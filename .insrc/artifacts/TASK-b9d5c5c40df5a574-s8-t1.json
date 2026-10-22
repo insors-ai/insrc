@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d17ce732-2722-4caa-b73f-ed518b70fa6a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.247Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s8",
+    "envelope": {
+      "description": "One definition of a module and the reading of a module value",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c992fd2b78c9cbcf826799edd88a76f2301a5119e6cb0ff4ae380cbffd9f35c6",
+        "at": "2026-10-22T12:44:26.247Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.248Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One definition of a module and the reading of a module value",
+    "summary": "Before any change, record the baseline: the result line of every top-level test of the analyze suite, run without the force-exit flag, and of the gated file src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts run with INSRC_LIVE_TESTS=1, kept in the Story's folder. Then add a new file under src/analyze/runtimes/shared/ with sourceModulesOf, moduleOfEntityId and moduleOfDirectory and their types. sourceModulesOf takes the resolved scope, the area's entities and all the repo's stored module entities, and returns the modules of the area: the stored module entities the area contains, and every directory that directly holds a source file and lies in or under no stored module entity's directory; none of the second kind under a file or symbol scope. moduleOfEntityId looks a value up as an entity id through a lookup callback and needs no scope. moduleOfDirectory reads a directory path under a resolved scope. Nothing calls them yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "The baseline is in the Story's folder before the first source change: the analyze suite's result lines and the gated file's, with the commit they were taken at",
+      "A directory that directly holds a stored source file is a module; a directory of artifact files only, and one whose source is all in sub-directories, is not",
+      "A stored module entity the area contains is kept with its id, and no directory in or under a stored module entity's directory is a module of its own, also when that entity lies above the area and is not itself listed",
+      "A module is named by its path relative to the repo, '.' for the repo's own directory, and 'payments' is never taken for part of 'pay'",
+      "Under a file scope and a symbol scope no directory is a module; a stored module entity the area contains is still returned",
+      "moduleOfEntityId returns the module of a stored module entity's id, null for a value that is no entity's id, and throws today's message for an entity of another kind; it takes no scope and no entity list",
+      "moduleOfDirectory reads an absolute path, a relative path, a trailing slash and '.' as the same directory, joins a relative value to graphRepoOf(scope) also when no repo is known, and refuses in this order with one message each: a file or symbol scope; a directory outside the repo or the scope's area; a directory with no stored source file under it",
+      "The functions read no store and call no model"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sourceModulesOf returns one module per directory that directly holds a source file, none for a directory of artifacts only, and none for a directory whose source is all in sub-directories (mutation: count artifact files as source)"
+      },
+      {
+        "level": "unit",
+        "name": "sourceModulesOf keeps a stored module entity with its id and lists no directory in or under its directory as a module of its own, also when the entity lies above the area and is not itself listed (mutation: test rule (b) against the area's entities only)"
+      },
+      {
+        "level": "unit",
+        "name": "sourceModulesOf names a module by its path relative to the repo, '.' for the repo's own directory, and does not take 'payments' for part of 'pay' (mutation: test the prefix without the slash)"
+      },
+      {
+        "level": "unit",
+        "name": "moduleOfDirectory reads an absolute path, a relative path, a trailing slash and '.' as the same directory, and moduleOfEntityId reads a stored module entity's id with neither a scope nor a repo's entities (mutation: treat every value as an entity id, as before)"
+      },
+      {
+        "level": "unit",
+        "name": "moduleOfDirectory fails for a directory with no stored source under it, for one outside the repo, for one outside the scope's area and for a directory path under a file or symbol scope, and moduleOfEntityId for the id of an entity of another kind, each with its own message; a relative value with no known repo is joined to the scope's own directory"
+      },
+      {
+        "level": "smoke",
+        "name": "the baseline of the analyze suite and of the gated file is recorded in the Story's folder before the first source change"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

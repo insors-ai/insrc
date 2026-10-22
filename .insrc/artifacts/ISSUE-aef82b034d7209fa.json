@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-18T17:09:49.078Z",
     "parentRef": {
       "slug": "review-every-changed-symbol-story-too"
+    },
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "39f8f2554c5e24e47c003afe35d2d13997756c20cd97a69bbacdcaac976c4617",
+        "at": "2026-10-18T14:08:16.121Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T17:09:49.078Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

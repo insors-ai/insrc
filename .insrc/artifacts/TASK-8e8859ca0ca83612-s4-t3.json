@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-892f5dd7-ae1e-4bf8-be35-6436803ab983",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.289Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4",
+    "envelope": {
+      "description": "cli-adapter marker-parse origin (fenced ```insrc:select```, buffer partials, strip marker) + syntax/uniqueness docs",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a12c3e7860d80ea5620bceabb437328e45c2dddcbb13492e6d473d8b8e04a521",
+        "at": "2026-10-22T12:43:58.289Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.289Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "cli-adapter marker-parse origin (fenced ```insrc:select```, buffer partials, strip marker) + syntax/uniqueness docs",
+    "summary": "Add the mapLine marker-parse branch to claudeMapper AND codexMapper (cli-adapter.ts): detect a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` block in the assistant text, JSON.parse + validate (prompt + non-empty options) inside try/catch, emit a selection-request event, and STRIP the raw marker from the visible assistant-delta. Buffer a partial/streamed marker (unclosed fence) in TurnState so a half-marker never emits and never leaks a partial fence. A malformed marker (bad JSON / missing fields) falls through as ordinary assistant-delta (no throw). A line with no marker behaves exactly as today (lc1). Document the ```insrc:select grammar + the option-id-uniqueness authoring guideline (duplicate ids render by index but authors should keep them unique) near the parser.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A scripted assistant line with a valid ```insrc:select marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker from the visible text.",
+      "A malformed marker (bad JSON or missing prompt/options) emits NO selection-request and leaves the text as an assistant-delta; never throws.",
+      "A marker split across two streamed lines is buffered in TurnState and emits the selection-request only when the closing fence arrives; a half-marker never emits.",
+      "A line with no marker emits the usual events unchanged (lc1); both claudeMapper and codexMapper handle it.",
+      "The ```insrc:select grammar + option-id-uniqueness guideline are documented near the parser."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "mapLine given a scripted line with a valid selection marker emits a selection-request with the parsed prompt/options/multi AND strips the raw marker"
+      },
+      {
+        "level": "unit",
+        "name": "A malformed marker emits NO selection-request and leaves the text as an assistant-delta (no throw)"
+      },
+      {
+        "level": "unit",
+        "name": "A marker split across two streamed lines emits only when the closing fence arrives; a half-marker never emits"
+      },
+      {
+        "level": "unit",
+        "name": "A line with NO marker emits the usual events unchanged (lc1)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

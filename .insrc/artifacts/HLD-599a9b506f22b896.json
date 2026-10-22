@@ -19,66 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "599a9b506f22b896",
     "epicSlug": "restructure-docs-artifact-markdown-from-flat",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts provides the canonical WorkflowId converters (toCanonical/toSlug/parseWorkflowId) and storyIdToOrdinal, whose /^s(\\d+)$/ is the lowercase-only gap sc1 (S001) widens.",
-          "evidence": "id.ts exports toCanonical, storyIdToOrdinal, ordinalToStoryId (3/3); the lowercase-only /^s(\\d+)$/ minter gap sc1 closes was confirmed at :102 in prior reviews.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/storage.ts's per-type *ArtifactPaths helpers return { md, json } where md is built under a TYPE dir from fileSeg(slug or hash) + storyId — the delegate surface sc2 re-points.",
-          "evidence": "storage.ts contains 26 matches for the md:join(repoPath...)/fileSeg(epicSlug...)/ARTIFACTS_DIR pattern — the { md, json } return shape with md = <TYPE>_DIR/<TYPE>-fileSeg(slug??hash)-storyId.md is confirmed; sc2 delegates this surface.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The read side enumerates via readdirSync over DOCS_ARTIFACT_DIRS + filename-prefix scans (startsWith('BUILD-'), planFilenamePrefix 'PLAN-<epicHash>-') — the finders sc2's listing functions replace.",
-          "evidence": "gates.ts uses readdirSync (3 sites) and basename.startsWith('BUILD-') (1); storage.ts defines planFilenamePrefix ('PLAN-<epicHash>-', 1) — the readdir/prefix finder surface sc2's listing functions replace is confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/storage.ts exports artifactIdMarker rendering the '<!-- insrc:artifact ... -->' first line; identity lives in that marker + companion JSON meta, not YAML frontmatter.",
-          "evidence": "storage.ts exports artifactIdMarker (1); the '<!-- insrc:artifact ... -->' first line + companion JSON meta as the identity source (no YAML frontmatter) was proven in the SPEC/DEF reviews.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD's shared-contract ownership fits the Epic story graph: sc1 (owner s1) is consumed by s2,s3 which both dependsOn s1; sc2 (owner s2) is consumed by s3 which dependsOn s2 — every consumer is transitively downstream of its owner.",
-          "evidence": "The approved DEF story graph is S001 (no deps), S002 depends s1, S003 depends s1+s2. So sc1 (owner s1) is consumed by s2,s3 — both transitively downstream of s1; sc2 (owner s2) is consumed by s3 — downstream of s2. Every consumer is downstream of its owner; ownership fits the graph with no invented dependency.",
-          "action": "none — verified sound; internal consistency holds",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-15T17:00:04.957Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-15T17:47:51.814Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e9fc2bf83aa9117ee601d471ca2f4016b9c1bb6e9e9ce466b91f8886217f50c6",
+        "at": "2026-09-15T16:59:01.375Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-15T17:47:51.814Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-15T17:00:04.957Z",
+        "report": {
+          "entityId": "HLD-599a9b506f22b896",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-599a9b506f22b896-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "A single work-item path-scheme module becomes the sole authority on where a work item's artifacts live. It is built on a uniform work-item identity — the existing canonical WorkflowId, fixed so every story-id form (lowercase s1 and uppercase S001) canonicalizes the same way — and maps that identity plus a human slug to a nested, work-item-first tree: docs/epics/<slug>-E<date><hash8>/ for epic-parented work and docs/standalone/<slug>-E<date><hash8>/ for triage-routed features, each holding item-root artifacts (SPEC/DEF/HLD) at its root and per-story S<nnn>/ subfolders (LLD/PLAN/BUILD/CR/EXT). Every per-type path helper delegates to this module and every directory-enumeration / filename-prefix finder is replaced by its listing functions, so the write side and the read side resolve the layout through one definition and can never disagree. The one-time migration reuses the very same resolver to compute each existing file's destination; the hash-flat .insrc/artifacts JSON store is left untouched.",

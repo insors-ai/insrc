@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e722d42-1e48-4100-adf9-181996091a78",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.012Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Type-mirror re-exports and display labels",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a037620f2d8327f28b4c51325f3f393518f8a83ddc3c95307df0a5233ccd7e69",
+        "at": "2026-10-22T12:43:41.012Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.013Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Type-mirror re-exports and display labels",
+    "summary": "Re-export DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState and ReviewVerdict from the plugin's delivery type mirror, and add DISPLAY_LABELS with exhaustive Records over the six unions plus the unplanned label.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "delivery-contract.ts re-exports the six types beside the nine existing ones and stays type-only; `npx tsc -p vscode-plugin/tsconfig.delivery-contract.json` passes.",
+      "DISPLAY_LABELS has a label for every member of the six unions; removing a key fails to compile.",
+      "The stage labels read Scoped, Design & plan, Ready · design approved, Ready · plan approved, Build recorded, Complete."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "labels.test.ts: 'every stage, attention reason, notice code, task result, approval state and review verdict has a display label'"
+      },
+      {
+        "level": "unit",
+        "name": "labels.test.ts: 'the six stage labels read in workflow order'"
+      },
+      {
+        "level": "integration",
+        "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

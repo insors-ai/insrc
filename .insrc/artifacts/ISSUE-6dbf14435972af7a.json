@@ -22,28 +22,44 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T16:35:49.309Z",
     "parentRef": {
       "slug": "present-every-artifact-awaiting-decision-buttons"
+    },
+    "epicCreatedAt": "2026-10-17T16:28:19.493Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7f19ad15ec74baaca9ddd86d69560d695063234d66bd130f6462c8a335b1be36",
+        "at": "2026-10-17T16:28:19.493Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T16:35:49.309Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
     "title": "Present every artifact awaiting a decision, with buttons that follow its state",
     "reproduction": "(1) Open a pending artifact in the VS Code review pane, then approve it from the chat (insrc_workflow_approve) or, for an HLD amendment, through approveAmendmentById. Observed: the pane keeps showing the document with live Approve / Reject buttons and still presents it as awaiting review; pressing a button acts on an artifact that is already decided. Expected: the buttons follow the artifact's state (pending: the decision buttons; approved or rejected: the outcome and no decision buttons), and once the artifact is decided the pane stops presenting it as awaiting review. (2) Ask the chat to present an HLD amendment or a Story extension that awaits approval, for example insrc_present({ documents: ['AMD-c2ba6fa62a148ed1-9', 'docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S013/EXT.md'] }). Observed (2026-10-17, for AMD-c2ba6fa62a148ed1-8, -9 and -10 and S013/EXT.md): every name comes back notPending and nothing opens, so their content had to be shown inline in the chat. Expected: every artifact that awaits the user's decision can be presented and decided in the pane.",
     "rootCause": "(1) The pane reads the pending list only when it opens, on the webview's boot ping and after a decision made in the pane itself (vscode-plugin/src/chat/docs-review-panel.ts:1275-1278); nothing tells it about a decision made through the chat or another surface, so its buttons and its presentation keep the state it last read. (2) insrc_present keeps only pending artifacts that have a document path (src/mcp/server.ts:1208-1214: 'A record with no document file (an empty mdPath) cannot be shown'). An HLD amendment is a JSON record with no document, and a Story extension record (EXT.md) is not reported in the pending list the present tool and the pane read (src/workflow/pending.ts), so neither can be presented or decided there; amendments are approved only through approveAmendmentById.",
-    "fixIntent": "The review pane always shows an artifact in its current state: decision buttons while it awaits a decision, its outcome and no decision buttons once it is approved or rejected, whichever surface made the decision; a decided artifact is no longer presented as awaiting review. Every artifact that awaits the user's decision, including HLD amendments and Story extensions, can be presented in the pane and decided there.",
-    "feedback": [
-      {
-        "id": "16524022",
-        "author": "controller (2026-10-17)",
-        "timestamp": "2026-10-17T16:28:34.102Z",
-        "target": {
-          "file": "docs/standalone/present-every-artifact-awaiting-decision-buttons-E202610176dbf1443/ISSUE.md"
-        },
-        "comment": "Root-cause precision: the exclusion of extension and amendment records from the pending list is deliberate today. src/workflow/pending.ts:36-41 (PENDING_KINDS) says: \"EXTEND / STUB / AMD stay excluded — they are not artifacts a reviewer approves in the review panel.\" In practice the stakeholder approves them (AMD-c2ba6fa62a148ed1-8, -9, -10 and the s13 extension on 2026-10-17, through approveAmendmentById and insrc_workflow_approve), so the fix reverses that recorded decision; the design should say so and decide how a JSON-only amendment is shown in the pane.",
-        "kind": "comment"
-      }
-    ]
+    "fixIntent": "The review pane always shows an artifact in its current state: decision buttons while it awaits a decision, its outcome and no decision buttons once it is approved or rejected, whichever surface made the decision; a decided artifact is no longer presented as awaiting review. Every artifact that awaits the user's decision, including HLD amendments and Story extensions, can be presented in the pane and decided there."
   },
   "citations": [
     {

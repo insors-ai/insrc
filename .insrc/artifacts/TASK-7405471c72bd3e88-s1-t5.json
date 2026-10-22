@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8784e834-0388-42f7-ae3b-92a1bca6696b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.835Z",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Epic board head, Epics rows and the Issues stage boxes",
+      "parent": {
+        "entityId": "STORY-7405471c72bd3e88-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7405471c72bd3e88-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7405471c72bd3e88-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "34aef628760d220f109fb4583efbca9f9e8ff43f42bcbad30e95f8aad13bff55",
+        "at": "2026-10-22T12:43:44.835Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.836Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Epic board head, Epics rows and the Issues stage boxes",
+    "summary": "Epic board: div.between.head (kicker 'EPIC · id', h1, pills; completion label over div.meter on the right) and a filterbar starting with a ghost '← Epics' button. Epics: div.rows of button.row (kicker, name, muted counts | completion over meter | attention pill) plus the Standalone link. Issues: the same details.acc sections as the board screens, each holding div.rows of button.row.issue-row (kicker, name, muted 'Corrects … · fix story …' | pills), remembering open/closed per trail entry and stage.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The epic board shows the head with the meter and the ghost back in its filterbar; a new epic board focuses its h1.",
+      "Epics rows put the name, completion and attention on one line.",
+      "The Issues screen shows collapsible stage boxes with the board screens' defaults and fold; a section's open state survives a refresh."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the Issues screen shows its issues in collapsible stage boxes"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

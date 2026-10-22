@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-df7b9245-61f0-42d9-aec7-9af6730efca0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.812Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Fixture sweep, part one",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t36",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "118539ca007ad210b062878a4697c1968d4a69bbba13054c2b6f2a742bca82a1",
+        "at": "2026-10-22T12:43:22.812Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.813Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fixture sweep, part one",
+    "summary": "Rewrite the remaining test fixtures that stamp the legacy fields to the lifecycle helper: src/workflow/__tests__/anchor-missing-producers.test.ts, anchor-missing-read.test.ts, artifact-writer.test.ts, docs-s3-follow-ups.test.ts, feedback-carry-finalize.test.ts, folder-identity-finalize.test.ts, meta-only-body-unchanged.test.ts and plan-artifact.test.ts.",
+    "size": "M",
+    "order": 37,
+    "acceptanceChecks": [
+      "None of the listed tests names a removed stamp",
+      "Each still passes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "artifact-writer.test.ts: the writer tests run on lifecycle fixtures"
+      }
+    ],
+    "planTaskId": "t37"
+  },
+  "citations": []
+}

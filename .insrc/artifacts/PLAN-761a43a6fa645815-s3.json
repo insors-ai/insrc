@@ -22,75 +22,57 @@
     "storyId": "s3",
     "lldRunId": "wf-1785752878857-liuoe5",
     "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The template src/workflow/code-review/dimensions/adherence.ts (c1) exists with the schema/prompt/judge seams t1 mirrors: ADHERENCE_FINDINGS_SCHEMA, buildAdherencePrompt, private fileOf, judgeAdherence.",
-          "evidence": "adherence.ts has every seam t1 mirrors: ADHERENCE_FINDINGS_SCHEMA (:49), buildAdherencePrompt (:74), fileOf (:109), judgeAdherence (:119). The template is real.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl2",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The reused helpers exist as t1 relies on: validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) with the third arg POSITIONAL (c3) in src/agent/providers/structured-output.ts.",
-          "evidence": "structured-output.ts exports validateAgainstSchema (:80) and withStructuredRetry (:182) — the helpers t1 reuses with the positional maxAttempts.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc3 DimensionFinding fields the judge maps through (c2) — expectationRef and confidence 'observation'|'breach' — exist in src/workflow/code-review/types.ts unchanged, and ReviewDimension includes 'conventions'.",
-          "evidence": "types.ts:48 confidence?: 'observation' | 'breach' | undefined; expectationRef? present; ReviewDimension (types.ts:33) includes 'conventions'. The judge maps these existing fields through with no contract change.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The fake-provider test harness t2 mirrors exists in adherence.test.ts (c1/c6): the `as unknown as LLMProvider` fake pattern and node:test/node:assert usage.",
-          "evidence": "adherence.test.ts uses `as unknown as LLMProvider` (the src/ hit at dimensions/__tests__/adherence.test.ts), and node:test + node:assert/strict is the repo-wide convention. The fake-provider harness t2 mirrors exists.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The target module src/workflow/code-review/dimensions/conventions.ts does not exist yet — t1 creates it (purely additive; no judgeConventions in src/ before this plan).",
-          "evidence": "judgeConventions / CONVENTIONS_FINDINGS_SCHEMA appear only in the design docs, not in any src/ file — conventions.ts does not exist yet, so t1 creating it is purely additive.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl6",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Task ordering is acyclic and topological: t1 (order 1, no deps) precedes t2 (order 2, dependsOn t1); the Story's storyDependsOn s1 is already satisfied on disk.",
-          "evidence": "ReviewDimension is defined in src/workflow/code-review/types.ts:33 (s1 shipped), so storyDependsOn s1 is satisfied; t1 (order 1, no deps) → t2 (order 2, dependsOn t1) is acyclic and topological.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-03T10:46:38.960Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-03T10:48:23.185Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a36c4b34f95bfb0a2d332fdbe9bd4fa0d2cca1d9c5538a60e796e35c8a49f7b0",
+        "at": "2026-08-03T10:45:49.679Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-03T10:48:23.185Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-03T10:46:38.960Z",
+        "report": {
+          "entityId": "PLAN-761a43a6fa645815-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-761a43a6fa645815-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791915192757-fn7xfj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T18:13:12.757Z",
+    "model": "claude:opus",
+    "elapsedMs": 40303,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "cb09a32ccdc4ed2b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T17:09:23.324Z",
+    "epicSlug": "show-epic-s-own-records-its",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2fc598fafae7c03e732668f5255d8e26c0f4881c0ad153ff6dee186a90bc0497",
+        "at": "2026-10-13T18:13:12.757Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "cb09a32ccdc4ed2b",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/delivery/__tests__/epic-records.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/delivery/__tests__/epic-records.test.ts:66",
+            "message": "Tests for this Story's behaviour are present but unverified. The graph grounding is hollow: every production symbol in board-host.ts, board-model.ts, board-protocol.ts and board-state.ts has an empty testsReaching, because the top-level node:test `test(...)` callbacks are not graph symbols and so yield no test edges. Reading the test file shows it does import and drive the changed surface directly (createDeliveryBoardHost, boardDownMessages, reduceBoardState, initialBoardState, currentItemId, recordOwnerId) across six cases at lines 66, 109, 130, 160, 284 and 357, covering the epic's records on the board, the record owner, unchanged story/list screens, details memory, the webview records table and the host's open-evidence handling. No build record is available and the suite could not be run in this review (the test command was not permitted), so no pass-state is asserted. Not reported as missing tests; no HIGH is raised from the empty grounding.",
+            "expectationRef": "createDeliveryBoardHost, boardDownMessages, reduceBoardState, recordOwnerId, currentItemId (epic-records.test.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/delivery/board-protocol.ts:1",
+            "message": "parseBoardUpMessage is not imported by the Story's own test file (epic-records.test.ts); the open-evidence up-message is exercised there through the host and webview harness instead. The symbol is referenced by the sibling suites board-protocol.test.ts and board-host.test.ts, but the graph reports no testsReaching edge for it and those suites were not run here, so direct coverage of any change to the up-message parser for this Story is present but unverified.",
+            "expectationRef": "parseBoardUpMessage",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 1
+    }
+  }
+}

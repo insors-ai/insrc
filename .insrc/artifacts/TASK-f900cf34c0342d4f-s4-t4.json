@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2f8ee6a-0b5f-4f8e-8d91-e991854a1e56",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:59.395Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Populate the client identity envelope in the rpc + mcp producers",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bb7909ab577aafe89b42390869ec471061fe49ba7b9a398788b08fedd7f0a90",
+        "at": "2026-10-22T12:44:59.395Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:59.396Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Populate the client identity envelope in the rpc + mcp producers",
+    "summary": "Set IpcRequest.client on the producer path(s): src/cli/client.ts rpc() writes `client: { label: 'cli', pid: process.pid }` (client.ts:17); if the insrc-mcp server has its OWN daemon-rpc client, it writes `client: { label: 'mcp:<clientName>', pid: process.pid }`. Build note: first grep for the insrc-mcp daemon-client call site — if it reuses cli/client.ts rpc() there is no second edit and t4 collapses to the rpc() change (CLI connections still labelled). Producers only — no reader/behaviour change; an unlabelled producer simply shows 'unknown'.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "rpc() attaches client={label:'cli', pid:process.pid} to every request it writes",
+      "If the insrc-mcp server has a distinct daemon-client, it attaches client={label:'mcp:<client>', pid:process.pid}; if it reuses rpc(), that is documented and sufficient",
+      "No external signature/behaviour change to rpc(); tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "rpc() writes an IpcRequest carrying client={label:'cli', pid:process.pid} (asserted against a captured socket write with an injected connection seam)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3c903589-0b30-42eb-bc40-1edccb1467d6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:29.281Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the auto-revert-on-reject branch to the ConfigSyncEngine (sc8, no signature change)",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f677c6fff99269954e22c472bd4b267c14d38e332145a1f83bd1721a788e35e2",
+        "at": "2026-10-22T12:43:29.281Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:29.282Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the auto-revert-on-reject branch to the ConfigSyncEngine (sc8, no signature change)",
+    "summary": "In vscode-plugin/src/config/sync-engine.ts, add a small shared revert helper called from all THREE rejected-write exits of applyChanges (invalid-value pre-flight, daemon {ok:false}, rpc reject): after the existing notifier.error, write the last-known-good value back — settings.write(change.key, lastSyncedSnapshot.get(change.key) ?? entry.option.default), wrapped in try/catch (never throws). When the key has no last-known value, pre-set lastSyncedSnapshot.set(key, option.default) BEFORE the revert so the echo is a no-op. The snapshot is NOT advanced on a rejection (unchanged) and the existing top-of-applyChanges idempotent-no-op guard suppresses the revert echo. applyChanges/pullFromDaemon signatures stay void (sc8 interface unchanged).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "on an invalid value, a daemon {ok:false}, and an rpc reject, applyChanges calls notifier.error AND settings.write(key, last-known-good) — the setting is reverted; the snapshot is not advanced",
+      "when the key has no last-synced value the revert uses option.default and pre-sets the snapshot; a revert settings.write failure is swallowed (applyChanges never throws)",
+      "the sc8 applyChanges/pullFromDaemon signatures are unchanged and the 118 existing S001/S002 plugin tests still pass (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "applyChanges on invalid-value / {ok:false} / rpc-reject reports the reason AND reverts the SettingsStore to the last-synced value, without advancing the snapshot"
+      },
+      {
+        "level": "unit",
+        "name": "the revert echo is a loop-suppressed idempotent no-op (no second toast/write); no-last-synced reverts to option.default with a pre-set snapshot; a revert-write failure is swallowed"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

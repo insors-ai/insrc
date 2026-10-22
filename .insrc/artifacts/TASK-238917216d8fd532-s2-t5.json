@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-377fe355-f3fe-4d50-967b-7c35360dae0b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.249Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Plugin: artifact content view in the ReviewToolWindow (JCEF render + native fallback)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f331b3ffdbf295036a26b051d812cc1cb03f7def87e97c1c5a466977cc67b96",
+        "at": "2026-10-22T12:43:18.249Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: artifact content view in the ReviewToolWindow (JCEF render + native fallback)",
+    "summary": "Add the content view to the existing ReviewToolWindow. LAND THE PURE MAPPERS FIRST — ArtifactContentViews.of(ArtifactContentResult) -> a content-view state and renderModeFor(jcefSupported) -> JCEF_HTML|NATIVE_FALLBACK (mirroring S001's ReviewListViews so the testable core exists before any JCEF/EDT wiring) — then wire the panel: a pending-list selection triggers a bounded on-demand fetch via DaemonGateway.artifactReviewView; when JBCefApp.isSupported() render renderedMarkdown->HTML inside a JBCefBrowser using the t4 bundled JS renderer (passing the raw renderedMarkdown across the Kotlin->JS bridge, read-only), else degrade to a read-only native-editor fallback showing the same renderedMarkdown with the same review actions; show a distinct 'content unavailable' state on Unavailable. Off-EDT fetch, EDT render. In scope: render + fallback selection only — no inline-comment bridge (s3), no submit (s4), no approve wiring (s5); approvable/blockReason are carried as read-only data.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "The pure ArtifactContentViews.of + renderModeFor mappers are extracted first and are unit-testable headlessly (no JCEF/EDT).",
+      "Selecting a pending artifact opens its content rendered legibly (JCEF HTML via the bundled JS renderer) within the tool window (ac1).",
+      "renderModeFor(false) -> the read-only native-editor fallback carrying the same review actions; Unavailable shows 'content unavailable', never a blank/empty pane (ac2).",
+      "The view shows exactly renderedMarkdown (the artifact's own content) with no second copy authored (ac3); the fetch is a single on-open request/reply, off the EDT with EDT render.",
+      "No s3/s4/s5 scope is implemented. Loads across the four IDEs off the shared platform module."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ArtifactContentViews.of(Loaded) -> Rendered(renderedMarkdown); of(Unavailable) -> 'content unavailable' (distinct from a blank/empty view)"
+      },
+      {
+        "level": "unit",
+        "name": "renderModeFor(jcefSupported): JCEF_HTML when true, NATIVE_FALLBACK when false"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

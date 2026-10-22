@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0071cf2e-6fcd-45b9-abae-c452ab7c90cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.372Z",
+    "epicCreatedAt": "2026-08-04T16:50:43.835Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e71f3a6001e773",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Generalize the BUILD record type (standalone true->boolean + optional provenance)",
+      "parent": {
+        "entityId": "STORY-d3e71f3a6001e773-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d3e71f3a6001e773-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0616f359506300d9474616fc788ff48e763052f38ac93eefd07e80443ad005ae",
+        "at": "2026-10-22T12:44:42.376Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.376Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Generalize the BUILD record type (standalone true->boolean + optional provenance)",
+    "summary": "In src/workflow/runners/build/standalone-record.ts widen the record type: introduce BuildRecord with meta.standalone: boolean (was the `true` literal), + optional meta.updatedAt and optional body.tasks?: { id: string; passed?: boolean }[] and body.commit?: string. Keep StandaloneBuildRecord as a standalone:true narrowing (alias) so existing Trivial callers (implement.ts:133) still typecheck. Strict ESM .js imports, import type, exactOptionalPropertyTypes-safe optionals.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "standalone-record.ts exports BuildRecord with meta.standalone:boolean + optional meta.updatedAt + body.tasks?[]/commit?; StandaloneBuildRecord remains a standalone:true narrowing",
+      "existing StandaloneBuildRecord callers (implement.ts:133 Trivial branch) typecheck unchanged; tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "StandaloneBuildRecord callers (implement.ts:133) still typecheck against the widened type"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

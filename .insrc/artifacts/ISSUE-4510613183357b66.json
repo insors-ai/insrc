@@ -20,7 +20,27 @@
     "issueHash": "4510613183357b66",
     "epicSlug": "five-acceptance-checks-approved-plan-issue",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "epicCreatedAt": "2026-10-02T18:40:46.290Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "05a538d2619dc498cff95f63b0225f7f1e19d42a9ee4e52e22c99e4b65312ae1",
+        "at": "2026-10-02T18:40:46.290Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Close five acceptance checks that shipped unmet in the BUILD-provenance Story",

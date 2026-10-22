@@ -4,7 +4,27 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s2",
     "createdAt": "2026-10-12T04:54:28.333Z",
-    "updatedAt": "2026-10-12T06:19:49.037Z"
+    "updatedAt": "2026-10-12T06:19:49.037Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d0c4bfb0a76dd68265329b2341e27cb0cdc81617ae669f68fe9a83905e8ce00d",
+        "at": "2026-10-12T04:54:28.333Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -23,91 +23,56 @@
     "storyId": "s5",
     "lldRunId": "wf-1790058200031-ods9oh",
     "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The three offer functions runOnboarding sequences exist at their cited locations (offerDaemonInstall daemon/commands.ts:41, offerHostWiring hosts/commands.ts:29, offerWorkspaceRegistration workspace/commands.ts:81).",
-          "evidence": "grep confirms offerDaemonInstall (daemon/commands.ts:41), offerHostWiring (hosts/commands.ts:29), offerWorkspaceRegistration (workspace/commands.ts:81) all exist at the cited lines.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The uninstall reversal reuses shipped symbols: createHostAdapter + adapter.unwire() (hosts/adapter.ts), HOST_SPECS (hosts/specs.ts:50), defaultHostFileSystem (hosts/fs.ts).",
-          "evidence": "createHostAdapter (adapter.ts:45), HOST_SPECS (specs.ts:50), defaultHostFileSystem (fs.ts:43), and adapter.unwire() (adapter.ts:74) all exist - the shipped symbols t2 reuses.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "extension.ts currently fires the three offers as three independent fire-and-forget IIFEs that t3 replaces with one runOnboarding.",
-          "evidence": "extension.ts has three `void (async () =>` IIFEs at 114/127/139, calling offerDaemonInstall (117), offerHostWiring (129), offerWorkspaceRegistration (141) - exactly the three scattered fire-and-forget offers t3 replaces.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The default OnboardingStore binding relies on vscode.ExtensionContext.workspaceState, already declared in the S004 vscode.d.ts shim (Memento).",
-          "evidence": "vscode.d.ts:62 declares interface Memento and :72 ExtensionContext.workspaceState: Memento; extension.ts already uses context.workspaceState.get/update (94/101) - the OnboardingStore binding relies on an already-declared surface.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t3",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The durable commands ac2 relies on are already registered (registerDaemonCommands/registerHostCommands/registerWorkspaceCommands) so s5 re-registers nothing.",
-          "evidence": "registerDaemonCommands (daemon/commands.ts:58), registerHostCommands (hosts/commands.ts:77), registerWorkspaceCommands (workspace/commands.ts:92) all exist - the durable commands are already registered; s5 re-registers nothing.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The S002/S003/S004 durable commands (7 ids: 5 daemon + hosts.wire + workspace.register) remain in contributes.commands for the subset check.",
-          "evidence": "package.json:20-26 holds exactly the 7 durable command ids (5 daemon + hosts.wire + workspace.register) that the subset check preserves.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task DAG (t1, t2 independent; t3 depends on both) is acyclic and orders the onboarding + uninstall modules before the extension.ts wiring.",
-          "evidence": "Ordering claim (no probe): edges t1->t3, t2->t3 form a DAG; order 1,2<3 is a valid topological order placing the onboarding + uninstall modules before the extension.ts wiring.",
-          "action": "none - verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-22T06:53:08.490Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-22T06:57:46.266Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2f3624c2310555840824307987937ba2674b022d6e357b8161279573ebd801f8",
+        "at": "2026-09-22T06:52:19.530Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T06:57:46.266Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-22T06:53:08.490Z",
+        "report": {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-ad0d45c9d690f8c1-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

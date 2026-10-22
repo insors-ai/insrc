@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d51d5d39-83ff-419e-af90-5da18b6b807d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.263Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the build-private plan-vs-design.story drift comparator",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eaf00405561bad0257c371d0a2dd1d1da97cb29698d46ffcbc638fa839bc8980",
+        "at": "2026-10-22T12:43:15.263Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.263Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the build-private plan-vs-design.story drift comparator",
+    "summary": "Inside src/workflow/runners/build/, add a private comparator that reads the plan's recorded upstream design hash via the existing readPlanUpstream and the current design.story artifact hash via the existing readLldArtifact, then compares them, mirroring scanLldStaleness's return-a-typed-verdict-don't-throw discipline. On drift it produces reason:'plan-stale' with inline staleness {planRecordedDesignHash, currentDesignHash}; equal hashes count as fresh (not drifted); an empty/absent recorded design hash conservatively refuses as 'plan-stale' since freshness cannot be positively established. Precondition (folded in from the c2 de-risking): confirm the real signatures of readPlanUpstream (gates.ts:250-269) and readLldArtifact, and confirm scanLldStaleness (staleness.ts:60-119) returns a typed verdict without throwing and compares LLD-vs-HLD, so it is used only as a pattern source. It does NOT call scanLldStaleness and does NOT generalize it into shared amendments/staleness.ts (a3 rejected). The comparator stays private to build/ and is never re-exported; scanLldStaleness and its callers (chain.ts::readStoryLldStatus, cli/services/workflow.ts::staleness) remain untouched.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The comparator reads the recorded upstream design hash via the actual readPlanUpstream and the current hash via the actual readLldArtifact (matching gates.ts:250-269)",
+      "A recorded upstream design hash differing from the current design.story hash yields reason:'plan-stale' with inline staleness={planRecordedDesignHash, currentDesignHash}",
+      "Equality of recorded and current design hashes is treated as fresh (no 'plan-stale' verdict)",
+      "An empty/absent recorded design hash conservatively yields reason:'plan-stale' rather than admitting",
+      "The comparator returns a typed verdict without throwing and neither calls scanLldStaleness nor edits amendments/staleness.ts",
+      "The comparator is private to src/workflow/runners/build/ and is not re-exported; chain.ts and cli/services/workflow.ts staleness callers are unmodified"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "drift comparator yields reason:'plan-stale' with inline staleness={planRecordedDesignHash, currentDesignHash} when recorded differs from current design hash"
+      },
+      {
+        "level": "unit",
+        "name": "drift comparator treats a recorded design hash equal to the current design.story hash as fresh (no 'plan-stale' verdict)"
+      },
+      {
+        "level": "unit",
+        "name": "drift comparator conservatively yields 'plan-stale' when the recorded design hash is empty/absent"
+      },
+      {
+        "level": "unit",
+        "name": "drift comparator returns a typed verdict without throwing, and guard: it is not re-exported from build/'s public surface"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

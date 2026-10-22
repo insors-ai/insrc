@@ -6,7 +6,26 @@
     "createdAt": "2026-10-20T16:44:27.482Z",
     "updatedAt": "2026-10-21T04:47:37.943Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
-    "epicSlug": "chunked-review-pipeline-every-review"
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "02266114ba4de12fed9ea37eb108f67a5bb6a464bba3b18f4995e9c1ea389615",
+        "at": "2026-10-20T16:44:27.482Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

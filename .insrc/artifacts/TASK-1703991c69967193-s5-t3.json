@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87007d50-4596-4f43-8af2-deb15d753bb7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.588Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Implement createBugfixTrackerIssue (config-gated create + link + record)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ac9f5809203f3cb555f78ae6ec87d4b190a7b91d2f79fe8219a46eca9e3e125",
+        "at": "2026-10-22T12:43:14.588Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.589Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement createBugfixTrackerIssue (config-gated create + link + record)",
+    "summary": "Implement createBugfixTrackerIssue(input, deps): resolveConfig (skip {status:'skipped'} on type:'none'/GithubConfigError, ac2) + authOk (skip if not ok); if meta.tracker already carries the ref -> {status:'reused'} (idempotent); else render body = renderIssueMarkdown(issue) VERBATIM (k4), title = issue.body.title, createIssue = ghCreateIssueTyped (get {ref,id}); resolveParentIssueRef(meta.parentRef) -> parent owner/repo#N (via resolveWorkflowRef/issueForWorkflowId); ghLinkSubIssue best-effort (skip when parentRef null/standalone or ref null; a link throw -> {created, linked:false}); recordRef the created ref on meta.tracker (patchTrackerMeta). Provide default deps wiring the real consumed functions.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Configured+parent-pushed -> createIssue(body===renderIssueMarkdown, title===issue.body.title); linkSubIssue(parent, createdId); ref recorded; {status:'created', linked:true}.",
+      "type:'none'/GithubConfigError/authOk-false -> {status:'skipped'}, no createIssue call (ac2). Already-recorded ref -> {status:'reused'}.",
+      "Standalone (parentRef null)/unpushed parent/link-throw -> {status:'created', linked:false}, no error. tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: configured + parent resolves -> createIssue called with body===renderIssueMarkdown(issue) and title===issue.body.title (k4); linkSubIssue called with the parent ref + created REST id; ref recorded; { status:'created', linked:true }"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: configured + standalone (parentRef null) -> created UNLINKED (linkSubIssue NOT called), { status:'created', linked:false }"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: configured + parentRef present but resolveParentIssueRef null -> created unlinked (no link attempt)"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: resolveConfig type:'none' -> { status:'skipped' }, NO createIssue call (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> { status:'skipped' }, NO createIssue call (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: authOk() false -> { status:'skipped' }, NO createIssue call"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: meta.tracker already carries the ref -> { status:'reused' }, NO createIssue call (idempotent)"
+      },
+      {
+        "level": "unit",
+        "name": "createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> issue still created + recorded, { status:'created', linked:false }"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

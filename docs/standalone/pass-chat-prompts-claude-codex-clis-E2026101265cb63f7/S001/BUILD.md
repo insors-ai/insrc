@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-65cb63f7186f84fa-S001 -->
+<!-- insrc:artifact BUILD-65cb63f7186f84fa-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -30,7 +30,7 @@ The chat's claude and codex argv builders now put every flag first and the promp
 
 ## Changes
 
-- `.insrc/artifacts/CR-65cb63f7186f84fa-S001.json` — **insrc-build** (2026-10-12T05:35:35.400Z)
+- `.insrc/artifacts/CR-65cb63f7186f84fa-s1.json` — **insrc-build** (2026-10-12T05:35:35.400Z)
 - `.insrc/artifacts/ISSUE-65cb63f7186f84fa.json` — **insrc-build** (2026-10-12T05:35:35.400Z)
 - `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/ISSUE.md` — **insrc-build** (2026-10-12T05:35:35.400Z)
 - `docs/standalone/pass-chat-prompts-claude-codex-clis-E2026101265cb63f7/S001/CR.md` — **insrc-build** (2026-10-12T05:35:35.400Z)

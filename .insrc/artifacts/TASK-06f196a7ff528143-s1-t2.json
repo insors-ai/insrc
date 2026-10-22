@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5326ac76-0651-44da-8f7a-c4743e702c7e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.322Z",
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "06f196a7ff528143",
+    "storyId": "s1",
+    "envelope": {
+      "description": "storyChangeSet: foreign commits, strict scan, perUnit",
+      "parent": {
+        "entityId": "STORY-06f196a7ff528143-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-06f196a7ff528143-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a42071ebf033664bf29069b7e03dd89f93217a082350de07085dd5e558d75ebf",
+        "at": "2026-10-22T12:43:11.324Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.325Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "storyChangeSet: foreign commits, strict scan, perUnit",
+    "summary": "In src/workflow/runners/build/story-commits.ts: the trailer scan records carrying and foreign commits (all Insrc-Story lines name other Stories); with strict: true a failed git log throws NoBuildChangesError (newestStoryCommit stays lenient); one rule for ordinary, merge-edit and octopus units (foreign never a unit, its paths to the excluded set; carrying always; untrailered merge always; untrailered ordinary only in a legacy range); the result gains perUnit. The trailer test expectation at story-commits-trailer.test.ts:101 becomes ['src/a.ts'].",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "With a storyKey, no unit of any kind comes from a foreign commit; untrailered merge edits are still units.",
+      "A range of only other Stories' commits gives an empty set.",
+      "strict: true turns a failed trailer scan into NoBuildChangesError.",
+      "perUnit is false only for an unfiltered legacy range."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

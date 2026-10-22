@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-767ac155-eaa3-4125-a2cd-106f793d8a81",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.989Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Full-surface visual verification in both themes, with committed evidence",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "672e72dcaad910caf21465b63a893539b9046284e1dcf575bb0f67da95d1d035",
+        "at": "2026-10-22T12:44:32.989Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.990Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full-surface visual verification in both themes, with committed evidence",
+    "summary": "The whole-surface pass, CONFIRMING rather than discovering now that t3 read the renderer in isolation. Render the real shell across every state — each of the four real records, the dual-slot arrangement, unshowable, absent, and a deep card at narrow pane width — screenshot headless in BOTH themes, READ the images back, and commit them under S004/evidence/ with the evidence-path guard extended to name each one.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Each of the four real records in the MOUNTED surface reads as an interface, confirmed by reading the image",
+      "The DUAL-SLOT layout read as an image: diagram and mock as labelled peers, each distinguishable at a glance — the only way to confirm a reviewer could actually tell them apart (ac2)",
+      "BOTH THEMES (critique): dark and light, for at least the dual-slot, one real record and the unshowable state. The light theme is where a wrong `--it-*` choice becomes visible and where a mechanical colour scan has nothing to say",
+      "The 'unshowable' state: the reason text is legible and the link-out visibly reachable",
+      "The 'absent' state: nothing drawn, no frame, no reserved space, and the body identical to the S003 rendering",
+      "A deep card at narrow pane width renders legibly, confirming t4's bound did not need to fire",
+      "All state images committed under S004/evidence/ at the paths the commit message CLAIMS, with the evidence-path guard extended — S002 committed evidence to the wrong path while its message claimed the right one and had to be amended"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "each of the four real records in the MOUNTED shell screenshotted and READ as an interface"
+      },
+      {
+        "level": "smoke",
+        "name": "the two records belonging to THIS Epic read correctly in the mounted surface"
+      },
+      {
+        "level": "smoke",
+        "name": "the DUAL-SLOT layout read as an image: diagram and mock as labelled peers, distinguishable at a glance"
+      },
+      {
+        "level": "smoke",
+        "name": "the 'unshowable' state read as an image: reason legible, link-out visibly reachable"
+      },
+      {
+        "level": "smoke",
+        "name": "the 'absent' state read as an image: nothing drawn, no frame, no reserved space, body identical to the S003 rendering"
+      },
+      {
+        "level": "smoke",
+        "name": "the SYNTHETIC deep card at NARROW pane width read as an image, confirming t4's bound did not fire"
+      },
+      {
+        "level": "smoke",
+        "name": "dual-slot, one real record and the unshowable state each read in BOTH dark and light themes"
+      },
+      {
+        "level": "unit",
+        "name": "the evidence-path guard names every committed S004 state image and fails if one is missing"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-1d428603-cad5-4748-bce9-19444066ac65",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.036Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Edit a setting with a type-appropriate control and save it",
+      "parent": {
+        "entityId": "EPIC-b5f333f8d7ba421b",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "16a193333b9688cabb79349bdbff8c68f7a468a93d418a617dc3f208cae34d21",
+        "at": "2026-10-22T12:43:07.036Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

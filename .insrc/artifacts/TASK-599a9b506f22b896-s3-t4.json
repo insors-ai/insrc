@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5eeb7850-19b2-4c8e-9062-95cf1be4533b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.529Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Unit + integration tests for the migration",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b370db4d0b34444aa36d3f923760c8b6dbd2e1f3522f30beec21e7d6f8a41a09",
+        "at": "2026-10-22T12:43:35.529Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.530Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit + integration tests for the migration",
+    "summary": "Add src/workflow/__tests__/migrate-docs-tree.test.ts: UNIT over a mkdtemp fixture (seed BOTH a slug-named marker-bearing md AND a hash-named markerless BUILD + companion .insrc/artifacts JSON + a hand-written non-artifact) asserting planMigration's grouped `to` via resolveArtifactMdPath, both locate paths, shared-anchor no-split, sibling-sourced slug, idempotent skip, unmappable (missing anchor/slug/md + collision), non-artifact-never-enumerated; INTEGRATION over a `git init` tmp repo committed with the flat tree asserting git-mv history (`git log --follow`), no flat md remains, .insrc/artifacts byte-identical, unmappable-refusal, broken-link-reject + chunk-rollback. Mirror path-scheme.test.ts's mkdtemp/seed style.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Unit tests cover every ac1/ac2 planMigration subject from the LLD test strategy, including a slug-named marker-located md AND a hash-named markerless BUILD (both locate paths pinned)",
+      "Integration tests cover the ac1/ac3 applyMigration subjects (git history, no-flat-remains, byte-identical json, unmappable-refusal, broken-link-reject, chunk-rollback)",
+      "`npx tsx --test 'src/workflow/**/*.test.ts'` passes; tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "applyMigration: a cross-artifact link is rewritten + the post-move validation (listWorkItems/listArtifactMdPaths) passes; an unresolved link throws (naming it) + rolls back the chunk"
+      },
+      {
+        "level": "unit",
+        "name": "the migrate-docs-tree.test.ts fixture seeds both a slug-named marker md and a hash-named markerless BUILD + a hand-written non-artifact, exercising the full planMigration matrix"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

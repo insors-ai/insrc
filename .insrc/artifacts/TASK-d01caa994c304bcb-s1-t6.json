@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d18dc64f-b3be-43dd-94a8-8d4ad88ad137",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.014Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Contract-test the relocation and the real catalog's self-consistency",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "99641a523c735aa810ea3041e1f214e969816be8d23d434887a4a5ad56cf3c07",
+        "at": "2026-10-22T12:44:41.020Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.021Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Contract-test the relocation and the real catalog's self-consistency",
+    "summary": "Add src/config/__tests__/config-catalog-contract.test.ts asserting the module-boundary and catalog-integrity properties no runtime test can observe. Static source scan over src/config/** (read files, parse import specifiers — no new dependency) asserting zero imports of src/cli; assert src/config/config-catalog.ts is the single definition site and that the symbol re-exported from src/cli/config-catalog.ts is reference-identical to it; assert every real CONFIG_CATALOG row's declared type is inside the discriminant domain and every row's default satisfies its own predicate (i.e. reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError); assert reconcileConfig is idempotent on the real 41-row catalog. Add the tsc-checked never-assignment fixture proving the predicate switch is exhaustive. This task owns six of the seven LLD contract-level subjects; the seventh — MaintenanceResult.configReconcile being optional and additive — is owned by t11 and must not be duplicated here (record that split in a comment at the top of this file so the ac6 contract row has one unambiguous owner).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "The source-scan assertion over src/config/** for src/cli imports runs green against the current tree and fails if such an import is introduced",
+      "`import { CONFIG_CATALOG } from '../../cli/config-catalog.js'` and the src/config import are asserted `===` identical",
+      "reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError, and a second pass over its output reports changed === false",
+      "An exhaustiveness assertion (never-assignment or tsc-on-fixture) fails to compile if a discriminant member is added without a matching switch arm",
+      "A header comment records that the MaintenanceResult contract subject is owned by t11, so every LLD contract-level subject has exactly one owning test"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source scan over src/config/** resolves every import specifier and asserts none reference src/cli"
+      },
+      {
+        "level": "unit",
+        "name": "src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption"
+      },
+      {
+        "level": "unit",
+        "name": "src/cli/config-catalog.ts re-exports both and its CONFIG_CATALOG is === the src/config array (no duplicate literal)"
+      },
+      {
+        "level": "unit",
+        "name": "real CONFIG_CATALOG self-consistency — every row's type is in-domain and every default satisfies its own predicate; reconcileConfig({}, CONFIG_CATALOG) does not throw ConfigCatalogError"
+      },
+      {
+        "level": "unit",
+        "name": "reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real 41-row catalog — second pass changed === false"
+      },
+      {
+        "level": "unit",
+        "name": "type-level exhaustiveness — never-assignment / tsc-on-fixture fails to compile when a ConfigOption discriminant member lacks a switch arm"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

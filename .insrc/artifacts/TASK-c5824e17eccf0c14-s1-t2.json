@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2699760c-3683-4b1b-8999-0af725cf9bd6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:37.224Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Optional functionalDefinition field on each <Stage>Body + assembly validation",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c26d930b0d3550deb40f3cd881ee38b9456e2139a207730539f89ce6da60db4",
+        "at": "2026-10-22T12:44:37.224Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:37.225Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Optional functionalDefinition field on each <Stage>Body + assembly validation",
+    "summary": "Add `functionalDefinition?: FunctionalDefinition | undefined` to DefineBody and the peer HldBody/LldBody/PlanBody. Add the record-assembly validation: unique FR ids (Set-size check), scope==='item' itemRef resolves to a real story/task id, and fail-loud when an id cannot be minted.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "each <Stage>Body type-checks with and without functionalDefinition under exactOptionalPropertyTypes",
+      "duplicate FR ids are rejected with a 'duplicate FR id' error before persistence",
+      "a scope==='item' FR with a dangling itemRef is rejected",
+      "an empty requirements [] is accepted and treated as absent"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "FunctionalDefinition/FunctionalRequirement on every <Stage>Body type-check under exactOptionalPropertyTypes (with and without the field)"
+      },
+      {
+        "level": "unit",
+        "name": "assembly validation rejects duplicate FR ids and dangling per-item itemRefs, and accepts an empty requirements[] as absent"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

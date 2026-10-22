@@ -24,129 +24,61 @@
     "hldBaseRunId": "wf-1790073320669-iy7sqb",
     "hldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon config.write IPC handler at src/daemon/index.ts:1353 takes { path: string | string[], value } and writes a dot-path or array-of-segments over ~/.insrc/config.json (the array form S007's per-repo write depends on).",
-          "evidence": "CONFIRMED: read src/daemon/index.ts:1353 -> \"'config.write': async (params) => {\"; the handler takes {path: string|string[], value} (the array form S007's per-repo write relies on).",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon config.catalog IPC handler is registered at src/daemon/index.ts:1327 (read-only schema+values assembler).",
-          "evidence": "CONFIRMED: read src/daemon/index.ts:1327 -> \"'config.catalog': async () => {\" (read-only catalog handler).",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "readRepoOverride in src/config/analyze.ts reads the per-repo models.byRepo override at run-resolve (the surface S007's panel edits), around line 411.",
-          "evidence": "CONFIRMED: read src/config/analyze.ts:411 -> \"function readRepoOverride(repoPath: string, configPath: string): RepoShaperOverride | undefined {\"; grep confirms it reads models.byRepo. docs/daemon.md:384-398 corroborate the byRepo per-repo surface.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "migrateByRepo in src/config/config-catalog.ts (around line 178) defines the flat per-repo byRepo entry shape (tasks / tiers) S007 renders as form fields.",
-          "evidence": "CONFIRMED: read src/config/config-catalog.ts:178 -> \"function migrateByRepo(value: unknown): unknown {\"; the flat byRepo tasks/tiers shape S007 renders.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The vscode-plugin sc8 ConfigGateway (vscode-plugin/src/config/gateway.ts) already exposes writeKeyPath(segments, value) (ARRAY-form config.write) + rawConfig() (config.show) + catalog() — the exact primitives S007 reuses, so no new daemon capability is added.",
-          "evidence": "CONFIRMED: grep found `async writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult>` and rawConfig in the vscode-plugin config seam (gateway + its fakes in per-role-engine.test.ts/truthful-sync.test.ts). The sc8 ConfigGateway already exposes writeKeyPath (ARRAY-form config.write) + rawConfig (config.show) — S007 adds no new capability.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The vscode-plugin config seam calls ONLY config.catalog + config.show + config.write daemon IPC (enforced by a seam test asserting deepEqual of the method set) — S007 introduces no new IPC method.",
-          "evidence": "CONFIRMED: seam.test.ts:37 + per-role-engine.test.ts:176 assert deepEqual(methods, ['config.catalog','config.show','config.write']) — the config seam calls only those three IPC methods; S007 introduces no new IPC (k3 holds).",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc9 DaemonDataGateway exposes registeredRepos(): Promise<readonly RepoRef[]> (RepoRef{path,name}) over repo.list — the folder-independent repo picker source for S007.",
-          "evidence": "CONFIRMED: the sc9 DaemonDataGateway.registeredRepos() over repo.list + RepoRef{path,name} exists (daemon-gateway.ts / types.ts, read directly during grounding); the folder-independent repo picker source.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc9 host (vscode-plugin/src/panels/webview-host.ts) exposes openRepoConfiguration() and currently renders a placeholder (REPO_PLACEHOLDER) — the shell S007 fills additively.",
-          "evidence": "CONFIRMED: webview-host.ts exposes openRepoConfiguration() rendering REPO_PLACEHOLDER (read directly during S006); HLD.md:62 + S004/LLD.md corroborate the sc9 signature. The placeholder shell S007 fills additively.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "extension.ts is the SOLE module importing 'vscode'; the new repo-config panel core must not import vscode (k5 thin bundle), matching the S004/S005/S006 panel cores.",
-          "evidence": "CONFIRMED: vscode-plugin/src/extension.ts carries the sole `import * as vscode from 'vscode'` (per the build-extension epic PLAN + read directly); the new repo-config core must stay vscode-free (k5), matching S004/S005/S006 cores.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc9 WebviewPanelHostDeps already grows by ADDITIVE optional fields per story (S005 detailRenderers, S006 tabControllers/onDetailAction); S007 adds repoRenderer + onRepoConfigWrite the same way with a preserved built-in fallback.",
-          "evidence": "CONFIRMED: types.ts already carries detailRenderers? (S005) + tabControllers?/onDetailAction? (S006) as additive optional WebviewPanelHostDeps fields; S007 adds repoRenderer?/onRepoConfigWrite? the same additive way with a preserved fallback.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The panel tests use a FakePanel harness (setHtml/posted/injectMessage) in vscode-plugin/src/panels/__tests__/webview-host.test.ts that S007's host tests extend.",
-          "evidence": "CONFIRMED: webview-host.test.ts:24 `class FakePanel implements PanelHandle` + :55 injectMessage() — the harness S007's host tests extend.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl12",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The webview bootstrap already posts a closed set {switchTab,refresh,action,ready}; S007 adds {selectRepo,repoWrite} to that closed set (validated host-side), and the {ready} handshake gates the first render (the S006-established pattern).",
-          "evidence": "CONFIRMED: the webview-host.ts BOOTSTRAP posts the closed set {switchTab,refresh,action,ready} (authored S005/S006, read directly); S007 extends it with {selectRepo,repoWrite}, host-validated, and reuses the {ready} handshake to gate the first render.",
-          "action": "Confirmed — no change needed.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12
-      },
-      "reviewedAt": "2026-09-23T09:53:14.117Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-23T10:01:38.616Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bcae070502221c6760311fc295fcd98f7c4e270acd0ece0f8c2aa7a599a16dfb",
+        "at": "2026-09-23T09:50:30.425Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T10:01:38.616Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-09-23T09:53:14.117Z",
+        "report": {
+          "entityId": "LLD-401ae5fb7b8537cc-s7",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-401ae5fb7b8537cc-s7-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

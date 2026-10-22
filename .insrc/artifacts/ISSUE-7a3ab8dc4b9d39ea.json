@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T11:27:27.401Z",
     "parentRef": {
       "slug": "make-insrc-analysis-complete-used-right",
       "storyId": "s6"
+    },
+    "epicCreatedAt": "2026-10-08T11:23:11.793Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bdc4e837e9e98bb23603e23c20a024a45c61a5c344a6d10c3aa675a6feaf6696",
+        "at": "2026-10-08T11:23:11.793Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T11:27:27.401Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

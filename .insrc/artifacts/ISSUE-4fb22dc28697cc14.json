@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T06:13:59.227Z",
     "parentRef": {
       "slug": "bug-data-plan-task-names-connection"
+    },
+    "epicCreatedAt": "2026-10-09T14:49:25.563Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "19abdb9541ff2a52ca1d8a8836248996d00228453b6b3aa739c81d3873075440",
+        "at": "2026-10-09T14:49:25.563Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T06:13:59.227Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

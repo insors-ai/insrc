@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6a62566-3348-4115-b012-47f30d9e262c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.050Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement type-structure extractor over graph codec reads",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "255f0026c0062d891a42b4b032656d8defe338b3086ec8f25be442889d7c9081",
+        "at": "2026-10-22T12:43:53.051Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.051Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement type-structure extractor over graph codec reads",
+    "summary": "Build the Phase A extractor that reads EntityRow and inheritance/composition edges via the graph codec and emits a derived-only DocumentIR, including empty-scope and source-not-ready detection.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "extract() builds derived.nodes exclusively from decodeEntityRow reads (src/db/graph/codec.ts) for the requested scope, leaving narrated.sections empty",
+      "inheritance and composition edges for in-scope types are decoded and added to derived.edges with correct kind",
+      "a scope resolving to zero types returns DocGenOutcome<'empty-scope'> with a reason string built at the zero-row read site, propagated via flatMap with no shell assembled",
+      "a repo registered but not finished indexing returns DocGenOutcome<'source-not-ready'> before any graph read is attempted",
+      "a recursive self-referential type produces a self-edge that is not deduplicated away",
+      "two same-named types defined in different files produce two distinct IrNodes keyed by their deterministic entity id",
+      "generatedAtRevision is resolved once at entry and used by every read in the call, so repeated calls against unchanged code are byte-identical"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extractor: mocked decodeEntityRow/decodeEdgeProps returning zero rows yields DocGenOutcome<'empty-scope'> with reason built at the zero-row read site, narrated.sections stays empty"
+      },
+      {
+        "level": "unit",
+        "name": "extractor: mocked reads for a fixed EntityRow + inheritance/composition edge set build derived.nodes/derived.edges exclusively from those reads"
+      },
+      {
+        "level": "integration",
+        "name": "extractor against a real LMDB-backed indexed fixture repo: base/derived and composed-field types produce correctly-typed inheritance/composition edges; recursive self-referential type keeps its self-edge; two same-named types in different files yield two distinct IrNodes by deterministic entity id; generatedAtRevision is stable across repeated calls"
+      },
+      {
+        "level": "integration",
+        "name": "extractor against a registered-but-not-indexed repo fixture returns DocGenOutcome<'source-not-ready'> before any graph read; an unregistered repo path propagates UnregisteredRepoError unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

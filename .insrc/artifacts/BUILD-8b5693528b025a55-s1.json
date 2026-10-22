@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8b5693528b025a55",
+    "storyId": "s1",
+    "createdAt": "2026-10-22T12:07:31.507Z",
+    "updatedAt": "2026-10-22T12:32:19.990Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story with one obvious approach: read two optional keys from the global config and pass them to the existing update paths.",
+    "epicCreatedAt": "2026-10-22T11:56:49.811Z",
+    "epicSlug": "make-daemon-update-source-repo-url",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "53fad39ebbb485dc01007c3f6f200dd79d9109f73c04657c76c25e3eb81b0a2f",
+        "at": "2026-10-22T12:07:31.507Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:32:21.816Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "The daemon update follows a configured git remote URL and branch (daemonUpdate.repoUrl and daemonUpdate.branch in ~/.insrc/config.json). A shared validated reader feeds the daemon.update helper (new --repo-url flag on daemon-ctl.sh) and the CLI update; both fetch with an explicit refspec for the single-branch install, check the tree before touching origin, and refuse to discard local-only commits when switching.",
+    "testRecord": {
+      "md": "docs/standalone/make-daemon-update-source-repo-url-E202610228b569352/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-8b5693528b025a55-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T12:32:19.990Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-daemon-update-source-repo-url-E202610228b569352/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T12:32:19.990Z"
+      }
+    ],
+    "commit": "6c91a7db"
+  }
+}

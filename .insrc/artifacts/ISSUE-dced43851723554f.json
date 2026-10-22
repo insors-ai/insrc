@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-18T10:56:03.672Z",
     "parentRef": {
       "slug": "keep-document-summaries-across-full-index"
+    },
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d19a82f70fcef7b5f806188554c5a61db22d2c7c383d5ec2bb80f39055635f8f",
+        "at": "2026-10-18T10:54:00.951Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T10:56:03.672Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

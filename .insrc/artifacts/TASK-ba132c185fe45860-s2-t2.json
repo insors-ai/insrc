@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ba9572a9-bbb0-47e4-88b3-580df6d83d33",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.806Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the src/daemon/list-models.ts dispatch module (sc2 types + listModels)",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "013a47dc5a1620dacf8a6d3f62e2d1966507bc272146a94b365c85a866e363ec",
+        "at": "2026-10-22T12:44:26.806Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.807Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the src/daemon/list-models.ts dispatch module (sc2 types + listModels)",
+    "summary": "Create src/daemon/list-models.ts exporting the sc2 types (ModelProvider/ModelInfo/ModelListResult/ListModelsParams) + listModels(params: unknown, deps?: ListModelsDeps): Promise<ModelListResult>. Validate params.provider against the three ModelProvider literals; cloud (cli-claude/cli-codex) -> getCuratedCatalog().modelsFor mapped to {available:true, models}; ollama -> the bounded lister wrapped in try/catch -> {available:true, models} on success or {available:false, models:[]} on any failure/timeout/malformed; unknown/missing provider -> the invalid-params error result. Injected deps default to the real bounded OllamaProvider lister (t1) + getCuratedCatalog (sc1, consumed). Strictly read-only, no cloud REST.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "listModels({provider:'cli-claude'|'cli-codex'}) returns {provider, available:true, models} mapped from getCuratedCatalog().modelsFor (empty array stays available:true)",
+      "listModels({provider:'ollama'}) returns available:true + mapped models on success; available:false + [] on lister rejection/timeout/malformed; available:true + [] when reachable-but-zero",
+      "listModels with an unknown/missing provider returns the invalid-params error result, throwing nothing and mutating nothing",
+      "the module imports only the ollama provider + getCuratedCatalog + node built-ins — no Anthropic/OpenAI/cloud-REST client is constructed or imported (k1/ac4)",
+      "types match the sc2 interfaceSketch exactly; ModelProvider is the three runner values"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "listModels({provider:'cli-claude'}) with a stub catalog -> {provider:'cli-claude', available:true, models} mapped from CatalogModel"
+      },
+      {
+        "level": "unit",
+        "name": "listModels({provider:'cli-codex'}) -> the cli-codex curated list, available:true"
+      },
+      {
+        "level": "unit",
+        "name": "listModels({provider:'ollama'}) with a fake lister returning models -> {provider:'ollama', available:true, models} mapped from names"
+      },
+      {
+        "level": "unit",
+        "name": "listModels({provider:'ollama'}) with a fake lister that REJECTS (unreachable) -> {provider:'ollama', available:false, models:[]}"
+      },
+      {
+        "level": "unit",
+        "name": "listModels({provider:'ollama'}) with a fake lister that never resolves within the bound (timeout) -> available:false + []"
+      },
+      {
+        "level": "unit",
+        "name": "listModels({provider:'ollama'}) with a fake lister returning a malformed shape (no models array / entry without name) -> available:false + []"
+      },
+      {
+        "level": "unit",
+        "name": "listModels with an unknown/missing provider (e.g. {provider:'gpt'} / {} / null) -> the invalid-params error result, no throw, no mutation"
+      },
+      {
+        "level": "unit",
+        "name": "cloud branch: the injected catalog stub's modelsFor is called and NO ollama lister / HTTP client is invoked (ac4 — assert the fake ollama lister is never called for a cloud provider)"
+      },
+      {
+        "level": "unit",
+        "name": "read-only: listModels invokes no mutation on the injected deps (the stub catalog + fake lister expose only read methods; assert no config write path is reachable)"
+      },
+      {
+        "level": "unit",
+        "name": "the list-models module's imports contain no direct cloud-REST/provider-SDK reference (only the ollama provider + getCuratedCatalog + node built-ins) — a source-scan assertion mirroring the k1 discipline"
+      },
+      {
+        "level": "unit",
+        "name": "the cli-claude/cli-codex branch reaches getCuratedCatalog only (no network call constructed)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

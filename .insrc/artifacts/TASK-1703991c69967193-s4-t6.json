@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9e448f43-3bdf-4241-ab30-544c08808ee8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.377Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Unit + integration tests for the orchestration",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7d3c995a92ce2cf3e31d3dd7aa1a9e0f1d99facd192f89a95568577ff85a271d",
+        "at": "2026-10-22T12:43:14.377Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.377Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit + integration tests for the orchestration",
+    "summary": "Unit-test nextAfterIssue (small/sized/invalid-magnitude, route-consistency, standalone param) and admitBugfixAdvance (approved+resolved / null / absent / not-approved) with fabricated IssueArtifacts; unit-test locateAndStampParent with an injected fake StampDeps (WorkItemRef / null / readIssue-null / not-approved / locateParent-rejects, asserting writeParentRef call/no-call). Add an integration test reusing the approve-build-completion harness proving a bugfix BUILD completes under codeReview.enforce with a CR pass and is withheld on absent/block CR (ac3). node:test via tsx; no live services.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Every nextAfterIssue/admitBugfixAdvance/locateAndStampParent subject from the LLD test strategy has a passing test (ac1/ac2 route + gate + stamp).",
+      "The completion integration test covers ac3 (CR pass completes; absent/block CR withholds) via the existing approve-build harness.",
+      "The relevant workflow/mcp subsets are green locally via npx tsx --test."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "A bugfix BUILD under codeReview.enforce with a CR pass -> completes (approvedAt set), codeReview[] pass"
+      },
+      {
+        "level": "integration",
+        "name": "A bugfix BUILD under codeReview.enforce with an absent/block CR -> withheld into skipped[], no approvedAt (unless overrideReview)"
+      },
+      {
+        "level": "integration",
+        "name": "A bugfix standalone-build path with enforce OFF -> completes byte-identical (no new completion path)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

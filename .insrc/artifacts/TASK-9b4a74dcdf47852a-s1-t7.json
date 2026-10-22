@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-37f0681c-2ea0-409b-821d-a6316392c905",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.720Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The runner runs each file on its own and returns a result per case",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3c8d8bf5d3679720b1065d6e884694605816f365985a289bcec4a443e7a819ba",
+        "at": "2026-10-22T12:44:02.723Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.723Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The runner runs each file on its own and returns a result per case",
+    "summary": "Change runValidationChecks to run each test file in its own process, in order, with the TAP reporter, under one time limit for all of them; to write each run's whole output to a file and return its path; and to return per file its exit code and titles, and per named test its cases with their results. Change the rule for the check's result accordingly, and extend the judge's evidence to list the named tests with their cases and each file's other failures. The existing tests of the runner are kept: only their assertions on the single command line for all files change, to one command per file, and the changed assertions are listed in the build record.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Each file is run in its own process, in order, with the TAP reporter, and per file the exit code and titles are returned",
+      "A mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found",
+      "A file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+      "A file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+      "A run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+      "A reported pass on a live test runs nothing and leaves the result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with a note, while a Task with no file and an unreported name still fails",
+      "For a touched file the result lists every title of the file",
+      "The judge's evidence lists each named test with its cases and results, and reads as before when there are no named tests; the tail of the output is still returned",
+      "No existing test of the runner is removed, and the build record lists the assertions that changed",
+      "The checks still never throw"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)"
+      },
+      {
+        "level": "integration",
+        "name": "render.test.ts: the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

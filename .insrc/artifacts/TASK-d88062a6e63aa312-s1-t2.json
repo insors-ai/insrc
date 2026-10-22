@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-01d55b62-5a82-44ce-abc4-9ad58c3d1529",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:43.400Z",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Split resolveCodeReviewSubject contract resolution into two independent trys",
+      "parent": {
+        "entityId": "STORY-d88062a6e63aa312-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d88062a6e63aa312-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d88062a6e63aa312-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "953a4da5ed61e77e0d44c8d5f3eb774f48f25560f7e1f52bd833f2f85890a13e",
+        "at": "2026-10-22T12:44:43.404Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:43.405Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Split resolveCodeReviewSubject contract resolution into two independent trys",
+    "summary": "In src/workflow/code-review/subject.ts, replace the single try that resolves requireApprovedLld+requireApprovedPlan (currently returning 'no-approved-contract') with two independent trys — one per contract — each catching ArtifactMissingError|ArtifactNotApprovedError and assigning null for that contract, re-throwing anything else. The two `let` bindings become LldArtifact|null / PlanArtifact|null (init to null). Remove the no-approved-contract early-return; the changedFiles try (no-build-record) is unchanged. Success subject now carries the possibly-null contracts. NOTE: the MCP handler needs NO edit — with the resolver now returning ok:true in mode C, mode-C flows straight to the four-dimension drive; the no-subject decline only fires for no-build-record (handler.ts:176 relays generically).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Missing/unapproved LLD maps approvedLld to null WITHOUT failing; missing/unapproved plan maps approvedPlan to null WITHOUT failing",
+      "A non-Artifact error thrown during contract resolution still propagates (not mapped to null)",
+      "The only ok:false path is reason:'no-build-record' from the changedFiles derivation",
+      "ok:true is returned even when BOTH contracts are null (a story with changed files but no contract)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)"
+      },
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)"
+      },
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)"
+      },
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)"
+      },
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: no changed files -> ok:false, reason:'no-build-record'"
+      },
+      {
+        "level": "unit",
+        "name": "resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

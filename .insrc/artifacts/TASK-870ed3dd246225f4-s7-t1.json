@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62e40d25-c136-49ff-a974-b3cda3b8c059",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.229Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Extract DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest() in shell.ts",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6a1e022a900f5300df7ae374440b995348bf8a842c795b1fa7c84f0f198ba0cd",
+        "at": "2026-10-22T12:43:55.230Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.231Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extract DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest() in shell.ts",
+    "summary": "In src/docgen/render/shell.ts, promote the private ASSET_DIR constant to an exported DOCGEN_ASSET_DIR constant, using the identical import.meta.url-relative resolution already in place. Extract a shared resolveDocgenRuntimeManifest(): RuntimeManifest helper that reads and parses runtime.json from DOCGEN_ASSET_DIR, and repoint loadRuntime() to obtain the manifest via this helper instead of reading runtime.json itself, keeping loadRuntime()'s existing runtimeCache memoization layered on top of the helper's result. No behavior change: same resolved path, same manifest contents, same memoization.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DOCGEN_ASSET_DIR is exported from shell.ts and resolves to the same directory the previous private ASSET_DIR resolved to",
+      "resolveDocgenRuntimeManifest() is exported from shell.ts, reads runtime.json from DOCGEN_ASSET_DIR, and is the single call site loadRuntime() uses to obtain the parsed manifest — no independent runtime.json read remains in loadRuntime()",
+      "loadRuntime()'s resolved path, manifest contents, and runtimeCache memoization behavior are unchanged after the extraction"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DOCGEN_ASSET_DIR resolves to the same directory loadRuntime reads from"
+      },
+      {
+        "level": "unit",
+        "name": "loadRuntime output is byte-identical after ASSET_DIR→DOCGEN_ASSET_DIR extraction"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

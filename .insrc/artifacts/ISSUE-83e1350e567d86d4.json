@@ -20,7 +20,27 @@
     "issueHash": "83e1350e567d86d4",
     "epicSlug": "extend-route-hardcodes-operationalizes-every-acceptance",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "epicCreatedAt": "2026-10-03T13:24:46.124Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "c91a1defbdffe9e627f2fe6ce2f5c1ce37ac0c3a78aa7c25cd5d21e61f92e6c7",
+        "at": "2026-10-03T13:24:46.124Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Give extend-route acceptance criteria a real constraint linkage instead of an empty one",

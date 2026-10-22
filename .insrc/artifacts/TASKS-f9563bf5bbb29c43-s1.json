@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5448cc7a-da44-4376-a1d1-d2b4139876c8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:00.924Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The Tasks of s1",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c01cecb28b79a14ee40ca58b81da91de69c4cfb9c31bf222046533ad18ac2770",
+        "at": "2026-10-22T12:45:00.924Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "planRevision": 1,
+    "taskIds": [
+      "t1",
+      "t2",
+      "t3",
+      "t4",
+      "t5",
+      "t6"
+    ],
+    "nextNumber": 7
+  },
+  "citations": []
+}

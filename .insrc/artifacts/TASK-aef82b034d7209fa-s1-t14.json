@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a6302740-7444-425f-b419-8380a87945fa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.421Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ship and smoke",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f21daccbd29206472296d4250b6241f03da32f9e101462122fd02c41481220f",
+        "at": "2026-10-22T12:44:15.421Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.422Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship and smoke",
+    "summary": "Push, update the installed daemon, run the code review of Epic c2ba6fa6 s1 on codex and record calls per stage per dimension and the largest prompt sent; send one oversized prompt through the claude CLI and record what it returns; record in smoke.md.",
+    "size": "S",
+    "order": 14,
+    "acceptanceChecks": [
+      "smoke.md records s1's completed review with calls per stage and the largest prompt, and the claude CLI's oversized-prompt response."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/smoke.md: the code review of Epic c2ba6fa6 s1 completes (it failed with a 1,247,701-character prompt), recording the calls per stage per dimension and the largest prompt sent"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

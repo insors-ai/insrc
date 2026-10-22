@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5b34b65e-68a4-4c09-a019-aa9c025c55bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.526Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Thin applyMigration executor (git mv + link rewrite + post-move validation + chunks)",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "75283b3b438dde40ad8a281d962c70b76b76a5b21b2cf7c9ba0792870e530871",
+        "at": "2026-10-22T12:43:35.526Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.526Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Thin applyMigration executor (git mv + link rewrite + post-move validation + chunks)",
+    "summary": "Add `applyMigration(repoPath, plan): void` to the module: refuse if plan.unmappable is non-empty (fail-loud); require a clean git working tree; per work-item CHUNK, `git mv` each member md to its nested `to` (shell out to git; history preserved) then commit the chunk, rolling the chunk back on any git-mv failure; apply the flat→nested linkRewrites across moved md; run a post-move validation walking the nested tree via sc2 listWorkItems/listArtifactMdPaths and resolving every intra-artifact link, throwing (naming the link) + rolling back BEFORE acceptance if any fails. The .insrc/artifacts JSON store is never touched.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "applyMigration refuses (throws, names files) when plan.unmappable is non-empty, before any git mv (ac2)",
+      "Each move is a `git mv` preserving history; per-epic chunk commits; a failed chunk is rolled back leaving no partial mix (ac1/lc1)",
+      "linkRewrites applied; the post-move validation resolves every intra-artifact link via listWorkItems/listArtifactMdPaths and throws (naming the link, rolling back) on any unresolved link (ac3/k4)",
+      "The .insrc/artifacts JSON store is byte-unchanged (only md files move)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "applyMigration: git mv relocates each md to its nested path and `git log --follow` still shows the pre-move history"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: after the run no artifact md remains in the flat dirs; .insrc/artifacts byte-identical"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a plan with non-empty unmappable[] is REFUSED (throws, names files) before any git mv"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a git-mv failure in one epic chunk rolls that chunk back and leaves no partial mix"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

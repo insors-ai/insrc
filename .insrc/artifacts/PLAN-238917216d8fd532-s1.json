@@ -23,71 +23,56 @@
     "storyId": "s1",
     "lldRunId": "wf-1789800359056-6mub19",
     "lldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "plan",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependsOn graph is acyclic with a valid topological order 1..5: t1,t3 roots; t2->t1; t4->t3; t5->{t2,t3,t4}.",
-          "evidence": "Structural: t1,t3 roots; t2->t1; t4->t3; t5->{t2,t3,t4}; order 1..5 places every dependency before its dependents — acyclic, valid topological order.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t3/t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin test suite reuses an existing fake-DaemonRpc pattern from Sc2DaemonGatewayTest.",
-          "evidence": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/Sc2DaemonGatewayTest.kt exists — the fake-DaemonRpc pattern the plugin tests reuse.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t1/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ARTIFACTS_DIR = '.insrc/artifacts' exists in storage.ts and resolve.ts enumerates that directory — the scan pattern t1 reuses.",
-          "evidence": "ARTIFACTS_DIR = '.insrc/artifacts' at src/workflow/storage.ts:53; artifactsDir enumeration confirmed — the scan pattern t1 reuses.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t2/c3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "'workflow.pending' is net-new: no such handler is registered in src/daemon today; workflow.approve exists as the sibling convention it mirrors.",
-          "evidence": "'workflow.approve' handler at src/daemon/index.ts:555 confirmed as the sibling convention; 'workflow.pending' appears only in this Epic's docs, never under src/ — net-new.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t3/c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin DaemonGateway exposes call(method, params) (the existing transport the t3 wrapper extends).",
-          "evidence": "DaemonGateway.kt:69 `fun call(method,params)` confirmed — the existing transport the t3 wrapper extends.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-19T07:18:03.755Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-19T07:23:10.494Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2abecc46b7f24990e8223efc8b9af01563d5bc362c9d270cf9c74be1805171ce",
+        "at": "2026-09-19T07:17:16.091Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T07:23:10.494Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-19T07:18:03.755Z",
+        "report": {
+          "entityId": "PLAN-238917216d8fd532-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-238917216d8fd532-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

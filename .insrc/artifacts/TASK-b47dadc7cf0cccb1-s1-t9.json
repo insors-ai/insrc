@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8747e1c-b611-43f7-b1db-c5075ee3fc68",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.263Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ship and smoke on this repository",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0bfe3f7cf89cbbd41417fde7da013784ab06f1ab751dc1fec38de793d27fa1c8",
+        "at": "2026-10-22T12:44:18.263Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.264Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship and smoke on this repository",
+    "summary": "Check with git that every commit of this Story from t1 on carries `Insrc-Story: b47dadc7cf0cccb1/S001`; update the installed daemon; re-run the code review of ISSUE-ae864466 and record its attribution and coverage findings; review this Story and record that its subject is its own commits; record in docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "Every commit of this Story from t1 on carries the trailer (git log check recorded).",
+      "smoke.md records ISSUE-ae864466's re-review (attribution, coverage findings no longer on Markdown or tests).",
+      "smoke.md records this Story's review with attribution 'story-trailer' and only its own files."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

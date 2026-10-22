@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "55229bde990589c9",
+    "storyId": "s1",
+    "createdAt": "2026-09-15T13:48:32.918Z",
+    "epicSlug": "make-design-story-lld-plan-workflows",
+    "epicCreatedAt": "2026-09-15T12:14:06.342Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4870eec8fa0bafd986adfa0a83557dc80f804f2c74b530855a1eb22132744238",
+        "at": "2026-09-15T13:48:32.918Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-15T13:54:17.933Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Make the design.story (LLD) and plan workflows scope-aware of sibling stories",
+    "producesLld": false,
+    "commit": "8b1aafc",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

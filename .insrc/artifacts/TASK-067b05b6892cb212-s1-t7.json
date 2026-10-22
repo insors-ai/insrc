@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8b54c89f-94bc-4290-ab4e-17d693b210c0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.081Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewrite the steering and guide text",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "391ad47600db0d48c11fb86aaeb0077c4937f36f21c3927828a6c22e7b896629",
+        "at": "2026-10-22T12:43:11.083Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.085Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewrite the steering and guide text",
+    "summary": "Rewrite the approval and guide prose in steering-block.md so the controller calls insrc_present with the documents it asks the user to review before it asks for approval, and also gives the document's path in its message; the catalog row stays as t2 left it, and the steering-template needs no change beyond pointing at the block. Add a plain note that steering-only enforcement is accepted for now and should be revisited (a daemon-side reminder in tool responses, or detection of a missing call) if it proves unreliable. Update the steering-text pins in the tests.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "The steering block and guide tell the controller to call insrc_present before asking for approval and to give the path in its message",
+      "The steering text carries the revisit note for steering-only enforcement",
+      "The steering-text tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

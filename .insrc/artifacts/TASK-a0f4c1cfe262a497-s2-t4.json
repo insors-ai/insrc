@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dffa60d5-f0c3-44e1-9e69-e35c3c1abc62",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.818Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add changeLogBodyLines binding + wire Changes/Feedback into renderPlanBuildRecordMd",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "012ae21f81ce0c98b9f3b412b53267775661e7046537856cfd9be31a326dd311",
+        "at": "2026-10-22T12:44:04.819Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.819Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add changeLogBodyLines binding + wire Changes/Feedback into renderPlanBuildRecordMd",
+    "summary": "Add changeLogBodyLines(changeLog: ChangeLog | undefined): string[] to format/bindings.ts (sc3-declared sibling; omit-slot: [] when absent/empty), mirroring feedbackBodyLines. In renderPlanBuildRecordMd, after the Tasks-validated section, push a `## Changes` block from changeLogBodyLines(rec.body.changeLog) and a `## Feedback` block from feedbackBodyLines(rec.body.feedback) — omit-slot, byte-identical when both absent. Co-locate binding + renderer tests.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "changeLogBodyLines non-empty → section lines; undefined/empty → []",
+      "renderPlanBuildRecordMd shows Changes/Feedback when present; byte-identical to pre-change when both absent (ac3/ac4/k5)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "changeLogBodyLines: non-empty → section lines; undefined/empty → [] (omit-slot)"
+      },
+      {
+        "level": "unit",
+        "name": "renderPlanBuildRecordMd: with changeLog → '## Changes'; with feedback → '## Feedback'; with neither → byte-identical to the pre-change render"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

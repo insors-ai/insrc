@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2cf7fc4-8c2e-4265-a252-50a1f109a0c5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:59.397Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Widen the DebugService facade with attachedClients + mcpStatus (types + impls + binding)",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9f4b0ba54f466ed0734d02d2cdcb88e1537b2cf62a0113bbf90c6896ad26254e",
+        "at": "2026-10-22T12:44:59.397Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:59.398Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the DebugService facade with attachedClients + mcpStatus (types + impls + binding)",
+    "summary": "Add DebugStatusModel (discriminated reachable/unreachable) + McpClientStatus to src/cli/services/debug-types.ts and widen the DebugService interface with attachedClients(): Promise<DebugStatusModel> + mcpStatus(): Promise<readonly McpClientStatus[]>. In src/cli/services/debug.ts add injectable-deps cores: attachedClientsWith(deps) (rpc seam → folds resolve to {reachable:true;clients sorted}, reject to {reachable:false}, never throws) and mcpStatusWith(deps) (per claude/codex, injectable runCli → parse insrc-line=registered + connection-state token=connected, spawnError/non-zero → available:false, never throws, always one entry per client) + zero-arg facade wrappers over realDeps, bound onto the makeServices() debug entry. Build note: land WITH t7 (the fakes) in one increment.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "DebugService interface gains attachedClients() + mcpStatus(); DebugStatusModel + McpClientStatus are exported from debug-types.ts",
+      "attachedClientsWith folds a resolving rpc → {reachable:true;clients} (sorted) and a rejecting rpc → {reachable:false} without throwing",
+      "mcpStatusWith returns exactly one McpClientStatus per claude/codex from canned mcp-list output (registered + connected independent); a spawnError/non-zero client → available:false; never throws",
+      "makeServices().debug.attachedClients + .mcpStatus are bound to the real impls; no real subprocess/socket runs in unit tests (deps injected)",
+      "tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "mcpStatusWith: canned claude+codex mcp-list output with an insrc line + connection-state token -> per client {registered:true, connected:<parsed>, available:true}"
+      },
+      {
+        "level": "unit",
+        "name": "mcpStatusWith: stdout with NO insrc line -> {registered:false, connected:false, available:true}"
+      },
+      {
+        "level": "unit",
+        "name": "mcpStatusWith: a runner spawnError / non-zero exit for one client -> {available:false,...} while the OTHER client is still evaluated (never throws)"
+      },
+      {
+        "level": "unit",
+        "name": "mcpStatusWith: exactly one McpClientStatus per known client (claude, codex), never omitted"
+      },
+      {
+        "level": "unit",
+        "name": "attachedClientsWith: a resolving rpc -> {reachable:true; clients} (sorted); a rejecting rpc -> {reachable:false} without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "makeServices().debug exposes attachedClients + mcpStatus bound to the real impls"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

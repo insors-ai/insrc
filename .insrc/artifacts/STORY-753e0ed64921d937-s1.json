@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-69984f8e-d148-452a-b3ba-ecb20f098b0d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.957Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Establish deployment design as a distinct, consistent framework surface",
+      "parent": {
+        "entityId": "EPIC-753e0ed64921d937",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d63aaa734afc98e3977fe7c05ee1e9054921bf39a1e1aba8b671e0d9f947c671",
+        "at": "2026-10-22T12:43:06.958Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

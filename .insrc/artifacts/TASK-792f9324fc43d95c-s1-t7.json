@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-81cc4376-ce08-4b16-a83f-c54563bde50c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.229Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Full sweep, containment evidence, and the tiered criteria record",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd1a5893a3d9d7b24cd390a48fc563d0549bbba0feef0d503231a0c7e5644d00",
+        "at": "2026-10-22T12:43:49.229Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.230Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full sweep, containment evidence, and the tiered criteria record",
+    "summary": "Close the Story with evidence rather than assertion. Run the full sweep and record real counts from actual output. Confirm containment where the LLD claims it: hierarchical-id tests for REAL stories pass untouched (the second narrowing is confined to nonexistent stories), and neither render.ts nor bugfix/mount.ts needed an edit (the public signature held). Record the criteria provenance split decided at the open-question gate: k1-k4 binding because the user stated them — an ISSUE is a DEF, 13ebd04's widening was correct, the defect is counting rather than containment, buildRef must verify — while k5-k8 and ac1-ac10 are LLD-authored and provisional.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "Full sweep run with real pass/fail/skip counts from actual output, and no new failures beyond the known pre-existing sqlite-driver native-ABI one",
+      "Hierarchical-id tests for REAL stories pass untouched — the second narrowing is confined to nonexistent stories",
+      "Neither render.ts nor bugfix/mount.ts required an edit — the public signature held",
+      "CRITIQUE APPLIED — CHANGED FILE SET asserted, covering the three otherwise-unguarded fences: production changes confined to src/workflow/tracker/resolve.ts; test changes confined to the two known test files; and NO edit to orchestrator.ts, chain.ts, the ISSUE writer, or buildRef's task-level handling",
+      "Every mutation proof from t3, t4 and t5 re-run at the end and still inverting, confirming no later task neutralised an earlier guard",
+      "The criteria provenance split is recorded: k1-k4 binding and user-grounded, k5-k8 and ac1-ac10 LLD-authored and provisional",
+      "The report states plainly that a clean `tsc --noEmit` is NOT evidence about the tests, because tsconfig excludes them",
+      "The report states plainly that a follow-up ISSUE for the out-of-module body.stories readers (orchestrator.ts, chain.ts) is OWED and NOT YET FILED"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "full sweep with no new failures, real counts recorded from actual output"
+      },
+      {
+        "level": "smoke",
+        "name": "neither render.ts nor bugfix/mount.ts required an edit"
+      },
+      {
+        "level": "smoke",
+        "name": "hierarchical-id tests for REAL stories pass untouched — evidence narrowing 2 is confined to nonexistent ones"
+      },
+      {
+        "level": "smoke",
+        "name": "CHANGED FILE SET asserted — production confined to resolve.ts, tests to the two known files, and no edit to orchestrator.ts, chain.ts, the ISSUE writer or task-level handling"
+      },
+      {
+        "level": "smoke",
+        "name": "all mutation proofs from t3, t4 and t5 re-run and still inverting"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

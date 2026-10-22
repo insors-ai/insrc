@@ -20,91 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "c5824e17eccf0c14",
     "epicSlug": "make-workflow-framework-s-generated-artifact",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The ReviewDimension union and a DimensionFinding type with an expectationRef field exist in src/workflow/code-review/types.ts — the seam a new adherence dimension extends.",
-          "evidence": "grep resolves ReviewDimension and expectationRef in the code-review type surface — the extension seam a new adherence dimension plugs into exists. sc2 holds.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "architectureShape",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A finalizeCodeReview fold exists that folds dimension findings into a review report.",
-          "evidence": "grep 'finalizeCodeReview' resolves (4 hits) — the fold that assembles dimension findings into the review report exists.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The verdict reducer computeReviewVerdict (src/workflow/review/review.ts) and the gate-read effectiveReviewVerdict (src/workflow/review/resolve.ts) exist and are the block/warn/pass reduction that must not be forked.",
-          "evidence": "grep resolves computeReviewVerdict (9) and effectiveReviewVerdict (16) — the block/warn/pass reducer and gate-read that the HLD says must not be forked both exist.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "sc4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The docgen reuse seam exists: generateDocument (src/docgen/index.ts) and InMemoryDocTypeRegistry (src/docgen/registry.ts).",
-          "evidence": "grep resolves generateDocument (50) and InMemoryDocTypeRegistry (13) — the docgen reuse seam for content-gated companion diagrams exists. sc4 holds.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "architectureShape",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The completion gate approveWorkflowTarget exists in src/workflow/gates.ts and takes an enforce option — the gate the new dimensions ride.",
-          "evidence": "grep 'approveWorkflowTarget' resolves (50 hits incl. gates.ts) — the additive completion gate the new dimensions ride exists.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "architectureShape",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The four per-type renderers exist under src/workflow/artifacts/: renderDefineMarkdown, renderHldMarkdown, renderLldMarkdown, renderPlanMarkdown.",
-          "evidence": "grep resolves all four per-type renderers (renderDefineMarkdown, renderHldMarkdown, renderLldMarkdown, renderPlanMarkdown) under src/workflow/artifacts/ — the render surface the RENDER layer enriches exists.",
-          "action": "No change — verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "rolloutOverview",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The Story dependency chain and phase order are strictly linear and acyclic: S001→S002→S003→S004, with each shared contract owned by a Story that all its consumers transitively depend on.",
-          "evidence": "The HLD's storyBoundaries declare depends s2→[sc1], s3→[sc1,sc3], s4→[sc1,sc2,sc3,sc4] with contract owners s1(sc1,sc2)/s2(sc3)/s3(sc4); every consumer is transitively downstream of its owner along the linear S001→S002→S003→S004 chain — acyclic, no forward reference. Ordering claim holds.",
-          "action": "No change — dependency/ownership graph is acyclic and consistent.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-27T14:58:24.287Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-27T15:02:58.429Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "93886ceb21bddbf23306d189ee916a03cb93544c2d905abf0aa08a737d53d443",
+        "at": "2026-09-27T14:57:10.411Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-27T15:02:58.429Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-27T14:58:24.287Z",
+        "report": {
+          "entityId": "HLD-c5824e17eccf0c14",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-c5824e17eccf0c14-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Adopt a1: the artifact JSON body is the single source of truth for the new content, the existing per-type renderers are enriched to generate human-readable, audience-aware markdown from that structured body, and the three new adherence checks (functional-coverage, diagram, UX) are added as code-review dimensions that ride the existing computeReviewVerdict / codeReview.enforce completion gate without forking the verdict reducer. Diagrams and UX mocks are content-gated companion artifacts referenced from — never inlined into — the core markdown, produced through the existing docgen generateDocument seam. The four forward-only Stories layer cleanly: S001 introduces the functional-definition record + its coverage dimension; S002 makes every document navigable, audience-aware, and de-duplicated; S003 adds content-gated diagram companions; S004 unifies the selectable adherence dimensions and the UX-acceptance check.",

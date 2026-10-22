@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "1703991c69967193",
     "storyId": "s5",
-    "epicSlug": "add-bugfix-triage-category-insrc-framework"
+    "epicSlug": "add-bugfix-triage-category-insrc-framework",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "4a488d5894230e00ab0971f84925182861a7d90c86ff3284ad1ee560c9e306ae",
+        "at": "2026-09-18T15:55:18.726Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

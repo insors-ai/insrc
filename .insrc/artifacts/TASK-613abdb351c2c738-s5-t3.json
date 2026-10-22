@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be3cee87-11b5-41b0-b184-c95a4eb93d93",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.760Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "envelope": {
+      "description": "A waiting message's attachments survive the start-up sweep",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81e81479ede5fa412c9ab44e394c20cb58688627747052066fbdf954bcf048be",
+        "at": "2026-10-22T12:43:38.760Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.761Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A waiting message's attachments survive the start-up sweep",
+    "summary": "Add tests only: the start-up sweep over a keep set made from the store's sessions keeps the attachments directory of a session that holds a waiting queued message and clears an unreferenced old session; and a queued message with an attachment keeps it and sends it when the message runs. Show the sweep test can fail: temporarily build the keep set without the stored session and see the directory removed, then restore it. No production change is planned; if the tests show the keep set does not protect the session, that is reported, not worked around.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "the sweep keeps the attachments of a stored session with a waiting message and removes an unreferenced old one, and the same test fails when the stored session is left out of the keep set",
+      "a queued message with an attachment still has it and sends it when it runs"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "attachment-store.test.ts: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session"
+      },
+      {
+        "level": "integration",
+        "name": "chat-queue-outbox-host.test.ts: a queued message with an attachment keeps it and sends it when the message runs"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

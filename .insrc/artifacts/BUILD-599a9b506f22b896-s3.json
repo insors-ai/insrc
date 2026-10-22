@@ -5,9 +5,36 @@
     "epicHash": "599a9b506f22b896",
     "storyId": "s3",
     "createdAt": "2026-09-16T10:53:27.132Z",
-    "approvedAt": "2026-09-16T10:55:08.577Z",
     "epicSlug": "restructure-docs-artifact-markdown-from-flat",
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "aa4265423d54934816eb3910eefed062d9c4b6b3a83415ff237aa10a5304510a",
+        "at": "2026-09-16T10:53:27.132Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-16T10:55:08.577Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "S003 — one-time docs-tree migration (migrate-docs-tree.ts: pure planMigration + thin applyMigration) consuming sc1+sc2; relocated the repo’s 224 flat artifacts into the nested tree with git history, link rewrite, and post-move validation.",

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95fbe79c-fd46-4936-b2e4-1b1aa97e8983",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.210Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Reshape LLD + PLAN renderers + HLD-context de-dup",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2589317b508ec2bd20a44368289e96a9595faa50a2a39b42047e73d1ab0ea3d",
+        "at": "2026-10-22T12:44:38.210Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.210Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reshape LLD + PLAN renderers + HLD-context de-dup",
+    "summary": "Reshape renderLldMarkdown (HLD-context rendered as a deriveHldContextRef reference — the ac2 de-dup, defect #13) + renderPlanMarkdown via the engine. Update the lld/plan heading-literal suites.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "LLD HLD-context is a SharedContextRef reference line, not the copied framework-summary; explicit contextRefs take precedence over the engine-derived default",
+      "PLAN renders per-task sub-template + numbering",
+      "lld/plan heading-literal suites updated + green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderLldMarkdown: HLD-context reference (defect #13) + Summary binding + explicit-contextRefs precedence"
+      },
+      {
+        "level": "unit",
+        "name": "renderPlanMarkdown: per-task sub-template + numbering heading-literal suite"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

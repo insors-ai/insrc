@@ -21,7 +21,27 @@
     "epicSlug": "keep-chat-turn-s-reply-when",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-13T18:55:23.696Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "1d6cdc33e0001a1e11d3c78f1699e910706a82ab9057a0ed9ae69521d0b21dd5",
+        "at": "2026-10-13T18:55:23.696Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Keep a chat turn's reply when the CLI answers a queued item first",

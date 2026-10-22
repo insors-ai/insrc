@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c953700a-5001-4456-9428-c882af85ff22",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.104Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Layout & input: fixed header, bottom-pinned input with Send/Stop, animated thinking indicator",
+      "parent": {
+        "entityId": "EPIC-f9563bf5bbb29c43",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f8aafe466c10cd7848a5a53ac5216f154e324445e50152243371ce0c85d44e16",
+        "at": "2026-10-22T12:43:07.105Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

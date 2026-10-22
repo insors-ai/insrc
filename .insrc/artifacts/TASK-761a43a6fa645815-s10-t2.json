@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9c2103cc-8c26-46d8-9a0f-ce92bf87c1cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.522Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Add groundingMode + capVerdictAtWarn opts to runCodeReview",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "909062e2e804bbf32fb0395df52508a80578b6601fad1a5be92da79638014b7e",
+        "at": "2026-10-22T12:43:45.522Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.523Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add groundingMode + capVerdictAtWarn opts to runCodeReview",
+    "summary": "In src/workflow/code-review/runner.ts add optional groundingMode?: 'full'|'degraded' (default 'full') and capVerdictAtWarn?: boolean (default false) to RunCodeReviewOpts; thread groundingMode into buildArtifact (stamp body.groundingMode = opts.groundingMode ?? 'full', replacing the hardcoded 'full') and apply capVerdictAtWarn in foldVerdict (when true, promote a folded 'pass' to 'warn'; NEVER lower a block/warn). Both default to today's behaviour so existing callers are byte-identical.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "RunCodeReviewOpts carries optional groundingMode + capVerdictAtWarn",
+      "buildArtifact stamps body.groundingMode from opts (default 'full')",
+      "foldVerdict with capVerdictAtWarn:true maps a would-be 'pass' to 'warn' and leaves block/warn unchanged",
+      "with neither opt set, buildArtifact stamps 'full' and foldVerdict is unchanged (default parity)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runner: runCodeReview with opts.groundingMode:'degraded' -> the persisted record body.groundingMode === 'degraded'"
+      },
+      {
+        "level": "unit",
+        "name": "runner: capVerdictAtWarn:true + all-empty findings (would fold pass) -> verdict 'warn'"
+      },
+      {
+        "level": "unit",
+        "name": "runner: capVerdictAtWarn:true + a HIGH finding -> verdict stays 'block' (cap never lowers block/warn)"
+      },
+      {
+        "level": "unit",
+        "name": "runner: NO groundingMode/cap opts -> body.groundingMode === 'full' and the verdict fold is unchanged (default parity)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T16:28:18.144Z",
     "parentRef": {
       "slug": "defect-against-epic-e1-2ff0dfda-delivery"
+    },
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0e5ea6f968b5b7e318fadd5eed60eacad039d3f31c5eebea36578242534d0421",
+        "at": "2026-10-09T16:27:38.957Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T16:28:18.144Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

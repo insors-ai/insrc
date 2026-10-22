@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c494ff0f-07d5-49f6-8ec4-e2d7480e0812",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.345Z",
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "06f196a7ff528143",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate gate: Story-scoped typecheck projects and trivial tests",
+      "parent": {
+        "entityId": "STORY-06f196a7ff528143-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-06f196a7ff528143-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-06f196a7ff528143-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d661641d5d8979aae74f0aff66ecb191b279fb24f4958250ae5f7afc4a79c08a",
+        "at": "2026-10-22T12:43:11.347Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.347Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate gate: Story-scoped typecheck projects and trivial tests",
+    "summary": "In src/daemon/steps/build-step/validation-checks.ts: withTypecheckProjects and trivialCheckPlan take an optional storyKey and, with it, select from the Story's set synchronously (storyChangeSet strict plus own-file uncommitted and untracked paths; trivial tests filtered to files that still exist; no base fails the trivial listing); validate.ts passes the storyKey at 348 and 389.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A project owning only unrelated uncommitted or untracked files is not in typecheckProjects; Story and test-file projects are.",
+      "A trivial build runs only the Story's existing test files; a deleted test is never asked to run.",
+      "Without a storyKey, results are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8dfa615c-d361-4f94-b7f8-e7ce3507031e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.058Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Send back-flow note to consuming stories on DocumentIR/DocGenOutcome shape changes",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2347dd2fc67788cacea135784b10d3406743ce73d71282098b5cf779574437b",
+        "at": "2026-10-22T12:43:53.058Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.058Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Send back-flow note to consuming stories on DocumentIR/DocGenOutcome shape changes",
+    "summary": "Author and send a single combined back-flow note to consuming stories s2–s7 documenting the DocumentIR reshape from a flat provenance-flagged structure to the derived/narrated partition, and the DocGenOutcome ok arm rename from shell to value, per the LLD's REQUIRED backflow instruction.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "a single back-flow note is authored covering both changes together: DocumentIR's flat provenance-flagged structure replaced by the derived/narrated partition, and DocGenOutcome's ok arm renamed from shell to value",
+      "the note is sent/attached as a workflow artifact addressed to consuming stories s2, s3, s4, s5, s6, and s7",
+      "the note is delivered in one pass rather than as separate messages per consuming story, per the winning judgment's single-note instruction"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "back-flow note artifact: single note covers both the DocumentIR partition reshape and the DocGenOutcome ok-arm rename, and is addressed to s2, s3, s4, s5, s6, s7 in one delivery"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

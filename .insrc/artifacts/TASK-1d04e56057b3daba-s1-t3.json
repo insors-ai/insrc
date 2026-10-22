@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-503e294e-c6dc-47b1-862e-0caa940dcf7c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.687Z",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1d04e56057b3daba",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Let the real spawner write the CLI's output to the session files",
+      "parent": {
+        "entityId": "STORY-1d04e56057b3daba-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1d04e56057b3daba-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1d04e56057b3daba-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e7e64aadb007901f8e611a3ae470e83c98a072571d4fe64e1ac470632809f3e3",
+        "at": "2026-10-22T12:43:16.687Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.687Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Let the real spawner write the CLI's output to the session files",
+    "summary": "cli-adapter.ts: SpawnFn opts.output { outPath, errPath, cursor, tail, errTail }; when present nodeSpawner opens outPath and errPath in append mode and passes them as the child's stdout and stderr (stdin stays a pipe), lines() reads the turn's segment through tail until the process has exited and the segment is read, stderr() returns errTail(), and SpawnedProcess.cursor tracks the latest position. Without output the pipe path is unchanged. The stream mappers skip marker lines.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "With output, the CLI's stdout lands in the session file inside its segment and stderr in the err log; lines() yields every line, including lines written after the result line.",
+      "Without output, the spawner and all existing adapter tests behave as before.",
+      "Marker lines reaching a mapper produce no events."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "cli-adapter.test.ts: the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: marker lines reaching a mapper produce no events"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b185924b-62a0-4129-906a-7019f2e082dc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.792Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the bugfix deps through the adapter",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "58d411b9743f303f47098c565f8452a17c6ac408eece6b85655559e29c4aed62",
+        "at": "2026-10-22T12:43:24.792Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.793Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the bugfix deps through the adapter",
+    "summary": "Change defaultTrackerCreateDeps and defaultTrackerCloseDeps, keeping their optional opts and the TrackerCreateDeps and TrackerCloseDeps interfaces, so createIssue keeps returning CreatedIssue, linkSubIssue keeps taking the numeric child id and throwing on failure, closeIssue throws on failure and findByLabels maps a failed lookup to undefined.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "createBugfixTrackerIssue still passes created.id to linkSubIssue and a readonly string[] of labels type-checks",
+      "A failed link makes linkToParent return false and a failed close propagates instead of returning status closed",
+      "The relink-by-label recovery records, closes through issueOps.close and returns closed on a match, and returns skipped for no labels, no match and a failed lookup",
+      "Both factories accept the optional labels and promptOnLostRef as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/bugfix-tracker.test.ts: bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/bugfix-tracker.test.ts: a failed link makes linkToParent return false and a failed close propagates instead of reporting closed"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label match is recorded, closed and returned as closed"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/bugfix-tracker.test.ts: both default deps factories keep their optional opts"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

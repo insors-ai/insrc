@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-504bff98-7e85-44f2-9fec-8a56ce4e838d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.487Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The 500-item performance fixture and timing test",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eab758d624161ec7ee1da021b29670a414583e1f5d0a3e1dde4aac734db495fb",
+        "at": "2026-10-22T12:43:42.487Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.488Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The 500-item performance fixture and timing test",
+    "summary": "Add largeSnapshot() to board-fixtures.ts: 20 epics, 400 stories with 2 evidence entries each across the six stages, and 80 issues, deterministic, with recordCount 1000. Add board-perf.test.ts. It times the host's derive and post plus the real script's DOM build on the fake DOM, for the first board and for each filter change (search, attention, scope), best of three, and reports the timings through diagnostics. By default it asserts 5× the targets; with INSRC_PERF=1 it asserts the exact 1 s and 150 ms.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The fixture has 500 items and recordCount 1000, and is deterministic.",
+      "Timings are taken through createDeliveryBoardHost posting into the real BOARD_WEBVIEW_SCRIPT on the fake DOM, for the first render and each filter change, best of three, and reported.",
+      "It asserts the 5× tripwire by default and the exact 1 s / 150 ms targets under INSRC_PERF=1."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-perf.test.ts: 'a 500-item, 1,000-record board renders within one second and each filter change within 150 ms, best of three'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d0c40e9f-3157-4302-ac62-6df6a4d3aa68",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.970Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Give the moved review handlers an in-daemon client and a signal",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "21115c2dff505ca77a57b13ce02f8f79ad015c51603746bf535931022eb11db0",
+        "at": "2026-10-22T12:44:34.971Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the moved review handlers an in-daemon client and a signal",
+    "summary": "Build, in src/daemon/index.ts, an in-daemon client from the same unary and stream handler maps passed to the IpcServer, with the shapes of reviewArtifactStream, codeReviewStream, fetchCodeReviewGrounding, fetchCodeReviewFreshness and resolveRepoForCwd, keeping reviewStreamRequest's failure mapping (timeout, aborted, daemon-error with reason). Add an optional signal to handleReviewStep and handleCodeReviewStep and pass it to their waits.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "no module under src/daemon/steps imports src/mcp/daemon-stream.ts",
+      "a timed-out wait gives 'timeout', an aborted one 'aborted', an error frame with reason 'diff-unavailable' takes the diff fallback, as before",
+      "an aborted signal ends the inner review run"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "in-daemon review client equivalence: timeout, aborted (code daemon-review-aborted, not retryable), daemon-error with reason, and the diff-unavailable fallback behave as before"
+      },
+      {
+        "level": "integration",
+        "name": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

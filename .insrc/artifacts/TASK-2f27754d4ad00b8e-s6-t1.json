@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-63feba6e-5626-4b45-8a3b-004be3c8c436",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.508Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add listComments and attach to the tracker port and the GitHub adapter",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "df6a90d7501bc40796ac47af9c68e8ed6db3255dffcf5eb055a78934b54a2184",
+        "at": "2026-10-22T12:43:21.508Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.508Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add listComments and attach to the tracker port and the GitHub adapter",
+    "summary": "Add the TrackerComment type, TrackerPort.listComments(issue, since?) and TrackerPort.attach(issue, artifact, link) to src/workflow/tracker/port.ts, two gh wrappers in src/workflow/tracker/github.ts (a paged read of an issue's comments in ascending time order with since, and a comment post that returns the comment id) and their binding in createGithubTracker. A failed gh is a classified failure, never an empty list; attach posts one comment that holds the link and names the artifact. Give every in-memory fake port a stub only where a test calls it.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "listComments returns every comment of the issue in ascending time order across pages, passes since to gh, and fails with a classified kind when gh fails",
+      "attach posts one comment holding the link and returns its id as externalId",
+      "TrackerPort declares both methods and the project typechecks"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "github-comments.test.ts: the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c020c1a6-3c7a-49a6-9a88-e316b6e93bfd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.015Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Record build changes and code feedback on the build artifact",
+      "parent": {
+        "entityId": "EPIC-a0f4c1cfe262a497",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "990f2a3083ba0ffbcd40769316807581cbf7b093fdf018bd405eb1f8e62ab73f",
+        "at": "2026-10-22T12:43:07.015Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

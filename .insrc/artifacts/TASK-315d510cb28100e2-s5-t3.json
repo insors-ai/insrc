@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5a090534-5996-4093-ad36-d03a5482bbf5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.241Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the completion hook and the first-author exception to the gate",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fc393686430081fa856cf1c15265dfe9973f4d787a4295b4e708b620e4b40181",
+        "at": "2026-10-22T12:43:26.241Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.241Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the completion hook and the first-author exception to the gate",
+    "summary": "In src/workflow/team/gate.ts add CompletionHook and registerCompletionHook, consult the registered hook for author and build on a next stage and for open-signoff, revise and release (a throwing hook refuses with its message; none registered continues), give the hook's own release a non-recursive internal path that skips the hook, and return no-issue for a stage whose issue cannot be resolved or created, with allowFirstAuthor true only for the first author turn of a stage that has no artifact yet; any other action on such a stage is refused.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The completion hook is consulted for the listed actions, a release from the hook does not consult it again, and with none registered the gate continues",
+      "A throwing hook refuses with its message and never throws",
+      "The first author turn of a stage with no issue and no artifact is allowed and any other action on a stage with no issue is refused",
+      "A missing issue that ensureUnitIssue can create is created and the gate then decides"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

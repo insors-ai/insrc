@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5d3994ca-b88d-4d24-bad9-2d8929fa53af",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.925Z",
+    "epicCreatedAt": "2026-09-20T15:58:45.676Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Register the inline repo.stats handler in src/daemon/index.ts",
+      "parent": {
+        "entityId": "STORY-be438ed37a36f5fc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-be438ed37a36f5fc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-be438ed37a36f5fc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81d34b505c5f175d0afe9e099217fdc7bea0a9222beec8e1558638121173caed",
+        "at": "2026-10-22T12:44:28.930Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.931Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the inline repo.stats handler in src/daemon/index.ts",
+    "summary": "Add a 'repo.stats' handler to the daemon handler map (next to repo.list/daemon.status): read getGraphStore()+listRepos(db)+the queue, call collectRepoStats, and return the single RepoStats for params.repoPath (or `{ error: 'repo.stats: <path> is not a registered repo' }` when unregistered) or the full RepoStats[] when repoPath is omitted. Additive; no existing handler changes; read-only.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "'repo.stats' is registered in the index.ts handler map and delegates to collectRepoStats/buildRepoStats; with repoPath it returns one RepoStats (or {error} when unregistered, not thrown); omitted returns RepoStats[] (=== [] when zero repos)",
+      "the handler mutates nothing (no writeFileSync/setConfigAtPath/store put/enqueue) and does not alter repo.list/daemon.status"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: src/daemon/index.ts registers a 'repo.stats' handler that delegates to collectRepoStats/buildRepoStats and returns a single RepoStats for params.repoPath else the RepoStats[] array"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the handler returns { error } (not throw) when repoPath is not in listRepos(), and is READ-ONLY (no writeFileSync/setConfigAtPath/store put/enqueue in the handler body); src/shared/types.ts declares the RepoStats interface"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

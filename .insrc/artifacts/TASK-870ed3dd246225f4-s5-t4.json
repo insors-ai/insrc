@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa2a20b7-b6db-4678-a9ef-4de255d93a5a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.666Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add assembleFallbackShell() to fallback.ts",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "254243da8e1939d84d1707f46badc4ebacb5136912a4c4fb37f9ec4e885128c8",
+        "at": "2026-10-22T12:43:54.666Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.666Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add assembleFallbackShell() to fallback.ts",
+    "summary": "Implement assembleFallbackShell(ir, svg, svgPanZoom, svgPanZoomVersion) in fallback.ts: pure assembly of the sc3 RenderedDocumentShell shape with the given SVG inlined directly plus the svg-pan-zoom bundle and init call, no Mermaid.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "assembleFallbackShell returns a RenderedDocumentShell with backend='fallback-subprocess', diagramFormat='svg', supportsZoomPan=true, inlinedRuntimeVersion=svgPanZoomVersion",
+      "the returned shell inlines the given svg markup and svgPanZoom bundle directly with no <script src= (no CDN/network reference)",
+      "assembleFallbackShell performs no I/O; title/docType-derived fields come from ir (docType + scopeDescription)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleFallbackShell(ir, svg, ...): sc3 shape backend='fallback-subprocess', diagramFormat='svg', supportsZoomPan=true, inlinedRuntimeVersion=svgPanZoom version; the <svg> + svg-pan-zoom inlined, no <script src= (ac2)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

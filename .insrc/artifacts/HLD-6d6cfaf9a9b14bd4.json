@@ -10,7 +10,6 @@
     "schemaVersion": 1,
     "epicHash": "6d6cfaf9a9b14bd4",
     "epicSlug": "stream-incremental-progress-from-daemon-calling",
-    "approvedAt": "2026-07-20T08:48:22.871Z",
     "questionResolutions": {
       "qc8647f7e": {
         "question": "s6/f2 (ambiguous): architectureShape names WorkflowProgress, eventToProgressData, workflow.run, analyze.run, and IpcStreamMessage but carries no inline s1 bundle citation in the prose itself — the concrete cite (src/shared/types.ts:734) appears only in the sc1 interfaceSketch. Every named module is grounded in s1/s2 exploration so nothing is ungrounded, but the architectureShape prose omits explicit per-module s1 bundle citations; confirm whether inline citations are required there before story-level design.",
@@ -31,6 +30,35 @@
         "insrc:in-progress",
         "insrc:blocked"
       ]
+    },
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f175c46ed9ed04a27b8b539fa6c58a8ac8d36f3672e9d30857e6211489e4ad08",
+        "at": "2026-07-19T16:06:55.169Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-20T08:48:22.871Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

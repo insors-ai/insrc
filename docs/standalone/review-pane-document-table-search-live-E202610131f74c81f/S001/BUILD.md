@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-1f74c81f507dbe78-S001 -->
+<!-- insrc:artifact BUILD-1f74c81f507dbe78-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,5 +23,5 @@ Task 6 adds no code. The plugin's suite and typecheck were run after task 5, the
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T19:32:23.180Z)
+- `.insrc/artifacts/BUILD-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T19:32:23.180Z)
 - `docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/BUILD.md` — **insrc-build** (2026-10-13T19:32:23.180Z)

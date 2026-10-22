@@ -19,111 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "a0f4c1cfe262a497",
     "epicSlug": "provenance-traceability-workflow-artifact-json-two",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/types.ts defines an artifact attribution model — ArtifactMetaBase.attribution and an ArtifactModelAttribution type — that the new feedback/change attribution is to align with.",
-          "evidence": "Confirmed: src/workflow/types.ts:295 declares `interface ArtifactModelAttribution` and :331 `ArtifactMetaBase.attribution?: ArtifactModelAttribution`. The DEF's :290 anchor lands on the aggregate's doc-comment header (exact interface at 295). Attribution model exists as cited.",
-          "action": "None — citation resolves; DEF aligns with the real attribution model.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/attribution.ts exists as the attribution helper module the new contract reuses.",
-          "evidence": "Confirmed: src/workflow/attribution.ts exists and exports singleModelAttribution / attributionOf / modelSummary over ArtifactModelAttribution + ArtifactMetaBase.",
-          "action": "None — the attribution helper module exists as cited.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The four document-artifact renderers exist as src/workflow/artifacts/{define,hld,lld,plan}.ts, the surfaces the shared feedback field is rendered from.",
-          "evidence": "Confirmed: src/workflow/artifacts/{define,hld,lld,plan}.ts all exist (direct file check OK for all four).",
-          "action": "None — all four document renderers exist.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/format/bindings.ts exists and carries the additive body-slot binding pattern (S002 summary / S003 companions) the feedback section rides on.",
-          "evidence": "Confirmed: src/workflow/artifacts/format/bindings.ts exists and exports companionBodyLines (the S002/S003 additive body-slot binding), referenced by companion tests.",
-          "action": "None — the additive-slot binding surface exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The BUILD-step producer files src/mcp/build-step/{types,render,handler}.ts exist — where the change-log + code-feedback attach to the BUILD body and are rendered.",
-          "evidence": "Confirmed: src/mcp/build-step/{types,render,handler}.ts all exist (direct file check OK).",
-          "action": "None — the BUILD-step producer files exist.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The build runner files src/workflow/runners/build/{schemas,standalone-record}.ts exist — the BUILD artifact shape + standalone record producer.",
-          "evidence": "Confirmed: src/workflow/runners/build/{schemas,standalone-record}.ts both exist; standalone-record.ts renders the BUILD record (renderPlanBuildRecordMd).",
-          "action": "None — the build runner files exist.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts exists — the gate surface referenced for the BUILD change-log grounding.",
-          "evidence": "Confirmed: src/workflow/gates.ts exists (direct file check OK).",
-          "action": "None — the gate surface exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An additive, absent-safe optional body field precedent already exists in the artifact synthesizer body schemas (S002 `summary`, S003 `erDefinition`), proving a new optional feedback field can be added the same way.",
-          "evidence": "Confirmed: the additive absent-safe optional body-field precedent is live — design-epic/schemas.ts includes optional `summary` (S002) and `erDefinition` (S003, via ER_DEFINITION_PROPERTY_SCHEMA); orchestrator.ts authors erDefinition content-gated. A new optional feedback field follows the same proven pattern.",
-          "action": "None — the additive-field pattern is real and precedented.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "s1/s2",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Story s2 (build change-log + code feedback) depends on s1 (shared feedback record + append API) because s2 reuses the shared feedback record and append API that s1 owns.",
-          "evidence": "Internally consistent: s2 declares dependsOn s1 and its ac2 explicitly reuses the shared feedback record + append API that s1 owns; the ordering is sound.",
-          "action": "None — dependency ordering is self-consistent.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-28T09:27:35.640Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-28T09:36:06.312Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "53cf8ed13d297cab25082261540462f25c7e192ca9f9e385b2aacdb74fe69dfb",
+        "at": "2026-09-28T09:23:41.149Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-28T09:36:06.312Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-28T09:27:35.640Z",
+        "report": {
+          "entityId": "DEF-a0f4c1cfe262a497",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-a0f4c1cfe262a497-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

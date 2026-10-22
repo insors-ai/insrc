@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-160ff743-6421-4f41-9ece-ca2922a07a95",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.030Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integration-test the I/O wrapper against a temp INSRC home",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "430fc5e3fa7938012cff9d3bf05b745f0f019f98b5158b0aa0489c9219017cbb",
+        "at": "2026-10-22T12:44:41.035Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.036Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration-test the I/O wrapper against a temp INSRC home",
+    "summary": "Add src/config/__tests__/config-reconcile-io.test.ts extending the on-disk fixture idiom already used at src/config/__tests__/repo-shaper-override.test.ts:27 (materialise a config file → run the code under test → assert on the resulting file). Use a temp INSRC home per test and a write-counting fs seam that counts writeFile invocations targeting the config document (temp or final) plus rename invocations, so 'written at most once' is an assertion rather than an inference — this is what fences off any N-round-trip implementation, including one that writes the temp file twice. Cover: the t2 legacy fixture producing exactly 1 writeFile + 1 rename with the three dynamic namespaces byte-identical; an already-normalized config producing 0 writeFile and 0 rename and an unchanged mtime; ENOENT first-boot equivalence; unreadable file (EACCES/EISDIR, skip-guarded when running as root); corrupt/truncated/zero-byte JSON aborting with no write and explicitly asserting no default-fill fallback; write failure leaving no temp file behind; concurrent modification abandoning the write; a ConfigCatalogError surfacing as its own outcome kind; and path resolution going through PATHS.config.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Every listed integration subject has a test and the suite passes under `npx tsx --test 'src/config/__tests__/*.test.ts'`",
+      "The write-counting seam counts writeFile invocations targeting the config document (temp or final) and rename invocations, and asserts exactly 1 of each for the legacy fixture and exactly 0 of each for the already-normalized case, with mtime asserted unchanged in the latter",
+      "The corrupt-JSON test asserts the on-disk bytes are identical after the run and that the dynamic namespaces were not default-filled over",
+      "A catalog-integrity failure is asserted to surface as a distinct outcome kind from an I/O or parse failure",
+      "Permission-based tests skip cleanly rather than fail when the suite runs as root",
+      "Tests add no new package dependency"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "legacy config on disk → exactly 1 writeFile + 1 rename, resulting document normalized, dynamic namespaces byte-identical"
+      },
+      {
+        "level": "integration",
+        "name": "already-normalized config → zero writeFile, zero rename, mtime unchanged (steady state)"
+      },
+      {
+        "level": "integration",
+        "name": "ENOENT → degrades to reconcileConfig(undefined) and writes defaults once (first-boot equivalence)"
+      },
+      {
+        "level": "integration",
+        "name": "unreadable file (EACCES/EISDIR, root-skip-guarded) → nothing written, existing file untouched, errno surfaced"
+      },
+      {
+        "level": "integration",
+        "name": "corrupt / truncated / zero-byte JSON → aborts writing nothing, reports parse message + byte offset, on-disk bytes identical and no default-fill fallback"
+      },
+      {
+        "level": "integration",
+        "name": "write failure (ENOSPC/EACCES) → temp file unlinked, no partial or half-renamed document, counts reported alongside the error"
+      },
+      {
+        "level": "integration",
+        "name": "concurrent modification between read stat and pre-rename re-stat → write abandoned, newer document intact, non-fatal outcome recorded"
+      },
+      {
+        "level": "integration",
+        "name": "ConfigCatalogError surfaces as a structurally distinct outcome kind from I/O and parse failures"
+      },
+      {
+        "level": "integration",
+        "name": "path resolution goes through PATHS.config against a temp INSRC home; no hardcoded ~/.insrc path is exercised"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

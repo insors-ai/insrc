@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-00e3eaa2-ebc4-43a2-af3d-7de3cd1b53d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.257Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The BUILD record names the Story's newest trailered commit",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1504e5c48bcfca43290fe3690caddea590c061966786650df5e91f32faeb70b5",
+        "at": "2026-10-22T12:44:18.257Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.257Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The BUILD record names the Story's newest trailered commit",
+    "summary": "In the BUILD record persist (src/workflow/runners/build/standalone-record.ts:313), derive body.commit as the newest first-parent commit since the range base that carries the Story's trailer; HEAD when none does; an explicit body.commit still wins.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "A BUILD record persisted after another Story's commits names this Story's newest trailered commit.",
+      "With no trailered commit, body.commit is HEAD as today; an explicit value wins."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: 'a BUILD record persisted after another Story's commits names the Story's newest trailered commit'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: 'with no trailered commit the record names HEAD, and an explicit commit wins'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

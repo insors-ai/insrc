@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8d3dc7d0-dd9f-4d97-8257-04678da45fd9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.730Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "runShaper looks up the cache before resolving the scope; bundles record their repository",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4768fbf9d4b4837cc771fbdf3f0f8a592b28fab419779d695704452a6655b7c6",
+        "at": "2026-10-22T12:44:36.730Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.731Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "runShaper looks up the cache before resolving the scope; bundles record their repository",
+    "summary": "BundleMeta.repoPath: string | null (src/analyze/context/types.ts), admitted by the bundle schema's meta (src/analyze/context/schema.ts) as optional ['string','null'], written on every bundle. runShaper (src/analyze/context/driver.ts) looks up the cache first: a hit with a string repoPath runs ensureRepoQueryable and the freshness read for that repository only; null is served as today; a missing key is a miss. On a miss the scope is resolved once, ensureRepoQueryable runs for every source, then the pairing check, the code-only empty-closure check and the pipeline as today. ShapeOpts.scopeChecked (passed by the factory in src/analyze/context/index.ts into RunShaperArgs.opts) skips the repeated checks; it is not part of the cache key. Grounding: the factory in src/analyze/context/index.ts passes the caller's ShapeOpts whole as runShaper's opts (:93-100, :113-120, :138-145), so scopeChecked reaches runShaper without a new pass-through. Grounding of today's order: src/analyze/context/driver.ts builds the cache key at :336, resolves the scope at :350 (prepareScope), reads freshness from the resolved scope at :357 and looks up the cache at :360. After the change a hit takes its freshness path from the bundle's recorded repoPath, not from a resolved scope.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a connection-scope hit while another repository's connections file is broken returns the bundle.",
+      "A hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and not returned; a bundle without repoPath is a miss; a repoPath null bundle is served without either check.",
+      "A hit whose recorded repository has a newer last-indexed time than the bundle is a miss, and the request is built normally.",
+      "A freshly built bundle with repoPath (string and null) passes validateBundleWithErrors on the tool-loop and pipeline paths; an older bundle still validates; scopeChecked does not change the cache key."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle"
+      },
+      {
+        "level": "unit",
+        "name": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss"
+      },
+      {
+        "level": "unit",
+        "name": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built"
+      },
+      {
+        "level": "unit",
+        "name": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates"
+      },
+      {
+        "level": "unit",
+        "name": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

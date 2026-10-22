@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-44084826-9d85-49e1-b441-2fe6bae118f4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.582Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The step tool reports a missing answer prompt with what its lookups found",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "97406b9131456638e0b01cf8b8d45053e20444c08657f4ceae3bf79ba7b50407",
+        "at": "2026-10-22T12:44:24.582Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.583Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The step tool reports a missing answer prompt with what its lookups found",
+    "summary": "The step tool's error output gains an optional data member and the error helpers of its plan and narrow phases take it. The two calls that prepare the answer-writing turn catch a missing prompt and return a non-retryable error whose data holds the executed results and the report derived from them, and whose message starts with the completeness line.",
+    "size": "S",
+    "order": 15,
+    "acceptanceChecks": [
+      "A missing answer prompt after the lookups ran returns a non-retryable error whose data holds the results and the report, from the plan phase and from the narrow phase",
+      "The error's message starts with the completeness line",
+      "An error of any other kind has no data member",
+      "The step tool's JSON output carries error.data as returned"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase"
+      },
+      {
+        "level": "unit",
+        "name": "the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

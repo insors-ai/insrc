@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a77188fd-232d-4332-8c88-c4c650b86238",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.067Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s3",
+    "envelope": {
+      "description": "registerHostCommands wiring (insrc.hosts.wire, combined consent, wire-only-on-accepted, state→sc2)",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "974e1e53a3d74d48d38506357d64f8abc900b15244546fe0c5055aeea6a19468",
+        "at": "2026-10-22T12:44:13.067Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.068Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "registerHostCommands wiring (insrc.hosts.wire, combined consent, wire-only-on-accepted, state→sc2)",
+    "summary": "Add registerHostCommands({ commands, consent, status, registry }): registers the durable insrc.hosts.wire command into sc3. On run: registry.detectPresent(); if none, set a 'no supported AI hosts detected' status; else present ONE combined sc4 ConsentGate prompt with items = the detected adapters' displayNames and wire each ONLY on 'accepted' (k4/ac1). A failing adapter (HostFileAccessError) does not abort the others; the aggregate outcome is pushed into sc2 (StatusSurface.set). Nothing is written on declined/dismissed. Mirrors S002 registerDaemonCommands + a shared offerHostWiring helper (reused by the activation offer).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "registers the insrc.hosts.wire command into the CommandRegistry",
+      "the wire command asks a single combined ConsentGate prompt (items = detected displayNames) and wires NONE until 'accepted'; declined/dismissed writes nothing (k4)",
+      "on 'accepted' every detected adapter.wire() runs; one adapter throwing does not abort the others; the outcome is pushed into StatusSurface.set",
+      "no supported host present → a 'no hosts detected' status, no prompt, no write"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerHostCommands registers the insrc.hosts.wire command into the fake CommandRegistry"
+      },
+      {
+        "level": "unit",
+        "name": "the wire command calls ConsentGate.ask with items = every detected adapter's displayName (single combined prompt) and wires NONE until 'accepted' (k4); on declined/dismissed nothing is written"
+      },
+      {
+        "level": "unit",
+        "name": "on 'accepted' every detected adapter.wire() runs; a failing adapter (HostFileAccessError) does not abort the others; the outcome is pushed into StatusSurface.set"
+      },
+      {
+        "level": "unit",
+        "name": "no supported host present → the command sets a 'no hosts detected' status and wires nothing"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ the shared writers) — no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

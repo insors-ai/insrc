@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-731a2f84-60c9-4598-90c0-c2ecafd47fc7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.040Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the build.ts artifact definition under src/workflow/artifacts",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ba95374ba4f2c30845277c3772bb350ca30d7e46926d3f101fb4bd2065aa368",
+        "at": "2026-10-22T12:43:15.040Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.040Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the build.ts artifact definition under src/workflow/artifacts",
+    "summary": "Create src/workflow/artifacts/build.ts as a new sibling of plan.ts/define.ts, defining the Task-bearing BuildArtifact and wiring it through the parent module's existing hash.ts + slug.ts writers and storage.ts — preserving the identical durability envelope used by define/design.epic/design.story/plan (hash-json + slug-md, incremental-checkpoint-capable). No change to any existing artifact definition or persistence machinery; a self-contained additive file.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/artifacts/build.ts exists defining the build stage's artifact, mirroring the structure of the sibling plan.ts artifact definition",
+      "The definition writes through the parent module's existing hash.ts + slug.ts writers (and storage.ts) — no new persistence substrate, no direct file I/O introduced",
+      "Existing artifact definitions (define.ts/plan.ts/etc.) and the shared writer machinery are byte-for-byte unchanged by this addition",
+      "The module typechecks and the artifact is keyed/slugged consistently with its siblings"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "build artifact round-trips through the shared hash.ts + slug.ts writers, keyed/slugged consistently with the sibling plan artifact (src/workflow/__tests__)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

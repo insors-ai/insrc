@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-68ea6c0a-af9b-480b-8203-f966ccf0a8c7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.358Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add item-root 'ISSUE' ArtifactKind + issueArtifactId + issue path helper",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "41eaf9f72816a168fecbe1ee30b2166a689d7a2b6198e11d2a1c9353f5f828ed",
+        "at": "2026-10-22T12:43:13.358Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.360Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add item-root 'ISSUE' ArtifactKind + issueArtifactId + issue path helper",
+    "summary": "In src/workflow/path-scheme.ts add 'ISSUE' to the ArtifactKind union (line 45), leave STORY_SCOPED (line 67) unchanged (ISSUE is item-root), and add ISSUE to the item-root branch of allArtifactMdPaths (~173) alongside SPEC/DEF/HLD. In src/workflow/storage.ts add `issueArtifactId(issueHash)='ISSUE-${issueHash}'` (mirror specArtifactId:165) + the per-artifact issue path function returning { md, json } (mirror the spec path helper ~319). Landed FIRST so the record family (t2) can import issueArtifactId.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ArtifactKind includes 'ISSUE'; STORY_SCOPED does NOT include it; the eight existing kinds' item-root/story-scoped classification is byte-for-byte unchanged.",
+      "issueArtifactId('abc') === 'ISSUE-abc'; the issue path helper returns an item-root ISSUE.md + its ARTIFACTS_DIR/ISSUE-<hash>.json, mirroring the spec helper.",
+      "allArtifactMdPaths enumerates an ISSUE.md at the work-item root; tsc exhaustiveness passes for every ArtifactKind consumer."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ArtifactKind includes 'ISSUE'; STORY_SCOPED does NOT include 'ISSUE' (item-root like SPEC/DEF/HLD)"
+      },
+      {
+        "level": "unit",
+        "name": "the existing kinds keep their classification: SPEC/DEF/HLD item-root, LLD/PLAN/BUILD/CR/EXT story-scoped (byte-for-byte unchanged)"
+      },
+      {
+        "level": "unit",
+        "name": "an ISSUE artifact path resolves to an item-root ISSUE.md (+ its .json), and allArtifactMdPaths enumerates it alongside SPEC/DEF/HLD"
+      },
+      {
+        "level": "unit",
+        "name": "issueArtifactId(hash) === `ISSUE-${hash}` and the id-marker round-trips (extractable back to the id)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

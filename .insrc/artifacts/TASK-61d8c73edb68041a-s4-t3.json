@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d6208f66-ebd6-4caa-960a-8f41b87f083a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.276Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s4",
+    "envelope": {
+      "description": "SteeringInjectionLifecycle sc1-consumer",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3cf36a00a678178177023bc1f0881269f71458d5ce7662e6e4270944f65fc3c9",
+        "at": "2026-10-22T12:43:40.276Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.276Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "SteeringInjectionLifecycle sc1-consumer",
+    "summary": "Add SteeringInjectionLifecycle : PluginLifecycle mirroring McpWiringLifecycle, with an injectable AiHostAdapter (default AiHostAdapterImpl()) and an injectable SteeringContent. onProjectOpened: resolve steeringBody() ONCE up front (catch IllegalStateException -> log + write nothing); call adapter.detectPresent(), return early if empty; for each host compose MarkerDelimitedBlock(AiHostAdapterImpl.RULES_BEGIN, RULES_END, steeringBody) and write via `runCatching { adapter.writeRulesBlock(host, block) }.onFailure { log.warn(...) }`. onPluginUninstalled is a no-op. Never writes the mcp file, never calls removeRulesBlock.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "onProjectOpened composes MarkerDelimitedBlock with the sc3 RULES markers + steeringBody and calls writeRulesBlock once per detected host.",
+      "Empty detectPresent() -> no writeRulesBlock call (no-op).",
+      "A missing/empty steering resource (steeringBody throws) -> no writeRulesBlock call on any host.",
+      "A HostFileAccessException from one host is caught (per-host runCatching) and the other present host is still written.",
+      "onPluginUninstalled is a no-op; no mcp write and no removeRulesBlock invocation anywhere."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SteeringInjectionLifecycleTest.composesRulesBlockAndWritesOncePerDetectedHost"
+      },
+      {
+        "level": "unit",
+        "name": "SteeringInjectionLifecycleTest.emptyDetectPresent_noWrite"
+      },
+      {
+        "level": "unit",
+        "name": "SteeringInjectionLifecycleTest.steeringBodyThrows_noWriteOnAnyHost"
+      },
+      {
+        "level": "unit",
+        "name": "SteeringInjectionLifecycleTest.perHostHostFileAccessException_isolated_otherHostStillWritten"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

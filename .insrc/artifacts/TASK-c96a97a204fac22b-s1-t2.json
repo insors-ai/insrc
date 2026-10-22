@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90793681-4f1c-4300-a8f1-fe233f2f7d9a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.579Z",
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "File seam and the file store's core: files, read, list and appending save",
+      "parent": {
+        "entityId": "STORY-c96a97a204fac22b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c96a97a204fac22b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c96a97a204fac22b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c22dc1bd681811faa3f89ca5805f56b4daff1b2d0e74822dc4b9b388fe14259",
+        "at": "2026-10-22T12:44:40.579Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.579Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "File seam and the file store's core: files, read, list and appending save",
+    "summary": "New vscode-plugin/src/chat/session-file-store.ts: the SessionFilesFs interface with nodeSessionFilesFs, and createFileChatSessionStore implementing ChatSessionStore over `<root>/<sessionFileName(id)>.head.json` and `.rows.ndjson`. Per-object tracking of the rows on disk; save appends the rows beyond the object's count and replaces the head through a temporary file and a rename, head after rows; draft writes nothing and create saves at once; get reads once and returns the same object while the files are unchanged; list reads heads only; a damaged head reads as absent; a torn last rows line is dropped and cut back, a bad middle line skipped; an id is stored under sessionFileName(id) and read back with its real id. Includes the in-memory recording fake used by the tests.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A save of a session holding 1,000 stored rows and one new row appends exactly that row and replaces the head; the bytes written do not grow with the stored rows",
+      "A save with no new rows writes the head only",
+      "draft() writes nothing until its first save; create() saves at once",
+      "get() returns every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again",
+      "list() reads head files only and returns id, provider, title and updatedAt sorted by updatedAt descending",
+      "A damaged head is absent from get and list; a torn last line is dropped and the file cut back before the next append; a bad middle line is skipped",
+      "An id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)"
+      },
+      {
+        "level": "unit",
+        "name": "a save with no new rows writes the head only"
+      },
+      {
+        "level": "unit",
+        "name": "a draft writes nothing until its first save, which writes its rows and then its head; create() saves at once"
+      },
+      {
+        "level": "unit",
+        "name": "get returns the saved session with every row variant, editMode, mode, nativeSessionId and liveTurn unchanged, and the same object on a second call without reading the files again"
+      },
+      {
+        "level": "unit",
+        "name": "list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending"
+      },
+      {
+        "level": "unit",
+        "name": "a damaged head reads as no session and is left out of list; a rows file with a torn last line is read without it and cut back before the next append; a bad line in the middle is skipped"
+      },
+      {
+        "level": "unit",
+        "name": "an id with characters outside A-Za-z0-9_- is stored under sessionFileName(id) and read back with its real id"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

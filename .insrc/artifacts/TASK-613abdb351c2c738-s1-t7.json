@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e81ce93a-9f44-433e-80cd-5d87cb7a645a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.187Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the suites and check by hand with two windows",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ac2675f77299c3529c901b1b5b9b792c5d386ad8c57cb2a7a9ca4e021fb0fae2",
+        "at": "2026-10-22T12:43:37.187Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.187Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the suites and check by hand with two windows",
+    "summary": "Run the plugin's suite and typecheck, build, package and install the plugin, and have the user check in VS Code 1.141 with two windows on one repository.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "The plugin's suite and typecheck pass apart from failures that exist before this Story",
+      "By hand: a message typed mid-turn waits and runs after the turn; a message from the second window runs after the first window's turn; Stop marks the message failed and the next runs; a reload while a message waits keeps it; the store opens in the real extension host with no 'unsupported' notice"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story, with the tests the HLD lists as changing updated"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code (1.141) with two windows on one repository: a message typed mid-turn waits and runs after the turn, the running turn keeps showing; a message sent in the second window runs after the first window's turn; Stop marks the message failed and the next runs; a window reload while a message waits keeps it and it runs"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

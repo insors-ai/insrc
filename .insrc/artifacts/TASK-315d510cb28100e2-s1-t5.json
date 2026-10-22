@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1233d474-0aab-416d-bc9f-607c179a3f4f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.788Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add readAssignee and setAssignee to the adapter",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f9f149c04f0c2bc53442ba8571fec7b72e5c1c63533779c477089ebdd453df9",
+        "at": "2026-10-22T12:43:24.788Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.788Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add readAssignee and setAssignee to the adapter",
+    "summary": "Implement readAssignee (single assignee, null when none, rejected for more than one or a malformed reference) and setAssignee (read the current assignees, remove every other assignee, add the requested one or clear all for null, re-read and compare, report a partial or unknown outcome as rejected or unreachable without retrying) using gh issue edit and gh issue view.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "setAssignee from zero, one (same user), one (another user) and several assignees ends with exactly the requested set, verified by the re-read",
+      "setAssignee makes no change call when the set is already right and clears every assignee for null",
+      "A differing re-read or a step that times out is reported as rejected or unreachable and no step is retried",
+      "readAssignee returns rejected for more than one assignee or a malformed reference without calling gh"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee from zero, one and several assignees ends with exactly the requested user"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee makes no change call when already right and clears for null"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

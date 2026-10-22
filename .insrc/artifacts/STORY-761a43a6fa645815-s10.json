@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-2b2c0055-9d88-41d7-88be-37afde0a647d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.970Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Fall back to a diff-only degraded review when the index cannot be made fresh",
+      "parent": {
+        "entityId": "EPIC-761a43a6fa645815",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef2e96c04ca3d4fe605f481630fa3e7e35b4753ef8f381edc581b4681e42e59a",
+        "at": "2026-10-22T12:43:06.970Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

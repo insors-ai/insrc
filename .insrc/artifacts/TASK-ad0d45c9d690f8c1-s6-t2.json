@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-047c1262-4f38-4a63-9f8a-93c5accd79e7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.883Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Complete the Marketplace manifest in package.json",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a17a73ed8dfdd290d0efeea7c02cc33f253cdb3cd8fd15488aeef083608a5b22",
+        "at": "2026-10-22T12:44:14.883Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.884Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Complete the Marketplace manifest in package.json",
+    "summary": "Add publisher, repository, license, icon ('icon.png'), keywords, and a real categories set to vscode-plugin/package.json; remove private:true; add scripts { bundle, package ('npx @vscode/vsce package'), vscode:prepublish ('tsc --noEmit && npm run bundle' — the ordered typecheck-then-bundle gate so a broken typecheck/bundle never packages) }. Preserve unchanged the name/displayName/description/version/engines.vscode/activationEvents/main/the 7 contributes.commands/sync-assets/build/test/vscode:uninstall. Publisher id is a maintainer-supplied placeholder called out in the README, not invented.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "package.json carries publisher, repository, license, icon, keywords, categories, engines.vscode, main, activationEvents + the 7 insrc.* contributes.commands unchanged",
+      "package.json no longer sets private:true",
+      "scripts include bundle + package + vscode:prepublish = 'tsc --noEmit && npm run bundle' + the preserved vscode:uninstall = 'node ./out/uninstall.js'"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "manifest: package.json has publisher/repository/license/icon/keywords/categories/engines.vscode/main/activationEvents + the 7 contributes.commands unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "manifest: package.json no longer sets private:true"
+      },
+      {
+        "level": "unit",
+        "name": "manifest: scripts include bundle + package (vsce) + vscode:prepublish (tsc --noEmit && bundle) + preserved vscode:uninstall = 'node ./out/uninstall.js'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

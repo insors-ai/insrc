@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d9affc16-fd1b-47b3-83a8-dbb30c35891e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.227Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Fake-provider unit tests for the quality judge",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e0490af605602f52edcc85fcb276f5e786da06ad6b26addb42b429099c19987c",
+        "at": "2026-10-22T12:43:47.227Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.227Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-provider unit tests for the quality judge",
+    "summary": "Add src/workflow/code-review/dimensions/__tests__/quality.test.ts mirroring coverage.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any stray method throws), a subject(changedFiles) factory stubbing approvedLld/Plan via unknown (unused by quality), and a grounding(symbols) factory producing ChangedSymbolSummary[] with populated signature/callers/callees so a duplication finding can name a counterpart. Cover: (ac1) the four risk classes (correctness/complexity/duplication/unhandled-error) each map to a finding with location + severity, plus a QUALITY_FINDINGS_SCHEMA per-finding shape assertion; (ac2) a duplication finding maps counterpartRef through naming the existing symbol (dimension==='quality'), and buildQualityPrompt's charge mentions counterpartRef + the user payload includes the callers/callees edges; (ac3) a matter-of-taste finding maps through at LOW severity (never HIGH), and the system charge caps taste at LOW; (ac4) judgeQuality issues exactly ONE completeStructured call through the injected provider (no other provider method); plus out-of-changedFiles drop, retry-exhaustion-propagation (invalid output → assert.rejects), the two empty-result edge cases (empty grounding → findings:[]; no-risk fake {findings:[]} → no manufactured finding), and a prompt-trailing assertion. No live model.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/code-review/dimensions/__tests__/quality.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+      "tests cover ac1-ac4 plus out-of-scope drop, retry-exhaustion propagation (assert.rejects), the two empty-result edge cases, and the prompt-trailing placement",
+      "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S005 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ac1: the four risk classes (correctness/complexity/duplication/unhandled-error) each map to a finding with location + severity"
+      },
+      {
+        "level": "unit",
+        "name": "ac2: duplication finding maps counterpartRef through naming the existing symbol (dimension:'quality'); prompt charge mentions counterpartRef + payload includes callers/callees"
+      },
+      {
+        "level": "unit",
+        "name": "ac3: a matter-of-taste finding maps through at LOW severity (never HIGH); charge caps taste at LOW"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: judgeQuality issues exactly ONE completeStructured call through the injected provider (no other provider method touched)"
+      },
+      {
+        "level": "unit",
+        "name": "out-of-changedFiles finding is dropped"
+      },
+      {
+        "level": "unit",
+        "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+      },
+      {
+        "level": "unit",
+        "name": "edge: empty grounding → {dimension:'quality', findings:[]} with no error"
+      },
+      {
+        "level": "unit",
+        "name": "edge: no-risk fake {findings:[]} → empty result, no manufactured finding"
+      },
+      {
+        "level": "live",
+        "name": "judgeQuality against a real buildShaperProvider provider on a fixture with a KNOWN duplication (INSRC_LIVE_TESTS-gated, skips when unset)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

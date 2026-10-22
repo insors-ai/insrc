@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-2c1fe364-93c0-4b9b-acaf-14f227467c27",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.023Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Seed a full Epic from an approved spec",
+      "parent": {
+        "entityId": "EPIC-abd1ecf6a5f5063e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "dbcbb46b7c2a06e8218f1c10ab479bfb74801998340027d1696378c985985914",
+        "at": "2026-10-22T12:43:07.023Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

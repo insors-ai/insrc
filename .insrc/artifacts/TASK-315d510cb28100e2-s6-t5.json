@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9577c554-49b6-44e9-aa71-a2aa4ab30d07",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.510Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Register the park-offer provider from the owner recorded on runs and from uncommitted drafts",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4e5b49841d3170577f492605b14eeeab4ab364a6b004b65653019b3686ceed50",
+        "at": "2026-10-22T12:43:26.510Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.510Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the park-offer provider from the owner recorded on runs and from uncommitted drafts",
+    "summary": "Implement the provider the handoff module registers with the gate: true when the actor owns a live run for the unit in any stage (meta.owner equals the actor, found through listStates) or has an uncommitted draft artifact for the unit (git status on the unit's artifact paths); a run without an owner never counts. Register it at daemon startup beside the other gate registrations.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A held-by-other refusal carries offerPark for an owned run in any stage and for an uncommitted draft",
+      "A run with no owner never produces an offer",
+      "The refusal text printed by the workflow-step handler and the terminal names the park command"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-8ab2cc2edb3743df-S001 -->
+<!-- insrc:artifact BUILD-8ab2cc2edb3743df-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -20,7 +20,7 @@ docs/daemon.md (a new part of the section on the final report being written from
 
 ## Changes
 
-- `.insrc/artifacts/CR-8ab2cc2edb3743df-S001.json` — **insrc-build** (2026-10-10T12:31:30.435Z)
+- `.insrc/artifacts/CR-8ab2cc2edb3743df-s1.json` — **insrc-build** (2026-10-10T12:31:30.435Z)
 - `design/analyze-framework.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-10T12:31:30.435Z)
 - `docs/standalone/bug-plan-tree-analyze-run-when-E202610098ab2cc2e/S001/CR.md` — **insrc-build** (2026-10-10T12:31:30.435Z)

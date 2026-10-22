@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-567ddb1e-bd5e-461a-a9d4-35cfb690dde1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:00.913Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Introduce sc1 view layer: types + RenderRegistry + RenderHost collapse primitive + line() fallback, wired into the append path",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fbd08bd3592ca1c107f91686df80ed9a1cda702d55214ae103b6aa7c92ea7489",
+        "at": "2026-10-22T12:45:00.914Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:00.915Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Introduce sc1 view layer: types + RenderRegistry + RenderHost collapse primitive + line() fallback, wired into the append path",
+    "summary": "Add the net-new sc1 webview types (RowKind, RowViewModel, RowRenderer, RenderRegistry, RenderHost) inline under the CSP, implement RenderRegistry.renderRow (dispatch by kind, fall back to the flat line() renderer for any unmapped kind incl. the reserved 'approval-request'), implement RenderHost.collapsible as the icon-only chevron (▸/▾) 3-line-clamp primitive (provided but not yet consumed by S001), wrap the existing line() (chat-panel.ts:234) as the registered 'fallback' RowRenderer, and route the transcript append path through renderRow. Behaviour-neutral: every currently-handled row kind renders exactly as today.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "RenderRegistry.renderRow dispatches to a registered renderer and returns line()'s output for any unmapped kind (incl. 'approval-request')",
+      "RenderHost.collapsible produces an icon-only chevron toggle and a default-collapsed 3-line-clamped container using className/textContent only, no innerHTML (k1)",
+      "line() is registered as the 'fallback' renderer and is unchanged; all currently-handled row kinds render byte-identically — the ~151 chat tests stay green (k2)",
+      "the render layer is inline under the nonce'd CSP; nothing fetches externally (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "RenderRegistry.renderRow — dispatches to a registered renderer and falls back to line() for an unmapped kind (incl. the reserved 'approval-request')"
+      },
+      {
+        "level": "unit",
+        "name": "RenderHost.collapsible — icon-only chevron primitive; default-collapsed clamps to 3 lines (S001 provides it; tool-command renderer never uses it)"
+      },
+      {
+        "level": "integration",
+        "name": "the ~151 existing chat tests (chat-panel/cli-adapter/markers) stay green — line() fallback keeps every current row kind rendering unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

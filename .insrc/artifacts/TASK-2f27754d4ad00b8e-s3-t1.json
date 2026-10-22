@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aa2cb12f-d6fc-4ba5-9dff-4a75c3636c5d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.660Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the lifecycle error classes",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ba4d8fa18e97dba31edf949c361e64616a0223697d59b257e73ec6923069465",
+        "at": "2026-10-22T12:43:20.661Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.662Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the lifecycle error classes",
+    "summary": "Add LifecycleConflictError (carrying the Integrity reason and artifact id), IllegalTransitionError, TerminalArtifactError, ReviewRequiredError and UnreadableChildError (carrying the unreadable ids) to src/workflow/artifact-core/types.ts and extend the exports test that pins that module's runtime exports.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "the five classes are exported, are Errors and carry their name, and LifecycleConflictError and UnreadableChildError expose the reason and the ids",
+      "the exports test lists exactly the existing six classes plus these five and the repository type-checks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts: the five lifecycle error classes carry their name, reason and ids, and the module exports exactly eleven error classes"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

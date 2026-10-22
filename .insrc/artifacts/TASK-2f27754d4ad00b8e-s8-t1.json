@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-40d02af2-d492-422c-bcbe-7ba1c7023587",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.499Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Let FeedbackInput carry a source",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f58625a99744bc79b598e803c84d541ea35e05226e19c35373d81786484d4581",
+        "at": "2026-10-22T12:43:22.499Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.499Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Let FeedbackInput carry a source",
+    "summary": "Add the optional source { system, externalId, url? } to FeedbackInput in src/workflow/feedback/feedback-service.ts: FeedbackService.add stores it on the entry, validates it (a system and an external id), and compares it when an id is repeated.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "An entry added with a source is stored with it and read back with it",
+      "The same id with the same fields and the same source appends nothing; the same id with a different source is refused as already used with different content",
+      "A source with no system or no external id is refused",
+      "An entry added with no source is stored exactly as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "feedback-source.test.ts: FeedbackService.add stores a source and a repeat of the same id with the same source appends nothing"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -10,8 +10,36 @@
     "schemaVersion": 1,
     "epicHash": "ba132c185fe45860",
     "storyId": "s3",
-    "approvedAt": "2026-09-23T15:07:44.189Z",
-    "epicSlug": "work-framed-approved-spec-proceed-from"
+    "epicSlug": "work-framed-approved-spec-proceed-from",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ca8259b06c4183dfdd325d7675b89ed268768597698e41c21ae062a16fd1851d",
+        "at": "2026-09-23T15:07:09.138Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T15:07:44.189Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

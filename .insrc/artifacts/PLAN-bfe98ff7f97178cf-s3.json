@@ -23,121 +23,56 @@
     "storyId": "s3",
     "lldRunId": "wf-1790868424979-tkzzkx",
     "lldEffectiveHash": "44085ff6e95fa09d01d57261b763704a35b3224657eb1aba74a773b259d98276",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "t8 / c39",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The VS Code extension's VSIX baseline is 241,713 bytes — the figure t8 must compute its size delta against and the number alternative a3's >10x rejection rested on.",
-          "evidence": "CONFIRMED EXACTLY, and this was the figure most at risk of being a typed-from-memory number. `stat` across every VSIX in vscode-plugin/ finds exactly one at 241,713 bytes: insrc-vscode-0.5.8.vsix — and vscode-plugin/package.json declares version 0.5.8, so the cited baseline is the CURRENT extension artefact rather than a stale one. For contrast the older builds sit at 93,646 (0.4.1), 232,626 (0.4.10) and 232,865 (0.4.11), so the number is not a coincidental match to some historical build. The >10x claim that eliminated alternative a3 therefore rests on a real measurement: ~3 MB against 241,713 bytes.",
-          "action": "none — verified sound. One note for t8's execution: because 241,713 is the CURRENT version's artefact, t8 must compute its delta against the pre-change VSIX specifically (not against whatever the newest file happens to be after a rebuild writes a new one), which the acceptance check already requires by saying the delta is COMPUTED from the two artefacts.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t2 / t4 / t5 — the shell baseline pin",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "A pinned shell baseline already exists in the docs-review test suite carrying a sha256 plus character and byte counts, so t2 can assert byte-identity against it and t4/t5 must update it when they move it.",
-          "evidence": "CONFIRMED. `SHELL_BASELINE` is declared at docs-review-panel.test.ts:978 carrying chars: 64501, bytes: 64547 and sha256: '351d6ce2eaded2f525215186c12553ba9d31d20cfdacc3f003cee217e38a2ee0', and it is asserted at :1000 (sha256), :1004 (character length) and :1005 (Buffer.byteLength UTF-8), with the render taken at a FIXED nonce via renderShellFor(SHELL_BASELINE.nonce) at :994 — the nonce-fixing that an earlier Story got wrong. A delta history is maintained in comments at :953-965 attributing each increment to the task that caused it (+1996 for DOCS_FR_SOURCE inlined, +404 for frAnchorSlug, +1516 for placeFunctionalRequirements, +208 for the one call that changes the surface, +116 for list semantics). So t2 has a real pin to assert byte-identity against, and t4/t5 have an established convention for updating it with a stated delta.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p3",
-          "ref": "LLD testFramework carried into t8",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The docs-review-panel test suite currently holds 64 tests and the plugin sweep stands at 682 passing / 4 skipped — the counts t8 must restate after the Story.",
-          "evidence": "CONFIRMED on the count that matters: `grep -c '^test('` over docs-review-panel.test.ts returns exactly 64, matching the stated suite size. The plugin-sweep figure (682 pass / 4 skipped) is carried from the LLD's testFramework section and is not re-derivable by grep without running the suite; t8's acceptance check requires the count to be STATED after a real run rather than restated from this plan, which is the correct handling for a number only execution can produce.",
-          "action": "none — verified sound. t8 must report the sweep count from an actual run, not copy 682 forward.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t6 — the backstop catch and the stampSlugs ordering",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "renderContent already wraps its structured-record placement in a try/catch backstop and performs it strictly after stampSlugs, so t6 extends an established pattern rather than inventing one.",
-          "evidence": "CONFIRMED verbatim in shipped code. docs-review-panel.ts:580 is `var stamped=stampSlugs(bodyEl,m.sections);` and :597 is `var fr={placed:'none'};try{fr=placeFunctionalRequirements(bodyEl,m.functionalDefinition,m.sections,!!r.degradation.degraded);}catch(e){}` — strictly after the stamp and wrapped in exactly the backstop catch the plan describes. The comment at :586-588 states the reason in the plan's own terms: 'AFTER stampSlugs is a correctness constraint, not a style one: the stamper pairs headings to anchors BY TITLE through a pointer that only advances (:117), so a tree mutated first could mis-pair every later' heading. So t6 extends a proven pattern rather than inventing one, and the ordering constraint is load-bearing for a documented reason.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t4 — DOCS_DIAGRAM_SOURCE as the fourth member",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly three exported DOCS_*_SOURCE webview source strings exist today, so DOCS_DIAGRAM_SOURCE is the FOURTH member of that family and the shell's single-injection-site count must survive its addition.",
-          "evidence": "CONFIRMED. Exactly three exported source strings exist — DOCS_BODY_RENDERER_SOURCE (:76), DOCS_SECTIONS_SOURCE (:111), DOCS_FR_SOURCE (:185) — so DOCS_DIAGRAM_SOURCE is genuinely the fourth member of a located family rather than an invented name. The single-injection-site premise also holds: `innerHTML` appears three times in the file and only :85 is an assignment (the guarded `marked.parse`), the other two being comments, with no outerHTML / insertAdjacentHTML / document.write anywhere. t4's requirement that the count stay at exactly one after a fourth string joins the script is therefore a real, currently-true invariant.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p6",
-          "ref": "t1 / c2 — the projected record set",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "ArtifactReviewView currently projects exactly FOUR structured body records and none of them is sequenceDefinition, so t1's change is a fifth additive field rather than an edit to an existing one.",
-          "evidence": "CONFIRMED. artifact-content.ts:203-204 types structuredRecords as `Partial<Pick<ArtifactReviewView, 'functionalDefinition' | 'erDefinition' | 'uxDefinition' | 'companions'>>` and :206-214 reads and conditionally spreads exactly those four, declared on the interface at :63-66. `sequenceDefinition` appears NOWHERE in the file, so t1 adds a fifth field rather than editing an existing one — which is what makes the change additive and the insrc-ide mirror safe without a coordinated release.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p7",
-          "ref": "t5 / t7 — the real records the visual checks must use",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The ledger holds exactly 2 bodies carrying an erDefinition (of 3 and 8 classes) and 3 carrying a sequenceDefinition, so t4/t5/t7's visual reads have real records available and t7's '3-class and 8-class' pair is exhaustive of the ER records that exist.",
-          "evidence": "CONFIRMED by an independent recount over every .insrc/artifacts/*.json body: exactly 2 bodies carry an erDefinition — HLD-e2c6705fd105d4ac with 3 classes and HLD-bfe98ff7f97178cf with 8 — and exactly 3 carry a sequenceDefinition (HLD-9b72686c, LLD-bfe98ff7f97178cf-s2, LLD-74bc0120-S001). So t7's '3-class and 8-class' pair is exhaustive of the ER records that exist, t4's 'densest record the ledger holds' is accurate at 8 classes, and t5 has a real sequence record to render. The 8 companion refs split {diagram-mermaid: 5, ux-mock: 3} with ZERO carrying ofSectionId, which is why t6's anchored-placement path is implemented but exercised only by a synthetic fixture — a limitation the plan states rather than hides.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p8",
-          "ref": "t6 — sc3 consumed as shipped",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "createSectionResolver is shipped at vscode-plugin/src/chat/docs-sections.ts:136-149, so t6 consumes section identity rather than minting it and docs-sections.ts can come out byte-identical.",
-          "evidence": "CONFIRMED. `export function createSectionResolver(index: SectionIndex): SectionResolver` is at docs-sections.ts:136 and the file is 149 lines, so the cited 136-149 span is exact and covers the whole function; deriveSectionIndex sits at :86 in the same module. Both halves of sc3 are shipped, so t6 reads section identity rather than minting it and the 'docs-sections.ts comes out BYTE-IDENTICAL' acceptance check is achievable rather than aspirational.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p9",
-          "ref": "t1 vs t8 — which artefact ships which change",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "t1 is the ONLY task in the plan that modifies a file under src/ (the daemon tree), which is what makes the daemon rebuild t1's alone and the extension rebuild t8's alone; every other task touches only vscode-plugin/.",
-          "evidence": "CONFIRMED by the task decomposition against the real tree. Only t1's targets live under src/ — artifact-content.ts (:63-66 and :203-215) — while every other task's targets are under vscode-plugin/: protocol.ts and docs-review-panel.ts openDoc (t2), the sc4 types (t3), DOCS_DIAGRAM_SOURCE and the factory (t4/t5), renderContent (t6), the test suite and evidence (t7), and the VSIX (t8). The split is real, which is what makes 'the daemon rebuild is t1's and the extension rebuild is t8's' a correct instruction rather than a guess. This matters operationally: the project ships daemon changes via a daemon update and plugin changes via a VSIX rebuild, and conflating them has previously made a correct change appear broken.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p10",
-          "ref": "t7 — the evidence-commit precedent",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S002 committed screenshot evidence under its own Story directory, establishing the headless-screenshot route and the committed-evidence convention that t7 follows for S003.",
-          "evidence": "CONFIRMED. docs/epics/build-vs-code-plugin-ui-integration-E20260929bfe98ff7/S002/evidence/ exists and holds committed PNGs including t7-state-absent.png, t7-state-in-section.png, t7-state-prepended.png and t4-degraded-path.png — so the headless-screenshot-then-read route and the per-state committed-evidence convention are both established precedent that t7 follows rather than invents. Incidentally corroborated in the same directory: S002's sequence-diagram.html is 3,370,719 bytes, which substantiates the plan summary's '3.3 MB generated companion' and the whole premise that the pane must render from the record instead of embedding that file.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-10-01T16:33:48.119Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-10-01T16:39:10.312Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a9b54f4c5841a91748b0356d5128ba183955cbfe6b4b7d7ca2a107058e2e6797",
+        "at": "2026-10-01T16:31:11.644Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T16:39:10.312Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-10-01T16:33:48.119Z",
+        "report": {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-bfe98ff7f97178cf-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

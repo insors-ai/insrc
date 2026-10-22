@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-16T07:23:22.126Z",
     "parentRef": {
       "slug": "write-project-file-references-relative-project"
+    },
+    "epicCreatedAt": "2026-10-16T07:20:38.220Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b0fe1d6c717214f55f593ba3b9ff381ba4f955e4c203007bceb00287fcf416b4",
+        "at": "2026-10-16T07:20:38.220Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T07:23:22.126Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

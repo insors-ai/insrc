@@ -24,71 +24,61 @@
     "hldBaseRunId": "wf-1790749192360-iyxm4i",
     "hldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "3.1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "BuildStepInputValidate (types.ts:59) currently has no standalone field, while BuildStepInputImplement (types.ts:56) carries standalone?: BuildStandaloneContext.",
-          "evidence": "Confirmed: types.ts:59 `export interface BuildStepInputValidate {` (no standalone field), :56 `readonly standalone?: BuildStandaloneContext | undefined;` on BuildStepInputImplement.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "2.2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "handleValidate resolves via resolveTaskRef at validate.ts:64 and the persist-on-verdict block (persistBuildRecord) is at validate.ts:102, reached only after resolution.",
-          "evidence": "Confirmed: validate.ts:64 `const resolved = resolveTaskRef(...)` and :102 `persistBuildRecord(...)`; collectBuildChangeLog is present in the persist block.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "implement.ts has handleStandaloneImplement resolving identity from a BuildStandaloneContext (the pattern S002 mirrors), with the identity guard around implement.ts:100-113.",
-          "evidence": "Confirmed: implement.ts:70 `function handleStandaloneImplement` + a `BuildStandaloneContext` interface — the standalone identity-resolution pattern S002 mirrors.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "persistBuildRecord is an upsert (mergeWithPrior) that preserves createdAt + approval stamps; collectBuildChangeLog yields the file-level change list; both are consumed unchanged.",
-          "evidence": "Confirmed: standalone-record.ts has `function persistBuildRecord` + `function mergeWithPrior` (the upsert) and collectBuildChangeLog exists — all consumed unchanged.",
-          "action": "Accept — semantic claim holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "4",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "sc1 (BUILD ledger record contract) is owned by s2 per the HLD, so this LLD implementing sc1 matches the HLD ownership.",
-          "evidence": "Confirmed: the sc1 'BUILD ledger record contract' exists in the approved HLD and its ownedByStory is s2 (authored + approved this session; the ownedByStory grep returned 0 only because the probe scans src/, not .insrc/artifacts/ where the HLD JSON lives). This LLD implementing sc1 matches the HLD ownership.",
-          "action": "Accept — cross-artifact ownership holds.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-30T06:43:24.703Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-30T06:44:25.932Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1a7465c39bcddcd481791fab78217fa83615e16e1031db87db9dabedd6ef8527",
+        "at": "2026-09-30T06:42:21.499Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T06:44:25.932Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-30T06:43:24.703Z",
+        "report": {
+          "entityId": "LLD-9b72686c1746af2b-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-9b72686c1746af2b-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

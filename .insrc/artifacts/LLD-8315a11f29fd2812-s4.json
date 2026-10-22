@@ -25,159 +25,63 @@
     "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers S004's section grouping, neighbour summaries and single-result acceptance criteria.",
-          "evidence": "DEF §6.4 requires coherent section chunks (ac1), summaries across chunk boundaries (ac2), and one result using today's verdict rules (ac3). The proposed material builder, neighbourSummary and merge/finish address these three requirements. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "HLD/LLD use one template reviewer session; other stages extract claims and verify each claim separately.",
-          "evidence": "runReview dispatches through `if (isDesignStage(opts.stage)) return runTemplateReview(...)`; otherwise it calls extractClaims, gatherEvidence and a serial verifyOrRecord loop. runTemplateReview sends the whole document and permits one correction after invalid output. HARD_REVIEW_DEADLINE_MS is 30 minutes. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review/template.ts, src/workflow/review/extract.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "buildBatchedVerifyPrompt is private to claims.ts, has the stated signature, and has only handleClaims as its caller.",
-          "evidence": "Repository search found its declaration and sole invocation in claims.ts. Its body accepts readonly Claim[] and Evidence[], builds an evidence map by claimId, and returns `{ system, user }` using buildVerifyPrompt and renderEvidence. [files: src/daemon/steps/review-step/phases/claims.ts, src/workflow/review/verify.ts]",
-          "action": "Move the helper and update the import as proposed.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A new parsed answer representation is needed to retain file sets and notApplicable reasons before merging.",
-          "evidence": "validateTemplateAnswer currently converts directly to Finding[]. It omits notApplicable items and embeds files into evidence using `[files: ...]`; Finding has no files field. Searches found no existing parseTemplateAnswer implementation. [files: src/workflow/review/template.ts, src/workflow/review/types.ts]",
-          "action": "Preserve the existing validation and finding conversion semantics in the new parser.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Using the heading-path slug as an atom ID is sufficient to identify every section independently.",
-          "evidence": "S004 specifies `id = the heading path slug`, without collision handling. HLD sc3 represents chunk membership as `atomIds: readonly string[]`, and sc1 references endpoints only through `from` and `to`. Two sibling sections with identical headings therefore receive the same identity, making membership and reference resolution ambiguous and potentially reviewing the wrong section. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
-          "action": "Assign deterministic occurrence-qualified atom IDs, separate them from anchor slugs, and test repeated headings and slug collisions.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Prefixing a raw claim ID with its chunk makes every raw claim ID job-unique.",
-          "evidence": "normalizeClaims preserves every supplied nonempty ID: `const id = typeof c.id === 'string' && c.id.length > 0 ? c.id : ...`; it performs no uniqueness check. Two distinct claims with local ID c1 in the same chunk both become `c<chunk>-c1`. S004 explicitly promises distinct raw IDs for this case, but its formula produces colliding source identifiers and ambiguous provenance. [files: src/workflow/review/extract.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md]",
-          "action": "Include the claim's occurrence index in rawId, retaining the model's local ID separately. Test duplicate IDs within one chunk as well as across chunks.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S001 already provides the multi-answer snapshot commit behavior required by the divided extraction stage.",
-          "evidence": "S001 §2.17 says claims are saved 'the moment the extract stage's answer is applied' and written once. S004 requires accumulating multiple answers and committing only after the last. No review-pipeline implementation was found to establish how stage completion, aggregation and snapshot writes interact. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md]",
-          "action": "Make S001's stage-completion contract explicitly cover multiple extraction answers and the merged claim/evidence output, then verify resume between answers.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Returning multiple relation prompts and using semantic validation and neighbour summaries are supported S001 contract extensions.",
-          "evidence": "Although HLD sc2 sketches a single relation prompt, S001 §2.22 explicitly refines it to `readonly ChunkPrompt[]`. Sections 2.19 and 2.21 also define optional AdapterStage.validate and ReviewAdapter.neighbourSummary. S004 consumes these owner-defined extensions. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A premise that fails verification twice is retained as MED not judged and blocks under the default policy.",
-          "evidence": "verifyOrRecord makes two attempts, propagates AbortError, and then returns severity MED with evidence beginning `Not judged`. DEFAULT_BLOCK_ON is ['HIGH', 'MED']. verifyClaim passes VERIFY_CALL_TIMEOUT_MS = 180000. Existing tests assert that other findings survive and the resulting verdict blocks. [files: src/workflow/review/review.ts, src/workflow/review/verify.ts, src/workflow/review/verdict.ts, src/workflow/review/__tests__/review.test.ts]",
-          "action": "Preserve these behaviors through the pipeline failure policy.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Invalid checklist answers are detectable with existing validation and fail the review after one corrective retry.",
-          "evidence": "validateTemplateAnswer rejects missing, repeated or unknown items, excess premises, and does-not-hold premises without files. runTemplateReview adds correction text, retries once, and throws `No review was recorded` after a second invalid answer. [files: src/workflow/review/template.ts, src/workflow/review/template-review.ts]",
-          "action": "Keep relation-answer validation distinct from full-checklist validation when relation calls return only selected items.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every upstream S004 acceptance criterion maps to a proposed test.",
-          "evidence": "Compared DEF §6.4 with the supplied acceptance mapping: ac1 maps to whole-section splitting and coherent chunk integration tests; ac2 to reference-summary tests; ac3 to divided template/premise report and verdict tests. Existing template and premise tests provide concrete validation, severity and retry expectations. This verifies test-plan coverage, not execution of the proposed tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md, src/workflow/review/__tests__/template.test.ts, src/workflow/review/__tests__/review.test.ts]",
-          "action": "Add the atom-ID and raw-claim-ID collision cases identified above.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 2,
-        "med": 0,
-        "low": 9,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-20T07:30:14.247Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-20T07:41:57.418Z",
-    "reviewOverride": {
-      "reason": "Cycle-2 round-3 HIGHs fixed without re-review, both mechanical id-uniqueness fixes: section atom ids are occurrence-based (sec<n>) with anchor slugs kept separately; raw claim ids use the claim's position in its chunk's answer (r<chunk>-<k>) with the model's localId kept apart. User approved the override in chat 2026-10-20.",
-      "at": "2026-10-20T07:41:57.414Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "07c4131a42dc79a31ee198c178d08fbf4cdbfd42eb4bc84a8365dffbbd72b458",
+        "at": "2026-10-19T11:00:15.767Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T07:41:57.418Z",
+        "override": {
+          "reason": "Cycle-2 round-3 HIGHs fixed without re-review, both mechanical id-uniqueness fixes: section atom ids are occurrence-based (sec<n>) with anchor slugs kept separately; raw claim ids use the claim's position in its chunk's answer (r<chunk>-<k>) with the model's localId kept apart. User approved the override in chat 2026-10-20."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 2,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-10-20T07:30:14.247Z",
+        "report": {
+          "entityId": "LLD-8315a11f29fd2812-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-8315a11f29fd2812-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

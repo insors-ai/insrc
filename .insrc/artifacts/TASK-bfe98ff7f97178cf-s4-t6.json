@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eb76078e-77bb-4557-894b-41baf96bb82e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.987Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Mount the experience slot beside the diagram slot — the one call that changes what a reviewer sees",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7e45081e44c6fdf93bce0376448f9c26331cc408a8053d4d20b550bf9e1f56cd",
+        "at": "2026-10-22T12:44:32.987Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.988Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Mount the experience slot beside the diagram slot — the one call that changes what a reviewer sees",
+    "summary": "Call uxBuildMockSlot from renderContent and mount the slot immediately AFTER the diagram slot, so the two sit as labelled peers in one companions region. Diagram first because it answers 'what is this made of' and the mock answers 'what will it feel like'. After stampSlugs for the same pointer-advance reason s3's mount obeys, inside the same backstop catch, REUSING s3's dgMountSlot unchanged — including its corrected id-walk anchor lookup, since querySelector('#'+slug) THROWS on a digit-leading slug and insrc numbers its headings (`## 2. Contract details` -> `2-contract-details`). Deliberately last and deliberately one call: reverting it restores the S003 surface exactly.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "THE FOUR-COMBINATION GATE as a table: ref absent + record absent -> 'absent'; ref present + record present -> 'rendered'; ref present + record absent -> 'unshowable'; ref absent + record present -> 'rendered'",
+      "THE FOURTH ROW CARRIES ITS REASONING (critique): the RECORD gates content and the REF gates only label and link-out, so ref-absent + record-present renders with the DEFAULT label and asserts NO link-out. That row looks like a bug and is a convention, consistent with S003 — stating the consequence is what stops a later Story 'fixing' it back into one",
+      "ac3's dominant path proved as ZERO DOM ACTIVITY: no ref and no record -> NO createElement call from the experience path and no slot host content. the overwhelming majority of ledger bodies take this path (re-derive the exact ratio at build time — the denominator grows with every artifact written)",
+      "`body: []` and a malformed record are treated as ABSENT, matching the undefined-or-empty convention",
+      "THE DUAL-SLOT ARRANGEMENT: a document carrying both refs renders TWO slots, diagram FIRST and experience SECOND, each labelled from its OWN ref via sc4's companionVisualKind — ac2's whole substance",
+      "Adding the experience slot leaves the DIAGRAM slot byte-identical to what S003 renders for the same document — the symmetric proof of S003's sha256-identical dual-ref result",
+      "A ux-mock ref with no uxDefinition routes to 'unshowable' with a reason NAMING what was referenced, and the link-out is offered",
+      "IDEMPOTENCE: two identical messages leave exactly ONE experience slot; a third carrying neither leaves none — against a stub whose innerHTML/textContent assignment REPLACES children",
+      "A forced throw in the experience slot build leaves the body, chooser, notice, open questions, BOTH approval controls AND the diagram slot intact — six surfaces",
+      "An ofSectionId that resolves anchors beside that heading; a STALE one falls back to the default position rather than dropping the visual; a DIGIT-LEADING slug resolves without throwing, against a stub that throws exactly as Chrome does",
+      "docs-sections.ts comes out BYTE-IDENTICAL — this Story mints no section identity",
+      "MUTATIONS RUN AND REVERTED: delete the absent gate; dispatch on the ref's kind instead of the record; place the experience slot BEFORE the diagram slot; drop linkOut from 'unshowable' — each turning its named test RED"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "THE FOUR-COMBINATION GATE driven through the shipped bootstrap, as a table of four rows"
+      },
+      {
+        "level": "integration",
+        "name": "ref absent + record present renders with the DEFAULT label and NO link-out — the record gates content, the ref gates label and link"
+      },
+      {
+        "level": "integration",
+        "name": "ac3's dominant path: no ref and no record produces ZERO createElement calls from the experience path and no slot host content"
+      },
+      {
+        "level": "integration",
+        "name": "THE DUAL-SLOT ARRANGEMENT: both refs render TWO slots, diagram FIRST and experience SECOND, each labelled from its own ref"
+      },
+      {
+        "level": "integration",
+        "name": "adding the experience slot leaves the DIAGRAM slot byte-identical to what S003 renders for the same document"
+      },
+      {
+        "level": "integration",
+        "name": "the rendered surface for a document with neither ref nor record is identical to what S003 ships"
+      },
+      {
+        "level": "integration",
+        "name": "IDEMPOTENCE: two identical messages leave exactly ONE experience slot; a third carrying neither leaves none"
+      },
+      {
+        "level": "integration",
+        "name": "a forced throw in the slot build leaves body, chooser, notice, open questions, BOTH controls and the diagram slot intact — six surfaces"
+      },
+      {
+        "level": "integration",
+        "name": "a resolvable ofSectionId anchors beside that heading; a stale one falls back to the default position rather than dropping the visual"
+      },
+      {
+        "level": "integration",
+        "name": "a DIGIT-LEADING slug resolves without throwing, against a stub that throws exactly as Chrome's querySelector does"
+      },
+      {
+        "level": "unit",
+        "name": "docs-sections.ts comes out BYTE-IDENTICAL"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: deleting the absent gate turns the zero-DOM-activity test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: dispatching on the ref's kind instead of the record present turns the unshowable test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: placing the experience slot before the diagram slot turns the ordering test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: dropping linkOut from 'unshowable' turns its named test red"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

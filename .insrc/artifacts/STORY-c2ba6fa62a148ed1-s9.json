@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-1f69f48f-5b4e-423f-9ca3-b38c8460bb6b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.077Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s9",
+    "envelope": {
+      "description": "The index reads Rust, C#, SQL, C and C++",
+      "parent": {
+        "entityId": "EPIC-c2ba6fa62a148ed1",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "103a4c633c9b41a32937c681602687c98131810a1b6b127ad41001e704b81b32",
+        "at": "2026-10-22T12:43:07.077Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

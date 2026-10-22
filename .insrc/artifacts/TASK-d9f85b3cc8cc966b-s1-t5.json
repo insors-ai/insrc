@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-580bd25d-0c87-4a47-8354-c44aa49f259a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.532Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ER page builder",
+      "parent": {
+        "entityId": "STORY-d9f85b3cc8cc966b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d9f85b3cc8cc966b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d9f85b3cc8cc966b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d9f85b3cc8cc966b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5144b578e1213006ad6086c681de41f654e3eff4374a8a190c8030b7cdf9a809",
+        "at": "2026-10-22T12:44:44.536Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.537Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ER page builder",
+    "summary": "In er.ts add a pure builder from ErDefinition to CompanionPageContent: Mermaid erDiagram with typed scalar columns, PK markers from identifier slots, relationship lines labelled with the slot name and cardinality (||--o{ multivalued, ||--|| required single, ||--o| optional single, self-loops), sanitised identifiers/labels; an entities table (entity, description, key, relationships) and one columns table per entity (column, type, required, multi-valued, PK/FK, description).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Source starts with erDiagram, never classDiagram.",
+      "Cardinality, self-loop and PK rendering match the LLD edge cases.",
+      "Missing descriptions become null cells; an attribute-less entity gets a 'no columns' row.",
+      "Entity/slot names with quotes, angle brackets, colons or non-ASCII produce sanitised erDiagram source and escaped table cells."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "er page builder: erDiagram, PK, cardinality, self-loop (Delivery read-model fixture)"
+      },
+      {
+        "level": "unit",
+        "name": "er page builder: entities + columns tables, null descriptions, no-columns row"
+      },
+      {
+        "level": "unit",
+        "name": "er page builder: hostile characters sanitised"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

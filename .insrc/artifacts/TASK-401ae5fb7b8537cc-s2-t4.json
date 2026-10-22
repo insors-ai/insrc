@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-638d148b-c9dd-4ed8-b969-f4fbc704969e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:29.018Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Generate the 30 per-role manifest keys in package.json from the taxonomy",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "32f9c2cbba2707613aeba109d183cc2fe1a7fa4eb7b751526b2e36e80f6a5e43",
+        "at": "2026-10-22T12:43:29.018Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:29.018Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Generate the 30 per-role manifest keys in package.json from the taxonomy",
+    "summary": "Add a machine-scoped native ENUM setting per role to vscode-plugin/package.json contributes.configuration: id `insrc.models.tasks.` + roleId, type 'string' + enum ['cheap','mid','core'], default = role.defaultTier, markdownDescription (role id + criticality), scope:'machine' — GENERATED from reasoningRoleTaxonomy() (as S001 generated its 31 keys), in a new 'Models — per-role tiers' section alongside S001's sections. The existing 31 global keys + 7 commands stay intact.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "package.json declares exactly the 30 per-role `insrc.models.tasks.<roleId>` keys, each type 'string' + enum cheap/mid/core + default = the role's defaultTier + scope:'machine'",
+      "the 31 S001 global keys and the 7 commands remain unchanged; package.json is valid JSON"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "manifest-taxonomy contract: declared insrc.models.tasks.<roleId> keys exactly cover the 30 roles with enum cheap/mid/core + default=defaultTier + scope:'machine'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c4f9e416-4f31-4ade-b1fd-925c0a67433a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.863Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s1",
+    "envelope": {
+      "description": "See which artifacts are waiting for approval, from inside the IDE",
+      "parent": {
+        "entityId": "EPIC-238917216d8fd532",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba43baa55a6660ec766365ba4a172376be912c8a7dac5ee30aced40af903343c",
+        "at": "2026-10-22T12:43:06.863Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

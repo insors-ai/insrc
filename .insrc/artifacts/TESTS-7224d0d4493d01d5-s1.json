@@ -7,7 +7,26 @@
     "updatedAt": "2026-10-10T14:36:42.231Z",
     "standalone": true,
     "epicSlug": "defect-against-epic-e1-2ff0dfda-delivery",
-    "epicCreatedAt": "2026-10-09T16:27:38.957Z"
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "1dd3e4c4c08e1da9ae7f35204bc97ad889f9af1f00bbe8b9919be200e915cc82",
+        "at": "2026-10-10T14:25:14.014Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

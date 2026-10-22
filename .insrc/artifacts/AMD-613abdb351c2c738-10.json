@@ -1,33 +1,66 @@
 {
-  "id": "AMD-613abdb351c2c738-10",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "retryNow",
-      "signature": "retryNow(seq: number): boolean",
-      "purpose": "makes a retrying message due at once without changing its attempt count; false when the row is not retrying"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T19:08:37.063Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "28f76358d8eaecf6361deef40f2b6f8ce0c73f5d4ef66f4856383f8f5e6e65bc",
+        "at": "2026-10-14T19:08:37.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:10:17.104Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "S004 added the retry-now action behind the outbox's button; the store change is one guarded UPDATE. Built and approved in S004.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-10",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "retryNow",
+        "signature": "retryNow(seq: number): boolean",
+        "purpose": "makes a retrying message due at once without changing its attempt count; false when the row is not retrying"
+      }
+    },
+    "rationale": "S004 added the retry-now action behind the outbox's button; the store change is one guarded UPDATE. Built and approved in S004.",
+    "proposedBy": {
+      "workflow": "epic-end-batch",
+      "runId": "manual-2026-10-14T19:08:37.063Z",
+      "storyId": "s4",
+      "stepId": "batch"
+    },
+    "proposedAt": "2026-10-14T19:08:37.063Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "epic-end-batch",
-    "runId": "manual-2026-10-14T19:08:37.063Z",
-    "storyId": "s4",
-    "stepId": "batch"
-  },
-  "proposedAt": "2026-10-14T19:08:37.063Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T19:10:17.104Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

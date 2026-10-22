@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1f551977-164e-4833-a9d2-8e85a587b119",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.417Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Controller jobs and emit_calls frames within the measured envelope",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7859f87d9000d61d42bf4a74dab2c1b4a118877d38fcfe62b160e90e5d25af56",
+        "at": "2026-10-22T12:44:15.417Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.418Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Controller jobs and emit_calls frames within the measured envelope",
+    "summary": "The controller path keeps one ReviewJob per dimension in the step state; when the review does not fit today's single frame it emits next 'emit_calls' frames (calls with callId, dimension, stage, prompt, schema; no grounding or legacy prompts), planned with a per-call budget of controllerFrameChars minus the measured frame envelope and packed while the serialised frame fits. A review that fits one frame is exactly as today.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Every serialised emit_calls frame fits controllerFrameChars, including a call near the frame budget.",
+      "A review that fits one frame produces today's emit_judgements frame unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a review that fits one frame is exactly as today, out-of-scope findings disclosed as today'"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/handler.test.ts (existing, still passes)"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'every serialised emit_calls frame fits controllerFrameChars, with no grounding or legacy prompts, including a call near the frame budget'"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'with a test record larger than the frame budget, every emit_calls frame fits and the record written matches the daemon path'"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a symbol and clause too large together, and a test file too large alone, complete frame by frame with every serialised frame within the budget'"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

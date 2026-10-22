@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3751fbee-72db-40c1-b4ec-a0db29a404e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.669Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add ArtifactStore.update and childrenOfStrict",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "886dd27335f382e2e7d89c01c75544b353c12b595bb86c4a8de9110756dbb22b",
+        "at": "2026-10-22T12:43:20.669Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.669Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ArtifactStore.update and childrenOfStrict",
+    "summary": "Add update(id, by, mutate, options) whose mutate may be async and which holds the per-artifact queue across the read, the mutate and the write, recovering any pending journal operation under the queue before it reads the head or the history; add childrenOfStrict returning the readable children and the unreadable heads. Binding requirements 2 and 6.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "two competing lifecycle-only operations through update both land in order and neither is lost, an async mutate is awaited under the queue, and a mutate that throws writes nothing",
+      "a head replace that fails after the log append is finished by the next update before it reads, and the retry is logged once",
+      "childrenOfStrict returns an unreadable child that childrenOf skips"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/store-update.test.ts: update runs read, mutate and write inside the queue, awaits an async mutate, keeps two competing operations in order and writes nothing when mutate throws"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/store-update.test.ts: a head replace that failed after the log append is finished before update reads, and the retry is logged once"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts: childrenOfStrict returns an unreadable child that childrenOf skips"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f845643f-3de2-4a78-85ac-d8d686d8d56e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.382Z",
+    "epicCreatedAt": "2026-08-04T16:50:43.835Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e71f3a6001e773",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Persist the plan-driven BUILD record from the validate phase",
+      "parent": {
+        "entityId": "STORY-d3e71f3a6001e773-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d3e71f3a6001e773-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d3e71f3a6001e773-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "53ce6fd3ed3182fd2937f9d41a1e74dbe07d795b10eb09a16ea77fef7a914644",
+        "at": "2026-10-22T12:44:42.385Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.386Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist the plan-driven BUILD record from the validate phase",
+    "summary": "In src/mcp/build-step/phases/validate.ts handleValidate, after computing `passed` and before `return { next:'done', verdict, passed }` (validate.ts:85), for a plan-driven target whose resolved.ref carries epicHash + storyId, call persistBuildRecord to upsert BUILD-<epicHash>-<storyId>.json (standalone:false) recording { id: resolved.ref.taskId, passed }. Gate: skip when epicHash/storyId is absent (no BUILD-undefined path). Wrap the persist in try/catch so a writeAtomic failure is logged and the verdict is returned unchanged (persistence never alters/blocks the verdict). Use the real return type (BuildStepDone | BuildStepError).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "handleValidate upserts a standalone:false BUILD record recording the validated task + passed for a plan-driven target, right before returning the (unchanged) verdict",
+      "persistence is SKIPPED when the resolved ref lacks epicHash/storyId (no BUILD-undefined write) and a persist throw is caught so the verdict is still returned",
+      "the returned { next:'done', verdict, passed } shape is unchanged; tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "handleValidate on a plan-driven target upserts BUILD-<epicHash>-<storyId>.json (standalone:false) recording the validated task + passed, after computing the verdict"
+      },
+      {
+        "level": "integration",
+        "name": "a target with no resolvable epicHash/storyId SKIPS persistence (no BUILD-undefined path) and still returns the verdict"
+      },
+      {
+        "level": "integration",
+        "name": "a persistence failure (writeAtomic throw) is caught and the verdict is returned unchanged (persistence never fails validate)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

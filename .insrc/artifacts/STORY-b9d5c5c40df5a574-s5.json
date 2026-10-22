@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-51ce7ee4-8ec6-4369-b280-e508687f1dcb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.049Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The form of an answer fits the question, for every kind of analyzer",
+      "parent": {
+        "entityId": "EPIC-b9d5c5c40df5a574",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "5d9ce7390b22be8b41c7942f751126a7c22958ef907f7b58197f4b2cf698804c",
+        "at": "2026-10-22T12:43:07.049Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5238df91-34d9-4d66-bd62-1325eb26aa82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.566Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update existing Services test fakes to add the debug member",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc2a134e638f040618fb68369c751c7b2ab5655469c66f6403068e3379a3af5f",
+        "at": "2026-10-22T12:44:57.566Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.566Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update existing Services test fakes to add the debug member",
+    "summary": "Update every in-repo test that constructs a Services literal (principally fakeServices() in src/cli/__tests__/tui.test.ts) to add a conformant `debug: { sections: [...] }` member so the suites compile against the widened Services interface. This is the additive-break the LLD backwardCompat calls out (in-repo test doubles only, compile-time caught). Build note (s3 critique): apply together-with or before t4 so the tui suite compiles at every committed step; dependsOn stays [t2] (the true compile dependency).",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "fakeServices() in tui.test.ts includes a debug facade conforming to DebugService",
+      "Every other in-repo Services literal is updated so `npx tsx --test 'src/cli/**/*.test.ts'` compiles",
+      "No existing assertion behaviour changes beyond the additive debug member"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "tui.test.ts compiles + all existing pane render assertions still pass with the fake carrying the debug facade (regression guard)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1785872114948-wzvfq2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-04T19:35:14.948Z",
+    "model": "client",
+    "elapsedMs": 4,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "epicSlug": "make-code-review-work-any-subset",
+    "standalone": true,
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "93d93ee7a884984b00f9a1d71e69afd68cf55740a1b42c10be261a635ff95d05",
+        "at": "2026-08-04T19:35:14.948Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "subject": {
+      "changedFiles": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d717f729-91e9-4878-a387-4efe5acbab2a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.518Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Flip the S002 Phase-A canary + add strip/inject/real-asset tests",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "09ed444f8e1fdd3cf6233aedca9bb9ac0be952cd4552da6e5b3b412c0a7dee13",
+        "at": "2026-10-22T12:43:27.518Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.518Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Flip the S002 Phase-A canary + add strip/inject/real-asset tests",
+    "summary": "Update src/mcp/__tests__/schema-registry.test.ts: flip the Phase-A canary ('readWorkflowGuide null for every key') to assert each expected WorkflowKey (the EXACT WorkflowKey set) now RESOLVES to non-empty guidance over the REAL steering asset, and that stripGuideSections(realSteering) contains no guide-start marker + is strictly shorter than the whole file + mentions every registered insrc_* tool incl. insrc_build_step. Add src/daemon/__tests__/guide-strip.test.ts: stripGuideSections unit tests over a SELF-CONTAINED fixture (not the real steering file) — remove complete sections/skeleton retained/malformed intact/blank-run collapse/idempotent/empty-safe; plus an inject-path test (refreshSteeringAcrossRepos default readBlock stamps a guide-marker-free skeleton via the injected seams, while readSteeringBlock stays whole; an injected deps.readBlock is honoured verbatim).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The S002 Phase-A canary is replaced by assertions that every expected WorkflowKey (the exact set, catching a t2 typo) resolves + the stripped skeleton excludes them (ac1, ac2).",
+      "The stripGuideSections unit tests use a self-contained fixture so t1's helper is provable independently of t2's authored content; new tests also cover the inject-path skeleton-only behaviour + the injected-readBlock-honoured edge (ac1, ac4).",
+      "Full daemon + MCP suites green; tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts: the flipped canary — stripGuideSections(REAL steering) has no guide-start marker and is strictly shorter than the whole file (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "guide-strip.test.ts (inject path): refreshSteeringAcrossRepos with the PRODUCTION default readBlock stamps a guide-marker-free skeleton into a fixture repo file via the injected seams while readSteeringBlock stays whole (guide.get unaffected); an injected deps.readBlock is honoured verbatim; a re-run is idempotent (unchanged)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

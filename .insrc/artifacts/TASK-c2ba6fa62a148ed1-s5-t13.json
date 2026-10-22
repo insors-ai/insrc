@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-209b5e49-9dd1-472b-990a-ddeb3dd2bfa9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.740Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Cross-repository results leave out a repository under index; search.query skips it",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "64d7059bbd3464dfd49e260a4db076c0b424fb398710c51347a5d4de79b29cd3",
+        "at": "2026-10-22T12:44:36.741Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.741Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Cross-repository results leave out a repository under index; search.query skips it",
+    "summary": "src/daemon/index.ts: results that follow the graph or a closure across repositories (search.callers, search.callees, search.callers_nhop, entity.closure, entity.unreachable, search.closure through resolveClosure, repo.depends_on and repo.search_cross_repo through the DEPENDS_ON closure) leave out the entities or repositories under index; search.query leaves repositories under index out of the set it searches and answers from the others, without refusing.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "search.callers for an entity in a ready repository whose callers include entities of a repository being indexed returns the callers from the ready repository only.",
+      "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out.",
+      "search.query while one repository is being indexed returns rows from the other repositories only."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "search.callers across repositories leaves out the entities of a repository under index"
+      },
+      {
+        "level": "integration",
+        "name": "search.query while one repository is being indexed returns rows from the other repositories only"
+      },
+      {
+        "level": "integration",
+        "name": "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

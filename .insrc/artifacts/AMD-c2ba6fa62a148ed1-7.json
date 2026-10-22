@@ -1,14 +1,57 @@
 {
-  "id": "AMD-c2ba6fa62a148ed1-7",
-  "epicHash": "c2ba6fa62a148ed1",
-  "epicSlug": "complete-consistent-richer-code-index-one",
-  "hldBaseRunId": "wf-1791697214822-7bombm",
-  "amendment": {
-    "type": "storyBoundary.addStory",
-    "storyId": "s12",
-    "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "createdAt": "2026-10-17T09:16:43.957Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "00f1436c3358148e733995669f3b750ca3962b4c544d759606440a15cc0cd482",
+        "at": "2026-10-17T09:16:43.957Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T09:21:44.661Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story for complete call extraction and resolution in every parser, building on DEF-c2ba6fa6, Story s1's pending-row classes and code in src/indexer/parser/*.ts and src/indexer/cross-file-resolver.ts.",
+  "body": {
+    "id": "AMD-c2ba6fa62a148ed1-7",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s12",
+      "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+    },
+    "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story for complete call extraction and resolution in every parser, building on DEF-c2ba6fa6, Story s1's pending-row classes and code in src/indexer/parser/*.ts and src/indexer/cross-file-resolver.ts.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1792228584569-jqfk3l",
+      "storyId": "s12",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-17T09:16:43.957Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
@@ -34,15 +77,5 @@
       "ref": "src/indexer/cross-file-resolver.ts:499",
       "quotedText": "if (importedFiles.size === 0) return UNRESOLVED;"
     }
-  ],
-  "proposedBy": {
-    "workflow": "define",
-    "runId": "wf-1792228584569-jqfk3l",
-    "storyId": "s12",
-    "stepId": "scope.assess"
-  },
-  "proposedAt": "2026-10-17T09:16:43.957Z",
-  "status": "approved",
-  "approvedAt": "2026-10-17T09:21:44.661Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

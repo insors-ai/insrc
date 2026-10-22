@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-89234dce-d5c1-47e8-847e-2ecb2fb95a51",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.542Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pending-row deletes, meta updates and the by-target read keep the counts true",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "03c14cda4bae6b3decd99b21214cceb14ee4cac431688fafde9c1ac8c34d7404",
+        "at": "2026-10-22T12:44:34.543Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.543Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pending-row deletes, meta updates and the by-target read keep the counts true",
+    "summary": "deleteUnresolvedRowInTxn (src/db/relations.ts:463) removes the row's unresolved_by_target entry and decrements its class and reason counts in the same transaction, which covers deleteUnresolvedForFile (:312), deleteUnresolvedForRepoFile (:344) and deleteUnresolvedForRepo (:365) and their callers; updateUnresolvedMeta / updateUnresolvedMetaBatch merge meta (awaitsId, file, repo, specifier, exportedAs kept), move the counts on a class change and clear candidates on a class other than 'ambiguous'; listUnresolvedRelations gains opts.awaiting, reading rows awaiting the given ids from every repository through unresolved_by_target. Anchors: updateUnresolvedMeta (src/db/relations.ts:407) and updateUnresolvedMetaBatch (:442) replace meta today (`const next = { ...row, meta, attemptedAt }`, :417 and :453); deleteUnresolvedRowInTxn is at :463; listUnresolvedRelations (:277) scans the pending table without a file scope (:300-307). Depends on t3 for the by-target index writes it must undo. deleteUnresolvedRowInTxn has five callers: the three delete functions (:333, :360, :380) and the two promotions (promoteToResolved :403, promoteResolvedBatch :437). The helper decrements the removed row's class and reason counts; the promotions rely on it for that and add only the counts of what they write (an edge adds none; a re-keyed awaiting row adds its own), so no removal is counted twice.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A kept-awaiting row is removed by deleteUnresolvedForFile(<absolute path>) and its count decremented; each of the three delete functions decrements what it removes",
+      "A reclass keeps awaitsId and specifier and clears stale candidates",
+      "listUnresolvedRelations with opts.awaiting returns two rows awaiting one id, one of them held by another repository, without scanning the pending table",
+      "A promotion that writes the edge leaves the class counts lowered by exactly one; one that re-keys an awaiting row leaves the awaiting count unchanged (no double decrement)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/relations-pending-upkeep.test.ts: the three delete functions decrement counts and remove by-target entries; meta merge keeps awaitsId and clears stale candidates; listUnresolvedRelations opts.awaiting across repositories"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

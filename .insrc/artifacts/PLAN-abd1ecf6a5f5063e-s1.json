@@ -64,89 +64,57 @@
     "storyId": "s1",
     "lldRunId": "wf-1785591199795-7gd4h8",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl-state",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "WorkflowStepStatePayload is defined in src/mcp/workflow-step/state.ts — the existing payload t5 threads BrainstormElicitState into without changing saveState/loadState signatures.",
-          "evidence": "src/mcp/workflow-step/state.ts:30 `export interface WorkflowStepStatePayload` — the existing payload t5 threads BrainstormElicitState into (imported widely incl. phases/plan.ts, state-store test). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-start",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/phases/start.ts is the workflow-step start phase that validates/handles the workflow id (where 'brainstorm' must be recognized).",
-          "evidence": "src/mcp/workflow-step/phases/start.ts:1 found=True (imported by daemon/workflow-rpc.ts augmentStandaloneParams/epicKeyFor) — the start phase where workflow:'brainstorm' must be recognized. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-classify",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/triage/classify.ts holds the triage route table (which t4 asserts is NOT modified by this story, preserving ac5).",
-          "evidence": "src/workflow/triage/classify.ts:1 found=True; exports routeForSizeClass consumed by src/mcp/triage-step/phases/classify.ts — the triage route table t4 correctly asserts is NOT modified by this story (ac5). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-guard",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "design-story/index.ts:541-552 is registerDesignStoryRunners with the module-level `registered` idempotent guard that t3's registerBrainstormRunners mirrors.",
-          "evidence": "src/workflow/runners/design-story/index.ts:541 registerDesignStoryRunners + the `if (registered) return` guard (shared by define/design-epic/plan/stub/tracker) — the idempotent template t3 mirrors. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-wfunion",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A workflow-id type/union enumerating the existing workflows (define/design.epic/design.story/plan/build) exists, that 'brainstorm' is added to.",
-          "evidence": "WORKFLOW_NAMES + `type WorkflowName` in src/daemon/workflow-rpc.ts:43/364; the 'design.story'/'design.epic'/'plan'/'build' literals recur across src — a real workflow-name union that 'brainstorm' is added to. Confirmed (build may touch >1 add-site; the seam is correctly identified).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly 5 tasks: t1, t2, t3, t4, t5.",
-          "evidence": "The plan enumerates exactly five tasks t1–t5 (task table + per-task sections); count re-derives to 5. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl-dag",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency DAG is acyclic and dependencies precede dependents: t1(—), t2(—), t5(—); t3→t1,t2; t4→t3.",
-          "evidence": "DAG: t1(—), t2(—), t5(—); t3→t1,t2; t4→t3. Acyclic; every dependency precedes its dependent (context type + schemas + state before the registration scaffold, which precedes boot-wiring). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-08-01T14:59:11.097Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-01T14:59:44.260Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6ba5cb86f52073b7a4d2a0a3c7c5f35f23a23d98ad1f53ee50cbf2fc5b89125d",
+        "at": "2026-08-01T14:24:49.251Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T14:59:44.260Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-08-01T14:59:11.097Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

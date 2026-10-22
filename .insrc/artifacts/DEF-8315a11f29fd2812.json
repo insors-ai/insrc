@@ -20,10 +20,37 @@
     "epicHash": "8315a11f29fd2812",
     "epicSlug": "chunked-review-pipeline-every-review",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-19T05:15:13.124Z",
-    "reviewOverride": {
-      "reason": "Approved by Subho Ghosh in the review pane, 2026-10-19 (option A). Daemon review cycle: round 2 blocked with 0 HIGH / 46 MED / 3 LOW; its real findings (3-chars/token stated as a guarantee, c2 quote truncated so k4/k9 sources were unseen, gather stage unbounded, cross-chunk judging vs no new criteria, missing invariant for today's behaviour, pre/post wording uncited) were fixed in the DEF; the other 43 MEDs are 'unverifiable' because the daemon's probe greps stop at 50 matches. Rounds 1 and 3 never completed: codex stalled on the 4th premise-verify call and was killed at the 10-minute call timeout, which discards the whole review (to be filed as an ISSUE).",
-      "at": "2026-10-19T05:15:13.124Z"
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d50541d317cd1e6f9076ac2e75b9b701e031457d162d6ae1e9954f2dad93d98b",
+        "at": "2026-10-19T04:32:14.895Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T05:15:13.124Z",
+        "override": {
+          "reason": "Approved by Subho Ghosh in the review pane, 2026-10-19 (option A). Daemon review cycle: round 2 blocked with 0 HIGH / 46 MED / 3 LOW; its real findings (3-chars/token stated as a guarantee, c2 quote truncated so k4/k9 sources were unseen, gather stage unbounded, cross-chunk judging vs no new criteria, missing invariant for today's behaviour, pre/post wording uncited) were fixed in the DEF; the other 43 MEDs are 'unverifiable' because the daemon's probe greps stop at 50 matches. Rounds 1 and 3 never completed: codex stalled on the 4th premise-verify call and was killed at the 10-minute call timeout, which discards the whole review (to be filed as an ISSUE)."
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

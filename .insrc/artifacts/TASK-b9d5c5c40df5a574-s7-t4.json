@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-73c67fdc-1232-4c2e-9b05-8600f79841c5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.470Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The infra and data tasks take their scope from the scope function",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f2fcfd1b2d5d51e1d7b526042a2b276ecc5617c4111054de1941bc5b52a36c0d",
+        "at": "2026-10-22T12:44:25.470Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.470Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The infra and data tasks take their scope from the scope function",
+    "summary": "Move the six infra runtimes and the three data runtimes that resolve a repo path, and the connection-listing task, to resolveTaskScope. A data task opens its pool at the scope's own path for a repo, a manifest directory and a workspace, as today, and at the connection's repo for a connection scope, working on that connection only. Remove the infra copy of resolveRepoPath and resolveRepoPathFromIntent, and replace their existing tests.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "An infra task accepts repo, manifest-dir and workspace and refuses any other kind with 'scope-ref-kind-target-mismatch'",
+      "A data task accepts connection, repo, manifest-dir and workspace; with a connection scope it works on that connection only",
+      "A data task with a repo scope on a directory that is not a registered repo, and one with a manifest-directory scope inside a registered repo, open the pool at that directory, as before the change",
+      "The optional scopeRefValue parameter of the connection-listing task still takes precedence",
+      "The two removed functions have no caller and no test left; the tests that replaced theirs pass",
+      "The unrelated resolveRepoPath under src/mcp is untouched"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a data task with a connection scope works on that connection only"
+      },
+      {
+        "level": "integration",
+        "name": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)"
+      },
+      {
+        "level": "integration",
+        "name": "an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before"
+      },
+      {
+        "level": "unit",
+        "name": "the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

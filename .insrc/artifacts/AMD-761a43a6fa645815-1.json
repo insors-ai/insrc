@@ -1,14 +1,57 @@
 {
-  "id": "AMD-761a43a6fa645815-1",
-  "epicHash": "761a43a6fa645815",
-  "epicSlug": "add-daemon-driven-code-review-stage",
-  "hldBaseRunId": "wf-1785741597494-lbzdo7",
-  "amendment": {
-    "type": "storyBoundary.addStory",
-    "storyId": "s9",
-    "internal": "Private implementation of s9: Wait for a fresh index before grounding a Story's code review"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "createdAt": "2026-08-05T04:47:34.061Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4debc51c09fa31ba8f46ea6b1cdaa256a44abcd58b7b6e0b7628f8040ac4f2b3",
+        "at": "2026-08-05T04:47:34.061Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T05:03:58.498Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — building the freshness gate on the existing code-review stage (src/workflow/code-review/*, src/mcp/code-review-step/*, reading src/daemon/queue.ts). This is Story A of two; a follow-up extend adds the diff-only fallback pathway (Story B).",
+  "body": {
+    "id": "AMD-761a43a6fa645815-1",
+    "hldBaseRunId": "wf-1785741597494-lbzdo7",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s9",
+      "internal": "Private implementation of s9: Wait for a fresh index before grounding a Story's code review"
+    },
+    "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — building the freshness gate on the existing code-review stage (src/workflow/code-review/*, src/mcp/code-review-step/*, reading src/daemon/queue.ts). This is Story A of two; a follow-up extend adds the diff-only fallback pathway (Story B).",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1785904715589-yc1l3a",
+      "storyId": "s9",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-08-05T04:47:34.061Z",
+    "approvedBy": "user:in-chat-approval"
+  },
   "citations": [
     {
       "id": "c1",
@@ -28,15 +71,5 @@
       "ref": "src/daemon/queue.ts:154",
       "quotedText": "isProcessing(): boolean — the queue-in-flight freshness signal reused as-is."
     }
-  ],
-  "proposedBy": {
-    "workflow": "define",
-    "runId": "wf-1785904715589-yc1l3a",
-    "storyId": "s9",
-    "stepId": "scope.assess"
-  },
-  "proposedAt": "2026-08-05T04:47:34.061Z",
-  "status": "approved",
-  "approvedAt": "2026-08-05T05:03:58.498Z",
-  "approvedBy": "user:in-chat-approval"
+  ]
 }

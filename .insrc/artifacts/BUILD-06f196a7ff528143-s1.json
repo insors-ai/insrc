@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "06f196a7ff528143",
+    "storyId": "s1",
+    "createdAt": "2026-10-21T05:47:38.616Z",
+    "updatedAt": "2026-10-21T06:44:13.783Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "epicSlug": "scope-story-s-code-review-what",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "9e94deb59d7f5c08cea00e78c60b1999bfc64636692311595d8060a10a9ee643",
+        "at": "2026-10-21T05:47:38.616Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "summary": "withTypecheckProjects and trivialCheckPlan take an optional storyKey and, with it, select from the Story's own commits (strict, synchronous via storyChangeSet; trivial tests filtered to files that still exist; no base fails the trivial listing); validate.ts passes the key at both call sites. Two validate-level tests in build-step.test.ts that relied on untracked files or a base-less HEAD listing were updated to the rule.",
+    "testRecord": {
+      "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/mocks/ontology-editor.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/ontology.template.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/render.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-viewer.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T06:44:13.783Z"
+      }
+    ],
+    "commit": "a0a031cf"
+  }
+}

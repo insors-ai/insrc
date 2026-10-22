@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-06ae61a6-d411-4c07-af24-1f01056ed579",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.725Z",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route approval requests through the queue in the panel",
+      "parent": {
+        "entityId": "STORY-6a811b8acca60ac5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a811b8acca60ac5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a811b8acca60ac5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a811b8acca60ac5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "252677b8c3b4306f66dccdbaa426815ea1d3a6ce1d746945094c308bb0560e15",
+        "at": "2026-10-22T12:43:42.725Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.726Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route approval requests through the queue in the panel",
+    "summary": "Replace pendingPerms with the t1 queue in chat-panel.ts. runTurn's TurnSink.onEvent and followLiveTurn's FollowSink.onEvent enqueue approval-requests (classifying blockKind as today) instead of posting them, and post only the head card with position/total; every other event is posted and persisted as today. A batch ends on its turn's terminal event (done/error) or a followed turn's onEnd. Stop (cancel-turn) records each undecided request as rejected and clears the queue; a chat switch or panel close drops it without outcome rows.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A turn raising three approval-requests posts exactly one card (the first) with position 1 of 3",
+      "A followed turn's approval-requests also go through the queue",
+      "Stop records each undecided request as rejected and clears the queue; open-chat / new-chat / dispose drop it with no outcome rows",
+      "approval-request is still never written to the transcript"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "three requests in one turn: only the first card is posted (with '1 of 3')"
+      },
+      {
+        "level": "integration",
+        "name": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch"
+      },
+      {
+        "level": "integration",
+        "name": "Stop with requests queued records each as rejected and clears the queue"
+      },
+      {
+        "level": "integration",
+        "name": "outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

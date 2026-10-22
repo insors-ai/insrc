@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c79d47f9-1baa-4837-b378-c9e7d1c87fed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.981Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Update the in-repo debug-facade test fakes for scanOrphans/killOrphans",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cc79da3b2af407358cd770cba320866d3b09f0d66fa26bd9052857d2da8a366",
+        "at": "2026-10-22T12:44:58.981Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.982Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the in-repo debug-facade test fakes for scanOrphans/killOrphans",
+    "summary": "Add conformant scanOrphans + killOrphans stubs to every in-repo `debug` facade fake so the widened DebugService compiles: fakeServices() in src/cli/__tests__/tui.test.ts, ctxWith base in src/cli/__tests__/command.test.ts, and the props built in src/cli/panes/__tests__/DebugPane.test.ts + DaemonSection.test.ts (default scanOrphans -> {supported:false}, killOrphans -> []). Build note: apply together-with t3 in ONE increment (mirrors s1/t5 + s2/t5 lockstep); dependsOn stays [t3] (the true compile dependency).",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "every in-repo debug-facade fake includes scanOrphans + killOrphans stubs returning valid OrphanScanResult / KillOutcome[]",
+      "`npx tsx --test 'src/cli/**/*.test.ts'` compiles against the widened DebugService",
+      "no existing assertion behaviour changes beyond the additive stubs"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the in-repo debug fakes (tui/command/DebugPane/DaemonSection tests) carry scanOrphans + killOrphans stubs so the CLI suite compiles"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

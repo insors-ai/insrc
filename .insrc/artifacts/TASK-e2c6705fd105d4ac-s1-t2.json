@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-598421d6-43c9-4090-bb70-3abcbbaff86e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:48.130Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the source-scan guard test + ajv admit-but-never-force check",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e2c6705fd105d4ac-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "75e153c6ad213f66ee74a7ec90318caf395bfa1e0114e619c6a82e51f93e7396",
+        "at": "2026-10-22T12:44:48.130Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:48.131Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the source-scan guard test + ajv admit-but-never-force check",
+    "summary": "Add src/workflow/__tests__/ux-synth-schema.test.ts mirroring feedback-synth-schema.test.ts: (a) readFileSync orchestrator.ts + the two runner index.ts and assert UX_CONTENT_GATE_RULE is imported + present at every prompt that admits the uxDefinition slot, keyed to the ER twin / `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` count so it cannot silently drift (ac4/k4); (b) via prepareSynthesize + ajv, assert the design.epic + design.story body schemas still admit uxDefinition, keep additionalProperties:false, and a body WITHOUT uxDefinition validates (admit-but-never-force, ac2). Per the s3 critique, ac3 (renderer + 'ux' dimension light up on an authored uxDefinition) is covered by the PRE-SHIPPED ux-integration / ux-dimension suites S1 does not touch — the whole-sweep-green acceptanceCheck re-runs them rather than adding a redundant new integration test.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "The new test source-scans orchestrator.ts + design-story/index.ts + design-epic/index.ts and fails if any uxDefinition-slot-admitting prompt drops UX_CONTENT_GATE_RULE (ac4/k4).",
+      "An ajv compile of both synthesize body schemas confirms uxDefinition is admitted, additionalProperties:false is preserved, and a body with no uxDefinition validates (ac2).",
+      "The test passes under `npx tsx --test src/workflow/__tests__/ux-synth-schema.test.ts` and the whole workflow sweep stays green — transitively re-running the pre-shipped ux-integration / ux-dimension suites that cover ac3."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ux-synth-schema: co-location assertion — every `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` in orchestrator.ts (:1467/:1863) has a UX_CONTENT_GATE_RULE in the same synthesizer builder; count-keyed to ER so the gate cannot drift (ac4/k4)"
+      },
+      {
+        "level": "unit",
+        "name": "ux-synth-schema: ajv — prepareSynthesize design.epic + design.story body schemas admit uxDefinition, keep additionalProperties:false, and a body with NO uxDefinition validates (ac2); a body carrying a valid uxDefinition still validates"
+      },
+      {
+        "level": "integration",
+        "name": "PRE-SHIPPED (re-run in the sweep, not authored by S1): ux companion finalize renders a ux-mock CompanionArtifactRef + the 'ux' dimension engages on an authored uxDefinition (ac3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

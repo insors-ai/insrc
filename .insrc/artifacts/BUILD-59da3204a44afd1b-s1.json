@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "createdAt": "2026-10-12T10:25:29.172Z",
+    "updatedAt": "2026-10-13T06:09:34.817Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "epicSlug": "paste-images-attach-documents-dev-chat",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3cf2edc81908d7d479bfbf4192fa0755ea9c840264cfe1ba90ceb89987a8c18b",
+        "at": "2026-10-12T10:25:29.172Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-13T06:09:34.971Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/paste-images-attach-documents-dev-chat-E2026101259da3204/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-2284d9b47fc9c35e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.817Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/codex-chat-turns-hang-because-cli-E202610122284d9b4/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T06:09:34.817Z"
+      }
+    ],
+    "commit": "f21955c6",
+    "summary": "Pasted images and picked documents are copied to the chat's own folder under ~/.insrc/chat-attachments, shown as removable chips under the prompt, sent with the next message as paths the CLI may read, and shown as chips on the sent message that open the file. Checked with the real claude and codex CLIs and in the panel by the user. A paste fix (commit bdd0a0ef) was made after the user's first paste did nothing: the handler also reads images offered as files and says what the clipboard offered when it has no image; which of that and the second reload made paste work is not known."
+  }
+}

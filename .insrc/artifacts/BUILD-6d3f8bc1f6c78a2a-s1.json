@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "6d3f8bc1f6c78a2a",
+    "storyId": "s1",
+    "createdAt": "2026-10-01T06:09:05.570Z",
+    "updatedAt": "2026-10-01T06:19:08.985Z",
+    "triageRationale": "Three declaration-level edits in two adjacent CSS rules in one file. No design choice left (values specified by the user). Not a bugfix — the 90% cap was delivered as specified; this is a preference change on working code.",
+    "epicCreatedAt": "2026-10-01T06:09:05.570Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "057bcf2e1da8f2311a30da80204743e5e6aaada71bf66517291901a780d4e5c4",
+        "at": "2026-10-01T06:09:05.570Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T06:19:09.011Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Dev-chat message bubbles span the full available width and the assistant bubble loses its purple left lining. Set .insrc-bubble--user max-width 82% -> 100%, .insrc-bubble--assistant max-width 90% -> 100%, and remove border-left:2px solid var(--magenta) from the assistant rule (chat-panel.ts:356/:358). Presentation-only: no markup, renderer, view-model, event or persistence change. Update/extend the bubble tests to pin both full-width caps and the absence of the magenta rail.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b1c7c1bc57962e97-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:19:08.985Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-bd2d6b6a98f48dc6-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:19:08.985Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/b1c7c1bc57962e97-E20261001b1c7c1bc/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:19:08.985Z"
+      }
+    ]
+  }
+}

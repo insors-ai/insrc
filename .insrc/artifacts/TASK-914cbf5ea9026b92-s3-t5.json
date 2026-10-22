@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2bd971a9-1ab6-4005-847b-a6ca5f7f570a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.161Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Java + Scala HTTP-client recognizers",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ede24a91470b23da9363978fd37d158c94113919e84d25b29b3312e968e227e8",
+        "at": "2026-10-22T12:43:59.161Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.162Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Java + Scala HTTP-client recognizers",
+    "summary": "Wire the Java and Scala recognizers into their call visitors (Java method_invocation; Scala call_expression) using the shared client-shape helper from t3. Java: HttpClient.send / OkHttpClient.newCall(Request) / RestTemplate.{getForObject,exchange,…} / WebClient / Apache HttpClient. Scala: sttp / Akka-Pekko HTTP (Http().singleRequest) / Play WS (ws.url(...).get()). Each emits an unresolved CALLS_HTTP { from: callerId, to: rawUrlExpr, resolved:false } on a client match; look-alikes stay plain CALLS; unextractable URLs emit nothing.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Java fixtures: HttpClient.send / OkHttpClient.newCall / RestTemplate / WebClient each emit one CALLS_HTTP with the URL arg; a non-HTTP method_invocation stays a plain CALLS edge.",
+      "Scala fixtures: sttp / Akka-Pekko HTTP / Play WS each emit one CALLS_HTTP with the URL arg; a non-HTTP call stays a plain CALLS edge.",
+      "In both languages an unextractable URL emits no CALLS_HTTP and a no-HTTP file yields an unchanged ParseResult."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "java recognizer: HttpClient.send/OkHttp.newCall/RestTemplate/WebClient each emit one CALLS_HTTP with the URL arg; non-HTTP method_invocation stays CALLS"
+      },
+      {
+        "level": "unit",
+        "name": "java recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+      },
+      {
+        "level": "unit",
+        "name": "scala recognizer: sttp/Akka-Pekko HTTP/Play WS each emit one CALLS_HTTP with the URL arg; non-HTTP call stays CALLS"
+      },
+      {
+        "level": "unit",
+        "name": "scala recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

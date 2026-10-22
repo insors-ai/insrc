@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a2925f83-2025-446c-9c8e-990b0bb7c6f6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.763Z",
+    "epicCreatedAt": "2026-10-01T11:57:40.327Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate the UX tests from graph assertions to rendered-output assertions",
+      "parent": {
+        "entityId": "STORY-85e6a58693579b6d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-85e6a58693579b6d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-85e6a58693579b6d-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b867728ee881cdd6e46a3cd02d8fd8c4dc33d37e65d2327436c7a3bd24546260",
+        "at": "2026-10-22T12:43:52.763Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.763Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate the UX tests from graph assertions to rendered-output assertions",
+    "summary": "The four test files that describe the OLD renderer's graph output move with the change: ux-render.test.ts, ux-integration.test.ts, ux-body-fields.test.ts and ux.test.ts. The distinction that matters is which assertions are DESCRIPTIONS of the old output (they move) versus INVARIANTS (they must pass untouched): ux-integration.test.ts:75 and :124, and context-sections.test.ts:82. Those three are contracts, and a migration that rewrites them has broken something rather than updated it.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The four graph-describing test files assert rendered output rather than node/edge structure",
+      "ux-integration.test.ts:75 and :124 pass UNCHANGED — not rewritten, not relaxed",
+      "context-sections.test.ts:82 passes UNCHANGED, including for the empty-card case",
+      "ENUMERATED per critique rather than left generic — each of the seven edge cases has a test that REACHES it: an empty card body, deep nesting (Container > ColumnSet > Column > Container), an empty ColumnSet, an Image with a remote url, HTML metacharacters in a TextBlock and a choice title, a long unbroken token, and two cards differing only in element order",
+      "Each of the three error cases has a test that reaches it: an element outside the union, a container with a malformed child list, and the write failure propagating unchanged",
+      "NON-VACUITY CHECK: for the unrecognised-element path and the malformed-container path, the test is shown to FAIL when the branch's behaviour is inverted. A test named for a case is not evidence it covers that case — that exact shape shipped twice in this repo this week",
+      "The existing fixtures at ux-render.test.ts:29-30 and ux-integration.test.ts:43-44 are reused unchanged, so the fix is proved against cards that predate it"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "an empty ColumnSet renders a visible empty row"
+      },
+      {
+        "level": "unit",
+        "name": "deep nesting is preserved to full depth with no truncation"
+      },
+      {
+        "level": "unit",
+        "name": "a long unbroken token wraps or scrolls within its region"
+      },
+      {
+        "level": "unit",
+        "name": "two cards differing only in ORDER produce different documents"
+      },
+      {
+        "level": "integration",
+        "name": "ux-integration's :75 and :124 assertions pass UNCHANGED"
+      },
+      {
+        "level": "integration",
+        "name": "context-sections' empty-card ['Purpose','Legend'] assertion passes UNCHANGED"
+      },
+      {
+        "level": "unit",
+        "name": "mutation check: inverting the unrecognised-element branch and the malformed-container branch each turns the suite red"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

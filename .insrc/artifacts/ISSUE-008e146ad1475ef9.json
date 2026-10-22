@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T12:38:25.216Z",
     "parentRef": {
       "slug": "defect-analyzer-s-request-measure-src"
+    },
+    "epicCreatedAt": "2026-10-10T05:39:29.105Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "527f044a0c8e613d366306b234b84044a48b1cadf2e33bfc91ccbda0ec4254ef",
+        "at": "2026-10-10T05:39:29.105Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T12:38:25.216Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

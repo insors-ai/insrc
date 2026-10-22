@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e495b510-232f-4008-98fb-eb08e3eb8839",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.584Z",
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the file store into the extension",
+      "parent": {
+        "entityId": "STORY-c96a97a204fac22b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c96a97a204fac22b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c96a97a204fac22b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c96a97a204fac22b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9db34ce07af21932e25c8b601dc8f9ae93a9c11a9360fd0611812df4febfb422",
+        "at": "2026-10-22T12:44:40.584Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.584Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the file store into the extension",
+    "summary": "In extension.ts run migrateChatSessionsFromMemento over context.globalState first, build chatStore with createFileChatSessionStore over join(PATHS.insrc, 'chat-sessions') with the same maxSessions and onEvict, and give the output sweep a keep set of the store's ids plus the migration's kept ids. Update extension-chat-wiring.test.ts: replace the line-46 assertion with ones for the file store, its root and the migration placed before it; keep the onEvict assertion; change the sweep assertion to the new keep set.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "extension.ts calls the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict",
+      "The sweep's keep set holds the store's ids and the migration's kept ids",
+      "createMementoChatSessionStore is no longer constructed in extension.ts",
+      "The plugin type-checks and the wiring test passes with the updated assertions"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

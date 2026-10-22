@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-38ca6ae8-3ba9-41c9-9f68-654f8c91160d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.384Z",
+    "epicCreatedAt": "2026-09-30T11:33:03.045Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "71133869f31324f7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Restructure the three surface sections into the tab markup",
+      "parent": {
+        "entityId": "STORY-71133869f31324f7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-71133869f31324f7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-71133869f31324f7-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-71133869f31324f7-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3bbcf426e8cea871a0a753b128a3a97d82852e78c840419a936412ee66c62bb8",
+        "at": "2026-10-22T12:43:44.387Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.387Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Restructure the three surface sections into the tab markup",
+    "summary": "Replace the three plain <h2> surface sections (#cli/#vscode/#jetbrains) in getting-started.html with one tab component: a role=tablist of three role=tab buttons (Terminal only / VS Code / JetBrains) + three role=tabpanel panels. Each panel LEADS with the CORE model config step for its surface, KEEPS that surface's essential install/onboarding steps, and routes only DEEPER configuration to the settings.html guide. Keep the top-level #cli/#vscode/#jetbrains ids on the tab/panel elements and preserve existing sub-anchors where practical.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The three surfaces are a single tablist + 3 tabpanels (Terminal only / VS Code / JetBrains).",
+      "Each panel LEADS with the CORE model configuration step AND retains that surface's essential install/onboarding steps; only deeper config links to settings.html.",
+      "The #cli/#vscode/#jetbrains top-level anchor ids are preserved on the tab/panel elements (and existing sub-anchors kept where practical).",
+      "With JS off the panels render stacked + fully readable (content-first)."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "three tabpanels; each panel headlines core-model config + ends with settings.html link"
+      },
+      {
+        "level": "smoke",
+        "name": "JS-off: all panels render stacked + fully readable (content-first fallback)"
+      },
+      {
+        "level": "smoke",
+        "name": "inbound deep-links #cli/#vscode/#jetbrains + #prerequisites still resolve to visible content"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

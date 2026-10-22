@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28fcf23f-35c7-4fae-872d-b5ebf7063eac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.776Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove the composite-page leftovers",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cd90adf414d7e87b8bab556ffeecaddca94943019b43e68cca1636fde0508aa4",
+        "at": "2026-10-22T12:43:26.777Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.777Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the composite-page leftovers",
+    "summary": "Delete the board/epics/issues/details/items down-messages, the set-scope, select-item and close-details up-messages, BoardView, BoardViewModel, EpicRollupViewModel, IssueViewModel, ColumnView, scopeOptionsOf, NOT_IN_EPIC_TITLE and the 'Not in an epic' row, and the old tabs, scope chips, .layout and #details code paths; update the comments that describe the old page.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "parseBoardUpMessage returns null for set-scope, select-item, close-details and set-view 'board'.",
+      "No source file in vscode-plugin/src/delivery references the removed types, messages, #scope-chips, #details or 'Not in an epic'.",
+      "The plugin typechecks."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-protocol.test.ts: 'the removed set-scope, select-item, close-details and set-view board give null'"
+      },
+      {
+        "level": "integration",
+        "name": "board-wiring.test.ts: 'extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client'"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-804443b5-43b1-43f3-934e-ba215e04e8de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.756Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Pane decisions through the queue; the waiting list removed",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d962637e21f7c7b10e7ff25a57bb739c58e9e29fc8da623c00e0fada4621bd0",
+        "at": "2026-10-22T12:43:38.757Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.758Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pane decisions through the queue; the waiting list removed",
+    "summary": "Change submitExternal in chat-panel.ts to resolve the target chat (the shown session, or the one the panel opens on), save it, and submit through ChatQueueWorker.submit with origin 'review-pane', returning 'queued' or { kind: 'unavailable', note } (note for blank text, no CLI, a full or busy queue, and defensively no worker). Change ExternalSubmitResult, the review host's notifyChat dependency type, ChatHandOver and decisionResultLine together so the pane says 'Sent to the chat; it waits its turn in the outbox.' or 'The chat could not be told: <note>'. Remove waitingExternal, drainExternal and every call to it; keep the webviewReady reset that dropExternal performs under a clearer name. Rewrite the chat-panel.test.ts submitExternal suite and the docs-review-decision tests that pinned 'sent', the old wording and the drain order, and add the queue-path tests on the real-store host harness. This stays one L task because the result type is shared by the chat host and the review host through extension.ts's binding, and the old suite runs on hosts without a queue, so a split would leave the typecheck or the suite red between tasks.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "a pane decision sent while a turn runs is a review-pane row in the chat's outbox, the running turn and its waiting card are untouched, and it runs when the turn ends",
+      "with the panel closed, submitExternal opens it on its session, saves the chat and queues one row that runs in order once the webview is ready",
+      "blank text, no CLI, a full queue and a busy queue each return unavailable with their own note and queue nothing",
+      "the review pane's result line reads 'Sent to the chat; it waits its turn in the outbox.' for queued and 'The chat could not be told: <note>' for unavailable; 'sent' no longer exists",
+      "waitingExternal and drainExternal are gone and a decision queued before the panel or window closes is still in the queue file afterwards"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-queue-outbox-host.test.ts: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends"
+      },
+      {
+        "level": "integration",
+        "name": "chat-queue-outbox-host.test.ts: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready"
+      },
+      {
+        "level": "integration",
+        "name": "chat-queue-outbox-host.test.ts: a decision queued before the panel or window closes is still in the queue file afterwards"
+      },
+      {
+        "level": "integration",
+        "name": "chat-queue-outbox-host.test.ts: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing"
+      },
+      {
+        "level": "unit",
+        "name": "docs-review-decision.test.ts: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

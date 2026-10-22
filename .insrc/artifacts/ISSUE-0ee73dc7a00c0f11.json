@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T06:20:22.812Z",
     "parentRef": {
       "slug": "bug-analyze-planner-gives-plan-task"
+    },
+    "epicCreatedAt": "2026-10-09T14:43:15.174Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0518067c85408f64c608b738f03591f37f3fe491ac36dca86586e732ede59249",
+        "at": "2026-10-09T14:43:15.174Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T06:20:22.812Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

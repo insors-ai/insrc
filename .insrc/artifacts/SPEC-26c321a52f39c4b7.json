@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "26c321a52f39c4b7",
     "epicSlug": "extend-code-graph-trace-through-external",
-    "approvedAt": "2026-08-06T15:41:48.447Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-08-06T15:35:01.183Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a2a38a41e01aca8103e987c6419b1d53c3ae818ffa42d9922a71135af049f74c",
+        "at": "2026-08-06T15:35:01.183Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T15:41:48.447Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

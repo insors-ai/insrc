@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-d9f85b3cc8cc966b-S001 -->
+<!-- insrc:artifact BUILD-d9f85b3cc8cc966b-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -27,7 +27,7 @@ Removed generate.ts (+test), componentDependencyDefinitionToIr / ComponentDefini
 
 ## Changes
 
-- `.insrc/artifacts/CR-d9f85b3cc8cc966b-S001.json` — **insrc-build** (2026-10-11T17:10:42.910Z)
+- `.insrc/artifacts/CR-d9f85b3cc8cc966b-s1.json` — **insrc-build** (2026-10-11T17:10:42.910Z)
 - `docs/standalone/implement-approved-spec-77932eaa1a85819b-docs-standalone-E20261011d9f85b3c/S001/CR.md` — **insrc-build** (2026-10-11T17:10:42.910Z)
 - `src/assets/artifacts/companion/panzoom.js` — **insrc-build** (2026-10-11T17:10:42.910Z)
 - `src/assets/artifacts/schemas/adaptive-cards.schema.json` — **insrc-build** (2026-10-11T17:10:42.910Z)

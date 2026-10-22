@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7734e51c-103a-4d5d-8a2f-f74080b848e1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.040Z",
+    "epicCreatedAt": "2026-08-07T14:35:19.818Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0a116120820e903f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "edges-stat distinct-pair count + orphan endpoint GC",
+      "parent": {
+        "entityId": "STORY-0a116120820e903f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0a116120820e903f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0a116120820e903f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "66480e6f028d3dde77197fa44be27781e15ea8bb86d1c493289eeb8eb9357bfb",
+        "at": "2026-10-22T12:43:12.043Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.044Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "edges-stat distinct-pair count + orphan endpoint GC",
+    "summary": "In src/indexer/external-endpoints.ts: (1) compute `edges` as the count of DISTINCT (unresolved.fromEntity, targetEntityId) pairs among promotes (not promotes.length). (2) After promoteResolvedBatch, run a GC step: list this repo's externalEndpoint entities (listEntitiesByKind filtered to repo), for each check inNeighbors(CALLS_HTTP); collect ids with zero in-edges and deleteEntitiesById them. GC runs strictly after the promote so current edges are written first; optional gcDeleted stat. Idempotent (no-op when nothing orphaned).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "edges = distinct (from,to) pairs: one caller reaching one identity via two distinct raw exprs => endpoints=1, edges=1 (not 2).",
+      "GC deletes an orphan externalEndpoint (zero CALLS_HTTP in-edges) while keeping a live one (>=1 in-edge); a repo whose HTTP calls were all removed ends with zero endpoint nodes.",
+      "Idempotency: re-running on identical sources deletes nothing and yields a byte-identical node/edge set + identical edges stat. A still-called endpoint SURVIVES the pass (GC runs after promoteResolvedBatch and sees the just-written edge) — the survive-test seeds the caller+CALLS_HTTP via the real promote path, not a pre-seeded edge."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "edges stat: one caller, two distinct raw exprs -> same identity => endpoints=1, edges=1 (distinct (from,to) pairs), not 2"
+      },
+      {
+        "level": "unit",
+        "name": "GC: orphan externalEndpoint (no in-edge) deleted while a live one (>=1 in-edge) survives the pass"
+      },
+      {
+        "level": "unit",
+        "name": "GC no-op when every endpoint has a live caller; GC full-clear leaves zero endpoint nodes when all CALLS_HTTP removed"
+      },
+      {
+        "level": "unit",
+        "name": "idempotency: re-run on identical sources => identical node/edge set + identical edges stat (GC deletes nothing)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

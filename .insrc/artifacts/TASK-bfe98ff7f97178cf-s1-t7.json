@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-92105844-61d8-4039-8aa3-4ce05ceae4fc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.622Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Measure the VSIX delta and confirm the widened response leaves the JetBrains panel unaffected",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d732b2f41d2d77343abc979109d9b41e91e1082a76c1a614b88105d60925e43",
+        "at": "2026-10-22T12:44:30.623Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.623Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Measure the VSIX delta and confirm the widened response leaves the JetBrains panel unaffected",
+    "summary": "REVISED per critique: retitled and reduced from a verify-everything catch-all to the only two checks that genuinely cannot be done earlier. First, measure the VSIX size delta now that MARKED_SRC is actually bundled into this surface — the HLD flagged bundle growth as a risk and s1 is the Story that introduces it here. Second, confirm the cross-client contract: the four added keys leave the JetBrains ArtifactReviewViewDto parse working. That is already established by reading DaemonGateway.kt:1517, where parseView pulls six named keys field-by-field out of a Map<String, Any?> with no unknown-key rejection, so this is a confirmation rather than an integration risk. The per-task behavioural checks have moved into t4 and t6, where the changes that could break them live.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "the VSIX size delta attributable to this Story is measured and reported as a number, not an impression",
+      "the JetBrains ArtifactReviewViewDto parse is confirmed unaffected by the four added keys, citing parseView's field-by-field key reads",
+      "npx tsc --noEmit is clean across the repo",
+      "the full sweep passes, with any pre-existing unrelated failure named explicitly rather than absorbed into the result",
+      "the installed daemon is rebuilt and restarted so the widened projection is actually live — migration step 8, which no other task owns; until it runs the plugin compiles against the new shape but still receives the old six-member response"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "package the VSIX and report the measured byte delta attributable to this Story"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: parseView reads six named keys field-by-field with no unknown-key rejection, so the four added keys cannot break the JetBrains DTO"
+      },
+      {
+        "level": "smoke",
+        "name": "npx tsc --noEmit is clean across the repo"
+      },
+      {
+        "level": "smoke",
+        "name": "the full node:test sweep passes, with any pre-existing unrelated failure named explicitly"
+      },
+      {
+        "level": "smoke",
+        "name": "the installed daemon is rebuilt and restarted, and a freshly-opened document shows the projected records"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

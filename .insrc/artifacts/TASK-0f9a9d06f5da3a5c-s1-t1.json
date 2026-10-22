@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7c591155-87fb-4d5f-922b-51359f3925e2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.708Z",
+    "epicCreatedAt": "2026-08-04T11:46:40.232Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f9a9d06f5da3a5c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "gates.ts: codeReview[] field + CodeReviewApprovalOutcome + the approveOne gate step + enforce test-seam",
+      "parent": {
+        "entityId": "STORY-0f9a9d06f5da3a5c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0f9a9d06f5da3a5c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4c147eb51f7926d5c5583c7e12377337f291324af473b5be17750a29d88fd88e",
+        "at": "2026-10-22T12:43:12.710Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.711Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "gates.ts: codeReview[] field + CodeReviewApprovalOutcome + the approveOne gate step + enforce test-seam",
+    "summary": "In src/workflow/gates.ts: (a) add the CodeReviewApprovalOutcome type { readonly path: string; readonly storyId: string; readonly status: CodeReviewGateResult['status']; readonly message?: string; readonly counts?: { high:number; med:number; low:number }; readonly overrideReason?: string; readonly at?: string } (the overrideReason/at arm carries the OVERRIDE audit on status==='overridden' so the controller-presented outcome records the bypass, not only the stamped approvedAt) and add the additive `readonly codeReview: readonly CodeReviewApprovalOutcome[]` field to WorkflowApproveResult; (b) add an OPTIONAL second param to approveWorkflowTarget — approveWorkflowTarget(req: WorkflowApproveRequest, opts?: { readonly enforce?: boolean }): WorkflowApproveResult — the additive test-seam threaded into the gate's opts.enforce (existing single-arg callers unaffected); (c) declare a `codeReview: CodeReviewApprovalOutcome[]` accumulator beside approved/skipped and return it in `{ approved, skipped, codeReview }`; (d) INSIDE approveOne(jsonPath), BEFORE approveArtifactByJsonPath, read the artifact json meta (JSON.parse the file the approve already opens) and if story-scoped (meta.epicHash && meta.storyId) call enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, { ...(req.overrideReview!==undefined?{overrideReview:req.overrideReview}:{}), ...(opts?.enforce!==undefined?{enforce:opts.enforce}:{}) }); project the CodeReviewGateResult to a CodeReviewApprovalOutcome (preserve overrideReason+at on 'overridden') and push to codeReview[]; on status==='blocked' push { path: jsonPath, reason: gate.message } to skipped[] and RETURN (no approveArtifactByJsonPath, no approvedAt). Every non-blocked status (no-review/pass/warn/overridden) falls through to the UNCHANGED approveArtifactByJsonPath. Import enforceCodeReviewGate from './code-review/gate.js' + CodeReviewGateResult from './code-review/types.js'; .js imports, import type, getLogger not console.log, strict optional handling.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/gates.ts exports the CodeReviewApprovalOutcome type (with optional overrideReason?/at? carried on the 'overridden' arm) + WorkflowApproveResult gains the additive `readonly codeReview: readonly CodeReviewApprovalOutcome[]`; approved[]/skipped[] shapes unchanged",
+      "approveWorkflowTarget gains an OPTIONAL opts?: { enforce?: boolean } second param threaded into enforceCodeReviewGate's opts.enforce (existing single-arg callers keep compiling)",
+      "the daemon 'workflow.approve' registration in src/daemon/index.ts (and the src/mcp/server.ts handleWorkflowApprove relay) continues to reach approveWorkflowTarget via req ONLY — NO production call site passes opts; opts is a test-only seam so the codeReview.enforce config flag governs in production",
+      "approveOne, BEFORE approveArtifactByJsonPath, calls enforceCodeReviewGate for a story-scoped artifact (meta.epicHash && meta.storyId), pushes the projected CodeReviewApprovalOutcome to codeReview[], and on status 'blocked' routes { path, reason: gate.message } into skipped[] and returns WITHOUT stamping approvedAt",
+      "on status 'overridden' the pushed CodeReviewApprovalOutcome carries the override audit (overrideReason from the gate) so ac2's 'records the override' is provable on the presented outcome, not only via approvedAt",
+      "a non-story-scoped artifact (no epicHash/storyId) or a non-blocked status (no-review/pass/warn/overridden) falls through to the UNCHANGED approveArtifactByJsonPath meta.review approve — the gate is a SEPARATE check over body.verdict, never merged into meta.review (k8)",
+      "overrideReview is threaded from req into the gate opts (reused channel, no new param); tsc --noEmit clean; .js imports + import type; getLogger not console.log; read-only over the CR record (no writeAtomic added beyond the existing approve stamp)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: enforce on + block + no override => skipped, no approvedAt, codeReview[] 'blocked'"
+      },
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: enforce on + block + overrideReview => approved, codeReview[] 'overridden' + overrideReason"
+      },
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: warn/pass => approved, codeReview[] records status + counts"
+      },
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: absent CR / DEF-HLD (no storyId) / enforce OFF + block => approvedAt byte-identical, codeReview[] 'no-review'"
+      },
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: epic batch A 'block' + B 'pass' => A skipped, B approved"
+      },
+      {
+        "level": "unit",
+        "name": "approveWorkflowTarget: clean meta.review + code-review 'block' withheld only by the gate; corrupt CR => 'no-review' fail-open"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

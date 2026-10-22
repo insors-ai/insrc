@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792005545675-hgipbs",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T19:19:05.675Z",
+    "model": "claude:opus",
+    "elapsedMs": 63122,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "de069d56d76eaacd",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T19:16:10.679Z",
+    "epicSlug": "keep-chat-s-progress-widget-when",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "571e6a7d427329298dbae287c9fd06e27000bfa8bb28a1d3649d1d90445226d1",
+        "at": "2026-10-14T19:19:05.675Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "de069d56d76eaacd",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts:482",
+            "message": "Present but unverified, not missing. The Story changes one line: the 'ready' branch of handleMessage in chat-panel.ts:1743 now posts 'turn-running' when a turn is busy, starting or queued. The new test 'a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not' covers both sides of that branch. It sends 'ready' while a turn runs and expects one more turn-running post after session-restored. It sends 'ready' again after the turn ends and expects no new post. The supplied build-record signal is absent, so this test's pass-state cannot be confirmed here. The on-disk TESTS.md records only a whole-file run (exit 0, 11 titles) with no per-case mapping, which shows 0 pass and 0 fail. Map this test case at validate to confirm it passed.",
+            "expectationRef": "handleMessage ('ready' branch, turn-running post)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1743",
+            "message": "The graph shows no tests reaching handleMessage, and it also shows none for the new helper runningPosts. The graph is incomplete here. The test reaches handleMessage through the fake channel (h.fc.send('ready') goes to the wired webview message handler), and the call graph does not follow that callback dispatch. runningPosts is called inside the new test's body. No HIGH coverage gap is reported, because one would rest only on these missing edges. Every other symbol listed is unchanged (whole-file entity dump) and outside this Story's coverage scope.",
+            "expectationRef": "handleMessage / runningPosts (testsReaching edges missing)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1743",
+            "message": "`startingTurns > 0` is not tied to a session, while `turns.busy()` is: showSession detaches and invalidates the lifecycle, so busy() only reflects the shown session. If a runTurn for session A is still between its start and turns.start when the user switches to session B, and the page is rebuilt in that short window, the rebuilt page gets `turn-running` for B. It would show the progress widget and Stop for a chat that has no turn running. The window is narrow and the widget clears on the next turn event, so this is a note, not a blocker. Tracking the session of the starting turn, or checking it against session.id as the `queued` clause does, would close it.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 3
+    }
+  }
+}

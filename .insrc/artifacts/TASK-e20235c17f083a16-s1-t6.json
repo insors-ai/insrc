@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bb981d65-f3d4-4dc0-81b5-49caa1e3ff51",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.173Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Converge the folders already scattered on disk",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "41dc72f1a0b84e9b23881b521791c2fc0112c70799ac37e98254e3c2eb9e2b8a",
+        "at": "2026-10-22T12:44:47.173Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.174Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Converge the folders already scattered on disk",
+    "summary": "Extend the existing docs-tree migration so it recognises multiple folders sharing one identity segment and plans their convergence onto the one the definition artifact designates, rewriting links into moved paths and reporting anything it cannot place as unmappable rather than guessing or overwriting. Planning stays read-only and separate from applying. The live inputs are concrete and already committed: four folders share one segment, including one labelled with a raw hash and one under the wrong top-level, and two further segments have two folders each — both of those pairs forked by this session's own design documents while designing this very fix.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "CRITIQUE APPLIED — dependsOn widened from t5 alone to the full t2-t5 set. The convergence destination depends on the anchor (t2), the label (t3), the placement (t4) AND the slug resolution (t5); with any one still broken the target folder is itself wrong. The t2 omission was the real hazard: the anchor determines the identity SEGMENT the convergence keys on, so running this first could have moved files into a folder invalidated the moment t2 landed",
+      "PRECONDITION ASSERTED FIRST, so the end state cannot pass vacuously: the fixture is verified to START with four distinct folders before the migration runs",
+      "A pre-seeded work item with FOUR folders, one artifact each, converges onto one",
+      "A folder labelled with a raw hash and a folder under the wrong top-level are both handled",
+      "Anything unplaceable is reported as unmappable rather than guessed at or overwritten",
+      "Planning leaves the docs tree BYTE-IDENTICAL — only applying moves anything",
+      "Links pointing into moved paths are rewritten",
+      "Run against this repo, the live segments E20261002792f9324, E20261003e20235c1 and E202610036f31771d each end with exactly one folder",
+      "CRITIQUE APPLIED — MUTATION PROOF, run and recorded (t6 previously had none while t1-t5 all did, so t7's promise to re-run every proof could not have been kept): disabling the group-by-segment step so the planner treats each folder independently turns the four-folder convergence test red"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the migration converges a pre-seeded FOUR-folder work item onto one, with the four-folder start state asserted BEFORE the migration runs"
+      },
+      {
+        "level": "integration",
+        "name": "a raw-hash-labelled folder and a wrong-top-level folder are both handled"
+      },
+      {
+        "level": "integration",
+        "name": "an unplaceable folder is reported as Unmappable rather than guessed at or overwritten"
+      },
+      {
+        "level": "integration",
+        "name": "planMigration remains read-only: calling it leaves the docs tree byte-identical, and only applyMigration moves anything"
+      },
+      {
+        "level": "integration",
+        "name": "links pointing into moved paths are rewritten"
+      },
+      {
+        "level": "integration",
+        "name": "MUTATION PROOF: disabling the group-by-segment step reds the four-folder convergence test"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6ef47ea6-239d-4922-91b6-c62ac7dbb87e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.293Z",
+    "epicCreatedAt": "2026-10-09T13:11:02.374Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repoint the body, sections and webview suites to the shared fake",
+      "parent": {
+        "entityId": "STORY-3b6bd6b5fa3c30d1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3b6bd6b5fa3c30d1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3b6bd6b5fa3c30d1-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5e61b85a78cedf86c1722020faa088be9298a6d15eddf47a596894c94a89729",
+        "at": "2026-10-22T12:43:28.293Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.293Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repoint the body, sections and webview suites to the shared fake",
+    "summary": "In docs-review-panel.test.ts, move the stubEl uses (loadRenderer tests), node/StubNode (loadSections) and the local bodyStub (loadPlace, runWebview, frHeadingIn) to the shared bodyStub. Delete stubEl, node, StubNode and the local bodyStub/BodyStub. Fire the :807/:826 listeners through the listener array.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "stubEl, node/StubNode and the file-local bodyStub/BodyStub no longer exist in the test file.",
+      "Every test in these suites passes with its assertions unchanged.",
+      "Any failure caused by the shared fake's stricter rules is reported as a finding, not worked around."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs-review-panel.test.ts: the t4 body-renderer, t6 sections-and-chooser and webview-shell suites pass on the shared fake with their assertions unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

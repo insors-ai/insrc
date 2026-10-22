@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f5f2f45f-5390-44ce-ac44-9bb400b296cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.450Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Obligations and context atoms per code-review dimension",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2a2a03617ede8075eb44b69615ba892e4f4b8805e57d2bdd689b97f0ffa9d2d7",
+        "at": "2026-10-22T12:43:52.451Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.451Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Obligations and context atoms per code-review dimension",
+    "summary": "In src/workflow/review-pipeline/code-review.ts (and a new src/workflow/review-pipeline/adapters/code-review-obligations.ts), each model dimension's material() adds obligations and context built from the saved subject and the snapshot only. adherence: one 'clause' obligation per approved LLD clause (keys derived deterministically from the LLD body: each contractDetails entry, dataModelChanges entry, errorPaths case and invariant) and one per PLAN task (its task id), each clause's text a context atom the obligation names; none and no call without an approved LLD or plan (today's skip). functional coverage: one 'requirement' per FR (functionalRequirementsOf). coverage: one 'promised-test' per promised test (promisedTestsOf), its context ALL the record evidence testRecordView gives for that test chosen by name (reportedTests entry, build tasks, record notes, status and title atoms of every test file naming it), also with empty grounding. conventions: one 'module-conventions' per touched module (the atoms' module values). quality: none.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Each dimension's obligation set equals what today's single prompt asks the model to judge: LLD clauses and PLAN tasks, FRs, promised tests, touched modules; quality has none.",
+      "Adherence has no obligations and makes no call without an approved LLD or plan, as today.",
+      "A promised test passed only by a reported smoke or live run, with no test file or reaching edge, has that reported result in its obligation context; this holds with empty grounding.",
+      "Obligations and context are built from the saved subject and the snapshot only, and are identical on every rebuild."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

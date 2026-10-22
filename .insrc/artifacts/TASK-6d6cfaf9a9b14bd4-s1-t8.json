@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90e71094-7bed-4264-8f15-a2c8ffa80044",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.975Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add unit coverage for both adapters, the batcher, the guard, the fallback, and the backstop",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e6d9ad845a678b59127fe54f7e4ec867c1ceaa728879e2d0c20c0f0c66b4a86",
+        "at": "2026-10-22T12:43:42.975Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add unit coverage for both adapters, the batcher, the guard, the fallback, and the backstop",
+    "summary": "Unit level of the LLD testStrategy, split out from the integration/contract level (t9) so the conformance assertion cannot be compressed away under a single oversized task. Table-driven cases over: the analyze adapter (every enumerated AnalyzeRunEvent variant plus malformed fixtures, threaded tokensTotal and stageIndex, total:null on stage frames), the workflow progress adapter (one fixture per known phase; one with runner+attempt+detail all populated on a synthesize-retry attempt 3; one with an unrecognised phase), the t5 accumulator's batching and sums, the numeric guard's NaN/negative/regressing suppression with retained last-known-good cumulative, the unknown-phase warn-logged fallback, and the try/catch backstop on both emission sites. Use a stub logger so every suppression path is asserted by its expected warn/debug line rather than passing silently. node:test + node:assert/strict via tsx, no new framework.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Unit cases cover all eight known workflow phases plus the unknown-phase fallback, every enumerated AnalyzeRunEvent variant plus the null-return path, batching with tokensDelta > 1, unattributable stageId:null, and NaN/negative/regressing suppression.",
+      "Each suppression, fallback, and backstop case asserts the expected warn or debug log line against the stub logger — no path passes by silence.",
+      "A synthesize-retry attempt-3 fixture with runner, attempt, and detail all populated produces a stageLabel containing all three, and no sc1 field is invented to carry them.",
+      "Both adapters are proven total: no fixture in any table throws, malformed inputs return null or the raw-phase fallback.",
+      "The suite runs green under `npx tsx --test` with node:test + node:assert/strict and no added dependency."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "progress-adapters unit table: all eight known workflow phases plus the unknown-phase fallback, and every enumerated AnalyzeRunEvent variant plus the null-return path, driven from one table with no fixture throwing"
+      },
+      {
+        "level": "unit",
+        "name": "progress-adapters unit table: a synthesize-retry attempt-3 fixture with runner, attempt, and detail all populated yields a stageLabel containing all three and invents no sc1 field"
+      },
+      {
+        "level": "unit",
+        "name": "progress-adapters unit table: index monotonicity across a synthesize-retry that repeats the same stageId, with repeated stageIds not deduplicated"
+      },
+      {
+        "level": "unit",
+        "name": "progress-adapters unit table: batching with tokensDelta > 1, unattributable stageId:null, and NaN/negative/regressing suppression each assert the expected warn/debug line against the stub logger"
+      },
+      {
+        "level": "unit",
+        "name": "progress-adapters unit table: the try/catch backstop at both emission sites — an injected throwing mapper is caught, warn-logged, emits no frame, and returns normally"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -12,7 +12,26 @@
     "storyId": "s4",
     "reviewedBy": "daemon",
     "epicSlug": "e2-delivery-board-vs-code-goal",
-    "epicCreatedAt": "2026-10-08T18:04:18.693Z"
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "47aef313c23de9d2d22eb406478dde4a2d55c8e0d30353b1c156ed133f5ad582",
+        "at": "2026-10-09T11:01:12.568Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

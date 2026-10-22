@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95a97883-7f70-40d3-a5f1-0599441ba0bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.732Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Plugin gateway wrapper + DTOs + Recorded|Unavailable result",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4fbc8d9e5870af58ce52f69997254dd4597cb00f0228de2eac9eb6042b8e1a58",
+        "at": "2026-10-22T12:43:18.732Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.733Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin gateway wrapper + DTOs + Recorded|Unavailable result",
+    "summary": "Add DaemonGateway.resolveComment(repo, artifactId, comments): ResolveCommentResult (Recorded|Unavailable) + ReviewCommentDto + the result DTOs in DaemonGateway.kt, mirroring S002's artifactReviewView/ArtifactContentResult; classify the reply verbatim (ok->Recorded; ok=false/DaemonUnavailable/result.error/malformed->Unavailable). Add the new interface-method override to EVERY gateway test double (FakeGateway/NoopGateway/AlreadyRegisteredGateway across all test files) + imports in the SAME task so the suite compiles.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "DaemonGatewayImpl.resolveComment maps ok(result)->Recorded and ok=false/DaemonUnavailable/result.error/malformed->Unavailable",
+      "All existing gateway test doubles compile with the new override (no broken test files)",
+      "The comment->ReviewCommentDto wire mapping preserves anchor fields + body"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DaemonGatewayImpl.resolveComment over a fake DaemonRpc: ok->Recorded; ok=false/DaemonUnavailable/malformed->Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "comment -> ReviewCommentDto wire mapping preserves anchor fields + body"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

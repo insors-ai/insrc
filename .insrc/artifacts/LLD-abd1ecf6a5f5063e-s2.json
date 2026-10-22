@@ -23,80 +23,62 @@
     "hldBaseRunId": "wf-1785587820064-46kctq",
     "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "s2-cat",
-          "ref": "c1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "BrainstormCategory is exactly the union requirements|design|implementation|testing|general in src/shared/brainstorm-classes.ts, and BRAINSTORM_CATEGORY_CLASSES is exported there — the reused vocabulary (no new taxonomy).",
-          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` (members incl. requirements:13, implementation) + BRAINSTORM_CATEGORY_CLASSES at :23 — the reused vocabulary; no new taxonomy. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "s2-pause",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "llmPauseRunner is a real helper used by the design-story runners to build llm-pause steps (the mechanism s2 reuses for elicit).",
-          "evidence": "llmPauseRunner is a real helper used to build llm-pause steps — defined + used in design-epic/index.ts:44, design-story/index.ts:107, plan/index.ts:63. Note: it is a PER-MODULE private helper (not a shared export), so the build defines brainstorm's own mirroring the pattern (or inlines the StepRunnerLlmPause return) — a build detail, the mechanism is real.",
-          "action": "Build note: define a local llmPauseRunner in brainstorm/index.ts (or inline the pause) as the other runner modules do; do not import a non-existent shared export.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "s2-llmpause-type",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "StepRunnerLlmPause (type:'llm-pause') is a real member of the StepRunnerResult union in src/workflow/types.ts — the return shape the elicit runner produces.",
-          "evidence": "src/workflow/types.ts:146 `interface StepRunnerLlmPause`; type:'llm-pause' handled in executor.ts:227 — the return shape the elicit runner produces is real. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "s2-s1seam",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The s1 scaffold that s2 reshapes exists: a placeholder `elicit` StepRunner in src/workflow/runners/brainstorm/index.ts and BrainstormElicitState in src/mcp/workflow-step/state.ts.",
-          "evidence": "The s1 seam exists: the 'elicit' runner id (brainstorm registration.test + orchestrator brainstormDecomposer enum ['elicit']) and src/mcp/workflow-step/state.ts:35 `interface BrainstormElicitState` — both landed by s1 (212fb1c). s2 reshapes elicit in place. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "s2-qgate",
-          "ref": "c4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "questions-gate.ts is the upstream-artifact open-questions gate (upstreamKindFor), not a mid-stage user-question mechanism — grounding the LLD's refinement that s2 uses the step-loop pause instead.",
-          "evidence": "src/mcp/workflow-step/questions-gate.ts:38 `export function upstreamKindFor(workflow): QuestionArtifactKind` — confirms questions-gate is the upstream-artifact open-questions gate, grounding the LLD's refinement that s2 uses the step-loop pause instead (honors sc3 intent). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "s2-consume",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "s2 consumes (does not own) sc2 + sc3, which the HLD assigns ownedByStory s1 — so role:'consumes' is correct.",
-          "evidence": "sc2/sc3 are ownedByStory s1 in the HLD; s2 lists them as consumes with owns:[] — role:'consumes' is correct (no false implements). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-01T17:05:02.072Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-01T17:05:28.239Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7acf4481406461c1c1ff3776eade4d0b5ef85ecd21b7a0d94e4e98179e186621",
+        "at": "2026-08-01T16:53:27.793Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T17:05:28.239Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-01T17:05:02.072Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

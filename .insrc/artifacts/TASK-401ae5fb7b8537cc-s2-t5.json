@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-607820db-c535-46c5-9bc6-ac21f5b58c77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:29.019Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Merge the PerRoleKeyMap into the engine in extension.ts",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6e2f497fd77138c668f3ee3745d03edaac9ef0cb3fada287739f5ccc11a47bcc",
+        "at": "2026-10-22T12:43:29.019Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:29.020Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Merge the PerRoleKeyMap into the engine in extension.ts",
+    "summary": "In vscode-plugin/src/extension.ts pass the MERGED key map (global CONFIG_KEY_MAP + buildPerRoleKeyMap()) to createConfigSyncEngine so the ONE engine drives both. The existing onDidChangeConfiguration('insrc') listener + activation pull already iterate the merged map (they filter insrc.* and per-key over the map), so no new listener/command is added. The ConfigGateway bound here now also exposes writeKeyPath/rawConfig from t1.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "extension.ts constructs the engine over the merged (global + per-role) key map; the existing listener + activation pull cover the per-role keys with no new listener/command",
+      "activation still never throws/blocks and the S001 global behavior + status bar + 7 commands are unchanged (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: extension.ts constructs the engine over the merged global+per-role key map and adds no new listener/command; the ConfigGateway binding exposes writeKeyPath/rawConfig"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

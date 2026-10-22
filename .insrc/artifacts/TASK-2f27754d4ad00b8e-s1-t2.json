@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-141712bd-9b8d-4207-8759-d8c76b42ebac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.163Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build storage and amendment ids through make",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "350a8f7a3839ad9f9c9dec3dc18793eacf4d4a12f66de9acb84172eb40647dbf",
+        "at": "2026-10-22T12:43:20.163Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.164Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build storage and amendment ids through make",
+    "summary": "Switch the storage.ts id functions (define, hld, lld, plan, build, spec, issue, code review, tests, extend) and nextAmendmentId to ArtifactIds.make, keeping the amendment counter scan, so an uppercase story throws. Update the tests and fixtures that use S001 to the lowercase form and add the test that a stored uppercase artifact fails with a message pointing to the s9 conversion.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "lowercase-story artifacts keep their id and file name and resolve through the storage lookups and gates",
+      "an uppercase story fails with an error that points to the conversion",
+      "nextAmendmentId returns the same text for existing amendment files and the next counter",
+      "the storage, gates and amendment tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/storage.test.ts: lowercase-story artifacts keep their id and file name and resolve through the storage lookups and gates"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/storage.test.ts: an artifact stored with an uppercase story fails with an error that points to the conversion"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/amendments/__tests__/next-amendment-id.test.ts: nextAmendmentId returns the same AMD text for existing amendment files and the next counter"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

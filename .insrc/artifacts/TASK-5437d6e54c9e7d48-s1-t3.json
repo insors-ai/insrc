@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5a2de968-4d30-40de-87f2-3b8bbf4712b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.252Z",
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5437d6e54c9e7d48",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pin lmdb's transaction behaviour and the store's open options",
+      "parent": {
+        "entityId": "STORY-5437d6e54c9e7d48-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5437d6e54c9e7d48-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5437d6e54c9e7d48-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b9b60a463aca1f7717d50110bd1b7952f2c48b10bac46ba96a7e09c4a4004dec",
+        "at": "2026-10-22T12:43:32.252Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.253Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pin lmdb's transaction behaviour and the store's open options",
+    "summary": "New src/db/graph/__tests__/lmdb-txn-semantics.test.ts: in a fresh process after a reopen (the store-child.ts harness or a direct child), root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it. A test that the store opens without useWritemap (child transactions available). lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The pin test fails if lmdb starts discarding root.transaction writes or keeping childTransaction ones",
+      "The lock-loss suites pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts: in a fresh process after a reopen, root.transaction keeps a throwing callback's write, childTransaction and transactionSync discard it; the store opens without useWritemap"
+      },
+      {
+        "level": "integration",
+        "name": "src/db/graph/__tests__/lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -11,7 +11,26 @@
     "epicHash": "599a9b506f22b896",
     "storyId": "s3",
     "epicSlug": "restructure-docs-artifact-markdown-from-flat",
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "27355600f7a42e275a8fcf12e247788a043e81ae88830eae0fb61014062ce16c",
+        "at": "2026-09-16T10:52:51.388Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

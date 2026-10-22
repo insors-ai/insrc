@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0124956-f9c9-44de-8a79-1f54f6db5bbf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.307Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Data-quality notices",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f14d6cebe44936d1e6873920b497b485d9fd06f96a29c0622b029b421ddef401",
+        "at": "2026-10-22T12:43:24.307Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.308Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Data-quality notices",
+    "summary": "Add the pass's notices: review-currency-unknown per epic, story or issue with unknown-currency records (saying so when several LLDs or PLANs sit on one story) plus one store-level notice for unheld ones; base-predates-extension per approved EXT whose added story its epic DEF's body.stories does not list; incomplete-evidence per epic, story or issue with no title, and per load failure naming the file, reason, detail and the items its file name's kind, hash and story imply. Never raises record-unreadable, which the graph builder raises since the merged ISSUE-34b6a247 fix (ca780fe1); t3 changes no graph.ts code. Sorted with sortNotices.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "An EXT story stays in the graph; an EXT whose story the DEF lists raises no notice, and one whose story the DEF omits raises base-predates-extension naming the EXT, DEF, epic and story.",
+      "An untitled item stays in the graph with one incomplete-evidence notice naming it and its evidence.",
+      "A malformed file leaves every other item in place; this pass raises one incomplete-evidence notice naming the file and the items it leaves uncovered, the graph raises exactly one record-unreadable notice for it (from the ISSUE-34b6a247 fix), and the pass raises none.",
+      "Producing the annotation over a real temporary store (with a malformed file and an s1/S001 LLD pair) changes no file's bytes or mtime.",
+      "The real-shape fixtures give every record a currency entry, deterministically."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'an extension story stays in the view and its extension newer than the epic framing is reported'"
+      },
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'an item no record gives a title stays in the view with an incomplete-evidence notice'"
+      },
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'the real-shape fixtures give every record a currency entry, deterministically'"
+      },
+      {
+        "level": "integration",
+        "name": "currency.test.ts: 'a malformed file leaves every other item in place and is named with the coverage it leaves unknown'"
+      },
+      {
+        "level": "integration",
+        "name": "currency.test.ts: 'producing the currency annotation changes no file in the artifact store'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6aec4f36-602e-40d9-8707-8646c247c6e4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.174Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove the date fallbacks in the producers",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "50727e4fa0bea6e2896079ed4ba24fdc10c33ea0e41afdc19159431a4106faaf",
+        "at": "2026-10-22T12:43:20.174Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.174Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the date fallbacks in the producers",
+    "summary": "Replace the inline readEpicCreatedAt-or-now fallbacks in the producers: orchestrator.ts (1372, 1847, 2227, 2687), the anchors in tracker-auto.ts and tracker/link.ts, daemon/workflow-rpc.ts, the synthesize phase and cli/services/workflow.ts, each with the resolved anchor and a failure before any write. Add the missing-anchor tests for these sites.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "each listed site fails before any file is created when no anchor exists",
+      "no source file falls back to new Date() or to an artifact's own createdAt for the folder date",
+      "the workflow and daemon tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/anchor-missing-producers.test.ts: the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize each fail before any file is created when no anchor exists"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

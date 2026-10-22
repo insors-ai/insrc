@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ac54139-17d4-4771-9826-69bf29efd3e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.268Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Terminal tracker setup through the daemon with a validated plan",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "944bb2324f96e89ad010b8a55ac618d00efef4f30ce23613d016398f79fd7d95",
+        "at": "2026-10-22T12:43:25.268Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.269Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Terminal tracker setup through the daemon with a validated plan",
+    "summary": "Add planTrackerConfig (strict readRepoEntry first; any structural failure is a failed plan; then the existing completeness test), the optional configOutcome seam on runTrackerSetup, and make trackerSetup in src/cli/services/workflow.ts asynchronous: plan, call repo.trackerConfig.ensure through rpc with timeoutMs 15000 when a write is needed, then run the remaining steps. Update the command layer, the TUI and Services callers. The deadline bounds only the config call; the other steps run afterwards and are not bounded by it.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "planTrackerConfig returns failed with the strict message, calls no daemon and writes nothing for a null own entry with a complete default, a null default, non-object levels and invalid JSON, without throwing",
+      "With a running test daemon the config step reports done or already with today's detail text; with no daemon, a silent daemon and an early-closing daemon it reports failed within the deadline and says the daemon owns the file",
+      "In every failure branch the remaining setup steps still execute and report, asserted separately from the timeout assertion; no test claims a 15 second total setup time",
+      "makeServices always passes configOutcome into runTrackerSetup and a source search test fails if production code outside the daemon and tests calls it without it",
+      "Existing runTrackerSetup tests pass unchanged without the seam"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: planTrackerConfig already, needs-write and no-origin cases"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: planTrackerConfig fails on malformed files without throwing, calling the daemon or writing"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/tracker-setup-service.test.ts: config step done, already and failed through the terminal service"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/tracker-setup-service.test.ts: silent and early-closing daemon fail the config step within the deadline"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/tracker-setup-service.test.ts: the remaining setup steps still run after a failed config step"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/tracker-setup-service.test.ts: malformed github.json fails the config step with no daemon call"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/tracker-setup-service.test.ts: makeServices always injects the config seam"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5b174a47-825b-4fca-b330-22ef64d6826d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.061Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the insrc_present MCP tool",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4eb900ffde5488684e5870cca05675a6ae6ea09201d9cc5ef6a38b504ce5b016",
+        "at": "2026-10-22T12:43:11.063Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.064Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the insrc_present MCP tool",
+    "summary": "Add the insrc_present input shape to the schema registry, a workflow.pending wrapper in daemon-stream.ts, a handler that resolves the repo as insrc_workflow_approve does and answers presented and notPending against the pending list (a record with no document file is not presentable; ids matched without regard to the case of the story part; one to twenty names), register the tool in server.ts, and update the pins: the golden tool-surface fixture (inserted in name-sorted position, count thirteen, the 'twelve tools' title and length check in forward-step.test.ts), EXPECTED_TOOLS and PHASELESS_TOOLS in schema-registry.test.ts, and the steering tool-catalog row in steering-block.md (the only steering edit in this task; the prose is t7).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "insrc_present answers presented and notPending for pending and non-pending names and rejects an empty, oversized or non-string list",
+      "With no resolvable repo the tool answers an error and presents nothing",
+      "The golden fixture, forward-step test and schema registry tests pass with thirteen tools"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list"
+      },
+      {
+        "level": "integration",
+        "name": "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present"
+      },
+      {
+        "level": "integration",
+        "name": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_present with a resolver that finds no repo answers an error and presents nothing"
+      },
+      {
+        "level": "integration",
+        "name": "a pending record with no document file is reported as not pending by the tool and by the chat"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c9fda6fd-de06-4aed-af0c-9206751ca2da",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.951Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Use the board in a narrow pane, with the keyboard alone, and at either density",
+      "parent": {
+        "entityId": "EPIC-6a1315585c38c41c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7516d22371910076624378959b75eccbf1c2f011271b9c2ca12450820172a79f",
+        "at": "2026-10-22T12:43:06.951Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

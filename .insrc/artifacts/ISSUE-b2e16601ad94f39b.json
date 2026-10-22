@@ -21,9 +21,37 @@
     "epicSlug": "code-review-record-takes-its-folder",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-04T12:11:00.851Z",
     "parentRef": {
       "slug": "code-review-record-takes-its-folder"
+    },
+    "epicCreatedAt": "2026-10-04T05:15:59.390Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8e5a38fbe45b23146007d4f5dd3c6c660d22a5ef04089f5c1873d58cd7d6aaca",
+        "at": "2026-10-04T05:15:59.390Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T12:11:00.851Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

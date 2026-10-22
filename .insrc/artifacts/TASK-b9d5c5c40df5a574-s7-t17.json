@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ca8f4ceb-ccde-4b00-bbe6-152cea381793",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.485Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The daemon guide, the live checks and the baseline comparison",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7b3ffd1b4a5978ecc4f70a6a9195c6ecee9f06f1c5154136cedd33b9f66de6c1",
+        "at": "2026-10-22T12:44:25.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.486Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The daemon guide, the live checks and the baseline comparison",
+    "summary": "Update docs/daemon.md: the kinds of scope each family's tasks accept, the code on a failed task, the aggregate task's rule and what a report with absent inputs says, 'run-abandoned', the check before planning, and the prompt rule, with a note for the IDE repository on the optional code. Through the installed daemon running this Story's code, one at a time because each run spends the stakeholder's model quota: an infra and a data request; a code request; a request with an empty prompt and a stated source; infra or data requests at sizes above S to look for a nested plan; and a docs request, recorded and not a proof. Compare the four suites with the baseline taken in the first Task.",
+    "size": "M",
+    "order": 17,
+    "acceptanceChecks": [
+      "docs/daemon.md describes each of the listed changes and carries the note for the IDE repository",
+      "Live: an infra and a data request each complete with a final report",
+      "Live: a code request returns a final report whose first line names the failed functional-surface tasks",
+      "Live: a request with an empty prompt and a stated kind of source completes",
+      "Live: the sizes tried for a nested plan are recorded; if one run plans a planner-kind task, its child tasks appear by path in the run's answer report, and if none does the nested integration test is named as the proof of ac2",
+      "Live: the docs request is recorded with its outcome and marked as the accepted exception, to be closed by Story s3",
+      "Each live run's date and result are in the build record",
+      "No test of the four suites that passed in the baseline fails after the last Task, other than the tests of the three removed scope functions"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "an infra request and a data request each complete with a final report"
+      },
+      {
+        "level": "live",
+        "name": "a code request returns a final report whose first line names the failed functional-surface tasks"
+      },
+      {
+        "level": "live",
+        "name": "a request with an empty prompt and a stated kind of source completes"
+      },
+      {
+        "level": "live",
+        "name": "infra or data requests at sizes above S: a plan with a planner-kind task runs its child plan, or the sizes tried are recorded and the nested integration test stands"
+      },
+      {
+        "level": "live",
+        "name": "a docs request, recorded as the accepted exception"
+      },
+      {
+        "level": "smoke",
+        "name": "no test of the four suites that passed in the baseline fails after the last Task, other than the tests of the three removed scope functions"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

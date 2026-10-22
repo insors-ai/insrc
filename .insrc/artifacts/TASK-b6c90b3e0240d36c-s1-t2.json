@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f9613909-1f4f-4928-b4a1-7eaf567dd339",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:21.034Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the update-runner module (launch guard + detached spawn + outcome writer/reader) with an injected spawn seam",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b6c90b3e0240d36c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c6247bbdce79c8364874a4a5c23b76d5d7a14caea4b48ffceaed042e8270047",
+        "at": "2026-10-22T12:44:21.035Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:21.035Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the update-runner module (launch guard + detached spawn + outcome writer/reader) with an injected spawn seam",
+    "summary": "New module src/daemon/update-runner.ts realizing the sc1-internal mechanism, exporting launchUpdate and readUpdateOutcome as INDEPENDENT, independently-testable functions (per the s3 critique): resolve DAEMON_ROOT ($INSRC_DAEMON_ROOT ?? ~/.insrc/daemon) + the daemon-ctl.sh path (throw 'cannot locate daemon root / helper' if missing); a concurrent-launch guard over PATHS.updateLock with stale-marker (dead-pid/aged) detection (throw 'update already in progress' when live); spawn a DETACHED, unref'd child running daemon-ctl.sh restart with stdio-to-log (the daemon.ts:66 detached:true idiom) via an INJECTED spawn fn; an outcome writer (state:'succeeded'|'failed' + raw error + finishedAt to PATHS.updateOutcome, clears the marker); and the best-effort readUpdateOutcome (parse PATHS.updateOutcome; return null on ENOENT/parse error, never throw). No real restart in the module; the shutdown trigger is an injected seam too.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "launchUpdate and readUpdateOutcome are separately exported and can be unit-tested in isolation (per the s3 critique)",
+      "launchUpdate() spawns the detached child with argv resolving to daemon-ctl.sh restart and { detached:true, unref, stdio-to-log } via the injected spawn seam",
+      "A live updateLock marker makes launchUpdate throw 'daemon.update: update already in progress' and NOT spawn; a stale/dead-pid marker is ignored and the launch proceeds",
+      "An unresolvable DAEMON_ROOT/daemon-ctl.sh makes launchUpdate throw 'daemon.update: cannot locate daemon root / helper' before any spawn/marker write",
+      "readUpdateOutcome() returns the parsed DaemonUpdateOutcome for a present record and null for absent/unparseable (never throws)",
+      "the outcome writer records state:'succeeded' on zero exit and state:'failed'+raw error on non-zero/timeout, clearing the marker in both cases"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "launchUpdate: injected fake spawn records argv resolving to daemon-ctl.sh restart with { detached:true, unref, stdio-to-log }"
+      },
+      {
+        "level": "unit",
+        "name": "launchUpdate guard: a live updateLock marker throws 'update already in progress' and does NOT spawn; a stale/dead-pid marker is ignored and the launch proceeds"
+      },
+      {
+        "level": "unit",
+        "name": "launchUpdate resolve failure: an unresolvable DAEMON_ROOT/daemon-ctl.sh throws 'cannot locate daemon root / helper' before any spawn or marker write"
+      },
+      {
+        "level": "unit",
+        "name": "outcome writer: zero exit -> state:'succeeded'; non-zero exit/timeout -> state:'failed'+raw error; marker cleared in both cases"
+      },
+      {
+        "level": "unit",
+        "name": "readUpdateOutcome: parses a present record; returns null on ENOENT and on unparseable JSON (never throws)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

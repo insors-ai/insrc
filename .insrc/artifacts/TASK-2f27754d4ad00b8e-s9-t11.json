@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-812d2ba6-f8e5-457e-93f4-02e0fb4827d4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.773Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "move-story-history and the pre-s8 comment listing",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d474632ff933776327326dd4439a07ff171af84b22060c60c1eecfb42523de4a",
+        "at": "2026-10-22T12:43:22.773Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.773Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "move-story-history and the pre-s8 comment listing",
+    "summary": "Add src/workflow/convert/story-history.ts: copy the LLD's tracker:<comment id> feedback lines and feedback-post receipts to the STORY head (the LLD keeps its append-only copies; feedback ids de-duplicate); when a tracker port is supplied list the pre-s8 attach comments in the plan and the report without rewriting them. Test src/workflow/convert/__tests__/convert-story-history.test.ts.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "The STORY head holds the tracker feedback lines and receipts and feedback ids de-duplicate on a repeat",
+      "The pre-s8 attach comments are listed and not rewritten"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-story-history.test.ts: tracker feedback lines and receipts move to the STORY head and attach comments are listed"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

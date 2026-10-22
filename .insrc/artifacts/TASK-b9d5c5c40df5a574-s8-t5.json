@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6fd15285-3446-4799-b13a-481728f50b22",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.253Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s8",
+    "envelope": {
+      "description": "The daemon guide, the suite comparison and the live check",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a8d59c975bbfb91f782ee47e1e81aec07fc023bd41bcd7e45dd4358e65f936c",
+        "at": "2026-10-22T12:44:26.253Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.254Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The daemon guide, the suite comparison and the live check",
+    "summary": "Add a subsection to docs/daemon.md, after 'The kinds of scope each family of tasks accepts', on what a module is for the code tasks: the definition, the three forms of the `module` value, and what a file or symbol scope gives. Compare the analyze suite by test name with the baseline of the first Task, and run the gated file deterministic-runtimes.test.ts whole. Then the live check: the push of the Story's commits, the update of the installed daemon and the run itself are each done only on the stakeholder's word; the run spends the stakeholder's model quota, is started detached from the session, and only after checking that no other session is running one. Record the result.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "docs/daemon.md has the new subsection with the definition, the three forms of the value and the file and symbol scope rule",
+      "No test of the analyze suite that passed in the baseline fails after the last Task; the two gated tests that change are named with their new result",
+      "The gated file src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts passes whole with INSRC_LIVE_TESTS=1",
+      "Live: a code request at size S on this repository returns a final report in which every functional-surface task succeeded and the module list is not empty; its date and result are in the build record"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "a code request at size S on this repository returns a final report in which every functional-surface task succeeded and the module list is not empty"
+      },
+      {
+        "level": "smoke",
+        "name": "no test of the analyze suite that passed before the Story's first change fails after its last, the gated file src/analyze/runtimes/code/__tests__/deterministic-runtimes.test.ts included, which is run whole with INSRC_LIVE_TESTS=1. Two of its tests change and are named: 'surface.functional: unknown module entity id -> throws' (the message for a value that names nothing) and 'structure.module-tree: repo with zero modules -> empty tree, not error' (one source file in the repo's own directory now gives one node '.' and no edge)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

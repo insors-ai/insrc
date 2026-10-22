@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-36b8647b-2758-42d3-ba9e-fe92a4b67ffe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.087Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Record a build-ledger entry (change-log + feedback) for every completed build",
+      "parent": {
+        "entityId": "EPIC-e2c6705fd105d4ac",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c1e53ded72d03c36f18dc9c97007d82b1ffe5a8d02aed18d1a58693110e6e823",
+        "at": "2026-10-22T12:43:07.087Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

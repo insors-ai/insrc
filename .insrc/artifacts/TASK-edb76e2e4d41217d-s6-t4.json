@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0d8c18ab-fa37-4470-a295-8045cc4b7177",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.464Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Render the edit-mode toggle + chat-view inline diff in the webview",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "428ca101805455304e2ea9b638fbaa36dffab5b1b82a31ea8dd5167c7f5c52d3",
+        "at": "2026-10-22T12:44:53.464Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.465Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render the edit-mode toggle + chat-view inline diff in the webview",
+    "summary": "Inside the ONE nonce'd webview script, render the sc1-styled per-session edit-mode toggle (emits set-edit-mode) and the chat-view inline diff for an edit-prompt message (added/removed lines via the line(s,cls) writer using textContent + sc1 className, with accept/reject controls emitting edit-decision, handled by t3). No second script, no innerHTML, no remote origin; CSP unchanged.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "the webview renders an edit-mode toggle + a diff view for edit-prompt; still exactly one <script> under the strict CSP",
+      "diff hunk + control text set via textContent/className, never innerHTML; no remote origin / asWebviewUri added",
+      "accept/reject controls post edit-decision {path, accept} (handled by t3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-panel shell: edit-prompt diff renders inside the ONE nonce'd script; strict CSP, textContent/className only, no innerHTML, no remote/asWebviewUri"
+      },
+      {
+        "level": "unit",
+        "name": "chat-panel shell: hunk lines added via textContent styled by sc1 className, never markup"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

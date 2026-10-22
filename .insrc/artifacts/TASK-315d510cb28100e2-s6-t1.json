@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0520f464-c39a-4c49-a400-001db3b048a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.500Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Declare registerParkOfferProvider and set offerPark in the gate",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "41b610851f7deab8e823b7db743299c232bf40ef52db66b2a2bbf382a3440e88",
+        "at": "2026-10-22T12:43:26.500Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.502Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare registerParkOfferProvider and set offerPark in the gate",
+    "summary": "In src/workflow/team/gate.ts add registerParkOfferProvider (amendment AMD-315d510cb28100e2-13, shaped like registerCompletionHook, shipped with no provider). teamGate and claim consult it for a held-by-other outcome (a throwing provider counts as false, no call without a policy) and describeOutcome appends the park command when offerPark is true.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "With no provider registered offerPark stays false on every outcome",
+      "offerPark is true only on held-by-other and only when the provider returns true for (repo, unit, actor); a throwing provider counts as false",
+      "A repo with no policy makes no provider call and no tracker call",
+      "describeOutcome appends the park command only for held-by-other with offerPark true"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/park-offer.test.ts: teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

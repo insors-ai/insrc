@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ba22116-9835-4fb7-a137-c39b12a68095",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:46.633Z",
+    "epicCreatedAt": "2026-09-26T11:44:45.049Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dfc0371b7200f5b5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add guide-enumeration + triage-regression tests",
+      "parent": {
+        "entityId": "STORY-dfc0371b7200f5b5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dfc0371b7200f5b5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ffdcf808522f1d22c4eb60a0e9efd285405886d2996bba957d923e4fbc0d8b9",
+        "at": "2026-10-22T12:44:46.638Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:46.639Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add guide-enumeration + triage-regression tests",
+    "summary": "Add a guide-sections test that listWorkflowGuides now includes 'bugfix' and guideGetResult({workflow:'bugfix'}) returns the section with existing keys/order unchanged. Add/confirm a triage regression assertion that routeForSizeClass('bugfix', small|sized) still routes to startStage 'issue' and that the triage nextCall returns workflow:'issue' for a bugfix result. (The gate-mount behaviour tests are authored alongside t2; the steering-content assertions alongside t3.)",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A guide-enumeration test asserts 'bugfix' is present in listWorkflowGuides output and the section text is returned, order unchanged.",
+      "A triage regression test asserts routeForSizeClass('bugfix', small|sized) → startStage 'issue' and the nextCall workflow is 'issue'.",
+      "All new + existing workflow/mcp/daemon tests pass under `npx tsx --test`."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "listWorkflowGuides(steering-block.md) includes 'bugfix' after the marker is added"
+      },
+      {
+        "level": "unit",
+        "name": "guideGetResult({workflow:'bugfix'}) returns the bugfix section text"
+      },
+      {
+        "level": "unit",
+        "name": "existing keys + order unchanged (triage..tracker still present)"
+      },
+      {
+        "level": "unit",
+        "name": "routeForSizeClass('bugfix','small') → startStage 'issue', small chain"
+      },
+      {
+        "level": "unit",
+        "name": "routeForSizeClass('bugfix','sized') → startStage 'issue', design→plan→build"
+      },
+      {
+        "level": "unit",
+        "name": "triage nextCall returns insrc_workflow_step workflow:'issue' for a bugfix result"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

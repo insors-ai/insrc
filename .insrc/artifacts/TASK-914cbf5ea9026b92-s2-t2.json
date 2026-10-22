@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0440b97d-901f-43fa-98cc-ca6dede39c2f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.873Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s2",
+    "envelope": {
+      "description": "At-rest config-source parsers + buildConfigSourceMap (path-read, total precedence)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "99d16b16f2d2b78f03e54ec195192d1997aa0fb68e851d0cb04425887bc107a5",
+        "at": "2026-10-22T12:43:58.874Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.874Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "At-rest config-source parsers + buildConfigSourceMap (path-read, total precedence)",
+    "summary": "In src/indexer/target-resolution/config-sources.ts write four at-rest text parsers, each producing {key,value,layer} from a config source's FULL text read by PATH (not the truncated 8KB entity.body): a .env key=value reader (envFile), a Dockerfile ENV + docker-compose environment/env_file reader (docker), a k8s manifest env/data reader via js-yaml load/loadAll (k8s), and an in-repo config-default reader (localConfig). buildConfigSourceMap(configFiles) reads each file at rest (fs, never executed; guard MAX_SIZE), parses best-effort (skip a malformed line / unparseable YAML doc without throwing), and folds all into one ConfigSourceMap with the single TOTAL precedence order k8s > docker > envFile > localConfig on a key clash (so the k8s-over-docker intra-deploy-time tie-break is explicit, matching the LLD edge case). Kept as one cohesive task — the four parsers share buildConfigSourceMap + the precedence rule.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "each parser (.env / Dockerfile+compose / k8s manifest / localConfig) extracts the correct key->value pairs from a sample body of its type and tags the right layer; a malformed .env line / unparseable YAML doc is skipped without throwing",
+      "buildConfigSourceMap folds multiple sources with the single total precedence k8s > docker > envFile > localConfig (k8s beats docker within deploy-time; deploy-time beats envFile beats localConfig)",
+      "all reads are at-rest fs reads by path (js-yaml load; no kubectl, no execution)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": ".env parser: key=value, quoted values, comments, and a malformed line skipped (best-effort partial parse)"
+      },
+      {
+        "level": "unit",
+        "name": "Dockerfile ENV parser + docker-compose environment/env_file reader tagged 'docker'"
+      },
+      {
+        "level": "unit",
+        "name": "k8s manifest env/data reader tagged 'k8s' via js-yaml — reading manifest FILE text, never invoking kubectl; an unparseable YAML document is skipped without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "in-repo config-default reader tagged 'localConfig'"
+      },
+      {
+        "level": "unit",
+        "name": "buildConfigSourceMap precedence-merge: a multiply-defined key resolves to the k8s > docker > envFile > localConfig winner"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

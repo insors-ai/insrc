@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6a4d5370-a9ea-452c-995b-c8ed973e15f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.373Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Report which edit a result answers, and each file a codex patch changed",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b699a985e7d03d4cede8b3c96528617b33fa47314a9b799097a28f54670977d",
+        "at": "2026-10-22T12:44:17.377Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.378Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Report which edit a result answers, and each file a codex patch changed",
+    "summary": "stream-events.ts gains editPath and isError on 'tool-result' and applied on 'file-edit'. The claude mapper remembers Edit and Write tool_use ids and sets editPath and isError on their results. The codex mapper emits one 'file-edit' event per entry of a file_change item's changes list, one for a bare path, and '(unknown)' when the item names none; the events carry applied unless the item's status is 'failed', in which case the host holds the path and writes its path line when the turn's diff state ends. A recorded real codex item is added as a unit fixture, and the two live tests are added behind the live flag.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A claude Edit or Write result carries editPath, and isError when the block reports an error; a command's result carries neither",
+      "A codex file_change item with two changes gives two applied file-edit events with those paths, and a failed item gives them without applied",
+      "Existing adapter tests pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither"
+      },
+      {
+        "level": "unit",
+        "name": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied"
+      },
+      {
+        "level": "live",
+        "name": "live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section"
+      },
+      {
+        "level": "live",
+        "name": "live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

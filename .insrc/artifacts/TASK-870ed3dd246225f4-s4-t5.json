@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a0bff5e-3dbf-49fe-88cb-86502888c9f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.396Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Fake-generator unit suite + shell regression + live-gated path",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "66cd8ceb0f2c4198afc5c045385c6ecbbd4489a6e81d45087ef04dacf5ba8f8c",
+        "at": "2026-10-22T12:43:54.396Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.397Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-generator unit suite + shell regression + live-gated path",
+    "summary": "Create src/docgen/extract/__tests__/narrative.test.ts: pure buildAllowedEntitySet/groundSections/buildNarrativeDocument fixtures (grounded/partial/all-ungrounded/casing); makeExtract against a FAKE NarrativeGenerator covering the FULL degrade matrix (grounded ok, available()=false degrade, generate() rejects degrade, all-ungrounded, base non-ok short-circuit, empty-scope, base dispatch) + fake base extract fns; shell narrated-region render + HTML-escaping + the derived-only byte-identical regression (the t3 backstop); an INSRC_LIVE_TESTS-gated real-provider case (skips when unset). Then run the full docgen suite + npm run build.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the new narrative tests pass; full docgen suite green (56 + new cases)",
+      "npm run build clean",
+      "every makeExtract degrade branch (unavailable / throws / all-ungrounded / base-non-ok) is covered by the fake-generator matrix",
+      "the live-provider case is gated behind INSRC_LIVE_TESTS and skips cleanly when unset; derived-only byte-identical regression holds (s1/s2/s3 unaffected)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "full narrative.test.ts suite green + full docgen suite (56 + new) green; derived-only byte-identical regression"
+      },
+      {
+        "level": "live",
+        "name": "INSRC_LIVE_TESTS-gated real-provider narrative round-trip (skips when unset)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

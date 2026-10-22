@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cba668b8-3a87-4515-a254-abd2ed751f08",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.239Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Build the team gate core and the implicit claim",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "08858cd7099479db321a5e022fc8202997c8d6e32eebbb3522878f93be2b8d2d",
+        "at": "2026-10-22T12:43:26.239Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.240Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the team gate core and the implicit claim",
+    "summary": "Add src/workflow/team/gate.ts with GuardedAction, GateOutcome, ClaimState, TeamGateRefusedError and teamGate(repo, unit, action): allowed with no tracker call for no policy, teamMode false, claimsEnforced false or an unguarded action; otherwise load the tracker with the claim capability, make its own whoAmI call, read the assignee live, treat the assignee as the holder (logins compared case-insensitively), give held-by-other naming the holder, refuse several assignees and every port or policy failure, and take the implicit claim through addAssignee for author and build. Logs every non-allowed outcome with unit, action and reason. Never throws.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A repo with no policy, teamMode false or claimsEnforced false is allowed with no tracker call",
+      "An unassigned stage is allowed for author and build with implicitClaim true and takes no claim for approve-local or applying a finding",
+      "A developer assigned directly in the tracker is the holder, with logins compared case-insensitively",
+      "Another holder gives held-by-other naming them whatever their idle time",
+      "Several assignees, every port failure kind and an unreadable policy map to refused with the reason and never throw"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/gate.test.ts: teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder's idle time"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

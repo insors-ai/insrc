@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-53a27cfa-1818-4589-bd10-0f65983d598a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.166Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Correct the pairing table, the symbol form in the validator, and the classifier prompt",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d68863e6d47675478436c8524e23e79a6532aaafb66d5b3a5ccc5abffc99e09f",
+        "at": "2026-10-22T12:44:25.167Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.167Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Correct the pairing table, the symbol form in the validator, and the classifier prompt",
+    "summary": "Change TARGET_TO_KINDS to the corrected rows with its comment. Make the validator split a symbol's value at the last '#' before any file-system test. Rewrite the classifier prompt's pairing list and its rule for a symbol's value. Rewrite the matrix test and add the test that compares the prompt with the table.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The matrix test asserts every pairing of five kinds of source and seven kinds of scope against the corrected rows",
+      "A symbol value in the new form passes when its file exists and fails with 'scope-ref-unresolved' with no '#' or a file part that is not a file",
+      "A test reads the classifier prompt and finds the same rows as the exported table; changing one row in either makes it fail",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pairing matrix: thirty-five pairings against the corrected rows"
+      },
+      {
+        "level": "unit",
+        "name": "validator symbol form: passes, no '#', file part not a file"
+      },
+      {
+        "level": "unit",
+        "name": "classifier prompt's pairing list equals the exported table"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

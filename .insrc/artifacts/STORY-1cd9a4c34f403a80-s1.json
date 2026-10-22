@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-a5473562-be09-41ce-84b9-506ef07f1e58",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.858Z",
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Break an approved Story design into an ordered, sized, dependency-labelled task list",
+      "parent": {
+        "entityId": "EPIC-1cd9a4c34f403a80",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "5e085133a734392b1be6f843e078d53e763a2942fdc6ab61f54a62b9f4fd4779",
+        "at": "2026-10-22T12:43:06.858Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

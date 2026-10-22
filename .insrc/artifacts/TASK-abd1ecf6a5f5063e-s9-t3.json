@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ddbe4fb2-1964-4f30-8136-a9d80c2118ec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:11.301Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Unit tests for the ac3 guard + standalone provenance parity",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s9-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "296c1ee4d9f05a04e062d152e23703875225b1ac81f5446551ffd3f2a2d0e0cc",
+        "at": "2026-10-22T12:44:11.301Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:11.302Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit tests for the ac3 guard + standalone provenance parity",
+    "summary": "Extend src/workflow/__tests__/seed-focus.test.ts (or a peer): (ac3) specScopeFitsStandalone table — epic/trivial false, feature/small true; (ac4/provenance) finalizeArtifact('design.story') with a standalone intent (params.standalone:true, storyId, sizeClass:'feature', specHash) + a minimal standalone LLD body -> meta.seededFromSpec = hash + renderLldMarkdown contains SPEC-<hash>; a plain (no specHash) standalone run -> unset + no seeded-from line; (ac1/ac2) resolveStageFocus over a {standalone:true, specHash} bag yields the same composed framing as the define-shape bag (reuse s8 tmp-repo/approved-spec fixtures).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "a pure table test proves specScopeFitsStandalone across all four SizeClasses (ac3)",
+      "a finalize test proves meta.seededFromSpec stamp + renderer line on a seeded standalone LLD and its absence on a plain run (ac4)",
+      "a parity test proves resolveStageFocus composes the same framing for the standalone param bag as for define (ac1/ac2)",
+      "full workflow + workflow-step sweep + tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "seed-focus.test.ts: specScopeFitsStandalone table (ac3) + finalizeStandaloneLld seededFromSpec stamp/renderer + plain-absence (ac4) + resolveStageFocus standalone-vs-define parity (ac1/ac2)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

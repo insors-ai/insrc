@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox",
-    "approvedAt": "2026-10-14T14:24:30.111Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1503588c399bc920e157b6afb22ff1a34311e5c5ac70d8a06552385230c15f29",
+        "at": "2026-10-14T12:57:26.478Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T14:24:30.111Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

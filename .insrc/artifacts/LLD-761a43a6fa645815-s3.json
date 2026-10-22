@@ -23,93 +23,62 @@
     "hldBaseRunId": "wf-1785741597494-lbzdo7",
     "hldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/code-review/dimensions/adherence.ts exists and exports ADHERENCE_FINDINGS_SCHEMA, buildAdherencePrompt, and judgeAdherence — the shipped S002 template judgeConventions mirrors.",
-          "evidence": "adherence.ts exports all three symbols: ADHERENCE_FINDINGS_SCHEMA (adherence.ts:49), buildAdherencePrompt (adherence.ts:74), judgeAdherence (adherence.ts:119). The S002 template the LLD mirrors exists exactly as described.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "src/workflow/code-review/types.ts declares DimensionFinding with an optional confidence field whose values are 'observation'|'breach', plus expectationRef — both fields the conventions judge reuses without a contract change.",
-          "evidence": "src/workflow/code-review/types.ts:37 declares interface DimensionFinding with expectationRef?: string | undefined (types.ts:44) and confidence?: 'observation' | 'breach' | undefined (types.ts:48). Both fields the conventions judge reuses exist without any contract change.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The ReviewDimension union in types.ts includes 'conventions' (so no new union member is introduced by this Story).",
-          "evidence": "src/workflow/code-review/types.ts:33 defines ReviewDimension = 'adherence' | 'conventions' | 'coverage' | 'quality' — 'conventions' is already a union member; no new member introduced.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "src/agent/providers/structured-output.ts exports validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) which throws after the attempt cap (never returns an invalid value) — the propagate-on-exhaustion mechanism the judge relies on.",
-          "evidence": "src/agent/providers/structured-output.ts:80 exports validateAgainstSchema<T>, and :182 exports async withStructuredRetry<T> whose signature takes maxAttempts — the propagate-on-exhaustion helper the judge relies on exists as cited.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The shipped adherence judge issues exactly one provider.completeStructured call wrapped in withStructuredRetry — the single-serial-call seam (k4) the conventions judge replicates.",
-          "evidence": "The withStructuredRetry + completeStructured seam is present in the shipped adherence module (judgeAdherence at adherence.ts:119; the module uses both, as the S002 LLD at LLD-...-s2.md:66/112 corroborates). The single-serial-call pattern the conventions judge replicates is real.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "No src/workflow/code-review/dimensions/conventions.ts exists yet — this Story creates it as a new sibling module (purely additive).",
-          "evidence": "The only judgeConventions / CONVENTIONS_FINDINGS_SCHEMA matches are inside the LLD-s3 doc itself — no src/workflow/code-review/dimensions/conventions.ts exists yet. The Story is purely additive (creates the new sibling module) exactly as the migration section states.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The existing adherence unit test file src/workflow/code-review/dimensions/__tests__/adherence.test.ts exists and uses node:test + node:assert/strict via a fake LLMProvider — the layout the conventions test mirrors.",
-          "evidence": "src/workflow/code-review/dimensions/__tests__/adherence.test.ts:35 uses `as unknown as LLMProvider` (the fake-provider pattern), and node:test + node:assert/strict is the repo-wide test convention. The test layout the conventions test mirrors exists.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "adherence.ts drops findings whose location file is outside subject.changedFiles (the scope-drop the conventions judge replicates) via a fileOf(location) split and a changedFiles membership check.",
-          "evidence": "adherence.ts:109 defines function fileOf(location: string), and the changedFiles scope-drop is present in the shipped judge. The scope-drop seam the conventions judge replicates is real.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-03T10:41:46.430Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-03T10:42:18.092Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "53ed55fc8ebdf01ebb2657a30aaa293830778264c95a531fa1bcb687d5cfb6b6",
+        "at": "2026-08-03T10:39:39.704Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-03T10:42:18.092Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-03T10:41:46.430Z",
+        "report": {
+          "entityId": "LLD-761a43a6fa645815-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-761a43a6fa645815-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

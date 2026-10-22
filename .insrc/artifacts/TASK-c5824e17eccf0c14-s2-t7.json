@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-66ba9935-b145-47ed-a5c0-903175f0ae0d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.212Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Boundary-regex update + end-to-end integration tests",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "369d7f4f64b6fae81d12a1681e78bcf4e008fa51cbe01ad7ff10d2304bb6a09a",
+        "at": "2026-10-22T12:44:38.212Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.213Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Boundary-regex update + end-to-end integration tests",
+    "summary": "Update the synthesizer.ts:151 BOUNDARY_RULES to admit the new constructs (References block, TOC, numbered headings, per-item checkboxes) while still rejecting genuine scope leakage; add integration tests proving a full synthesize of each type produces the new format + a populated Summary + the HLD-context reference and passes the updated validators; a no-optional-data artifact stays absent-safe.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "BOUNDARY_RULES admit the new constructs; real scope leakage still rejected",
+      "integration: full synthesize of DEF/HLD/LLD/PLAN passes end-to-end",
+      "absent-safe: an artifact with no summary/contextRefs/functionalDefinition renders fully"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "BOUNDARY_RULES admit new constructs + still reject real scope leakage over the new rendered output"
+      },
+      {
+        "level": "integration",
+        "name": "end-to-end synthesize of DEF/HLD/LLD/PLAN with elicited summary; absent-safe no-optional-data artifact renders fully"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

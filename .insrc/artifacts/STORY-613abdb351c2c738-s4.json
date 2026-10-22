@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-25a80f46-d89f-49f8-abbf-aaad48a29476",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.935Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Retry a turn that failed on a passing infrastructure problem before it acted",
+      "parent": {
+        "entityId": "EPIC-613abdb351c2c738",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2663fbca9721c4355c07acf73b278129c95a157d5f19a8713245693a86d3c476",
+        "at": "2026-10-22T12:43:06.935Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

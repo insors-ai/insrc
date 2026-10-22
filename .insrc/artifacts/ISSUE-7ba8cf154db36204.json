@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T06:31:50.604Z",
     "parentRef": {
       "slug": "build-gate-s-test-report-cut"
+    },
+    "epicCreatedAt": "2026-10-12T06:29:42.082Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2450d430e84ed7b71cf2bc4f443e7f7061433f07bac0ea4778bdd14df9947c6e",
+        "at": "2026-10-12T06:29:42.082Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T06:31:50.604Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

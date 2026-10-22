@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-888dee13-32dd-43e4-8f6c-1595130ae2f9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:49.480Z",
+    "epicCreatedAt": "2026-08-01T09:12:18.048Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add runUpdateSteeringRefresh best-effort wrapper to maintenance.ts",
+      "parent": {
+        "entityId": "STORY-ea1b11621c933a2c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ea1b11621c933a2c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ea1b11621c933a2c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ae2099b4d299f376349fa9976ed99a8ae800a1d7e357c7cf33dcfb3cfdc71c76",
+        "at": "2026-10-22T12:44:49.484Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:49.484Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add runUpdateSteeringRefresh best-effort wrapper to maintenance.ts",
+    "summary": "Implement runUpdateSteeringRefresh(root, onLog): Promise<SteeringRefreshReport | undefined> in src/cli/services/maintenance.ts. Resolves the freshly-built steering-block.md (out/prompts), calls refreshSteeringAcrossRepos with production deps, emits a per-repo/summary log line via onLog (mirroring runUpdateReconcile's logging shape), and wraps the whole call in a try/catch so any top-level failure (missing block asset, listRepos rejection) is caught and logged, returning undefined instead of throwing.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "runUpdateSteeringRefresh reads the freshly-built steering-block.md from out/prompts (post-build) and passes it as the deps.readBlock source into refreshSteeringAcrossRepos with production deps (real listRepos, real fs readFile/writeFile)",
+      "On success it emits a per-repo/summary log line via onLog, mirroring runUpdateReconcile's logging shape, and returns the SteeringRefreshReport",
+      "readBlock/asset-missing failure is caught, logged, and the function returns undefined without throwing",
+      "listRepos rejection is caught, logged, and the function returns undefined without throwing"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runUpdateSteeringRefresh: readBlock/asset missing is caught and logged, returns undefined"
+      },
+      {
+        "level": "unit",
+        "name": "runUpdateSteeringRefresh: listRepos rejection is caught, returns undefined"
+      },
+      {
+        "level": "unit",
+        "name": "runUpdateSteeringRefresh: happy path returns SteeringRefreshReport and emits onLog summary line"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

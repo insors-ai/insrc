@@ -1,35 +1,68 @@
 {
-  "id": "AMD-613abdb351c2c738-12",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc2",
-    "breaking": false,
-    "field": {
-      "name": "holderGone",
-      "type": "(lease: RepoLease) => boolean",
-      "optional": true,
-      "purpose": "optional last parameter of takeOver and reclaim: says the recorded holder window's process and the lease's CLI are gone; takeOver of a lease of the claim's own windowKey (a reloaded window) is taken at once, and another window's only after LEASE_TAKEOVER_MS without a heartbeat; the dispose of a window keeps its presence row, which ages out over PRESENCE_GRACE_MS"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T19:08:37.063Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b2347fda9f842cfcc02b566f837c9e9256399b2b470c1e3abc28d4b29092e48d",
+        "at": "2026-10-14T19:08:37.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:10:17.104Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "S003 made takeover and reclaim take the liveness check from the worker and added the same-windowKey rule, so a reload does not wait ten minutes. Built and approved in S003.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-12",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc2",
+      "breaking": false,
+      "field": {
+        "name": "holderGone",
+        "type": "(lease: RepoLease) => boolean",
+        "optional": true,
+        "purpose": "optional last parameter of takeOver and reclaim: says the recorded holder window's process and the lease's CLI are gone; takeOver of a lease of the claim's own windowKey (a reloaded window) is taken at once, and another window's only after LEASE_TAKEOVER_MS without a heartbeat; the dispose of a window keeps its presence row, which ages out over PRESENCE_GRACE_MS"
+      }
+    },
+    "rationale": "S003 made takeover and reclaim take the liveness check from the worker and added the same-windowKey rule, so a reload does not wait ten minutes. Built and approved in S003.",
+    "proposedBy": {
+      "workflow": "epic-end-batch",
+      "runId": "manual-2026-10-14T19:08:37.063Z",
+      "storyId": "s3",
+      "stepId": "batch"
+    },
+    "proposedAt": "2026-10-14T19:08:37.063Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "epic-end-batch",
-    "runId": "manual-2026-10-14T19:08:37.063Z",
-    "storyId": "s3",
-    "stepId": "batch"
-  },
-  "proposedAt": "2026-10-14T19:08:37.063Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T19:10:17.104Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3ea1d7bc-b118-4a0a-96f4-c255bfbbbb0b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.394Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Extend the shell to render a distinct narrated region (offline)",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cfe73be0548d17d36c57154d9f4b861ca843383d8bc6459e939144710da877d",
+        "at": "2026-10-22T12:43:54.394Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.394Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the shell to render a distinct narrated region (offline)",
+    "summary": "Extend src/docgen/render/shell.ts: thread ir.narrated.sections through assembleShell -> buildHtml; when non-empty, append a distinct '#docgen-narrative' region below the diagram — per section a title + escapeHtml(narrativeText), with a small inline style so narrated content is visually separable from the derived diagram (ac3), all inlined (no external fetch, ac5). When narrated.sections is EMPTY, emit NOTHING new so derived-only output (s1/s2/s3) is byte-identical. escapeHtml/assembleShell reused. This is the ONE regression-risk touch on a shared s1/s2/s3 file; the byte-identical check below is the load-bearing guard.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "assembleShell(narrative IR) HTML has a distinct '#docgen-narrative' region with section titles + escaped narrativeText",
+      "narrativeText with <, >, & is escaped (no markup injection); still no <script src= (offline, ac5)",
+      "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell — HARD GATE",
+      "npx tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleShell(narrative IR) HTML contains a distinct '#docgen-narrative' region with section titles + escaped narrativeText"
+      },
+      {
+        "level": "unit",
+        "name": "narrativeText with <, >, & is escaped (no markup injection); no <script src= (offline, ac5)"
+      },
+      {
+        "level": "unit",
+        "name": "assembleShell(derived-only IR, narrated.sections=[]) emits NO narrated region -> byte-identical to the pre-s4 shell"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

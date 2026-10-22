@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ef042d80-f99f-4b4e-94e6-b716a931db99",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.432Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Fake-file unit tests for the gate + catalog carry-forward",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ed44d9b2c90dfee993f115dfbf819b06989a3da0a7935b8bd2540cf4076331e",
+        "at": "2026-10-22T12:43:48.432Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-file unit tests for the gate + catalog carry-forward",
+    "summary": "Add src/workflow/code-review/__tests__/gate.test.ts (node:test + node:assert/strict via npx tsx --test): write a temp CR-<epic>-<story>.json under a tmp repo dir via codeReviewArtifactPaths with a scripted CodeReviewBody (verdict block/warn/pass + counts), or omit it (absent), or write malformed/unknown-verdict json; inject opts.enforce true/false to bypass the live config read; assert the discriminated CodeReviewGateResult for every branch: block=>blocked (message+counts), block+override=>overridden (overrideReason+at), warn=>warn (enforce on AND off), pass=>pass, absent=>no-review, enforce-off+block=>non-blocking advisory (advisory:true + message naming the demoted block, distinguishable from a genuine warn), malformed/unknown=>no-review, override-on-non-block=>no-op. Also assert: (a) enforceCodeReviewGate performs no write (the CR json bytes are unchanged after the call); (b) readEnforceFlag fail-safe — with NO config file and opts.enforce omitted, a block is advisory (not blocked), proving the default-false-never-throws behaviour. Plus a CONFIG_CATALOG assertion that codeReview.enforce is present with default false (extending the existing config-catalog-contract test coverage). No live daemon/Ollama.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/workflow/code-review/__tests__/gate.test.ts runs under `npx tsx --test` (node:test + node:assert/strict) using temp CR json files + injected opts.enforce — no live daemon/Ollama/config",
+      "tests cover every branch: blocked, overridden, warn (enforce on+off), pass, no-review (absent), enforce-off-block advisory (advisory:true + demoted-block message, distinct from a genuine warn), fail-open (malformed/unknown-verdict), override-no-op-on-non-block; plus a read-only assertion (CR json unchanged after the call)",
+      "a test proves the readEnforceFlag fail-safe: no config file + opts.enforce omitted => a block is advisory, not blocked (default false, never throws)",
+      "a CONFIG_CATALOG assertion confirms codeReview.enforce is declared with type:'boolean', default:false",
+      "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S007 green; live tests skip cleanly when INSRC_LIVE_TESTS unset)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "absent record => { status:'no-review' } (additive; ac4)"
+      },
+      {
+        "level": "unit",
+        "name": "fail-open on malformed / unknown-verdict CR json => 'no-review' (never a spurious block)"
+      },
+      {
+        "level": "unit",
+        "name": "override reason on a non-block verdict (pass/warn) is a no-op"
+      },
+      {
+        "level": "unit",
+        "name": "readEnforceFlag fail-safe: no config file + opts.enforce omitted => a block is advisory, not blocked (default false, never throws) (critique 2)"
+      },
+      {
+        "level": "unit",
+        "name": "enforceCodeReviewGate performs no write — CR json bytes unchanged after the call (read-only)"
+      },
+      {
+        "level": "unit",
+        "name": "CONFIG_CATALOG declares codeReview.enforce with type:'boolean', default:false"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

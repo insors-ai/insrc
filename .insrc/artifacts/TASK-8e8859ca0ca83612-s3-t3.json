@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-25f13ee2-ef34-4184-89d7-d42450a07097",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:57.431Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s3",
+    "envelope": {
+      "description": "runTurn gains an optional suppressEcho flag gating the user-row echo (ac2/k1)",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3216482c1e2ca799b7629d94b76f7c362f0e43f3c295ec08dff87d20af087aab",
+        "at": "2026-10-22T12:43:57.431Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:57.432Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "runTurn gains an optional suppressEcho flag gating the user-row echo (ac2/k1)",
+    "summary": "Add the optional third parameter opts?: { readonly suppressEcho?: boolean } to runTurn (chat-panel.ts:527) and gate the user-row echo post (chat-panel.ts:543) on it (default off = today's behaviour). The resume turn + tool grant are otherwise unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "runTurn's signature gains an optional opts.suppressEcho; existing call-sites compile unchanged (backward-compatible).",
+      "When suppressEcho is true the user-row echo post at :543 is skipped; when absent/false it posts exactly as today.",
+      "The resume turn + [toolName] grant behaviour is unchanged regardless of suppressEcho."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a NORMAL user turn still posts its user-row echo (suppressEcho off by default)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

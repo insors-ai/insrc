@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27b3b103-f703-4fae-9b42-63fa1f185372",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.978Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Roll out the payload cut-over: announce the break, restart the daemon, land the fork reader",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6da665bb172f37a3ccbe25fa24af189d7bf3459ec58455c02f63f60ceb7cf6b",
+        "at": "2026-10-22T12:43:42.978Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.978Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Roll out the payload cut-over: announce the break, restart the daemon, land the fork reader",
+    "summary": "Operational close-out. NOT ROLLBACKABLE in the operational sense and sized accordingly: restarting the daemon terminates any in-flight run, and a 30-40 minute operation killed mid-flight must be re-run from scratch, so the restart is scheduled for a window with no long operation active. The fork type mirror already landed in t2, so the fork compiles against ProgressEvent before this task begins; what remains here is the announcement, the restart, and the fork's reader change against the now-live payload.\n\nAnnounce the payload-shape break to fork maintainers, naming every affected surface: (1) workflow.run 'progress' consumers reading data.phase/runner/attempt/detail, now stageId/stageLabel/index/total; (2) workflow.run 'delta' consumers of the pre-existing `{ stepId, token }` raw-string population, which t6 replaces with batched TokenProgressEvent frames — a surface the LLD's stateBefore omitted entirely; (3) analyze.run consumers counting progress frames as an event proxy, which now see strictly fewer, and whose stage frames carry total:null; (4) the absence of any `seq`, so a dropped frame is indistinguishable from a quiet period. No incumbent MCP consumer exists to break — the sweep for progressToken|notifications/progress|sendNotification under src/mcp returned zero hits — so s2's forwarding branch carries no compatibility obligation.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "A written announcement to fork maintainers enumerates all four breaking surfaces, explicitly including the replaced workflow.run `{ stepId, token }` delta population and the no-`seq` drop-detection limitation.",
+      "The daemon is rebuilt and restarted in a window verified to have no long operation in flight, and that verification is recorded before the restart.",
+      "A live workflow.run and a live analyze.run each observably emit ProgressEvent-shaped progress and delta frames after the restart.",
+      "The fork's reader change lands against the live payload and renders stage and token progress for both operations.",
+      "No consumer of prefs slash-command delta frames or of todos-rpc / tool-execution frames observes any change."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "post-restart smoke: a live workflow.run and a live analyze.run against the restarted daemon each emit ProgressEvent-shaped progress and delta frames, validated with the t9 assertProgressEvent helper"
+      },
+      {
+        "level": "smoke",
+        "name": "fork reader smoke: the fork renders stage and token progress for both operations against the live payload, and prefs slash-command deltas plus todos-rpc / tool-execution frames render unchanged"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

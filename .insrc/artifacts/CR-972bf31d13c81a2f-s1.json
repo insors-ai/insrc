@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1786020974757-nmpgvv",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-08-06T12:56:14.757Z",
+    "model": "client",
+    "elapsedMs": 9,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "972bf31d13c81a2f",
+    "storyId": "s1",
+    "epicSlug": "auto-fall-back-diff-based-code",
+    "standalone": true,
+    "epicCreatedAt": "2026-08-06T12:39:01.290Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "af0823ecf4953f244ea7131a25d2993919d3e461656484a2f011fe73f1e71ee1",
+        "at": "2026-08-06T12:56:14.757Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "972bf31d13c81a2f",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

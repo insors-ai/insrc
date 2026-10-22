@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-2284d9b47fc9c35e-S001 -->
+<!-- insrc:artifact BUILD-2284d9b47fc9c35e-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,8 +26,8 @@ Codex is now started with no input stream, so `codex exec` no longer waits for i
 
 ## Changes
 
-- `.insrc/artifacts/CR-2284d9b47fc9c35e-S001.json` — **insrc-build** (2026-10-13T06:09:34.368Z)
-- `.insrc/artifacts/CR-59da3204a44afd1b-S001.json` — **insrc-build** (2026-10-13T06:09:34.368Z)
+- `.insrc/artifacts/CR-2284d9b47fc9c35e-s1.json` — **insrc-build** (2026-10-13T06:09:34.368Z)
+- `.insrc/artifacts/CR-59da3204a44afd1b-s1.json` — **insrc-build** (2026-10-13T06:09:34.368Z)
 - `.insrc/artifacts/ISSUE-2284d9b47fc9c35e.json` — **insrc-build** (2026-10-13T06:09:34.368Z)
 - `docs/standalone/codex-chat-turns-hang-because-cli-E202610122284d9b4/S001/CR.md` — **insrc-build** (2026-10-13T06:09:34.368Z)
 - `docs/standalone/paste-images-attach-documents-dev-chat-E2026101259da3204/S001/CR.md` — **insrc-build** (2026-10-13T06:09:34.368Z)

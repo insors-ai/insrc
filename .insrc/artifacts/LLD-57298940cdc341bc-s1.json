@@ -24,91 +24,61 @@
     "hldBaseRunId": "wf-1789970136758-lvyg6v",
     "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "sc2",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The daemon.status IPC payload (DaemonStatus in src/shared/types.ts:882) carries uptime:number, repos:RegisteredRepo[], queueDepth, embeddingsPending, modelPullStatus?:'pulling'|'ready', modelPullPct?, lmdbFileSizeMb? — and has NO socket/running/scalar-repoCount field, so the DTO derives running from reachability and repoCount from repos.length.",
-          "evidence": "read anchor src/shared/types.ts:882 found:true = 'export interface DaemonStatus {'; grep confirms modelPullStatus + lmdbFileSizeMb are real payload fields. The DTO's derive-running / repoCount=repos.length realization is consistent with a payload that has no socket/running/scalar-count field.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonGateway currently has a stale-only `fun probe(): DaemonState` whose impl reuses METHOD_STATUS='daemon.status' and reads FIELD_STALE='stale'; there is no daemonStatus() yet.",
-          "evidence": "read DaemonGateway.kt:552 found:true = 'override fun probe(): DaemonState'; grep confirms `const val METHOD_STATUS = \"daemon.status\"` (:872) and `const val FIELD_STALE = \"stale\"` (:883) exist; fun daemonStatus( appears only in the HLD/LLD docs, confirming it is NEW.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "sc2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The DaemonGateway transport is an injectable DaemonRpc whose call() returns a DaemonResult{ok:Boolean, data:Map, error:String?, list:List?}, and repoStats() already classifies Unavailable on !ok/error and coerces Gson Doubles — the idiom daemonStatus() mirrors.",
-          "evidence": "grep confirms interface DaemonRpc (:526), data class DaemonResult (:538), override fun repoStats( (:605); read DaemonGateway.kt:612 found:true shows repoStats calling rpc.call(METHOD_...) — the injectable-transport + sealed-result classification idiom daemonStatus() mirrors is real.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "plugin.xml registers the parent applicationConfigurable id=ai.insors.insrc.settings (instance InsrcSettingsConfigurable) under parentId=tools; child pages nest by adding more applicationConfigurable elements with parentId=ai.insors.insrc.settings without editing the parent.",
-          "evidence": "read plugin.xml:289 found:true = '<applicationConfigurable'; grep confirms id=ai.insors.insrc.settings + InsrcSettingsConfigurable; child nesting via parentId=ai.insors.insrc.settings is valid and the parent is untouched.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ui/InsrcCollapsible.kt exposes fun collapsiblePanel(title, body, expanded) and class ScrollableColumn(viewportHeightPx, minWidthPx) — the shared scroll shell the InsrcOpsConfigurable base composes; S001 adds no new scroll primitive.",
-          "evidence": "read InsrcCollapsible.kt:31 found:true = 'fun collapsiblePanel(title: Strin...'; grep confirms class ScrollableColumn exists — the shared scroll shell the S001 base composes is real, no new primitive.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "InsrcSettingsConfigurable implements com.intellij.openapi.options.Configurable and createComponent() runs the read via executeOnPooledThread and renders back via invokeLater — the off-EDT/guarded-render idiom the S001 base generalizes; this shipped file is not edited by S001.",
-          "evidence": "read InsrcSettingsConfigurable.kt:72 found:true = 'override fun creat...(createComponent)'; grep confirms class InsrcSettingsConfigurable + executeOnPooledThread + invokeLater — the off-EDT/guarded-render idiom the base generalizes; the file is not edited by S001.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "test",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The gateway test idiom (RepoStatsGatewayTest) drives DaemonGatewayImpl against a fake DaemonRpc (RecordingRpc) feeding Gson-Double numbers, which the daemonStatus() unit tests extend; JUnit 5 is the framework.",
-          "evidence": "read RepoStatsGatewayTest.kt:20 found:true = 'private class RecordingRp...'; grep confirms class RepoStatsGatewayTest + RecordingRpc + org.junit.jupiter — JUnit 5 fake-DaemonRpc idiom the daemonStatus() unit tests extend is real.",
-          "action": "",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-21T06:29:25.677Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-21T07:59:43.174Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "917421dcf21fa35b4eec3fd7248aa0677c8cc8df44fa13e056f87f818e624918",
+        "at": "2026-09-21T06:28:12.034Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T07:59:43.174Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-21T06:29:25.677Z",
+        "report": {
+          "entityId": "LLD-57298940cdc341bc-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-57298940cdc341bc-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

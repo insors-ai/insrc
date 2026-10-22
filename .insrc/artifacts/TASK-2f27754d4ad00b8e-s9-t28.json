@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6143b879-c787-462c-8b8a-46e417c5b341",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.798Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Review and completion gates",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c84813eed1024351f1d965d07e981740859c004e80682c0912682b7d6e81920a",
+        "at": "2026-10-22T12:43:22.798Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.799Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Review and completion gates",
+    "summary": "In src/workflow/gates.ts move the review gate (lines near 641, 746 and 889), the other-party check and the BUILD completion check to the lifecycle review. Update src/workflow/__tests__/review-gate.test.ts, other-party-review-gate.test.ts, approve-build-completion.test.ts, approve-build-record-completion.test.ts and approve-codereview-gate.test.ts.",
+    "size": "M",
+    "order": 28,
+    "acceptanceChecks": [
+      "The review gate withholds approval on a blocking lifecycle review",
+      "BUILD completion needs a code review by the other party read from the lifecycle"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "review-gate.test.ts: a blocking lifecycle review withholds approval"
+      }
+    ],
+    "planTaskId": "t28"
+  },
+  "citations": []
+}

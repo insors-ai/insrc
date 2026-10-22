@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d789e5e6-9751-431c-bb72-1ab1aef1b17c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.194Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "WebviewPanelHost core (panels/webview-host.ts) — shell + menu + tab framework",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec726d1242c5cf60be008338a254b126634adba8137a54427fda6aa0e381db4a",
+        "at": "2026-10-22T12:43:30.195Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.195Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "WebviewPanelHost core (panels/webview-host.ts) — shell + menu + tab framework",
+    "summary": "Implement createWebviewPanelHost(deps) as the VS-Code-free host: showStatusMenu() shows a 2-item QuickPick (Detailed Status, Repo Configuration) via deps.pickMenu and routes to openDetailedStatus()/openRepoConfiguration() (cancel = no-op); openDetailedStatus(tab?) creates-or-reveals a SINGLE Detailed Status panel with the fixed daemon/workflows/debug tab framework, landing on 'daemon' by default, rendering the daemon body from gateway.status() (degrading to an in-panel error + logger.warn on reject, never throwing) and leaving Workflows/Debug as placeholders for s5/s6; openRepoConfiguration() creates-or-reveals the separate Repo Configuration panel shell (form body deferred to s7). Single-instance discipline via a cached reference cleared on panel.onDidDispose; a panel-create failure is caught+logged (visible no-op). Kept as one L task per s3 critique — the concerns share one host closure + cached-reference state; the acceptanceChecks decompose it for discrete tests.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "showStatusMenu offers EXACTLY two items and routes each choice; a dismissed pick is a no-op (ac1)",
+      "openDetailedStatus creates one panel with the daemon/workflows/debug tabs, defaults to 'daemon', renders daemon body from gateway.status(); a rejected status still opens the panel+tabs with a daemon-tab error state (ac2)",
+      "Single-instance: a second open reveals/switches-tab without duplicating; onDidDispose clears the cached ref so a later open creates fresh; the host never throws",
+      "openRepoConfiguration creates/reveals the separate Repo Configuration panel shell (ac2-adjacent); the core imports no 'vscode'"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "showStatusMenu offers EXACTLY two items (Detailed Status, Repo Configuration) and routes each choice to the matching open method (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "Cancel path: pickMenu resolving undefined opens no panel (no-op)"
+      },
+      {
+        "level": "unit",
+        "name": "openDetailedStatus creates ONE panel with the fixed daemon/workflows/debug tab triad, defaults to 'daemon', and renders the daemon body from gateway.status() (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "Degraded render: a rejected gateway.status() still opens the panel + tabs with a daemon-tab error state and never throws (host never-throw invariant)"
+      },
+      {
+        "level": "unit",
+        "name": "Single-instance: a second openDetailedStatus reveals the same panel and switches tab without duplicating; after onDidDispose a later open creates fresh"
+      },
+      {
+        "level": "unit",
+        "name": "openRepoConfiguration creates/reveals the separate Repo Configuration panel shell (single-instance)"
+      },
+      {
+        "level": "unit",
+        "name": "Source-scan: webview-host.ts imports no 'vscode' module (extension.ts stays the sole vscode importer)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

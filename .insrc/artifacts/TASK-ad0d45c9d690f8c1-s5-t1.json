@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27a60c63-d911-4f6b-8183-3adc896298a8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.484Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "src/onboarding/ - runOnboarding orchestrator + OnboardingStore seam",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d12a28d86b08f17232fd7e352746b7beec5c9a12024a493666d4109f6e51f99",
+        "at": "2026-10-22T12:44:14.484Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.484Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "src/onboarding/ - runOnboarding orchestrator + OnboardingStore seam",
+    "summary": "Create vscode-plugin/src/onboarding/ with: the OnboardingStore seam interface { wasOnboarded(root): boolean; markOnboarded(root): void } + an in-memory impl for tests (the real workspaceState binding lives in extension.ts, t3); and runOnboarding(deps) that resolves the primary root (folders()[0]), and when a root exists returns early if onboarded.wasOnboarded(root); else awaits the three shipped offers IN ORDER offerDaemonInstall -> offerWorkspaceRegistration -> offerHostWiring (each in its own per-step try/catch so one failure doesn't abort the rest; each keeps its OWN internal guard + sc4 consent), then onboarded.markOnboarded(root). A no-folder window skips the register step + the onboarded gate but still runs the global install/wire steps. Pure sequencing over the shipped seam TYPES + offers; registers no command, holds no duplicated action logic (lc1). Imports only node builtins + ../daemon|hosts|workspace command modules + ../surfaces (k5).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "runOnboarding awaits offerDaemonInstall -> offerWorkspaceRegistration -> offerHostWiring in that order (recorded), not concurrently; then markOnboarded(root)",
+      "runOnboarding no-ops (no offer runs) when onboarded.wasOnboarded(root) is already true",
+      "one step's offer throwing does NOT abort the sequence (per-step guard); the later steps still run; runOnboarding never throws",
+      "no workspace folder open -> the register step is skipped and markOnboarded is NOT called (no root key), while global install/wire steps may still run",
+      "OnboardingStore interface + in-memory test impl are exported; runOnboarding holds no duplicated consent/branch logic (lc1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runOnboarding awaits the three offers IN ORDER install->register->wire (recorded call order), not concurrently - one coherent sequence, then markOnboarded(root)"
+      },
+      {
+        "level": "unit",
+        "name": "runOnboarding no-ops (no offer runs, no prompt) when onboarded.wasOnboarded(root) is already true"
+      },
+      {
+        "level": "unit",
+        "name": "a step that internally no-ops (already installed / already registered / no host) is silently skipped while the remaining needed steps still run - the sequence degrades to only the needed prompts"
+      },
+      {
+        "level": "unit",
+        "name": "one step's offer throwing does NOT abort the sequence - the later steps still run (per-step guard); runOnboarding never throws"
+      },
+      {
+        "level": "unit",
+        "name": "no workspace folder open -> register step is skipped and the per-root onboarded flag is NOT set (a later folder-open still onboards), while the global install/wire steps may still run"
+      },
+      {
+        "level": "unit",
+        "name": "each step keeps its OWN sc4 consent (no combined mega-consent) - declining install still offers register + wire (k4)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -6,7 +6,26 @@
     "createdAt": "2026-10-13T11:53:21.419Z",
     "updatedAt": "2026-10-13T20:20:39.779Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "e31bfac85cf2d4dde261e00b7d6e90c96c88c1abc9ab46637e6fdadc679fb732",
+        "at": "2026-10-13T11:53:21.419Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

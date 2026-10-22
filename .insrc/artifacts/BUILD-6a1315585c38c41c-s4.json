@@ -6,9 +6,36 @@
     "createdAt": "2026-10-09T09:57:32.537Z",
     "updatedAt": "2026-10-09T12:04:52.965Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T12:04:54.238Z",
     "epicSlug": "e2-delivery-board-vs-code-goal",
-    "epicCreatedAt": "2026-10-08T18:04:18.693Z"
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "363d6a374858e6c44b77601898c2edf4744e3afb3bcdc4da8e1da561d1c60a55",
+        "at": "2026-10-09T09:57:32.537Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T12:04:54.238Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -41,14 +68,14 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-2f07f59c76f70149-S001.json"
+          "file": ".insrc/artifacts/BUILD-2f07f59c76f70149-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T12:04:52.965Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-2f07f59c76f70149-S001.json"
+          "file": ".insrc/artifacts/CR-2f07f59c76f70149-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T12:04:52.965Z"

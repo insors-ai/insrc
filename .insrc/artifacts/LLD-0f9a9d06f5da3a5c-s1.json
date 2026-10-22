@@ -25,20 +25,57 @@
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "feature",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-08-04T11:47:44.125Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-04T11:46:40.232Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-04T11:51:12.733Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "18fb9f9daa959011b06ea6958ef6ca8e6aa6231a8b041829d059ce44a348e9b1",
+        "at": "2026-08-04T11:46:40.232Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T11:51:12.733Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-08-04T11:47:44.125Z",
+        "report": {
+          "entityId": "LLD-0f9a9d06f5da3a5c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-0f9a9d06f5da3a5c-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

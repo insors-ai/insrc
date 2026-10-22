@@ -21,7 +21,27 @@
     "epicSlug": "honor-configurable-timeouts-def-reviews",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-17T09:49:16.602Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "feca7b4944d88844929a4982a82f5c224c49adfa7b8b937ff1c4f72a5b7bb05e",
+        "at": "2026-10-17T09:49:16.602Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Honor configurable timeouts in DEF reviews",

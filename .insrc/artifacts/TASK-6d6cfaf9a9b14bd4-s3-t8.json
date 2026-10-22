@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a2ce10e1-4c9f-41d9-b871-913e36a07b94",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.435Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the decode-miss, handler-isolation and envelope-containment resilience layer",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f8a9f918cbd72c91d7660c37831841f380db8fa005ea68c9701932eac9dc1760",
+        "at": "2026-10-22T12:43:43.435Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.435Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the decode-miss, handler-isolation and envelope-containment resilience layer",
+    "summary": "Harden the t7 pipeline so no single malformed frame or misbehaving consumer can take the reader down. A body that fails structural decode is dropped without dispatch, warn-logged via getLogger (never console), and leaves the reader attached and processing subsequent frames. Each handler invocation is wrapped in try/catch: a throwing consumer handler is caught, warn-logged, and swallowed; sibling handlers registered for the same event still run; and state is not rolled back, since the frame was legitimately received regardless of what the consumer did with it. Enforce envelope containment: no raw IpcStreamMessage — nothing carrying the `stream`/`data` envelope keys — ever reaches a consumer callback; consumers see only decoded sc1 event objects.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A 'progress'-kind frame with a non-conforming body is dropped, warn-logged, and the reader remains attached and processes the next valid frame normally.",
+      "A throwing consumer handler is caught and warn-logged; sibling handlers for the same event still run and the reader stays attached.",
+      "State is not rolled back when a handler throws — the snapshot reflects the received frame.",
+      "No object carrying IpcStreamMessage's `stream`/`data` envelope keys is passed to any consumer callback.",
+      "All logging goes through getLogger; no console call is introduced anywhere in the module."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "decode-miss-drop: a raw-shaped 'progress' body (todos-rpc/tools-types style) is dropped, warn-logged, and the reader still processes the next valid frame"
+      },
+      {
+        "level": "unit",
+        "name": "handler-throw-isolation: a throwing handler is caught and warn-logged, sibling handlers for the same event still run, reader stays attached"
+      },
+      {
+        "level": "unit",
+        "name": "no-state-rollback-on-throw: the snapshot still reflects the received frame after a handler throws"
+      },
+      {
+        "level": "unit",
+        "name": "no-raw-envelope-leakage: no object bearing `stream`/`data` keys reaches any consumer callback"
+      },
+      {
+        "level": "unit",
+        "name": "logging-via-getlogger: a log spy over getLogger captures both warns and no console call exists in the module"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

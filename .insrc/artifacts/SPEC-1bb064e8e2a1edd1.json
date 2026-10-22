@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "1bb064e8e2a1edd1",
     "epicSlug": "structured-design-review-template-every-decision",
-    "approvedAt": "2026-10-05T06:05:44.521Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-10-05T05:38:33.054Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "19cb6cc7fe2223a3f68f6fecdec95be8e64461f87e43fa9abdb68ac94194c5b5",
+        "at": "2026-10-05T05:38:33.054Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-05T06:05:44.521Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

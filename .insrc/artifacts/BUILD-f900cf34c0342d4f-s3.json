@@ -5,9 +5,36 @@
     "epicHash": "f900cf34c0342d4f",
     "storyId": "s3",
     "createdAt": "2026-08-06T00:00:00.000Z",
-    "approvedAt": "2026-08-06T08:08:56.206Z",
     "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ae0f7d142ba6cc8643c4db7a555da7abe33b74c594564a462a79162ccc54f1d1",
+        "at": "2026-08-06T00:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T08:08:56.206Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "Orphan daemon-process scan + guarded multi-select kill in the Debug pane Daemon section",

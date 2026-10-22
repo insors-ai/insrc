@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5e7dad6-8102-439e-87b3-59fafbacad18",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.586Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the thin ghCloseIssue gh-verb wrapper",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fce14f508b77e5c0e85652845d64009134654510583cda4905cc91ac288373b6",
+        "at": "2026-10-22T12:43:14.587Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.587Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the thin ghCloseIssue gh-verb wrapper",
+    "summary": "Add ghCloseIssue(owner: string, repo: string, ref: string): void to src/workflow/tracker/github.ts, mirroring ghEditIssueBody/ghComment: parseIssueRef(ref).number then silent('gh', ['issue','close', <N>, '--repo', `${owner}/${repo}`]) through the injectable _exec (k5: gh CLI argv, no shell, no REST). Additive sibling in the gh-wrapper family; touches no existing wrapper.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "ghCloseIssue shells `gh issue close <N> --repo owner/repo` via the injectable _exec; number parsed via parseIssueRef.",
+      "No existing wrapper's signature/behavior changes; tsc + existing tracker test subset green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ghCloseIssue: via _setTrackerExecForTests a fake _exec records argv === ['issue','close', '<N>', '--repo', 'owner/repo'] (number parsed from owner/repo#N)"
+      },
+      {
+        "level": "unit",
+        "name": "ghCloseIssue: uses `gh` (not a shell) — the fake exec asserts the command is 'gh' and args are an argv array"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

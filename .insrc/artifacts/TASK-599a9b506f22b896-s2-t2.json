@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-80e6820e-aae0-4840-a726-0fd808590f0d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.282Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Widen the 9 *ArtifactPaths helpers + 6 *MdRel builders to delegate their md side to sc2",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a588c3a4cdc55e537e46c440853315a8b3e019cc21fa421f7a712a88c22f21b4",
+        "at": "2026-10-22T12:43:35.282Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.283Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the 9 *ArtifactPaths helpers + 6 *MdRel builders to delegate their md side to sc2",
+    "summary": "In storage.ts, add createdAtISO + workItemKind params to all 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend) and switch each md side to deriveWorkItemIdentity + resolveArtifactMdPath; keep the json side byte-identical (ARTIFACTS_DIR/<hashId>.json). Switch the 6 *MdRel builders (define/hld/lld/plan/build/spec) to the same resolver so tracker/link issue-body links target the nested paths. epicSlug stays trailing-optional (falls back to fileSeg(epicHash)). This widens an internal-shared signature, so tsc now flags every caller — that error set is t3's checklist.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All 9 *ArtifactPaths helpers accept createdAtISO + workItemKind and return md from resolveArtifactMdPath; json side unchanged",
+      "The 6 *MdRel builders produce the nested relative md path matching the absolute helper",
+      "epicSlug omitted still resolves (folder label falls back to fileSeg(epicHash)); json unchanged",
+      "storage.ts compiles; the only tsc errors remaining are unmigrated call sites (handled in t3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lldArtifactPaths (representative) + spec/def/hld/plan/build/codeReview/extend/stub: .md is the nested resolver path; .json is unchanged ARTIFACTS_DIR/<hashId>.json"
+      },
+      {
+        "level": "unit",
+        "name": "epicSlug omitted → folder label falls back to fileSeg(epicHash), md still resolves, json unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "*MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel) produce the nested relative md path matching the absolute helper"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd1ac441-de05-42c6-a98a-25851b193118",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.363Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Daemon: register the 'workflow.pending' IPC handler",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "79e79c993cf5949431166098ca65f506b6537a875c97a9b9b76e4d90421623d7",
+        "at": "2026-10-22T12:43:17.363Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.364Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon: register the 'workflow.pending' IPC handler",
+    "summary": "Register 'workflow.pending' in the src/daemon/index.ts handler map, resolving repo from params.repo || process.env.INSRC_REPO like its siblings, delegating to listPendingArtifacts and returning { artifacts }. A repo-unresolved or store-unreadable failure is caught and returned as an { error } result (never a silent empty list).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Handler returns { artifacts: PendingArtifact[] } for a fixture repo; empty artifacts[] for an all-approved/rejected or absent store.",
+      "repo-unresolved and store-unreadable both return an { error } result, NOT { artifacts: [] }.",
+      "No existing handler (workflow.approve/artifact.get/artifact.search) is changed. tsc clean; workflow+daemon subset green."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "workflow.pending handler: given a fixture repo with pending artifacts -> { artifacts: [...] } with the pending set (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "workflow.pending handler: given a repo whose store is all-approved/rejected or absent -> { artifacts: [] } (ac3, distinct from error)"
+      },
+      {
+        "level": "integration",
+        "name": "workflow.pending handler: repo-unresolved (no params.repo, no INSRC_REPO) -> an { error } result, NOT { artifacts: [] } (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "workflow.pending handler: store readdir throws -> { error } result (ac2)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

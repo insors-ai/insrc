@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-1102dc7125ad0c07-S001 -->
+<!-- insrc:artifact BUILD-1102dc7125ad0c07-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,5 +23,5 @@ Re-validate after code review round 1 (222cc3f0): testsReaching entries now carr
 
 ## Changes
 
-- `.insrc/artifacts/CR-1102dc7125ad0c07-S001.json` — **insrc-build** (2026-10-17T08:18:18.094Z)
+- `.insrc/artifacts/CR-1102dc7125ad0c07-s1.json` — **insrc-build** (2026-10-17T08:18:18.094Z)
 - `docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/CR.md` — **insrc-build** (2026-10-17T08:18:18.094Z)

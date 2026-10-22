@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7536945-58a5-42bd-b34a-fc39e0c06377",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.483Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Plugin: additive heading-id hook in the bundled markdown-renderer.js",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "addfd35bb2aeee8ddfd736605624bd38a1efbfda50ef133258f88bfcf92b942b",
+        "at": "2026-10-22T12:43:18.483Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.484Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: additive heading-id hook in the bundled markdown-renderer.js",
+    "summary": "Additively extend the S002 bundled markdown-renderer.js so ATX headings emit a stable id (slug + ordinal) and expose the heading path, enabling CommentAnchor.sectionPath. Purely additive to the render output; the HTML-escaping, link-scheme filter, and CSP (no CDN, read-only) rules are unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Headings render with a stable, unique id (slug + ordinal for duplicates); a heading-path helper is available to the comment JS.",
+      "No change to escaping / link-scheme / CSP behavior; still a local resource (no CDN).",
+      "The renderer still ships in the plugin jar; S002 rendering is unaffected."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderer resource: the bundled markdown-renderer.js still ships in the built resources / jar and carries no http(s)/CDN reference after the heading-id addition"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

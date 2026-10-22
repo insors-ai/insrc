@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ed5bc27-8a25-4e2b-a60e-208af4d0a9cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:54.976Z",
+    "epicCreatedAt": "2026-10-07T12:59:03.938Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f1bf0fb3085c629c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate runs the checks, then a read-only judge",
+      "parent": {
+        "entityId": "STORY-f1bf0fb3085c629c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f1bf0fb3085c629c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f1bf0fb3085c629c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f1bf0fb3085c629c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "27139ab2bda30d72ba4acc4a1cf9db424f2540e18457e883b05e1607093103f0",
+        "at": "2026-10-22T12:44:54.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:54.976Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate runs the checks, then a read-only judge",
+    "summary": "In src/mcp/build-step/phases/validate.ts: change ValidateProvider to runReviewSession; add _setBuildValidateCheckRunnerForTests; have handleValidate and handleStandaloneValidate build their route's check plan and pass it to runValidateSession, which runs the checks (through the override when set), renders the evidence into the prompt, calls runReviewSession with the judge schema and a deadline, validates the returned object, overwrites testsPassed / typecheckClean, sets passed = judge passed && both checks, attaches evidence, and maps ReviewSessionTimeoutError, other thrown errors and bad shapes to verdict-session-timeout, verdict-session-failed and unparseable-verdict. Migrate the validate fakes in build-step.test.ts and build-start.test.ts to runReviewSession plus a passing check runner.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The judge is called through runReviewSession with the repository as cwd and the judge verdict schema, after the checks have run, and the prompt it receives contains the check results.",
+      "handleValidate passes the plan built from the task's tests, and handleStandaloneValidate the plan for its small or trivial route (asserted through the check-runner seam).",
+      "verdict.testsPassed and verdict.typecheckClean equal the check results, and passed is false whenever either check fails, whatever the judge says.",
+      "A judge timeout, any other judge error, and a judge object without a boolean passed return verdict-session-timeout, verdict-session-failed and unparseable-verdict, and write no BUILD record.",
+      "Every existing build-step and build-start test passes with the migrated fakes and spawns no real typecheck or test runner."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'a judge passed:true with a failing typecheck gives passed:false'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'a judge timeout returns verdict-session-timeout and writes no BUILD record'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'the validate judge is called through runReviewSession with the repo as cwd and a verdict schema'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'a judge object without a boolean passed gives unparseable-verdict'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'a non-timeout judge error gives verdict-session-failed and writes no BUILD record'"
+      },
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'plan-driven and standalone validate each hand the check runner the plan for their route'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

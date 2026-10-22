@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ef878b5d-53f9-49f6-91ed-52e3b469b460",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.485Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Plugin: the comment JS layer (bundled resource)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3c3b9c33de17be961a9d5112b715770afdbbe03e83757b60b457a486e79f671",
+        "at": "2026-10-22T12:43:18.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.485Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: the comment JS layer (bundled resource)",
+    "summary": "Add the comment JS layer as a bundled local resource loaded into the JCEF page alongside the renderer: a selection / open-question-marker 'add comment' affordance, anchor capture (sectionPath from the t3 heading ids, quote from window.getSelection, openQuestionId on a marker click), thread rendering from a pushed comment set, and the injected JBCefJSQuery call posting { op, comment } for add/edit/remove. Pre-checks a non-empty selection/target before posting. No network; read-only over the rendered content. The load-bearing op validation lives in the pure t2 applier (Kotlin); this JS only captures + posts + renders.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The JS resource is bundled locally (no CDN/http reference) and loaded into the JCEF page by composeHtml.",
+      "Selection / open-question-marker -> an 'add comment' affordance that captures the anchor and posts { op:add, comment } via the injected query; edit/remove post their ops.",
+      "Threads render from a pushed comment set (Kotlin is the source of truth); an empty selection/body is pre-checked and not posted."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "comment JS resource: present on the classpath / in the built resources and referenced by a local URL only (no http(s)/CDN string)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

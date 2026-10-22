@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c2a0784c-62ca-443d-b9ac-8852d3c0b093",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.282Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement assembleCodeReviewGrounding (sc2 producer)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "37bd0495ce1fe66b10feff29dc54f11bacf797787fd973f47f312f6e14bce4bb",
+        "at": "2026-10-22T12:43:45.283Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.283Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement assembleCodeReviewGrounding (sc2 producer)",
+    "summary": "Add assembleCodeReviewGrounding(repoPath, changedFiles) that enumerates the graph entities in each changed file and builds ChangedSymbolSummary rows using the src/db/graph/edges.ts traversal API (callers via inNeighbors+CALLS filter, callees via outNeighbors, testsReaching via inNeighbors from test entities). If the graph store exposes no entity-by-file enumeration, adding that read-only helper is IN SCOPE for this task (additive + read-only — does not spill into t4). Omits files with no indexed entities (observably, not as 'no changes'); one row per entity keyed by entityId; no raw file contents. Read-only graph reads only.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "ac3: returns ChangedSymbolSummary rows (entityId/signature/callers/callees/testsReaching) with NO raw file-content field",
+      "edge cases: a changed file with no indexed entities is omitted from symbols but not dropped from the subject; a file with multiple entities yields one row per entity sharing the file path",
+      "any entity-by-file helper added is read-only and additive (no graph-store mutation)",
+      "ac5: only graph read operations are invoked — no mutation of the graph store or the working tree"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleCodeReviewGrounding (entity lookup + caller/callee + testsReaching edges): returns ChangedSymbolSummary rows with no raw file-content field, over a small in-memory graph fixture"
+      },
+      {
+        "level": "unit",
+        "name": "omit-unindexed-file behaviour: a changedFiles list with one indexed + one unindexed + one non-code file yields symbols only for the indexed entities, none dropped from the subject"
+      },
+      {
+        "level": "unit",
+        "name": "per-symbol (not per-file) row keying: a file with multiple entities yields one row per entityId sharing the file path"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

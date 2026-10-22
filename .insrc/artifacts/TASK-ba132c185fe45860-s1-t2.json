@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3380b849-7efd-4997-aae3-f560e4bc924e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.522Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the daemon catalog module: types + validateModelCatalog + getCuratedCatalog + modelsFor",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "52d82052d72df08930830b1586ebc64dec52673edf8c87c12767d885fcbf70ca",
+        "at": "2026-10-22T12:44:26.522Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.522Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the daemon catalog module: types + validateModelCatalog + getCuratedCatalog + modelsFor",
+    "summary": "Create a new daemon module (e.g. src/daemon/model-catalog.ts) defining CloudModelCatalogFile / CatalogModel / CloudProvider types + ModelCatalogValidationError, validateModelCatalog() (read the shipped asset, JSON-parse, schema-validate version+providers+entries, cache the frozen parse, else throw ModelCatalogValidationError naming the file + a copy-assets Fix: hint), getCuratedCatalog() (returns the singleton accessor; throws the boot-ordering Error if the cache is unset), and CuratedCatalog.modelsFor(provider) over the frozen parse. Mirrors src/docgen/asset-validator.ts. No cloud REST; nothing consumes it yet.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "validateModelCatalog() resolves for a valid catalog and throws ModelCatalogValidationError (message names the file + a copy-assets Fix: hint) for a missing or malformed/schema-invalid asset, short-circuiting on the first structural failure",
+      "getCuratedCatalog() returns a CuratedCatalog whose modelsFor('cli-claude'|'cli-codex') returns the frozen readonly arrays, an empty array for a provider the catalog omits, and throws the boot-ordering Error when called before validateModelCatalog cached the parse",
+      "the module makes NO network/provider call (no HTTP client constructed) and does NOT read/write config.json or touch the config-reconcile system",
+      "CloudProvider = 'cli-claude' | 'cli-codex' only (ollama excluded); types match the sc1 interfaceSketch exactly"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validateModelCatalog: valid catalog fixture -> resolves, caches the frozen parse"
+      },
+      {
+        "level": "unit",
+        "name": "validateModelCatalog: removed/absent catalog file -> throws ModelCatalogValidationError naming the file + a copy-assets Fix: line"
+      },
+      {
+        "level": "unit",
+        "name": "validateModelCatalog: non-JSON file -> throws (parse failure) naming the file"
+      },
+      {
+        "level": "unit",
+        "name": "validateModelCatalog: schema-invalid (missing version / providers not the two-key object / entry missing id / id not a string) -> throws naming the specific failure, short-circuits"
+      },
+      {
+        "level": "unit",
+        "name": "modelsFor('cli-claude') / modelsFor('cli-codex') over a loaded catalog -> returns the curated readonly arrays"
+      },
+      {
+        "level": "unit",
+        "name": "modelsFor for a provider omitted from the catalog -> returns an empty readonly array (not an error)"
+      },
+      {
+        "level": "unit",
+        "name": "getCuratedCatalog before validateModelCatalog populated the cache -> throws the boot-ordering Error"
+      },
+      {
+        "level": "unit",
+        "name": "unit + accessor tests make no network/provider call — the loader/accessor have no cloud-REST code path (no HTTP client is constructed or invoked)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a596502e-6cf0-4dfc-9bde-9dc9008d856c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:19.185Z",
+    "epicCreatedAt": "2026-10-10T14:46:43.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Describe the clean-up in the guide and check the installed daemon",
+      "parent": {
+        "entityId": "STORY-2764c29d7ccb66a5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2764c29d7ccb66a5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2764c29d7ccb66a5-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "947c0b1712bd24bd38f212f142f27da838b5ee523391242add7b98e49f67e57a",
+        "at": "2026-10-22T12:43:19.185Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:19.185Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Describe the clean-up in the guide and check the installed daemon",
+    "summary": "In docs/daemon.md, where indexing is described, say that the index is cleaned at start and during a full index, what is removed and what is kept, that an ignored file is not indexed by a file job, and the limit on a kept file's link into a removed entity. After the build is pushed, update and restart the installed daemon and check this repository's index before and after with search.by_file and repo.stats. The check on the installed daemon is reported by the builder with its evidence, not run by the gate; this task is validated after the push and the daemon update.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "docs/daemon.md describes the clean-up, when it runs, what it removes and its one limit.",
+      "On the installed daemon after the update, files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the count of JavaScript files has fallen (reported by the builder with evidence)."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "on the installed daemon after the update, the files under this repository's build output and the deleted test file have no entities, a source file still has its entities, and the repository's count of JavaScript files has fallen"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-bca78d27-c6dc-4316-8fbc-59151e6e9254",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.035Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Obtain the full self-describing set of settings and their current values from inside the IDE",
+      "parent": {
+        "entityId": "EPIC-b5f333f8d7ba421b",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c0a7bda00f1959ede73736990bf8e94b7b49c97fb7867ea298328e8c79a5ec00",
+        "at": "2026-10-22T12:43:07.035Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

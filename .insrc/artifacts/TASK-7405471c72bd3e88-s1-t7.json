@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a8e027a-16a4-4dc9-b1f3-7889b55f0ed6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.838Z",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Perf on the Issues screen, full verification and screenshots beside the mocks",
+      "parent": {
+        "entityId": "STORY-7405471c72bd3e88-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7405471c72bd3e88-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7405471c72bd3e88-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7405471c72bd3e88-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "288e413dc1fdc220458ee806229f398aadadce6cd29472f99a2df3f6ae01b8f7",
+        "at": "2026-10-22T12:43:44.838Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.838Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Perf on the Issues screen, full verification and screenshots beside the mocks",
+    "summary": "Extend board-perf.test.ts to switch the 500-item board to the Issues view and assert 150 ms (best of three). Run the full plugin suite and typecheck. Capture every screen beside its mock with headless Chrome at 1200, 600 and 360 px and save them as evidence. Packaging and installing the extension (migration step 4) is a release step after BUILD approval, confirmed with the user, not a build task.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "board-perf.test.ts times the Issues switch within 150 ms, alongside the 1 s first screen and 150 ms filter/drill-down.",
+      "The full suite passes apart from the known manifest-catalog baseline failure; typecheck is clean.",
+      "Screenshot pairs (board vs mock) for all-work, epic board, Epics, Issues, story and issue at 1200/600/360 px are saved under the story's evidence folder."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "board-perf.test.ts: switching the 500-item board to the Issues screen renders within 150 ms, best of three"
+      },
+      {
+        "level": "smoke",
+        "name": "evidence: headless-Chrome screenshots of each screen beside its mock at 1200, 600 and 360 px"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -21,9 +21,37 @@
     "epicSlug": "bug-vscode-plugin-dev-chat-each",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-09-30T13:40:39.630Z",
     "parentRef": {
       "slug": "bug-vscode-plugin-dev-chat-each"
+    },
+    "epicCreatedAt": "2026-09-30T13:39:50.043Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f1ce5ee058e2095fb3014c8a78f07d747831e672788afd55afac9d2cf79bf4fd",
+        "at": "2026-09-30T13:39:50.043Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T13:40:39.630Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

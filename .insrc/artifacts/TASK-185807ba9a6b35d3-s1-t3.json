@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b923673c-979a-429f-98de-65a5d6bca91c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.041Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add registerBuildRunners() under src/workflow/runners/build/",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3a428e16b35ef403f80a4eb0025748d3ec85f09feb5926ca4b8382c7843a3b9",
+        "at": "2026-10-22T12:43:15.041Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.042Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add registerBuildRunners() under src/workflow/runners/build/",
+    "summary": "Create src/workflow/runners/build/ (index.ts + schemas.ts) exporting an idempotent `export function registerBuildRunners(): void` that mirrors registerDesignStoryRunners: register the build stage's start/decompose/synthesize/finalize StepRunners via the executor's registerRunner, each keyed `build/<id>` and carrying `workflow:'build'`. No classes, no base class, no inheritance. A module-level `registered` boolean guard makes repeat calls silent no-ops. No sibling runner is touched. SCOPE BOUNDARY for this Story per dataModelChanges: this Task delivers registry MEMBERSHIP + dispatchability only — the four StepRunner entries are registered under build/<id> with workflow:'build', but the actual turn-handler bodies are minimal placeholders deferred to a later Story (dataModelChanges: 'wired in a later Story'). Accordingly, acceptance asserts registry presence + workflow tag, NOT end-to-end handler behavior.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "registerBuildRunners() is exported from src/workflow/runners/build/index.ts as an idempotent `(): void` function with no class or base-class inheritance, mirroring registerDesignStoryRunners",
+      "After calling it, the executor registry HOLDS start/decompose/synthesize/finalize StepRunner entries keyed `build/<id>`, each tagged `workflow:'build'` — assertion is on registry membership + workflow tag, not on invoking a functioning handler body (handler logic is a deferred-to-later-Story placeholder)",
+      "A second and later invocation is a silent no-op (no throw, no duplicate registry entries) via the module-level `registered` guard",
+      "A before/after snapshot shows sibling (define/design.epic/design.story/plan) registry entries are unchanged — registration is additive and order-independent"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerBuildRunners() registers start/decompose/synthesize/finalize StepRunners keyed build/<id> tagged workflow:'build' via registerRunner (src/workflow/__tests__)"
+      },
+      {
+        "level": "unit",
+        "name": "registerBuildRunners() is idempotent — a second/later call is a silent no-op via the `registered` guard, producing no duplicate entries and no throw (src/workflow/__tests__)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

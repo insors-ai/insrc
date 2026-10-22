@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1ea965a2-8404-4d91-8f4f-af27bad1e469",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:27.341Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the pure headless ModelTiersModel (k7 state machine)",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a000ac48df2ad8a6f71281ecc1312010ebb367cdbee1b91072e6e7fcec53d842",
+        "at": "2026-10-22T12:44:27.341Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:27.341Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pure headless ModelTiersModel (k7 state machine)",
+    "summary": "Add ModelTiersModel(catalog: SettingsCatalogDto, listsByProvider: Map<String, ModelListResult>) — a PURE, headless model mirroring PerRepoOverridesModel. Reads each tier's effective runner+model from the catalog snapshot, falling back to the per-tier CONFIG_CATALOG default (core/mid runner cli-claude, cheap ollama; model core '' / mid 'sonnet' / cheap 'qwen3.6:27b'). Exposes currentRunner/currentModel, modelOptions(tier) (the provider's models + a disabled '(current, not in catalog)' entry for a saved OVERRIDE absent from a Loaded list; a 'no models available' sentinel when Unavailable/empty), selectModel, selectRunner (clears that tier's pending model), isModified, collectWrites(): List<PendingWrite> (['models','tiers',tier,'model'] + runner only on a switch). No Swing, no fetch logic. Additive; nothing wires it yet.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A Loaded list → modelOptions(tier) is exactly the daemon's model ids (dropdown-only), pre-selecting the saved model when present (marked current)",
+      "Unavailable AND Loaded(false,[]) AND Loaded(true,[]) → a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)",
+      "A saved OVERRIDE absent from a Loaded list → a disabled '(current, not in catalog)' entry showing the saved id; selectModel(otherId) emits PendingWrite(['models','tiers',tier,'model'], otherId)",
+      "A saved built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry",
+      "selectRunner(tier, newProvider) clears the pending model + re-derives modelOptions from listsByProvider[newProvider]; collectWrites emits runner (and model only once re-picked)",
+      "A defaulted tier runner resolves the CONFIG_CATALOG default so the provider is always known; re-selecting the saved model is an idempotent no-op"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a Loaded list → modelOptions(tier) is exactly the daemon's ids (dropdown-only), pre-selects the saved model (marked current)"
+      },
+      {
+        "level": "unit",
+        "name": "Unavailable → a single disabled 'no models available' sentinel; collectWrites emits nothing (saved untouched)"
+      },
+      {
+        "level": "unit",
+        "name": "Loaded(false,[]) AND Loaded(true,[]) → same 'no models available' presentation, no write"
+      },
+      {
+        "level": "unit",
+        "name": "a saved OVERRIDE absent from a Loaded list → disabled '(current, not in catalog)' entry; selectModel(otherId) emits PendingWrite(['models','tiers',tier,'model'], otherId)"
+      },
+      {
+        "level": "unit",
+        "name": "a saved built-in DEFAULT (not an override) absent from the list → NO '(current, not in catalog)' entry"
+      },
+      {
+        "level": "unit",
+        "name": "selectRunner(tier, newProvider) clears the pending model + re-derives from listsByProvider[newProvider]; collectWrites emits runner then (on re-pick) model"
+      },
+      {
+        "level": "unit",
+        "name": "selecting the already-saved model is an idempotent no-op (collectWrites emits nothing)"
+      },
+      {
+        "level": "unit",
+        "name": "a defaulted tier runner resolves the CONFIG_CATALOG default; isModified false with no edits, true after a select, false again after reset"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

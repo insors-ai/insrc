@@ -23,85 +23,62 @@
     "hldBaseRunId": "wf-1785421889464-2ayzlc",
     "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "LLMProvider in src/shared/types.ts exposes completeStructured and a capabilities object with structuredOutput — the narrator seam's interface.",
-          "evidence": "src/shared/types.ts:177 interface LLMProvider; :216 completeStructured<T>; :232 readonly structuredOutput:boolean — the narrator seam's provider interface exists as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider(cfg) exists in src/analyze/context/shaper-provider.ts and returns an LLMProvider (the core-tier, k1-safe provider s4 uses); buildSummariserProvider is the cheap tier.",
-          "evidence": "buildShaperProvider at shaper-provider.ts:277 and buildSummariserProvider both exist — the core-tier (k1-safe) vs cheap-tier provider selection s4 leans on is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The built sc1 IrSection is {id, title, narrativeText} with NO citation field, and DocumentIR uses a structural derived/narrated partition — so s4's grounding is validation-time with no sc1 type change.",
-          "evidence": "types.ts:51 interface IrSection with :54 readonly narrativeText and no citation field; NarratedContent present — grounding-by-validation needs no sc1 change, as the design states.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The s2/s3 base derived extractors s4 composes exist: buildComponentDependencyIR (component-dependency.ts) and buildCallSequenceIR (call-sequence.ts).",
-          "evidence": "buildComponentDependencyIR (component-dependency.ts) and buildCallSequenceIR (call-sequence.ts:97) both exist — the reused s2/s3 base extractors are real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The shell's buildHtml today renders ONLY a #docgen-diagram region and has NO narrated/#docgen-narrative region — s4 must add it; assembleShell + escapeHtml exist.",
-          "evidence": "shell.ts has buildHtml + docgen-diagram + escapeHtml + assembleShell; grep -c 'docgen-narrative' src/docgen/render/shell.ts = 0 — the narrated region is genuinely new work, confirming the design's premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/docgen/index.ts currently registers 3 doc types (s1/s2/s3) and s4 adds 'narrative' as the 4th; generateDocument is the single generation path.",
-          "evidence": "grep -c 'r.register(' src/docgen/index.ts = 3 (s1/s2/s3); s4 adds 'narrative' as the 4th. generateDocument is the single path. narrativeRegistration currently only in the design docs.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DocGenOutcome ok carries `value` and constructors ok/emptyScope exist — makeExtract returns ok(DocumentIR) / short-circuits the base non-ok outcome.",
-          "evidence": "outcome.ts exports ok/emptyScope; DocGenOutcome ok carries `value: T` — makeExtract's ok(DocumentIR)/short-circuit contract holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-07-31T09:05:03.714Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-31T09:09:30.071Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b935161dc8095ecfb3af1fb236274a014b09358872038a8fc5ed6a1fdd7e7fb9",
+        "at": "2026-07-31T09:02:06.057Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T09:09:30.071Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-07-31T09:05:03.714Z",
+        "report": {
+          "entityId": "LLD-870ed3dd246225f4-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-870ed3dd246225f4-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

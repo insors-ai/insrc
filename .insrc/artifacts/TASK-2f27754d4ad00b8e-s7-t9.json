@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8269918d-e768-4762-a6f2-557c0fa3d921",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.258Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Record a Task's build round from the build validate phase",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "30e567aae137b40d439b4d3c265b7685b60f8d3627124db94ce63b9a9d5ff659",
+        "at": "2026-10-22T12:43:22.258Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.259Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record a Task's build round from the build validate phase",
+    "summary": "Make src/daemon/steps/build-step/phases/validate.ts call recordBuildRound with the gate's verdict for the Task being validated, keeping the BUILD record write, and log and skip the Task write when the Task has no head.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "A validate turn records its round (passed or failed, with the summary) in the Task's own log",
+      "A Task with no head keeps writing the BUILD record only"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "validate-task-round.test.ts: a validate turn records its round in the Task's own log, and a Task with no head keeps writing the BUILD record only"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

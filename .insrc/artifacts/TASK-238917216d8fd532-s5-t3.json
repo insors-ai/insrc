@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ec643b55-def5-473a-bfc1-fc45aa8c3ca6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.954Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Post-approve refresh wiring (ReviewPanel.onApproved -> refreshNow)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e9badf12930764a742a86aa73e4052715e75b9c4193f8cd71512f265682ba02f",
+        "at": "2026-10-22T12:43:18.954Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.955Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Post-approve refresh wiring (ReviewPanel.onApproved -> refreshNow)",
+    "summary": "ReviewPanel passes an onApproved: () -> Unit callback into ArtifactContentPane that invokes the EXISTING ReviewPanel.refreshNow() (ReviewToolWindow.kt:124) so the just-approved artifact drops off the pending list. No new poll machinery (k7); reuses the generation-guarded poll unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "On Approved the pane invokes onApproved, which calls the existing ReviewPanel.refreshNow()",
+      "No new poll/scheduler is introduced (the S001 poll is reused unchanged)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ApproveDecision.shouldRefresh is true only for Approved (not Withheld/Unavailable)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

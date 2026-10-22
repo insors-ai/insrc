@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6815d32e-8e2e-4cad-ade9-b50a59505f92",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.205Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s2",
+    "envelope": {
+      "description": "sc3 types + optional body fields",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dead5169b2765251b11667c691671bedca1a3718f5d30504463f85019e46553e",
+        "at": "2026-10-22T12:44:38.205Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.206Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc3 types + optional body fields",
+    "summary": "Add the sc3 model in a new src/workflow/artifacts/format/ module: Audience, SharedContextRef, SectionSpec (incl. numbered flag + source union), ItemFormat, DocumentFormat. Add optional summary {prose, audience?} to Define/Hld/Lld/Plan bodies and contextRefs to LldBody. Additive types only; additionalProperties:false retained; no behavior change yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Audience/SharedContextRef/SectionSpec/ItemFormat/DocumentFormat exported from format/",
+      "optional summary on each body type + contextRefs on LldBody; existing bodies still type-check",
+      "tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc3 types compile + optional summary/contextRefs are absent-safe on each body type"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

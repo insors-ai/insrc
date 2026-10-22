@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-960fc919-5be7-4618-be42-03f245fceb3c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.015Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board message protocol and up-message parser",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dae0967f9a44eb9edc0014e85bbe34782a605f1f5a9c36340d90ce944c754848",
+        "at": "2026-10-22T12:43:41.015Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.015Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board message protocol and up-message parser",
+    "summary": "The Envelope, BoardDownMessage (including the interim 'items' variant from AMD-6a131558-1), BoardUpMessage and StatusView types, and parseBoardUpMessage, which accepts only a v1 envelope with a known type and well-typed fields.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The down- and up-message unions match the HLD sc3 sketch plus the approved 'items' variant.",
+      "parseBoardUpMessage returns the typed intent for every valid up-message and null for a wrong version, an unknown type or a mistyped field."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-protocol.test.ts: 'every valid up-message parses and a wrong version, unknown type or mistyped field gives null'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

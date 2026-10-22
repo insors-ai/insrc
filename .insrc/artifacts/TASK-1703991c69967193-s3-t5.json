@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2bc9f69f-842e-4b64-9367-bb9ad954310f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.182Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Unit-test the locateParent policy with fabricated deps",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3296a01ab3644f7885d4ef77086c95329e2dbc9dd36e712ffdf723e2159ea69",
+        "at": "2026-10-22T12:43:14.182Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.183Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit-test the locateParent policy with fabricated deps",
+    "summary": "Add unit tests (node:test via tsx) that inject a fake LocateParentDeps (stub resolveRef, stub inferCandidates returning hand-built InferredCandidates, stub promptForRef, fixed LocateThresholds) to pin every tier-policy branch and the lc1 guarantees without a DB: tier-1 short-circuit, graph>=threshold, semantic>=threshold, tied-graph->prompt, below-threshold->prompt, nothing->prompt->standalone, inferCandidates-rejection degrade, empty-defectDescription skip-semantic, stale-explicitRef fall-through, and the ParentLocation shape invariant (parentRef null iff standalone).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Every locateParent subject from the LLD test strategy has a passing test; ac1/ac2/ac3 policy branches covered.",
+      "Tests use fabricated deps only (no DB, no daemon) and run in the fast workflow subset.",
+      "npx tsx --test on the new file is green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "locateParent: graph candidate >= threshold -> tier='graph-ownership', semantic pass skipped (short-circuit)"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: graph empty/below-threshold, semantic >= threshold -> tier='semantic'"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: nothing clears threshold -> promptForRef called; a resolvable ref -> attached, an unresolvable/empty ref -> tier='standalone', parentRef=null"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: tied graph candidates at/above threshold -> defers to prompt (no arbitrary pick)"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: inferCandidates rejects/times out -> degrades to prompt then standalone, never throws, never auto-attaches"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: empty defectDescription -> semantic tier skipped, graph+prompt order preserved"
+      },
+      {
+        "level": "unit",
+        "name": "locateParent: stale explicitRef (resolveRef returns null) -> falls through to inference tiers"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

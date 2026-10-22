@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd2a55c7-4f08-4ac5-957b-7aef56dccd57",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.466Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "One function for the pairing check and resolution; the indexed check takes readers",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "146fa5c9d87d622086ff688de660118d82ba03e39db050332361d0b90544f4ef",
+        "at": "2026-10-22T12:44:25.466Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.466Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One function for the pairing check and resolution; the indexed check takes readers",
+    "summary": "Take and record the baseline of the analyze, mcp, daemon and workflow suites before anything changes. Add resolveScopeForTarget beside resolveScope: check a kind of scope against a row of TARGET_TO_KINDS, then resolve. stepScope calls it in place of its two lines; prepareScope calls it in its run-mode branch only and keeps its mode condition. Give ensureNonEmptyClosure an optional second parameter holding the two readers it uses; its caller in the context builder passes nothing.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The baseline result of the four suites is recorded with the commit it was taken on, before any change of this Story",
+      "stepScope, and prepareScope in run mode with an intent, accept, refuse and return exactly what they did, through the new function",
+      "prepareScope in classification mode (no intent) and in task mode with a pairing the table does not allow still resolves without refusing",
+      "ensureNonEmptyClosure given readers reads the registry and a repo's entities through them; given none it reads the real store as today, and its existing tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "prepareScope and stepScope accept, refuse and return what they did, and prepareScope makes no pairing check in classification or task mode (mutation: make the check in every mode)"
+      },
+      {
+        "level": "unit",
+        "name": "the indexed check reads the registry and entities through the readers it is given, and the real store when given none"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

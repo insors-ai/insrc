@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-57ee55ef-0889-46b8-b578-2ec7ed1aab86",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.729Z",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A typed message clears the queue (denying in-turn requests first)",
+      "parent": {
+        "entityId": "STORY-6a811b8acca60ac5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a811b8acca60ac5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a811b8acca60ac5-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ab693ef34e22e4e90aba274044a9daae4dd9f794651d2289c96221095be1d07",
+        "at": "2026-10-22T12:43:42.729Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.729Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A typed message clears the queue (denying in-turn requests first)",
+    "summary": "On a user-typed submit-turn (not a follow-up), before the turn starts: answer every undecided in-turn request whose turn is still live with decide(live.turnId, requestId, 'deny'); then record each undecided request as rejected, clear the queue and reset the grant chain; then run the user's message as a normal turn.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "With a queued in-turn request, a typed message calls decide(turnId, requestId, 'deny') before the new turn starts",
+      "Every undecided request gets a rejected chip and the queue is empty",
+      "The next approval follow-up does not carry grants from before the typed message"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn"
+      },
+      {
+        "level": "integration",
+        "name": "a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

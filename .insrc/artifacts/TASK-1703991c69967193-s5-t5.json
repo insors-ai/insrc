@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-48d6f293-8f17-4411-af4f-1b51535f232b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.591Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the prompt-on-lost-ref path (resolved open-question)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "133801366fb0d270aaee63284a366e94b784f0b29e7252708f3f3ecd57e22403",
+        "at": "2026-10-22T12:43:14.591Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.592Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the prompt-on-lost-ref path (resolved open-question)",
+    "summary": "Per the resolved open-question: when a recorded GH issue ref is lost/unexpectedly missing where one should exist, PROMPT THE USER with next-step options rather than silently degrading. Add an injectable promptOnLostRef dep (returns a LostRefAction) to TrackerCreateDeps/TrackerCloseDeps and branch on it: (create) if recordRef throws AFTER a successful create -> promptOnLostRef with the created ref in hand (retry-record / record-manual / skip); (close) if a configured repo has no recorded ref but a create likely happened -> promptOnLostRef (relink-by-label / record-manual / skip). SCOPING (per s3 critique): ghFindIssueByLabels is invoked ONLY inside the user-chosen 'relink-by-label' branch of the interactive prompt — NEVER on the normal create path — so a1's no-per-create-round-trip invariant holds and only the a2 lost-ref RECOVERY is added, not the deferred always-on a2 dedup. Default promptOnLostRef is a no-op returning 'skip' (preserves the pure-defer behavior when no prompter is injected, e.g. non-interactive). Still gh CLI only; no new external path.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "create: recordRef throws post-create -> promptOnLostRef invoked with the created ref; 'retry-record' re-writes it, 'skip' returns {status:'created', reason:'ref-unrecorded'} without throwing.",
+      "close: configured + no recorded ref (but likely created) -> promptOnLostRef invoked; 'relink-by-label' uses ghFindIssueByLabels (ONLY here, not on create) to re-discover + re-record + close, 'skip' -> {status:'skipped'}.",
+      "Default (no promptOnLostRef injected) -> returns 'skip' (byte-compatible with the LLD's defer behavior); no ghFindIssueByLabels call on any normal create path. tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "prompt-on-lost-ref (create): recordRef throws post-create -> promptOnLostRef invoked with the created ref; 'retry-record' re-writes it; 'skip' -> { status:'created', reason:'ref-unrecorded' } without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "prompt-on-lost-ref (close): configured + no recorded ref -> promptOnLostRef invoked; 'relink-by-label' uses ghFindIssueByLabels to re-discover + re-record + close; 'skip' -> { status:'skipped' }"
+      },
+      {
+        "level": "unit",
+        "name": "prompt-on-lost-ref default: no promptOnLostRef injected -> returns 'skip'; assert ghFindIssueByLabels NOT called on any normal create path (a1 no-per-create-round-trip invariant)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-86b0c05b-20c1-4059-86ae-5106418bad69",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.671Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the LifecycleService and its inventory entry",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "24f4601f4367a867468d2515322b60e7490fda68cf56c7f947c41cdc5350bcc4",
+        "at": "2026-10-22T12:43:20.672Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.672Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the LifecycleService and its inventory entry",
+    "summary": "Add src/workflow/artifact-core/lifecycle-service.ts with apply and completeIfRolledUp built on ArtifactStore.update: the integrity check against the last revision-bearing entry, the completed-once check, transition and the write with the real operation; complete cascades to the members first with their own updates and records the unit's own entry last through the outer update only; reopen reopens the members and is refused while the parent is completed. Extend the write inventory detector to recognise update as a store write and add the service file's entry in the same task.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "approve, review and complete on a head with each Integrity reason write and log nothing, and a head with no stored hash or no revision-bearing entry is approved normally",
+      "after a content change an approved artifact reads draft with its earlier approval and review at the older revision and a log that replays to the same status",
+      "complete is recorded once, the Story completes members first and itself last, completeIfRolledUp walks up to the Epic once, a failure part-way is finished by a retry, and reopen reopens the frozen members",
+      "the write inventory test passes with the service entered and a caller of update is recognised"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts: after a content change to an approved artifact the status is draft, the revision moved, and the earlier approval and review keep their original revision numbers (unit, then through LifecycleService and readWithHistory, then through writeArtifact)"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts: apply refuses approve, review and complete on each Integrity reason and writes nothing, while unhashed and unlogged heads are approved normally"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts: completeIfRolledUp records the Story once, members first and the unit last, and the Epic follows"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts: a completion that fails part-way is finished by a retry, and reopen reopens the frozen members and is refused while the Epic is completed"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

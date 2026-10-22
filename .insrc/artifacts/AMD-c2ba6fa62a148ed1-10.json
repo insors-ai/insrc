@@ -1,22 +1,65 @@
 {
-  "id": "AMD-c2ba6fa62a148ed1-10",
-  "epicHash": "c2ba6fa62a148ed1",
-  "epicSlug": "complete-consistent-richer-code-index-one",
-  "hldBaseRunId": "wf-1791697214822-7bombm",
-  "proposedBy": {
-    "workflow": "controller",
-    "runId": "chat-2026-10-17",
-    "storyId": "s13",
-    "stepId": "boundary-decision"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "createdAt": "2026-10-17T16:23:58.442Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6f276e0511cce36b9305532c00402844cf0f7ed36f3e3503693e2bf9f0037a57",
+        "at": "2026-10-17T16:23:58.442Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T16:26:58.756Z"
+      },
+      "signoffs": []
+    }
   },
-  "proposedAt": "2026-10-17T16:23:58.442Z",
-  "status": "approved",
-  "amendment": {
-    "type": "storyBoundary.addConsumer",
-    "contractId": "sc2",
-    "consumer": "s13"
+  "body": {
+    "id": "AMD-c2ba6fa62a148ed1-10",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "amendment": {
+      "type": "storyBoundary.addConsumer",
+      "contractId": "sc2",
+      "consumer": "s13"
+    },
+    "rationale": "Story s13 relies on the FileCommit owned by s2 for caller-owned edges: re-indexing a file replaces only the relationships that originate in it, and an edge into an entity that no longer exists after the commit returns to pending; s13 then re-resolves those pending rows by their binding key when a matching entity is stored (its ac6). Stakeholder decision 2026-10-17 (option A): s13 does not build the file commit itself.",
+    "proposedBy": {
+      "workflow": "controller",
+      "runId": "chat-2026-10-17",
+      "storyId": "s13",
+      "stepId": "boundary-decision"
+    },
+    "proposedAt": "2026-10-17T16:23:58.442Z",
+    "approvedBy": "Subho Ghosh",
+    "sideEffects": {
+      "addedStoryDependencies": [
+        {
+          "from": "s13",
+          "to": "s2"
+        }
+      ]
+    }
   },
-  "rationale": "Story s13 relies on the FileCommit owned by s2 for caller-owned edges: re-indexing a file replaces only the relationships that originate in it, and an edge into an entity that no longer exists after the commit returns to pending; s13 then re-resolves those pending rows by their binding key when a matching entity is stored (its ac6). Stakeholder decision 2026-10-17 (option A): s13 does not build the file commit itself.",
   "citations": [
     {
       "id": "c1",
@@ -29,15 +72,5 @@
       "kind": "prior-artifact",
       "ref": ".insrc/artifacts/EXT-c2ba6fa62a148ed1-s13.json feedback e913193b (refined s13 design)"
     }
-  ],
-  "sideEffects": {
-    "addedStoryDependencies": [
-      {
-        "from": "s13",
-        "to": "s2"
-      }
-    ]
-  },
-  "approvedAt": "2026-10-17T16:26:58.756Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

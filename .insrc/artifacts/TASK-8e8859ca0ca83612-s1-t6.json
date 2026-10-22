@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b1e70ea-fc42-453f-83f9-ff1f7a6a6bf2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.865Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Map + render the tool-result row and keep parity",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f9daeaf9413db117ee56fdde01c17a0a37c19f6b0860869306028ecdd16af06",
+        "at": "2026-10-22T12:43:56.865Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.866Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Map + render the tool-result row and keep parity",
+    "summary": "In render-registry.ts add the toViewModel dual-input branch (live ToolResultEvent AND persisted tool-result entry -> { kind:'tool-result', collapsible:true, meta:{command,output} }), register a 'tool-result' RowRenderer that builds command / separator and wraps ONLY the output in host.collapsible(defaultCollapsed:true), and keep the eval'd renderRegistryWebviewSource inline toViewModel + live-render dispatch in parity; wire 'tool-result' into the chat-panel webview live-render structured branch. Confirm the assistant-text renderer is NOT default-collapsed.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "toViewModel maps a live tool-result event and a replayed tool-result entry to an IDENTICAL RowViewModel (dual-input)",
+      "The registered tool-result renderer shows command + separator + output with ONLY the output default-collapsed to ~3 lines, expandable/re-collapsible",
+      "The eval'd webview source stays in parity with the module (parity test) and the live-render dispatch renders tool-result structurally",
+      "Assistant/non-tool rows are never default-collapsed (ac3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "toViewModel: a live ToolResultEvent maps to { kind:'tool-result', collapsible:true, meta:{command,output} }; the existing tool-call->tool-command and assistant-delta->assistant-text branches are unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "toViewModel: a replayed tool-result TranscriptEntry maps to an IDENTICAL RowViewModel as its originating live event (dual-input parity)"
+      },
+      {
+        "level": "unit",
+        "name": "tool-result RowRenderer: builds command line + separator + output; ONLY the output is wrapped in host.collapsible(defaultCollapsed:true); command stays outside the collapsible (always visible)"
+      },
+      {
+        "level": "unit",
+        "name": "assistant-text renderer: is NOT default-collapsed (rendered in full)"
+      },
+      {
+        "level": "unit",
+        "name": "renderRegistryWebviewSource parity: the eval'd inline toViewModel/markerFor + live-render dispatch stays in parity with the module source after adding the tool-result branch (parity test)"
+      },
+      {
+        "level": "unit",
+        "name": "renderer isolation: a throwing tool-result renderer falls back to the flat 'fallback' renderer for that one row"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

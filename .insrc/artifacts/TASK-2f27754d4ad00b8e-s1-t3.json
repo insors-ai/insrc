@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f30f5013-cad9-4d11-a261-b423dcbabe35",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.165Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make every producer default to the lowercase story",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "80c34e501e482a4f05d70bd77f2c0445cd2b2cbfd26ab52a4386737254833827",
+        "at": "2026-10-22T12:43:20.165Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.165Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make every producer default to the lowercase story",
+    "summary": "Change the standalone story default in design-story/standalone.ts, the build-step defaults in implement.ts and validate.ts, and the MCP tool descriptions and examples to s1. Add the fresh standalone workflow test.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "a new standalone workflow with no storyId produces s1 and passes the strict id check",
+      "no source text names S001 as a default or example",
+      "the build-step and design-story tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/standalone-story.test.ts: a new standalone workflow with no storyId produces s1 and passes the strict id check"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

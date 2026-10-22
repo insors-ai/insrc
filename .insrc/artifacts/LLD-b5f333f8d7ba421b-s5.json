@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1789841045868-kib3gd",
     "hldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-20T08:55:45.001Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-20T08:56:15.157Z",
     "questionResolutions": {
       "q70aa37ec": {
         "question": "The per-repo tiers editor edits the daemon's free-string runner + model values (there is no sc1 enum domain for model names), so it uses text fields with no membership validation — an invalid runner/model is caught only at the daemon (SaveResult.Rejected). This matches k5 (the plugin owns no settings semantics) and is the accepted trade for full per-repo parity; surfaced for the user at LLD approval.",
@@ -46,6 +32,61 @@
         "rationale": "Matches the LLD scope + k5 (plugin owns no settings semantics); SaveResult.Rejected already surfaces the daemon's authoritative error. A catalog runner/model domain (C) is an out-of-scope daemon change fileable as a follow-up; B is a later refinement on top of A.",
         "resolvedAt": "2026-09-20T08:56:54.800Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "afd4253bb012b80cdef31d0ec0c356429551a9d37d762a68f7db541cd388b1e9",
+        "at": "2026-09-20T08:54:38.317Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-20T08:56:15.157Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-20T08:55:45.001Z",
+        "report": {
+          "entityId": "LLD-b5f333f8d7ba421b-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-b5f333f8d7ba421b-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

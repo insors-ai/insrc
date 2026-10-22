@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09414dd9-34ae-4496-a756-cafc778f58a3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.429Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add RepoSchemaGate",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4c5c815511bb2646b7bd40e2cb0438cc07fc6ec0057c019df48c6b1c66a35e04",
+        "at": "2026-10-22T12:43:20.429Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.430Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add RepoSchemaGate",
+    "summary": "Add the repository version marker reader and require over .insrc/schema.json, with absent meaning version 1.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "read returns version 1 with no marker and the marker's version when valid",
+      "require refuses an unconverted repository with a message naming the s9 conversion and throws on an invalid marker"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/repo-schema.test.ts: RepoSchemaGate reads version 1 with no marker, requires a version and throws on an invalid marker"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

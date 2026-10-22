@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "a0f4c1cfe262a497",
     "storyId": "s2",
-    "epicSlug": "provenance-traceability-workflow-artifact-json-two"
+    "epicSlug": "provenance-traceability-workflow-artifact-json-two",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "9fd100313c1d28dca86766456bff25c50e8a1ae999d9836e3e89f9a9b04268dc",
+        "at": "2026-09-28T14:02:12.149Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

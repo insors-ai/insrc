@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-bd1c6c9005ff6390-S001 -->
+<!-- insrc:artifact BUILD-bd1c6c9005ff6390-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,20 +23,20 @@ An integration test indexes a two-file TypeScript fixture through the indexer's 
 
 - `.insrc/artifacts/AMD-c2ba6fa62a148ed1-8.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/BUILD-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/BUILD-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/CR-bd1c6c9005ff6390-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/BUILD-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/CR-bd1c6c9005ff6390-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/DEF-670419c4ad8bea8e.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/DEF-c2ba6fa62a148ed1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/EXT-c2ba6fa62a148ed1-s13.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/HLD-670419c4ad8bea8e.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/ISSUE-487ad7a67474d321.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/LLD-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/LLD-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/PLAN-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/PLAN-bd1c6c9005ff6390-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/PLAN-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/PLAN-bd1c6c9005ff6390-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
-- `.insrc/artifacts/TESTS-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
+- `.insrc/artifacts/TESTS-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `.insrc/build-start/b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `AGENTS.md` — **insrc-build** (2026-10-17T16:09:26.777Z)
 - `CLAUDE.md` — **insrc-build** (2026-10-17T16:09:26.777Z)

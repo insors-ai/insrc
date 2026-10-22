@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2673c55b-b0a5-4c47-a9e7-61bc718bdd7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.390Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Check for changes after each tool call and push the sections as rows",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1645c73de1207212a1e646077ae1d7cb255f7fde87ef337c8a04500f8f7e37b",
+        "at": "2026-10-22T12:44:17.394Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.395Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Check for changes after each tool call and push the sections as rows",
+    "summary": "edit-governor.ts gains sectionsActive, check, sectionPaths and abandonTurn, limits observe to the editor view, swaps showChat for showSections and sectionsUnreadable, and loses computeDiff and defaultComputeDiff. The host opens a diff state in a turn's beforeRun, asks for a check after every 'file-edit' and 'tool-result' event of that turn's sink, pushes diff rows with sid and replaces and the overflow and unreadable marker rows, posts them as 'transcript-row', and ends the diff state in onTerminal after resolveTurn. 'edit-prompt' leaves protocol.ts. extension.ts passes relPath and no computeDiff. The S006 edit-prompt host tests, the governor tests and the wiring and protocol tests follow. One Task because the seam does not typecheck until the host stops using showChat and computeDiff.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "A check passes add, update and withdraw operations to the host, which pushes rows and never changes an earlier row",
+      "Checks run one at a time and a call made during a check causes exactly one more",
+      "With no snapshot or with the editor view no diff state is made and the rows are those of today",
+      "The restored window carries each section's latest version",
+      "The plugin typechecks with 'edit-prompt', showChat, computeDiff and defaultComputeDiff gone"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "governor: check passes the reconciled operations to showSections and calls nothing when nothing changed"
+      },
+      {
+        "level": "unit",
+        "name": "governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one"
+      },
+      {
+        "level": "unit",
+        "name": "governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections"
+      },
+      {
+        "level": "unit",
+        "name": "governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn"
+      },
+      {
+        "level": "unit",
+        "name": "governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing"
+      },
+      {
+        "level": "unit",
+        "name": "governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot"
+      },
+      {
+        "level": "unit",
+        "name": "governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing"
+      },
+      {
+        "level": "unit",
+        "name": "protocol: transcript-row is a host message and edit-prompt is not"
+      },
+      {
+        "level": "unit",
+        "name": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment (__tests__/extension-chat-wiring.test.ts; replaces the assertion on `computeDiff: defaultComputeDiff` at line 89)"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: the restored window and an older page carry each section's latest version at its first row's place"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

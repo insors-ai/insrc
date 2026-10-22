@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-85bffd20-0c60-420f-9642-070620501b9c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.859Z",
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Refuse to break down an unapproved or stale Story design",
+      "parent": {
+        "entityId": "EPIC-1cd9a4c34f403a80",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f2c8529c9f237d0edac90bd34305afa87d6320787f08fa9ea24fa614ad6f3f03",
+        "at": "2026-10-22T12:43:06.859Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

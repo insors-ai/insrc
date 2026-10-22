@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be535d22-85de-406f-ba22-176c5a6b8258",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.111Z",
+    "epicCreatedAt": "2026-07-27T06:54:16.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5a6e60ccefd9be4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integration + boot + maintenance + smoke tests for prune reporting/convergence",
+      "parent": {
+        "entityId": "STORY-f5a6e60ccefd9be4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f5a6e60ccefd9be4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f5a6e60ccefd9be4-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f5a6e60ccefd9be4-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "422c7c1aedf6cc4398916c241b43bfadeed607404c250750da6ac48f31025625",
+        "at": "2026-10-22T12:44:57.114Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.115Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration + boot + maintenance + smoke tests for prune reporting/convergence",
+    "summary": "Extend config-reconcile-io.test.ts, config-boot-reconcile.test.ts, maintenance-reconcile.test.ts, config-reconcile-smoke.test.ts for prune-only write-once, convergence, boot/update pruned reporting, and the retired∩live distinguishable warn.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "integration write-counting seam proves prune-only = 1 write and already-pruned = 0 writes",
+      "boot + maintenance tests assert the pruned count is surfaced and the retired∩live bug is distinguishable",
+      "smoke asserts convergence (retired keys gone, live surfaces intact, second pass no-op)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "integration: legacy fixture on disk → exactly 1 writeFile + 1 rename; retired keys gone, dynamic namespaces byte-identical to baseline"
+      },
+      {
+        "level": "integration",
+        "name": "integration: a config with ONLY retired keys to remove (nothing to fill/repair) → still 1 write (prune-only trips changed)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: already-pruned config → 0 writeFile, 0 rename, mtime unchanged (convergence)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: daemon boot reconcile strips retired keys and logs a pruned count; a retired∩live catalog bug logs the distinguishable shipped-catalog warn and leaves the file untouched"
+      },
+      {
+        "level": "smoke",
+        "name": "smoke: boot against a temp home holding the legacy fixture → models.{local,embedding,embeddingDim,tiers,context,agents} absent afterwards, models.providers.local.* + models.analyze.* intact; second boot writes nothing"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

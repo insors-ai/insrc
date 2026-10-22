@@ -24,133 +24,6 @@
     "hldBaseRunId": "wf-1790428640052-v7rbx8",
     "hldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "'approval-request' is present in TURN_EVENT_KINDS but TurnEvent has NO ApprovalRequestEvent union member yet (S001 reserved the kind only); S004 adds the member.",
-          "evidence": "stream-events.ts:64-74 TURN_EVENT_KINDS includes 'approval-request' (line 71); comment at :58 states 'S001 sc2 (additive) RESERVES approval-request as a kind S004 fills'. No `interface ApprovalRequestEvent` exists yet. Claim verified.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "markerFor has an exhaustiveness never-check (default: const _never: never = event) that a new TurnEvent union member must be handled in.",
-          "evidence": "markerFor is NOT in stream-events.ts — it is defined in src/chat/markers.ts:43 with the exhaustiveness never-check at markers.ts:76 (`const _never: never = event`), and has a single-sourced webview mirror markerWebviewSource (markers.ts:84) that chat-panel.ts:261 embeds. The LLD's markerFor API entry, the ApprovalRequestEvent dataModel call-sites ('src/chat/stream-events.ts (TurnEvent union + markerFor)'), and migration step 1 ('markerFor null case (stream-events.ts)') all mis-locate markerFor in stream-events.ts and omit that its webview mirror markerWebviewSource must also gain the 'approval-request' case. The never-check requirement itself is correct.",
-          "action": "During build, edit src/chat/markers.ts for the markerFor 'approval-request'->null case AND update markerWebviewSource (the single-sourced webview mirror) to match; add only the ApprovalRequestEvent union member in stream-events.ts. Treat migration step 1's '(stream-events.ts)' as covering both files (markers.ts markerFor + stream-events.ts union member).",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "Correct the file location so the build edits markers.ts (host markerFor + markerWebviewSource mirror), not stream-events.ts, for the exhaustiveness case.",
-            "artifactEdits": [
-              {
-                "find": "**Call sites:**\n- `src/chat/stream-events.ts`\n- `src/chat/cli-adapter.ts`\n- `src/chat/chat-panel.ts`",
-                "replace": "**Call sites:**\n- `src/chat/stream-events.ts` (ApprovalRequestEvent union member)\n- `src/chat/markers.ts` (markerFor + markerWebviewSource 'approval-request'->null case)\n- `src/chat/cli-adapter.ts`\n- `src/chat/chat-panel.ts`"
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "cl3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "SpawnedProcess exposes only lines()/stderr()/exit/spawnError/kill() and has no stdin write channel; S004 adds an optional write().",
-          "evidence": "cli-adapter.ts:64-74 SpawnedProcess exposes lines()/stderr()/spawnError/kill() only; no write member. Claim verified — the additive optional write() is a genuine new seam.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "claude buildArgs is ['-p', req.prompt, '--output-format=stream-json', '--verbose'] and does not add any permission flag today.",
-          "evidence": "cli-adapter.ts:141 `const args = ['-p', req.prompt, '--output-format=stream-json', '--verbose']`; only --resume is conditionally pushed; no permission flag today. Claim verified.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "codex buildArgs uses ['exec','--json',prompt] (and exec resume for resume) and adds no permission flag today.",
-          "evidence": "cli-adapter.ts:204-207 codex buildArgs returns ['exec','resume',id,'--json',prompt] or ['exec','--json',prompt]; no permission flag today. Claim verified.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "StreamAdapter interface has run() + cancel() + capabilities and no decide() method yet; S004 adds decide().",
-          "evidence": "cli-adapter.ts:47-53 StreamAdapter has run()+cancel()+capabilities; no decide() method. Claim verified — decide() is a genuine new method.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "TurnRequest interface is defined around cli-adapter.ts:35-53 and S004 adds an optional permissionMode field to it.",
-          "evidence": "TurnRequest is at cli-adapter.ts:40-44 (provider/prompt/resume?/cwd) — the LLD's cited range :35-53 is slightly loose but the interface exists and has no permissionMode field yet. The additive optional field is valid. Minor anchor imprecision only.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "RowKind in render-registry.ts already includes a reserved 'approval' member and toViewModel does not emit 'approval'; S004 registers the 'approval' renderer without changing RowKind/toViewModel.",
-          "evidence": "render-registry.ts:37-45 RowKind includes 'approval'; comment :34 'S004 the approval kind'; register (:82) + toViewModel (:101) exist; toViewModel does not emit 'approval'. Claim verified — registering the renderer without changing RowKind/toViewModel is consistent.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "protocol.ts WebviewToHost / WEBVIEW_TO_HOST_TYPES contains 'cancel-turn' (S002) but not yet 'permission-decision' or 'set-permission-mode'; S004 adds both additively.",
-          "evidence": "protocol.ts:84-96 WEBVIEW_TO_HOST_TYPES includes 'cancel-turn' (:92); no permission-decision or set-permission-mode. Claim verified — both additions are additive.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The chat test suites named in the strategy exist under src/chat/__tests__ (stream-events, protocol, cli-adapter, render-registry, chat-panel).",
-          "evidence": "src/chat/__tests__/ contains stream-events.test.ts, protocol.test.ts, cli-adapter.test.ts, render-registry.test.ts, chat-panel.test.ts (plus markers.test.ts et al). Claim verified.",
-          "action": "none",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl11",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts renderShell builds a fixed .statusbar region containing a '✓ idle' seg and an edit-mode select that S004 leaves intact while adding a sibling permission-mode control.",
-          "evidence": "chat-panel.ts:354-357 renderShell builds .statusbar with an edit-mode select (#insrc-editmode, options auto/review, :356) and a '✓ idle' seg (:357); no permission-mode control yet. Claim verified — S004 adds a sibling control leaving editMode intact. NOTE: the edit-mode select already offers auto/review labels, so the new permission-mode control must be visually distinguishable (distinct id/label) to avoid confusion.",
-          "action": "During build, give the permission-mode control a distinct id/label (e.g. #insrc-permmode 'perms') so it is not confused with the existing #insrc-editmode 'edits' auto/review select.",
-          "fixability": "assisted"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-26T16:23:11.506Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-26T16:34:53.906Z",
-    "reviewOverride": {
-      "reason": "User approved after reviewing the 1 MED finding (cl2). The MED is a documentation-location correction, not a design defect: markerFor lives in src/chat/markers.ts (with its markerWebviewSource webview mirror), not stream-events.ts. Accepted-with-note — the build will add the 'approval-request'->null case in markers.ts (both markerFor and markerWebviewSource) plus the ApprovalRequestEvent union member in stream-events.ts, and give the new permission-mode control a distinct id/label (#insrc-permmode) per cl11. Design is sound; 10/11 premises verified clean.",
-      "at": "2026-09-26T16:34:53.906Z"
-    },
     "questionResolutions": {
       "qee8aadf4": {
         "question": "The precise claude stream-json permission control-line schema + codex approval-item schema (field names for requestId/title/detail) are confirmed to EXIST by the 7100435 spike but must be pinned against the installed CLI versions during build; unit tests use scripted samples and the INSRC_LIVE_TESTS suite validates the real shape.",
@@ -166,6 +39,64 @@
         "rationale": "Satisfies ac1-ac3 exactly and stays inside the Story boundary; the scope field is parsed/persisted by the a2 registry but no prompt is short-circuited, keeping the decision wire shape stable so a later story adds the 'session' auto-answer without a breaking change.",
         "resolvedAt": "2026-09-26T16:36:39.905Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "383ae4c09d2f239ff4aa5032e9d84aeb5f4ecb36546ef554b15981cf4efad14b",
+        "at": "2026-09-26T16:20:33.773Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T16:34:53.906Z",
+        "override": {
+          "reason": "User approved after reviewing the 1 MED finding (cl2). The MED is a documentation-location correction, not a design defect: markerFor lives in src/chat/markers.ts (with its markerWebviewSource webview mirror), not stream-events.ts. Accepted-with-note — the build will add the 'approval-request'->null case in markers.ts (both markerFor and markerWebviewSource) plus the ApprovalRequestEvent union member in stream-events.ts, and give the new permission-mode control a distinct id/label (#insrc-permmode) per cl11. Design is sound; 10/11 premises verified clean."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 10
+        },
+        "at": "2026-09-26T16:23:11.506Z",
+        "report": {
+          "entityId": "LLD-f9563bf5bbb29c43-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-f9563bf5bbb29c43-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

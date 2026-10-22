@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4812c84d-940f-4806-a35c-e2648302e5ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.403Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ReviewJob core: whole call, MAP, merge, refusals, daemon driver",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4e090b6c911613fbc6dc194afc2be5a12825c5f0f5af8e00983a7baa9acdc58e",
+        "at": "2026-10-22T12:44:15.403Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.404Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ReviewJob core: whole call, MAP, merge, refusals, daemon driver",
+    "summary": "createReviewJob / nextCalls / applyAnswer with the whole-call path (one call with the supplied whole prompt when it fits or the budget is unknown), MAP over the cross product of each needed input source's batches (local findings and keyed notes, never absence findings), the finding merge (identical findings once) with parts counts, refusal re-planning (re-pack with the reported maxChars, else halves), and a daemon driver that runs a job's calls serially.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A job whose whole prompt fits, or with an unknown budget, is exactly one call with the supplied whole prompt and schema.",
+      "Every MAP call fits when serialised and every original atom of every source is read whole by some MAP call, for inputs many times the budget.",
+      "A refused call is re-planned and no prompt is sent twice."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a fitting dimension, or an unknown budget, is one call with today's prompt and schema'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every call the job issues fits the budget at every stage, for a Story many times the budget'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a refused call is re-planned and the job completes, sending no prompt twice'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'identical findings merge once; findings differing in any field are all kept'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every original symbol summary and clause is read whole by some call'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

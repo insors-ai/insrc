@@ -1,0 +1,451 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792054993961-5jpjdx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T09:04:57.377Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 103410,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "epicSlug": "add-syntax-highlighting-chat-diff-widget",
+    "storyId": "s1",
+    "lldRunId": "wf-1792052591189-36jgsd",
+    "lldEffectiveHash": "00d80121c593053c7c5bcb7a298a2c7cae22b502ad5e41679c4842310f78c3b3",
+    "authoredBy": "controller",
+    "rangeBase": "938c00581ac0c2414b11d9e77b4d836d9248e425",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1ff5c3c03c9e0c72a906733d6dd405c517c56971f9bd7a5fa61e7db8e3c2b573",
+        "at": "2026-10-15T09:04:57.377Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T09:14:03.902Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The build bundles a highlighter into the chat page as its own generated module, adds the language map and a markup scanner, and uses them to colour each side of every diff section, falling back to plain text on any problem. It then loads the module in the chat shell with token colours taken from the chat's existing theme variables, and makes a diff line or its header path open the file at the right line through the links story's message and host opener. A last live check in a running VS Code confirms the colours in both themes and the click. One deliberate departure from the LLD's wording: the shared fake DOM gains a textOf helper instead of a children-joining textContent getter, because the getter change broke 11 unrelated UX-card tests.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Generate the highlighter module with a language subset and a size budget",
+        "summary": "Add highlight.js as a dev dependency and extend gen-webview-libs.mjs to bundle highlight.js core plus typescript/javascript, json, python, go, java, scala, bash, yaml, css, xml/html and markdown into one self-contained string with esbuild, escape any script-tag text in it, and write it to src/chat/webview-hljs.ts (HLJS_SRC). webview-marked.ts is not touched.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "npm run gen:webview-libs writes webview-hljs.ts exporting HLJS_SRC and still writes webview-marked.ts unchanged",
+          "evaluating HLJS_SRC defines a highlighter global that highlights TypeScript, JSON and Python text and returns span markup",
+          "the string holds no <script or </script text, and the generator fails if it finds one",
+          "the byte length of HLJS_SRC alone is under 250 KB and a test fails above that"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup"
+          },
+          {
+            "level": "integration",
+            "name": "the highlighter module holds no script tag and its byte length stays under 250 KB"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Give the shared fake DOM a textOf helper that reads descendants' text",
+        "summary": "Add an exported textOf(node) helper to fake-dom.ts that joins the text of a node's descendants as the real textContent does, and wire createTextNode into the chat-shell document stub. The fake's own textContent getter is NOT changed: making it join children changed 11 docs-review-panel tests, which collect textContent over every element and rely on it being a node's own text. Tests that read a highlighted diff line's text read it through textOf. This replaces the LLD's wording that the getter joins children.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "textOf joins the text of a node's text-node and element descendants, and returns a childless node's own text",
+          "an element's textContent is still its own text, and setting textContent still clears the children as fake-dom.test.ts asserts",
+          "every suite that uses fake-dom.ts passes unchanged"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Language map and the span-markup scanner",
+        "summary": "In the registry's page script add the extension-to-language map (case-insensitive, with Dockerfile and Makefile by name) and the string scanner that turns the highlighter's span markup into per-line runs: innermost class wins, a span crossing a newline continues on the next line, a multi-class span uses its first hljs class, a class with no hljs- prefix is classless, and any other tag or entity makes it return undefined. Both are pure and written as a reusable unit.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the extension is matched without regard to case and a Dockerfile and a Makefile have a language",
+          "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+          "a multi-class span such as hljs-title function_ uses its first hljs class, and a span with no hljs- class is classless text",
+          "markup other than a span with a class, a span close and the five entities makes the scanner return undefined"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the extension is matched without regard to case and a Dockerfile has a language"
+          },
+          {
+            "level": "unit",
+            "name": "nested spans and a span that crosses a newline are flattened per line with the innermost class"
+          },
+          {
+            "level": "unit",
+            "name": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class"
+          },
+          {
+            "level": "unit",
+            "name": "a span with no hljs- class is read as classless text and does not reject the section"
+          },
+          {
+            "level": "unit",
+            "name": "highlighter output that is not plain spans and text falls back to plain text"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Tokenise each side of a diff section and build highlighted lines",
+        "summary": "Add diffTokens, which rebuilds the old side (context and removed lines) and the new side (context and added lines) as two texts, tokenises each with the highlighter and maps the runs back to their lines, and build each diff line's text span from text nodes and class-named spans, falling back to plain text for an unknown language, a missing highlighter, a throw or a scanner refusal. A backslash note line is not tokenised.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "a TypeScript line is split into keyword, string and comment runs carrying their classes",
+          "a block comment opened on a context line colours an added line as comment, and a removed line is tokenised from its own side",
+          "an unknown extension, a missing highlighter or a thrown highlight leave every line as plain text",
+          "a diff line's text span holds only text nodes and class-named spans, never assigned markup",
+          "the existing chat-shell and render-registry diff assertions pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes"
+          },
+          {
+            "level": "unit",
+            "name": "a block comment opened on a context line colours an added line as comment"
+          },
+          {
+            "level": "unit",
+            "name": "a removed line and an added line are each tokenised from their own side"
+          },
+          {
+            "level": "unit",
+            "name": "an unknown extension and a failing highlighter leave every line as plain text"
+          },
+          {
+            "level": "unit",
+            "name": "a diff line's text span holds no assigned markup"
+          },
+          {
+            "level": "integration",
+            "name": "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Load the highlighter in the chat shell and colour the token classes",
+        "summary": "Evaluate HLJS_SRC in the chat shell next to marked in chat-panel.ts only, add the token class rules to the widget's stylesheet using only existing :root names (keyword magenta, string accent, number amber, function and title user, type and built-in accent2, comment muted, meta/attribute/tag link), and list the added selectors exactly in chat-theme.test.ts.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the shell inlines the highlighter source exactly once, holds one script tag, and the CSP is unchanged",
+          "the widget rules name no --vscode- variable and the added selectors match the inline list exactly",
+          "docs-review-panel.ts and webview-marked.ts are unchanged and the review pane's single-script test passes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Click a diff line or its path to open the file at the line",
+        "summary": "Write each diff line's path and new-side line as data attributes when the row is built, add the delegated click handler that posts the existing open-code-ref message through the registry's link-open sink (a removed line uses the new-side line it sat before, a non-empty text selection is left alone), and make the header's path open the file at the section's first new-side line while the rest of the header still toggles the widget.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a click on an added or context line posts open-code-ref with its path and its new-side line",
+          "a click on a removed line posts the new-side line it sat before, never an old-side number",
+          "a click on the header's path posts the section's first new-side line and a click on the rest of the header still toggles the widget",
+          "a click during a text selection posts nothing",
+          "the host opens a clicked line in the editor group the review pane uses and refuses a deleted file"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a click on an added or context line posts open-code-ref with its path and new-side line"
+          },
+          {
+            "level": "unit",
+            "name": "a click on a removed line posts the new-side line it sat before"
+          },
+          {
+            "level": "unit",
+            "name": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget"
+          },
+          {
+            "level": "integration",
+            "name": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Live checks in a running VS Code",
+        "summary": "In the installed plugin, look at a diff in the chat in a light and a dark theme and a file of an unknown type, and click a diff line and the header path. The gate cannot run these, so the results are the builder's own record and map to no test file.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "a diff is coloured by syntax and readable in a light and a dark theme, and an unknown file type stays plain",
+          "clicking a diff line opens the file at that line in the right editor group, and the header path opens at the section's first line"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain"
+          },
+          {
+            "level": "live",
+            "name": "clicking a diff line opens the file at that line beside or in the editor group the review pane uses"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a block comment opened on a context line colours an added line as comment",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a removed line and an added line are each tokenised from their own side",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "an unknown extension and a failing highlighter leave every line as plain text",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the extension is matched without regard to case and a Dockerfile has a language",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "highlighter output that is not plain spans and text falls back to plain text",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a diff line's text span holds no assigned markup",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a span with no hljs- class is read as classless text and does not reject the section",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a click on an added or context line posts open-code-ref with its path and new-side line",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a click on a removed line posts the new-side line it sat before",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "clicking a diff line opens the file at that line beside or in the editor group the review pane uses",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract details (diffTokens and the scanner, the highlighter module, and the open-code-ref click; the renderRegistryWebviewSource entry is an alias for the new diffTokens)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 data model changes (the diff line's data attributes, the shared fake DOM and the existing tests that read a diff text span)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 error paths and invariants (the fallbacks, the script-tag escape, the unchanged CSP, row message and stored rows)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 test strategy and acceptance mapping (ac1-ac5, derived; ac5 from the user's review comment)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration steps 1-4"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42496510-1a53-4b65-91b3-9376287b63de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.544Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Writers carry meta.repo and the missing-file class",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9daa7f512b85087ff95a413eb43cd452c0771df10df764d0c08fffb64a978fb",
+        "at": "2026-10-22T12:44:34.544Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.545Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Writers carry meta.repo and the missing-file class",
+    "summary": "resolveRelations (src/indexer/resolver.ts) keeps a relative import that resolves to no file unresolved with class 'no-candidate', reason 'target-file-missing', and puts meta.repo on every resolved relation; indexManifest writes DEPENDS_ON with meta.repo = meta.file = repoPath; the cross-file Pass 1 rewire writes meta.repo and the importing file's absolute meta.file. Anchors: resolveRelations (src/indexer/resolver.ts:63) keeps an import unresolved when resolveImportPath finds no file (:105-107); indexManifest is the private method at src/indexer/index.ts:1080 and writes DEPENDS_ON with no meta at :1111-1113; Pass 1's rewire writes IMPORTS with no meta at src/indexer/cross-file-resolver.ts:242-244. Depends on t4 for the counted, merged pending writes.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A relative import of './missing.js' is 'no-candidate' with reason 'target-file-missing'; one of an existing file resolves to its file id as today",
+      "A refused DEPENDS_ON or rewire is counted against the repository, not the unattributed counter",
+      "A DEPENDS_ON kept awaiting is removed only by deleteUnresolvedForRepo"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/indexer/__tests__/resolver-file-target.test.ts: missing relative import is no-candidate/target-file-missing; resolved relations carry meta.repo; DEPENDS_ON and Pass 1 rewire carry meta.repo and absolute meta.file"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

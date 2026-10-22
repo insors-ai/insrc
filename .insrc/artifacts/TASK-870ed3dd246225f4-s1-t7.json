@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b2d83b8e-0e97-45a9-a040-4bd56d9b2f54",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.053Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire docgen daemon tool + IPC boundary over DocTypeRegistry",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d75127550f64c5515730a048d5f1815bc465ffdff75370939299cdc2dc61f93",
+        "at": "2026-10-22T12:43:53.053Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.054Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire docgen daemon tool + IPC boundary over DocTypeRegistry",
+    "summary": "Bootstrap the registry with the type-structure extractor and register the single docgen daemon tool as the sole external resolution path, with input validation, not-found/unregistered-repo handling, and a verified single IPC boundary crossing.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "the type-structure extractor is registered into DocTypeRegistry exactly once at daemon startup, before any docgen request is served",
+      "the docgen tool is registered via registerTool(tool: Tool) at src/daemon/tools/registry.ts following its existing signature, with no second dispatch map needed to resolve a docType to its extractor",
+      "the tool handler returns DocGenOutcome<'not-found'> carrying the requested symbol when DocTypeRegistry.get returns undefined, rather than throwing",
+      "caller input is validated against the resolved registration's extractorInputSchema before extract() runs; a violation is rejected at the boundary with no graph read performed",
+      "an UnregisteredRepoError from the storage layer propagates to the caller unchanged rather than being modelled as a DocGenOutcome variant",
+      "the tool handler's response never contains a store handle, EntityRow, or DocumentIR — only DocGenOutcome<RenderedDocumentShell>",
+      "a JSON-RPC call for the docgen IPC method (registered in the daemon's IPC handler registry, distinct from the Tool registry) resolves to the same DocTypeRegistry-backed handler as the registered tool, with no second dispatch path — verifying exactly one daemon tool and one IPC method exist for document generation"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docgen-tool: registerTool handler's response contains only DocGenOutcome<RenderedDocumentShell> — never a store handle, EntityRow, or DocumentIR — and DocTypeRegistry.get is the sole resolution path from an external docType request to its extract() implementation"
+      },
+      {
+        "level": "integration",
+        "name": "docgen-tool: requesting an unregistered docType returns DocGenOutcome<'not-found'> carrying the requested symbol, rather than throwing"
+      },
+      {
+        "level": "integration",
+        "name": "docgen-tool: an input payload violating the resolved registration's extractorInputSchema is rejected at the boundary with no graph read performed"
+      },
+      {
+        "level": "integration",
+        "name": "docgen-tool: an UnregisteredRepoError from the storage layer propagates to the caller unchanged rather than being modelled as a DocGenOutcome variant"
+      },
+      {
+        "level": "integration",
+        "name": "docgen IPC method call resolves to the same DocTypeRegistry-backed handler as the registered tool — exactly one daemon tool and one IPC method exist for document generation"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

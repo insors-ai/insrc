@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fc87e100-ec2f-42ce-a5b8-bed87c60489f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.927Z",
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replace the dropdown with the list view",
+      "parent": {
+        "entityId": "STORY-1f74c81f507dbe78-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f74c81f507dbe78-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f74c81f507dbe78-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1f74c81f507dbe78-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6c5a9199f7b606e5ca3fa09da7be07332a91d4a6253f53847f216fc3ad36cdf",
+        "at": "2026-10-22T12:43:16.929Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.930Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace the dropdown with the list view",
+    "summary": "Add the list view to the shell: a toolbar (search with a datalist, type select with counts, a count line), a notice line, a table of 25 rows a page ordered by type then title, and a pager. Replace the header's select with a back button and the document's title. The view changes to the document only on reveal. The search, type, page and view are kept in the saved state, and both writers of that state keep each other's key. Update the shell's recorded baseline and the layout tests.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The table pages 25 rows ordered by type then title, and the pager is disabled at the ends",
+      "The search matches every word without regard to case, the type select filters with counts, and either goes to page 1; the datalist offers at most 50",
+      "A row posts open-doc; reveal changes to the document view, a content without it never does; back returns to the list with the document and drafts kept",
+      "The host's notice of a failed read is shown in the list view's notice line",
+      "The saved search, type, page and view are restored on rebuild, and a draft saved after the list state keeps it and the reverse",
+      "The table is its own scrolling region with the toolbar and pager outside it, in theme variables, with titles and ids set as text"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: the datalist offers at most 50 titles and ids of the chosen type"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

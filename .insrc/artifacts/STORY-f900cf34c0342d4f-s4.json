@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-a3d38053-8edf-4d24-8b1e-0d1fb029d1fe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.101Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "See which MCP clients are connected and who is attached to the daemon now",
+      "parent": {
+        "entityId": "EPIC-f900cf34c0342d4f",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a755cbc982b07fd1c1f53dd125795c8234a0c9904f5aff0507f553545ced1752",
+        "at": "2026-10-22T12:43:07.101Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

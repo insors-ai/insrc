@@ -22,21 +22,58 @@
     "storyId": "s1",
     "lldRunId": "wf-1785843530754-a74hkd",
     "lldEffectiveHash": "0f9a9d06f5da3a5c41872c32b49da681a96e0b1e6fad1fb6c38d880df41ca13f",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-08-04T11:58:48.113Z",
-      "model": "client"
+    "standalone": true,
+    "epicCreatedAt": "2026-08-04T11:46:40.232Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-04T12:01:32.749Z",
-    "standalone": true
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "79ce220254f7267f67765660690cea37ed733e071c090e478b4e0ca0b3fd7dfb",
+        "at": "2026-08-04T11:57:18.313Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T12:01:32.749Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-08-04T11:58:48.113Z",
+        "report": {
+          "entityId": "PLAN-0f9a9d06f5da3a5c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-0f9a9d06f5da3a5c-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

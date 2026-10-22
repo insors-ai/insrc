@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6c96088c-507f-4d65-90cc-5a1526e5eba0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:43.395Z",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen the CodeReviewSubject fields + trim the failure-reason union",
+      "parent": {
+        "entityId": "STORY-d88062a6e63aa312-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d88062a6e63aa312-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84ea5ea237232971fb8e4c64c0155e247834d192c4c0aef0b3f0a3447ccd0ddb",
+        "at": "2026-10-22T12:44:43.398Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:43.399Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the CodeReviewSubject fields + trim the failure-reason union",
+    "summary": "In src/workflow/code-review/types.ts, change CodeReviewSubject.approvedLld to LldArtifact|null and approvedPlan to PlanArtifact|null, and trim the CodeReviewSubjectResult failure union from {reason:'no-approved-contract'|'no-build-record'} to {reason:'no-build-record'}. Pure type-surface change; no runtime logic here.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "CodeReviewSubject.approvedLld and approvedPlan are typed `LldArtifact | null` / `PlanArtifact | null`",
+      "CodeReviewSubjectResult's ok:false member is exactly {ok:false; reason:'no-build-record'} — 'no-approved-contract' is gone",
+      "tsc surfaces every downstream call site that now must handle null (drives t2–t4)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tsc over the code-review module compiles with CodeReviewSubject.approvedLld/approvedPlan nullable and the trimmed no-build-record-only failure union (type-shape assertion)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

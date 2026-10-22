@@ -19,7 +19,6 @@
     "schemaVersion": 1,
     "epicHash": "1703991c69967193",
     "epicSlug": "add-bugfix-triage-category-insrc-framework",
-    "approvedAt": "2026-09-18T10:08:35.900Z",
     "questionResolutions": {
       "q31c9706c": {
         "question": "Item a2 (design risk, resolve in HLD): how reliably can a fix's touched files/entities be mapped to an owning story via the existing artifact-tree ref-resolver + graph (code-ownership), and at what confidence threshold does the semantic match defer to the user prompt rather than attach to a wrong parent? The ownership-feasibility assumption is only med-confidence.",
@@ -28,6 +27,35 @@
         "rationale": "Preserves the k3 order exactly: (1) exact artifact-tree ref-resolver match on the touched files/entities, then (2) graph code-ownership scoring of candidate stories, then (3) semantic embedding match of the defect description against epic/story artifacts, then (4) user prompt, then (5) standalone. Auto-attach fires ONLY above a deliberately high confidence threshold at each automatic tier; any ambiguity or low score defers to the prompt (honouring lc1's deterministic-first, never-silently-wrong rule and the accuracy-first principle). Each attach records which tier decided it and its confidence/evidence, which is what retires the med-confidence ownership-feasibility assumption with real data rather than by assertion. Rejected: deterministic-only (drops the user-required semantic tier), always-prompt (defeats the auto-locate value the user asked for), and auto-attach-then-reparent (accepts silently-wrong parents, violating lc1).",
         "resolvedAt": "2026-09-18T10:09:35.926Z"
       }
+    },
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "fbf6a688e929613ec9051fee5f18e6f812dd9c87d0f5227702caefd182aa95be",
+        "at": "2026-09-18T10:07:09.320Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T10:08:35.900Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea0eb7bb-7ef2-4bfa-8c18-e05410074e5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.073Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Presenter: open exactly the declared documents",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cdb45610c355ee55a741682a76bac7a4d3bbd2efcee7cbc2c9f72ddaef3b101f",
+        "at": "2026-10-22T12:43:11.075Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.076Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Presenter: open exactly the declared documents",
+    "summary": "Change the presenter's turn handle in review-presenter.ts from toolResult and end to declared(documents) returning a DeclaredOutcome (opened, notPending, unreadable) and end. declared resolves each name against the pending list (artifact id without regard to the case of the story part, or path), opens each match once per turn in order, reports names that are not pending, logs and reports an unreadable list, and never throws. The old toolResult, presentedPathOf and end-of-turn guess are left in place for now so the build stays green; they are removed in t8.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A declared id and a declared path each open the matching pending document once, in order",
+      "A name that is not pending opens nothing and is reported by name; an unreadable list or a failing open is logged and never thrown",
+      "The same document declared twice in a turn opens once, and ids match without regard to the case of the story part"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a declared artifact id and a declared path each open the matching pending document once, in order"
+      },
+      {
+        "level": "unit",
+        "name": "a declared name that is not pending opens nothing and is reported by name"
+      },
+      {
+        "level": "unit",
+        "name": "the same document declared twice in a turn opens once"
+      },
+      {
+        "level": "unit",
+        "name": "an unreadable pending list and a failing open are logged and never thrown"
+      },
+      {
+        "level": "unit",
+        "name": "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable"
+      },
+      {
+        "level": "unit",
+        "name": "a declared artifact id matches the pending list's id without regard to the case of its story part"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

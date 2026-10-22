@@ -1,0 +1,561 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791092343566-1q6di1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-04T05:42:33.978Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 210399,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c4c420c22b71651e",
+    "epicSlug": "vs-code-plugin-lock-insrc-chat",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791092343566-1q6di1",
+    "hldEffectiveHash": "1c633dd2bb5d55d81903b8ee01dd66ec8f0e13d9396343d55e672caa3a441342",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story with one obvious approach, confined to the VS Code plugin: run workbench.action.lockEditorGroup after the chat panel is created or restored, gated by one new boolean setting. 2 source files in one module plus one new small module; a small design choice around sequencing the lock against panel focus.",
+    "rangeBase": "efd4b38bf00e1fabd8a844ca3fc16189e736c368",
+    "epicCreatedAt": "2026-10-04T05:42:33.978Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3891acb45a8d85616d265140de5be47bd6d7d00d019c903c586093600f889bb9",
+        "at": "2026-10-04T05:42:33.978Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T08:44:25.938Z",
+        "override": {
+          "reason": "User-approved override. Finding 1 (attach state machine under-specified) is carried into the build as binding requirements: set the finished flag synchronously before invoking the lock command; subscribe to view-state and tab changes before the first attempt; add a test that fires both event kinds while the command is still in flight; count both view-state and tab subscriptions in the test fake. Findings 2-3 (VS Code API availability, runtime tab view-type form, lock command semantics) cannot be verified in-tree and are covered by the required manual smoke check in an Extension Development Host."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 3,
+          "low": 10
+        },
+        "at": "2026-10-04T05:45:15.345Z",
+        "report": {
+          "entityId": "LLD-c4c420c22b71651e-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-c4c420c22b71651e-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "The insrc chat opens as a tab in an editor split, and today any file picked in the Explorer can open as another tab on top of it. This story makes the plugin lock the chat's editor group the first time the chat tab is the active tab, on a fresh open and after a window reload, so files open in a different group instead. A new setting, insrc.chat.lockGroup (on by default), turns the lock off for anyone who prefers tabs to stack on the chat; no user settings are written."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Lock the chat's editor group on open"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "webviewPanelChannel",
+          "signature": "(panel: vscode.WebviewPanel) => ChatPanelChannel",
+          "parameters": [
+            {
+              "name": "panel",
+              "type": "vscode.WebviewPanel",
+              "purpose": "The freshly created or VS-Code-restored chat panel to wrap.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelChannel",
+            "meaning": "Unchanged channel adapter over the panel."
+          },
+          "errors": [],
+          "preconditions": [
+            "Existing adapter in extension.ts, called for both the createPanel dep and the serializer restore callback, inside the chatEnabled block."
+          ],
+          "postconditions": [
+            "Signature and returned channel are unchanged.",
+            "Additionally attaches the group lock to the panel once per panel object, so the fresh and the restored path are both covered by the single adapter.",
+            "The group-lock factory and its seams are constructed inside the chatEnabled block, and the existing createPanel literal (createWebviewPanel(viewType, title, vscode.ViewColumn.Beside, ...)) is left intact, as the existing wiring test requires."
+          ]
+        },
+        {
+          "name": "isChatTabInput",
+          "signature": "(input: unknown, viewType: string) => boolean",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "The raw `input` of the window's active tab (or undefined when there is no active tab); unknown because it is whatever VS Code reports and is narrowed structurally here.",
+              "optional": false
+            },
+            {
+              "name": "viewType",
+              "type": "string",
+              "purpose": "The chat panel's view type ('insrc.chatPanel', passed from chat-panel.ts's exported constant).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True only when input is a non-null object whose `viewType` property is a string that EQUALS viewType or ENDS WITH '-' + viewType (the 'mainThreadWebview-insrc.chatPanel' runtime form). False for undefined, non-objects, inputs without a string viewType, and any other view type (e.g. the docs-review panel)."
+          },
+          "errors": [],
+          "preconditions": [
+            "New pure function exported from the new vscode-free module vscode-plugin/src/chat/group-lock.ts."
+          ],
+          "postconditions": [
+            "Pure and total: never throws, no side effects.",
+            "This is the single definition of the view-type matching rule; extension.ts contains no comparison of its own."
+          ]
+        },
+        {
+          "name": "createChatGroupLock",
+          "signature": "(deps: ChatGroupLockDeps) => { attach(panel: LockablePanel): void }",
+          "parameters": [
+            {
+              "name": "deps.enabled",
+              "type": "() => boolean",
+              "purpose": "Live read of insrc.chat.lockGroup (true unless explicitly false); read at each attempt.",
+              "optional": false
+            },
+            {
+              "name": "deps.viewType",
+              "type": "string",
+              "purpose": "The chat view type handed to isChatTabInput.",
+              "optional": false
+            },
+            {
+              "name": "deps.activeTabInput",
+              "type": "() => unknown",
+              "purpose": "Returns the raw input of the active tab group's active tab, or undefined; a thin seam with no logic.",
+              "optional": false
+            },
+            {
+              "name": "deps.onTabsChanged",
+              "type": "(listener: () => void) => { dispose(): void }",
+              "purpose": "Subscribes to tab-model changes (both tab changes and tab-group changes), the second retry trigger.",
+              "optional": false
+            },
+            {
+              "name": "deps.lockActiveGroup",
+              "type": "() => PromiseLike<unknown>",
+              "purpose": "Runs VS Code's workbench.action.lockEditorGroup on the active group; the result value is ignored.",
+              "optional": false
+            },
+            {
+              "name": "deps.warn",
+              "type": "(message: string) => void",
+              "purpose": "Reports a failed attempt without surfacing it to the user.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ attach(panel: LockablePanel): void }",
+            "meaning": "attach wires one panel. LockablePanel is the structural slice { readonly active: boolean; onDidChangeViewState(listener: () => unknown): { dispose(): void }; onDidDispose(listener: () => unknown): unknown }."
+          },
+          "errors": [
+            {
+              "type": "Error (caught, never propagated)",
+              "condition": "Any dep throws or the lock command rejects; the error message goes to deps.warn and attach never throws into the panel create/restore path."
+            }
+          ],
+          "preconditions": [
+            "New factory exported from vscode-plugin/src/chat/group-lock.ts; the module imports nothing from 'vscode'."
+          ],
+          "postconditions": [
+            "attach makes one attempt immediately, then one on every panel view-state change and every tab-model change, until the panel is finished.",
+            "An attempt issues the lock command only when panel.active is true AND isChatTabInput(deps.activeTabInput(), deps.viewType) is true AND deps.enabled() is true.",
+            "The lock command is issued at most once per attached panel; once issued (whether it resolves or rejects) the panel is finished.",
+            "A panel is also finished when it is disposed. Finishing disposes both subscriptions.",
+            "When deps.enabled() is false the panel is not finished, so turning the setting on later takes effect at the next attempt.",
+            "Best-effort targeting: the check and the command are not atomic, so a focus change between them can lock a different group; the design narrows this to that window and does not claim to eliminate it."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "insrc.chat.lockGroup (contributed setting)",
+        "change": "new",
+        "details": "New boolean in the 'Chat (preview)' configuration group of vscode-plugin/package.json, default true, scope machine (matching the sibling insrc.chat.* settings). Description states that the chat's editor group is locked so files opened from the Explorer do not open as tabs over the chat, and that the group is locked again the first time the chat is focused after each window reload. Read with the full dotted key via vscode.workspace.getConfiguration().get<boolean>('insrc.chat.lockGroup') !== false.",
+        "callSites": [
+          "vscode-plugin/package.json",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "chat view-type constant (chat-panel.ts VIEW_TYPE)",
+        "change": "field-modify",
+        "details": "The module-private constant 'insrc.chatPanel' becomes an exported constant so extension.ts passes it to the group lock instead of introducing another copy of the literal. Its value and its use inside chat-panel.ts are unchanged; the existing invariant that chat-panel.ts stays vscode-free is unaffected.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "vscode shim (src/vscode.d.ts)",
+        "change": "field-add",
+        "details": "Compile-only additions mirroring the real API: WebviewPanel.onDidChangeViewState(listener): Disposable; window.tabGroups with activeTabGroup.activeTab (possibly undefined) exposing `input: unknown`, plus onDidChangeTabs and onDidChangeTabGroups events. No TabInputWebview class is needed because the predicate narrows structurally. No runtime dependency is added.",
+        "callSites": [
+          "vscode-plugin/src/vscode.d.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The lock command rejects or is unavailable (an editor fork without workbench.action.lockEditorGroup).",
+          "detection": "The PromiseLike returned by deps.lockActiveGroup() rejects, or the call throws synchronously; both are caught inside the attempt.",
+          "response": "Send the message to deps.warn and finish the panel (no retry of a command that cannot succeed); both subscriptions are disposed. The chat keeps working unlocked.",
+          "userImpact": "Group is not locked; behaviour is as before this story. Nothing is shown to the user.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tab-groups API is missing or shaped unexpectedly at runtime.",
+          "detection": "deps.activeTabInput() throws (caught by the attempt's try/catch) or returns a value isChatTabInput rejects structurally.",
+          "response": "No lock at this attempt; a thrown error goes to deps.warn. The panel is not finished, so later events retry.",
+          "userImpact": "Group stays unlocked; nothing else is affected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deps.enabled throws.",
+          "detection": "The attempt body runs inside try/catch in group-lock.ts.",
+          "response": "deps.warn with the error; the panel is not finished so a later event retries.",
+          "userImpact": "Group stays unlocked for now.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Focus moves to another group between the guard check and the lock command executing.",
+          "detection": "Not detectable from the extension host: the command takes no target and reports no group.",
+          "response": "None possible; the design accepts this as the residual best-effort window. The user can unlock the affected group from its menu.",
+          "userImpact": "Rarely, a group other than the chat's is locked.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Fresh open where the panel is active and the tab model already reports the chat as the active tab at attach time.",
+          "expected": "Locks once on the immediate attempt; both subscriptions are disposed."
+        },
+        {
+          "input": "Fresh open where the panel's view-state event arrives BEFORE the tab model reports the chat tab (the two channels have no ordering guarantee).",
+          "expected": "The view-state attempt does not lock; the following tab-model change triggers another attempt, which locks."
+        },
+        {
+          "input": "Fresh open where the tab model updates first and the panel becomes active afterwards.",
+          "expected": "The tab-change attempt does not lock (panel not active); the view-state change attempt locks."
+        },
+        {
+          "input": "Restored panel that is a background tab or in a non-active group after a window reload.",
+          "expected": "No lock and no focus change at restore; locks the first time the user focuses the chat."
+        },
+        {
+          "input": "insrc.chat.lockGroup is false.",
+          "expected": "Never locks while false. If set to true later, the next attempt on a still-unfinished panel locks."
+        },
+        {
+          "input": "User manually unlocks the group after the plugin locked it.",
+          "expected": "Not re-locked for that panel object. After a window reload the restored chat is a new panel object and locks again on first focus; the setting is the way to opt out permanently."
+        },
+        {
+          "input": "Panel is disposed before it was ever locked.",
+          "expected": "Both subscriptions disposed, no lock, no error."
+        },
+        {
+          "input": "View-state or tab events fire after the panel is finished.",
+          "expected": "Ignored; the lock command count for that panel stays at one (or zero)."
+        },
+        {
+          "input": "Another insrc webview (docs review, view type insrc.docsReviewPanel) or a text editor is the active tab while the chat panel object reports active.",
+          "expected": "isChatTabInput is false, so no lock at that attempt."
+        },
+        {
+          "input": "ViewColumn.Beside reuses an existing side group that already holds the user's files (ordinary two-column layout).",
+          "expected": "The shared group is locked when the chat tab is active in it; existing tabs stay and can still be used, but new files open in another group. The lock stays on that group if the chat tab is closed while other tabs remain; the user unlocks it from the group menu."
+        },
+        {
+          "input": "chatHost.open() on a live panel (reveal) and chatHost.adopt() of a restored panel.",
+          "expected": "Reveal creates no panel, so nothing is attached twice; an adopted panel is a distinct object and gets its own single attach via the adapter."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (`npm test` in vscode-plugin: tsx --test 'src/**/__tests__/*.test.ts'), node:assert/strict, hand-rolled fakes",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the whole lock decision in the vscode-free module with a fake panel and counting deps, using the real isChatTabInput (never a stubbed predicate). The story defines four acceptance criteria: ac1 the lock is issued for the chat's tab on a fresh open regardless of event order; ac2 a restored panel locks on first focus through the same adapter; ac3 the insrc.chat.lockGroup setting gates it; ac4 it is issued at most once per panel and failures never propagate. Each test must be shown red under its named mutation before it is accepted.",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/group-lock.test.ts: isChatTabInput is true for { viewType: 'mainThreadWebview-insrc.chatPanel' } and for { viewType: 'insrc.chatPanel' }",
+            "group-lock.test.ts: isChatTabInput is false for { viewType: 'mainThreadWebview-insrc.docsReviewPanel' }, for a viewType that merely contains the chat type mid-string, for an input with no viewType (text editor), for a non-string viewType, for null and for undefined (mutations: always-true, always-false, strict-equality-only)",
+            "group-lock.test.ts: locks once on the immediate attempt when the panel is active and the active tab input is the chat",
+            "group-lock.test.ts: view-state event first with a non-chat tab input does not lock; a later tab-change event with the chat input locks (mutation: drop the onTabsChanged subscription)",
+            "group-lock.test.ts: tab-change event first while the panel is not active does not lock; a later view-state change to active locks (mutation: drop the panel.active check)",
+            "group-lock.test.ts: a non-active restored panel does not lock at attach and locks on its first activation",
+            "group-lock.test.ts: does not lock while the active tab input is the docs-review webview even though the panel reports active (mutation: drop the tab-input guard)",
+            "group-lock.test.ts: never locks while enabled() is false; locks at the next event after it flips to true (mutation: drop the enabled check)",
+            "group-lock.test.ts: further view-state and tab events after a lock do not issue the command again, and both subscriptions are disposed (mutation: drop the finished flag)",
+            "group-lock.test.ts: a panel disposed before locking disposes both subscriptions and never locks",
+            "group-lock.test.ts: a rejecting and a synchronously throwing lockActiveGroup are each reported via warn, attach does not throw, and no retry follows",
+            "group-lock.test.ts: a throwing enabled() or activeTabInput() is reported via warn and a later event retries and locks"
+          ],
+          "fixturesNeeded": [
+            "a fake LockablePanel with a settable `active` flag and manual fire() for view-state and dispose",
+            "a fake tab source with a settable active input and manual fire() for tab changes, counting live subscriptions"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the manifest contract and the presence of the wiring. These assertions do not claim behaviour: the manifest check parses package.json, and the source checks only establish that the seams exist and are thin (the predicate lives in the unit-tested module).",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts: package.json contributes insrc.chat.lockGroup (boolean, default true, scope machine)",
+            "extension-chat-wiring.test.ts: inside the chatEnabled block, createChatGroupLock is constructed with the exported chat view type, the lock seam executes 'workbench.action.lockEditorGroup', the setting is read with the full dotted key, both tab-change events are subscribed, and webviewPanelChannel calls attach(panel)",
+            "extension-chat-wiring.test.ts: extension.ts contains no view-type comparison of its own (no 'insrc.chatPanel' literal other than the serializer registration)",
+            "extension-chat-wiring.test.ts: group-lock.ts is vscode-free",
+            "existing extension-chat-wiring.test.ts assertions stay green unmodified (createPanel literal with ViewColumn.Beside, chatEnabled block extraction)"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Manual check in a real VS Code window; this is the only check of the real editor-group service and of the runtime tab-input view type, so it is a required acceptance step, not optional. Steps: build the extension and run it in an Extension Development Host; (a) open the chat with one editor group open and confirm the lock icon appears on the chat's group and an Explorer click opens the file in the other group; (b) repeat starting from a two-column layout; (c) reload the window and confirm the restored chat locks on first focus; (d) set insrc.chat.lockGroup to false, open a fresh chat and confirm it is not locked. If (a) fails because the runtime view type differs from the expected prefixed form, record the observed value and correct isChatTabInput and its tests.",
+          "subjects": [
+            "built extension in an Extension Development Host"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "group-lock.test.ts: locks once on the immediate attempt when the panel is active and the active tab input is the chat",
+            "group-lock.test.ts: view-state event first with a non-chat tab input does not lock; a later tab-change event with the chat input locks",
+            "group-lock.test.ts: tab-change event first while the panel is not active does not lock; a later view-state change to active locks",
+            "group-lock.test.ts: isChatTabInput true/false cases",
+            "smoke (a) and (b)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "group-lock.test.ts: a non-active restored panel does not lock at attach and locks on its first activation",
+            "extension-chat-wiring.test.ts: webviewPanelChannel calls attach(panel)",
+            "smoke (c)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "group-lock.test.ts: never locks while enabled() is false; locks at the next event after it flips to true",
+            "extension-chat-wiring.test.ts: package.json contributes insrc.chat.lockGroup (boolean, default true, scope machine)",
+            "smoke (d)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "group-lock.test.ts: further view-state and tab events after a lock do not issue the command again, and both subscriptions are disposed",
+            "group-lock.test.ts: a rejecting and a synchronously throwing lockActiveGroup are each reported via warn, attach does not throw, and no retry follows",
+            "group-lock.test.ts: does not lock while the active tab input is the docs-review webview even though the panel reports active"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Per the s1 bundles: the chat opens as an editor-tab webview panel beside the active editor and is restored through the insrc.chatPanel serializer; both paths go through the single webviewPanelChannel adapter in extension.ts. Nothing locks the chat's editor group, there is no insrc.chat.lockGroup setting, the chat view type is a module-private constant, and the vscode shim has no view-state or tab-group surface. Files opened from the Explorer can open as tabs in the chat's group.",
+      "stateAfter": "A vscode-free group-lock module issues the lock command once per panel object, the first time the panel is active and the active tab is the chat, re-attempting on view-state and tab-model changes; this covers fresh and restored panels. A new insrc.chat.lockGroup setting (boolean, default true) turns it off. The chat view type is an exported constant. No user settings are written and no persisted data changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the insrc.chat.lockGroup boolean (default true, scope machine) to the Chat configuration group in the plugin manifest.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Export the existing chat view-type constant from the chat panel module (value unchanged).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the compile-only view-state and tab-group declarations to the vscode shim.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the vscode-free group-lock module (pure tab predicate plus the lock factory) with its unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Attach the group lock inside the webviewPanelChannel adapter with thin seams injected, keeping the wiring inside the chat-enabled block, and extend the wiring test.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Run the manual smoke check in an Extension Development Host, then bump the plugin version and rebuild. Existing users get the lock by default from the first chat opened or focused after updating.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The webviewPanelChannel signature and returned channel are unchanged, no existing setting changes meaning, and exporting the view-type constant does not change its value. The behaviour change for existing users is the default-on lock: new files no longer open in the chat's group, including when that group is a reused side group that already holds their files. Setting insrc.chat.lockGroup to false restores the previous behaviour. A manual unlock from the group menu holds only until the next window reload, after which the restored chat locks its group again on first focus; the setting is the permanent opt-out.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Lock on first verified activation, retried on view-state AND tab-group events, predicate in the vscode-free module",
+        "oneLineSummary": "A deps-injected group-lock module locks once per panel when the panel is active and the active tab input is the chat webview, re-attempting on both panel view-state changes and tab-group changes; the tab predicate is a pure exported function.",
+        "approach": "Add vscode-plugin/src/chat/group-lock.ts with two exports. (1) A pure predicate `isChatTabInput(input, viewType)`: true only when input is an object carrying a string viewType that equals the chat view type or ends with '-' + the chat view type (covering the 'mainThreadWebview-' prefixed runtime form). (2) `createChatGroupLock(deps)` whose attach(panel) attempts the lock immediately and again on every panel view-state change and every tab-group change until it succeeds, the lock command fails, or the panel is disposed. An attempt locks only when panel.active, isChatTabInput(deps.activeTabInput(), deps.viewType) and deps.enabled() all hold. extension.ts injects thin seams only (raw active tab input, tab-change subscription, the command, the setting read) from the single webviewPanelChannel adapter; chat-panel.ts exports its view-type constant so no third literal is introduced. The shim gains onDidChangeViewState and the tabGroups slice with its two change events.",
+        "pros": [
+          "A fresh open locks even when the tab model updates after the last view-state event, because tab-group changes also trigger an attempt",
+          "The whole decision (including the view-type rule) is unit-tested with real values; extension.ts holds no logic a regex would have to vouch for",
+          "Restored background chat tabs lock on first focus without stealing focus",
+          "Best-effort protection against locking another group: the command is only issued while the chat is the active tab"
+        ],
+        "cons": [
+          "One new module, one exported constant and a few shim declarations",
+          "The guard and the command are not atomic: a focus change between the check and the command's execution could lock another group (small window)",
+          "A restored chat that is never focused stays unlocked"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Inline lock right after createWebviewPanel",
+        "oneLineSummary": "Execute workbench.action.lockEditorGroup inline in extension.ts immediately after the panel is created or adopted.",
+        "approach": "In the createPanel dep and in the restore callback, read insrc.chat.lockGroup and, when true, execute the lock command straight after the panel exists (revealing the panel first on the restore path so the chat's group is active). No new module and no shim additions.",
+        "pros": [
+          "Smallest diff",
+          "No new vscode API surface in the shim"
+        ],
+        "cons": [
+          "The command locks whichever group is active when it runs and panel activation is asynchronous, so it can routinely lock the user's code group",
+          "The restore path must steal focus on every window reload",
+          "Only checkable by source-scan"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Meets the setting and both-paths intent with the smallest diff, but with no guard it can routinely lock the user's code group because activation is asynchronous, and the restore path must steal focus."
+      },
+      {
+        "id": "a3",
+        "name": "Contribute an autoLockGroups default",
+        "oneLineSummary": "Ship a configurationDefaults entry adding the chat webview's editor id to workbench.editor.autoLockGroups.",
+        "approach": "Add contributes.configurationDefaults in package.json so VS Code's own auto-lock handles the chat group; there would be no insrc.chat.lockGroup setting because a manifest default cannot be gated at runtime.",
+        "pros": [
+          "No runtime code",
+          "Uses VS Code's built-in mechanism"
+        ],
+        "cons": [
+          "Auto-lock only applies when the chat is the first editor in a NEW group and another group exists; Beside can reuse an existing group, where it never fires",
+          "Unverified whether an extension default for this object setting merges with or replaces the built-in default",
+          "Cannot honour the requested opt-out setting"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Cannot honour the opt-out setting, does not fire when Beside reuses an existing group, and rests on unverified default-merge behaviour."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts",
+      "quotedText": "const webviewPanelChannel = (panel: vscode.WebviewPanel): ChatPanelChannel => {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts",
+      "quotedText": "const VIEW_TYPE = 'insrc.chatPanel';"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/package.json",
+      "quotedText": "\"insrc.chat.diffView\": {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/vscode.d.ts",
+      "quotedText": "export interface WebviewPanel extends Disposable {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+      "quotedText": "const block = /if \\(chatEnabled\\) \\{([\\s\\S]*?)\\n  \\}/.exec(src);"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts",
+      "quotedText": "const VIEW_TYPE = 'insrc.docsReviewPanel';"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s3"
+    }
+  ]
+}

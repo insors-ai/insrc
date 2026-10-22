@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ad108d58-da75-4b38-8840-f06eee26e416",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.446Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Implement the runners/build finalize projection and the four precondition guards (pure)",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "97e4f56bec25c3e7f483b2a4f1974fdc2592ce239665cf0e608b5fccacf6bd48",
+        "at": "2026-10-22T12:43:16.446Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.447Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the runners/build finalize projection and the four precondition guards (pure)",
+    "summary": "Add the pure, storage-free core of the finalize turn handler in runners/build (mirroring the runners/design-story finalize handler): re-project runState/halt/filesTouched once from the terminal BuildRunProgress (sc6), carry BuildTaskOutcome[] (sc4) verbatim into taskOutcomes, and map BuildAdmissionAccepted (sc3) into BuildArtifactUpstream. Enforce the three pre-seal preconditions on hand-built values — non-terminal runState → precondition violation (no record produced); halt/runState inconsistency → reject; missing BuildAdmissionAccepted → abort rather than fabricate the citation. Depends on t1 only; the seal + writer-throw boundary is split out to t6 where the t2 storage seam and the t5 checkpoint exist.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "the finalize handler re-projects runState/halt/filesTouched once from the terminal BuildRunProgress (sc6) and carries taskOutcomes[] verbatim from sc4, exercised on hand-built fixture values with no storage dependency",
+      "BuildArtifactUpstream (planArtifactId/planArtifactHash/storyId/epicId) is populated only from a BuildAdmissionAccepted verdict (sc3), never from the implementer subprocess self-report",
+      "a non-terminal BuildRunProgress is refused with a finalize-precondition violation (no record produced); a halt/runState inconsistency is rejected; a missing BuildAdmissionAccepted aborts rather than fabricating the citation",
+      "unit tests over terminal (complete/halted), non-terminal, inconsistent-projection, and missing-admission fixtures pass — all on pure values without the storage seam"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "finalize projection re-projects runState/halt/filesTouched once from terminal BuildRunProgress (complete + halted) and carries taskOutcomes[] verbatim, on pure hand-built values"
+      },
+      {
+        "level": "unit",
+        "name": "BuildArtifactUpstream populated only from a BuildAdmissionAccepted verdict (planArtifactId/planArtifactHash/storyId/epicId), never from the implementer self-report"
+      },
+      {
+        "level": "unit",
+        "name": "finalize preconditions: non-terminal BuildRunProgress refused with no record, halt/runState inconsistency rejected, missing BuildAdmissionAccepted aborts instead of fabricating the citation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

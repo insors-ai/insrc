@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc18be23-57c5-4060-8746-9f16c3a48121",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:45.528Z",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Send only the latest window on restore",
+      "parent": {
+        "entityId": "STORY-ddc4ede1dbf84626-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ddc4ede1dbf84626-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ddc4ede1dbf84626-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a79059e16f1a2959511ff81efeb7f4eee7d7ce96e4e59aa15b640c3c4e6fa30",
+        "at": "2026-10-22T12:44:45.533Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:45.533Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Send only the latest window on restore",
+    "summary": "Switch postInitialState, the new-chat handler and the open-chat handler to post session-restored through one helper that uses latestWindow, so only the latest window is sent with its firstIndex and total. Update the tests that assert the whole transcript is posted.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "Opening a 1,000-row session posts at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+      "ready, new-chat and open-chat post the same windowed session-restored",
+      "A `ready` after older pages were requested posts the latest window again, with the approval head after it",
+      "After restores and page loads the saved transcript equals the original rows"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0"
+      },
+      {
+        "level": "integration",
+        "name": "ready, new-chat and open-chat post the same windowed session-restored"
+      },
+      {
+        "level": "integration",
+        "name": "a ready after older pages were requested posts the latest window again, with the approval head after it"
+      },
+      {
+        "level": "integration",
+        "name": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -13,7 +13,6 @@
     "storyId": "s1",
     "lldRunId": "wf-1784543632737-k07l2i",
     "lldEffectiveHash": "2699deb1622741156a80ddbf2c951c2e924e7e98d7183cee9dae0693b835ea99",
-    "approvedAt": "2026-07-20T13:17:09.041Z",
     "tracker": {
       "adapter": "github",
       "taskRefs": {
@@ -34,7 +33,35 @@
         "epic:stream-incremental-progress-from-daemo-3385a5"
       ]
     },
-    "epicCreatedAt": "2026-07-19T15:51:03.713Z"
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c52331c963b6677a1e3a07fd0a540993abe775ccd533e06ee9f73bc9cdea7acc",
+        "at": "2026-07-20T13:17:09.035Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-20T13:17:09.041Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

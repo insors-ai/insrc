@@ -1,0 +1,589 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791790915490-o0iuuv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T07:45:23.977Z",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 208482,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "epicSlug": "page-dev-chat-transcript-show-latest",
+    "storyId": "s1",
+    "lldRunId": "wf-1791789281233-4pjafm",
+    "lldEffectiveHash": "6baf2b20634668cba1ab830641c3494930088dd0e4f2f8e66cfced203c6d0c00",
+    "authoredBy": "controller",
+    "rangeBase": "72fc12d2786d445d85e7538b9c67b4b7d42223df",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "89d4cd49f348e17e85177ed5526700b239643b66fab432931a4fc18c1bc8e86f",
+        "at": "2026-10-12T07:45:23.977Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T07:55:19.025Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Eight tasks, each leaving the test suite green. First the pieces nothing depends on yet: the page-cutting rule, the message shapes, and the registry and test-fixture additions. Then the host starts writing each row before posting it with its index and answers requests for older pages, while the webview pager is built and tested on its own in two steps. Only then is the pager embedded in the chat shell, and last the host switches to sending just the latest window when a chat opens. This is the plan as amended on 2026-10-12: one check of task 3 described a state that cannot occur and now states what the code does."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Page-cutting module",
+        "summary": "Add the vscode-free transcript-window module: latestWindow(transcript, pageRows) and pageBefore(transcript, before, pageRows), each returning { firstIndex, rows }, with the one rule (PAGE_ROWS back from the end of the range, then back to the nearest user row within a further PAGE_ROWS, else the plain cut), `before` clamped to 0..length, and the fixed constants (PAGE_ROWS = 100). Nothing uses it yet.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A transcript no longer than one page is returned whole with firstIndex 0",
+          "A long transcript returns at most two pages of rows, starting at a user row when one is within reach, else the plain last page",
+          "pageBefore clamps `before`; at 0 it returns no rows and firstIndex 0",
+          "Walking pageBefore from the latest window to 0 reproduces the whole transcript, no row skipped or repeated",
+          "The sizes are named constants; no setting is read"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0"
+          },
+          {
+            "level": "unit",
+            "name": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows"
+          },
+          {
+            "level": "unit",
+            "name": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once"
+          },
+          {
+            "level": "unit",
+            "name": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0"
+          },
+          {
+            "level": "unit",
+            "name": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Protocol shapes for paging",
+        "summary": "In protocol.ts add the optional `firstIndex` and `total` on session-restored, optional `rowIndex` on turn-event and user-row, the WebviewToHost `load-older` message and the HostToWebview `transcript-page` message; add 'load-older' to WEBVIEW_TO_HOST_TYPES and 'transcript-page' to HOST_TO_WEBVIEW_TYPES, with a protocol.test.ts case. Types only; no behaviour changes.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The two unions carry the new messages and optional fields and the project typechecks",
+          "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', with every prior kind still present"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Host: write-then-post with row indexes, and answer load-older",
+        "summary": "In chat-panel.ts make appendEvent return the index of the row it wrote; in the run sink and the followed-turn sink call appendEvent first and post second with `rowIndex` (in the followed sink the write stays before and outside the `!disposed && session === s` guard); in recordPermissionOutcome and recordSelectionOutcome push first and post with `rowIndex` (none when there is no session); add `rowIndex` to runTurn's user-row. Add the `load-older` handler: validate sessionId and before, ignore a request for a session that is not active, and post one transcript-page cut by pageBefore. session-restored still carries the whole transcript, now with firstIndex 0 and total; any existing deep-equality assertion on that payload is updated here. AMENDED: the earlier check that a turn followed for a session that is not shown 'still writes its rows' described a state that cannot occur, because a chat switch or a closed panel aborts the follow at once; it is replaced by what the code does.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Every persisted live row (assistant, marker, tool-result, user, permission outcome, selection outcome) is posted with the absolute index of a row the transcript already holds; status and approval-request carry none",
+          "The rows written to the transcript are unchanged",
+          "A followed turn's row is written before it is posted with its index; after a chat switch the follow stops, posting and writing nothing more (the rest is read again on the next resume, as before this change); in the followed-turn sink the write is before and outside the shown-session guard",
+          "load-older for the active session answers one transcript-page ending just before `before`; repeated requests walk back to 0",
+          "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+          "session-restored carries firstIndex 0 and total, and the existing session-restored assertions pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none"
+          },
+          {
+            "level": "integration",
+            "name": "write-then-post order: when each live row is posted, the transcript already holds it at that index"
+          },
+          {
+            "level": "integration",
+            "name": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard"
+          },
+          {
+            "level": "integration",
+            "name": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0"
+          },
+          {
+            "level": "integration",
+            "name": "load-older for another session id, or with a malformed before or sessionId, posts nothing"
+          },
+          {
+            "level": "integration",
+            "name": "session-restored carries firstIndex 0 and total while the whole transcript is still sent"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Fixture scroll metrics and registry paging companions",
+        "summary": "Add scrollTop, scrollHeight and clientHeight to the shared __tests__/fake-dom.ts (no second fake DOM). Add three companions to the render registry's returned object: forgetKeysBefore(index), which drops the r<n> keys below an index; withIsolatedPending(fn), which runs a render with an empty pending-tool list and restores the live list afterwards; and forgetPendingIn(nodes), which drops pending tool entries whose row node is one of the given nodes.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "fake-dom.ts nodes carry scrollTop, scrollHeight and clientHeight, and its existing tests pass",
+          "forgetKeysBefore drops only the r<n> keys below the index; other keys and nodes are untouched",
+          "withIsolatedPending runs the render with an empty pending list and restores the live list afterwards, also when the render throws",
+          "forgetPendingIn drops exactly the pending entries whose node is given; a later tool result for a dropped entry renders as its own row",
+          "The existing registry tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards"
+          },
+          {
+            "level": "unit",
+            "name": "registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row"
+          },
+          {
+            "level": "unit",
+            "name": "fake-dom nodes carry scrollTop, scrollHeight and clientHeight"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Pager: follow rule, stamping and trimming",
+        "summary": "Add the transcript-pager webview source module with its window state and: append(node), the single way a node joins the terminal, which follows to the bottom only when the view was at the bottom before the append and no page is being rendered; reset(firstIndex, total), which ends at the bottom; stamp(fromChild, rowIndex); and trimIfNeeded(), which, above 300 held rows and at the bottom, removes the oldest nodes back to a user row leaving about 200, cuts plainly when no user row is in the removable range, and calls forgetKeysBefore and forgetPendingIn for what it removed. Tests build the real registry on a line() that appends through the pager, on fake-dom.ts. The shell does not embed it yet.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A live row rendered through the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even above 300 held rows",
+          "A live row while at the bottom follows to the bottom; above 300 held rows the oldest are removed back to a user row leaving about 200 and the view is still at the bottom",
+          "One turn longer than 300 rows is trimmed by a plain cut; a pending tool row in the removed range is dropped, so a later result renders as its own visible row",
+          "reset sets the first held index and total and ends at the bottom",
+          "The sizes are named constants; the pager tests use fake-dom.ts and define no fake DOM of their own"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held"
+          },
+          {
+            "level": "unit",
+            "name": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, and the view is still at the bottom"
+          },
+          {
+            "level": "unit",
+            "name": "one turn longer than 300 rows is trimmed by a plain cut, and a pending tool row in the removed range is dropped so a later result renders as its own row"
+          },
+          {
+            "level": "unit",
+            "name": "pager reset: a restore sets the first held index and total and ends at the bottom"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Pager: older pages, load requests and the bar",
+        "summary": "Extend the pager with: prepend(page), which discards a page that does not match the shown session and first held index, records scrollTop and scrollHeight, renders the page through the registry (keys r<absolute index>, pending rows isolated, following off, cleared in a finally), moves the new nodes above the held ones and restores the reader's place; the load request with its one-at-a-time flag, cleared on the matching page, on reset and after 5 seconds; the scroll listener that requests a page at the top and runs the trim on return to the bottom; and the 'load earlier' bar, shown when the first held index is above 0, with the count of older rows.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "prepend renders an older page above the held rows in order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view never jumps to the bottom",
+          "A page for another session or with the wrong `before` adds no row",
+          "Trimmed rows render again when their page comes back",
+          "One load-older is sent per request (bar click or scroll to the top); none while loading; the flag clears on the matching page, on reset and after 5 seconds",
+          "Returning to the bottom above 300 held rows runs the trim",
+          "A row that throws while a page renders falls back and following is switched back on",
+          "The bar is shown only when the first held index is above 0 and names the count of older rows"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders"
+          },
+          {
+            "level": "unit",
+            "name": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row"
+          },
+          {
+            "level": "unit",
+            "name": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes"
+          },
+          {
+            "level": "unit",
+            "name": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds"
+          },
+          {
+            "level": "unit",
+            "name": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener"
+          },
+          {
+            "level": "unit",
+            "name": "a row that throws while an older page renders falls back, and following is switched back on afterwards"
+          },
+          {
+            "level": "unit",
+            "name": "the 'load earlier' bar is shown only when the first held index is above 0, names the count of older rows, and appears after a trim"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Embed the pager in the shell",
+        "summary": "In the chat-panel.ts shell create the pager before the registry and hand it the registry; route line(), renderDiff and the approval-card branch through pager.append (no direct scrollTop writes); on session-restored reset the registry keys and the pager, replay rows with absolute keys (firstIndex + i) and end at the bottom; send transcript-page to prepend; stamp live rows with rowIndex and run the trim; wire the bar and scroll to post load-older; settle the provider lock from total. Update, in this same task, the three shell-text pins in chat-panel.test.ts (the replay loop, the appendKeyed key and the setProvLock expression) and any pin on line()'s scroll. Scroll behaviour itself is proven by the pager tests that drive the real registry; this task's own tests are the shell-text pins and the host integration tests still passing. The host still sends the whole transcript.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The shell embeds the pager source; line(), renderDiff and the approval card append through it and no other code sets the terminal's scrollTop",
+          "session-restored replays with keys r<firstIndex + i> through the pager's reset; transcript-page goes to prepend; live rows are stamped and trimmed",
+          "The provider lock settles from total",
+          "The shell is still one nonce'd inline script with no innerHTML outside the guarded markdown path and no remote origin",
+          "The three shell-text pins are updated in this task and the whole chat test suite passes at this commit"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total"
+          },
+          {
+            "level": "integration",
+            "name": "the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Send only the latest window on restore",
+        "summary": "Switch postInitialState, the new-chat handler and the open-chat handler to post session-restored through one helper that uses latestWindow, so only the latest window is sent with its firstIndex and total. Update the tests that assert the whole transcript is posted.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Opening a 1,000-row session posts at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+          "ready, new-chat and open-chat post the same windowed session-restored",
+          "A `ready` after older pages were requested posts the latest window again, with the approval head after it",
+          "After restores and page loads the saved transcript equals the original rows"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0"
+          },
+          {
+            "level": "integration",
+            "name": "ready, new-chat and open-chat post the same windowed session-restored"
+          },
+          {
+            "level": "integration",
+            "name": "a ready after older pages were requested posts the latest window again, with the approval head after it"
+          },
+          {
+            "level": "integration",
+            "name": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a live row rendered by the registry while the view is at the bottom moves the view to the bottom; with more than 300 rows held the oldest nodes are then removed back to a user row leaving about 200, the bar appears, and the view is still at the bottom",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "returning to the bottom with more than 300 rows held runs the trim from the scroll listener",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pager prepend: an older page is rendered above the held rows in transcript order, keyed r<absolute index>; scrollTop grows by exactly the height added and the view is never moved to the bottom while the page renders",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pager prepend: a page for another session, or whose before is not the first held index, is discarded and adds no row",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "trimmed rows render again when their page comes back: the dropped keys are forgotten, so appendKeyed renders new nodes",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pager reset: a restore sets the first held index and total, ends at the bottom, and shows the 'load earlier' bar only when the first held index is above 0, naming the count of older rows",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "pager load request: one load-older is sent for the first held index on a bar click or a scroll to the top; no second request is sent while one is loading; the flag clears on the matching page, on a restore and after 5 seconds",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a row that throws while an older page renders falls back, and following is switched back on afterwards",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "ready, new-chat and open-chat post the same windowed session-restored",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "write-then-post order: when each live row is posted, the transcript already holds it at that index",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a turn followed for a session that is not shown still writes its rows and posts nothing",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails (postInitialState, appendEvent, recordPermissionOutcome, recordSelectionOutcome, runTurn, line, appendKeyed, resetKeys)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges (session-restored, load-older, transcript-page, rowIndex, transcript-window, transcript-pager, fake-dom.ts, ChatSession invariant)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths (error cases, edge cases, invariants to preserve)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy (test levels, subjects, fixtures)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration (six ordered steps, backward compatibility)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 review override, 2026-10-12",
+      "quotedText": "(1) The three shell-text pins in chat-panel.test.ts are updated in the same task that embeds the pager. (2) The trim cuts plainly when no user row is in the removable range, drops pending tool entries whose node it removes, and gets an edge-case test for one turn longer than 300 rows."
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "LLD S001 open questions, resolved by the user 2026-10-12",
+      "quotedText": "fixed sizes no settings"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts (plan amendment approved by the user 2026-10-12: a chat switch or a closed panel aborts the follow, so no event is delivered for a session that is not shown)",
+      "quotedText": "following?.ctl.abort(); // a resumed turn: its process is not ours to stop here"
+    }
+  ]
+}

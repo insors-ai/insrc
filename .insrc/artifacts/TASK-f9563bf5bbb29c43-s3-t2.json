@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a04f5984-24f6-4398-b20a-b25239c920dd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:02.698Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Role-differentiate the user/assistant-text renderers + collapse-when-long (ac1/ac2)",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "78acc487954b58675b5c456e910473152516edc599d551618a68af3713a59de3",
+        "at": "2026-10-22T12:45:02.698Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:02.699Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Role-differentiate the user/assistant-text renderers + collapse-when-long (ac1/ac2)",
+    "summary": "In renderRegistryWebviewSource replace the placeholder 'user' and 'assistant-text' renderer bodies with role-classed rows (user tone vs assistant tone, ac1) that wrap their content in host.collapsible({defaultCollapsed:true}) ONLY when the text exceeds ~3 lines (ac2); short messages render un-wrapped. All via createElement/textContent (k1). The tool-command renderer is left untouched (inline, k6 d).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "the 'user' renderer emits a user-role-classed row and the 'assistant-text' renderer an assistant-role-classed row (distinct tones) — ac1",
+      "a >3-line message is wrapped in host.collapsible (default-collapsed, icon-only chevron); a <=3-line message is NOT wrapped — ac2",
+      "the tool-command renderer is unchanged (inline, never collapsed, k6 d)",
+      "renderers use createElement/textContent only (no innerHTML); a renderer throw still falls back to line() (per-row isolation)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the 'user' renderer emits a user-role-classed row and the 'assistant-text' renderer an assistant-role-classed row (distinct tones)"
+      },
+      {
+        "level": "unit",
+        "name": "a long (>3-line) message is wrapped in host.collapsible (default-collapsed, icon-only chevron); a short message is NOT wrapped"
+      },
+      {
+        "level": "unit",
+        "name": "the 'tool-command' renderer is unchanged — inline, single line, never wrapped in collapse (k6 d)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

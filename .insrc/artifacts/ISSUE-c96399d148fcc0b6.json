@@ -21,9 +21,37 @@
     "epicSlug": "dev-chat-message-input-under-delivers",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-09-30T04:30:58.100Z",
     "parentRef": {
       "slug": "dev-chat-message-input-under-delivers"
+    },
+    "epicCreatedAt": "2026-09-29T20:29:58.186Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cd0cbb7e7ff3ae5087e3d6015734163041b5cef144b6f1c51f4f1d8b33488621",
+        "at": "2026-09-29T20:29:58.186Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T04:30:58.100Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

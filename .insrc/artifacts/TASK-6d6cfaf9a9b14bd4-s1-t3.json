@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3b7c319f-62b1-47bf-bc85-2860ab22cdbe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.967Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Narrow eventToProgressData to ProgressEvent | null",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "121f25d1d168bc3be379ea8329622b9821503ae5b4492d552162a7af0d310427",
+        "at": "2026-10-22T12:43:42.967Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.968Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Narrow eventToProgressData to ProgressEvent | null",
+    "summary": "Change `eventToProgressData` (src/daemon/analyze-rpc.ts:583) from returning `Record<string, unknown>` to returning `ProgressEvent | null`, keeping it a pure total function over AnalyzeRunEvent. Because AnalyzeRunEvent carries only per-event data and no ordinal, the two cumulative stage fields and the cumulative token count are threaded in as parameters rather than derived inside: signature becomes `(event: AnalyzeRunEvent, tokensTotal: number, stageIndex: number)`.\n\nRESOLVED derivation for the stage fields (previously unspecified): analyze.run's stage set is NOT enumerable ahead of time — AnalyzeRunEvent declares no ordinal and no stage manifest exists to count against — so `total` is ALWAYS null on the analyze side, mirroring the workflow side's non-enumerable verdict but for a different reason (no manifest, vs. synthesize-retry), and `index` is the caller-threaded monotonic `stageIndex` counter, the same mechanism t6 uses for workflow. t4 owns both counters; the mapper never increments state.\n\nStage-transition variants map to StageProgressEvent with operation:'analyze.run', stageId/stageLabel from the existing stage value at analyze-rpc.ts:586, index:stageIndex, total:null. Token-production variants map to TokenProgressEvent with the threaded cumulative tokensTotal. Every other AnalyzeRunEvent variant returns null. Unmapped or malformed variants return null rather than throwing, so progress mapping can never fail an in-flight 30-40 minute analyze run. camelCase function naming per local convention. This is the only existing graph-indexed normaliser sc1 subsumes; the workflow counterpart stays s1-internal and is deliberately NOT exposed as a shared exported helper, so uniformity is enforced by both adapters returning ProgressEvent rather than by a shared module.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "eventToProgressData's declared return type is `ProgressEvent | null` and its signature is `(event: AnalyzeRunEvent, tokensTotal: number, stageIndex: number)`; tsc passes.",
+      "The AnalyzeRunEvent union members are enumerated in the test table directly from the type declaration, and a `never`-check on the mapper's switch default proves the enumeration is exhaustive.",
+      "A table driving every enumerated AnalyzeRunEvent variant plus at least two malformed fixtures (missing discriminant; unknown discriminant value) through eventToProgressData throws on no input; unmapped and malformed inputs return null.",
+      "Stage variants yield kind:'stage' with stageId and stageLabel from the analyze-rpc.ts:586 stage value, index equal to the caller-threaded stageIndex argument, and total strictly null — asserted by a test that passes a non-zero stageIndex and checks it round-trips.",
+      "Token variants yield kind:'token' with tokensTotal equal to the threaded argument; the mapper holds no mutable state between calls.",
+      "Returned payloads carry operation:'analyze.run' on both variants."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "analyze-progress-adapter: table over every enumerated AnalyzeRunEvent variant — stage variants yield StageProgressEvent(operation:'analyze.run', stageId/stageLabel from the stage value, index=threaded stageIndex, total:null)"
+      },
+      {
+        "level": "unit",
+        "name": "analyze-progress-adapter: token-production variants yield TokenProgressEvent with the threaded cumulative tokensTotal, and repeated calls prove the mapper holds no mutable state"
+      },
+      {
+        "level": "unit",
+        "name": "analyze-progress-adapter: every other variant plus two malformed fixtures (missing discriminant, unknown discriminant value) return null and throw on no input"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

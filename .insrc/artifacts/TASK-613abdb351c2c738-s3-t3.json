@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-744513e4-3ce5-4451-9b75-241d73ee8932",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.206Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Worker: dispose keeps the presence row",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fcb4088183f0cfa63dfc9a6b73889e70278d4f4a3189e899feb4eebc2ee977b0",
+        "at": "2026-10-22T12:43:38.206Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.206Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Worker: dispose keeps the presence row",
+    "summary": "In chat-queue-worker.ts dispose() stops calling store.leave(claim), so a reloading window's presence row ages out over PRESENCE_GRACE_MS instead of vanishing. Keep the rest of dispose (finish and release when the lease is this window's and its CLI is gone). Invert the S001 assertion at chat-queue-worker.test.ts:151 ('presence removed') to 'presence kept'.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "after dispose the window's presence row is still there and windowAlive stays true until PRESENCE_GRACE_MS has passed",
+      "dispose with the turn's CLI still running leaves the lease; with the CLI gone it finishes and releases, as before",
+      "the S001 dispose test passes with its assertion inverted"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: the worker (the existing S001 test, its presence assertion inverted to presence kept)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f9309450-9008-425d-806f-c13ea76e75de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.576Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Plan tasks report cut documents and the project context's limits",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d462304bdb757e98d84d4a41df0939d0977332ed87cbab8b73d0ee67ec07de77",
+        "at": "2026-10-22T12:44:24.576Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.576Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plan tasks report cut documents and the project context's limits",
+    "summary": "The three adherence checks report their 1,200-character cut in partlyRead through measureItem. The project-context assembler's result gains which of its limits were reached and the documents behind its decisions and constraints, and the adherence check reads them into the record. The two docs plan tasks report a document longer than the summariser's cut as partly read, with its file, the cut and the full length, and a missing summary or a failure placeholder as skipped.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Each adherence check reports a body it cut with both lengths",
+      "The project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in limited and partlyRead",
+      "The docs plan tasks report a document longer than 8,192 characters under partlyRead with its file and both lengths; dropping the entry makes the test fail",
+      "A missing summary and a failure placeholder are listed under skipped",
+      "The docs tool exposed to agents returns what it returned before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "each adherence check reports a body it cut with the kept and full lengths"
+      },
+      {
+        "level": "unit",
+        "name": "the project-context assembler reports a limit it reached and the documents behind its decisions and constraints, and the adherence check puts them in the record"
+      },
+      {
+        "level": "unit",
+        "name": "the docs plan tasks report a document longer than the summariser's cut under partlyRead, and a missing summary and a failure placeholder under skipped (mutation: drop the partlyRead entry)"
+      },
+      {
+        "level": "unit",
+        "name": "the docs tool exposed to agents returns what it returned before"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

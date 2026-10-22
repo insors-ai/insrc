@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-57d60751-ea11-4b20-a1a0-6ecdac82f914",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:51.533Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "chat-panel.ts createChatPanelHost (turn loop + dispatch + shell)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba51d738bb3b6ee4caf967c289948d03c6555a1c427ded226d2b6cad5df851f6",
+        "at": "2026-10-22T12:44:51.533Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:51.533Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "chat-panel.ts createChatPanelHost (turn loop + dispatch + shell)",
+    "summary": "Add vscode-plugin/src/chat/chat-panel.ts: ChatPanelHost/ChatPanelHostDeps + createChatPanelHost(deps). Renders the terminal chat webview shell (one nonce'd inline script under a strict per-render CSP, embedding renderTerminalStyle + surfaceClass('chat')); dispatches WebviewToHost messages; on submit-turn runs StreamAdapter.run and posts each TurnEvent INCREMENTALLY while appending TranscriptEntry rows; single-in-flight guard; onDidDispose -> cancel + stop posting; unknown-provider/errors surfaced as terminal error events; edit-*/docs-* accepted-but-ignored; passthrough (no workflow tool). vscode-free, deps-injected. The two concerns (vscode-free dispatch/turn-loop + the rendered shell) stay independently provable per the checks below.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "(host logic) createChatPanelHost is vscode-free (imports nothing from 'vscode') and returns ChatPanelHost {open,dispose}; submit-turn drives StreamAdapter.run(TurnRequest{provider,prompt,cwd}) and posts each yielded TurnEvent incrementally (no whole-turn buffering); a terminal error event is posted inline; empty submit is a no-op; a second submit while streaming does not interleave (cancel-or-ignore).",
+      "(shell) the rendered shell keeps the one-inline-nonced-script + strict-CSP + fresh-nonce-per-render invariants and contains renderTerminalStyle output + surfaceClass('chat').",
+      "onDidDispose cancels the active turn and stops posting; every post routes through the injected fire-and-forget postMessage; the host never calls an insrc workflow/MCP tool (passthrough, k8)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "submit-turn -> StreamAdapter.run + incremental turn-event posts (interleaved, not buffered) via FakePanel"
+      },
+      {
+        "level": "unit",
+        "name": "error TurnEvent posted inline + unknown-provider surfaced (not thrown); empty submit no-op; single-in-flight no interleave"
+      },
+      {
+        "level": "unit",
+        "name": "onDidDispose cancels the active turn + stops posting; edit-*/docs-*/malformed ignored; passthrough (no workflow-tool call on deps)"
+      },
+      {
+        "level": "integration",
+        "name": "rendered chat shell: one nonce'd inline script + strict CSP + fresh nonce/render + renderTerminalStyle/surfaceClass('chat') + no remote origin/asWebviewUri"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

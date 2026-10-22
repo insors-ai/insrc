@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-8f90988572f4d5b2-S001 -->
+<!-- insrc:artifact BUILD-8f90988572f4d5b2-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,16 +26,16 @@ A child plan's task record is now stored in its own plan's directory under its f
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/CR-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/CR-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/CR-8f90988572f4d5b2-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/BUILD-0ee73dc7a00c0f11-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/BUILD-4fb22dc28697cc14-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-0ee73dc7a00c0f11-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-4fb22dc28697cc14-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/CR-8f90988572f4d5b2-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `.insrc/artifacts/ISSUE-0ee73dc7a00c0f11.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `.insrc/artifacts/ISSUE-4fb22dc28697cc14.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `.insrc/artifacts/ISSUE-8f90988572f4d5b2.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/TESTS-0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
-- `.insrc/artifacts/TESTS-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/TESTS-0ee73dc7a00c0f11-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
+- `.insrc/artifacts/TESTS-4fb22dc28697cc14-s1.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `.insrc/build-start/0ee73dc7a00c0f11-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `.insrc/build-start/4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:14.808Z)
 - `design/analyze-plan-builder.md` — **insrc-build** (2026-10-10T06:34:14.808Z)

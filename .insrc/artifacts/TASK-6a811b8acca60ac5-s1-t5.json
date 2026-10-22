@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3dbf1d21-7436-4a38-bf18-abc2d74eb9ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.728Z",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "One follow-up per completed turn-ended batch",
+      "parent": {
+        "entityId": "STORY-6a811b8acca60ac5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a811b8acca60ac5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a811b8acca60ac5-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1246b2ab241e9f0f35adc45331845d9407f24608c7b8b7c7f8fed2bb9abc552a",
+        "at": "2026-10-22T12:43:42.728Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.728Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One follow-up per completed turn-ended batch",
+    "summary": "When a turn-ended batch is complete (its turn ended and every request decided), run exactly one follow-up via runTurn(prompt, grantChain, { suppressEcho: true }): one approved tool-gate uses today's exact prompt text ('Approved — run exactly this now: <command>' or the tool-name fallback); several use one combined prompt naming each approved action (exact command where captured) and each denied one; all denied (or only dir-blocks approved) posts an informational 'no action was approved' message and runs nothing. Requests the follow-up raises form the next batch; the grant chain carries over.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Approving three turn-ended requests starts turns.start exactly once, after the last decision and the turn's end, with allowedTools = the three tools and a prompt naming the three actions",
+      "A denied request is named as denied in the combined follow-up; all denied runs no follow-up and posts the notice",
+      "A follow-up that is refused again forms a new batch whose follow-up carries the earlier grants",
+      "The existing single-request approve / deny / exact-command / tool-name / dir-block / suppressEcho tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions"
+      },
+      {
+        "level": "integration",
+        "name": "no approval ever supersedes a running follow-up: turns.start is called once per batch"
+      },
+      {
+        "level": "integration",
+        "name": "deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message"
+      },
+      {
+        "level": "integration",
+        "name": "a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants"
+      },
+      {
+        "level": "integration",
+        "name": "single request: the existing approve/deny/exact-command/tool-name/dir-block/suppressEcho tests keep passing unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

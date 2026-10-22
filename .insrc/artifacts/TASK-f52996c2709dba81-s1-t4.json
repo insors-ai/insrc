@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fcf81755-1ab3-4da1-974a-89e0ec15f022",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:56.606Z",
+    "epicCreatedAt": "2026-10-16T09:01:43.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f52996c2709dba81",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Carry the script in the three page shells",
+      "parent": {
+        "entityId": "STORY-f52996c2709dba81-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f52996c2709dba81-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f52996c2709dba81-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6444d5f152c6baf1a9ba3411e14b5c5f5caa4ea7ad114d9e36770ee75067e5db",
+        "at": "2026-10-22T12:44:56.610Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:56.610Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry the script in the three page shells",
+    "summary": "Import CODE_REF_SCRIPT into the companion page shell (src/workflow/artifacts/companion/shell.ts), the docgen Mermaid shell (src/docgen/render/shell.ts) and the docgen subprocess fallback (assembleFallbackShell in src/docgen/render/fallback.ts) and inline it. The two Mermaid shells run the marking after mermaid.run resolves, and a page with no Mermaid visual and the fallback run it once at load. A marked element gets a pointer cursor from the page's own style.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The companion shell, the docgen Mermaid shell and the docgen fallback shell each carry CODE_REF_SCRIPT, imported from the one module, with no import cycle between the shells and the module",
+      "In the two Mermaid shells the marking runs after the diagram is drawn; a page with no Mermaid visual and the fallback mark references at load",
+      "A marked element is styled as clickable (a pointer cursor) in the companion shell and in both docgen shells",
+      "A page built without any reference is otherwise unchanged and still renders its header, narrative, view and description tables"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

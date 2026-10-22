@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-54b843e5-885d-42a9-8e1d-1a40bae73d3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.711Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen the change-set derivation additively with an optional base and exclusion list",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b8e177889c9ac34680c7283da5fcea2284b64dea9b8f6b81bf14797db59521c2",
+        "at": "2026-10-22T12:44:00.711Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.712Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the change-set derivation additively with an optional base and exclusion list",
+    "summary": "Add an optional options argument to changedFiles (today `(repoPath: string)` only, changed-files.ts:43) carrying a range base and a path-exclusion list, and thread it through collectBuildChangeLog's context and its existing injectable seam (:72). git_diff already accepts `from`/`to` (c11), so this needs no new capability — only a different call. Behaviour must be BIT-FOR-BIT unchanged when neither option is supplied, so this ships without altering any existing call site's result and rolls back independently of everything that consumes it. s1 established that the never-throw catch and its log.warn ALREADY exist at :77-83, so this task PRESERVES and ASSERTS them rather than building them.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "changedFiles accepts an optional options argument; existing single-argument call sites compile untouched and return identical results",
+      "collectBuildChangeLog's mandated two-argument form is unchanged; the completion-time writer at completion-record.ts:40, which already passes the optional third seam argument, behaves identically",
+      "With no base supplied, the derivation asks git exactly what it asks today — asserted via a recording seam that captures the arguments, not inferred from the result",
+      "With a base supplied, the range reaches git_diff's `from` — asserted via the recording seam",
+      "The existing never-throw catch and its log.warn at changed-files.ts:77-83 survive VERBATIM — asserted by a seam that throws, proving the call still returns [] AND still logs"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "existing TWO-ARGUMENT collectBuildChangeLog call sites compile and behave identically after the widening"
+      },
+      {
+        "level": "unit",
+        "name": "with NO base supplied, the recording seam shows git is asked exactly what it is asked today — argument-level, not result-level"
+      },
+      {
+        "level": "unit",
+        "name": "with a base supplied, the recording seam shows the range reaching git_diff's `from`"
+      },
+      {
+        "level": "unit",
+        "name": "collectBuildChangeLog NEVER THROWS: a seam that throws yields [] AND emits the log.warn, both asserted"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

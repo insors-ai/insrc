@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f5aa39e8-ca0f-4d9d-adf8-9885eb15a927",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.273Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Contract test that all three clients show the same rows",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12bf5ef27c8dd0f62e07ab717b58ddead09ba57528ef643e7237b5252fd11d25",
+        "at": "2026-10-22T12:43:25.273Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.274Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Contract test that all three clients show the same rows",
+    "summary": "Add the shared JSON fixture of the config.catalog payload and the TypeScript and Kotlin tests that load it, asserting the row keys, labels, kinds and notes rendered by the terminal, VS Code and JetBrains clients equal repoFields, and that a row added to a test copy of the table appears in all three models.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "Each client's rendered rows equal the repoFields in the shared fixture",
+      "A row added to a test copy of the table appears in all three client models without a client change"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/repo-fields-contract.test.ts: terminal rows equal the shared catalog fixture"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts: VS Code rows equal the shared catalog fixture and a new row appears"
+      },
+      {
+        "level": "integration",
+        "name": "jetbrains-plugin RepoFieldsContractTest: JetBrains rows equal the shared catalog fixture and a new row appears"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

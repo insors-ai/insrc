@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bf781844-a75c-49bd-ad33-32e7c3f0c66d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.547Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add daemonStatus() to the DebugService facade + impl",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e401519890d503515e30f54d9c89405a2ab735ff8990588097781e75f3fba962",
+        "at": "2026-10-22T12:44:58.547Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add daemonStatus() to the DebugService facade + impl",
+    "summary": "Add `daemonStatus(): Promise<DaemonCardModel>` to the DebugService interface (debug-types.ts) and implement it in src/cli/services/debug.ts: delegate to getStatus() (from ./daemon.js) for uptime/repos (count only workspace repos), attach socket=PATHS.sockFile, pid from PATHS.pidFile (existsSync-guarded, parse numeric), and best-effort version from join(DAEMON_ROOT,'package.json').version (catch to undefined). Catch any getStatus reject and RESOLVE to { reachable:false } (never throw). Bind `daemonStatus: debug.daemonStatus` onto the existing makeServices() debug entry in src/cli/services/index.ts. Additive; `sections` unchanged. Build note (s3 critique): land t2 together-with t5 in one increment so the CLI suites compile at every committed step.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "DebugService interface gains `daemonStatus(): Promise<DaemonCardModel>`; `sections` + sibling facades unchanged",
+      "debug.daemonStatus() resolves { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available) on a successful getStatus",
+      "debug.daemonStatus() resolves { reachable:false } and never throws when getStatus rejects",
+      "only workspace repos are counted (shared-modules rows excluded); version/pid degrade to undefined when unresolvable",
+      "makeServices().debug.daemonStatus is bound; tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "debug.daemonStatus(): a resolving getStatus stub yields { reachable:true } with uptimeSec/repoCount/repos[]/socket (+pid/version when available)"
+      },
+      {
+        "level": "unit",
+        "name": "debug.daemonStatus(): a rejecting getStatus stub yields { reachable:false } and never throws"
+      },
+      {
+        "level": "unit",
+        "name": "debug.daemonStatus(): unresolvable version / absent pidfile leave version/pid undefined but keep the reachable variant"
+      },
+      {
+        "level": "unit",
+        "name": "debug.daemonStatus(): only workspace repos are counted (shared-modules rows excluded)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

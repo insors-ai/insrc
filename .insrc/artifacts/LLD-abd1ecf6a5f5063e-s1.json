@@ -23,91 +23,62 @@
     "hldBaseRunId": "wf-1785587820064-46kctq",
     "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "l-reg",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "executor.ts exports registerRunner (throws on duplicate) + getRunner (throws on miss); the brainstorm stage reuses this single registry.",
-          "evidence": "src/workflow/executor.ts:57 `export function registerRunner(r: StepRunner): void` and :65 `export function getRunner(workflow, runnerId): StepRunner` — the single registry the brainstorm stage reuses (k5). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-tmpl",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "registerDesignStoryRunners is an idempotent (registered-guarded) registration entry point at design-story/index.ts — the template registerBrainstormRunners mirrors.",
-          "evidence": "src/workflow/runners/design-story/index.ts:541 registerDesignStoryRunners + :542 `if (registered) return` — the idempotent registered-guard template (shared by all 6 runner modules); registerBrainstormRunners mirrors it. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-central",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "registerWorkflowRunners at workflow/index.ts is the central boot registration site (calls the design register*Runners); s1 adds registerBrainstormRunners there.",
-          "evidence": "src/workflow/index.ts:23 `export function registerWorkflowRunners(): void` — the central boot registration site s1 adds registerBrainstormRunners to. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-state",
-          "ref": "sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "state-store.ts exposes saveState/loadState (throws on unknown/expired)/releaseState — the opaque-token continuation machinery BrainstormElicitState reuses (k9).",
-          "evidence": "src/mcp/workflow-step/state-store.ts:38/52/64 saveState/loadState/releaseState (typed to WorkflowStepStatePayload, distinct from the analyze-step/review-step stores) — the opaque-token continuation machinery BrainstormElicitState reuses (k9). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-dispatch",
-          "ref": "sc3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The workflow-step handler dispatch is keyed on phase (start/plan/step/synthesize/resolve_question/review_deferred), NOT on workflow — so a new workflow 'brainstorm' needs no new handler case (k8).",
-          "evidence": "src/mcp/workflow-step/handler.ts:58 `switch (step.phase)` with cases start(:59)/synthesize(:62)/resolve_question(:63)/review_deferred(:64) — dispatch is keyed on phase, not workflow, so a new 'brainstorm' workflow needs no new handler case (k8). Closed-union confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-stub",
-          "ref": "k10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The chat-agent brainstorm.addIdea is an offlineRpc stub at daemon/index.ts:1354 — the k10 collision the new stage stays distinct from.",
-          "evidence": "src/daemon/index.ts:1354 `'brainstorm.addIdea': offlineRpc('brainstorm.addIdea')` — the chat-agent stub the new stage stays distinct from (k10). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "l-standalone",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "StandaloneStoryContext is the design-story standalone-context interface StandaloneBrainstormContext peers.",
-          "evidence": "src/workflow/runners/design-story/standalone.ts:23 `export interface StandaloneStoryContext` — the standalone-context interface StandaloneBrainstormContext peers. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-08-01T13:46:00.509Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-01T14:12:46.557Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c5326250a5a4b2ee4741cd1bf868c50cf95df6be2da72432292dd25241132d73",
+        "at": "2026-08-01T13:44:57.391Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T14:12:46.557Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-08-01T13:46:00.509Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

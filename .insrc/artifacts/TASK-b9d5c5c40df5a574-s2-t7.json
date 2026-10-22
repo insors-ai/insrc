@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da1549f5-8284-4253-b527-6cf19097f471",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.859Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The step tool and the free-form lookup take the measured size",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "89d41e853dfbd4905fabe1bbc4a621befc649cb51fbb73a0a50ac0b0ee95cbd6",
+        "at": "2026-10-22T12:44:24.859Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.860Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The step tool and the free-form lookup take the measured size",
+    "summary": "In the step tool, take the named-area measure at the start phase for the planning prompt, carry the caller's stated size in the state token as an optional hint, pass the request size to the plan and narrow phases' execution through stepPlan, and take the measure from lookup results at the bundle phase and the answer turn, each with the hint. Add the optional request size to the runner context, set at the three places the executor builds one. Let the free-form lookup use it and, when it has none, measure its resolved scope or a repo scope at its repo path. Remove the default size from the step tool's start phase and from the free-form lookup's inner intent.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The step tool's start phase gives the planning prompt the named-area size and sets no default",
+      "The state token carries the hint from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes and the state's version is not raised",
+      "The runner context carries the request size at the executor's three construction sites and through stepPlan",
+      "The free-form lookup uses the request size in its runner context and, with none, measures its resolved scope or a repo scope at its repo path; it never takes a default",
+      "The step tool's answers carry the measure line"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the step tool carries a caller's stated size in its state token from the start phase to the bundle phase and the answer turn, whose reports give the measured size with that hint; a token minted before the change still decodes"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-e62a9269a7cb9550-S001 -->
+<!-- insrc:artifact BUILD-e62a9269a7cb9550-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -18,16 +18,16 @@ A document a chat turn presents for approval is opened in the review pane. New m
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/BUILD-8d4b90c9ab301e66-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/CR-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/CR-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/LLD-dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/TESTS-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/TESTS-8d4b90c9ab301e66-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
-- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/BUILD-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/BUILD-8d4b90c9ab301e66-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/CR-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/CR-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/LLD-dd277f9cddd6d879-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/TESTS-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/TESTS-8d4b90c9ab301e66-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
+- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
 - `.insrc/build-start/cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
 - `.insrc/build-start/dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:32:22.380Z)
 - `docs/standalone/list-pending-build-records-review-E20261013dd277f9c/S001/LLD.md` — **insrc-build** (2026-10-13T19:32:22.380Z)

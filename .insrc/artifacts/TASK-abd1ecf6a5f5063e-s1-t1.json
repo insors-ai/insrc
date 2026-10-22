@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d889c9a-cc61-4a2a-b956-50823c6c5631",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.713Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Standalone brainstorm context type",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "377b62e96ead7bb74afd201517c0fbd8429bcc52369247651767edd649a69a95",
+        "at": "2026-10-22T12:44:06.713Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.714Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Standalone brainstorm context type",
+    "summary": "Create src/workflow/runners/brainstorm/standalone.ts exporting StandaloneBrainstormContext { readonly focus: string }, a peer of design-story's StandaloneStoryContext (standalone.ts:23), for invoking brainstorm outside an Epic with just a rough focus string.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "standalone.ts exports StandaloneBrainstormContext with exactly one required field, focus: string, mirroring the shape of design-story's StandaloneStoryContext",
+      "compiles cleanly under strict TS / exactOptionalPropertyTypes with no optional-field handling needed since focus is required"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "StandaloneBrainstormContext accepts a bare focus string (peer of StandaloneStoryContext)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

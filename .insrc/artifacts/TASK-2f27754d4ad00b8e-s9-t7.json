@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d9ed22f5-062a-41d3-a35f-0a7be2004d12",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.767Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Rename rule for uppercase story ids",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b028034c24208981b7ae4d329aa1e8ea9c94bb56be4f634348e488998b9cd52c",
+        "at": "2026-10-22T12:43:22.767Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.768Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rename rule for uppercase story ids",
+    "summary": "Add src/workflow/convert/rename.ts: build the rename map first (S001 to s1 through ArtifactIds), check each target against existing files and other renames, rename the files and rewrite the references in structured fields, list references in prose; leave no alias. Test src/workflow/convert/__tests__/convert-ids.test.ts.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Uppercase story ids are renamed once and every structured reference is rewritten",
+      "A collision is a plan problem and no rename is applied",
+      "References in prose are listed in the report"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

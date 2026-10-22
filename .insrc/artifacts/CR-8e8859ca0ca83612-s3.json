@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "8e8859ca0ca83612",
     "storyId": "s3",
-    "epicSlug": "vs-code-dev-chat-ux-polish"
+    "epicSlug": "vs-code-dev-chat-ux-polish",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "7ba75fc62e17fdc8e481580b999055fd7a8b436564f7103d5bf0d617b89a933b",
+        "at": "2026-09-29T13:45:08.407Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5ec55f1c-7c6a-4406-8b98-428bf3b5410e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.013Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delivery client",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cf1cc5e3d80cf0feb41c8302e99bc8d2005bbd23ff1bc6a1572cdd947b28577",
+        "at": "2026-10-22T12:43:41.014Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.014Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delivery client",
+    "summary": "createDeliveryClient over an rpc function, the workspace repo and two deadlines: snapshot() and evidence(artifactId) send repo in every request, race the deadline, never reject, and classify outcomes into no-workspace, daemon-unavailable, timed-out and read-failed, rejecting a snapshot whose schemaVersion is not 1. It needs only t1's re-exported types, not its labels.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "snapshot() sends workflow.delivery with { repo } and evidence() sends workflow.deliveryEvidence with { repo, artifactId }; nothing is sent when repo is null.",
+      "Each failure kind is produced by its documented condition, and neither method ever rejects.",
+      "A never-settling rpc yields timed-out after the deadline, and its late answer is ignored.",
+      "Wired to the daemon's real handleDelivery over a temporary git repository, repeated snapshot() calls change no file under the repository and leave git status and HEAD unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "delivery-client.test.ts: 'snapshot and evidence send the workspace repo and nothing is sent without a workspace'"
+      },
+      {
+        "level": "unit",
+        "name": "delivery-client.test.ts: 'the client classifies a missing workspace, a stopped daemon, a daemon error, a timeout and an unknown schemaVersion into their own failure kinds'"
+      },
+      {
+        "level": "integration",
+        "name": "delivery-client.test.ts: 'opening and refreshing against a temporary git repository leaves the store, docs and git untouched'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

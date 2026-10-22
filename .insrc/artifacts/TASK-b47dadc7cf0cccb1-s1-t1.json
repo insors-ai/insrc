@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fe07415-c835-4277-a483-5c7da7c6970f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.252Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Both build prompts ask for the Insrc-Story trailer",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c6c4bb2cb974964d98e0ffa1c065b60e2b3a1e8f78edf2f6bec29a37d74052c",
+        "at": "2026-10-22T12:44:18.252Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.253Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Both build prompts ask for the Insrc-Story trailer",
+    "summary": "Add the trailer rule `Insrc-Story: {{epicHash}}/{{storyId}}` to the commit step of src/prompts/build/implement-task.md and render epicHash in src/daemon/steps/build-step/render.ts; add epicHash to StandaloneBuildSpec and the trailer rule to renderStandaloneImplementPrompt (src/daemon/steps/build-step/render.ts:183-199), supplied by its caller (src/daemon/steps/build-step/phases/implement.ts:171). From this task on, every commit of this Story carries `Insrc-Story: b47dadc7cf0cccb1/S001` (written by hand until the installed daemon serves the new prompt).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The rendered task prompt asks for `Insrc-Story: <epicHash>/<storyId>` with the Story's real epicHash and storyId.",
+      "The rendered no-plan standalone prompt asks for the same trailer with the standalone Story's epicHash.",
+      "The subject-line format is unchanged.",
+      "The existing render and standalone-implement tests pass, updated only where they assert the commit step.",
+      "This task's commit carries `Insrc-Story: b47dadc7cf0cccb1/S001`."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId'"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash'"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/build-step/__tests__/render.test.ts (existing, still passes)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

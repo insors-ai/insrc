@@ -27,204 +27,6 @@
       "AMD-c2ba6fa62a148ed1-1"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ac2's second measure ('one function reached only through a re-exporting file, named in the design with its text-search count') is designed: stripReviewSection with 4 callers through src/workflow/review/index.ts",
-          "evidence": "DEF.md:167 requires a named re-exported function with a text-search count. src/workflow/review/index.ts:42 `export { reviewArtifactFile, stripReviewSection, REVIEW_SECTION } from './run-artifact.js'`; the callers are start.ts:72, findings.ts:90 and verdicts.ts:92 (src/daemon/steps/review-step/phases), all importing from the barrel, plus run-artifact.ts:84 in the same file, so 4 in total. runGrepSearch callers: grep.ts:222, probe.ts:62, config-trace.ts:104 and search-text.ts:104, so 4 in total, as the LLD states. [files: src/workflow/review/index.ts, src/workflow/review/run-artifact.ts, src/daemon/tools/builtins/search/grep.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ac1 to ac4 of Story s1 are each designed (keep-awaiting rows, reindex from scratch, re-export resolution, completeness beside status)",
-          "evidence": "DEF.md:166-169 lists ac1-ac4 for s1. §2.1/2.3/2.9 (keep awaiting + Pass 0) cover ac1; §2.10 (fullIndex deletes then rebuilds) covers ac2; §2.9 Pass 1b + export_names cover ac3; §2.15-2.17 + 3.6 cover ac4. No s1 non-goal is built. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today upsertResolvedRelations silently skips an edge with a missing endpoint at debug, and promoteToResolved / promoteResolvedBatch delete the pending row even when the edge is skipped",
-          "evidence": "src/db/relations.ts:135-143 `if (fromU64 === undefined || toU64 === undefined) { skipped++; continue; }` and log.debug at :149; promoteToResolved :397-403 logs 'unresolved row still removed' then deleteUnresolvedRowInTxn at :403; promoteResolvedBatch :433-437 deletes unconditionally. [files: src/db/relations.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Pending rows without meta.file/meta.repo or of an unregistered repo are dropped at debug (:223-229, :253-263)",
-          "evidence": "relations.ts:223-228 'unresolved relation missing meta.file/meta.repo -- dropping' (debug); :253-262 'upsertUnresolvedRelations: repo not registered; dropping' (debug). [files: src/db/relations.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The per-file resolver resolves a relative import to the file id whenever the file exists on disk; the TS parser emits nothing for re-exports; DEPENDS_ON from the never-stored repo entity is skipped",
-          "evidence": "resolver.ts:104-110 makes `makeEntityId(repo, absPath, 'file', absPath)` resolved once resolveImportPath finds the file via existsSync (:145-151). typescript.ts:189-196 export_statement only recurses into childForFieldName('declaration'). index.ts:1095 repoEntityId = makeEntityId(repoPath,'','repo',repoPath), and upsertRelations at :1111 writes DEPENDS_ON with no meta, and no repo entity is upserted. [files: src/indexer/resolver.ts, src/indexer/parser/typescript.ts, src/indexer/index.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Pass 2 today resolves only INHERITS/IMPLEMENTS/CALLS, a call only into files reachable by stored IMPORTS edges, and writes meta only for ambiguous rows (via updateUnresolvedMetaBatch, which REPLACES meta)",
-          "evidence": "cross-file-resolver.ts:306-313 handles only INHERITS/IMPLEMENTS/CALLS and skips other kinds; :488-498 importedFiles from prefetchImportsByFile, then `if (!importedFiles.has(e.file)) continue`; :343 updateUnresolvedMetaBatch(ambiguousUpdates). relations.ts:453 `{ ...row, meta, attemptedAt }`, a replace. The callers build `{ ...row.meta, candidates }` (:433, :454, :484, :504), as the LLD states. [files: src/indexer/cross-file-resolver.ts, src/db/relations.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Reused: deleteEntitiesForRepo already removes vectors, doc summaries and the exploration cache, and every entity delete goes through detachDeleteEntitiesInTxn (the place export_names upkeep is added)",
-          "evidence": "entities.ts:560-583 calls detachDeleteEntities, deleteEntityVecsForRepo, deleteDocSummariesForRepo and deleteCachedExplorationsForRepo. detachDeleteEntities :1087 `withWriteTxn(s => detachDeleteEntitiesInTxn(s, u64s))`; reindexFile :485 calls detachDeleteEntitiesInTxn; deleteEntitiesById :557 and deleteEntitiesForFile :525 go through detachDeleteEntities. The InTxn body at :1099-1135 sweeps both directions and then removes the id maps, so adding the export_names removal before :1130 is feasible. [files: src/db/entities.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Reused: the EXPORTS kind already has byte 7, and a 'repo' entity kind byte exists, so storing the repo entity and writing EXPORTS needs no new byte",
-          "evidence": "src/db/graph/keys.ts:29 `EXPORTS: 7,`; keys.ts:69 `repo: 1,` (entity kind). listEntityFilesForRepo (entities.ts:813) skips filePath '' rows, so the new file-less repo entity is not removed as 'absent' by reconcileRepo inside fullIndex. [files: src/db/graph/keys.ts, src/db/entities.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "promoteResolvedBatch has exactly three callers (cross-file-resolver.ts:335, external-endpoints.ts:142, messaging-endpoints.ts:141), all ignoring its return value",
-          "evidence": "Grep of non-test src: only cross-file-resolver.ts:335 `await promoteResolvedBatch(opts.db, promotes);`, external-endpoints.ts:142 and messaging-endpoints.ts:141 `if (promotes.length > 0) await promoteResolvedBatch(opts.db, promotes);`. [files: src/indexer/cross-file-resolver.ts, src/indexer/external-endpoints.ts, src/indexer/messaging-endpoints.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The deleteUnresolved* call-site inventory is complete (index.ts:787, :1043, entities.ts:539, index.ts:559, daemon/index.ts:572, repos.ts:193), and the indexer's resolved writes are only the per-file write, the manifest DEPENDS_ON and the Pass 1 rewire",
-          "evidence": "Grep finds exactly those deleteUnresolved* sites. upsertRelations( callers in non-test src: cross-file-resolver.ts:242 (Pass 1 rewire, no meta, :243), index.ts:1071 (per-file) and index.ts:1111 (DEPENDS_ON); promoteToResolved has no production callers. [files: src/db/relations.ts, src/indexer/index.ts, src/db/entities.ts, src/daemon/index.ts, src/db/repos.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "graphCompleteness has 19 call sites in 14 files with params {returned, found?, limited?, skipped?, partlyRead?, rule?}; the executor builds ExplorationRunnerContext at three places",
-          "evidence": "Grep of `graphCompleteness(` outside tests: 19 calls across usage-example(2), manifests-locate, symbol-locate, concept-resolve, test-locate, import-graph(2), data-model-trace(2), class-hierarchy(2), convention-detect(2), adherence, discovery-entrypoints, discovery-modules, surface-functional and structure-module-tree, which is 14 files. completeness-facts.ts:66-74 shows exactly those params. executor.ts:213, :519 and :581 build `const ctx: ExplorationRunnerContext`, which the LLD gives as 'around :216, :522, :584'. [files: src/analyze/explore/completeness-facts.ts, src/analyze/explore/executor.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A V4->V5 step run by runMigrations rolls back with the version write on failure, and a v5 store is refused by an older daemon with LmdbStoreSchemaVersionMismatch",
-          "evidence": "migrations.ts:442-448 `store.root.transaction(async () => { await step.run(store); await store.meta.put(META_SCHEMA_VERSION, step.to); })`. store.ts:611-613 `else if (stored > SCHEMA_VERSION) { await root.close(); throw new LmdbStoreSchemaVersionMismatch(...) }`. SCHEMA_VERSION = 4 at store.ts:128; MIGRATIONS ends with MIGRATION_V3_TO_V4 (migrations.ts:406-409). Sub-DBs are opened in getGraphStore before the version check (store.ts:~593), consistent with opening the new ones there. [files: src/db/graph/migrations.ts, src/db/graph/store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The LLD does not take over s2's file-commit work or s3's single entity remove function: export_names upkeep is added inside the existing detachDeleteEntitiesInTxn, and incoming-edge return-to-pending is limited to cross-repository edges at repository reindex",
-          "evidence": "Adjacent scope lists s2 as owning 'incoming relationships of a removed entity returned to pending' within the file commit, and s3 as owning one put/remove function. §3.3 places the cleanup in detachDeleteEntitiesInTxn (entities.ts:1099), which exists today, and says s3 consumes it unchanged. §2.13 adds returnIncomingToPending only on deleteEntitiesForRepo (entities.ts:560) for other repositories' edges. The file-event path (index.ts:784-787) and reindexFile (:485) are left as they are. [files: src/db/entities.ts, src/indexer/index.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A daemon crash mid full index is detectable at start-up and re-queued by extending the existing start-up rule (index.ts:286-300); a failing cross-file pass propagates to status 'error' as today",
-          "evidence": "index.ts:287-300 enqueues `{ kind: 'full' }` for status pending, error, or indexing without lastIndexed, so it can be extended with an IndexState check. fullIndex :706-707 awaits runCrossFileResolver inside the try, and the catch at :760-764 writes status 'error' with lastRunOf('failed'). The endpoint passes have their own try/catch at :715-734, where endpointPassFailed would be set. indexFile returns false on a read failure (:1028-1029) and fullIndex counts it only as skipped (:655-656), as the LLD states. [files: src/indexer/index.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each s1 acceptance criterion (ac1-ac4) maps to at least one named test, with mutation checks for ac1, ac3 and ac4 and a smoke measure for ac2",
-          "evidence": "The §7 acceptance mapping table lists ac1 (first-index-order.test.ts + relations-awaiting-target.test.ts + mutation), ac2 (integration hand-deleted edge + smoke runGrepSearch=4 / stripReviewSection=4), ac3 (reexport-callers.test.ts + typescript-reexports.test.ts + export_names mutation) and ac4 (index-state.test.ts, repo-completeness.test.ts, plugin contract tests, completeness-all-lookups.test.ts). These match DEF.md:166-169. completeness-all-lookups.test.ts, which the LLD extends, exists (src/analyze/explore/__tests__/completeness-all-lookups.test.ts:58). [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, src/analyze/explore/__tests__/completeness-all-lookups.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 15,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-14T08:37:49.207Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-14T08:41:27.869Z",
     "questionResolutions": {
       "qf111c4f4": {
         "question": "sc1 amendment (proposed in s4): sharedContract.fieldAdd reasonCounts { unwritable, awaiting } on IndexState, so completeness can name each cause with its count. Additive; s1 owns sc1. It must be approved with this LLD [c19].",
@@ -248,8 +50,62 @@
         "resolvedAt": "2026-10-14T08:46:10.872Z"
       }
     },
-    "staleAckedAt": "2026-10-14T08:46:40.256Z",
-    "staleAckedReason": "Stale only because AMD-c2ba6fa62a148ed1-2 was approved after this LLD on 2026-10-14; the LLD itself proposed AMD-2 and already designs its field (IndexState.reasonCounts), so the amended HLD changes nothing it relies on. Both approved together by the stakeholder."
+    "staleAckedReason": "Stale only because AMD-c2ba6fa62a148ed1-2 was approved after this LLD on 2026-10-14; the LLD itself proposed AMD-2 and already designs its field (IndexState.reasonCounts), so the amended HLD changes nothing it relies on. Both approved together by the stakeholder.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cb4df6a0c9efe895f01cb5b0f575df1089ab762299af868be533823558eac8b9",
+        "at": "2026-10-14T08:37:46.877Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T08:41:27.869Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 15
+        },
+        "at": "2026-10-14T08:37:49.207Z",
+        "report": {
+          "entityId": "LLD-c2ba6fa62a148ed1-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-c2ba6fa62a148ed1-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -1540,48 +1396,6 @@
         "kind": "diagram-mermaid",
         "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/er-model.html",
         "title": "ER model"
-      }
-    ],
-    "feedback": [
-      {
-        "id": "79b127bb",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-18T04:21:08.617Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
-        },
-        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t8: a resolved relative IMPORTS carries the target file's absolute path as meta.targetFile, written by the per-file resolver (src/indexer/resolver.ts). The cross-file pass's file-target classification (section 2.9: 'not-code' -> 'no-candidate' with reason 'target-not-code'; 'excluded-by-ignore' / not stored -> stays 'awaiting-target' with reasons 'target-excluded-by-ignore' / 'target-not-committed') needs the path of a file that is not stored. A pending row holds only the file's entity id, a hash of the path that cannot be reversed, and the design named no source for the path. The keep-awaiting writer keeps the rest of the meta, so the path rides on the row; edges store no meta. t8's scope therefore includes this change to src/indexer/resolver.ts.",
-        "kind": "feedback"
-      },
-      {
-        "id": "60830321",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-18T04:22:17.590Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
-        },
-        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t8, on the check 'after a settle that adds a call to JSON.parse, the row is no-candidate and a complete repository stays complete'. The TypeScript parser records no CALLS row for JSON.parse(...): parse is on its built-in method list, which exists so that a built-in call is never matched by name to a method of an imported class (JSON.parse in a file importing a parser would otherwise resolve to TypescriptParser.parse, a wrong edge). The check is met by its outcome: a built-in call creates no row and cannot make a complete repository incomplete, and an unresolvable library call (the case the check is after) is classed 'no-candidate' with reason 'no-match' in every mode. The parser keeps the built-in list; src/indexer/__tests__/cross-file-modes.test.ts asserts both.",
-        "kind": "feedback"
-      },
-      {
-        "id": "4b37ae56",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-18T05:09:20.259Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
-        },
-        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t11. A full index deletes the repository's rows before it writes them again (section 2.10), so while it runs an entity of that repository is not stored and a search request naming it by id (search.callers, entity.closure, ...) could not be traced to its repository: Story s5's guard (src/daemon/search-guard.ts) read the entity's repository and, finding none, answered the request (an empty, partial answer) instead of refusing it with 'repo-indexing'. Decision: a request naming an entity that is not stored is refused for every repository whose status is 'indexing' (the guard's own ensureRepoQueryable refusal, naming that repository); with none being indexed it is answered as before. Repositories whose last index ended in an error are not included, so an unknown id is not refused indefinitely. Accepted cost: an id that is genuinely unknown is also refused while some repository is being indexed. t11's scope therefore includes src/daemon/search-guard.ts.",
-        "kind": "feedback"
-      },
-      {
-        "id": "7d710d42",
-        "author": "Subho Ghosh (stakeholder decision, recorded by the controller)",
-        "timestamp": "2026-10-18T14:04:02.653Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
-        },
-        "comment": "Stakeholder decision 2026-10-18 (option A) on t17's check 'The doc-summarise-repo job for this repository completes and its summary count after the reindex equals the count before (or the difference is explained in smoke.md)': the job's completion is NOT awaited. The rebuild's summary loss was fixed by ISSUE-dced4385 (COMPLETE @57f8d110): 10,996 of this repository's 11,412 summaries restored and kept across a later reindex; the 416 difference is explained in S001/smoke.md (46bc01b4). The sweep is still running (2,292 of 15,384 entities at 13:59 UTC, about 4,300 sections without a summary, about 40 h of local-model work). The t17 validate verdict that fails this check literally is accepted; s1's BUILD approval needs an override citing this decision.",
-        "kind": "feedback"
       }
     ]
   },

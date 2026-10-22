@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79759419-03c9-4998-b9a7-d4c3bc221eaf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.005Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "DaemonLifecycleService — sc1-triggered orchestration + single-flight, registered at app start",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f902e725577e72a356b4aa11e3a33bab20472007b371b8eb64a97434e8b7c1bb",
+        "at": "2026-10-22T12:43:40.005Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.006Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "DaemonLifecycleService — sc1-triggered orchestration + single-flight, registered at app start",
+    "summary": "Wire the pieces: a DaemonLifecycleService implementing PluginLifecycle.onProjectOpened(ctx) (sc1 consumer, off-EDT) that probes sc2, calls decide(state, consent), and for OfferSetup prompts a single one-click IDE action (records consent on accept) / for RunSilently runs directly; the action resolves the NodeRuntime (t4->t5) and invokes DaemonProvisioner (t6), surfacing the outcome as an IDE notification (non-modal for silent failures). A single-flight guard serialises concurrent project-open triggers so the app-scoped daemon is never double-installed. Registered as a broadcaster consumer in InsrcAppLifecycle.appStarted (mirroring S002's McpWiringLifecycle).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "on project open with ABSENT/STALE + no consent, exactly one one-click OfferSetup is surfaced and nothing auto-runs; accepting records consent (ac1)",
+      "after consent, a later open with STALE runs the update via the provisioner with NO prompt (ac2); CURRENT -> no prompt, no provisioner call",
+      "a silent (consented) failure surfaces a non-modal notification (never a silent breakage); a failed install/update leaves the daemon absent/stale for re-offer on the next open",
+      "concurrent project-open triggers are serialised by a single-flight guard (no double-install); the service runs off the EDT and is registered in InsrcAppLifecycle.appStarted; it never calls registerProject (S005) or touches sc3 (S002)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "DaemonLifecycleServiceTest#absentNoConsent_surfacesOfferSetup_doesNotAutoRun (ac1, IntelliJ fixture)"
+      },
+      {
+        "level": "integration",
+        "name": "DaemonLifecycleServiceTest#afterConsent_staleOpen_runsUpdateSilently_noPrompt (ac2); current_doesNothing"
+      },
+      {
+        "level": "integration",
+        "name": "DaemonLifecycleServiceTest#registeredAsBroadcasterConsumer_runsOffEDT"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonLifecycleServiceTest#singleFlightGuard_secondConcurrentTrigger_doesNotLaunchSecondInstaller"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

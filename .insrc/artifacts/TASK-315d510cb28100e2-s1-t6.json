@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cb980c85-1dce-42c7-bbb2-90c5e250cb49",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.789Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the issueOps group to the adapter",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec4d180f417027a4625be6789fc671747237a5b0400b8e079e26f4d565029eba",
+        "at": "2026-10-22T12:43:24.789Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.790Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the issueOps group to the adapter",
+    "summary": "Implement IssueOps on the adapter: create returning the CreatedIssue shape, linkSubIssue taking the numeric child id, close, comment, readBody, writeBody, ensureLabel keeping its boolean, ensureMilestone keeping its swallow and attachMilestone, each running the same gh argv as its wrapper, with port.createIssue wrapping issueOps.create.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Each issueOps operation runs the same gh argv as its wrapper, compared with a recording fake gh",
+      "Epic, Story and Task specs produce the same labels, issue type and parent link as the current calls, and a failed parent link does not fail the create",
+      "ensureLabel returns false on failure, ensureMilestone swallows a failed create and closing a closed issue succeeds"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Epic create parity with ghCreateIssueTyped"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Story create and Epic parent link parity"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Task create and Story parent link parity"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

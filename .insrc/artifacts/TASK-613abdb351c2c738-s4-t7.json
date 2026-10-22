@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed6eff65-cd4b-4445-8f24-996a01e7c05e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.491Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Retry-now: worker action, host handling and the retrying row in the webview",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "90006ccc85c08f3bf31f7ede6e42b8c94daf6d1bed17d0dec66ab76aa4c2b3a4",
+        "at": "2026-10-22T12:43:38.491Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.491Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retry-now: worker action, host handling and the retrying row in the webview",
+    "summary": "Add 'retry-now' to the worker's act (retryNow then an immediate tick; refused with a note on any other row); handle outbox-retry-now in the chat host's outbox action switch beside cancel, dismiss and resend; in the webview script draw, for a retrying row, 'attempt n of 3', a countdown to nextAttemptAt that ticks, a retry-now button and the existing cancel button; the chat-outbox projection already carries attempt and nextAttemptAt. This task also carries the worker-level test of the whole retry progression against the real store (a retrying head is held until due, then runs; three failed retries end failed and the next message runs), so it is not lost.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note",
+      "outbox-retry-now from the webview reaches the worker with its seq and re-posts the outbox with any refusal note",
+      "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and cancel still removes it",
+      "a worker holds a retrying head until due and then runs it; three failed retries end failed and the next message runs"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a retrying head is not taken before its due time, holds the queue behind it, and runs when due"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a message that fails three infrastructure retries ends failed and the next message runs"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note"
+      },
+      {
+        "level": "unit",
+        "name": "chat-outbox.test.ts: a retrying row carries attempt and nextAttemptAt"
+      },
+      {
+        "level": "unit",
+        "name": "chat-shell.test.ts: a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -12,7 +12,26 @@
     "storyId": "s1",
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
-    "epicSlug": "one-common-model-every-artifact"
+    "epicSlug": "one-common-model-every-artifact",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d245ea324d843045f09a6d6cefc74063a57cf5da8f4279628708bff29f152a9e",
+        "at": "2026-10-20T15:19:12.462Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

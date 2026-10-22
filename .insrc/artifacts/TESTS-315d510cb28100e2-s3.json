@@ -6,7 +6,26 @@
     "createdAt": "2026-10-17T16:53:11.562Z",
     "updatedAt": "2026-10-17T18:36:28.181Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
-    "epicSlug": "team-signoff-claim-based-workflow"
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "ba1290a4ea8bd348df0ce3e536b9b7e174ae504f9e63006d6c1cb627291fa8b9",
+        "at": "2026-10-17T16:53:11.562Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e38ab29a-ce70-4c08-84de-dbce47c4022c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.976Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add integration suites and the shared cross-operation ac3 conformance assertion",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c3ee7bbe8a51be445b603a2dd2bac636e41daf2c4b175fddba5333a9288ef67",
+        "at": "2026-10-22T12:43:42.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.977Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add integration suites and the shared cross-operation ac3 conformance assertion",
+    "summary": "Integration and contract levels, and the sole proof of ac3. Integration: drive the workflow.run stream handler via the existing `stream` method in src/daemon/__tests__/workflow-rpc.test.ts:42, and add an analyze-side suite in a new kebab-case `*.test.ts` file under src/daemon/__tests__/ matching its neighbours; each captures a full `sent` array. Contract: one shared `assertProgressEvent(data)` validator applied to BOTH captured streams, asserting kind ∈ {'stage','token'}, operation ∈ the closed ProgressOperation union, every field of the discriminated variant present and non-undefined, that the observed key sets per `kind` are exactly equal between the two operations (no operation-specific extra or missing field), and that the payload/frame discriminant pairing holds in both directions. Include the negative branch bounding the k1 uniformity claim to the two in-scope operations: a raw-shaped frame standing in for a todos-rpc.ts:1146 / tools/types.ts:56 emission fails the consumer narrow `typeof data === 'object' && data !== null && (data.kind === 'stage' || data.kind === 'token')`, is ignored for progress rendering, passes through untouched, and never throws or tears down the stream. The CLI-no-token case uses a provider stub, not a live INSRC_LIVE_TESTS run.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "assertProgressEvent passes for every frame in the captured workflow.run stream and the captured analyze.run stream, fed through one table-driven conformance test.",
+      "The per-`kind` payload key sets from the two operations are asserted exactly equal; adding an operation-specific field to either adapter fails the test.",
+      "Every stream==='progress' frame from an in-scope operation carries kind==='stage' and every stream==='delta' from an in-scope operation carries kind==='token', asserted in both directions.",
+      "A raw-shaped out-of-scope frame fails the consumer narrow, is ignored for rendering, passes through untouched, and neither throws nor terminates the stream.",
+      "A CLI-provider-stub run asserts stage frames throughout and zero TokenProgressEvents, with token silence documented in the test as valid rather than a stall.",
+      "The new analyze-side test file is kebab-case under src/daemon/__tests__/ and the full sweep `npx tsx --test 'src/**/__tests__/*.test.ts'` is green."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "progress-contract: the shared assertProgressEvent(data) validator — kind ∈ {'stage','token'}, operation ∈ the closed ProgressOperation union, every field of the discriminated variant present and non-undefined — passes for every frame of both captured streams"
+      },
+      {
+        "level": "integration",
+        "name": "progress-contract: the observed payload key sets per `kind` are asserted exactly equal between workflow.run and analyze.run; an operation-specific extra or missing field fails the test"
+      },
+      {
+        "level": "integration",
+        "name": "progress-contract: discriminant pairing asserted in both directions — every in-scope stream==='progress' frame carries kind==='stage' and every in-scope stream==='delta' carries kind==='token'"
+      },
+      {
+        "level": "integration",
+        "name": "progress-contract negative branch: a raw-shaped frame standing in for a todos-rpc.ts:1146 / tools/types.ts:56 emission fails the consumer narrow, is ignored for rendering, passes through untouched, and neither throws nor tears down the stream"
+      },
+      {
+        "level": "integration",
+        "name": "progress-contract: both captured `sent` arrays — workflow.run via the existing `stream` method at workflow-rpc.test.ts:42 and analyze.run via the new kebab-case suite under src/daemon/__tests__/ — feed one table-driven conformance test, with the CLI-no-token case served by a provider stub rather than a live run"
+      },
+      {
+        "level": "unit",
+        "name": "progress-contract type-level: a tsc-compiled fixture assigns each adapter's return type to ProgressEvent and exhaustively switches on `kind` with a never-check, proving structural identity with the sc1 sketch"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5732c77-3d01-433a-8495-6808b4bf8cdc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:46.641Z",
+    "epicCreatedAt": "2026-09-26T11:44:45.049Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dfc0371b7200f5b5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rebuild + verify (tsc clean, asset copy, targeted sweep)",
+      "parent": {
+        "entityId": "STORY-dfc0371b7200f5b5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dfc0371b7200f5b5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dfc0371b7200f5b5-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "313230cd7c809f84c2a7938299c671e11135e02c212a018385105807ac4e9821",
+        "at": "2026-10-22T12:44:46.646Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:46.647Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rebuild + verify (tsc clean, asset copy, targeted sweep)",
+    "summary": "Run npm run build so tsc compiles and copy-assets.mjs propagates the updated steering-block.md to out/ (+ plugin copies). Verify tsc --noEmit is clean and run the targeted test subsets (workflow + mcp + daemon) green. This is the final integration/verification task.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "npm run build succeeds; the bugfix marker section is present in the copied out/prompts/steering-block.md.",
+      "tsc --noEmit is clean.",
+      "The workflow + mcp + daemon test subsets pass."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "npm run build + targeted workflow/mcp/daemon test sweep both green; bugfix marker present in out/prompts/steering-block.md"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

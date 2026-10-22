@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fc4bbda5-8363-4b80-8853-05e2d2fc8bb2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.539Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add McpRegistrationReader + McpHostStatusDto (detectPresent fold + mcpServers.insrc read)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "08b88fba9233855c3d4c6947aecd5f7418e3380551b8595a8cabb706dc565e26",
+        "at": "2026-10-22T12:43:34.539Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.540Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add McpRegistrationReader + McpHostStatusDto (detectPresent fold + mcpServers.insrc read)",
+    "summary": "Add jetbrains-plugin/.../debug/McpRegistrationReader.kt (+ McpHostStatusDto{kind:AiHostKind,present:Boolean,registered:Boolean}) as a pure fold over an injected detectPresent:()->List<AiHost> + an injected isInsrcRegistered:(mcpConfigPath)->Boolean (default = a small mcpServersInsrcPresent Gson key-read: true iff mcpServers.insrc present; per-host swallow -> registered=false). detectPresent failure -> empty list; never throws. Per the s3 critique, the default detectPresent provider MUST bind to the REAL AiHostAdapter host-detection accessor resolved at build time (grep the actual service class / AiHostAdapterImpl / companion) — the LLD's `service<AiHostAdapterService>()` is a placeholder; the injected-seam shape (detectPresent:()->List<AiHost>) stays unchanged so the reader is testable regardless of what the default resolves to.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "read() returns one McpHostStatusDto per detected host (present=true) with registered = mcpServers.insrc present in mcpConfigPath, in detectPresent() order",
+      "A per-host unreadable/malformed config folds to registered=false (not a throw); a detectPresent() failure yields an empty list",
+      "The default detectPresent provider is bound to the REAL resolved AiHostAdapter accessor (not the placeholder service name) and the module compiles; read-only — no host file written, no reach into JsonMcpConfigWriter private internals (k3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "McpRegistrationReaderTest.perHostRegisteredFromMcpServersInsrc (injected detectPresent [AI_ASSISTANT,JUNIE] + temp JSON present/absent -> registered true/false, detectPresent order)"
+      },
+      {
+        "level": "unit",
+        "name": "McpRegistrationReaderTest.foldsFailuresNeverThrows (malformed/unreadable config -> registered=false; detectPresent failure -> empty list)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

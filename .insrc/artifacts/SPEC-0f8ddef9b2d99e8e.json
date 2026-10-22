@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "0f8ddef9b2d99e8e",
     "epicSlug": "build-vscode-extension-insrc-mirrors-what",
-    "approvedAt": "2026-09-21T16:23:20.687Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-09-21T15:20:45.266Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "78b47c7af22d7594e40e277fe19444ba12a20b756dfd64bd0165c9f92f886285",
+        "at": "2026-09-21T15:20:45.266Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T16:23:20.687Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

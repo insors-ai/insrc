@@ -21,159 +21,58 @@
     "epicHash": "8315a11f29fd2812",
     "epicSlug": "chunked-review-pipeline-every-review",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The five Stories cover the approved definition's shared pipeline, coherent chunks, neighbour summaries, complete gather, and controller execution.",
-          "evidence": "DEF-8315a11f29fd2812 assigns these responsibilities to S001–S005, including S003/ac4's installed-daemon smoke. The HLD preserves that allocation and explicitly includes the smoke, whole-atom handling, bounded gather, identifiers, and size-refusal replanning. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Daemon code review preserves serial dimension execution, skips adherence's model call without an approved contract, and isolates diagram handler failures as LOW observations.",
-          "evidence": "runCodeReview awaits each effective judge in a for-of loop. judgeAdherence returns empty findings when both approvedLld and approvedPlan are null. judgeDiagram catches each handler separately and emits severity 'LOW', confidence 'observation'. [files: src/workflow/code-review/runner.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Premise verification is per claim on the daemon and batched on the controller; HLD/LLD review uses a reviewer session.",
-          "evidence": "runReview iterates claims and awaits verifyOrRecord. handleClaims builds one batched prompt containing every claim's evidence. runTemplateReview calls runReviewSession with the repository cwd and remaining review deadline. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/daemon/steps/review-step/phases/claims.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing ReviewJob and packIntoBatches provide reusable serial execution, whole-atom packing, and refusal replanning.",
-          "evidence": "packIntoBatches measures the built prompt and throws AtomTooLargeError naming an oversized item. ReviewJob stores pending calls and carried symbol/context IDs; applyRefusal replans the refused material under a smaller budget, and runReviewJob executes calls serially. Production searches found these helpers are not yet wired into the dimension judges, so adoption remains necessary. [files: src/workflow/code-review/pack-into-batches.ts, src/workflow/code-review/review-job.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/adherence.ts]",
-          "action": "Reuse the helpers while explicitly wiring the existing judges into the new pipeline.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed identifier envelope is accepted live by both CLI providers.",
-          "evidence": "CliProvider rejects root unions and supports object schemas, but this does not establish acceptance of every nested adapter schema. No live envelope probe was run. The attempted insrc analysis itself failed because its provider rejected an unrelated response schema. [files: src/agent/providers/cli-provider.ts]",
-          "action": "Keep the specified live probes as a prerequisite to adapter rollout, using actual review schemas.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Saved subject plus today's code-review grounding contains everything needed to preserve deterministic stages without further filesystem queries.",
-          "evidence": "judgeUx checks companion existence at execution time: 'if (!existsSync(abs))' produces a missing-mock breach. CodeReviewGrounding and the saved subject do not capture those existence results. Merely wrapping today's judge violates the immutable-snapshot rule; removing the read loses an existing review criterion. [files: src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/types.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Capture UX companion existence during preparation and pass that evidence to the deterministic stage. Test that adding or removing a mock after preparation cannot change the review result.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Adding the controller answers phase requires MCP input-schema and schema-registry changes.",
-          "evidence": "server.ts currently admits ['start', 'claims', 'verdicts', 'findings'] for review and ['start', 'judgements'] for code review. schema-registry.test.ts independently enumerates those accepted phases. S005 identifies both boundaries. [files: src/mcp/server.ts, src/mcp/__tests__/schema-registry.test.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Controller state is memory-only, and preserving the optional parts field avoids changing its existing stored shape.",
-          "evidence": "Both state stores use module-local Map instances and explicitly report that daemon restarts lose runs. DimensionResult.parts is optional with exactly { map, reduce, compare }. Keeping it unchanged and introducing a separate optional field does not require rewriting older records. [files: src/daemon/steps/review-step/state-store.ts, src/daemon/steps/code-review-step/state-store.ts, src/workflow/code-review/types.ts]",
-          "action": "Retain legacy-record fixtures when adding pipelineCalls.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Extracting a generic tool loop while retaining the analyzer wrapper respects the upstream exclusion of analyzer chunking.",
-          "evidence": "The DEF excludes 'Chunking the analyzer or other non-review model calls.' runShaperToolLoop currently builds analyzer-specific messages, invokes a read-only tool loop, then emits an AnalyzeContextBundle. The HLD leaves that wrapper's behavior intact and scopes chunk planning to reviews. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/analyze/context/driver.ts]",
-          "action": "Keep analyzer-specific final emission and configuration in its wrapper during extraction.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A premise verification failure after two attempts becomes a MED not-judged finding, whereas extraction failure aborts the review.",
-          "evidence": "verifyOrRecord loops from attempt 1 through 2, then returns severity 'MED' with 'Not judged: the reviewing model call failed twice'. extractClaims is awaited outside that recovery loop. verifyClaim sets VERIFY_CALL_TIMEOUT_MS to 180000. [files: src/workflow/review/review.ts, src/workflow/review/verify.ts]",
-          "action": "Preserve these policies and the per-premise timeout in the new driver.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every upstream Story acceptance criterion has an explicit proposed test in the HLD.",
-          "evidence": "Compared all 18 DEF criteria: S001/ac1–ac5, S002/ac1–ac3, S003/ac1–ac4, S004/ac1–ac3, and S005/ac1–ac3 each have corresponding HLD test descriptions. Existing schema-registry tests also provide the identified controller-phase regression seam. This verifies test planning, not implementation or passing results. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/mcp/__tests__/schema-registry.test.ts]",
-          "action": "Add the snapshot regression identified under change-sites.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 1,
-        "med": 0,
-        "low": 10,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-19T06:28:30.817Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-10-19T06:43:16.200Z",
-    "reviewOverride": {
-      "reason": "Approved by Subho Ghosh (option A, 2026-10-19). Two daemon review cycles plus one round (6 rounds in all); every HIGH and MED raised was fixed in the HLD. The last finding (ux companion-mock existence read from disk after prepare) was fixed exactly as the reviewer specified (fileFacts recorded in the material snapshot at prepare, with a test) and approved without a further round by stakeholder decision. The open unverifiable point (live acceptance of the identifier envelope by both CLIs) is an s1 prerequisite in the HLD.",
-      "at": "2026-10-19T06:43:16.193Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a1b1caed27a7d747d24517da409b83f241a1dd2d498fef3598c47713bef29561",
+        "at": "2026-10-19T05:59:06.295Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T06:43:16.200Z",
+        "override": {
+          "reason": "Approved by Subho Ghosh (option A, 2026-10-19). Two daemon review cycles plus one round (6 rounds in all); every HIGH and MED raised was fixed in the HLD. The last finding (ux companion-mock existence read from disk after prepare) was fixed exactly as the reviewer specified (fileFacts recorded in the material snapshot at prepare, with a test) and approved without a further round by stakeholder decision. The open unverifiable point (live acceptance of the identifier envelope by both CLIs) is an s1 prerequisite in the HLD."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 1,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-10-19T06:28:30.817Z",
+        "report": {
+          "entityId": "HLD-8315a11f29fd2812",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-8315a11f29fd2812-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

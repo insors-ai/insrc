@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791883410209-hfohe6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T09:23:30.209Z",
+    "model": "claude:opus",
+    "elapsedMs": 143938,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "epicSlug": "show-each-changed-section-turn-s",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "8cfca94fdc3023673d96822091878ecdc155e025aba94a1b623fa19ae4c39cb5",
+        "at": "2026-10-13T09:23:30.209Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-theme-before.json",
+        "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/codex-file-change-item.json",
+        "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
+        "vscode-plugin/src/chat/__tests__/edit-governor.test.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures.ts",
+        "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts",
+        "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
+        "vscode-plugin/src/chat/__tests__/live-cli.test.ts",
+        "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+        "vscode-plugin/src/chat/__tests__/real-git.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+        "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/diff-sections.ts",
+        "vscode-plugin/src/chat/edit-governor.ts",
+        "vscode-plugin/src/chat/git-baseline.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/session-store.ts",
+        "vscode-plugin/src/chat/stream-events.ts",
+        "vscode-plugin/src/chat/transcript-window.ts",
+        "vscode-plugin/src/extension.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/session-store.ts",
+            "message": "`createInMemoryChatSessionStore(deps?: { now?: () => string; genId?: () => string; maxSessions?: number })` declares three optional properties without the explicit `| undefined` the rule requires under exactOptionalPropertyTypes. Sibling signatures in the same changed set do carry it (e.g. `deriveChatTitle` opts `timeoutMs?: number | undefined`, `runTurn` opts, `attachHarness` opts). Line number not available: I judged from the symbol summary only (signature of entity 98509), and could not confirm whether this Story introduced the signature or it predates it.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
+            "message": "Test helper `makeStore(over: { fake?: FakeSessionFs; warns?: string[] } = {})` declares optional properties without `| undefined`. Other test helpers in the changed set follow the rule (`runShell(opts: { attach?: boolean | undefined })`, `harness(opts?: { gitAvailable?: boolean | undefined; diffView?: DiffView | undefined })`, `fake(..., opts?: { indexExists?: boolean | undefined })`). Line number not available (symbol summary only, entity 98546); may predate this Story.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+            "message": "Test helpers `toolCall(events): { tool: string; command?: string; mcp?: unknown } | undefined` and `toolResult(events): { output: string; command?: string; exitCode?: number } | undefined` declare optional properties in their return types without `| undefined`. Line numbers not available (symbol summaries only, entities 98458 and 98459); may predate this Story.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/live-cli.test.ts:166",
+            "message": "Present but unverified: both promised live tests exist (lines 166 and 194) but are gated on INSRC_LIVE_TESTS plus an installed claude/codex binary, and were skipped in my run of the plugin suite (8 skipped). Their pass-state cannot be confirmed here; the claude editPath result and the codex applied file-edit mapping are otherwise covered by the passing unit tests in cli-adapter.test.ts:1467 and :1501.",
+            "expectationRef": "live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section; live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "Unverified: the promised by-hand VS Code smoke (one widget per section, folded to 8 lines, updated in place, latest form after a window reload) has no automated counterpart and no build record attests it was performed. The same behaviour is exercised piecewise by passing tests (render-registry.test.ts:1160/:1210, chat-shell.test.ts:386/:458, chat-panel.test.ts:877/:1082), but the end-to-end manual check itself cannot be confirmed.",
+            "expectationRef": "By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:1",
+            "message": "Present but not fully met as worded: running the whole plugin suite (`npx tsx --test 'src/**/__tests__/*.test.ts'` in vscode-plugin) gave 1206 tests, 1191 pass, 2 fail, 5 cancelled, 8 skipped. The 2 failures are the two expected manifest-catalog tests. The 5 cancelled are all in src/__tests__/activation.test.ts (tests 2-6, 'Promise resolution is still pending but the event loop has already resolved'), reproducible when that file runs alone. That file and src/activation.ts were last touched on 2026-09-24 and are outside this Story's changed set, so this is not a regression from the Story, but the suite is not clean 'apart from the two manifest-catalog tests'. Every chat test this Story promised is present by its exact name and passed in this run. Caveat on grounding: the graph's testsReaching edges only record named helper functions, not the anonymous test() callbacks, so the empty edges on symbols such as parsePatch internals, reconcileSections, runCheck, settlePath, endDiffTurn and latestDiffVersions are a hollow-grounding artefact, not coverage gaps; I judged coverage from the run instead and raise no finding from those empty edges.",
+            "expectationRef": "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts:805",
+            "message": "The test helper `diff(over: Record<string, unknown>): TranscriptEntry` builds a diff transcript row from overrides, and the same builder with the same signature exists in transcript-window.test.ts:95 (also as `diffRow` in render-registry.test.ts:1152 and `diffRowMsg` in chat-shell.test.ts:381). Four independent copies of the diff-row shape can drift when the row's fields change; a single builder in `__tests__/fixtures.ts`, next to the already-shared `patchOf`, would remove that. Test-only duplication, so it does not block.",
+            "counterpartRef": "diff (vscode-plugin/src/chat/__tests__/transcript-window.test.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1121",
+            "message": "`runTurn` now carries the diff-turn lifecycle (openDiffTurn, pushMarker, pathLine, settlePath, settleHeld, endDiffTurn, warnGovernor) on top of streaming, approvals, titling and persistence — 16 distinct callees inside the `createChatPanelHost` closure, which itself has 57. The summaries show `endDiffTurn` reached from four exit paths (runTurn, handleMessage, wireChannel, the host), so the 'diff state ended on every exit' guarantee depends on each path remembering the call. Judged from the call edges only, not the body; no defect is shown, this is a maintainability observation.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 8
+    }
+  }
+}

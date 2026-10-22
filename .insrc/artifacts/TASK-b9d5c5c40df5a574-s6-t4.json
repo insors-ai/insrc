@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3acfbdfc-b431-43f0-b411-5bc9b139f02c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.165Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "The scope module: resolve a scope once",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf8983010757523db47b6db5050d69b1d7d30995e10b64b1bd586233370b422e",
+        "at": "2026-10-22T12:44:25.165Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.166Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The scope module: resolve a scope once",
+    "summary": "Add src/analyze/context/scope.ts with resolveScope, ResolvedScope and ScopeDeps (registered repos, entities by file, entities by repo, connections by repo). Rules: directory kinds keep their own directory as lookupPath; a file and a symbol use the containing registered repo; a symbol is '<absolute file path>#<name>', split at the last '#', and must match exactly one stored entity; a connection id must be declared by exactly one registered repo. A symbol outside any registered repo, with an empty registry, or in a repo with no stored entities fails as not indexed. Nothing calls it yet.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "resolveScope returns the stated fields for each of the seven kinds, with longest-prefix choice between nested repos",
+      "A module and a manifest directory inside a registered repo keep their own directory as lookupPath; making lookupPath the repo root makes this test fail",
+      "Symbol: no '#', no entity, two entities (both listed) fail with ScopeRefUnresolvedError; the three not-indexed cases fail with ScopeNotIndexedError",
+      "Connection: one repo resolves; none and two fail with ScopeRefUnresolvedError naming the repos; a connections file that fails to parse is reported, not skipped",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveScope for each of the seven kinds, with nested repos"
+      },
+      {
+        "level": "unit",
+        "name": "resolveScope symbol cases: split, no '#', none, two, '#' in the path"
+      },
+      {
+        "level": "unit",
+        "name": "resolveScope connection cases: one, none, two, unparseable connections file"
+      },
+      {
+        "level": "unit",
+        "name": "resolveScope directory kinds keep their own directory as lookupPath; a path in no repo gives repoPath null"
+      },
+      {
+        "level": "unit",
+        "name": "resolveScope symbol not-indexed cases: empty repo, no containing repo, empty registry"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

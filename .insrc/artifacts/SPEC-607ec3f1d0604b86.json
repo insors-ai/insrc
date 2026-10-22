@@ -19,21 +19,58 @@
     "schemaVersion": 1,
     "specHash": "607ec3f1d0604b86",
     "epicSlug": "integrate-insrc-framework-into-jetbrains-ide",
-    "review": {
-      "artifact": "brainstorm",
-      "stage": "brainstorm",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-17T10:36:47.272Z",
-      "model": "client"
+    "standalone": true,
+    "epicCreatedAt": "2026-09-17T10:33:50.175Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-17T10:37:38.291Z",
-    "standalone": true
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8c67cff3a747f897e3865d5a59f1c21750e309bdb386452852fcb80826dfd5b6",
+        "at": "2026-09-17T10:33:50.175Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-17T10:37:38.291Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-17T10:36:47.272Z",
+        "report": {
+          "entityId": "SPEC-607ec3f1d0604b86",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-SPEC-607ec3f1d0604b86-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

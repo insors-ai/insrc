@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "createdAt": "2026-08-05T00:00:00.000Z",
+    "updatedAt": "2026-08-05T00:00:00.000Z",
+    "epicSlug": "make-code-review-work-any-subset",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "28a8caf81d864aa1bc5474241c679af7154a30b611dfe190a9219a8b0ed4229a",
+        "at": "2026-08-05T00:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T19:35:51.413Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Make the LLD and plan optional for code review (three modes)",
+    "commit": "0c1f4da",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ]
+  }
+}

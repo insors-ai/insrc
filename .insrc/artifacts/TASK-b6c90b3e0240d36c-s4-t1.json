@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-30c7bf15-05bf-4054-b042-59f5e72c9132",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:22.777Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Gateway sc1/sc2 client bindings + last-seen state store",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "862481dedf7ed8300a56ec3da1b759220e2d57eee020ee038de7d160b6a9a3d7",
+        "at": "2026-10-22T12:44:22.777Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:22.779Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gateway sc1/sc2 client bindings + last-seen state store",
+    "summary": "Add the client-side bindings the Kotlin plugin lacks so the flow can CONSUME the daemon-owned sc1/sc2 IPC (never a shell-out, k2): (a) DaemonGateway.update(): DaemonActionResult calling rpc.call(\"daemon.update\") via the runAction template (like shutdown()/compact()); (b) DaemonGateway.updateOutcome(): DaemonUpdateOutcomeResult calling rpc.call(\"daemon.updateOutcome\") — add the new sealed DaemonUpdateOutcomeResult { Loaded(state,error?,finishedAt) | None | Unavailable } modeled on DaemonStatusResult; (c) DaemonStatusDto gains installedCommit: String = \"\" extracted in parseDaemonStatus (default '' for a pre-S002 daemon, never-throw parse preserved); (d) add the delegate lines in DaemonGatewayService; (e) a new @Service(APP) PersistentStateComponent last-seen store (lastSeenPluginVersion: String) modeled on SetupConsentStoreService (Storage insrc.xml). PATCH every DaemonGateway fake/impl in tests (FakeGateway + any others) for the two new interface methods (known gotcha). No deps.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonGateway interface + DaemonGatewayImpl gain update(): DaemonActionResult (rpc.call('daemon.update')) and updateOutcome(): DaemonUpdateOutcomeResult (rpc.call('daemon.updateOutcome')); DaemonGatewayService delegates both",
+      "new sealed DaemonUpdateOutcomeResult { Loaded(state,error?,finishedAt) | None | Unavailable } added, modeled on DaemonStatusResult",
+      "DaemonStatusDto has installedCommit: String = \"\" and parseDaemonStatus extracts it (present -> sha, absent -> ''); Loaded/Stopped/Unavailable contract + Gson-Double coercion of existing fields unchanged",
+      "a new @Service(APP) PersistentStateComponent stores lastSeenPluginVersion:String (getState/loadState round-trip), Storage insrc.xml",
+      "every DaemonGateway fake/impl in test sources (incl. FakeGateway) is patched for the two new methods; ./gradlew test compiles + green (JDK21)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gateway update(): rpc.call('daemon.update') -> launched:true=Ok, launched:false/error=Failed, DaemonUnavailable=Failed (never a shell-out, k2)"
+      },
+      {
+        "level": "unit",
+        "name": "gateway updateOutcome(): rpc.call('daemon.updateOutcome') -> Loaded(state,error?,finishedAt) for a record, None for null, Unavailable when down"
+      },
+      {
+        "level": "unit",
+        "name": "gateway daemonStatus(): installedCommit extracted (present=sha, absent=''); Gson-Double coercion + Loaded/Stopped/Unavailable contract unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "last-seen PersistentStateComponent: null before write, persisted after setLastSeen; getState/loadState round-trip lastSeenPluginVersion"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

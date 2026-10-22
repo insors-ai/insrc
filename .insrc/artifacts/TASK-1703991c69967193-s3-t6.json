@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e8c7a1b-4004-4f2d-a0a2-b0287f647cec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.183Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Test inferParentCandidates + end-to-end locate",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bfa5fb753cbff3982c4e2e1640bebc37e3819a31e2a6aa4442e48f1319d6259c",
+        "at": "2026-10-22T12:43:14.183Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.184Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Test inferParentCandidates + end-to-end locate",
+    "summary": "Add tests for the daemon inference (t2) over injected db stubs or a small seeded LMDB graph + Lance artifact-vec fixture: a touched path owned by a story yields a graph RankedCandidate + evidence; unindexed path contributes none; raw-scores-only (no threshold); embeds serial. Add an integration test composing the controller policy with the fixture-backed inference end-to-end: graph attach, semantic attach, and neither->prompt->standalone. Reuse the existing workflow/db test harness; keep live services out (fake embed returns a deterministic vector).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "inferParentCandidates tests assert ranking + evidence + no-threshold + serial embeds.",
+      "End-to-end tests cover ac1 (graph attach), ac2 (semantic attach), ac3 (prompt->standalone).",
+      "The relevant db + workflow test subsets are green locally via npx tsx --test."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "End-to-end locate: touched paths under an existing story's artifacts -> graph attach with grounded evidence"
+      },
+      {
+        "level": "integration",
+        "name": "End-to-end locate: unrelated touched paths + a defect description matching a story's artifact prose -> semantic attach"
+      },
+      {
+        "level": "integration",
+        "name": "End-to-end locate: neither matches -> prompt -> standalone"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

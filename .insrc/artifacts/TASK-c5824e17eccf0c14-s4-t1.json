@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dc520e51-db05-4f91-9abf-44b8341fe9a6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.117Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "UX companion module core: UxDefinition type + vendored Adaptive Cards schema + validate/toIr",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "241ad79743ef0a1da059faf0dacbf182e990a7ebbd7ad0174814540a84df1273",
+        "at": "2026-10-22T12:44:39.117Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.118Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "UX companion module core: UxDefinition type + vendored Adaptive Cards schema + validate/toIr",
+    "summary": "Add src/workflow/artifacts/companion/ux.ts (UxDefinition Adaptive Cards card-subset type + validateUxDefinition(uxDef:unknown, fnDef?):readonly DimensionFinding[] + uxDefinitionToIr(uxDef):DocumentIR) and ux-schema.ts (UX_DEFINITION_PROPERTY_SCHEMA + UX_CONTENT_GATE_RULE); vendor src/assets/artifacts/schemas/adaptive-cards.schema.json (no $schema meta-URI, shared draft-07 ajv, like linkml-metamodel.schema.json) + a boot-time asset validator mirroring validateLinkmlMetamodelAsset. validateUxDefinition validates via the shared validateAgainstSchema (HIGH finding on schema-invalid; UxDefinitionError only on unloadable asset). Mirrors er.ts/metamodel.ts exactly.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "ux.ts exports UxDefinition, validateUxDefinition, uxDefinitionToIr; ux-schema.ts exports UX_DEFINITION_PROPERTY_SCHEMA + UX_CONTENT_GATE_RULE",
+      "adaptive-cards.schema.json is present under src/assets/artifacts/schemas/ and loads through the shared ajv; a boot-time validator asserts it",
+      "a schema-valid uxDefinition yields no HIGH finding; a schema-invalid one yields a HIGH DimensionFinding; an unloadable asset raises UxDefinitionError",
+      "tsc clean; no change to er.ts/metamodel.ts behaviour"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validateUxDefinition: schema-valid -> no HIGH; schema-invalid (unknown card element / missing required field) -> HIGH DimensionFinding; malformed vendored asset -> UxDefinitionError"
+      },
+      {
+        "level": "unit",
+        "name": "uxDefinitionToIr: a valid UxDefinition maps to the expected DocumentIR shape"
+      },
+      {
+        "level": "unit",
+        "name": "ux-schema.ts: UX_DEFINITION_PROPERTY_SCHEMA compiles under the shared ajv and the vendored adaptive-cards.schema.json asset loads (boot-time asset validator)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

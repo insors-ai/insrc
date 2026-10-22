@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-444c3cd0-d3f4-4e4c-8172-5eadf715e26c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.086Z",
+    "epicCreatedAt": "2026-07-27T06:54:16.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5a6e60ccefd9be4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Trim CONFIG_CATALOG to 30 rows + add RetiredPath/RETIRED_PATHS",
+      "parent": {
+        "entityId": "STORY-f5a6e60ccefd9be4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f5a6e60ccefd9be4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f7cca51776f251c83dd778c52c3f746bff5645eef5460da3c581a7519d95c362",
+        "at": "2026-10-22T12:44:57.089Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.090Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Trim CONFIG_CATALOG to 30 rows + add RetiredPath/RETIRED_PATHS",
+    "summary": "In src/config/config-catalog.ts remove the 11 dead rows (models.local, models.embedding, models.embeddingDim, models.tiers.{fast,standard,powerful}, models.context.{local,localMaxOutput,claude,claudeMaxOutput,charsPerToken}); add RetiredPath interface + RETIRED_PATHS const (exact: models.local/embedding/embeddingDim; prefix: models.tiers/models.context/models.agents); update the header 'sync with' comment. Re-export from the src/cli shim only if a CLI consumer needs them.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "CONFIG_CATALOG has exactly 30 rows and none of the 11 removed dot-paths remain",
+      "RETIRED_PATHS exports 6 entries (3 exact + 3 prefix) and is disjoint from every CONFIG_CATALOG path",
+      "npm run build stays green (config-catalog.ts + shim compile)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "contract: CONFIG_CATALOG has 30 rows (was 41); none of the 11 removed paths remain"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

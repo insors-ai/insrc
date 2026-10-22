@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-11e4fa8831105a05-S001 -->
+<!-- insrc:artifact BUILD-11e4fa8831105a05-s1 -->
 
 # Build (standalone trivial) — Story S001
 

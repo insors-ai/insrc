@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-a5ef8ac073911ace-S001 -->
+<!-- insrc:artifact PLAN-a5ef8ac073911ace-s1 -->
 
 # Plan: S001
 

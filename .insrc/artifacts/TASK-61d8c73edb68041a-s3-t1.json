@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8c0afc72-3592-463e-96e3-62e9587f2084",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.996Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "S003 internal data model + service interfaces (lifecycle package)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fbc0650b14664ef251a52e0b7f4cd5c22799c9d6db1c2a2324aa59989c67a79b",
+        "at": "2026-10-22T12:43:39.996Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.997Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "S003 internal data model + service interfaces (lifecycle package)",
+    "summary": "Introduce the S003-internal types under a new package ai.insors.insrc.jetbrains.lifecycle: DaemonSetupAction (closed union NoOp | OfferSetup(ProvisionKind) | RunSilently(ProvisionKind)), ProvisionKind (INSTALL | UPDATE), NodeRuntime ({executablePath, source: NodeSource=SYSTEM|PROVISIONED}), ProvisionOutcome ({ok, exitCode?, reason?}), NodeProvisioningException, and the interfaces DaemonSetupPolicy / NodeRuntimeResolver / PrivateNodeProvisioner / DaemonProvisioner / SetupConsentStore. Types + interfaces only; no behaviour.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonSetupAction and ProvisionKind are closed Kotlin sealed types/enums with exactly the declared members; NodeSource has exactly SYSTEM|PROVISIONED",
+      "NodeRuntime, ProvisionOutcome are immutable data carriers with the LLD-named fields; NodeProvisioningException is a RuntimeException",
+      "the service interfaces declare the LLD signatures (decide/resolve/run/isConsented+recordConsent) plus an injectable PrivateNodeProvisioner interface (ensure-a-private-Node)",
+      "lives under ai.insors.insrc.jetbrains.lifecycle and compiles against the existing S001/S002 module"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "S003TypesTest: DaemonSetupAction/ProvisionKind/NodeSource are closed unions with exactly the declared members; NodeRuntime/ProvisionOutcome carry the declared fields"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

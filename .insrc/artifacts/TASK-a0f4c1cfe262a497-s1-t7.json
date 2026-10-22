@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8d9693c1-e43e-4559-bb5f-a81f4826083b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.514Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Daemon tool + inline artifact.feedback.append IPC handler",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b62f6cf5cbeb3a6e4292631f13e3b9ca12e444b5572e82d8bf2e124ec7bfb00",
+        "at": "2026-10-22T12:44:04.514Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.514Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon tool + inline artifact.feedback.append IPC handler",
+    "summary": "Add registerArtifactFeedbackTool() (registerTool, registerDocgenTool idiom) in the provenance module, mount it in daemon/tools/builtins/index.ts; add an inline 'artifact.feedback.append' handler to the daemon/index.ts handler map delegating to appendFeedback and returning a typed {error} object (not a throw) on a bad/out-of-tree/malformed request.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "registerArtifactFeedbackTool is mounted among the builtins",
+      "'artifact.feedback.append' is registered in the index.ts handler map, delegates to appendFeedback, and returns {error} (not throw) on a bad request (ac3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "artifact-feedback-handler-contract: source-scan proves 'artifact.feedback.append' registered in index.ts, delegates to appendFeedback, returns {error} not throw (repo-stats mould)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

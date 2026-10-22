@@ -22,301 +22,63 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "issue",
-      "stage": "issue",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "withWriteTxn is defined at src/db/graph/store.ts:882 and wraps every callback as store.root.transaction(() => fn(store)) at line 886.",
-          "evidence": "read src/db/graph/store.ts:882 → \"export async function withWriteTxn<T>(\", which matches the cited definition line. read src/db/graph/store.ts:886 → \"const txn = (store.root.transaction(() => fn(store)) as Promise<T>).then(value => ({ value }));\", which matches the cited wrapping call. The grep for `store.root.transaction(() => fn(store))` finds exactly one source match, at src/db/graph/store.ts:886, so this is the only place the wrapping happens. The grep for withWriteTxn turns up many callers, such as src/db/entities.ts:1087 and src/db/conversations.ts:237, all of which send their callbacks through this function. The premise is consistent with the evidence.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Both cited anchors resolve to the claimed entity and code exactly, so no edit is needed."
-          }
-        },
-        {
-          "claimId": "p2",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The migration runner at src/db/graph/migrations.ts:442-448 runs each step and its version write inside await store.root.transaction(async () => { ... }), with the version write after the step.",
-          "evidence": "The grep for /await store\\.root\\.transaction\\(async \\(\\) =>/ matches src/db/graph/migrations.ts:442, which is the start of the cited range. Reading line 442 gives `await store.root.transaction(async () => {`, and line 447 gives `await store.meta.put(META_SCHEMA_VERSION, step.to);`. So the schema-version write sits inside the transaction callback, near the end of the cited 442-448 range, after the earlier lines of the callback (443-446) where the step would run. The anchor resolves to the entity the premise names. The step call itself (lines 443-446) was not in the evidence, but the version write using `step.to` at 447, inside the same callback, is consistent with the claim that the step runs first and its version write follows in the same transaction. Nothing in the evidence contradicts the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The anchor and the structure it describes are confirmed: the transaction opens at line 442 and the META_SCHEMA_VERSION write at line 447 is inside it, after the step. The artifact needs no edit."
-          }
-        },
-        {
-          "claimId": "p3",
-          "ref": "c10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The migration runner comment at src/db/graph/migrations.ts:444-446 says advancing the version in the same txn means a crash rolls everything (including the version write) back.",
-          "evidence": "The cited anchor matches the source. The read of src/db/graph/migrations.ts:444 returned \"// Advance the version IN THE SAME TXN so a crash either\". A grep for /rolls everything/ matched src/db/graph/migrations.ts:445: \"// rolls everything (including the version write) back, or\". Together, lines 444-445 say what the premise says: the version is advanced in the same transaction, so a crash rolls everything back, including the version write. Line 446 was not read separately, but line 445 ends with \"or\", so the comment continues within the cited 444-446 range. The other match of each pattern is the artifact's own citation in ISSUE.md:36, not separate support.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The citation resolves to the stated comment at src/db/graph/migrations.ts:444-445, and the text matches the premise. No edit is needed."
-          }
-        },
-        {
-          "claimId": "p4",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The first-boot write in src/db/graph/store.ts:607 uses await root.transaction(() => {.",
-          "evidence": "The read of src/db/graph/store.ts:607 found `\t\t\tawait root.transaction(() => {`, and the grep for /await root\\.transaction\\(\\(\\) =>/ matched src/db/graph/store.ts:607 (the only other match is the ISSUE.md citation itself). The cited file:line exists and holds the quoted code exactly.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The citation points to the correct line, and that line contains the quoted text, so no edit is needed."
-          }
-        },
-        {
-          "claimId": "p5",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The only three non-test uses of root.transaction( in src/ are withWriteTxn (store.ts:886), the migration runner (migrations.ts:442) and the first-boot write (store.ts:607).",
-          "evidence": "The grep for /root\\.transaction\\(/ found 11 matches. Three are non-test files under src/: src/db/graph/store.ts:886 (`const txn = (store.root.transaction(() => fn(store)) as Promise<T>)...`, the withWriteTxn body), src/db/graph/migrations.ts:442 (`await store.root.transaction(async () => {`) and src/db/graph/store.ts:607 (`await root.transaction(() => {`). The other matches are test files: src/db/graph/__tests__/derived-indices.test.ts:200, src/db/graph/__tests__/helpers/store-child.ts:140 and src/db/graph/__tests__/migration-v2-to-v3.test.ts:89. The rest are in the ISSUE.md docs. The wider grep for /\\.transaction\\(/ found only one more match, src/db/__tests__/lmdb-smoke.test.ts:107 (`env.transaction`). It is a test and not a `root.transaction` call. So the set of three non-test uses is complete, and every anchor points at the line it names.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms the list is exactly these three non-test call sites, and each one is at the line the premise names. No edit is needed."
-          }
-        },
-        {
-          "claimId": "p6",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "withWriteTxn has 52 call sites across 9 production files: src/config/store.ts 3, src/db/conversations.ts 13, src/db/doc-summaries.ts 3, src/db/entities.ts 4, src/db/exploration-cache.ts 2, src/db/graph/ids.ts 3, src/db/relations.ts 10, src/db/repos.ts 3, src/db/todos.ts 11.",
-          "evidence": "The grep for /withWriteTxn\\(/ stopped at its 50-match cap, so only part of the premise can be checked. The parts the evidence covers agree with it:\n- src/config/store.ts has 3 sites (:115, :151, :181).\n- src/db/conversations.ts has 13 (:237, :278, :338, :395, :446, :466, :477, :499, :516, :544, :578, :618, :683).\n- src/db/doc-summaries.ts has 3 (:152, :196, :241).\n- src/db/entities.ts has 4 (:223, :403, :926, :1087).\n- src/db/exploration-cache.ts has 2 (:145, :160).\n\nThe rest cannot be checked:\n- src/db/graph/ids.ts shows only 2 sites (:72, :96) before the cut. The premise claims 3, and the third would sit past the cap.\n- src/db/relations.ts (claimed 10), src/db/repos.ts (claimed 3) and src/db/todos.ts (claimed 11) sort after the cut and are absent from the evidence.\n\nSo 25 of the 52 claimed production sites are confirmed (3+13+3+4+2). The other 27, and the claim that exactly 9 production files call withWriteTxn, cannot be verified. Any production file that sorts after src/db/graph/ids.ts (more of src/db/*, or src/indexer/…) is also unseen.\n\nNothing in the evidence contradicts the premise. Several of the matches are test or doc files (for example src/db/graph/__tests__/*, src/analyze/explore/__tests__/removed-flags.test.ts and HLD.md:435), which the premise correctly leaves out of the production count.",
-          "action": "Re-run the search without the match cap, excluding tests and docs: `rg -c 'withWriteTxn\\(' src --glob '!**/__tests__/**'`. Use the result to confirm the counts for src/db/graph/ids.ts (3), relations.ts (10), repos.ts (3) and todos.ts (11). Also check that no other production file (for example under src/indexer or src/daemon) calls withWriteTxn. If the counts differ, correct the inventory line. If only a count is wrong, the prescribed change still holds. If a 10th production file turns up, add it to the task scope.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence is cut off, so it cannot provide the true values for 4 of the 9 files or prove the file list is complete. A human or a re-run grep without the cap has to supply them, and no auto-edit can be derived from what was gathered.",
-            "options": [
-              "Re-run the uncapped grep over production sources and keep the premise as written if it matches 52 sites across 9 files.",
-              "Re-run the uncapped grep and correct the per-file counts and total for ids.ts, relations.ts, repos.ts and todos.ts to the observed values.",
-              "If a 10th production file is found, add it to the inventory and to the task's set of files to change."
-            ]
-          }
-        },
-        {
-          "claimId": "p7",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "withWriteTxn is used by 12 test files under src/**/__tests__.",
-          "evidence": "The grep for /withWriteTxn/ stopped at its 50-match cap ([TRUNCATED at cap]), and the matches are sorted by path, so test files after src/db/doc-summaries.ts alphabetically never appear. Only 4 distinct test files under src/**/__tests__ show up in the evidence: src/analyze/explore/__tests__/removed-flags.test.ts:98,102; src/daemon/__tests__/repo-stats.test.ts:15,146; src/db/__tests__/entities-lmdb.test.ts:27,403; and src/db/__tests__/reindex-file-lmdb.test.ts:25,220. ISSUE.md:23 also names src/db/graph/__tests__/lock-loss-detection.test.ts, but no grep match in that file was returned. The rest of the matches are docs (HLD/LLD/PLAN/ISSUE, storage-migration-lmdb-lance.md) or production callers (src/config/store.ts, src/db/conversations.ts, src/db/doc-summaries.ts). The evidence neither confirms nor contradicts the count of 12. It shows at least 4, and the cap hides the rest. The count describes the area; it does not change what gets built. The fix makes withWriteTxn all-or-nothing when its callback throws, and that applies whatever the number of test callers.",
-          "action": "Before relying on the number 12, run an uncapped count, e.g. `rg -l 'withWriteTxn' src --glob '**/__tests__/**' | wc -l`. Then correct the number, or replace it with a statement that doesn't depend on the count: existing tests that call withWriteTxn (including lock-loss-detection.test.ts) must still pass. If any tests rely on rows a throwing callback leaves behind, list them by name.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The count can't be checked because the grep hit its 50-match cap; only 4 test files are visible. The work doesn't depend on the exact number, so the right fix is to recount or to remove the number. The evidence doesn't support replacing it with another specific figure.",
-            "options": [
-              "Re-run an uncapped `rg -l withWriteTxn src --glob '**/__tests__/**'` and replace 12 with the real count",
-              "Replace the count with: 'withWriteTxn is used by several test files under src/**/__tests__ (e.g. removed-flags, repo-stats, entities-lmdb, reindex-file-lmdb, lock-loss-detection); all must keep passing'",
-              "Drop the count and list only the test files whose assertions depend on what a throwing callback leaves behind"
-            ]
-          }
-        },
-        {
-          "claimId": "p8",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The existing migration test of a throwing step at src/db/graph/__tests__/migrations.test.ts:151-176 asserts only that the run rejects and the stored version (lines 159, 164-165, 174-175, e.g. assert.equal(await readVersion(store), 2)), never the rows the step wrote.",
-          "evidence": "The anchor resolves to the right test: migrations.test.ts:151 is `test('runMigrations leaves intermediate version on disk after a per-step crash', ...)`, line 159 is `await assert.rejects(` and line 165 is `assert.equal(await readVersion(store), 2);`. That supports the claim that the test checks the rejection and the stored version. The premise describes the assertions inaccurately, though. Line 164 is `assert.equal(ranA, 1);` and line 174 is `assert.equal(applied, 1);`. Both check step-execution counters, not the stored version, so \"lines 164-165, 174-175\" are not all version assertions. Line 175 was not in the evidence I was given. No line I received checks rows the step wrote, which fits \"never the rows the step wrote.\" I could not read the whole 151-176 range, so that part can't be fully confirmed. The change this premise supports, adding an assertion on the rows a failed step leaves behind, is still correct whatever the counter details are.",
-          "action": "Reword the premise so it says what the test actually checks: the run rejects (159), step counters (`ranA` 164, `applied` 174) and the stored version (`readVersion(store) === 2` at 165). Keep the main point that no assertion checks rows written inside the failing step. Confirm line 175 and the rest of 166-176 before claiming \"never\".",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The cited lines resolve to the right test, but the premise wrongly calls the 164 and 174 counter checks version assertions. The prescribed change still holds, so a rewording fixes it. I'm not proposing an automatic edit because I can't confirm that the premise wording appears verbatim in the artifact.",
-            "options": [
-              "Reword: 'asserts that the run rejects (159), the step counters (ranA at 164, applied at 174) and the stored version (readVersion === 2 at 165), but never the rows the throwing step wrote.'",
-              "Narrow the citation to the version assertion alone: 'asserts only that the run rejects (159) and that the stored version stays 2 (165); no assertion checks the rows the step wrote.'"
-            ]
-          }
-        },
-        {
-          "claimId": "p9",
-          "ref": "c11",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "withWriteTxn's lock-loss handling spans src/db/graph/store.ts:870-910 and calls recordLocksLost('a write transaction', 'write-timeout-probe', lost) with a bounded wait.",
-          "evidence": "The grep for /recordLocksLost\\('a write transaction', 'write-timeout-probe'/ finds the exact call at src/db/graph/store.ts:904 (\"recordLocksLost('a write transaction', 'write-timeout-probe', lost);\"). Line 904 sits inside the cited range 870-910. Reads at lines 870 and 910 both resolved (FOUND), so the range exists in the file. The only other match is the artifact's own citation in ISSUE.md:37. The call and its arguments match the premise exactly. The 'bounded wait' part is not shown directly in the gathered lines, because the boundary reads came back empty. It is a descriptive detail and does not change which code the task targets.",
-          "action": "None needed: the citation checks out. You could optionally confirm the 'bounded wait' wording against store.ts:870-903 when building, but it does not affect the anchor.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Checked and correct: the recordLocksLost('a write transaction', 'write-timeout-probe', lost) call is at store.ts:904, inside the cited range 870-910. No edit is needed."
-          }
-        },
-        {
-          "claimId": "p10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/db/graph/__tests__/lock-loss-detection.test.ts exists and exercises withWriteTxn lock-loss behavior.",
-          "evidence": "The file exists: reading src/db/graph/__tests__/lock-loss-detection.test.ts:1 returned FOUND (a license header). It also tests the write-transaction lock-loss path. At src/db/graph/__tests__/lock-loss-detection.test.ts:55 it asserts `assert.equal(h.detectedBy, 'write-timeout-probe');`. In the store, the value 'write-timeout-probe' is recorded only for write transactions: src/db/graph/store.ts:904 calls `recordLocksLost('a write transaction', 'write-timeout-probe', lost);`, and src/db/graph/store.ts:919 limits the write-side `detectedBy` to 'sync-write' | 'write-timeout-probe'. So the test checks the lock-loss signal that the write-transaction (withWriteTxn) path produces. The premise is correct.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms that the cited test file exists and checks the write-transaction lock-loss signal ('write-timeout-probe', which store.ts:904 records). Nothing to change."
-          }
-        },
-        {
-          "claimId": "p11",
-          "ref": "c12",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "In lmdb-js 3.5.4, transaction(callback) delegates to transactionAsync (node_modules/lmdb/write.js:897-902, :941-970), which queues the callback for a shared batch write transaction, and rethrows the caller's error via txnCallbacks.errors[txnIndex] when result === CALLBACK_THREW.",
-          "evidence": "The evidence shows that both anchors exist. `node_modules/lmdb/write.js:897` reads `transaction(callback) {` and `:941` reads `transactionAsync(callback, asChild) {`. `:966` reads `return txnCallbacks.results.then((results) => {`, which fits a batched transaction that resolves results asynchronously. The evidence does not show the body of `transaction` at lines 898-902, so the claim that it calls `transactionAsync` is not confirmed. No line mentions `CALLBACK_THREW` or `txnCallbacks.errors[txnIndex]`, so the rethrow behaviour is also not confirmed. Nothing in the evidence contradicts the premise. The parts the task relies on are unverifiable rather than wrong.",
-          "action": "Read `node_modules/lmdb/write.js:897-902` again to confirm that `transaction` calls `this.transactionAsync(callback)`. Read `:966-970` to confirm the `results[txnIndex] === CALLBACK_THREW` check and the `throw txnCallbacks.errors[txnIndex]` path. Then either re-anchor the premise to the exact lines or reword it to claim only what those lines show. If the rethrow path is missing, the error-propagation logic built on this premise needs a design change.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchors are correct: lines 897, 941 and 966 are the expected methods and promise chain. But the claims the task depends on (that `transaction` calls `transactionAsync`, and that errors are rethrown when the result is `CALLBACK_THREW`) are not in the gathered evidence. A person needs to read those lines and decide whether to keep or reword the premise. No edit can be derived safely from the evidence alone.",
-            "options": [
-              "Re-probe write.js:897-902 and :966-970 for 'transactionAsync', 'CALLBACK_THREW' and 'errors[txnIndex]'. If they match, keep the premise as written and mark it verified.",
-              "Reword the premise to claim only what the evidence shows: transaction(callback) at :897 and transactionAsync at :941, which resolves through txnCallbacks.results at :966. State the rethrow behaviour as an assumption the build stage must confirm.",
-              "If the rethrow path is not there in 3.5.4, rework the error handling to catch errors inside the callback rather than relying on lmdb to rethrow them."
-            ]
-          }
-        },
-        {
-          "claimId": "p12",
-          "ref": "c4",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "lmdb-js executeTxnCallbacks (node_modules/lmdb/write.js:655-704) runs every queued plain callback in one shared write transaction; a throwing plain callback only records txnError(error, txnCallbacks, j) (:686-691, :701-704) and the shared transaction still commits its writes.",
-          "evidence": "The evidence confirms only that the anchors exist. `node_modules/lmdb/write.js:655` is `async function executeTxnCallbacks() {` and `node_modules/lmdb/write.js:701` is `function txnError(error, txnCallbacks, i) {`, so both named functions are where the premise says. The evidence does not confirm what the premise says they do.\n1. Nothing shows that every queued plain callback runs inside one shared write transaction.\n2. The line cited for error handling, `write.js:686`, is `if (result && result.then) {`. That line handles a returned promise or thenable. It is not a catch block or a call to `txnError`, so it does not show that a throwing callback only records `txnError(error, txnCallbacks, j)`.\n3. Nothing shows the body of `txnError`. In particular, nothing shows that the shared transaction still commits after a callback throws instead of aborting.\nThe key claim is that a throwing callback leaves the other callbacks' writes committed. That claim cannot be verified from the evidence.",
-          "action": "Re-ground the premise against the full source of `node_modules/lmdb/write.js`, lines 655-720:\n- Read the whole body of `executeTxnCallbacks`: the loop, the try/catch, and where `txnError` is called.\n- Read the body of `txnError` to confirm it only records the error, and does not abort or roll back the shared transaction.\n- Find the commit path after the loop to confirm the transaction commits even when an error was recorded.\nThen correct the `:686-691` anchor so it points at the actual catch and `txnError` call site rather than the `result.then` promise branch. If the commit-despite-throw behaviour does not hold, rework the design that relies on it.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchors resolve to the right functions, but the evidence never shows the behaviour the premise relies on: one shared transaction, errors only recorded, and writes still committed. Line 686 is the promise-result branch, not the error path, so the sub-anchor looks stale or wrong. None of this can be corrected from the evidence alone. Someone has to read the full function bodies first.",
-            "options": [
-              "Re-read write.js:655-720 in full. If a throwing callback really is caught, recorded through txnError, and the shared transaction still commits, keep the premise and just correct the `:686-691` sub-anchor to the real catch/txnError call lines.",
-              "If txnError or the commit path aborts or rolls back the shared transaction, rewrite the premise and any design that depends on other callbacks' writes surviving a throw.",
-              "Avoid depending on this lmdb-js internal: run each callback in its own transaction, or catch errors inside our own callback wrapper, so correctness no longer depends on how executeTxnCallbacks handles errors."
-            ]
-          }
-        },
-        {
-          "claimId": "p13",
-          "ref": "c8/c9",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "In lmdb-js only a child-queued callback runs in an abortable nested txn (env.beginTxn(1) ... env.abortTxn(), node_modules/lmdb/write.js:663-680), and transactionSync aborts on a throw (env.abortTxn(), node_modules/lmdb/write.js:1024-1027).",
-          "evidence": "The evidence includes only the first line of each anchor range. node_modules/lmdb/write.js:663 resolves to `if (asChild) {`, which matches the premise's \"child-queued callback\" branch. node_modules/lmdb/write.js:1024 resolves to `} catch (error) {`, which matches the claim that transactionSync has a throw-handling path. Neither read shows the calls the premise depends on: no `env.beginTxn(1)` and no `env.abortTxn()` in either range. The premise also says ONLY the child path gets an abortable nested txn, and nothing in the evidence addresses that. Both anchors point at the right concepts, so neither is stale. But the specific behaviour (a nested txn is opened and aborted, and the sync path aborts on a throw) is not confirmed. For that part, the premise is unverifiable from what was gathered.",
-          "action": "Re-read the full ranges node_modules/lmdb/write.js:663-680 and 1024-1027. Confirm that `env.beginTxn(1)` and `env.abortTxn()` appear inside the `if (asChild)` branch, and that `env.abortTxn()` appears inside the transactionSync `catch (error)` block. To back the word \"only\", also confirm that the non-child queued callbacks (the non-asChild branch) do not open a nested txn they can abort. If any of these fail, revise the c8/c9 rollback reasoning that depends on this premise.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Both anchors resolve to the expected constructs (`if (asChild) {` and `} catch (error) {`), so no anchor needs correcting. The specific calls the premise relies on (beginTxn(1) and abortTxn()) are not in the evidence, so no edit can be derived from it. The next step is to re-run the probe with full-range reads, not to change the text.",
-            "options": [
-              "Re-run the probe with full-range reads of write.js:663-680 and 1024-1027, and keep the premise as written if beginTxn(1) and abortTxn() are confirmed",
-              "If the non-child path turns out to also be abortable, drop the word 'only' and re-check the c8/c9 rollback design"
-            ]
-          }
-        },
-        {
-          "claimId": "p14",
-          "ref": "c6",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "package.json pins lmdb at version 3.5.4, the version the probes ran against.",
-          "evidence": "Both anchors exist, but the evidence shows only the first line of each file: `read package.json:1 → FOUND: {` and `read node_modules/lmdb/package.json:1 → FOUND: {`. Neither read shows the `lmdb` entry in package.json's dependencies or the `\"version\"` field in node_modules/lmdb/package.json. Nothing gathered confirms or contradicts the claim that lmdb is pinned at 3.5.4, and nothing shows whether the declared spec is an exact pin (`3.5.4`) or a range (`^3.5.4` / `~3.5.4`). The premise is UNVERIFIABLE from this evidence.",
-          "action": "Re-run the probes so they reach the version lines. Grep `\"lmdb\"` in package.json and `\"version\"` in node_modules/lmdb/package.json, or read package-lock.json for `node_modules/lmdb`. Then confirm two things: (a) the installed version is 3.5.4, and (b) whether the declared spec is an exact pin or a range. If it is a range, either reword the premise to say \"resolves to 3.5.4 (declared as <spec>)\" or pin it exactly. That matters if the probe results depend on lmdb 3.5.4 behaviour.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchors resolve, but the evidence never reaches the version fields, so no value can be derived from it and an auto-edit isn't safe. A person must confirm the declared spec and the installed version, then choose a wording.",
-            "options": [
-              "Confirm package.json declares exactly \"lmdb\": \"3.5.4\" and node_modules/lmdb is 3.5.4. Keep the premise as written.",
-              "If package.json declares a range (e.g. ^3.5.4), reword it to: \"package.json declares lmdb <spec>, which resolves to 3.5.4 in the lockfile/node_modules, the version the probes ran against.\"",
-              "If the probe results depend on 3.5.4-specific behaviour, change package.json to an exact pin of 3.5.4 and say so in the artifact.",
-              "If the installed version is not 3.5.4, re-run the probes against the installed version and update the premise to match."
-            ]
-          }
-        },
-        {
-          "claimId": "p15",
-          "ref": "c6",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "Probes (2026-10-16, fresh-process reopen): writes before a throw inside root.transaction(callback) survive (sync or async callback), returning ABORT does not discard them, and the same write in root.transactionSync(callback) is rolled back.",
-          "evidence": "The gathered evidence does not confirm the premise. Its only direct match is the artifact restating itself: ISSUE.md:13 (\"a write made inside `root.transaction(callback)` before a throw is kept (sync or async callback); returning lmdb's ABORT from that callback does not discard it either; the same write inside `root.transactionSync(callback)` is rolled back\") and ISSUE.md:32, which cites [[c6]] as a `step-output` from the 2026-10-16 probes. The probe output itself (scripts, logs, read-backs after reopen) is not in the evidence.\n\nThe repo matches touch the APIs but do not show the claimed behavior:\n- src/db/graph/store.ts:941 `return store.root.transactionSync(fn);` shows the store already routes some path through transactionSync. It says nothing about whether rollback happens on a throw.\n- src/db/graph/__tests__/helpers/store-child.ts:135 `s.root.transactionSync(() => { s.meta.putSync(cmd.key, '1'); });` is a child-process helper (fresh-process harness) that does a write inside transactionSync. Nothing in it throws or checks for rollback.\n- No match shows `root.transaction(` (async) being exercised with a throw, or lmdb's ABORT symbol being used. All 14 non-ISSUE `ABORT` hits are about the unrelated workflow-run MCP cancel path (src/mcp/server.ts:100/871/901/1286/1329, workflow-run-dispatch.test.ts:201/215, golden json, baseline txts).\n\nThis is a claim about how lmdb-js 3.5.4 behaves at runtime. Text probes can't establish it, and no in-repo test or probe artifact was handed over to back it, so it is UNVERIFIABLE. It isn't HIGH because nothing in the evidence contradicts it. store.ts:941 already using transactionSync fits the prescribed direction.",
-          "action": "Ground c6 in a reproducible in-repo artifact. Add (or point to) a regression test that uses the existing fresh-process harness (src/db/graph/__tests__/helpers/store-child.ts) and checks three things after a reopen in a new process: (a) a put before a throw inside root.transaction(cb) survives for both sync and async cb; (b) returning ABORT from root.transaction(cb) does not discard the put; (c) the same put before a throw inside root.transactionSync(cb) is rolled back. Then cite that test (path:line), or the saved probe script and output, from ISSUE.md:32 in place of the bare step-output reference. Also confirm the lmdb version in package.json is 3.5.4, as the ISSUE states.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The premise may well be true, but the only grounding is the artifact's own restatement. The behavioral claim about the external lmdb-js contract needs an executable, in-repo proof. That takes writing a test or saving the probe output, which is more than a text edit, so it needs a human OK on which form the grounding takes.",
-            "options": [
-              "Add a fresh-process regression test via store-child.ts that covers transaction+throw (sync/async), transaction+ABORT, and transactionSync+throw, and cite it from c6.",
-              "Commit the 2026-10-16 probe script and its captured output under the ISSUE's docs/standalone/... folder and cite that file:line from c6.",
-              "Downgrade c6 to an explicitly unverified assumption and make the fix's acceptance criteria include the rollback test, so the build itself proves the contract."
-            ]
-          }
-        },
-        {
-          "claimId": "p16",
-          "ref": "c7",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The plan at docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/PLAN.md:23 (Epic c2ba6fa6, Story s1, task t1) names the unit test 'a throwing step leaves version 4'.",
-          "evidence": "The read of docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/PLAN.md:23 returned FOUND. That row is task `t1` (\"Store: three new sub-DBs and the V4->V5 migration step\"), and its test column reads \"unit: src/db/graph/__tests__/migration-v4-to-v5.test.ts: V4 store migrates to 5 with three sub-DBs and one IndexStateRow per repository; a throwing step leaves version 4; ...\". The grep for /a throwing step leaves version 4/ found exactly this line, plus the ISSUE.md:15 text that cites it. The Epic id (c2ba6fa6, from the directory name E20261011c2ba6fa6), Story S001/s1, task t1 and the test name all match the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms the premise exactly: the cited file:line is the t1 row, and that row names the unit test 'a throwing step leaves version 4'. No edit is needed."
-          }
-        },
-        {
-          "claimId": "p17",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Because the version write comes after the step inside the same root.transaction callback, a throwing step leaves the version unchanged but keeps the rows the step wrote.",
-          "evidence": "The read of src/db/graph/migrations.ts:442 confirms that the anchor opens the transaction (`await store.root.transaction(async () => {`), and the grep finds this call site in the code along with derived-indices.test.ts:200. The evidence partly supports the claim that the step's rows survive a throw. ISSUE.md:19 says lmdb-js `transaction(callback)` sends the callback through `transactionAsync` (node_modules/lmdb/write.js:897-902, :941-970). There, `executeTxnCallbacks` (write.js:655-704) runs all queued callbacks inside ONE shared write transaction. When a plain callback throws, the runner only records `txnError` for that caller (write.js:686-691, :701-704), and the shared transaction is still committed. So a throwing step does not roll back the rows it already wrote. The other half of the premise has no support in the evidence. Only line 442 was read, not lines 443-448, so nothing shows that the version write comes after the step inside the same callback. The evidence also does not show that the version write is skipped when the step throws. That ordering is what the premise depends on.",
-          "action": "Re-read src/db/graph/migrations.ts:442-448 to confirm two things: (a) the step is awaited before the version write inside the same `root.transaction` callback; (b) a throw from the step leaves the callback before the version write runs. If both hold, keep the premise and cite lines 443-448 explicitly. If the version write comes before the step, or is outside the callback, reword the premise to match the actual order.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchor and the lmdb-js partial-commit behaviour are confirmed. The ordering of the step and the version write inside lines 442-448 was not in the gathered evidence, so the premise has to be confirmed by a person rather than edited automatically.",
-            "options": [
-              "Keep the premise as written once lines 443-448 confirm that the step runs before the version write in the same callback",
-              "Reword the premise to match the actual order if the version write comes before the step or is outside the transaction callback",
-              "Add a citation to ISSUE.md / node_modules/lmdb/write.js:686-704 for the claim that a throwing callback still commits the shared transaction"
-            ]
-          }
-        },
-        {
-          "claimId": "p18",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The fix must keep lock-loss detection (bounded wait, reported lost locks) intact so lock-loss-detection.test.ts still passes after making withWriteTxn all-or-nothing on throw.",
-          "evidence": "The grep for /recordLocksLost/ found `src/db/graph/store.ts:904: recordLocksLost('a write transaction', 'write-timeout-probe', lost);`. That line sits inside the cited anchor range 870-910, and ISSUE.md:37 ([[c11]]) cites it verbatim. So the write-transaction lock-loss path (a timeout probe that reports the lost locks) is where the premise says it is. Five other call sites (store.ts:447, 681, 854, 926, plus the definition at 429) show that lock-loss reporting is a shared helper and is not built into withWriteTxn's commit/abort logic. An all-or-nothing-on-throw change can therefore leave it untouched. The read of store.ts:870 came back FOUND but without its contents. The evidence also includes nothing from lock-loss-detection.test.ts, so the test's exact assertions could not be checked. Because the premise is a \"do not regress\" rule and not a factual claim the build depends on, the missing test content does not make it wrong.",
-          "action": "None, verified sound. When building, keep the `recordLocksLost('a write transaction', 'write-timeout-probe', lost)` call at store.ts:904 and its bounded-wait probe on the throw/abort path. Then run src/db/graph/__tests__/lock-loss-detection.test.ts as a regression check.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The anchor matches the real lock-loss call at store.ts:904, inside the cited 870-910 range. No edit to the artifact is needed."
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 9,
-        "low": 9
-      },
-      "reviewedAt": "2026-10-16T11:52:15.621Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-16T12:02:53.612Z",
-    "reviewOverride": {
-      "reason": "Stakeholder approval 2026-10-16: the two real slips (migration-test counter lines; lmdb catch at write.js:690-691) were corrected in the record; the remaining MEDs are single-line-read / 50-match-cap limits of the review probe, each verified by hand against the full source (write.js 655-704/663-680/941-970/1024-1027, package.json:54 lmdb 3.5.4, uncapped count 52 sites in 9 files, migrations.ts:442-448 order).",
-      "at": "2026-10-16T12:02:53.610Z"
-    },
     "parentRef": {
       "slug": "complete-consistent-richer-code-index-one",
       "storyId": "s4"
+    },
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e760dd0087301976aff999036d0d6724f4284184fa20146609be0fb0525e185e",
+        "at": "2026-10-16T11:52:08.782Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T12:02:53.612Z",
+        "override": {
+          "reason": "Stakeholder approval 2026-10-16: the two real slips (migration-test counter lines; lmdb catch at write.js:690-691) were corrected in the record; the remaining MEDs are single-line-read / 50-match-cap limits of the review probe, each verified by hand against the full source (write.js 655-704/663-680/941-970/1024-1027, package.json:54 lmdb 3.5.4, uncapped count 52 sites in 9 files, migrations.ts:442-448 order)."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 9,
+          "low": 9
+        },
+        "at": "2026-10-16T11:52:15.621Z",
+        "report": {
+          "entityId": "ISSUE-5437d6e54c9e7d48",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-ISSUE-5437d6e54c9e7d48-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

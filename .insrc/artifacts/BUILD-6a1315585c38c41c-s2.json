@@ -6,9 +6,36 @@
     "createdAt": "2026-10-09T06:48:18.298Z",
     "updatedAt": "2026-10-09T08:43:25.184Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T08:43:25.738Z",
     "epicSlug": "e2-delivery-board-vs-code-goal",
-    "epicCreatedAt": "2026-10-08T18:04:18.693Z"
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "79d9f4ad4593ce009c767fe623026e7d7455c5a76a4e452a7b4f759071cd76cc",
+        "at": "2026-10-09T06:48:18.298Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T08:43:25.738Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c91c436e-3485-4730-ab31-5292001289c4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.030Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Coherent first-run onboarding plus durable commands (and clean removal)",
+      "parent": {
+        "entityId": "EPIC-ad0d45c9d690f8c1",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "0e24589d1a600280407911e8d0d4ebe6a9bdc7e39cef97f0fd96deac6159f226",
+        "at": "2026-10-22T12:43:07.030Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

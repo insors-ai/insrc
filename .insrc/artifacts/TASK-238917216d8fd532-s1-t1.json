@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-faaa12ef-b275-4709-95a9-439e99f25e64",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.362Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Daemon: pending-artifact types + pure listPendingArtifacts scan",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a26408ded26f829e3ee1257846e42d4129dfdad5f719a06a854de43b1237919",
+        "at": "2026-10-22T12:43:17.362Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.363Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon: pending-artifact types + pure listPendingArtifacts scan",
+    "summary": "Add the internal-shared types PendingArtifact / WorkflowPendingRequest / WorkflowPendingResult and a pure listPendingArtifacts(repoPath) that enumerates ARTIFACTS_DIR ('.insrc/artifacts') like resolve.ts, parses each <KIND>-<hash>.json once, keeps those with meta.approvedAt absent AND meta.rejectedAt absent whose KIND is in the sc1 union, and maps each to a PendingArtifact (kind from prefix, title from body, mdPath from the storage path helpers, workItemId from meta, openQuestionCount from body.openQuestions?.length ?? 0). Skips a malformed file; returns [] for an absent store.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "The three types compile under strict mode; PendingArtifact matches the sc1 descriptor exactly (kind union, state:'pending').",
+      "listPendingArtifacts returns only pending artifacts (approvedAt absent AND rejectedAt absent) of an sc1-union KIND; approved/rejected/non-union kinds excluded.",
+      "Absent .insrc/artifacts dir -> []; a malformed single JSON file is skipped and the rest returned. tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: a store with mixed states (one approvedAt-set, one rejectedAt-set, two with neither) returns ONLY the two pending ones (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: each returned descriptor carries kind (from the filename prefix), title (from body), mdPath, workItemId (when meta has it), openQuestionCount (body.openQuestions?.length ?? 0), state==='pending'"
+      },
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: a KIND outside the sc1 union (e.g. a BUILD-*.json with no approvedAt/rejectedAt) is excluded"
+      },
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: absent .insrc/artifacts dir -> [] (not a throw)"
+      },
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: a malformed single JSON file is skipped and the other pending artifacts still returned"
+      },
+      {
+        "level": "unit",
+        "name": "listPendingArtifacts: a pending artifact with no openQuestions array -> openQuestionCount 0; with no workItemId -> workItemId omitted"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

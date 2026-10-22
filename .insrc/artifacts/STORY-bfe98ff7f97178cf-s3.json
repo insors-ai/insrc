@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-462c8d8f-378e-4f6d-b961-5977e569c420",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.064Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "See a document's design diagram where the document carries one",
+      "parent": {
+        "entityId": "EPIC-bfe98ff7f97178cf",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "0fbae2ecc0ee25226716cb8140fc59c8bb7608b4b2ccac37211a8f26d4584be9",
+        "at": "2026-10-22T12:43:07.064Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

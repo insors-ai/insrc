@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-41083fe6-e78c-4b89-a400-41cc6d50dfe5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.674Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Wire the optional LifecycleService into the approval and review paths",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c6f476c087c17209a6dc594a3ea2d903e4c71c1334584d527bae4a9339b219b9",
+        "at": "2026-10-22T12:43:20.674Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.675Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the optional LifecycleService into the approval and review paths",
+    "summary": "Add the optional lifecycle?: LifecycleService field to WorkflowApproveRequest and reviewArtifactFile's arguments: with it the full log-tail check runs, the approval is applied through LifecycleService.apply, completeIfRolledUp is called after a BUILD record approval, and when a service is supplied ensureBuildRecordOnCompletion's persist and reviewArtifactFile's auto-fix write through the service's ArtifactStore (a content update that appends the revision-bearing entry) instead of writeArtifact so the log stays in step; without a service they keep writeArtifact and behaviour is as after t9. The legacy meta.approvedAt stamp still follows. Binding requirement 3.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the override reason is on the complete entry",
+      "with a service, a review auto-fix or BUILD hook rewrite on a head with existing history leaves the next service approval ok, not head-ahead-of-log",
+      "without a service the approval and review paths behave as after t9 and the legacy meta.approvedAt is still stamped"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: with a service, an explicit override over an advisory-blocked code review completes the Story through a real approval and the reason is on the complete entry"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: with a service, a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/gates-lifecycle-service.test.ts: without a service the approval and review paths behave as before and meta.approvedAt is still stamped"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

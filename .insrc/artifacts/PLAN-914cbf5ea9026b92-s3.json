@@ -22,142 +22,57 @@
     "storyId": "s3",
     "lldRunId": "wf-1786079806522-5x0kom",
     "lldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "fullIndex calls runCrossFileResolver at src/indexer/index.ts around line 435 (the wiring point for resolveExternalEndpoints).",
-          "evidence": "CONFIRMED verbatim: src/indexer/index.ts:435 reads `const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });` — the exact wiring point t1 targets.",
-          "action": "None — wiring point verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "listUnresolvedRelations exists in src/db/relations.ts and returns unresolved relations carrying a RelationKind + rawTo, so the pass can filter kind==='CALLS_HTTP'.",
-          "evidence": "Supported: listUnresolvedRelations is a real db/relations.ts export (plans/storage-migration-lmdb-lance.md records it landed alongside UnresolvedRelation + makeUnresolvedRelationId), and rawTo is the documented raw-`to` field on unresolved rows. The pass can filter kind==='CALLS_HTTP'.",
-          "action": "None — read API exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "makeExternalEndpointId(repo, protocol, target, rawExpression?) exists in src/indexer/parser/base.ts and mints the deterministic per-repo endpoint id.",
-          "evidence": "Supported: makeExternalEndpointId(repo,protocol,target,rawExpression?) was added to src/indexer/parser/base.ts by the shipped S001 (sc1) build; the LLD contract restates the exact signature. Symbol is real and in-tree.",
-          "action": "None — sc1 primitive in place.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "upsertEntities and upsertRelations exist in src/db/entities.ts and src/db/relations.ts respectively and are the write APIs the pass uses.",
-          "evidence": "CONFIRMED verbatim: src/db/entities.ts:196 `export async function upsertEntities(_db, entities)` and src/db/relations.ts:108 `export async function upsertRelations(_db, relations)` — the write APIs t1 uses.",
-          "action": "None — write APIs verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t1",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "sc2's async resolve(repo, protocol, rawExpression): Promise<ResolvedTarget> exists in src/indexer/target-resolution (index.ts/resolver.ts) and memoizes the per-repo ConfigSourceMap.",
-          "evidence": "Supported: src/indexer/target-resolution/resolver.ts exports the async resolve + invalidateRepoConfig (imported by __tests__/adapter.test.ts:27), the shipped S002 (sc2) engine with per-repo ConfigSourceMap memoization. Contract matches.",
-          "action": "None — sc2 resolve available.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The Entity type carries the endpoint fields (kind 'externalEndpoint', protocol, resolved, target, rawExpression) so an externalEndpoint Entity can be constructed and upserted.",
-          "evidence": "Supported: the externalEndpoint Entity fields (kind, protocol, resolved, target, rawExpression) were added to src/shared/types.ts Entity by the shipped S001; HLD/LLD restate them. An externalEndpoint Entity is constructible without a schema change.",
-          "action": "None — Entity fields present.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "t2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "RelationKind includes the four boundary kinds CALLS_HTTP / PUBLISHES_TO / SUBSCRIBES_TO / CALLS_RPC, byte-mapped in src/db/graph/keys.ts, so the resolver can exclude them.",
-          "evidence": "Supported: RelationKind's four boundary kinds (CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC) were byte-mapped into src/db/graph/keys.ts by the shipped S001 (bytes 13-16). The DEF-era 'zero src hits' note predates S001; they now exist in-tree, so the exclusion in t2 is a real, targetable filter.",
-          "action": "None — boundary kinds in the vocabulary.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The code-symbol Pass-2 resolver lives in src/indexer/cross-file-resolver.ts + src/indexer/resolver.ts (runCrossFileResolver / resolveRelations) — the exclusion site.",
-          "evidence": "CONFIRMED: src/indexer/cross-file-resolver.ts:93 `export async function runCrossFileResolver(` and resolveRelations (src/indexer/resolver.ts) are the code-symbol Pass-2 — the exact exclusion site t2 edits.",
-          "action": "None — exclusion site verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/indexer/parser/typescript.ts has a call_expression visitor (walkForCalls) that emits CALLS relations — the hook point for the TS/JS HTTP recognizer.",
-          "evidence": "CONFIRMED verbatim: src/indexer/parser/typescript.ts:622 calls walkForCalls and :659 defines it — the call_expression visitor emitting CALLS, the exact hook for the t3 TS/JS recognizer.",
-          "action": "None — hook point verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "t3/t4/t5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "All five parsers named by the plan exist as source files under src/indexer/parser/ (typescript, python, go, java, scala), each with a call-site visitor to extend.",
-          "evidence": "Supported: src/indexer/parser/go.ts:343 `class GoParser implements CodeParser` confirmed; typescript/python/java/scala parser files are established siblings under src/indexer/parser (java uses method_invocation, scala call_expression). All five call-site visitors t3/t4/t5 extend exist.",
-          "action": "None — five parsers present.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "t1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A Relation carries kind + from + to + resolved:boolean (plus optional meta), so an unresolved CALLS_HTTP relation {kind:'CALLS_HTTP', from, to:rawUrlExpr, resolved:false} is a valid relation the recognizer can push.",
-          "evidence": "CONFIRMED verbatim: src/shared/types.ts:625 `export interface Relation` with `resolved: boolean` at :632 (plus kind/from/to). An unresolved CALLS_HTTP {to: rawUrlExpr, resolved:false} is representable with no schema change.",
-          "action": "None — Relation shape verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl12",
-          "ref": "t4/t5",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Tasks t4 and t5 depend on t3 (the shared client-shape helper); t1/t2/t3 have no intra-story dependency, giving an acyclic order t1..t5.",
-          "evidence": "Correctly non-existent: `http-client-shapes`/`clientShapes` returns 0 in-tree hits because t3 CREATES that shared helper — it is a new module, not a pre-existing citation. The ordering claim itself (t4/t5 dependsOn t3; t1/t2/t3 independent) is acyclic and internally consistent, verified structurally in the plan's dependsOn graph.",
-          "action": "None — the module is a t3 deliverable, not a missing dependency; ordering is sound.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12
-      },
-      "reviewedAt": "2026-08-07T05:48:06.029Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-07T05:54:59.365Z",
-    "epicCreatedAt": "2026-08-06T15:51:10.850Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "30c410f9cadc403de7230d1439a69a3776f6c76b8b9aa37ba1ba6343a48f0142",
+        "at": "2026-08-07T05:45:55.544Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-07T05:54:59.365Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-08-07T05:48:06.029Z",
+        "report": {
+          "entityId": "PLAN-914cbf5ea9026b92-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-914cbf5ea9026b92-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

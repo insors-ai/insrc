@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "0a116120820e903f",
+    "storyId": "s1",
+    "createdAt": "2026-08-07T15:03:53.735Z",
+    "updatedAt": "2026-08-07T15:03:53.735Z",
+    "epicSlug": "s003-outbound-http-detector-follow-ups",
+    "epicCreatedAt": "2026-08-07T14:35:19.818Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "786196bcb2d2985b4c24550dea1b38b9ec0b92ec67dde113b863fd026d0e2bea",
+        "at": "2026-08-07T15:03:53.735Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-07T15:04:13.615Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "S003 detector follow-ups: (t1) deleteEntitiesById storage primitive; (t2) edges-stat distinct-pair + orphan endpoint GC; (t3) TS proven-receiver dataflow recall (lexically scoped after review HIGH); (t4) Python proven-receiver dataflow recall. Precision preserved; 2 MED nested-scope residuals logged as fast-follow.",
+    "producesLld": false,
+    "commit": "79dacb2",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

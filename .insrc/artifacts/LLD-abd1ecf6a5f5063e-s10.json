@@ -25,21 +25,62 @@
     "hldAmendmentsApplied": [
       "AMD-abd1ecf6a5f5063e-1"
     ],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-08-04T14:57:07.556Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-04T14:58:36.844Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bb6e849ac09af7a4a203a639bc808f69b5531459230a7ccc687f6e0545883152",
+        "at": "2026-08-04T14:55:52.286Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T14:58:36.844Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-08-04T14:57:07.556Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s10",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s10-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

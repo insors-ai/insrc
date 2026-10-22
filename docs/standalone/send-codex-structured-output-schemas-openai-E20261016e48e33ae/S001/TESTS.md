@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-e48e33ae6af03720-S001 -->
+<!-- insrc:artifact TESTS-e48e33ae6af03720-s1 -->
 
 # Tests: e48e33ae6af03720 S001
 

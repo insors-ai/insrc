@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-219117c8-039d-4abe-b008-61511e034702",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.479Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "A run that dies says so: live runs are counted and an uncaught error is recorded",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "72af825178bfd67a562d92348ec192eca052d59fef3a7123c25695b85be203bb",
+        "at": "2026-10-22T12:44:25.479Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.480Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A run that dies says so: live runs are counted and an uncaught error is recorded",
+    "summary": "Add the count of live runs per id and isRunLive; runAnalyze raises the count before its first read of a record and lowers it when it returns or throws. Guard the whole of runAnalyze from that first read: an uncaught error writes the run record as failed at the stage reached, with 'internal-error', and is returned; the stage variable starts as 'classify'. The handler's own record write is guarded.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "An error thrown from inside a stage with no handler: runAnalyze returns 'internal-error' at that stage, the record on disk says the same, 'done' fires once, and the run is no longer live",
+      "An error before any stage has started is reported at 'classify'",
+      "A run is live from before its first read of a record until it returns, and not after it throws; with two runs under one id the id is live until the second returns",
+      "With a run record that cannot be written, the handler still returns 'internal-error' and fires 'done' once",
+      "A completed run asked for again returns its stored result and report, and a record left 'in-progress' is replaced by the new run's first record"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)"
+      },
+      {
+        "level": "integration",
+        "name": "a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)"
+      },
+      {
+        "level": "integration",
+        "name": "with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)"
+      },
+      {
+        "level": "integration",
+        "name": "a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

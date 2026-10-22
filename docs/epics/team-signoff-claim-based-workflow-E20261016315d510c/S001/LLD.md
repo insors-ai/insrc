@@ -368,7 +368,7 @@ Default wiring only; the interface is unchanged, createIssue keeps returning Cre
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc1` | implements | s1 owns sc1 and implements the sketch exactly. GitHub declares claim and issue-create only; signoff-request and completion are undeclared so loadTracker refuses a policy that needs them, and the signoff methods return rejected without a tracker call. To deliver the HLD's full extraction scope, s1 proposes one additive amendment: the issueOps field (sharedContract.fieldAdd, breaking false); the sketch methods are unchanged so s4, s5 and s7 are unaffected. Supersession: the owner decided in chat on 2026-10-17 that s1 supersedes the unbuilt tracker-tool LLD-38436e90625a83a2-S001 (approvedAt unset). The durable record is the 'Superseded (2026-10-17)' note under that LLD's title in docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, which settles the conflicting approval status the HLD names; its companion LLD-9a7bbe63297457c2-S001 needs its own decision. sc1 is the one tracker abstraction. |
+| `sc1` | implements | s1 owns sc1 and implements the sketch exactly. GitHub declares claim and issue-create only; signoff-request and completion are undeclared so loadTracker refuses a policy that needs them, and the signoff methods return rejected without a tracker call. To deliver the HLD's full extraction scope, s1 proposes one additive amendment: the issueOps field (sharedContract.fieldAdd, breaking false); the sketch methods are unchanged so s4, s5 and s7 are unaffected. Supersession: the owner decided in chat on 2026-10-17 that s1 supersedes the unbuilt tracker-tool LLD-38436e90625a83a2-s1 (approvedAt unset). The durable record is the 'Superseded (2026-10-17)' note under that LLD's title in docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, which settles the conflicting approval status the HLD names; its companion LLD-9a7bbe63297457c2-s1 needs its own decision. sc1 is the one tracker abstraction. |
 
 ## 5. Error paths
 
@@ -558,7 +558,7 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
 - Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.
 - s1 now edits the tracker-auto call sites that s4 later refactors (shared issue-creation code, find-by-label dedupe). The split is: s1 switches the calls mechanically with no change to labels, order or persisted TrackerMeta; s4 refactors the orchestration afterwards on top of the port (it depends on sc1). s4's LLD should cite this.
 - The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.
-- The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.
+- The companion design LLD-9a7bbe63297457c2-s1 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-s1; it needs its own decision.
 - GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.
 - The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration.
 
@@ -574,8 +574,8 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
   - **resolved**: Keep the stated scope — Matches the approved LLD's timeout scope. _(2026-10-17T10:22:43.303Z)_
 - `qa4cb22d7` — The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.
   - **deferred**: deferred for review — Belongs to s4's find-by-label dedupe work; s1 keeps the existing behaviour for k4. _(2026-10-17T10:23:09.273Z)_
-- `q6051ee2a` — The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.
-  - **deferred**: deferred for review — The companion LLD-9a7bbe63297457c2-S001 needs its own decision outside s1's plan. _(2026-10-17T10:23:24.719Z)_
+- `q6051ee2a` — The companion design LLD-9a7bbe63297457c2-s1 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-s1; it needs its own decision.
+  - **deferred**: deferred for review — The companion LLD-9a7bbe63297457c2-s1 needs its own decision outside s1's plan. _(2026-10-17T10:23:24.719Z)_
 
 ## Citations
 

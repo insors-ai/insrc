@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicSlug": "complete-consistent-richer-code-index-one",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "approvedAt": "2026-10-12T10:44:16.975Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4f99c5d201834b0fb44cd8a3c427f16abb44ddc56944fb5d682f6e4b4cab8fe6",
+        "at": "2026-10-11T09:49:16.267Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T10:44:16.975Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

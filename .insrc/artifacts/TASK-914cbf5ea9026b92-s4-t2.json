@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd8fae61-dcaf-46da-917c-238ecc09482a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.483Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Wire the messaging recognizer into all five parsers",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "93d8dcb50b89358d3a092c138d6367076a812b139f438178652bca88962d3961",
+        "at": "2026-10-22T12:43:59.483Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.483Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the messaging recognizer into all five parsers",
+    "summary": "Wire matchMessagingClient/emitMessaging into each parser's call walk, mirroring the HTTP wiring: TS/JS inline in walkForCalls (typescript.ts); Python + Go focused walks (walkPythonForMessaging / walkGoForMessaging alongside the existing HTTP walks at go.ts:115/:198); Java + Scala under a new ctx.messagingEnabled import gate (parallel to ctx.httpEnabled) computed via fileImportsMessagingLibrary. Extract the topic arg per shape (positional index or object-field lookup on the first argument) and pass the raw expression text to emitMessaging with the shape's direction. Precision-over-recall: each language covers only its documented high-precision library subset; record that per-language covered-library set explicitly.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "For each language's COVERED libraries, a producer call emits one unresolved PUBLISHES_TO to the topic expression and a consumer call emits one SUBSCRIBES_TO; the covered-library set per language is recorded explicitly and uncovered libraries are a documented recall gap (not a failure)",
+      "Object-field shapes (Kafka-JS send({topic}), SNS publish({TopicArn}), SQS sendMessage({QueueUrl})) extract the field value; positional shapes (kafka-python send('t',...)) extract by index",
+      "Java/Scala emit nothing unless the file imports a messaging library (ctx.messagingEnabled gate); an RxJS .subscribe with no messaging import emits nothing",
+      "The existing HTTP recognizer output for each parser is unchanged (additive wiring); tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "messaging-client-shapes.test.ts: TS recognizer via typescriptParser.parse()->messaging relations (Kafka-JS object-field send, SNS/SQS object-field, ioredis pub/sub; RxJS no-import negative)"
+      },
+      {
+        "level": "unit",
+        "name": "http-recognizer-py-go.test.ts (extended): pythonParser.parse -> PUBLISHES_TO/SUBSCRIBES_TO (kafka-python send / consumer, pika basic_publish/basic_consume)"
+      },
+      {
+        "level": "unit",
+        "name": "http-recognizer-py-go.test.ts (extended): goParser.parse -> messaging relations for a Go kafka client, import-gated"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

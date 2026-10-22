@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "b5a62f289cbcdaee",
+    "storyId": "s1",
+    "createdAt": "2026-10-18T16:46:42.113Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-18T16:45:26.670Z",
+    "epicSlug": "keep-stored-good-summary-when-full",
+    "updatedAt": "2026-10-18T16:59:40.908Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c1216c324c941f1abb2314777ffe962717ac5d3aa23d3ce092fba41c6885388e",
+        "at": "2026-10-18T16:46:42.113Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T16:59:40.970Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "ISSUE-b5a62f28: restoreCarriedDocSummaries (src/db/doc-summaries.ts:339-362) keeps a summary already stored for the document when it has no error and the same contentHash (keepGoodSummary); a stored placeholder is still replaced. The result counts kept rows; the full index log line (src/indexer/index.ts:745) reports them. Test in src/db/__tests__/doc-summary-carry.test.ts.",
+    "producesLld": false,
+    "commit": "d1fb60c9",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "restoreCarriedDocSummaries now writes back with keepGoodSummary, so a good summary stored after the rebuild is kept and a stored placeholder is still replaced; the result and the full index's log line count keptGood. New test in doc-summary-carry.test.ts; db and indexer suites 860/860.",
+    "testRecord": {
+      "md": "docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b47dadc7cf0cccb1-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:59:40.908Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:59:40.908Z"
+      }
+    ]
+  }
+}

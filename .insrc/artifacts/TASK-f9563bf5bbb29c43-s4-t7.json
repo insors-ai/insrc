@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a7368dab-b436-4790-9763-dde01e0e29c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.123Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s4",
+    "envelope": {
+      "description": "chat-panel: live approval routing + permission-decision post + #insrc-permmode status control",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b23004ef9f825fd0c4e6bdd3922037176917a0556e47926a4e1817ffd8d3a904",
+        "at": "2026-10-22T12:45:03.123Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.124Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "chat-panel: live approval routing + permission-decision post + #insrc-permmode status control",
+    "summary": "In chat-panel.ts add an approval-request branch to the live turn-event handler (:304) that renders the approval card and wires its buttons to postMessage({type:'permission-decision',requestId,decision}). Add a DISTINCT #insrc-permmode 'perms' auto/review control to the .statusbar (:354-357), separate from the existing #insrc-editmode select (review finding cl11), posting set-permission-mode + showing the active mode as a seg. Add handleMessage cases: permission-decision->adapter.decide; set-permission-mode->store per-session, apply to the NEXT turn's buildArgs (not the in-flight spawn).",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "A live approval-request event routes to the approval renderer; a card click posts permission-decision{requestId,decision} dispatched to decide().",
+      "The status bar has a distinct #insrc-permmode auto/review control (not conflated with #insrc-editmode); changing it posts set-permission-mode and updates the mode seg.",
+      "set-permission-mode stores the per-session mode applied to the next turn's buildArgs; chat-panel tests assert on html + posted messages."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-panel.test.ts: html has the #insrc-permmode status control; mode change posts set-permission-mode; card click posts permission-decision; live approval-request routed to approval renderer."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

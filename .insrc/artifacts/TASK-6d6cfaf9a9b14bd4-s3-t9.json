@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5a43ec5c-6b75-48b3-babc-e7de03196d5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.436Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement terminal handling, detach, and the distinct error path",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e99758b8051a631907be21ce373b555bebe2bb95f121fc84e75b0934a5a8f81",
+        "at": "2026-10-22T12:43:43.436Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.437Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement terminal handling, detach, and the distinct error path",
+    "summary": "Add terminal detection and teardown. On the terminal signal (the sc1 event mapped from the daemon's `{ phase: 'done' }` at src/daemon/workflow-rpc.ts:184), fire onComplete at most once, set snapshot.done true, then detach — drop handlers and structurally discard all subsequent frames for the operation, so 'stops reporting further progress' is a property of the reader rather than caller discipline. A frame whose stream is 'error' (the daemon's distinct path at :218) takes the failure branch: the reader detaches and sets done true but does NOT fire onComplete — a failed 30-40 minute run must never render as successfully finished. Whether that branch additionally fires onError is fixed by the t1 decision, not decided here: if onError was approved, the branch dispatches it (implemented in t14); if rejected, the failure detaches silently. Abnormal transport close while not done is treated the same way (detach, done true, onComplete not fired), detected via the transport lifecycle signal identified in t2 — never via a timeout on frame silence, since token batches arrive at irregular cadence. Late registration after detach returns void, never throws, and the handler is never invoked; the snapshot stays readable with done true.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "onComplete fires exactly once on the terminal signal; a duplicate terminal frame does not re-fire it.",
+      "After the terminal signal the reader is detached: subsequent stage, token, or terminal frames invoke no handler and mutate neither currentStage nor tokensTotal.",
+      "An 'error'-stream frame detaches the reader and sets done true without firing onComplete, and its branch shape matches the t1 decision.",
+      "Abnormal transport close while not done detaches and sets done true without firing onComplete, driven by the transport lifecycle signal from t2 and not by any silence timeout — no timer on frame gaps exists in the code.",
+      "snapshot.done is true after any terminal path and remains true; the snapshot stays readable.",
+      "Registering a handler after detach returns void without throwing, and that handler is never invoked."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "complete-fires-once-then-detaches: onComplete fires exactly once on the terminal signal and the reader detaches"
+      },
+      {
+        "level": "unit",
+        "name": "post-terminal-suppression: subsequent stage/token/duplicate-done frames invoke no handler and mutate neither currentStage nor tokensTotal"
+      },
+      {
+        "level": "unit",
+        "name": "error-stream-branch: an 'error'-kind frame detaches and sets done true without firing onComplete, matching the t1-decided branch shape"
+      },
+      {
+        "level": "unit",
+        "name": "done-sticky-and-snapshot-readable: snapshot.done is true after every terminal path and the snapshot stays readable"
+      },
+      {
+        "level": "unit",
+        "name": "late-attach-inert: registering after detach returns void, never throws, and the handler is never invoked"
+      },
+      {
+        "level": "unit",
+        "name": "no-silence-timer: abnormal close is driven by the t2 transport lifecycle signal; no timer over frame gaps exists in the code"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

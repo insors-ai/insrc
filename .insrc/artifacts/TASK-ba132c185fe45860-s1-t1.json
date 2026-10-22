@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ad9f3d8d-069a-4443-81d2-33aa93e8ecad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.520Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the curated cloud model catalog JSON asset",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1e11c0ed86c87cf18ed0ae56f0fa323d1ef3442cacceb72eb34d942f29a81d7c",
+        "at": "2026-10-22T12:44:26.520Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.521Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the curated cloud model catalog JSON asset",
+    "summary": "Create src/assets/models/cloud-model-catalog.json matching the CloudModelCatalogFile shape { version:number, providers: { 'cli-claude': CatalogModel[], 'cli-codex': CatalogModel[] } } with an initial maintainer-curated set of cli-claude + cli-codex model entries ({ id, displayName? }). No copy-assets.mjs change — it ships to out/assets/ via the existing 'assets' DIRS membership.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/assets/models/cloud-model-catalog.json exists and is valid JSON matching { version:number, providers: { 'cli-claude': [...], 'cli-codex': [...] } }",
+      "each entry has a string id (+ optional string displayName); both cloud providers are present with at least one real curated model each",
+      "no copy-assets.mjs edit is required (the file sits under src/assets/)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the actual shipped src/assets/models/cloud-model-catalog.json validates against the CloudModelCatalogFile schema (the real curated asset, not a fixture)"
+      },
+      {
+        "level": "integration",
+        "name": "every entry in the shipped catalog has a string id; displayName when present is a string"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-13T05:56:39.494Z",
     "parentRef": {
       "slug": "codex-chat-turns-hang-because-cli"
+    },
+    "epicCreatedAt": "2026-10-12T12:38:41.569Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "042c5d21078aba5fdc8df814c5632a964e5c94f4fba39f353abe4dac8c8759e1",
+        "at": "2026-10-12T12:38:41.569Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-13T05:56:39.494Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

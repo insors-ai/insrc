@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8d7a2b05-8e5f-4799-b780-71d8c82802c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.933Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Unit tests for the seeding helper + provenance stamping",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s8-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2283a8ef3a5d7433b40a7fdb1016ad8f10219435c44290d39c282d253413df7f",
+        "at": "2026-10-22T12:44:10.933Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.934Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit tests for the seeding helper + provenance stamping",
+    "summary": "Add src/workflow/__tests__/seed-focus.test.ts (node:test + assert/strict, reusing the s6/s7 tmp-repo + specArtifactPaths + writeAtomic + approveArtifactByJsonPath fixtures): resolveStageFocus approved-spec -> composed focus contains intent/scope/each nonGoal/each decision + seededFromSpec set (ac1/ac2); plain focus -> verbatim + seededFromSpec unset (ac4); unapproved/missing -> throws the sc4 errors. Add a finalizeDefine test (or extend an existing one): intent.params.specHash set -> meta.seededFromSpec = hash + renderDefineMarkdown output contains SPEC-<hash>; unset -> absent (ac3/ac4).",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "seed-focus.test.ts covers approved/plain/unapproved/missing + composeSpecFocus decision+nonGoal inclusion (ac1/ac2/ac4)",
+      "a finalize test proves meta.seededFromSpec stamp + renderer line (ac3) and its absence on a plain-focus run (ac4)",
+      "full workflow + workflow-step + daemon sweep + tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "seed-focus.test.ts: resolveStageFocus (approved/plain/unapproved/missing) + composeSpecFocus (intent/scope/every nonGoal/every decision) + finalizeDefine seededFromSpec stamp/renderer + plain-focus absence (ac1/ac2/ac3/ac4)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

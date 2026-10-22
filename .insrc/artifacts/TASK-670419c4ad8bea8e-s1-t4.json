@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5fd0542b-74b8-4dbb-bede-df5909fccc48",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.776Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement atomic mutations and resumable records",
+      "parent": {
+        "entityId": "STORY-670419c4ad8bea8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-670419c4ad8bea8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-670419c4ad8bea8e-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "74a246abab75469ce7199ea1fa986525f5e4fbb1023c674f3f39a67899bcdd1f",
+        "at": "2026-10-22T12:43:40.776Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.776Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement atomic mutations and resumable records",
+    "summary": "Implement prepare/resume/cancel and internal validated mutation boundary with immutable attempts/audit and request deduplication; sibling authorization unavailable.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Current/history/index/request updates atomic, acknowledged only after commit",
+      "Stale revision conflicts return owner projection; exact replay no duplicate attempt; changed payload conflicts",
+      "No delivery mutation, LLM call, pass or receipt from foundation alone",
+      "Add and pass focused tests for this task before proceeding."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Concurrent CAS, exact replay, request conflict and transaction rollback"
+      },
+      {
+        "level": "integration",
+        "name": "Immutable original and assisted attempts resume after reopen"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

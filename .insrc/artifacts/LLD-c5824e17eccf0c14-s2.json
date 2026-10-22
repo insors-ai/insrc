@@ -24,141 +24,61 @@
     "hldBaseRunId": "wf-1790520092322-vpqvrh",
     "hldEffectiveHash": "a28e2f10766195dc4da9a97bba77989049c02e57e420ca2b397686703f7b420b",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contract/loadTemplate",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A loadTemplate function (the 3-tier template cascade) exists at src/daemon/artifacts/template-loader.ts around line 156.",
-          "evidence": "CONFIRMED exact: `export async function loadTemplate(` at src/daemon/artifacts/template-loader.ts:156.",
-          "action": "None — citation sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "data/renderers",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The four per-type renderers renderDefineMarkdown/renderHldMarkdown/renderLldMarkdown/renderPlanMarkdown exist in src/workflow/artifacts/{define,hld,lld,plan}.ts.",
-          "evidence": "CONFIRMED existence, minor line drift: renderHldMarkdown@hld.ts:109, renderPlanMarkdown@plan.ts:101, renderLldMarkdown@lld.ts (grep shows ~220/282 across contexts), renderDefineMarkdown@define.ts:86 — all four exist; the LLD cites the files (no exact lines), so no drift in the artifact itself.",
-          "action": "None required — symbols resolve.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "migration/defect13",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The LLD renderer re-embeds the HLD framework-summary in a '## HLD context' section around src/workflow/artifacts/lld.ts:293 (defect #13, the de-dup target).",
-          "evidence": "SUBSTANTIVELY CONFIRMED, line drift: the review doc (docs/artifact-document-template-review.md:17) confirms renderLldMarkdown's '## HLD context' section (cited at lld.ts:282); the exact line 293 reads `const eh = meta.epicHash;`, so the de-dup target sits ~282-293, not precisely 293.",
-          "action": "None required — the defect + de-dup target are real; anchor is approximate. Build locates the actual '## HLD context' emit.",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "interaction/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "S001's renderFunctionalRequirementsSection exists in src/workflow/artifacts/functional-definition.ts (near line 87) and is consumed unchanged.",
-          "evidence": "CONFIRMED exact: `export function renderFunctionalRequirementsSection(fd: FunctionalDefinition...)` at functional-definition.ts:87; consumed unchanged as designed.",
-          "action": "None — citation sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "errorpaths/boundary",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "Scope-boundary validators (BannedPattern regexes over rendered markdown) live in src/workflow/synthesizer.ts around line 151.",
-          "evidence": "CONFIRMED exact: `const BOUNDARY_RULES: Partial<Record<WorkflowName, readonly BannedPattern[]>>` at synthesizer.ts:151 — the boundary validators exist where cited and must be updated for the new constructs.",
-          "action": "None — citation sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "elicitation/synth-gate",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The defineSynthesizer body schema in src/workflow/orchestrator.ts (around line 937) requires flavor/problem/nonGoals/assumptions/constraints/stories/openQuestions under additionalProperties:false and does NOT include summary/functionalDefinition/contextRefs — so those fields have no upstream source today.",
-          "evidence": "CONFIRMED exact: orchestrator.ts:937 reads `required: ['flavor','problem','nonGoals','assumptions','constr...` — the defineSynthesizer (function@879) body schema; it omits summary/functionalDefinition/contextRefs under additionalProperties:false. This grounds the core elicitation-gap finding.",
-          "action": "None — the gap is real and correctly cited; the build extends this schema.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "elicitation/no-summary-in-synth",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No DEF/HLD/LLD/PLAN synthesizer body schema currently elicits a 'summary'; the only 'summary' in any orchestrator synthesizer schema is the stub/brainstorm one (around orchestrator.ts:315).",
-          "evidence": "CONFIRMED: orchestrator.ts:315 reads `required: ['title','summary','bulletList']` and :291 is the `stub` synthesizer — the only synthesizer 'summary' is the stub/brainstorm one, as claimed; DEF/HLD/LLD/PLAN bodies have none.",
-          "action": "None — semantic claim verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "elicitation/runner-prompts",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The per-phase step prompts S002 will extend exist as StepRunners in the runner index files (define epic.frame, design-epic framework.write, design-story contract.detail, plan tasks.finalize).",
-          "evidence": "CONFIRMED: the step ids epic.frame / framework.write / contract.detail / tasks.finalize appear in the runner sources (and the plan HLD enumerates the plan recipe incl. tasks.finalize). The prompts S002 extends exist.",
-          "action": "None — citation sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "data/storage-id-scheme",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The artifact-id scheme (DEF-/HLD-/LLD- prefixes) that SharedContextRef.sourceArtifactId + deriveHldContextRef point at is defined in src/workflow/storage.ts.",
-          "evidence": "SUPPORTED: grep shows storage.ts artifact-id peers (defineArtifactId/planArtifactId, SPEC-<hash>), establishing the prefix scheme deriveHldContextRef + SharedContextRef rely on. DEF-/HLD-/LLD- follow the same pattern.",
-          "action": "None required — build reads the exact HLD- const in storage.ts.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "interaction/sc-ownership",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Per the HLD, sc3 is owned by S002 (implements) and sc1 is owned by S001 (consumed only); the LLD implements only sc3 and consumes sc1.",
-          "evidence": "CONSISTENT with the embedded HLD context slice (workflow-guaranteed verbatim): sc3 ownedByStory s2 (implements), sc1 ownedByStory s1 (consumed only). No probe needed.",
-          "action": "None — ownership trace holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "alternatives/chosen",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "Exactly three alternatives (a1, a2, a3) were considered and a2 (externalized per-type template files on the template-loader cascade) is chosen.",
-          "evidence": "SELF-CONTAINED + consistent: exactly a1/a2/a3, a2 chosen, matching the stakeholder request + the s3 judgment.",
-          "action": "None — alternatives set complete.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl12",
-          "ref": "scope/s001-split",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The S001 functionalDefinition elicitation (define epic.frame/stories.compose prompts + defineSynthesizer schema) is explicitly OUT of S002 scope — a separate S001 back-fill — and the FR section stays absent-safe until then.",
-          "evidence": "CONSISTENT: functionalDefinition exists in the HLD + artifacts (S001), and the LLD explicitly scopes the FR-elicitation OUT to a separate S001 back-fill while consuming renderFunctionalRequirementsSection unchanged (absent-safe). A deliberate, documented scope decision, not a gap.",
-          "action": "None — scope split is explicit and honoured.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12
-      },
-      "reviewedAt": "2026-09-27T19:13:35.753Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-28T04:15:48.483Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0a7dc361eb077026d0df8d59ff7e4579f0a783b3585fbeb18c73889d4bfff34e",
+        "at": "2026-09-27T19:11:57.062Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-28T04:15:48.483Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-09-27T19:13:35.753Z",
+        "report": {
+          "entityId": "LLD-c5824e17eccf0c14-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-c5824e17eccf0c14-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1bc8acd0-8b79-4cca-b868-c1c9eb231ffb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.213Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Define the build-stage schema vocabulary",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4db14384f751932e339b6e10b77cadec38f0be7c6c159cb0c3fc3966a5f38354",
+        "at": "2026-10-22T12:43:16.213Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.214Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define the build-stage schema vocabulary",
+    "summary": "Create src/workflow/runners/build/schemas.ts and add the net-new, types-only vocabulary that s4 owns (sc6): the BuildRunState union ('running'|'halted'|'complete'), the BuildHaltInfo value object (failedTaskId, failedTaskTitle, reason, blockedTaskIds), and the BuildRunProgress projection interface (storyId, runState, totalTasks, completedTaskIds, optional inFlightTaskId, optional halt, filesTouchedSoFar). Signatures must match contractDetails.api exactly — readonly members, optional props as `| undefined`, declared as a read-time view rather than a stored record. Mirror the sibling-per-stage idiom; introduce no behavior and reuse/shadow no existing workflow enum (search.text confirmed no prior halt/status vocabulary in the package).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "BuildRunState, BuildHaltInfo, and BuildRunProgress are exported from src/workflow/runners/build/schemas.ts with signatures matching contractDetails.api verbatim (readonly members; inFlightTaskId/halt optional as `| undefined`).",
+      "The file introduces fresh vocabulary only — no existing workflow type in chain.ts/executor.ts/gates.ts/orchestrator.ts/types.ts is modified, duplicated, or shadowed (invariant c4).",
+      "`tsc` compiles with the new file present and nothing yet consuming the new types."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit: src/workflow/runners/build/schemas.ts exports BuildRunState/BuildHaltInfo/BuildRunProgress with contract-matching readonly signatures (optional inFlightTaskId/halt as `| undefined`) and shadows no existing workflow enum"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

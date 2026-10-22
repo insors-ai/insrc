@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c9ef9960-1553-464e-a3d5-cf9b69275d0c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.287Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Selection card renderer (single/multi) + onSelectionDecision sink + toViewModel dual-input + selection-outcome chip (module + eval'd parity)",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b4f6049f3d00caeafcf4a20d4ac05c5f40bc953140ae4b91709246082cd64552",
+        "at": "2026-10-22T12:43:58.287Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.288Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Selection card renderer (single/multi) + onSelectionDecision sink + toViewModel dual-input + selection-outcome chip (module + eval'd parity)",
+    "summary": "In render-registry.ts (module AND the eval'd renderRegistryWebviewSource, kept byte-parity): register the selection-request card renderer — the prompt + one selectable control per option (multi absent/false = radio-style single-select, multi:true = checkbox multi-select) + a confirm; add the onSelectionDecision(cb) sink (mirroring onApprovalDecision) that the confirm calls with (requestId, selected[]), guarded so a multi-select confirm posts nothing until >=1 chosen; add the toViewModel dual-input branches (a replayed selection-outcome TranscriptEntry AND the host-emitted live outcome -> one SelectionOutcomeRowView); register the selection-outcome resolved chip renderer (non-actionable, lists chosen labels). Chips keyed by array index (duplicate-id safe). textContent/className only (k1/k3). Extend the parity test with selection-request + selection-outcome samples.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style.",
+      "The confirm calls onSelectionDecision(requestId, selected[]); a multi-select confirm with zero chosen is a no-op until >=1 selected.",
+      "toViewModel maps BOTH a replayed selection-outcome entry and the live outcome to the same SelectionOutcomeRowView; the chip is non-actionable and lists the chosen label(s).",
+      "Both the module and the eval'd renderRegistryWebviewSource gain the branches; the parity test (with new samples) stays green.",
+      "textContent/className only — no innerHTML/remote origin."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "A live selection-request renders a card with the prompt + one selectable control per option; multi absent/false = radio-style, multi:true = checkbox-style"
+      },
+      {
+        "level": "unit",
+        "name": "The card's confirm calls the decision sink and the webview posts exactly one {type:'selection-decision',requestId,selected:[...ids]}"
+      },
+      {
+        "level": "unit",
+        "name": "A multi-select confirm with zero chosen is a no-op until >=1 option is selected"
+      },
+      {
+        "level": "unit",
+        "name": "textContent/className only; no innerHTML/remote; card appended un-keyed (live-only)"
+      },
+      {
+        "level": "unit",
+        "name": "toViewModel maps BOTH the replayed entry and the live outcome to the same SelectionOutcomeRowView (dual-input); the resolved chip lists the chosen label(s), non-actionable"
+      },
+      {
+        "level": "unit",
+        "name": "The renderRegistryWebviewSource parity test gains selection-request + selection-outcome samples and stays green"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

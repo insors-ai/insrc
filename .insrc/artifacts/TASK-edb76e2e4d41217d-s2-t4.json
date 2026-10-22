@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea03f4d2-c6cf-4afa-82f9-a26621e4021e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:50.981Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the test suites (fake-spawner unit + source-scan integration + gated live)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eaf20c1b9019faa4a82241cc8764aadf8e718cd849a5f377885f865226b726d1",
+        "at": "2026-10-22T12:44:50.981Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:50.981Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the test suites (fake-spawner unit + source-scan integration + gated live)",
+    "summary": "Add vscode-plugin/src/chat/__tests__/: unit suites over a fake deps-injected spawner replaying the captured fixtures (stream normalization, ordered events, file-edit→UnifiedDiff, malformed-line skip, ENOENT/non-zero-exit/auth-error terminal errors, cancel, capabilities.resume, post-done ignored) + a ProviderRegistry unit suite (available filtering, get, empty); a source-scan integration test (mirroring freshness/__tests__/extension-wiring.test.ts) asserting the adapter uses child_process spawn and imports no daemon-IPC/undici/http/fetch in the execution path; and an INSRC_LIVE_TESTS-gated real-CLI check that skips cleanly when unset. All acceptance criteria ac1-ac3 covered and green.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Unit suites cover every LLD testStrategy subject and pass under tsx --test",
+      "The source-scan integration test proves direct spawn + no daemon-IPC/REST in the execution path (k1/k2)",
+      "The live check is env-gated and skips cleanly when INSRC_LIVE_TESTS is unset",
+      "ac1, ac2, ac3 each have a passing proving test"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registry: available lists only providers whose injected probe reports present; Ollama never a member"
+      },
+      {
+        "level": "unit",
+        "name": "registry: get(id) returns the matching adapter; get(absent id) throws unknown-provider; available empty when none installed"
+      },
+      {
+        "level": "integration",
+        "name": "source-scan: cli-adapter imports a child_process spawn seam, not the daemon IPC client (k1)"
+      },
+      {
+        "level": "integration",
+        "name": "source-scan: no undici/http/https/fetch import in the adapter execution path (k2)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

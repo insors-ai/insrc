@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a7c7d9d-6d17-40c1-8901-7ff2710b0581",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.488Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Retried turn: skipUserRow, the stored retry line and the sign-in line",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c54a420e059775ae3f83ce6b5407b9dd05b7001507c7873d3441d4c1464694d9",
+        "at": "2026-10-22T12:43:38.488Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.489Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retried turn: skipUserRow, the stored retry line and the sign-in line",
+    "summary": "Add the skipUserRow option to runTurn/startTurn in chat-panel.ts: no user row pushed to the stored transcript, no echo, title check skipped and no second save, while the prompt is still sent to the CLI; the queued-turn runner passes it when message.attempts > 0. Add persistInfo (appendEvent plus post with the row index, as followLiveTurn does): the runner stores and posts 'the turn failed with <cause>; retrying (attempt n of 3)' when a retried message starts, and on an auth failure stores and posts one line naming the CLI's login command. Streamed partial text and the failed attempt's error row stay in the transcript. A normal turn's shared startTurn path is pinned unchanged.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a retried message is started with skipUserRow and the stored transcript holds a single user row after a retry while the prompt is still sent to the CLI",
+      "a retry stores and posts one retrying line that is still in the stored transcript after a reload",
+      "an auth failure stores and posts a sign-in line, also present after a reload",
+      "a text-only turn that fails with an infrastructure cause is retried and keeps its partial text",
+      "a normal (non-retried) turn still pushes and echoes its user row exactly as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: an auth failure stores and posts a sign-in line in the chat"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a normal turn still pushes and echoes its user row exactly as before"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

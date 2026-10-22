@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d0fdaaef-a1dc-4b24-89d9-68d0952c924e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.250Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Webview: the details pane and its controls",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b77fcd8a13495805191a82ae2573190d3518b0a38f946d5d307bc122da55564",
+        "at": "2026-10-22T12:43:42.250Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.251Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Webview: the details pane and its controls",
+    "summary": "BOARD_WEBVIEW_SCRIPT gains a details pane rendering every ItemDetailsViewModel field with textContent (the opened record in a <pre>), a select-item listener on every card in all three views, a close button posting close-details and an open button per evidence row posting open-evidence.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A 'details' message renders the title, stage and reason, task rows with dependencies, checks and results, the conflict, evidence rows, notices, links and source ids as text; a null model clears the pane.",
+      "Titles, notices and the opened record containing markup render literally; innerHTML is never touched.",
+      "Card clicks post select-item, the close button close-details and the evidence buttons open-evidence, each accepted by parseBoardUpMessage."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'the details pane renders as text and its controls post only select-item, close-details and open-evidence'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

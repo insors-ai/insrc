@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-88e05b17-363a-4f3f-8660-0fc8db394baa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.485Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "src/uninstall.ts - unwireAllHosts + runUninstall (fs-only reversal)",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "39f51da7f28bac37bba63f2d3baffc718461aadbb96bec72445d81f2e589d90c",
+        "at": "2026-10-22T12:44:14.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.486Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "src/uninstall.ts - unwireAllHosts + runUninstall (fs-only reversal)",
+    "summary": "Add vscode-plugin/src/uninstall.ts (plain node, NO vscode import): unwireAllHosts({ specs, fs }) iterates specs, builds an sc5 adapter per spec via createHostAdapter over fs + a no-op env/launchTarget (unwire ignores them), calls adapter.unwire() inside a per-host try/catch (removes the mcpServers.insrc key + the steering marker block; reversible no-op when absent), counting HostFileAccessError failures, and returns { unwired, failed } (never throws). runUninstall() calls unwireAllHosts over HOST_SPECS + defaultHostFileSystem and never throws / never exits non-zero. Reuses the shipped createHostAdapter/HOST_SPECS/adapter.unwire (src/hosts/adapter.ts:74, specs.ts:50) + defaultHostFileSystem (src/hosts/fs.ts). Imports only the hosts seams + node builtins (k5).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "unwireAllHosts builds an adapter per HostSpec over the injected fs and calls unwire() on each; removes the mcp key + steering block; returns { unwired, failed }",
+      "unwireAllHosts is an idempotent no-op for a never-wired host (file byte-unchanged; failed:0)",
+      "a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep (other hosts still unwired)",
+      "runUninstall calls unwireAllHosts over HOST_SPECS + defaultHostFileSystem and never throws / never exits non-zero",
+      "source-scan: src/uninstall.ts carries NO vscode import (plain node) and imports only the hosts seams + node builtins (k5)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unwireAllHosts builds an adapter per HostSpec over the injected fs and calls unwire() on each (mcp key + steering block removed), returning a { unwired, failed } tally"
+      },
+      {
+        "level": "unit",
+        "name": "unwireAllHosts is an idempotent no-op for a host that was never wired (file left byte-unchanged; failed:0)"
+      },
+      {
+        "level": "unit",
+        "name": "a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep (the other hosts are still unwired)"
+      },
+      {
+        "level": "unit",
+        "name": "runUninstall calls unwireAllHosts over HOST_SPECS + defaultHostFileSystem and never throws / never exits non-zero"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: vscode-plugin/src/uninstall.ts carries NO vscode import (plain node) and imports only the sc5 host seams + node builtins (k5)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

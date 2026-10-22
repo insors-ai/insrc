@@ -23,132 +23,62 @@
     "hldBaseRunId": "wf-1785421889464-2ayzlc",
     "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "generateDocument in src/docgen/index.ts already forwards the WHOLE input object to the resolved extractor (reg.extract(input)) rather than a reconstructed {repo,path} — the hinge that makes a1's whole-input pass-through require no generateDocument signature change.",
-          "evidence": "src/docgen/index.ts:70 `const ir = await reg.extract(input);` — the whole input object is passed to the extractor; :68 docgenRegistry.get(docType). The a1 no-signature-change hinge is real. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/tool.ts currently hard-threads only {docType,repo,path}: its execute() builds extractInput={repo}(+path) and its inputSchema fixes properties to docType/repo/path — the gap s6 generalizes.",
-          "evidence": "tool.ts:68 `const extractInput: Record<string,unknown> = { repo };` + :69 adds only path; DOCGEN_TOOL_ID='docgen_generate' (:25). The {repo,path}-only threading gap is real and localized to tool.ts. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/index.ts registers 'docgen.generate' and 'docgen.list' IPC handlers, and docgen.generate currently destructures only {docType, repo, path}.",
-          "evidence": "daemon/index.ts:1157 'docgen.generate' handler, :1158 `const { docType, repo, path } = params`; :1165 'docgen.list'. The IPC surface + its {docType,repo,path} destructuring exist as described. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "insrc_docgen",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "There is currently NO docgen MCP surface: src/mcp/ contains no docgen tool registration, so insrc_docgen is genuinely the missing third surface s6 adds.",
-          "evidence": "grep insrc_docgen + docgen over src/ returns 0 hits in src/mcp (matches are docs only). No docgen MCP surface exists yet — insrc_docgen is genuinely the missing third surface. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/server.ts registers MCP tools via server.registerTool(name, {title, description, annotations, inputSchema}, handler) — the pattern insrc_docgen follows.",
-          "evidence": "src/mcp/server.ts:128 (and 7 more) `server.registerTool(` — the registration pattern insrc_docgen follows. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/schema.ts exports RENDERED_DOCUMENT_SHELL_SCHEMA and DOCGEN_OUTCOME_SCHEMA — the hand-mirrored MCP output shapes the new tool uses.",
-          "evidence": "schema.ts:17 RENDERED_DOCUMENT_SHELL_SCHEMA + DOCGEN_OUTCOME_SCHEMA (pinned by schema.test.ts). The MCP output shapes exist. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/resolve-repo.ts exports resolveRepoPath(explicit, deps) for repo resolution and src/mcp/daemon-stream.ts exposes unary daemon RPC helpers — the daemon-owned read path the MCP handler uses (ac2).",
-          "evidence": "src/mcp/resolve-repo.ts:50 `export async function resolveRepoPath(explicit, deps)`; src/mcp/daemon-stream.ts:253/265 startRun/pollRun unary RPC. The MCP daemon-owned read path exists. (Other resolveRepoPath in analyze/ are unrelated namesakes.) Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The narrative doc type requires base+question (NARRATIVE_INPUT_SCHEMA) and call-sequence requires a symbol entry-point — per-type inputs the current {repo,path} threading drops, making those types unreachable on the tool/IPC surfaces pre-s6.",
-          "evidence": "narrative.ts:135 NARRATIVE_INPUT_SCHEMA, :138 `required: ['repo','base','question']` — inputs the {repo,path} threading drops, making narrative unreachable pre-s6. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "toSerializable in src/docgen/registry.ts projects {docType, capability, extractorInputSchema}, and listDocTypes maps the registry through it — the single enumeration source every surface reads, including extractorInputSchema.",
-          "evidence": "registry.ts:94 toSerializable projecting :98 `extractorInputSchema: entry.extractorInputSchema`; listDocTypes maps the registry through it (daemon/index.ts:1167). Single enumeration source incl. extractorInputSchema. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "registerDocgenTool() is wired into the daemon tool builtins bootstrap at src/daemon/tools/builtins/index.ts, so the tool surface is registered at daemon boot.",
-          "evidence": "builtins/index.ts:37 import registerDocgenTool + :58 registerDocgenTool() — the tool surface is registered at daemon boot. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "sc4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DocGenOutcome (sc4) already carries the source-not-ready variant that the ac3 registered/indexed precondition reuses, so no new outcome variant is introduced.",
-          "evidence": "outcome.ts:48 `sourceNotReady = <T>(reason) => ({ status: 'source-not-ready', reason })` — the sc4 variant the ac3 precondition reuses already exists; no new variant. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 11
-      },
-      "reviewedAt": "2026-07-31T12:32:23.151Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-31T12:34:28.495Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a96505c9d36e413d5bef58cac35c026ab6cb5df2f143547f0fc39670809b68fd",
+        "at": "2026-07-31T12:29:33.920Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T12:34:28.495Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-07-31T12:32:23.151Z",
+        "report": {
+          "entityId": "LLD-870ed3dd246225f4-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-870ed3dd246225f4-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

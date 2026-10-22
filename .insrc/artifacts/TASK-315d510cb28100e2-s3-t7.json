@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b71b2cc1-1223-4366-9588-dc2ac80d1aa5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.270Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Terminal client: Services members and the settings modal",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "926a3ecc5d564a394b10649448868c5a896d038673a5408d6e06051f4d849c49",
+        "at": "2026-10-22T12:43:25.270Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.270Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Terminal client: Services members and the settings modal",
+    "summary": "Add catalog, repoSettings and setRepoSetting to Services.config (functions in src/cli/services/config.ts, wired in makeServices), the settings modal on the repos pane listing repoFields rows with local rows editable and policy and status rows read-only, and update the four Services fixtures.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "makeServices exposes the three members and the command, tui, services and team-service fixtures satisfy the interface",
+      "The modal shows the same labels and values as the shared payload, edits local rows including ghHost only, and shows the message of an ok:false result"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/settings-modal.test.ts: makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/settings-modal.test.ts: the modal lists payload rows, edits local rows only and shows an error message"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

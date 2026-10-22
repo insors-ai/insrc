@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "d3e71f3a6001e773",
+    "storyId": "s1",
+    "createdAt": "2026-08-04T17:34:06.508Z",
+    "updatedAt": "2026-08-04T17:34:06.508Z",
+    "sizeClass": "feature",
+    "epicSlug": "build-ledger-plan-driven-builds-today",
+    "epicCreatedAt": "2026-08-04T16:50:43.835Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4115dd64dc776542da537294a3112b266d142036eddc424ff909b4fdb2d551a9",
+        "at": "2026-08-04T17:34:06.508Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T17:37:55.789Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "commit": "a2fbe67",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ]
+  }
+}

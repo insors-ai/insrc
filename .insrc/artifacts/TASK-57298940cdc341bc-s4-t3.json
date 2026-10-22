@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5a95f669-3e25-4778-a35e-74f91dd0774b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.286Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement OrphanProcessSeam.kill() (selection-only, SIGTERM->wait->SIGKILL, managed SKIPPED)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e979d45bc837f21883e4829becc79b21a6200f8c0f122a0e450e07cc3ea0290d",
+        "at": "2026-10-22T12:43:34.286Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.287Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement OrphanProcessSeam.kill() (selection-only, SIGTERM->wait->SIGKILL, managed SKIPPED)",
+    "summary": "Fill kill(pids): act ONLY on the passed pids (empty -> empty result); re-exclude managedPid (reported SKIPPED, never signalled, k5); SIGTERM(destroy) each target -> wait grace -> re-probe liveness (ProcessHandle.of(pid).isPresent/isAlive) -> SIGKILL(destroyForcibly) survivors; per-pid NOT_FOUND (already gone) / ERROR (signal refused); outcomes in INPUT pid order; never throws; [] off an unsupported platform — mirrors debug.ts killOrphansWith.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Acts only on the passed pids and returns one KillOutcome per input pid in input order",
+      "SIGTERM-death -> TERMINATED; SIGTERM-survivor -> SIGKILL -> FORCED; already-gone -> NOT_FOUND; refused -> ERROR",
+      "The managed pid in the selection is SKIPPED and never signalled (k5); empty selection is a no-op; never throws"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "OrphanProcessSeamTest.kill escalation: fake killer scripts SIGTERM-death->TERMINATED, survivor->SIGKILL->FORCED, already-gone->NOT_FOUND, throws->ERROR; outcomes in input order"
+      },
+      {
+        "level": "unit",
+        "name": "OrphanProcessSeamTest.kill k5/no-op: the managed pid in the selection is SKIPPED + never signalled; empty pids -> empty result; never throws"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

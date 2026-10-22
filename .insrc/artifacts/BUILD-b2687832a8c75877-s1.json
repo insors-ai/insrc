@@ -7,8 +7,36 @@
     "updatedAt": "2026-10-09T17:38:28.840Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-09T17:38:29.931Z",
-    "epicSlug": "defect-against-epic-e2-6a131558-vs"
+    "epicSlug": "defect-against-epic-e2-6a131558-vs",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "922e58d2492e1c162e90bd4937cbce2955d31a7f4d67e19671da1f607850200a",
+        "at": "2026-10-09T16:54:22.468Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T17:38:29.931Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

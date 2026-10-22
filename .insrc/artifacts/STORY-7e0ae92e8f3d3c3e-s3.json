@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-0a9cdf9d-a1a6-4295-b963-617a33b0f4a9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.973Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Use reviewed guidance across web and native mobile",
+      "parent": {
+        "entityId": "EPIC-7e0ae92e8f3d3c3e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "047ae1b89d64a644e1987a47e9cc664a84c5abe92b517ce5ea1e0b93c2980c4f",
+        "at": "2026-10-22T12:43:06.973Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

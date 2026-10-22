@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-a934fc38-5f94-448c-ad8f-78fcec0009e9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.974Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Update corpus releases without changing project decisions",
+      "parent": {
+        "entityId": "EPIC-7e0ae92e8f3d3c3e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "052d55425ff237483bdb3b8ad64547094c86e91780460764659a5d1858687807",
+        "at": "2026-10-22T12:43:06.974Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

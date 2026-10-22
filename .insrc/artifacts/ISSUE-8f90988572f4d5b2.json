@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T06:06:21.546Z",
     "parentRef": {
       "slug": "bug-analyzer-s-plan-tree-child"
+    },
+    "epicCreatedAt": "2026-10-10T05:03:36.238Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a4160b4145df0f2fdd7c03805976eedb43e3e0737f540fbb893433906cfea5bb",
+        "at": "2026-10-10T05:03:36.238Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T06:06:21.546Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

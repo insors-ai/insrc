@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-06f196a7ff528143-S001 -->
+<!-- insrc:artifact PLAN-06f196a7ff528143-s1 -->
 
 # Plan: E2026102106f196a7:S001
 
@@ -135,14 +135,14 @@ Update the installed daemon to the fix and run Epic c2ba6fa6 Story s1's code rev
 
 ## 3. References
 
-- **[[c1]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api storyChangeSet`
-- **[[c2]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api changedFiles`
-- **[[c3]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api storyRangeDiff, splitDiffByFile, realDiffGroundingDeps().workingTreeDiff`
-- **[[c4]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api resolveCodeReviewSubject + dataModelChanges (CodeReviewSubject, CodeReviewBody.subject, changeSetAttribution)`
-- **[[c5]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api assembleDiffCodeReviewGrounding`
-- **[[c6]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api collectBuildChangeLog + dataModelChanges ChangeSetAttributionReport`
-- **[[c7]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api withTypecheckProjects, trivialCheckPlan`
-- **[[c8]]** `prior-artifact` `LLD-06f196a7ff528143-S001 contractDetails.api gitDiffTool.execute`
-- **[[c9]]** `prior-artifact` `LLD-06f196a7ff528143-S001 errorPaths`
-- **[[c10]]** `prior-artifact` `LLD-06f196a7ff528143-S001 testStrategy`
-- **[[c11]]** `prior-artifact` `LLD-06f196a7ff528143-S001 migration`
+- **[[c1]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api storyChangeSet`
+- **[[c2]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api changedFiles`
+- **[[c3]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api storyRangeDiff, splitDiffByFile, realDiffGroundingDeps().workingTreeDiff`
+- **[[c4]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api resolveCodeReviewSubject + dataModelChanges (CodeReviewSubject, CodeReviewBody.subject, changeSetAttribution)`
+- **[[c5]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api assembleDiffCodeReviewGrounding`
+- **[[c6]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api collectBuildChangeLog + dataModelChanges ChangeSetAttributionReport`
+- **[[c7]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api withTypecheckProjects, trivialCheckPlan`
+- **[[c8]]** `prior-artifact` `LLD-06f196a7ff528143-s1 contractDetails.api gitDiffTool.execute`
+- **[[c9]]** `prior-artifact` `LLD-06f196a7ff528143-s1 errorPaths`
+- **[[c10]]** `prior-artifact` `LLD-06f196a7ff528143-s1 testStrategy`
+- **[[c11]]** `prior-artifact` `LLD-06f196a7ff528143-s1 migration`

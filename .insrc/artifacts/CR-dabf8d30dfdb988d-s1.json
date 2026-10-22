@@ -1,0 +1,668 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792384138252-ta6qt1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-19T04:28:58.252Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 72472,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dabf8d30dfdb988d",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T04:26:54.745Z",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2b4962044f1a11a5aa8e871e622fbb8d634548262d7e4e104ed54845e1dfa28d",
+        "at": "2026-10-19T04:28:58.252Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "dabf8d30dfdb988d",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/s6-open-issues.md",
+        "docs/plans/team-signoff-issues-inventory.md",
+        "src/daemon/steps/workflow-step/park-offer.ts",
+        "src/workflow/team/__tests__/handoff-resume.test.ts",
+        "src/workflow/team/handoff.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s6-open-issues.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "s6-open-issues.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s6-open-issues.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "S6 open issues",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s6-open-issues.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "S6-2: handoff test world duplicated",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "team-signoff-issues-inventory.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "Team signoff epic: issue and gap inventory",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "A. Open issues from the story logs",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "B. Known limitation, accepted",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "C. Design gaps with no story yet",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "D. Approvals made over a `block`",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "E. Loose ends",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/park-offer.ts:1",
+            "message": "Empty testsReaching: this changed file symbol is not exercised.",
+            "expectationRef": "/home/subho/work/dev/insors/insrc/src/daemon/steps/workflow-step/park-offer.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/park-offer.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "sameLogin",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/park-offer.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "hasUnparkedWork",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/park-offer.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "registerParkOffer",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-resume.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. The file's recorded passing run establishes coverage for rel and here, but does not supply a reaching edge for this file symbol.",
+            "expectationRef": "/home/subho/work/dev/insors/insrc/src/workflow/team/__tests__/handoff-resume.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed file symbol is not exercised.",
+            "expectationRef": "/home/subho/work/dev/insors/insrc/src/workflow/team/handoff.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "HandoffStage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "HandoffUnit",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "CheckpointCommon",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "RunCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "DraftCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "HandoffCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "unitId",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "unitType",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "slugOf",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "handoffBranchName",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "unitArtifactIds",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "isUnitArtifactPath",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "CheckpointCheck",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "isObject",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "isString",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "no",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "validateCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "escapeRegExp",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "mapStrings",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "portablePaths",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "rebindCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "local",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "RunCheckpointInput",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "buildRunCheckpoint",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "portable",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "unitDraftFiles",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "draftParkOffer",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "committedAtHead",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "inferStageWorkflow",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "has",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "runIsForUnit",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ParkDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ParkPlan",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ParkPlanResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "refuse",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "reasonOf",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "parkPlan",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "mine",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ParkResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "checkpointPath",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "git",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "handoffNote",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "executePark",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "fail",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "attempt",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "parkDraft",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "StageWorkflow",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ResumePlan",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ResumeCheck",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ResumeDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "refused",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "repositoryIdOf",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "verifyReceivingRepo",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "sameSnapshot",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "key",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "stageArtifactCommitted",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "resumeCheck",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "restart",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 74,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

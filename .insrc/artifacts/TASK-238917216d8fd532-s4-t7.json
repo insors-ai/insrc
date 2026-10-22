@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a3e3a5f7-9421-4984-b31e-9f9e61631500",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.735Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Plugin tests (gateway boundary + submit-outcome)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3b17a06919ede8e961ac2c73f767ca3a3c497e5f9415064bbda42cd78f399e6a",
+        "at": "2026-10-22T12:43:18.735Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.736Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin tests (gateway boundary + submit-outcome)",
+    "summary": "Add plugin JUnit tests mirroring ArtifactContentTest: DaemonGatewayImpl.resolveComment over a fake DaemonRpc (ok->Recorded; ok=false/DaemonUnavailable/malformed->Unavailable) AND the real UnixSocketDaemonRpc.parse across the framing boundary ({result:{...}}->Recorded; {result:{error}}->Unavailable); the pure submit-outcome decision (clear only on recorded===submitted); the comment->DTO mapping. Verify via ./gradlew test JDK21.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Gateway tests cross the real parse framing boundary ({result:{error}}->Unavailable)",
+      "The submit-outcome decision keeps the whole buffer on any non-full/failed result and clears only on full success",
+      "./gradlew test green on JDK21"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "real UnixSocketDaemonRpc.parse across the boundary: {result:{recorded,resolutions}}->Recorded; {result:{error}}->Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "submit-outcome decision keeps the whole buffer on any non-full/failed result"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

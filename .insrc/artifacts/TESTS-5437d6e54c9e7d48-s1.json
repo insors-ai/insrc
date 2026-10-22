@@ -1,0 +1,339 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "5437d6e54c9e7d48",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T12:29:31.630Z",
+    "updatedAt": "2026-10-16T12:36:16.256Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "epicSlug": "graph-store-write-transaction-whose-callback",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "7fb631e27c8f680924fd185beb89264b8dc4edbaba97524c1ee15852b97c53ab",
+        "at": "2026-10-16T12:29:31.630Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6898998f",
+        "ranAt": "2026-10-16T12:31:24.350Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/graph/__tests__/write-txn-atomic.test.ts: a throwing callback leaves nothing (in-process and after a reopen); a throwing and a succeeding caller queued together; an async callback refused and keeping nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/write-txn-atomic.test.ts",
+                "title": "a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/write-txn-atomic.test.ts",
+                "title": "of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/write-txn-atomic.test.ts",
+                "title": "an async callback is refused with \"withWriteTxn callbacks must be synchronous\" and keeps nothing; the type rejects it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/graph/__tests__/store-health.test.ts: no library transaction (childTransaction counted) after locks-lost; the slow healthy write probed at each bound with a synchronous callback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health.test.ts",
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/store-health.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1224,
+            "titles": [
+              {
+                "title": "recordStoreFailureIfLockError: records both read failures once, and nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "the named error's message names another process and does not repeat the library's advice",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close",
+                "result": "pass"
+              },
+              {
+                "title": "health record: after locks-lost getGraphStore itself rejects with the named error",
+                "result": "pass"
+              },
+              {
+                "title": "sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok",
+                "result": "pass"
+              },
+              {
+                "title": "slow healthy write: the probe runs and returns, nothing is recorded, the write completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/write-txn-atomic.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 824,
+            "titles": [
+              {
+                "title": "a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen",
+                "result": "pass"
+              },
+              {
+                "title": "of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept",
+                "result": "pass"
+              },
+              {
+                "title": "an async callback is refused with \"withWriteTxn callbacks must be synchronous\" and keeps nothing; the type rejects it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f04796f9",
+        "ranAt": "2026-10-16T12:33:54.676Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/graph/__tests__/migrations.test.ts: a throwing step leaves neither its rows nor its version write; earlier steps stay committed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migrations.test.ts",
+                "title": "a throwing step leaves neither its rows nor its version write; earlier steps stay committed (ISSUE-5437d6e5)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migrations.test.ts",
+                "title": "runMigrations leaves intermediate version on disk after a per-step crash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/migrations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1474,
+            "titles": [
+              {
+                "title": "production MIGRATIONS registry has the v1->v2 entry",
+                "result": "pass"
+              },
+              {
+                "title": "production MIGRATIONS registry has the v2->v3 entry",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations is a no-op when stored == target",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations with empty registry but stored < target throws",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations rejects when stored > target",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations applies a single 1->2 step and advances meta.schema_version",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations chains 1 -> 2 -> 3 in two steps",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations prefers the longest jump that does not overshoot",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations does not overshoot the target",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations leaves intermediate version on disk after a per-step crash",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing step leaves neither its rows nor its version write; earlier steps stay committed (ISSUE-5437d6e5)",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations throws MigrationPathError when chain is incomplete",
+                "result": "pass"
+              },
+              {
+                "title": "runMigrations re-run from already-current version is a no-op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "91892140",
+        "ranAt": "2026-10-16T12:36:16.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts: in a fresh process after a reopen, root.transaction keeps a throwing callback's write, childTransaction and transactionSync discard it; the store opens without useWritemap",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts",
+                "title": "lmdb behaviour pin: after a reopen in a fresh process, root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts",
+                "title": "the store opens without writemap mode, so child transactions are available",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/graph/__tests__/lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+                "title": "control: the same wrappers on a store that was not broken write and record nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+                "title": "store library after another process removed its locks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "lmdb behaviour pin: after a reopen in a fresh process, root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it",
+                "result": "pass"
+              },
+              {
+                "title": "the store opens without writemap mode, so child transactions are available",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/lock-loss-detection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1845,
+            "titles": [
+              {
+                "title": "detection through the real wrappers: asynchronous write by probe, synchronous write at once",
+                "result": "pass"
+              },
+              {
+                "title": "control: the same wrappers on a store that was not broken write and record nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/lock-loss-reproduction.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7672,
+            "titles": [
+              {
+                "title": "reproduction against the real library: read throws -30775, synchronous transaction throws 22, asynchronous transaction does not settle",
+                "result": "pass"
+              },
+              {
+                "title": "reproduction through the store module: a process that has read before gets code 22 with MDB_BAD_RSLOT on a read",
+                "result": "pass"
+              },
+              {
+                "title": "control case: without the second descriptor, the other process's close leaves the first process's write working",
+                "result": "pass"
+              },
+              {
+                "title": "store library after another process removed its locks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

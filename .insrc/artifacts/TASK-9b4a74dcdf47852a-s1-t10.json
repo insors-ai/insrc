@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8eca69cd-17b8-42ed-abf4-ae0dec0fd621",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.735Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The two records are filed together on every route",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6513249388aa6fd6bab3caa5accbf504571a74b97d769da5cc60729be7ef188e",
+        "at": "2026-10-22T12:44:02.738Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.739Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The two records are filed together on every route",
+    "summary": "Prove, and where needed complete, the folder rule across the routes: a trivial standalone build validated with no implement turn before it whose judge fails and which is validated again a day later; the same with an implement turn first; the first build record written by the completion path; and a standalone validate call on a Story whose definition head is silent about standalone.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "A trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder, and the test record's createdAt does not change",
+      "With an implement turn first, the build record it wrote is the anchor and the test record follows it",
+      "The same holds when the first build record is written by the completion path",
+      "A small standalone build's test record carries the resolved standalone flag before any build record exists",
+      "A standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-step.test.ts: a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)"
+      },
+      {
+        "level": "integration",
+        "name": "build-step.test.ts: a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

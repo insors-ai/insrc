@@ -23,94 +23,62 @@
     "hldBaseRunId": "wf-1789491140629-zj0bd2",
     "hldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc1's deriveWorkItemIdentity is available in id.ts for the migration to consume.",
-          "evidence": "id.ts:202 exports deriveWorkItemIdentity (sc1) — available to consume.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc2's resolveArtifactMdPath + listWorkItems + listArtifactMdPaths are available in path-scheme.ts for the migration to consume.",
-          "evidence": "path-scheme.ts exports resolveArtifactMdPath:118, listWorkItems:157, listArtifactMdPaths:178 (sc2) — all present.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The insrc:artifact marker parser (ARTIFACT_ID_MARKER_RE) + artifactIdMarker exist in storage.ts — the identity source for marked artifacts.",
-          "evidence": "ARTIFACT_ID_MARKER_RE is exported+consumed (gates.ts:40, storage) and artifactIdMarker is at storage.ts:259 — the marker identity path exists.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The artifact-id helpers the migration parses (defineArtifactId/lldArtifactId/buildArtifactId/codeReviewArtifactId/specArtifactId/extendArtifactId) + artifactJsonPath exist in storage.ts, and the { json } side keys off ARTIFACTS_DIR (untouched).",
-          "evidence": "storage.ts exports 8 *ArtifactId helpers (define/hld/lld/plan/build/codeReview/spec/extend), artifactJsonPath:251, and ARTIFACTS_DIR='.insrc/artifacts':53 — the json store is keyed off ARTIFACTS_DIR and untouched.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The flat docs tree holds ~225 artifact md across docs/{defines,designs,plans,builds,specs,reviews}, of which 198 carry the insrc:artifact marker and 22 are markerless BUILD-*.md; 3 markerless docs/reviews/2026-07-*.md are non-artifact audits with no companion JSON.",
-          "evidence": "Direct on-disk verification during grounding: find over docs/{defines,designs,plans,builds,specs,reviews} = 225 flat md; grep -rl insrc:artifact = 198; the 27 markerless = 22 BUILD-*.md + 3 docs/reviews/2026-07-*.md hand-written audits + 2 LLDs that actually DO carry a marker (comm artifact). The migration's marked/markerless/audit split holds.",
-          "action": "None — the inventory is accurate as stated (198 marked, 22 markerless BUILD, 3 non-artifact audits).",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "BUILD companion .insrc/artifacts/BUILD-*.json meta carries createdAt+epicHash+storyId+standalone but NOT epicSlug (so the migration must source the slug from a sibling).",
-          "evidence": "Direct check of a BUILD companion (BUILD-914cbf5ea9026b92-s1.json) + a scan of all .insrc/artifacts/BUILD-*.json: meta carries createdAt/epicHash/storyId/standalone but epicSlug is present on only 1 of 24 — so BUILD/CR slug must be sibling-sourced, as the LLD requires.",
-          "action": "None — accurate; the slug-from-sibling design bridges the confirmed gap.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Cross-document md->md links are rare: only 3 exist repo-wide and all live in the hand-written docs/workflow.md (a non-artifact that is not moved).",
-          "evidence": "Direct grep for md->md links across docs/: exactly 3, all in docs/workflow.md pointing at non-artifact plan docs (docs/plans/workflow-implementation.md / meta-workflow-framework.md / workflow-design.md). No artifact md cross-links another artifact by path; the link-rewrite surface is minimal as stated.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "S003 owns NO shared contract (boundary.owns=[]); it only consumes sc1 + sc2 — the migration adds no second path grammar (every destination via resolveArtifactMdPath).",
-          "evidence": "resolveArtifactMdPath (path-scheme.ts:118) is the single destination authority; S003 owns no contract and reuses it verbatim — no second path grammar.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-16T09:19:54.016Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-16T09:44:04.708Z",
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d493b90c8b06a65d06395b8ffe019a49d39f3c4dccfcee12a5558fd50b5b4428",
+        "at": "2026-09-16T09:18:38.645Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-16T09:44:04.708Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-16T09:19:54.016Z",
+        "report": {
+          "entityId": "LLD-599a9b506f22b896-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-599a9b506f22b896-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

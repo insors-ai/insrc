@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791922536306-lu0ioh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T20:15:36.306Z",
+    "model": "claude:opus",
+    "elapsedMs": 71353,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dd277f9cddd6d879",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T18:50:28.696Z",
+    "epicSlug": "list-pending-build-records-review",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "0ead78d89f6050815fdfede3a299c6c9c4b91773777ed9c147d5ab8c2f5a3d85",
+        "at": "2026-10-13T20:15:36.306Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "dd277f9cddd6d879",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/artifact-content.test.ts",
+        "src/workflow/__tests__/pending.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts",
+        "src/workflow/pending.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:70",
+            "message": "`handleWorkflowPending` declares its params as `{ repo?: string } | undefined` — the optional property `repo` is not declared `| undefined`, as the documented exactOptionalPropertyTypes rule requires (`repo?: string | undefined`). The same file repeats the pattern on `PendingArtifact.workItemId` (line 49), `ArtifactShape.meta` / `body` (lines 92-93) and the inline descriptor type at line 154. I could not confirm whether these lines were introduced by this Story or predate it.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/artifact-content.test.ts:38",
+            "message": "`makeFixture` options declare `md?: string`, `json?: unknown | string | null` and `mdRel?: string` (lines 38-40) without the explicit `| undefined` the documented rule requires for optional properties.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/review-decision.test.ts:46",
+            "message": "`makeFixture` options declare `meta?: Record<string, unknown>` and `reviewed?: boolean` without the explicit `| undefined` the documented rule requires for optional properties.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:6494",
+            "message": "`savedEntry` declares its optional properties (`author?`, `decision?`, `kind?`, `quote?`, `slug?`, `version?`, `file?`, lines 6494-6495) without `| undefined`. This breaks the documented rule and also drifts from the same file's own idiom: `fakeClient`, `runWebview` and `loadPlace` all write `?: T | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:108",
+            "message": "Caveat, not a gap: the graph's testsReaching edges are hollow for this Story (every production symbol in src/workflow/pending.ts shows an empty set), so the empty edges were not treated as breaches. Checked directly instead: src/workflow/__tests__/pending.test.ts imports deriveMdPath, listPendingArtifacts and handleWorkflowPending from ../pending.js and exercises them in 13 tests, which reach the private helpers (kindFromFilename, toDescriptor, buildRecordMdPath, deriveWorkItemId, deriveTitle, str) transitively. Running that file gave 13 pass, 0 fail. The other changed files are test files only; artifact-content.test.ts, review-decision.test.ts and vscode-plugin docs-review-panel.test.ts were not run here, so their pass-state is unverified.",
+            "expectationRef": "listPendingArtifacts / handleWorkflowPending (testsReaching grounding empty)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/pending.ts:123",
+            "message": "Correctness risk: a BUILD record is surfaced as awaiting approval on the mere PRESENCE of a same-named `CR-…json` filename in the directory listing. The CR file is never parsed here, so a zero-byte, truncated (mid-write) or malformed CR record — which the loop itself would skip with a warning when it reaches that file — still unlocks its BUILD for the pending list. The comment's premise (\"its Story's code review has run\") is asserted from a filename, not from a readable record carrying a verdict. Consider requiring the CR file to parse (and carry a verdict) before listing the BUILD.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:227",
+            "message": "Duplication: `deriveMdPath` repeats the same hash resolution (`epicHash ?? specHash ?? issueHash`), the same createdAt resolution (`epicCreatedAt ?? createdAt`), the same undefined guard and the same guarded `deriveWorkItemIdentity(hash, createdAt, storyId)` call that `deriveWorkItemId` performs at lines 200-208. `toDescriptor` calls both for every artifact, so the identity is derived twice and the two anchor-precedence rules can drift apart. One shared helper returning the identity (or undefined) would serve both.",
+            "counterpartRef": "deriveWorkItemId",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:191",
+            "message": "Unhandled/silent error path: `buildRecordMdPath` swallows any open/read failure of the BUILD.md (EACCES, EISDIR, EMFILE) with a bare `catch { return ''; }` and no log, unlike the malformed-artifact path at line 129 which warns. The record is then listed with an empty path indistinguishable from the two documented legacy shapes, so a real I/O fault is undiagnosable. A `log.warn` here would match the file's own convention.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:135",
+            "message": "Correctness edge: pending-ness is decided only when `approvedAt` / `rejectedAt` is a non-empty STRING. A record stamped with any other truthy shape (a numeric epoch, a Date-serialised object) is treated as still pending and re-listed for approval. Safe only as long as every writer stamps an ISO string; the check does not defend that assumption.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/review-decision.test.ts:69",
+            "message": "Duplication (test helper): the one-line `cleanup(repo)` (`rmSync(repo, { recursive: true, force: true })`) is defined identically in artifact-content.test.ts:58 and again in pending.test.ts:48, and the `Fixture` / `makeFixture` temp-repo scaffolding is re-declared per file. A shared test-fixture helper would remove three copies; not a blocking risk.",
+            "counterpartRef": "cleanup (src/workflow/__tests__/artifact-content.test.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 9
+    }
+  }
+}

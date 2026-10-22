@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d27a8440-9168-46ca-816e-f94062c37768",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.121Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Additive body fields: uxDefinition? + adherence? (+ AdherenceDimension) with admit-but-never-emit synthesizer schemas",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2a3bb5808c336b241ef99d85156b537ba3583181cac2cb821637896475185ebd",
+        "at": "2026-10-22T12:44:39.121Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.122Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Additive body fields: uxDefinition? + adherence? (+ AdherenceDimension) with admit-but-never-emit synthesizer schemas",
+    "summary": "Add the two optional body fields uxDefinition?: UxDefinition and adherence?: { readonly dimensions: readonly AdherenceDimension[] } (AdherenceDimension = 'ux'|'diagram-er'|'diagram-sequence'|'diagram-component'|'functional-coverage') to the artifact body interfaces (the four doc bodies + HLD/LLD bodies where uxDefinition/adherence are authored), and admit-but-never-emit both in the synthesizer body schemas (additionalProperties:false preserved; uxDefinition content-gated like erDefinition, adherence author-selectable). SCOPE NOTE (per s3 critique): the BuildRecord body is OUT OF SCOPE unless it authors a uxDefinition; the omit-slot pattern is uniform so absent-field byte-identity holds everywhere. Absent-safe, forward-only (k6); the 'ux' doc-format extension section already exists (formats.ts:87). Mirrors the S001 functionalDefinition / S003 erDefinition four-times-shipped omit-slot pattern.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "uxDefinition? and adherence? are optional on the doc/HLD/LLD body interfaces; AdherenceDimension type/enum defined; BuildRecord left unchanged",
+      "the synthesizer body schemas admit both fields with additionalProperties:false preserved and never emit them",
+      "a body without the fields renders byte-identical to pre-S004 output (omit-slot); with them present the UX section/companion link appears",
+      "formats.test.ts extension-section assertion stays green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "body field-add: a body without uxDefinition/adherence renders byte-identical to the pre-S004 output (omit-slot); with them present the UX section + companion link appear"
+      },
+      {
+        "level": "unit",
+        "name": "synthesizer body schemas: additionalProperties:false preserved; uxDefinition/adherence admitted in the schema but never emitted by the synth"
+      },
+      {
+        "level": "unit",
+        "name": "formats.ts: the already-declared 'ux' extension section (formats.ts:87) carries the UX section/mock reference; formats.test.ts extension-section assertion stays green"
+      },
+      {
+        "level": "unit",
+        "name": "AdherenceDimension enum: the multiselect enum validates the recorded selection against 'ux'|'diagram-er'|'diagram-sequence'|'diagram-component'|'functional-coverage'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

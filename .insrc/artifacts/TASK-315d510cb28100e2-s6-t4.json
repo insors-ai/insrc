@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f35f427f-c080-41da-8bd5-c795ea383f80",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.508Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Write the pure handoff module: branch name, checkpoints, rebinding, stage inference",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f99e1e09ef19470315a2ce25da97a9a44064611d75bf5a2ccd0b3713f43e4389",
+        "at": "2026-10-22T12:43:26.508Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.509Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write the pure handoff module: branch name, checkpoints, rebinding, stage inference",
+    "summary": "Add src/workflow/team/handoff.ts with handoffBranchName (placeholders id, slug, type; default insrc/handoff/{type}-{id}; grammar check; pattern must contain {id}), the HandoffCheckpoint run and draft variants with validation (schema version, kind, unit match, path containment under the unit's artifact paths), rebindCheckpoint (repoPath and repoIndexedAt replaced in both intents, startedAtMs reset, for all three stages) and inferStageWorkflow from the committed artifact chain. Set the branchPattern catalog row default in src/config/repo-fields.ts and drop its not-used-yet note.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "handoffBranchName fills placeholders, applies the default, rejects a name that breaks the grammar and a pattern without {id}",
+      "Checkpoint validation rejects an unknown schemaVersion or kind, a unit mismatch and any path outside the unit's artifact paths",
+      "rebindCheckpoint leaves no parker path in the payload or executor intent and works for awaiting_plan, awaiting_llm_step and awaiting_synthesize",
+      "inferStageWorkflow returns plan for a Story with an LLD and no PLAN and complete when both are committed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/handoff-pure.test.ts: handoffBranchName fills placeholders, applies the default, rejects a grammar break and a pattern without {id}"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/handoff-pure.test.ts: checkpoint validation rejects an unknown schemaVersion or kind, a unit mismatch and a path outside the unit's artifact paths, for the run and draft variants"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/handoff-pure.test.ts: rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, resets startedAtMs and leaves no parker path, for all three stages, and inferStageWorkflow follows the committed artifact chain"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

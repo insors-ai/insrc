@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf604cc7-4fcf-41ce-a9c4-de1c5dfc589b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.373Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make readEpicDefinitionCore the single work-item head reader",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1ce6aee29744ac10d8ac3d7330b7c8679091ff0e9726ff94764c6d236875eed1",
+        "at": "2026-10-22T12:44:33.373Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.374Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make readEpicDefinitionCore the single work-item head reader",
+    "summary": "In storage.ts: readArtifactCore also reads meta.tracker; EpicDefinitionCore gains headKind and tracker; readEpicDefinitionCore tries DEF, then ISSUE, then the lowest-ordinal LLD-<h>-<story>, reporting an LLD head with standalone: true and createdAt = epicCreatedAt ?? createdAt. All existing consumers (inheritedEpicSlug, inheritedStandalone, inheritedStoryStandalone, readEpicCreatedAt, buildRecordFolderArgs, validate resolveRouteFlag) then see LLD heads with no code change of their own.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "DEF beats ISSUE beats LLD; a lone LLD (flagged or unflagged) heads its hash with headKind 'LLD' and standalone: true; lowest-ordinal LLD wins; malformed LLD -> {}.",
+      "DEF/ISSUE heads keep their existing fields and now also carry tracker.",
+      "A legacy unflagged LLD-only item's BUILD/TESTS placement resolves to docs/standalone.",
+      "finalizePlan for an LLD-only standalone work item inherits the LLD's slug and writes PLAN.md into the LLD's folder."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readEpicDefinitionCore head precedence, LLD fallback, standalone:true and tracker"
+      },
+      {
+        "level": "integration",
+        "name": "legacy unflagged LLD-only item: BUILD/TESTS placed under docs/standalone"
+      },
+      {
+        "level": "integration",
+        "name": "finalizePlan writes PLAN.md into the anchor LLD's folder"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

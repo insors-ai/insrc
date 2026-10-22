@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-81ddcb49-f44a-4ffc-abcc-f53ad9de56a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.477Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The two S005 TabRenderers (new detail-renderers.ts)",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ce32c9c1b74eabb7c614bcfc52766dd5e4736bfa9effe362bf3f1f60624d8e5",
+        "at": "2026-10-22T12:43:30.478Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.478Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The two S005 TabRenderers (new detail-renderers.ts)",
+    "summary": "Create vscode-plugin/src/panels/detail-renderers.ts with renderDaemonTab (awaits gateway.status(), renders DaemonStatusView state heading + optional detail line + a Refresh control that posts {type:'refresh'}) and renderWorkflowsTab (awaits gateway.workflowChain(), groups WorkflowChainRow[] by slug — one section per slug, one line per stage: stage + status — an explicit empty-state when rows=[], + a Refresh control). Both are VS-Code-free pure fns over the injected gateway and let a gateway rejection propagate (no swallow) so the host degrades. HTML-escape every daemon value via a SINGLE shared escaper — per s3, export escapeHtml from webview-host.ts (or lift it to a shared panels/html.ts) so renderers + host use one escaper (no divergent copy). No vscode, no cloud.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "renderDaemonTab renders state + optional detail (missing detail -> just the state); renderWorkflowsTab groups rows by slug with stage+status lines + an empty-state for rows=[]",
+      "Every daemon-derived value (state/detail/slug/stage/status) is HTML-escaped via the shared escaper; a '<script>' in a value cannot break out",
+      "Both include a Refresh control that posts {type:'refresh'}; a gateway rejection propagates (not swallowed); no 'vscode'/cloud import"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderDaemonTab(gateway) renders gateway.status()'s state + detail into the daemon body (ac1); a missing detail renders just the state (no empty line)"
+      },
+      {
+        "level": "unit",
+        "name": "renderWorkflowsTab(gateway) renders gateway.workflowChain() rows grouped by slug (one section per slug, one line per stage: stage + status) (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)"
+      },
+      {
+        "level": "unit",
+        "name": "Both renderers HTML-escape every daemon-derived value (state/detail/slug/stage/status) — an injected '<script>' in a value cannot break out"
+      },
+      {
+        "level": "unit",
+        "name": "Both renderers include a Refresh control that (in the rendered html) posts {type:'refresh'}"
+      },
+      {
+        "level": "unit",
+        "name": "A renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

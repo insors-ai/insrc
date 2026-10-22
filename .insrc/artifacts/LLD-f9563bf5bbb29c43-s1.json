@@ -24,141 +24,61 @@
     "hldBaseRunId": "wf-1790428640052-v7rbx8",
     "hldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contractDetails/line",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "vscode-plugin/src/chat/chat-panel.ts defines a flat writer `line(s, cls?)` that sets textContent and only sets className when cls is passed (no innerHTML), around line 234.",
-          "evidence": "chat-panel.ts:234 reads verbatim `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;...}` — flat writer, textContent, className only when cls passed, no innerHTML. Exactly as cited.",
-          "action": "None — citation resolves verbatim.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "migration/stateBefore",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "On submit the webview bootstrap posts a 'submit-turn' message (and clears the box) with no live user-row render, around chat-panel.ts:262.",
-          "evidence": "chat-panel.ts:262 posts {type:'submit-turn',text:box.value} and clears box.value on Cmd/Ctrl+Enter — no live user-row render, as cited.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "dataModel/user-row",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The host pushes a durable user row (role:'user') into the transcript, around chat-panel.ts:337, which is why the prompt currently appears only on session-restored replay.",
-          "evidence": "chat-panel.ts:337 reads `s.transcript.push({ role: 'user', text: prompt, at: now() });` — the host durably pushes the user row, confirming the current replay-only appearance.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "invariants/k4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "appendEvent persists marker/assistant rows to the transcript but does NOT persist status ticks, around chat-panel.ts:424.",
-          "evidence": "chat-panel.ts:424 reads `if (ev.kind === 'status') return;` — status ticks are skipped from persistence, confirming k4's non-persisted-status invariant.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "dataModel/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "markers.ts maps a tool-call event to a label using the tool/mcp name only (e.g. `event.mcp ? server·name : event.tool`), around markers.ts:66.",
-          "evidence": "markers.ts:66 reads `label: event.mcp ? `${event.mcp.server} · ${event.mcp.name}` : event.tool,` — tool-call label is name-only, as cited; motivates surfacing the command.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "contractDetails/mapLine",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "cli-adapter.ts has a claude mapper (around :156) whose assistant tool_use block exposes `input` (around :166) and emits the tool-call (around :171) with tool (+mcp) only.",
-          "evidence": "cli-adapter.ts:166 `const input = (block['input'] ...) ?? {};` and :171 emits `{ kind:'tool-call', turnId, tool: toolName[, mcp] }` — claude mapper exposes input and emits name-only, exactly as cited; command is available to populate additively.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "contractDetails/mapLine",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "cli-adapter.ts has a codex mapper (around :200-227) whose command_execution/tool_call items carry `item.command` (around :222) and emit the tool-call (around :223) with tool only.",
-          "evidence": "cli-adapter.ts:222 shows `item['command']` is read (currently coalesced into `tool` as a fallback label) and :223 emits `{ kind:'tool-call', turnId, tool }`. item.command is present at the parse point, so populating a separate additive `command` field is sound; the LLD's characterization holds.",
-          "action": "None — confirmed; the command value is already in hand at :222.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "dataModel/ToolCallEvent",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "stream-events.ts declares the tool-call TurnEvent member (`kind: 'tool-call'`) around :33 — the shape S001 extends with an optional `command?: string`.",
-          "evidence": "stream-events.ts:33 reads `readonly kind: 'tool-call';` — the ToolCallEvent member S001 extends with optional command, as cited.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "dataModel/TURN_EVENT_KINDS",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "stream-events.ts declares TURN_EVENT_KINDS (around :50) and derives TurnEventKind = typeof TURN_EVENT_KINDS[number] (around :59) — the union S001 reserves 'approval-request' into additively.",
-          "evidence": "stream-events.ts:50 `export const TURN_EVENT_KINDS = [` and :59 `export type TurnEventKind = (typeof TURN_EVENT_KINDS)[number];` — the union derivation is exactly as cited; reserving 'approval-request' is a pure array-member addition.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "boundary/sc1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "There is currently NO MessageViewModel / RowViewModel / RenderRegistry / toViewModel in vscode-plugin/src/chat — sc1 is net-new (so S001 does not collide with an existing render layer).",
-          "evidence": "Greps for RenderRegistry/RowViewModel/toViewModel return matches ONLY in docs/ (this epic's HLD.md + LLD.md), none in vscode-plugin/src/ — sc1 is genuinely net-new source, so S001 introduces it without colliding with an existing render layer.",
-          "action": "None — confirmed net-new.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "testStrategy",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The existing chat test suites S001 must keep green are chat-panel.test.ts, cli-adapter.test.ts, and markers.test.ts under vscode-plugin/src/chat/__tests__.",
-          "evidence": "markers.test.ts:23 reads `{ kind: 'tool-call', turnId: 't', tool: 'grep' },` — an existing tool-call test fixture, confirming markers.test.ts exercises the tool-call path S001 must keep green.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl12",
-          "ref": "interactionWithShared",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S001 owns shared contracts sc1 and sc2 per the approved HLD (ownedByStory=s1), so implementing them here is in-scope and not a re-design of another story's contract.",
-          "evidence": "The bare-path read of HLD.md returned found:false (no line anchor), but the grep corroborates the trace: this epic's HLD.md:15/27/30/31 defines sc1 (MessageViewModel + inline RenderRegistry, RowViewModel, toViewModel) and the LLD's own embedded HLD context slice records ownedByStory=s1 for sc1/sc2. Ownership trace holds; the failed read is a probe-anchor artifact, not an LLD defect.",
-          "action": "None — ownership confirmed via grep + the approved HLD context slice.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12
-      },
-      "reviewedAt": "2026-09-26T14:08:45.234Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-26T14:16:46.855Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "501492e4f7591b6e954d8c07d92973d231488d1f9c853a34db6bce66b66595b2",
+        "at": "2026-09-26T14:05:36.915Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T14:16:46.855Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-09-26T14:08:45.234Z",
+        "report": {
+          "entityId": "LLD-f9563bf5bbb29c43-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-f9563bf5bbb29c43-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

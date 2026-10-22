@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c61be585-ce0f-4d7a-914c-a273c8cd3202",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.001Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Agent can present selectable options for the user to choose",
+      "parent": {
+        "entityId": "EPIC-8e8859ca0ca83612",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d268a38c9a6367dc6d709bc3284ece1499e78237102135d40ae5a6dded903a67",
+        "at": "2026-10-22T12:43:07.001Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

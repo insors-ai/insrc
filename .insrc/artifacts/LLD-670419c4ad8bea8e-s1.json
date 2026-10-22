@@ -25,168 +25,61 @@
     "hldEffectiveHash": "0b18f1868092f658a04b0e37289cd2f22064f72dc7fa70046b626365a0e5e8bb",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "warn",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers S001's durable personal history, unchanged delivery state, and restart recovery requirements.",
-          "evidence": "DEF S001/ac1 requires answers, confidence, assisted attempts and progress to remain associated with the original change; ac2 preserves delivery status and approvals; ac3 requires recovery without accidental pass. The proposed immutable scope, separate history namespaces, atomic writes, interrupted-job recovery and unavailable eligibility address these requirements. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/store.ts]",
-          "action": "Preserve these invariants during implementation.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Identity precedence and retention until explicit deletion reflect the resolved upstream decisions.",
-          "evidence": "HLD metadata specifies one connected provider identity, repository-configured Git email when multiple identities exist, OS fallback, and distinct identities unless explicitly linked. Its retention resolution says: 'Retain the learner's assessment history locally until that learner explicitly deletes it' with private history, sharing disabled and no automatic expiry. The design preserves these decisions. [files: .insrc/artifacts/HLD-670419c4ad8bea8e.json]",
-          "action": "Keep these resolutions as acceptance fixtures.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "GraphStore currently opens 27 named databases with MAX_DBS set to 32.",
-          "evidence": "Reading the complete store construction yields 27 named database opens, ending with exploration_cache. The constant is 'const MAX_DBS = 32'. Adding eight namespaces yields 35, so increasing capacity is necessary. [files: src/db/graph/store.ts]",
-          "action": "Implement the proposed capacity increase and inventory assertion together.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing streaming transport substitutes request IDs, uses a void send callback, and does not automatically emit done.",
-          "evidence": "StreamHandler accepts 'send: (msg: IpcStreamMessage) => void'. handleStreamMessage constructs '{ ...msg, id: request.id }', awaits the handler, and only removes listeners afterward; it emits an error on an uncaught handler failure but no automatic done. IpcStreamKind already includes progress, done and error. [files: src/daemon/server.ts, src/shared/types.ts]",
-          "action": "Retain the proposed explicit terminal frames and domain events inside progress.data.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "withWriteTxn supports the proposed atomic multi-namespace mutation with a synchronous callback.",
-          "evidence": "The complete implementation obtains GraphStore, executes store.root.childTransaction(run), rejects thenable callback results, awaits transaction settlement and detects lock loss. Its documented child-transaction behavior rolls back a throwing callback without rolling back neighboring callers. [files: src/db/graph/store.ts]",
-          "action": "Await withWriteTxn before acknowledgment and keep all callback work synchronous.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The role taxonomy and floor guard are reusable, while the five understanding role descriptors are new.",
-          "evidence": "The complete ROLES registry contains no understanding roles. RoleDescriptor exposes id, criticality and defaultTier; roleDescriptor returns undefined for absent entries. applyCoreFloor clamps critical roles against the configured floor. The proposed registration and explicit missing-descriptor check fit these APIs. [files: src/config/role-taxonomy.ts, src/config/core-floor-guard.ts]",
-          "action": "Test both descriptor registration and configured-floor behavior; critical does not independently force core under every configuration.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design identifies the existing transport and lifecycle integration sites needed for command registration and bounded shutdown flushing.",
-          "evidence": "daemon/index.ts constructs IpcServer from separate RPC and stream handler registries. Its stopBackgroundWork initiates server.close without awaiting it; closeStores runs after queue drain. server.ts writes directly without tracking write callbacks. These are the sites the design proposes extending, without changing the public send callback. [files: src/daemon/index.ts, src/daemon/server.ts, src/daemon/shutdown.ts]",
-          "action": "Cover both ordinary response writes and stream writes in pending-write tracking.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing connection metadata provides a concrete integration path for enumerating authenticated GitHub, GitLab and Jira stable subjects.",
-          "evidence": "The analyzer failed during planning with shaper-llm-unavailable caused by an invalid response schema. Subsequent source searches and reads found GitHub tracker configuration and ghAuthOk(), which runs 'gh auth status' and returns only ok/reason. Repository owner/repo metadata is not authenticated learner identity. No concrete stable-subject enumeration API or GitLab/Jira connection adapter was identified. [files: src/workflow/config/github.ts, src/workflow/tracker/github.ts]",
-          "action": "Specify each adapter's module, metadata source, stable-ID field and unavailable behavior. Distinguish a missing integration from an available authenticated identity that the implementation must discover.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Assessment versioning should be separate from graph versioning, with additive namespaces rather than a graph schema rewrite.",
-          "evidence": "GraphStore currently uses SCHEMA_VERSION = 5 and stores its version in meta under schema_version. Its initialization dispatches graph migrations from that value. The inspected namespace inventory and source searches contain no existing assessment storage format. A separate understanding_meta/version boundary avoids misinterpreting graph versions as assessment versions. [files: src/db/graph/store.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
-          "action": "Keep assessment initialization and unsupported-version handling separate from existing graph migration logic, as proposed.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design preserves the HLD's shared contracts and defers grading, editor behavior, Git capture and overrides to their owning stories.",
-          "evidence": "HLD sc1 contains the scope fields retained by the canonical tuple, including commitMode and ordered parentOids. sc2 contains the same AssessmentService sketch. sc4 defines confidence as unsure/low/medium/high. HLD §6 assigns foundational schemas and role registration to s1, grading to s3, editor integration to s5, capture/enforcement to s6 and exceptions to s7. The LLD follows those boundaries. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
-          "action": "Keep sibling implementations behind the proposed validated internal registration boundary.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed shutdown handling can preserve the existing forced-exit and lock-loss behavior.",
-          "evidence": "createShutdown is re-entrant guarded, invokes stopBackgroundWork synchronously, defaults hardExitMs to 20,000, and bypasses queue/store closure after detected lock loss in favor of SIGKILL. The proposed flush is confined to healthy closeStores and bounded to 1,000ms, so it need not replace these paths. [files: src/daemon/shutdown.ts, src/daemon/index.ts, src/daemon/server.ts]",
-          "action": "Keep stop hooks free of database waits and retain the proposed forced-exit, disconnect and re-entrant tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each S001 acceptance criterion has a corresponding proposed test using compatible repository test infrastructure.",
-          "evidence": "DEF ac1 maps to persistence/reopen and identity/scope tests; ac2 maps to unchanged delivery-artifact assertions; ac3 maps to interrupted-job recovery, rollback and reconnect tests. Existing graph tests use node:test, node:assert/strict, temporary directories, setGraphStorePath and closeGraphStore, supporting the proposed isolated persistence suite. Existing server registry tests use fake sockets, so the promised real-socket shutdown tests are additional work, not existing coverage. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/__tests__/store.test.ts, src/daemon/__tests__/server-registry.test.ts]",
-          "action": "Implement the mapped tests, explicitly including failed and skipped assessment transitions for ac2. This review did not execute tests or verify future implementation behavior.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-17T12:44:39.150Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-670419c4ad8bea8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-17T12:48:02.165Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c94cbf807d72364a4c2068bef6745be3e11c32627c4c79dab6efb03417938431",
+        "at": "2026-10-17T12:40:24.817Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T12:48:02.165Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-10-17T12:44:39.150Z",
+        "report": {
+          "entityId": "LLD-670419c4ad8bea8e-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-670419c4ad8bea8e-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

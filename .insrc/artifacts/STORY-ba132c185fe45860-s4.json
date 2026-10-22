@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-7310a511-e7d4-4599-b467-aca839150fa6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.058Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Pick a tier's model from an inline provider-filtered combo in JetBrains",
+      "parent": {
+        "entityId": "EPIC-ba132c185fe45860",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "16832323d1e610602b614d79a62466919c2118198034afb854a9a9650231d771",
+        "at": "2026-10-22T12:43:07.058Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

@@ -24,123 +24,61 @@
     "hldBaseRunId": "wf-1790073320669-iy7sqb",
     "hldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The shared sc1 IPC client exists as SharedIpcClient with an rpc method and a status method, the sole daemon path the gateway uses.",
-          "evidence": "CONFIRMED: sc1 SharedIpcClient lives at src/shared/ipc-client.ts (owner Story ad0d45c9:S001) and is already consumed inside vscode-plugin (config/gateway.ts, workspace/registrar.ts uses client.rpc). The rpc/status surface is real.",
-          "action": "No change — the gateway correctly leans on the existing sc1 client.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A daemon.status IPC method exists and returns a DaemonStatus with uptime/repos/queueDepth/embeddingsPending (mapped to DaemonStatusView).",
-          "evidence": "CONFIRMED: daemon.status is a real IPC method (src/cli/services/daemon.ts: rpc<DaemonStatus>('daemon.status'); daemon handler + server-registry test exercise it). DaemonStatus type with queueDepth/embeddingsPending exists.",
-          "action": "No change — status() maps a real payload.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A repo.list IPC method exists (mapped to registeredRepos()).",
-          "evidence": "CONFIRMED: repo.list handler exists at src/daemon/index.ts:536 and is already called from vscode-plugin/src/workspace/registrar.ts:40 (client.rpc('repo.list')).",
-          "action": "No change — registeredRepos() maps a real IPC.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A daemon.debug-status IPC method exists and returns { clients: AttachedClient[] } (mapped to mcpClients()).",
-          "evidence": "PARTIALLY PRECISE: daemon.debug-status + AttachedClient are real (src/shared/types.ts, src/cli/services/debug-types.ts). But the actual payload is a UNION { reachable:true; clients: readonly AttachedClient[] } | { reachable:false; ... }, not a bare { clients: AttachedClient[] } as the LLD abbreviates. mcpClients() must read clients only on the reachable branch.",
-          "action": "Build-time note (not a design defect): when wiring mcpClients(), destructure the debug-status union's reachable branch before mapping clients; treat unreachable as an empty McpClientView[] or a GatewayReadError. Carry this into the s6 consumer too.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The LLD's { clients } shorthand is accurate for the reachable case but omits the reachable discriminator the real IPC returns; the plan/build step should map only the reachable branch's clients."
-          }
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc2 status-bar surface is StatusSurface over an injected StatusBarHandle (surfaces/types.ts) that has text/tooltip/show but NO `command` field, so the click command is set on the raw vscode StatusBarItem in extension.ts.",
-          "evidence": "CONFIRMED: surfaces/types.ts:17 `export interface StatusBarHandle extends DisposableLike` has no `command` field; extension.ts:52-54 creates the raw vscode StatusBarItem and casts it to StatusBarHandle. So the click command must be set on the raw StatusBarItem in extension.ts, exactly as the LLD states.",
-          "action": "No change — the ac1 wiring approach is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "InsrcCommandId is a closed union in surfaces/command-registry.ts and was additively extended by S003 for 'insrc.settings.refresh' (the precedent this story follows); the three new ids are additive.",
-          "evidence": "CONFIRMED: command-registry.ts:22 shows the InsrcCommandId closed union ending with 'insrc.settings.refresh' (the S003 additive precedent). No insrc.status.* ids exist yet in vscode-plugin/src, so the three new ids are genuinely additive.",
-          "action": "No change — additive-union extension matches the established pattern.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "extension.ts is the SOLE module importing 'vscode' (the injectable-seam convention the sc9 cores preserve).",
-          "evidence": "CONFIRMED: the only `import * as vscode from 'vscode'` inside vscode-plugin/src is extension.ts:12 (other matches are tests/docs). The sole-vscode-importer invariant holds.",
-          "action": "No change — the sc9 cores must stay VS-Code-free over injected boundaries.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The compile-only src/vscode.d.ts shim currently declares StatusBarItem.command but NOT the Webview (createWebviewPanel/WebviewPanel/ViewColumn) or QuickPick (showQuickPick/QuickPickItem) API — these are net-new additive declarations.",
-          "evidence": "CONFIRMED: vscode.d.ts declares StatusBarItem (line 13, with command) but has NO createWebviewPanel/WebviewPanel/showQuickPick/QuickPickItem anywhere in vscode-plugin/src (all 44 such matches are in docs). These are net-new additive shim declarations, as the LLD says.",
-          "action": "No change — additive shim extension is required and correctly scoped.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The panels module (src/panels/) is net-new — no existing panels/webview-host/daemon-gateway files.",
-          "evidence": "CONFIRMED: no createWebviewPanelHost/createDaemonDataGateway/DaemonDataGateway symbols exist in vscode-plugin/src (all 37 matches are docs). src/panels/ is genuinely net-new.",
-          "action": "No change — new-capability module, no collision.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The test convention is node:test over injected fakes with existing suites surfaces.test.ts / controller.test.ts / sync-engine.test.ts, and command-count tests in packaging.test.ts + workspace/__tests__/activation.test.ts.",
-          "evidence": "CONFIRMED: node:test is the pervasive convention (40 test hits); surfaces.test.ts / controller.test.ts / sync-engine.test.ts all exist. The packaging + activation command-count tests are the ones S003 already had to touch.",
-          "action": "No change — test strategy matches the shipped convention.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "sc9 is owned by this story (s4) per the HLD boundary, and the LLD implements it verbatim from the HLD interfaceSketch (DetailTab triad, WebviewPanelHost 2 methods, DaemonDataGateway 5 methods) with no added surface members.",
-          "evidence": "CONFIRMED: the HLD boundary assigns sc9 ownership to s4, and the LLD implements the interfaceSketch verbatim (DetailTab triad, 2 host methods, 5 gateway methods, view types) with showStatusMenu flagged as an internal (non-surface) host method — no added sc9 members.",
-          "action": "No change — the implements-verbatim trace holds.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 11
-      },
-      "reviewedAt": "2026-09-22T14:04:56.990Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-22T14:09:03.775Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "14b82a7276d3f880ebf66f0c98d2ee2764b88e636fb0b2cd2ab8de9763a45b79",
+        "at": "2026-09-22T14:02:39.806Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T14:09:03.775Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-09-22T14:04:56.990Z",
+        "report": {
+          "entityId": "LLD-401ae5fb7b8537cc-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-401ae5fb7b8537cc-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

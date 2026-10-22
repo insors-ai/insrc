@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1aa3b93b-a116-4055-ba84-4d52eabc6d68",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.264Z",
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b94cf2c9058fd82a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "IndexQueue runs an index lane and a summary lane at the same time",
+      "parent": {
+        "entityId": "STORY-b94cf2c9058fd82a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b94cf2c9058fd82a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6615f58de3bf61b2c102cd271cb59cf65a724e3a816922f158cd977b485213f6",
+        "at": "2026-10-22T12:44:24.268Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.268Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "IndexQueue runs an index lane and a summary lane at the same time",
+    "summary": "IndexQueue routes doc-summarise-repo and doc-summarise-entity to a summary lane and every other kind to an index lane, with today's dedup per lane; start runs one drain loop per lane concurrently and resolves when both stop; a doc-summarise-entity job goes ahead of the first queued sweep; adds takeDocSummaryEdit, laneStatus and isStopping; depth, isProcessing and depthForRepo span both lanes and codeIndexWorkFor reads the index lane only. The existing code-index-work test asserts the index lane's order only.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "An index job enqueued while a summary job runs completes before that summary job finishes.",
+      "Each lane runs its jobs one at a time in order; kinds route to the right lane.",
+      "A single-document job goes ahead of a queued sweep and takeDocSummaryEdit removes and returns it.",
+      "depth, isProcessing, depthForRepo, codeIndexWorkFor and laneStatus report as the LLD specifies; stop ends both lanes and start resolves.",
+      "The existing queue tests pass, with queue-code-index-work asserting index-lane order only."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/queue-lanes.test.ts: while a summary job is running and has not finished, an index job enqueued after it runs to completion; the two lanes run at the same time and each runs its jobs one at a time in order; summary kinds go to the summary lane and every other kind to the index lane; a single-document job is placed ahead of a queued sweep and takeDocSummaryEdit removes and returns it; depth, isProcessing and depthForRepo span both lanes (depthForRepo counts a queued sweep but not a single-document job), codeIndexWorkFor reads the index lane only, laneStatus reports each lane; stop ends both lanes and start resolves"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/queue-code-index-work.test.ts: the existing test asserts the order of the index lane's in-flight jobs only, independently of summary-lane interleaving, and stops once both lanes are empty"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

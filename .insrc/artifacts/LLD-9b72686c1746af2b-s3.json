@@ -24,93 +24,61 @@
     "hldBaseRunId": "wf-1790749192360-iyxm4i",
     "hldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The BUILD record writer + renderer live in standalone-record.ts: persistBuildRecord (an upsert) and renderPlanBuildRecordMd around lines 126-157.",
-          "evidence": "Confirmed: standalone-record.ts:126 `export function renderPlanBuildRecordMd(rec: BuildRecord): string` and :172 `export function persistBuildRecord(...)` — both the writer and renderer resolve in that file.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "BuildRecord.body today has NO top-level narrative `summary` field (only focus/producesLld/tasks/commit/changeLog/feedback); S003 adds it.",
-          "evidence": "Confirmed: standalone-record.ts:70 `readonly changeLog?: ChangeLog | undefined` and the body carries feedback? but no `summary` field — the read at :61 anchors the body interface; S003's summary is genuinely new.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderPlanBuildRecordMd emits omit-slot `## Changes` and `## Feedback` sections via changeLogBodyLines/feedbackBodyLines (pushed only when non-empty).",
-          "evidence": "Confirmed: standalone-record.ts:149 `lines.push('', '## Changes', '', ...changeLines)` and :153 `... '## Feedback' ...`, each gated on the binder yielding content — the omit-slot pattern S003 mirrors for `## Summary`.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "persistBuildRecord upserts via mergeWithPrior computing body = {...prior.body, ...rec.body} (a new body field takes the new write; omitted keys are preserved).",
-          "evidence": "Confirmed verbatim: standalone-record.ts:232 `function mergeWithPrior(...)` with :247 `...prior.body,` and :248 `...rec.body,` — a new body field takes the new write; omitted keys are preserved from the prior.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "appendFeedback (writer.ts) is the append-only feedback writer: body.feedback = [...existing, entry], preserving every other key, minting an id + timestamp.",
-          "evidence": "Confirmed verbatim: writer.ts:117 `export function appendFeedback(req): AppendFeedbackResult` and :145 `body: { ...artifact.body, feedback: [...existing, entry] }` — append-only, preserving every other key.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The provenance vocabulary declares FeedbackEntry (id/target/comment/author/timestamp/kind?) + FeedbackRecord = readonly FeedbackEntry[] in provenance/types.ts.",
-          "evidence": "Confirmed: provenance/types.ts:37 `export interface FeedbackEntry extends ProvenanceAuthorship` and :50 `export type FeedbackRecord = readonly FeedbackEntry[]` (the citation's :45 was approximate; the symbol resolves at :50).",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The render binders feedbackBodyLines + changeLogBodyLines are defined in format/bindings.ts and return [] for absent/empty input (the omit-slot idiom S003 mirrors for `## Summary`).",
-          "evidence": "Confirmed: format/bindings.ts:74 `export function feedbackBodyLines(...)` and :91 `export function changeLogBodyLines(...)` — the omit-slot binders (they return [] for empty input).",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "appendFeedback validates non-empty author + comment and throws ArtifactFeedbackError otherwise (the fail-open-at-caller error the LLD relies on).",
-          "evidence": "Confirmed: writer.ts:33 `export class ArtifactFeedbackError extends Error` and :123/:124 throw it for an empty author/comment — the typed error the LLD's fail-open error paths rely on.",
-          "action": "accept",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-30T07:55:28.154Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-30T07:55:34.890Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b65c1a5e479faa4571666a566ed75d6efbb79f68270119ee5fc50ddec3a743a9",
+        "at": "2026-09-30T07:54:07.386Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T07:55:34.890Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-30T07:55:28.154Z",
+        "report": {
+          "entityId": "LLD-9b72686c1746af2b-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-9b72686c1746af2b-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

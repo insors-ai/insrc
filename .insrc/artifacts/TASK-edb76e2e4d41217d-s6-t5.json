@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7d807ee-b27b-49c9-89e7-702edbc35e38",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.465Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Contribute the insrc.chat.diffView setting in package.json",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "97c31e2c98834c1c82e43ff5070e7f39c0c19aac670e9739f5654b1831fb5eb6",
+        "at": "2026-10-22T12:44:53.465Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.466Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Contribute the insrc.chat.diffView setting in package.json",
+    "summary": "Add insrc.chat.diffView to vscode-plugin/package.json contributes.configuration: type 'string', enum ['chat','editor'], default 'chat', with enumDescriptions + description, next to insrc.chat.enabled.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "package.json contributes.configuration has insrc.chat.diffView with type 'string', enum ['chat','editor'], default 'chat'",
+      "it sits alongside insrc.chat.enabled and appears in VS Code's native Settings UI"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring: package.json has insrc.chat.diffView type 'string' enum ['chat','editor'] default 'chat'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792039732236-rv12v4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T04:48:52.236Z",
+    "model": "claude:opus",
+    "elapsedMs": 88641,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "160fa1bb7a8604ad",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T20:02:51.690Z",
+    "epicSlug": "end-running-state-only-running-turn",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "252f750f79d648ff05d56a2b13fe0c961ecf40f3e6523c948397600926b20d88",
+        "at": "2026-10-15T04:48:52.236Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "160fa1bb7a8604ad",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/protocol.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:4975",
+            "message": "presenterSpy's options parameter declares the optional prop `throwOn?: 'begin' | 'result' | 'end'` without `| undefined`. Neighbouring helpers in the same file (attachHarness, and runShell in chat-shell.test.ts) spell their optional props as `?: T | undefined`. This is test-helper code, and it may be older than this Story.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:5005",
+            "message": "presentedHarness's options parameter declares `store?:` and `hostPid?: number` without `| undefined`. That departs from the explicit `| undefined` idiom other harness helpers in the file use.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts:28",
+            "message": "spawningAdapter's `opts: { pipe?: boolean }` and harness's `{ pipe?: boolean; logs?: string[] }` (line 58) declare optional props without `| undefined`. The test helpers are not consistent with the documented style for optional props.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:706",
+            "message": "postInfo's new `info: true` on the closing done is exercised (dir-block and all-denied tests reach postInfo) but no assertion checks the flag. chat-panel.test.ts:2431 only checks that a done is posted. persistInfo's flag is asserted (chat-queue-runner.test.ts:410), and the page's `&&!m.info` branch is asserted both behaviourally (chat-shell.test.ts:641) and textually (chat-panel.test.ts:1828). If the flag were dropped from postInfo, the live-only informational lines (dir-block, all-denied, completed-batch notes) would end the running state again and no test would fail. Note: the graph's testsReaching edges were empty for all production symbols because the grounding is hollow. I judged coverage by running chat-shell, chat-queue-runner and chat-panel tests: 182/182 pass.",
+            "expectationRef": "postInfo",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:715",
+            "message": "persistInfo posts the same closing `{ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }` literal as postInfo, comment included. The fix had to be made twice, and a future change to how an informational line is closed (or a new info-posting helper) can miss one copy and bring the bug back. A small shared `closeInfo(turnId)` helper, called from both, would keep the `info` marking in one place.",
+            "counterpartRef": "postInfo",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts:658",
+            "message": "The comment says a done with no `info` mark ends the turn \"whatever its turn id\", but the test never sends an unmarked done with a non-turn id such as 'queue-retry-…'. It only sends an error on 't2'. Either add that assertion, so a later change that keys the check on the turn-id prefix instead of the flag gets caught, or reword the comment to match what the test checks.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 6
+    }
+  }
+}

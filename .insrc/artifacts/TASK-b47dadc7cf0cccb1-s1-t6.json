@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19dc9588-8507-40fb-9385-38c48d245010",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.259Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Coverage eligibility and the judge context",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "13f0edc5b4e803a2206552c23fb76ee24721358ae64dd4576e5aba1322998bef",
+        "at": "2026-10-22T12:44:18.259Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.260Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Coverage eligibility and the judge context",
+    "summary": "assembleCodeReviewGrounding (src/workflow/code-review/grounding.ts:74-104) sets coverageEligible (function/method/class in a non-test file); buildDiffSymbols rows (:296-310) are not eligible; add JudgeContext { groundingMode } passed by the runner to every judge slot (src/workflow/code-review/runner.ts:69-71, :193) from its options; types in src/workflow/code-review/types.ts.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "Sections, documents, config, types, interfaces and every test-file entity are not eligible; functions, methods and classes in source files are.",
+      "Every judge slot receives the run's groundingMode; the daemon diff path reaches judges as 'degraded'.",
+      "The grounding handed to the adherence, conventions and quality judges still holds every changed symbol, eligible and ineligible alike."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: 'sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: 'every judge slot receives the run's groundingMode and the non-coverage judges see every symbol'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

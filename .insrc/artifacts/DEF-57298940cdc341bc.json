@@ -19,102 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "57298940cdc341bc",
     "epicSlug": "expand-jetbrains-plugin-s-insrc-settings",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "d1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The CLI Daemon pane exists and offers the six lifecycle actions start/stop/restart/update/backup/compact via its daemon service.",
-          "evidence": "CONFIRMED: DaemonPane.tsx invokes all six — svc.daemon.startDaemon (:50), stopDaemon (:53), restart (:55), update (:60), backup (:80), compact (:66).",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The CLI Workflows pane lists Epics for a repo and opens an EpicDetail showing the chain state (define/hld/stories/amendments).",
-          "evidence": "CONFIRMED: WorkflowsPane.tsx uses svc.workflow.listEpics (:39), chain (:99) and amendments (:100) — the Epic-list + chain-state read the read-only Workflows page mirrors.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The CLI Debug pane hosts three sections — Daemon, MCP, Logs.",
-          "evidence": "CONFIRMED: DebugPane.tsx imports/uses MCPSection (:25/:40) and LogsSection (:26/:41), plus DaemonSection (:24/:39, read directly) — the three sections.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "In the Debug Daemon section, the orphan-process kill is the only mutating control and is gated behind a ConfirmPrompt acting on the explicit selection.",
-          "evidence": "CONFIRMED: DaemonSection.tsx uses debug.scanOrphans (:62), debug.killOrphans (:133) behind a ConfirmPrompt, documented as the ONLY mutating control acting on the explicit selection.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d5",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The daemon registers the socket IPCs the operational readouts/actions use: daemon.status, daemon.backup, daemon.compact, daemon.shutdown, and daemon.debug-status.",
-          "evidence": "CONFIRMED: src/daemon/index.ts registers 'daemon.backup' (:1456), 'daemon.compact' (:1465), 'daemon.shutdown' (:1450) and 'daemon.debug-status' (:937); daemon.status is called via rpc (daemon.ts). All the socket IPCs the readouts/actions need exist.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d6",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The orphan scan/kill, MCP listing, and log tail are CLI-LOCAL (POSIX ps+kill, a `mcp list` subprocess, fs-watched log files), not daemon IPCs — so the plugin must reimplement them IDE-natively.",
-          "evidence": "CONFIRMED: debug.ts uses execFileSync('ps', ...) (:227), spawn(bin, ['mcp','list']) (:328), and fsWatch (:494) — so orphan scan/kill, MCP listing, and log tail are CLI-local and must be reimplemented IDE-natively (a real design implication for S004/S005/S006).",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The CLI Logs section is a filterable read-only tail with a {minLevel, module, text} filter over a bounded buffer.",
-          "evidence": "CONFIRMED: LogsSection.tsx subscribes via debug.tailLog (:85) into a MAX_BUFFER ring buffer (:29/:86) with a {minLevel,module,text} filter (:122). The log files daemon.log/agent.log exist under a known LOG_DIR (paths.ts:104-105), so S006 can tail them locally.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin's existing InsrcSettingsConfigurable registers the parent applicationConfigurable id ai.insors.insrc.settings under Tools — the node the new child pages nest beneath.",
-          "evidence": "CONFIRMED: plugin.xml:290-291 registers the applicationConfigurable parentId=\"tools\" id=\"ai.insors.insrc.settings\"; InsrcSettingsConfigurable.kt:58 is the class — the exact parent node the new child pages nest under (k4).",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "d9",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin already has a DaemonLifecycleService the Daemon page reuses for start/update/restart.",
-          "evidence": "CONFIRMED: DaemonLifecycleService.kt:28 exists — the plugin machinery the Daemon page reuses for the non-IPC start/update/restart steps.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-21T05:48:24.349Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T05:55:22.834Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6fe4a95f3d0519c09eb83c33858c350df30c567cbbac9501a1212f74ed8a2b2b",
+        "at": "2026-09-21T05:46:35.262Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T05:55:22.834Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-21T05:48:24.349Z",
+        "report": {
+          "entityId": "DEF-57298940cdc341bc",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-57298940cdc341bc-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

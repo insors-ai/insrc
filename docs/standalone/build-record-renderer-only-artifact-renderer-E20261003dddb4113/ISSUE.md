@@ -40,4 +40,4 @@ Worth covering as acceptance: a freshly rendered BUILD.md resolves back to its J
 - **[[c4]]** `code` `src/workflow/artifacts/issue.ts:64` — "lines.push(artifactIdMarker(issueArtifactId(issueHash)));"
 - **[[c5]]** `code` `src/workflow/code-review/runner.ts:331` — "artifactIdMarker(id),"
 - **[[c6]]** `code` `src/workflow/migrate-docs-tree.ts` — "Markerless nested md. Rendered BUILD/CR ledgers carry no insrc:artifact marker, and a nested filename is the bare `<KIND>.md`"
-- **[[c7]]** `prior-artifact` `BUILD-e20235c17f083a16-S001 — approval by artifactPath was refused this session and had to fall back to the epicHash form`
+- **[[c7]]** `prior-artifact` `BUILD-e20235c17f083a16-s1 — approval by artifactPath was refused this session and had to fall back to the epicHash form`

@@ -19,100 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "abd1ecf6a5f5063e",
     "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "h-c1",
-          "ref": "sc3/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/questions-gate.ts exists (the clarifying-question primitive sc3 reuses).",
-          "evidence": "src/mcp/workflow-step/questions-gate.ts:1 found=True; also imported by phases/resolve-question.ts — the elicitation primitive sc3 reuses is real.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-c3",
-          "ref": "sc2/c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/runners/design-story/index.ts exports registerDesignStoryRunners with a sibling schemas.ts — the per-stage runner template sc2 mirrors.",
-          "evidence": "registerDesignStoryRunners defined at src/workflow/runners/design-story/index.ts:541 and imported/called in workflow/index.ts — the per-stage runner template sc2 mirrors is real.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-reg",
-          "ref": "sc2/framework",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/index.ts registerWorkflowRunners() is the central registration site (calls registerDesignEpicRunners/registerDesignStoryRunners) that a registerBrainstormRunners would be added to.",
-          "evidence": "src/workflow/index.ts:23 `export function registerWorkflowRunners()` calls registerDesignStoryRunners()/registerDesignEpicRunners() — the central registration site a registerBrainstormRunners is added to.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-c5",
-          "ref": "sc1/c5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/ holds one file per artifact type (define.ts, plan.ts, hld.ts, lld.ts), so a SpecArtifact spec.ts is a peer file there.",
-          "evidence": "The s1 module-tree bundle enumerated src/workflow/artifacts/ as one file per artifact type (define.ts, plan.ts, hld.ts, lld.ts, extend.ts, stub.ts, tracker.ts); a spec.ts peer fits the established convention (k6).",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-c6",
-          "ref": "sc1/c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/storage.ts exports writeAtomic + per-type path builders defineArtifactPaths/planArtifactPaths — the hash-addressed persistence a specArtifactPaths peer follows.",
-          "evidence": "src/workflow/storage.ts:71 writeAtomic, :194 defineArtifactPaths, :240 planArtifactPaths — the hash-addressed persistence a specArtifactPaths peer follows is real.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-c14",
-          "ref": "sc3/c14",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/ carries the multi-turn loop machinery the additive phase reuses: handler.ts, types.ts, state.ts, state-store.ts, questions-gate.ts, and a phases/ directory.",
-          "evidence": "src/mcp/workflow-step/ carries handler.ts, types.ts, state.ts, state-store.ts, questions-gate.ts and phases/ (confirmed present this session; mirrored by build-step/review-step which cite it as their template) — the multi-turn machinery the additive phase reuses (k8,k9).",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-vocab",
-          "ref": "sc1/k10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/shared/brainstorm-classes.ts defines the reusable BrainstormCategory vocabulary, and the chat-agent brainstorm.addIdea is an offlineRpc stub in src/daemon/index.ts — grounding the k10 naming-collision guard (the stage reuses the vocab, never the stub).",
-          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory`; src/daemon/index.ts:1354 `'brainstorm.addIdea': offlineRpc('brainstorm.addIdea')` — the reusable vocabulary AND the stub are both real, so the k10 guard (reuse vocab, never the stub) is grounded.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h-graph",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The HLD contract graph is internally consistent with the Epic Story DAG: owners sc1@s6, sc2/sc3@s1, sc4@s7; every consumer transitively depends on its owner (cg2); the induced graph is acyclic (cg1); and each storyBoundary.depends is the exact inverse of consumedByStories (cg3).",
-          "evidence": "The framework's own checkContractDependencyGraph (hld.ts:447, cg1/cg2/cg3) + checkOwnershipConsistency + checkStoryCoverage + checkRolloutCoverage all PASSED at synthesize — the artifact is only written when the graph is consistent. Owners sc1@s6/sc2,sc3@s1/sc4@s7 with depends as the exact inverse of consumedByStories; acyclic; all consumers downstream of owners.",
-          "action": "none",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-01T13:25:36.307Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-01T13:26:11.852Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cec903c9f4316ac6d9813b7ffc4da057368c4bc2e72af814828d3c8474678aa5",
+        "at": "2026-08-01T13:24:02.370Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T13:26:11.852Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-01T13:25:36.307Z",
+        "report": {
+          "entityId": "HLD-abd1ecf6a5f5063e",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-abd1ecf6a5f5063e-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Brainstorm ships as a first-class workflow stage (alternative a1): a peer runner directory src/workflow/runners/brainstorm/ that self-registers through the existing executor registry and workflow/index.ts registerWorkflowRunners; a new persisted SpecArtifact peer file in src/workflow/artifacts/ with a specArtifactPaths peer in storage.ts (hash-addressed, listed, approval-stamped identically to DEF/HLD/LLD/PLAN); and an additive elicitation phase on the existing insrc_workflow_step MCP surface that reuses state-store.ts and the questions-gate primitive and preserves the opaque state token verbatim. The single cross-cutting SpecArtifact shape (intent, scope boundary, non-goals, decisions-with-ruled-out-alternatives, open items) is read unchanged by both define (s8) and standalone design.story (s9). Nothing touches the shared/chat-agent brainstorm.addIdea stub.",

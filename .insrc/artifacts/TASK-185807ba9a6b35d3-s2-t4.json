@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ccb4b4e5-5926-468b-bdd5-17b38490c171",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.264Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add build/index.ts exporting admitBuild composing the gate verdict",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff6c682b4274b4cb0271d706a51996e7046b5bca11c436d702c930d373f9609c",
+        "at": "2026-10-22T12:43:15.264Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.265Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add build/index.ts exporting admitBuild composing the gate verdict",
+    "summary": "Add src/workflow/runners/build/index.ts exporting admitBuild(repoPath, storyId): BuildAdmissionResult, mirroring runners/plan/index.ts::upstream. Resolve epicHash via the existing computeEpicHash (whose signature is confirmed here per the c2 de-risking), then compose in fixed order: approval wrapper (t2) evaluated before staleness — plan-missing (ac4) and plan-unapproved (ac2) short-circuit before any drift comparison — then the drift comparator (t3) for plan-stale (ac3). Return admitted:true with the thin {planArtifactId, planArtifactHash, storyId} pointer when approved and non-drifted (ac1), else admitted:false with the appropriate BuildAdmissionRefusal (staleness populated only for 'plan-stale'). Non-throwing for all four modeled conditions; read-only so treeUntouched:true is structural. Unmodeled errors (malformed epicHash via assertEpicHash, corrupt plan body, missing current design.story) propagate rather than being remapped. Adds no second stage registration.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "admitBuild(repoPath, storyId) resolves epicHash via computeEpicHash and returns BuildAdmissionResult for all four modeled conditions without throwing",
+      "Approval is evaluated before staleness: an unapproved-and-drifted plan returns the single reason 'plan-unapproved' and the drift comparison is not computed",
+      "'plan-missing' takes precedence over staleness: a Story with a current design but no plan record returns 'plan-missing', never 'plan-stale' or an empty admitted run",
+      "admitted:true carries only the thin {planArtifactId, planArtifactHash, storyId} pointer with no PlanArtifact body",
+      "Every refusal reports treeUntouched===true with the working tree byte-identical before and after the call; unmodeled errors (malformed epicHash, corrupt plan body, missing current design.story) propagate rather than mapping to a modeled reason",
+      "index.ts adds no second stage registration and mirrors the runners/plan/index.ts structure"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "admitBuild returns {admitted:true} with only the thin {planArtifactId, planArtifactHash, storyId} pointer when the plan is approved and the recorded design hash equals the current design.story hash (incl. the equality boundary)"
+      },
+      {
+        "level": "unit",
+        "name": "admitBuild evaluates approval before staleness: an unapproved AND drifted plan returns the single reason 'plan-unapproved' and the drift comparison is not computed"
+      },
+      {
+        "level": "unit",
+        "name": "admitBuild returns 'plan-missing' (precedence over staleness) when a Story has a current design but no plan record — never 'plan-stale' or an empty admitted run"
+      },
+      {
+        "level": "unit",
+        "name": "admitBuild returns 'plan-stale' with inline staleness for a drifted or empty-recorded approved plan, and every refusal reports treeUntouched===true with the working tree byte-identical before/after"
+      },
+      {
+        "level": "unit",
+        "name": "admitBuild propagates unmodeled errors (malformed epicHash, corrupt plan body, missing current design.story) rather than remapping them to a modeled refusal reason"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

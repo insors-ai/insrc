@@ -12,7 +12,26 @@
     "storyId": "s3",
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
-    "epicSlug": "team-signoff-claim-based-workflow"
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "f62887409d95e704f991b0a46ed0dfe8ab16075fb794fcfff0a386457f5acb02",
+        "at": "2026-10-17T18:49:03.829Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

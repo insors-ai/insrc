@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ff33cf41-5875-4f0a-950a-48db05246dfc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:59.391Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the in-memory connection registry to IpcServer",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5e58a1c24a96d209575d7b25e0efc62b81dec60918d490094a7d007da2cda28e",
+        "at": "2026-10-22T12:44:59.392Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:59.392Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the in-memory connection registry to IpcServer",
+    "summary": "In src/daemon/server.ts add a private Map<Socket,ConnInfo> + a monotonic id counter + an injected `now` clock (3rd constructor arg, defaulting to a real epoch-ms clock). handleConnection creates an entry (id, connectedAt=now(), label 'unknown') and adds a socket.on('close') that deletes it; handleMessage updates the entry from a VALIDATED request.client (finite positive pid + non-empty bounded label, else ignored) + request.method (lastMethod). Add public attachedClients(): AttachedClient[] returning the snapshot sorted by connectedAt. Read-only, in-memory; no existing request-handling behaviour changes, and no code path ever closes a peer connection (k5).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A new connection registers an entry (monotonic id + connectedAt from the injected clock), labelled 'unknown' until a message identifies it",
+      "handleMessage with request.client={label,pid}+method updates label/pid/lastMethod; a malformed client envelope is ignored (stays 'unknown'/pid undefined)",
+      "socket 'close' deletes the entry; a double-close / close-before-message is an idempotent no-op (no throw)",
+      "attachedClients() returns entries sorted by connectedAt and never mutates or closes a connection (k5)",
+      "Existing data/error handling + stream handling is unchanged; tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "IpcServer registry: a new connection creates an entry (monotonic id + injected-clock connectedAt), labelled 'unknown' until a message identifies it"
+      },
+      {
+        "level": "unit",
+        "name": "IpcServer registry: handleMessage with request.client={label,pid}+method updates label/pid/lastMethod; attachedClients() reflects it"
+      },
+      {
+        "level": "unit",
+        "name": "IpcServer registry: socket 'close' deletes the entry; double-close / close-before-message is an idempotent no-op"
+      },
+      {
+        "level": "unit",
+        "name": "IpcServer registry: a malformed request.client (missing/non-integer pid, empty/oversized label) is ignored — stays 'unknown'/pid undefined"
+      },
+      {
+        "level": "unit",
+        "name": "IpcServer.attachedClients() returns entries sorted by connectedAt and never mutates/closes any connection (k5)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

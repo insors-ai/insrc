@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T05:10:11.786Z",
     "parentRef": {
       "slug": "defect-against-e2-6a131558-issue-b2687832"
+    },
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "55f0186f90e2244058065d5d2d2034df5c5ad68f58ac6f3958c094427009e5aa",
+        "at": "2026-10-10T05:07:43.607Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T05:10:11.786Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

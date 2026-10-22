@@ -47,7 +47,7 @@ Create src/workflow/delivery/notice.ts exporting NOTICE_ATTENTION (exhaustive ov
 
 ### 1.3 E202610072ff0dfda:S001:T003 — Test fixtures: record builders and real-shape records
 
-Create src/workflow/delivery/__tests__/fixtures.ts with builders that fabricate ArtifactRecords and record sets per kind (in the style of pending.test.ts's pendingLld) and with real-shape fixtures copied by value from the 2026-10-07 store: the S001/s001 pair in epic dfc0371b, ISSUE-0855311b6b32eb72, ISSUE-2d9e9e694a94116b, ISSUE-57446545909fe95c, ISSUE-095906bac5bbacaf, LLD-d88062a6e63aa312-S001 with its BUILD, BUILD-d5a433047dc3439f-S001 with its CR, BUILD-0855311b6b32eb72-S001, one flat AMD and one EXT.
+Create src/workflow/delivery/__tests__/fixtures.ts with builders that fabricate ArtifactRecords and record sets per kind (in the style of pending.test.ts's pendingLld) and with real-shape fixtures copied by value from the 2026-10-07 store: the S001/s001 pair in epic dfc0371b, ISSUE-0855311b6b32eb72, ISSUE-2d9e9e694a94116b, ISSUE-57446545909fe95c, ISSUE-095906bac5bbacaf, LLD-d88062a6e63aa312-s1 with its BUILD, BUILD-d5a433047dc3439f-s1 with its CR, BUILD-0855311b6b32eb72-s1, one flat AMD and one EXT.
 
 **Acceptance checks:**
 - Fixtures are plain values in the test tree; no test reads the live .insrc/artifacts store.

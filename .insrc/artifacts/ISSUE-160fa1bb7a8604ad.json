@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-15T04:44:45.400Z",
     "parentRef": {
       "slug": "end-running-state-only-running-turn"
+    },
+    "epicCreatedAt": "2026-10-14T20:02:51.690Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "484b9742af74739d1ae509ecf96987474c33600c737c5928342f6217481dd166",
+        "at": "2026-10-14T20:02:51.690Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T04:44:45.400Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

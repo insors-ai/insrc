@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c08546f2-4273-40b4-8a70-76b171be1687",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.249Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Board host: details memory, PLAN reads and evidence routing",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9de2632dc05440be8b0bc9c152c3c2dd0e9c274cf3cd48d31263a058f1c49d6",
+        "at": "2026-10-22T12:43:42.249Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board host: details memory, PLAN reads and evidence routing",
+    "summary": "DeliveryBoardHostDeps gains reviewPane?; the host keeps DetailsMemory (PLAN reads per applied snapshot keyed by PLAN artifact id, the opened record), posts 'details' after the view message while an item is selected, reads the selected story's PLAN once per snapshot, drops stale answers, and routes open-evidence by openWith to the review pane or a read-only client.evidence read.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Selecting a story with a PLAN posts details with the plan loading, makes one evidence read, and posts again with dependencies; reopening it in the same snapshot makes no second read, and a new snapshot reads again.",
+      "A PLAN read that fails shows planNotice and is logged; one that finishes after a newer snapshot or a closed panel is dropped; a PLAN whose body has no tasks list reads as failed with 'The plan record has no task list', and malformed entries are skipped.",
+      "open-evidence for a review-view entry calls reviewPane.openArtifact with its id and mdPath; for a build record, or with no review pane, it reads the record and shows its text as openedRecord; an artifact that is not the item's evidence is ignored and logged.",
+      "close-details posts details null and clears the opened record."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'opening a story reads its plan once per snapshot and shows the dependencies when it arrives'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'a review-view record opens in the review pane and a build record opens read-only from the daemon as text'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'a failed, malformed or stale plan read leaves the details standing with a notice'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

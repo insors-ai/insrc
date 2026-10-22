@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28f574de-a629-4021-81e1-b0135f276497",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:19.394Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Configurable source-scan tests + final green sweep",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b991a3dd123f47af77f56917c0e519e411f2f2b1262e475b17cb8b7a70766392",
+        "at": "2026-10-22T12:44:19.394Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.395Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Configurable source-scan tests + final green sweep",
+    "summary": "Extend InsrcSettingsConfigurableTest source-scan: edit-capable controls per type (not the read-only JLabel/disabled checkbox), apply throws ConfigurationException on not-Saved/validation, and apply uses gateway.writeSetting/clearSetting (not a raw config.write string). Confirm the gateway-classification tests (from t1) and SettingsEditModel tests (from t2) are present, then run the full JDK21 ./gradlew test green sweep. (Per the s3 critique, the pure-model and gateway tests land with t2/t1; t4 adds the shell source-scan and the consolidated final sweep.)",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "InsrcSettingsConfigurable source-scan asserts edit controls + apply-throws-on-not-Saved/validation + gateway (not raw config.write) usage.",
+      "The SettingsEditModel tests (t2) and gateway sc2 classification + WireRpc tests (t1) are present and passing.",
+      "./gradlew test passes on JDK21 with all new tests (full sweep green)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: apply calls gateway.writeSetting/clearSetting (not raw config.write), delegates isModified/reset, throws ConfigurationException on not-Saved/validation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

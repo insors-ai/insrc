@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-be8708a9cd20e286-S001 -->
+<!-- insrc:artifact BUILD-be8708a9cd20e286-s1 -->
 
 # Build (plan-driven) — Story S001
 
@@ -25,7 +25,7 @@ Implements the approved S001 LLD + PLAN: host the insrc dev-chat as an Activity 
   - **M1** — toggling `insrc.chat.enabled` without a window reload surfaced the Activity Bar icon before its provider was registered (a broken pane), because the view's `when` was the live `config.insrc.chat.enabled`. FIX: gate the view on an activate-time context key `insrc.chat.ready`, set only inside the flag gate — so the icon appears only after a reload re-runs `activate` with the flag on (matches the documented "reload required").
   - **M2** — tests never exercised the H1 continuity surface. FIX: added the two-resolve session-resume regression test over a real host + shared store.
   - **LOW** (deferred) — `open()`'s `reveal()` fast-path is unreachable in the sidebar flow (each host opens once; the command focuses the view). Harmless; still correct for the editor-panel/docs-review paths.
-- Code review (CR-be8708a9cd20e286-S001): **warn**, 0 HIGH / 0 MED (1 LOW observation; diff-fallback grounding — the new files are absent from the graph, so coverage was judged by the green suite).
+- Code review (CR-be8708a9cd20e286-s1): **warn**, 0 HIGH / 0 MED (1 LOW observation; diff-fallback grounding — the new files are absent from the graph, so coverage was judged by the green suite).
 
 ## Notes
 

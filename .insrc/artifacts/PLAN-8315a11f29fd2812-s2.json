@@ -25,7 +25,34 @@
     "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "authoredBy": "controller",
     "rangeBase": "4981cc4fae932c302940c9b37ba61aacf8869876",
-    "approvedAt": "2026-10-20T16:06:16.634Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7374d2fdd8e14b8043b01b64544c66ac21cf5b0251a2ef5c4363e9fb26faf88b",
+        "at": "2026-10-20T13:18:34.119Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T16:06:16.634Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -282,18 +309,6 @@
         "coveredByTaskIds": [
           "t3"
         ]
-      }
-    ],
-    "feedback": [
-      {
-        "id": "84907087",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-20T15:57:44.968Z",
-        "target": {
-          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/PLAN.md"
-        },
-        "comment": "Amended 2026-10-20 by the stakeholder's decision after the t3 build gate failed two checks that predate s1's approved LLD amendment (usage summaries required, proximity lines best-effort, a logged last resort). (1) 'A call relation cut between chunks gives each side a neighbour summary of the other' now excepts that last resort: a symbol that cannot hold its call summaries beside it is kept whole, the ones that do not fit are left out of its call and logged, and the other side still carries its summary; a new t3 test pins it. (2) The check 'fits once its related atoms share the chunk' described a case the code-review material cannot produce (a symbol's row is always longer than its one-line summary, so packing a related symbol beside an atom never shrinks its call); it now states what holds: same-file and same-directory lines are context, added while they fit, so such an atom is packed and not reported as too large. Its test is renamed to match. The testStrategyCoverage entries still quote s2's approved LLD verbatim; t3 covers both.",
-        "kind": "feedback"
       }
     ]
   },

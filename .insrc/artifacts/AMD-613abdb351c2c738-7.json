@@ -1,33 +1,66 @@
 {
-  "id": "AMD-613abdb351c2c738-7",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "markWaiting",
-      "signature": "markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean",
-      "purpose": "Sets or clears the waiting_on column of a processing message (schema version 2; QueuedMessage gains waitingOn?: 'approval' | 'selection'), so every window's list() shows that the running message waits on a card; false when the row is not processing"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T12:43:46.492Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6196b91ee2f98f7548783c1b319abd17d412708f6545bd93ccdd2394f2717564",
+        "at": "2026-10-14T12:43:46.492Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T12:49:01.729Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "The HLD's s2 boundary says other chats' outboxes say which chat a waiting card holds the queue for. Only the window running the message knows of the card, and the lease row has no such field (chat-queue-store.ts lease table); putting the flag on the processing message row means every window gets it in the rows it already reads through list() / onChange, and it ends with the message. Additive: a nullable column added by a version-1 to version-2 upgrade on open.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-7",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "markWaiting",
+        "signature": "markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean",
+        "purpose": "Sets or clears the waiting_on column of a processing message (schema version 2; QueuedMessage gains waitingOn?: 'approval' | 'selection'), so every window's list() shows that the running message waits on a card; false when the row is not processing"
+      }
+    },
+    "rationale": "The HLD's s2 boundary says other chats' outboxes say which chat a waiting card holds the queue for. Only the window running the message knows of the card, and the lease row has no such field (chat-queue-store.ts lease table); putting the flag on the processing message row means every window gets it in the rows it already reads through list() / onChange, and it ends with the message. Additive: a nullable column added by a version-1 to version-2 upgrade on open.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1791981822071-v8q2gp",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-14T12:43:46.492Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1791981822071-v8q2gp",
-    "storyId": "s2",
-    "stepId": "s4"
-  },
-  "proposedAt": "2026-10-14T12:43:46.492Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T12:49:01.729Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

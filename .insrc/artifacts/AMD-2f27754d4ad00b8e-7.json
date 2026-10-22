@@ -1,27 +1,60 @@
 {
-  "id": "AMD-2f27754d4ad00b8e-7",
-  "epicHash": "2f27754d4ad00b8e",
-  "epicSlug": "one-common-model-every-artifact",
-  "hldBaseRunId": "wf-1792406752203-whj6zi",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc2",
-    "method": {
-      "name": "readWithHistory",
-      "signature": "readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>",
-      "purpose": "A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "createdAt": "2026-10-20T16:14:26.734Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d4f407e983ea38ffdf9154308cd993c0047652897d9c589d9f122241423c46e1",
+        "at": "2026-10-20T16:14:26.734Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T16:35:55.756Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "DEF ac4 says a read exposes a change log, feedback and a lifecycle in one shape, but the sc2 Artifact omits the change log and feedback. A second read method is additive and keeps read cheap for callers that need only the head (the performance sentence in the HLD).",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792512517362-jsesps",
-    "storyId": "s2",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-2f27754d4ad00b8e-7",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc2",
+      "method": {
+        "name": "readWithHistory",
+        "signature": "readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>",
+        "purpose": "A read that exposes the artifact together with its change log and feedback in one shape, as DEF ac4 requires; read stays the cheap head-only read."
+      }
+    },
+    "rationale": "DEF ac4 says a read exposes a change log, feedback and a lifecycle in one shape, but the sc2 Artifact omits the change log and feedback. A second read method is additive and keeps read cheap for callers that need only the head (the performance sentence in the HLD).",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792512517362-jsesps",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-20T16:14:26.734Z",
+    "approvedBy": "user (explicit yes in chat, 2026-10-20)"
   },
-  "proposedAt": "2026-10-20T16:14:26.734Z",
-  "status": "approved",
-  "approvedAt": "2026-10-20T16:35:55.756Z",
-  "approvedBy": "user (explicit yes in chat, 2026-10-20)"
+  "citations": []
 }

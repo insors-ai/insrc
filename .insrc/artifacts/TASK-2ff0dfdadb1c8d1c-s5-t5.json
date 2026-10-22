@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bad9e3e7-5a99-4903-b44a-a94ed6c6ac75",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.552Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Client mirrors",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b56737c89a3cdc2481b229819ba4774bf631f21811eeec61c85a30a5fe6d5a38",
+        "at": "2026-10-22T12:43:24.552Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.552Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Client mirrors",
+    "summary": "Add vscode-plugin/src/delivery/delivery-contract.ts (type-only, importing the sc7 types by relative path) and vscode-plugin/tsconfig.delivery-contract.json (extending the plugin's tsconfig, including only that file); add src/workflow/delivery/__tests__/fixtures/delivery-snapshot.sample.json assembled from fixed records, a fixed time and a fixed port, kept equal to the assembler's output by a test.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "npx tsc -p vscode-plugin/tsconfig.delivery-contract.json exits 0.",
+      "The sample file parses as plain JSON and deep-equals what assembleSnapshot produces from its fixture."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+      },
+      {
+        "level": "integration",
+        "name": "contract.test.ts: 'the JetBrains sample snapshot is plain JSON and equals what the assembler produces'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bae4f88b-dd56-4736-bd18-87511561c105",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.711Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The build record links to the test record and is filed with it",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "50361b0087e4b0057428ac0900a501ba95c5f868ee8a21bdd001f5a585025d6c",
+        "at": "2026-10-22T12:44:02.714Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The build record links to the test record and is filed with it",
+    "summary": "Give the build record's body the optional testRecord link, rendered as one line, carried forward by the merge. At the merge, when there is no prior build record and a test record exists for the Story, seed the new record's createdAt, and its standalone flag when the test record's is true and the write states none. Add one function that returns the workflow's own files for a Story (both records' json and md, and the build-start file) and have the completion record use it for what its change log leaves out.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+      "With a test record on disk and no build record, a first build record written by each of its three writers (the validate turn's write, the completion path, and the implement turn of the trivial route) takes the test record's createdAt and lands in the test record's folder",
+      "Completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range",
+      "The completion record's list of files to leave out comes from the one function"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-record.test.ts: a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before"
+      },
+      {
+        "level": "integration",
+        "name": "completion-record.test.ts: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

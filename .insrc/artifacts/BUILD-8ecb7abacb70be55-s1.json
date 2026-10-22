@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "8ecb7abacb70be55",
+    "storyId": "s1",
+    "createdAt": "2026-10-11T07:51:17.300Z",
+    "authoredBy": "controller",
+    "triageRationale": "Mechanical asset wiring with the design already chosen by the user: two new SVG files in vscode-plugin/media, one icon field on the insrc.delivery.openBoard command in vscode-plugin/package.json, and one panel.iconPath assignment in the createWebviewPanel lambda passed to registerDeliveryBoard in vscode-plugin/src/extension.ts, mirroring the chat panel's existing iconPath at extension.ts:521. No new contract or design choice. Grounding is a text lookup (grep of package.json and extension.ts), which is enough because the answer is where two existing patterns live.",
+    "updatedAt": "2026-10-11T08:17:49.600Z",
+    "epicCreatedAt": "2026-10-11T07:51:17.300Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f052609baaa659ec2beb9144010e8f6a18e3db3717569bd798ee1c1f1ed92dba",
+        "at": "2026-10-11T07:51:17.300Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T08:17:49.869Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Give the Delivery board its own icon: add the chosen light/dark SVG pair (the insrc spiral at 60% opacity behind a curved four-node progress path: two done, one current, one ahead) as vscode-plugin/media/insrc-delivery-icon.svg and insrc-delivery-icon-dark.svg, set it as the icon of the insrc.delivery.openBoard command in package.json, and as the board's editor-tab icon (panel.iconPath) where extension.ts creates the board's webview panel, the same way the chat panel sets its tab icon.",
+    "producesLld": false,
+    "commit": "7fae3a83",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added the Delivery board icon pair (insrc spiral at 60% behind a four-node progress path) as media/insrc-delivery-icon.svg and -dark.svg; it is the insrc.delivery.openBoard command icon and, through registerDeliveryBoard's new tabIcon dep, the board's editor-tab icon. Behaviour-tested over a fake panel; board-icon.test.ts pins the assets and wiring.",
+    "testRecord": {
+      "md": "docs/standalone/8ecb7abacb70be55-E202610118ecb7aba/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/media/insrc-delivery-icon-dark.svg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/media/insrc-delivery-icon.svg"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-icon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/__tests__/board-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/delivery/board-wiring.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-11T08:17:49.600Z"
+      }
+    ]
+  }
+}

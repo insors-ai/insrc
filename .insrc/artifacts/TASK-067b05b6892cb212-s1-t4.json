@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6351ba63-5722-41c6-acd2-ce43ef7e22f9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.069Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Map the Codex mcp_tool_call item",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e3ff8ad77c3616454130b3d011d75580309256d4f6540a250dc58ce93e459cef",
+        "at": "2026-10-22T12:43:11.071Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.072Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Map the Codex mcp_tool_call item",
+    "summary": "Give the Codex mapper in cli-adapter.ts a branch for mcp_tool_call items on item.completed only: set the event's mcp from server and tool, and when tool is exactly insrc_present set present from arguments.documents (an object, no JSON-string form); ignore item.started so a call declares once, and still declare when the item's status is failed. command_execution and tool_call items map as before. Tested against the pinned codex-mcp-tool-call.jsonl capture. The mapper stays pinned to codex-cli 0.162.1 with no drift warning.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The pinned real capture maps to exactly one tool-call event with present set, from the completed item",
+      "A failed completed item still sets present",
+      "Another tool, a server-qualified tool name, or string arguments set no present, and command_execution and tool_call items map as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one"
+      },
+      {
+        "level": "unit",
+        "name": "a Codex mcp_tool_call insrc_present item with status failed still sets present"
+      },
+      {
+        "level": "unit",
+        "name": "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

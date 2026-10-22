@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-29246f24-5ea1-47f1-a9d4-d46eefb93a29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.289Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the sc3 DebugPageHost + DebugSection interfaces",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "51b9564150fc129ee90039cf531edb2c397f623a5f1c29a7d9de1c31ffd53d57",
+        "at": "2026-10-22T12:43:34.289Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.290Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the sc3 DebugPageHost + DebugSection interfaces",
+    "summary": "Add the two new plugin-internal interfaces (DebugSection{title():String; component():JComponent} + DebugPageHost{sections():List<DebugSection>}) that S004 OWNS, so S005/S006 attach read-only sections later without re-owning the page. Type-level contract only.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "DebugSection + DebugPageHost interfaces exist matching the HLD sketch (title/component + sections list)",
+      "Section-additive: no coupling to S004's concrete sections (S005/S006 can append)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DebugPageTest source-scan: DebugSection{title/component} + DebugPageHost{sections} interfaces exist matching the HLD sketch"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

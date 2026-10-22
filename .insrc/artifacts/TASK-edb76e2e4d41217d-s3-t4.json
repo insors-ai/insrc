@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7d7ed7cd-2911-482d-804e-0dacf0e9f46e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:51.535Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Flag-gated extension.ts wiring + package.json contributes",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "caaccf7364b5b0fadb2092c4874b161a1757f3638930fbbf3fceaf120e717b6f",
+        "at": "2026-10-22T12:44:51.535Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:51.535Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Flag-gated extension.ts wiring + package.json contributes",
+    "summary": "Wire extension.ts activate(): read insrc.chat.enabled via getConfiguration().get; when true, construct the memento-backed ChatSessionStore + a ProviderRegistry + createChatPanelHost with the injected vscode channel seams (createWebviewPanel/onDidReceiveMessage/postMessage/onDidDispose) mirroring the status-panel callsite, register the chat command, push its Disposable into context.subscriptions. Add the chat command + insrc.chat.enabled (boolean, default false) to vscode-plugin/package.json contributes. Existing wiring untouched.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The chat command is registered ONLY when insrc.chat.enabled reads true; the chat host is constructed with the real injected vscode seams + the memento store; the Disposable is pushed into context.subscriptions.",
+      "package.json contributes the chat command + the insrc.chat.enabled boolean config (default false); existing commands/panels are byte-unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension.ts source-scan: chat command gated on insrc.chat.enabled (getConfiguration().get, full dotted key); host constructed with injected seams + memento store; Disposable pushed to context.subscriptions"
+      },
+      {
+        "level": "integration",
+        "name": "package.json contributes the chat command + insrc.chat.enabled boolean (default false)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eb505e6f-dddc-47ae-81e6-6e8fcba59ac8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.020Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "handleInsrcSchema pure handler (src/mcp/schema/handler.ts)",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f4ff14a5a8874ae098efb91ce482e0be8276509dfac7727d9f60bcc5119dd3b",
+        "at": "2026-10-22T12:43:27.020Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.021Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "handleInsrcSchema pure handler (src/mcp/schema/handler.ts)",
+    "summary": "Add src/mcp/schema/handler.ts exporting handleInsrcSchema(input, registry): InsrcSchemaResult — the pure lookup+slice. Branches: omitted/empty tool -> { error, validTools }; unknown tool -> { error, validTools }; matched phaseless record (spurious phase ignored) -> { schema, description }; matched multi-turn record with valid phase -> { schema, description, validPhases }; phase omitted -> { error, validPhases }; unknown phase -> { error, validPhases }; dynamicNote record -> { schema (outer), description incl. the note, validPhases? }. Derives JSON Schema from record.rawShape via the SDK's own conversion (getZodSchemaObject / zod-json-schema-compat), wrapped in try/catch -> { error: 'schema unavailable' } on conversion failure. Never throws (k3).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "handleInsrcSchema returns a value for every branch and never throws.",
+      "InsrcSchemaOk.schema is derived from record.rawShape via the SDK conversion path (not a hand-copied schema).",
+      "A phaseless record ignores a spurious phase (ac3); multi-turn phase-omitted/unknown returns validPhases (ac2); unknown/omitted tool returns validTools (ac4); dynamicNote surfaces in the Ok result (ac5)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema-handler.test.ts: handleInsrcSchema across every hit/miss branch — phaseless hit, multi-turn hit with phase (ac1), multi-turn phase-omitted miss (ac2), multi-turn unknown-phase miss (ac2), unknown tool miss (ac4), omitted tool miss (ac4), self-lookup, dynamic-note case (ac5); asserts never throws (k3)"
+      },
+      {
+        "level": "unit",
+        "name": "schema-handler.test.ts: phaseless tool with a spurious phase returns InsrcSchemaOk == no-phase result (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "schema-handler.test.ts: JSON-Schema derivation of a record's rawShape yields a non-empty Record for a representative shape (via the SDK conversion path)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

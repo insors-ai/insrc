@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-cb09a32ccdc4ed2b-S001 -->
+<!-- insrc:artifact BUILD-cb09a32ccdc4ed2b-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -18,7 +18,7 @@ An Epic's board screen now carries the Epic's own records: StagesBody gains epic
 
 ## Changes
 
-- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T18:46:58.274Z)
+- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T18:46:58.274Z)
 - `docs/standalone/show-epic-s-own-records-its-E20261013cb09a32c/S001/CR.md` — **insrc-build** (2026-10-13T18:46:58.274Z)
 - `vscode-plugin/src/delivery/__tests__/epic-records.test.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)
 - `vscode-plugin/src/delivery/board-host.ts` — **insrc-build** (2026-10-13T18:46:58.274Z)

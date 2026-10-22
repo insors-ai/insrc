@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-296b7e6f-3e97-45ce-a941-9758f7ddb0a7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:07.082Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s10",
+    "envelope": {
+      "description": "StepRunnerContext.draftProvider + thread into EVERY ctx (runFrom + resumeRun)",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "634f5acac711f6a76ac56d5f6b8e3a9e0e5f9d5f05002644fb88c82c13b2df15",
+        "at": "2026-10-22T12:44:07.082Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:07.083Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "StepRunnerContext.draftProvider + thread into EVERY ctx (runFrom + resumeRun)",
+    "summary": "In src/workflow/types.ts add optional `readonly draftProvider?: LLMProvider | undefined` to StepRunnerContext (import type LLMProvider from shared/types.js). In src/workflow/executor.ts add an OPTIONAL executor-level dep (a startRun/resumeRun parameter carrying draftProvider) and thread it into EVERY StepRunnerContext the executor constructs — both the run() ctx in runFrom AND the finalize() ctx in resumeRun. Optional + additive: a caller passing nothing is byte-identical to today. Sequenced after t1 since both edit types.ts + executor.ts.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "StepRunnerContext gains optional draftProvider?: LLMProvider | undefined; existing fields unchanged; existing runners ignore it",
+      "the executor threads the draftProvider dep into BOTH the run() ctx (runFrom) AND the finalize() ctx (resumeRun) — so the elicit finalize→draft-next re-pause loop has ctx.draftProvider on every turn",
+      "startRun/resumeRun accept the draftProvider dep optionally so a caller that passes nothing is byte-identical to today; tsc --noEmit clean; .js imports + import type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "executor threads draftProvider into both the run() ctx and the finalize() ctx; absent-dep run is byte-identical to today"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

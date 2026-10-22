@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-987cab0a-c58e-4fdc-9b0c-5b1080c77f1a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.236Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Integration test against the real built asset tree",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b70eb7c1f79e03cc2a7622661f8799f35bf18b7ba3640d7f0e14dd1221c5a36",
+        "at": "2026-10-22T12:43:55.236Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.238Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration test against the real built asset tree",
+    "summary": "Add an integration test that runs against the real `npm run build` output, asserting runtime.json and its referenced mermaidAsset/svgPanZoomAsset resolve to present, non-empty files under out/assets/docgen, that validateDocgenAssets() runs clean against the real DOCGEN_ASSET_DIR, and that the same asset filenames are git-tracked under src/assets/docgen for the installer clone path.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "Integration test asserts runtime.json plus its referenced bundles are present and non-empty under the built out/assets/docgen tree",
+      "validateDocgenAssets() completes without throwing when run against the real built DOCGEN_ASSET_DIR, and the referenced asset filenames are confirmed to also exist under the git-tracked src/assets/docgen source tree"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "built out/assets/docgen has present, non-empty runtime.json + referenced mermaidAsset/svgPanZoomAsset"
+      },
+      {
+        "level": "integration",
+        "name": "validateDocgenAssets runs clean against the real built DOCGEN_ASSET_DIR"
+      },
+      {
+        "level": "integration",
+        "name": "manifest-referenced asset filenames are git-tracked under src/assets/docgen"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

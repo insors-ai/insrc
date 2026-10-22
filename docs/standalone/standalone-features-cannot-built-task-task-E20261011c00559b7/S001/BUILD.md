@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-c00559b7e38bb6ce-S001 -->
+<!-- insrc:artifact BUILD-c00559b7e38bb6ce-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,12 +23,12 @@ Ran planMigration over this repo (2 moves, 0 unmappable), showed the dry run to 
 
 ## Changes
 
-- `.insrc/artifacts/CR-c00559b7e38bb6ce-S001.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
+- `.insrc/artifacts/CR-c00559b7e38bb6ce-s1.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
 - `.insrc/artifacts/ISSUE-b2e05b043846451c.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
 - `.insrc/artifacts/ISSUE-c00559b7e38bb6ce.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
-- `.insrc/artifacts/PLAN-c00559b7e38bb6ce-S001.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
-- `.insrc/artifacts/PLAN-d9f85b3cc8cc966b-S001.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
-- `.insrc/artifacts/PLAN-f2f08ccf89f8ab25-S001.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
+- `.insrc/artifacts/PLAN-c00559b7e38bb6ce-s1.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
+- `.insrc/artifacts/PLAN-d9f85b3cc8cc966b-s1.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
+- `.insrc/artifacts/PLAN-f2f08ccf89f8ab25-s1.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
 - `.insrc/artifacts/SPEC-34d7bb72df47a5e5.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
 - `.insrc/artifacts/SPEC-77932eaa1a85819b.json` — **insrc-build** (2026-10-11T15:15:38.139Z)
 - `docs/plans/companion-template-mocks/component-dependency.html` — **insrc-build** (2026-10-11T15:15:38.139Z)

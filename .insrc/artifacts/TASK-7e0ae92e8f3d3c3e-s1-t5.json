@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7377d393-a66a-486e-86e3-f3fe4e5e1ac2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.705Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Compose publication preflight and expose the pure module",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0ae92e8f3d3c3e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "709e6dedf487fc05b5d456bd2d51e653dc55e203bc491f7c330d16e0c2c2d593",
+        "at": "2026-10-22T12:43:50.705Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Compose publication preflight and expose the pure module",
+    "summary": "Add digest-bound eligibility/coverage assessment composition and public barrel index.ts. Require both downstream stages without importing their future implementations. Export foundational schemas/types and pure validation/hash helpers, documenting distinctions between draft validation, preflight eligibility and actual publication.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Missing, duplicate, failed, stale or contradictory assessments yield eligible=false with stable issues; matching successful fixtures yield eligible=true.",
+      "PublicationCheck.manifestDigest is canonical manifest hash when computable, otherwise empty; errors do not fabricate hashes.",
+      "Imports and calls perform no file/DB/network/provider access or catalog writes; no runtime approval claims are made.",
+      "Only sc1/sc2 foundational surfaces are exported; no ingestion, retrieval, settings or publication mutations are added.",
+      "Changing source/notices roles without changing bytes and resealing releaseId rejects old coverage and both assessments. Missing/duplicate coverage entries mark every supplied assessment stale while preserving independently computable manifestDigest."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "publication-check.test.ts — downstream assessment composition fails closed and preserves issue diagnostics"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

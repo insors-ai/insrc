@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "createdAt": "2026-10-13T16:14:59.110Z",
+    "updatedAt": "2026-10-13T19:32:23.180Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "epicSlug": "review-pane-document-table-search-live",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "39a4289ad74a00336c23ff916741b90f61666271ee4cfdde973e18b7850cabe8",
+        "at": "2026-10-13T16:14:59.110Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-13T19:32:23.357Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Task 6 adds no code. The plugin's suite and typecheck were run after task 5, the real shell's list view was rendered in headless Chrome over the live pending list of 240 documents, and the plugin was built, packaged and installed (insrc-vscode 0.5.14). The user checked the pane by hand and confirmed the listed items when asked for them one by one.",
+    "testRecord": {
+      "md": "docs/standalone/review-pane-document-table-search-live-E202610131f74c81f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-e62a9269a7cb9550-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:32:23.180Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T19:32:23.180Z"
+      }
+    ],
+    "commit": "e6a58336"
+  }
+}

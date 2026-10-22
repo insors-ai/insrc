@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ff2860ba-fa56-4897-b221-8837459bd5cd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.045Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Settle the stale-catalog hazard and ship a standalone built-catalog loader",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "924a41eed66da3cf92f805a62343134433183502a4ec6e5da9689b65dd092db7",
+        "at": "2026-10-22T12:44:41.050Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.051Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Settle the stale-catalog hazard and ship a standalone built-catalog loader",
+    "summary": "Settle and implement the one genuinely open design decision, as an independently testable unit ahead of any update wiring: maintenance.update runs inside a CLI process holding the PRE-update CONFIG_CATALOG in its module graph, while `npm run build` at src/cli/services/maintenance.ts:106-112 rewrites out/ underneath it — so an in-process reconcile against the resident module is a no-op for exactly the shape change this Story targets, and is indistinguishable from 'already normalized'. Resolution (a) is chosen: load the freshly built catalog module via `await import()` of the build output and pass it as reconcileConfig's injectable `catalog` argument; on import rejection fall back to (b) — report only and defer the authoritative reconcile to the next daemon boot (landed in t9), never claiming a confident no-change against the stale in-memory catalog. Deliver this as a standalone helper `loadBuiltCatalog(): Promise<readonly ConfigOption[] | null>` in src/config that returns the freshly imported catalog or null on import rejection, with unit tests against a built-catalog fixture directory and a missing-output case. Record the decision and its rationale in a doc comment on the helper; the call-site wiring and its rationale comment land in t12.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "`loadBuiltCatalog` is exported from src/config, obtains the catalog via dynamic import of the build output, and never returns the statically imported src/cli/config-catalog.js binding",
+      "A missing or moved build output makes loadBuiltCatalog resolve to null rather than throwing, and this is unit-tested against both a valid built-catalog fixture directory and a missing-output case",
+      "The returned catalog is validated to be a non-empty array of catalog rows before being returned; a malformed module resolves to null",
+      "The chosen resolution (a with fallback b) and its rationale are documented in a doc comment on the helper",
+      "`npx tsx --test 'src/config/__tests__/*.test.ts'` passes with no new package dependency"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "loadBuiltCatalog — returns the freshly imported catalog from a built-catalog fixture directory, not the statically imported src/cli binding"
+      },
+      {
+        "level": "unit",
+        "name": "loadBuiltCatalog — missing/moved build output resolves to null without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "loadBuiltCatalog — malformed or empty catalog module resolves to null after the non-empty-array-of-rows validation"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

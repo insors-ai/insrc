@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1e8c5830-7890-487a-94ab-f65e140a8035",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.233Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Wire validateDocgenAssets into daemon boot sequence",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "01675ed7428ad1622391c7333f2dae22313f2de834cb54b08369a68585ec238d",
+        "at": "2026-10-22T12:43:55.233Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.234Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire validateDocgenAssets into daemon boot sequence",
+    "summary": "In src/daemon/index.ts, call validateDocgenAssets() immediately after the existing validateAnalyzePrompts() call, before the daemon accepts requests. A thrown DocgenAssetValidationError propagates to the same top-level fatal handler used for prompt-validation failures (log + clean exit).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "validateDocgenAssets() is invoked in src/daemon/index.ts directly after validateAnalyzePrompts() and before the daemon begins accepting IPC requests",
+      "A thrown DocgenAssetValidationError during boot is caught by the existing top-level fatal handler, logged, and causes a clean daemon exit rather than a partial or degraded boot"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "validateDocgenAssets runs clean against the real built DOCGEN_ASSET_DIR (daemon boot path)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

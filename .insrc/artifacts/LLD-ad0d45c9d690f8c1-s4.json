@@ -24,20 +24,61 @@
     "hldBaseRunId": "wf-1790009331473-c5to0q",
     "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-22T05:49:43.537Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-22T05:52:04.601Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "abf7f3d7ba9e778fde6a46592695e34b3a19b39ec9bec3d4aeb5b10a506e3fd5",
+        "at": "2026-09-22T05:48:41.229Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T05:52:04.601Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-22T05:49:43.537Z",
+        "report": {
+          "entityId": "LLD-ad0d45c9d690f8c1-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ad0d45c9d690f8c1-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

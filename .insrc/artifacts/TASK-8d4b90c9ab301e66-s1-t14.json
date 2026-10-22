@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a59db8a9-0546-4033-a4b7-f41c3a33ae9b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.593Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the suites, update the daemon, install the plugin and check by hand",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e45e2e39471cf69d7a9a54925cf5d1c37cc2b68e06daaa0a50da968f8e28acf",
+        "at": "2026-10-22T12:43:56.596Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.597Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the suites, update the daemon, install the plugin and check by hand",
+    "summary": "Run the daemon's and the plugin's typechecks and test suites. Ask the user before pushing, since the installed daemon is updated from the remote; update and restart the daemon before installing the plugin build. The user then checks in VS Code: the theme, an inline and a whole-document comment sent with reject, the history on reopening, a decision sent while a chat turn runs and with the chat closed, and three HTML artifacts (a sequence diagram, one other mermaid diagram and a UI mock). The results are recorded as reported.",
+    "size": "S",
+    "order": 14,
+    "acceptanceChecks": [
+      "Both suites pass apart from failures that exist before this Story",
+      "The daemon is updated before the plugin is installed, and nothing is pushed without the user's word",
+      "The user's checks in VS Code pass, and the result for each of the three HTML artifacts is recorded"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "The daemon's and the plugin's whole test suites pass apart from failures that exist before this Story"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code with a light and a dark theme: the pane follows the theme, an HTML companion with scripts is drawn in its tab, an inline comment and a whole-document comment sent with reject are saved under the git user and appear in the chat as one message, and they are shown as history when the document is opened again"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends, and one sent with the chat panel closed opens the chat and is delivered"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code: a sequence diagram, one other mermaid diagram and a UI mock are each drawn in their own tab, with the result recorded for each"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

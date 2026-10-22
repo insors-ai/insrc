@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2b0a25b1-fc99-46fb-bf89-515e3a37d796",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.822Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "State the rule in both directions",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c0a6edb0511f72d1807c477f1b0702afa2d1e6b7acb174d5ef0ad89c1791c66d",
+        "at": "2026-10-22T12:43:14.822Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.822Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "State the rule in both directions",
+    "summary": "Rewrite the review section of the steering source, the two review tool descriptions and the remaining daemon comments: the party that did not author the work reviews it, the review tools route this themselves, the same model on both sides is acceptable, and approval requires the review. Regenerate the plugin's copy of the steering source.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "The steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task",
+      "The plugin's copy of the steering source is identical to the source"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T13 the steering source and both tool descriptions state the rule in both directions and no longer say review is a controller task"
+      },
+      {
+        "level": "unit",
+        "name": "T13 the plugin's copy of the steering source is identical to the source"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

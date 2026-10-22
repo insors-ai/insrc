@@ -1,0 +1,343 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791198772610-tep5qw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-05T11:12:52.649Z",
+    "model": "claude:opus",
+    "elapsedMs": 201045,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "two-sets-eyes-review-rule-only",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b70aedd94da1bb62d9fbaca7cb6e56cc2f56b3130b20d8981a4abb38abaaf196",
+        "at": "2026-10-05T11:12:52.649Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "src/daemon/__tests__/code-review-rpc.test.ts",
+        "src/daemon/__tests__/workflow-review-rpc.test.ts",
+        "src/daemon/__tests__/workflow-rpc.test.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/index.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/__tests__/review-rule-text.test.ts",
+        "src/mcp/__tests__/review-stream.test.ts",
+        "src/mcp/build-step/__tests__/build-start.test.ts",
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/standalone-implement.test.ts",
+        "src/mcp/build-step/phases/implement.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/code-review-step/__tests__/handler.test.ts",
+        "src/mcp/code-review-step/__tests__/routing.test.ts",
+        "src/mcp/code-review-step/__tests__/ux-handler.test.ts",
+        "src/mcp/code-review-step/handler.ts",
+        "src/mcp/code-review-step/types.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/review-step/__tests__/review-step-findings.test.ts",
+        "src/mcp/review-step/__tests__/review-step-routing.test.ts",
+        "src/mcp/review-step/__tests__/review-step.test.ts",
+        "src/mcp/review-step/handler.ts",
+        "src/mcp/review-step/phases/findings.ts",
+        "src/mcp/review-step/phases/start.ts",
+        "src/mcp/review-step/phases/verdicts.ts",
+        "src/mcp/review-step/types.ts",
+        "src/mcp/server.ts",
+        "src/mcp/workflow-step/__tests__/amendments-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/define-extend-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-epic-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/design-story-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/handler.test.ts",
+        "src/mcp/workflow-step/__tests__/plan-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/questions-gate-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-e2e.test.ts",
+        "src/mcp/workflow-step/__tests__/tracker-tasks-coarse.test.ts",
+        "src/mcp/workflow-step/phases/synthesize.ts",
+        "src/prompts/steering-block.md",
+        "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+        "src/workflow/__tests__/approve-build-completion.test.ts",
+        "src/workflow/__tests__/approve-build-record-completion.test.ts",
+        "src/workflow/__tests__/approve-codereview-gate.test.ts",
+        "src/workflow/__tests__/approve-workflow-target.test.ts",
+        "src/workflow/__tests__/author-stamp.test.ts",
+        "src/workflow/__tests__/bugfix-orchestration.test.ts",
+        "src/workflow/__tests__/chain.test.ts",
+        "src/workflow/__tests__/companion-validation-gate.test.ts",
+        "src/workflow/__tests__/er-companion-finalize.test.ts",
+        "src/workflow/__tests__/gates.test.ts",
+        "src/workflow/__tests__/helpers/other-party-review.ts",
+        "src/workflow/__tests__/other-party-review-gate.test.ts",
+        "src/workflow/__tests__/other-party-review-helper.test.ts",
+        "src/workflow/__tests__/plan-gate.test.ts",
+        "src/workflow/__tests__/scope-extend.test.ts",
+        "src/workflow/code-review/__tests__/runner.test.ts",
+        "src/workflow/code-review/author.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/review/__tests__/party.test.ts",
+        "src/workflow/review/__tests__/same-party-refusal.test.ts",
+        "src/workflow/review/__tests__/template-review.test.ts",
+        "src/workflow/review/index.ts",
+        "src/workflow/review/party.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/review/types.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/completion-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/types.ts",
+        "vscode-plugin/assets/steering-block.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/workflow-rpc.test.ts:236",
+            "message": "The plan's T2 test for the daemon run requires showing the artifact carries authoredBy 'daemon' on the first finalize AND on the correction retry. Only the first finalize is exercised end to end. The retry is covered by a source-text scan of workflow-rpc.ts (one finalizeArtifact( call, two finalizeAsDaemon( calls), and the test's own comment says no test drives a correction round. The implementation does route both paths through finalizeAsDaemon, so the behaviour looks correct; the gap is that the retry stamp is pinned structurally, not by a retry-finalized artifact.",
+            "expectationRef": "PLAN t2 test 'T2 the synthesize phase stamps controller; the daemon run stamps daemon on first finalize and on the correction retry' / t2 acceptance check 'one finalized by the daemon run, including its correction retry, carries daemon'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:57",
+            "message": "New optional property `readonly groundingMode?: 'full' | 'degraded';` on `CodeReviewRunParams` is declared without the explicit `| undefined` the documented rule requires. The other optional properties this Story adds (`CodeReviewRunDeps`, `WorkflowReviewParams`, `ReviewStreamOpts`, `CodeReviewStreamParams`) do carry it. The neighbouring pre-existing `client?` has the same omission, so this follows a local precedent, but it is still a breach.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:60",
+            "message": "The JSDoc for `codeReviewRunStart` (\"`codeReview.run` stream handler. Emits `progress` frames…\") is now orphaned. The new `CodeReviewRunDeps` interface and its own doc comment were inserted between that comment and the function, so the handler's doc no longer attaches to the handler. The touched modules keep each doc comment directly above its declaration.",
+            "expectationRef": "module-idiom: doc comment directly above its declaration",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-rpc.ts:106",
+            "message": "`REVIEW_SKIPPED_DETAIL` and its doc comment were inserted between the existing `WorkflowProgress` JSDoc (\"Incremental progress event. `phase` is one of…\") and the `WorkflowProgress` interface. The phase-list doc is now detached from the interface it describes, and it does not list the new `review-skipped` phase.",
+            "expectationRef": "module-idiom: doc comment directly above its declaration",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/review-step/phases/start.ts:127",
+            "message": "The new wait-limit constants, `RETRYABLE` and `reviewByDaemon` were inserted between the existing `resolvePaths` JSDoc (\"Resolve the artifact's (md, json) pair…\") and the `resolvePaths` function. That doc comment now sits above `DESIGN_REVIEW_WAIT_MS` and `resolvePaths` is left undocumented.",
+            "expectationRef": "module-idiom: doc comment directly above its declaration",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/code-review-rpc.test.ts:127",
+            "message": "A second block of `import` statements (`DimensionResult`, `DiffUnavailableError`, `DEFAULT_DEPS`/`runCodeReview`) sits mid-file, after five test definitions. Every other test file in the touched modules keeps all imports in one block at the top.",
+            "expectationRef": "module-idiom: imports grouped at file top",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/review-step/phases/findings.ts:30",
+            "message": "The new `authorPartyOf` / `SamePartyReviewError` import is appended as a detached statement after the import block, and pulls from `workflow/review/party.js` directly; `phases/verdicts.ts:32` does the same. The sibling `phases/start.ts` and the daemon handler take the same symbols through the `workflow/review/index.js` barrel that these two files already import from, so the import source is inconsistent within the module.",
+            "expectationRef": "module-idiom: import grouping / review barrel import",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/__tests__/workflow-rpc.test.ts:236",
+            "message": "Present but weaker than promised, and pass-state unverified. The plan promised that the daemon run stamps `daemon` on the correction retry. No test drives a correction round: the only check is a source-text scan of workflow-rpc.ts that counts `finalizeArtifact(` and `finalizeAsDaemon(` occurrences (the test's own comment says so). The first-finalize stamp is exercised for real; the retry stamp is pinned by structure only, so a behavioural regression on the retry path that keeps the call counts would stay green.",
+            "expectationRef": "T2 the synthesize phase stamps controller; the daemon run stamps daemon on first finalize and on the correction retry",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/review-step/phases/start.ts:139",
+            "message": "No test for this promised live check appears in the changed set. The only trace is a code comment recording a measured 777 s DEF review on 2026-10-05, which then moved the limit from 10 to 30 minutes. That suggests the live run happened by hand, but there is no repeatable test and no build record to confirm it.",
+            "expectationRef": "a real daemon review of a controller-authored DEF, timed against the 10 minute limit",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/mcp/code-review-step/handler.ts:678",
+            "message": "No test or recorded evidence for this promised live check appears in the changed set. Every routing test replaces the daemon with a stand-in (`reviewByDaemon` dep) or a fake socket server; nothing in the grounding shows both tools returning a real daemon verdict or a real artifact approved with no override. Present-or-not cannot be confirmed from the grounding; treat as unverified, not as proven missing.",
+            "expectationRef": "both review tools on real controller-authored work return the daemon's verdict, and one such artifact is approved with no override",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/review-step/__tests__/review-step-routing.test.ts:139",
+            "message": "Present but diverges from the promised name. The plan promised a 10 minute wait limit for a DEF; the test asserts 30 minutes (`PIPELINE_REVIEW_WAIT_MS`), following the later t12 change. The test matches the shipped code, so this is a stale plan entry, not a coverage hole. Pass-state unverified.",
+            "expectationRef": "T11 insrc_review_step: daemon unreachable, error frame, older daemon and timeout each return an error, stamp nothing and offer no controller loop; the wait limit is 11 minutes for a design and 10 for a DEF",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:764",
+            "message": "Changed behaviour with no visible test. The `insrc_code_review_step` registration now derives `client` from `detectClientProvider(server.server.getClientVersion()?.name)` and passes it into the handler deps. The routing test covers `client` only when it is injected directly into deps (`harness('controller', { client: 'codex' })`); the derivation and the `DEFAULT_DEPS` spread in server.ts are not exercised.",
+            "expectationRef": "buildInsrcMcpServerWithRegistry: insrc_code_review_step client pass-through",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-review-rpc.ts:113",
+            "message": "Changed behaviour with no visible test. Every `workflowReviewStart` test injects `resolveProvider`, so the default branch (createRoleRouter + runWithRoutingContext resolving the `review` role, and the `runner:model` label it builds) never runs. The no-repo failure (`workflow.review: no repo`) is also not asserted: all bad-request cases either fail in parseParams or pass a repo. Likewise the `'workflow.review'` handler registration in src/daemon/index.ts is not exercised; only the handler function is called directly.",
+            "expectationRef": "workflowReviewStart default provider resolution; 'workflow.review' IPC registration",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/code-review-step/__tests__/routing.test.ts:243",
+            "message": "Small gap in an otherwise present test. `RETRYABLE_DAEMON_FAILURES` in the code-review handler includes `closed`, but the FAILURES table here has no `closed` row (the review-step routing test does). The retryable flag for an early-closed daemon code review is not asserted.",
+            "expectationRef": "T11 insrc_code_review_step: daemon unreachable, error frame, older daemon and the 10 minute timeout each return an error and stamp nothing",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/other-party-review-gate.test.ts:1",
+            "message": "Pass-state unverified for the whole Story. No build record was supplied, so no promised test can be confirmed green, including the suite-level promise. Presence was confirmed for T1 through T18 (T1 in party.test.ts, T15 in same-party-refusal.test.ts and T4 in template-review.test.ts were checked by test name in the repo, since their diffs were not supplied). Note also that every `testsReaching` list is empty because the grounding is file-level diff entries, not graph symbols; that emptiness is a grounding limit and is not reported here as uncovered code.",
+            "expectationRef": "the workflow and MCP suites pass with every approving test moved onto the helper",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/code-review-step/handler.ts:686",
+            "message": "Correctness risk under daemon version skew. `reviewByDaemon` trusts the `done` frame without checking it: it hard-codes `reviewedBy: 'daemon'` and never verifies that `res.artifact.body.groundingMode` equals the `mode` it asked for. `codeReview.run` existed before this Story, so an older daemon accepts the request, silently ignores `groundingMode: 'degraded'`, grounds on the stale or empty graph, does not cap the verdict at warn and does not stamp `meta.reviewedBy`. The tool would then report a possible `pass` for a review that was meant to be degraded. The `unknown-method` guard does not cover this, because the method is known. Compare the returned mode and `meta.reviewedBy` with what was requested and return an error on mismatch.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/review-step/phases/start.ts:165",
+            "message": "Unhandled error path on timeout. When the wait limit fires, the stream helper destroys the socket and the tool returns `retryable: true` with \"No review was recorded\". Nothing in the changed code shows the daemon's `workflow.review` run being aborted when the client goes away; that depends on server wiring outside this diff. If it is not aborted, `reviewArtifactFile` (which for a DEF can run a second pass after applying fixes) keeps running and later stamps `meta.review` and rewrites the md and json, contradicting the message. A retry then starts a second review writing the same files concurrently. The same pattern is in `reviewByDaemon` in src/mcp/code-review-step/handler.ts. Either confirm the handler's `signal` aborts on socket close, or word the timeout as \"may still complete\" and guard against a concurrent run.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/gates.ts:674",
+            "message": "Correctness gap in the completion rule. `otherPartyReviewGap` accepts a BUILD record as soon as any `CR-<epic>-<story>.json` exists beside it with a different reviewer party. It does not check that the code review postdates the build or covers the current change set. A rebuilt Story, or a later task of a multi-task Story, completes on the earlier build's review, so the \"completion requires a code review\" rule is met by a stale record. Before this Story the missing-review check applied only under enforcement; it is now the unconditional gate, so the gap matters more. Compare the review's `createdAt` or its changed-file subject against the BUILD record's `updatedAt` or range base.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/gates.ts:672",
+            "message": "Two resolutions of the same record. `otherPartyReviewGap` finds the code review with `join(dirname(jsonPath), codeReviewArtifactId(...) + '.json')`, while the code-review gate called just before it in `approveWorkflowTarget` resolves it from the repo path through the artifact store. If a BUILD json is approved from a path outside the store directory, the two checks can disagree: one finds a review, the other reports none. Resolve the path once, through the same storage helper.",
+            "counterpartRef": "enforceCodeReviewGate",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/code-review-step/handler.ts:668",
+            "message": "Duplication. `reviewByDaemon`, its retryable-failure set (`unreachable`, `closed`, `timeout`), the `daemon-review-${failure}` code and the \"did not complete … not replaced by a controller review … approve with an override reason\" message are written twice, once here and once in the review-step start phase. The two copies can drift, for example if a failure kind is added to `ReviewStreamFailure` and only one set is updated. Move the failure-to-error mapping into one shared helper next to `ReviewStreamError`.",
+            "counterpartRef": "reviewByDaemon / RETRYABLE in src/mcp/review-step/phases/start.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/review-step/phases/verdicts.ts:89",
+            "message": "Duplication. The stamp-time guard (`authorPartyOf(artifact.meta) === 'controller'`, then `releaseState`, then throw `SamePartyReviewError`) is copied verbatim into the verdicts and findings phases, with a third variant in the code-review `handleJudgements`. One small helper, such as `assertControllerMayStamp(meta, state, subject)`, would keep the rule in one place.",
+            "counterpartRef": "handleFindings in src/mcp/review-step/phases/findings.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/daemon-stream.ts:455",
+            "message": "Small error-path gaps in `reviewStreamRequest`. (1) The abort listener is added before `deps.connect()` or `createConnection` runs; if connect throws synchronously the promise rejects with the raw error, not a `ReviewStreamError`, and the listener is never removed. (2) An older daemon is recognised by `error.startsWith('unknown method')`, a string match on the server's wording; if that wording changes, the failure becomes a generic non-retryable `daemon-error` without the \"update the daemon\" hint. (3) The `done` payload is cast with `as T` and never shape-checked, so a malformed frame resolves as a successful review. In review-step start that means `next: 'done'` with an undefined verdict.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:155",
+            "message": "Avoidable complexity. The runner is called from a three-way branch (degraded, `deps.write` set, default) whose last two arms differ only by a test-only `write` seam. Building the runner deps once and making a single call would remove the branch. The trailing `export { buildAuthorParty }` re-export also exists only so a test can import it from this module.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/code-review-rpc.ts:60",
+            "message": "Orphaned doc comments. New declarations were inserted between three existing JSDoc blocks and the symbols they describe, so each comment now documents the wrong thing: the `codeReview.run` stream handler comment sits above `CodeReviewRunDeps`; the `WorkflowProgress` phase list sits above `REVIEW_SKIPPED_DETAIL` in src/daemon/workflow-rpc.ts; and the `resolvePaths` comment sits above `DESIGN_REVIEW_WAIT_MS` in src/mcp/review-step/phases/start.ts.",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/workflow-rpc.test.ts:236",
+            "message": "Brittle test. The T2 \"finalizes through ONE call\" test checks the source text of workflow-rpc.ts with regexes: it counts `finalizeArtifact(` occurrences and requires the call to end with `attributionNow(), 'daemon')`. A harmless reformat or rename fails it, and a behavioural regression that keeps the text passes it, such as a second finalize reached through an imported helper. It does not exercise the correction-retry path it claims to protect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 6,
+      "low": 19
+    }
+  }
+}

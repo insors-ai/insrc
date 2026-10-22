@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-de3271d9-0b52-4702-8458-dd5f36f02d40",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.432Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Record the s9 inputs and the final checks",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c042693aa22e140c377f19719ca62443783dcd54af2805e1da92191fb00c762",
+        "at": "2026-10-22T12:43:20.432Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the s9 inputs and the final checks",
+    "summary": "Record in docs/plans/core-data-model.md the s9 conversion inputs this Story creates (the flat amendments, the envelope and lifecycle back-fill, the feedback conversion and the version marker) and run the workflow, mcp and daemon subsets and the build.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "the plans doc lists the four s9 inputs from this Story",
+      "npm run build succeeds and the workflow and mcp subsets pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/docs-s2-inputs.test.ts: the plans doc lists the four s9 conversion inputs from the common model Story"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

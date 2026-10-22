@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7255e610-58d0-4bd0-a56c-52f651ba470b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.423Z",
+    "epicCreatedAt": "2026-09-29T06:43:38.282Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99bc81bbe965eec3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Regression tests: multi-epic scoped resolve (resolver + build-step) + unchanged paths",
+      "parent": {
+        "entityId": "STORY-99bc81bbe965eec3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99bc81bbe965eec3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-99bc81bbe965eec3-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99bc81bbe965eec3-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99bc81bbe965eec3-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "141ed6c1d6e7877566574c0c8bcd45eeae64262989114a6163812623c8d195f9",
+        "at": "2026-10-22T12:44:02.423Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.424Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Regression tests: multi-epic scoped resolve (resolver + build-step) + unchanged paths",
+    "summary": "Extend tracker/__tests__/tracker.test.ts with a MULTI-epic fixture (two epics' DEF+LLD+PLAN, both with s1/t1): scoped resolveWorkflowRef(repo,'s1/t1',{epicHash}) resolves (full hash + 8-char prefix); unscoped stays null; zero-match/ambiguous-prefix → null; issue#/hierId forms unaffected by the opt; single-epic unscoped still resolves. Extend build-step.test.ts with a multi-epic + { target:'s1/t1', epicHash } scoped-resolve case (fake ValidateProvider + approved PLAN) and the without-epicHash still-'unresolved-target' case; confirm the existing single-epic 's1/t1' tests + standalone-implement.test.ts stay green.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "tracker.test.ts covers scoped-resolve (full+prefix), unscoped-null, zero/ambiguous-scope-null, issue#/hierId-unaffected, single-epic-unchanged",
+      "build-step.test.ts covers scoped-resolve end-to-end + without-scope still-refuses",
+      "the pre-existing single-epic label tests + standalone tests remain green",
+      "full sweep green under tsx --test (sole known failure = the better-sqlite3 native-ABI red herring)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveWorkflowRef: issue# (#N / owner/repo#N) and hierarchical-id forms resolve identically whether or not opts.epicHash is passed (scope ignored off the label path)."
+      },
+      {
+        "level": "unit",
+        "name": "the multi-epic fixture (two epics' DEF+LLD+PLAN, both with s1/t1) is shared by the resolver + build-step scoped-resolve cases; the pre-existing single-epic 's1/t1' tests + standalone-implement.test.ts stay green; full sweep green under tsx --test."
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

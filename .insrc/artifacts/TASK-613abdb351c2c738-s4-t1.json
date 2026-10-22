@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-89148284-fa14-4d36-bddd-f6a0ce8aa357",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.481Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Failure classifier module and retry constants",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2de82aef002cec2ab6a7f36c75d48747b763490e275fb72899a62e34e1592bb4",
+        "at": "2026-10-22T12:43:38.481Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.482Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Failure classifier module and retry constants",
+    "summary": "Add vscode-plugin/src/chat/chat-failure.ts (vscode-free, pure): classifyFailure(message): InfraCause with conservative patterns written from the messages cli-adapter.ts produces and the daemon's isTransientCliError (overloaded, rate limit, 429 and 5xx, timeouts, connection failures map to their causes; the not-authenticated text and the CLIs' unauthorised, invalid key and login-required texts map to auth; 'CLI not found' (ENOENT) and any unmatched text map to other; passing start-up failures such as EAGAIN map to spawn), plus the constants RETRY_DELAYS_MS = [10000, 60000, 300000] and MAX_INFRA_RETRIES = 3. Nothing calls it yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "overloaded, rate limit, 429 and 5xx, timeout and connection-failure texts map to their causes",
+      "the adapter's not-authenticated text and the CLIs' unauthorised and invalid key texts map to auth",
+      "CLI not found and any unmatched text, including a model refusal, map to other",
+      "the module imports nothing from vscode and does no I/O"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-failure.test.ts: overloaded, rate limit, 429 and 5xx texts, timeouts and connection failures map to their causes"
+      },
+      {
+        "level": "unit",
+        "name": "chat-failure.test.ts: the adapter's not-authenticated text and the CLIs' unauthorised and invalid key texts map to auth"
+      },
+      {
+        "level": "unit",
+        "name": "chat-failure.test.ts: CLI not found and any unmatched text, including a model refusal, map to other"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

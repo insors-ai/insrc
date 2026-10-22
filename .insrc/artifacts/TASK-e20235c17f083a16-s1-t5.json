@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-684ec1bb-d45f-45c4-a4d4-c683c105a95d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.171Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Fix the BUILD folder-arg derivation so an ISSUE-anchored item gets a real label",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "688f5be22e3783dc5556a8d27b30a95696de914ca93f3292c29440bc8ab7038b",
+        "at": "2026-10-22T12:44:47.171Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.172Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fix the BUILD folder-arg derivation so an ISSUE-anchored item gets a real label",
+    "summary": "Route the non-standalone branch's single upstream read through the new accessor rather than the define artifact alone, so it stops returning an undefined label for a work item defined by an ISSUE. Removing that undefined is what stops the raw-hash fallback being reached. The function keeps its five parameters and its returned shape, and it has exactly one caller. With this task every NEW artifact of a work item lands in one folder; nothing on disk has moved yet.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "An ISSUE-anchored work item yields a real label where it previously yielded undefined",
+      "The raw sixteen-hex hash appears nowhere in the resulting folder name",
+      "A standalone story's BUILD record is written under the standalone top-level and renders with its standalone heading, not the plan-driven title with 'Standalone: no'",
+      "A Trivial standalone build with no LLD still falls back to the record's own anchor and still resolves as standalone",
+      "CRITIQUE APPLIED — the fallback is proven REACHABLE rather than merely present: a work item with NO definition artifact at all still composes a folder name, degrading to the hash without throwing or producing a malformed name. A guard that survives in source while becoming unreachable is indistinguishable from a deleted one, and t1 is what narrows the path to it",
+      "MUTATION PROOF, run and recorded: restoring the DEF-only upstream read brings the raw-hash folder name back"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildRecordFolderArgs: the non-standalone branch yields a real slug for an ISSUE-anchored work item instead of undefined"
+      },
+      {
+        "level": "unit",
+        "name": "buildRecordFolderArgs: an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt for a Trivial build with no LLD"
+      },
+      {
+        "level": "integration",
+        "name": "a full standalone/bugfix chain — ISSUE, LLD, PLAN, BUILD — writes every markdown artifact into exactly one folder, by enumerating the docs tree and counting folders carrying the identity segment"
+      },
+      {
+        "level": "integration",
+        "name": "an ISSUE-anchored BUILD record's folder label is the real slug and the raw 16-hex hash appears nowhere in the name"
+      },
+      {
+        "level": "integration",
+        "name": "a standalone story's BUILD.md renders the standalone heading and 'Standalone: yes', not 'Build (plan-driven)' with 'Standalone: no'"
+      },
+      {
+        "level": "integration",
+        "name": "the hash fallback is still REACHABLE: a work item with no definition artifact composes a folder name degrading to the hash, without throwing"
+      },
+      {
+        "level": "integration",
+        "name": "MUTATION PROOF: restoring the DEF-only upstream read brings the raw-hash folder name back"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-396e806c-6bfb-45f4-a146-8b6919d856a8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.967Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Move the review and code-review steps into the daemon's tree",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4c294c260692030e59c28b90d680bce1051d5de196f42eac4440d58912cf0367",
+        "at": "2026-10-22T12:44:34.967Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.967Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the review and code-review steps into the daemon's tree",
+    "summary": "Move src/mcp/review-step and code-review-step to src/daemon/steps with their tests; repoint the three code-review conditional tests in src/workflow/code-review/__tests__; they keep calling the daemon through daemon-stream until t7.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the review and code-review routing tests pass at their new location",
+      "no file under src/mcp other than server.ts imports src/daemon/steps"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "moved review and code-review tests pass at src/daemon/steps, including the routing tests and the three conditional tests"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

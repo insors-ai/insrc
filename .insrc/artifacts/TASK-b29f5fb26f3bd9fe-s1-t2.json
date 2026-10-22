@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2797d9fd-27dd-4d8c-8ed4-3ecc39dbebe0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.973Z",
+    "epicCreatedAt": "2026-09-25T10:30:55.043Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b29f5fb26f3bd9fe",
+    "storyId": "s1",
+    "envelope": {
+      "description": "VS Code: wire the production reloadWindow seam in extension activation",
+      "parent": {
+        "entityId": "STORY-b29f5fb26f3bd9fe-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b29f5fb26f3bd9fe-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b29f5fb26f3bd9fe-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "af9d13d65c3e97e31b6410c987bbcbc71b3b3e76a8630d394c9da7104f9c00aa",
+        "at": "2026-10-22T12:44:16.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.977Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "VS Code: wire the production reloadWindow seam in extension activation",
+    "summary": "In the VS Code extension activation that constructs the production DaemonFreshnessDeps, inject reloadWindow: () => executeCommand('workbench.action.reloadWindow') (as a Promise<void>).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "extension activation passes a reloadWindow seam wired to workbench.action.reloadWindow",
+      "tsc clean; the bundle builds"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension-wiring: production DaemonFreshnessDeps wires reloadWindow -> workbench.action.reloadWindow"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

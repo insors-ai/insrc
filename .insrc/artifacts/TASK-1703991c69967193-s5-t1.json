@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-73089eac-1a6c-4e7f-95d6-16c07e71add1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.585Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the s5 GitHub-integration module types",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "907e6d3783490cdc5a6acc47dd1fc5db2af1f7f14fb8f78f567f4413423603a9",
+        "at": "2026-10-22T12:43:14.585Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.586Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the s5 GitHub-integration module types",
+    "summary": "Create the s5 module (src/workflow/bugfix/tracker.ts) and declare the internal helper types: TrackerCreateDeps, TrackerCloseDeps, TrackerIssueResult { status:'created'|'reused'|'skipped'; ref?; linked?; reason? }, TrackerCloseResult { status:'closed'|'skipped'; ref?; reason? }, and a LostRefAction union for the resolved prompt path ('retry-record'|'record-manual'|'relink-by-label'|'skip'). Import/consume CreatedIssue + ResolvedGithubConfig + IssueArtifact + WorkItemRef (existing). No new shared type.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "All helper types compile under strict mode; TrackerIssueResult/TrackerCloseResult status unions are exact; no sc-level shared type is added.",
+      "CreatedIssue/ResolvedGithubConfig are consumed (imported), not redefined; tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types: a TrackerIssueResult/TrackerCloseResult sample object type-checks against the exact status unions (compile-time; covered transitively by t3/t4/t5 result assertions)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

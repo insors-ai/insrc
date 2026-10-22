@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-a77b65c1-e225-4d0e-a1f1-aa4f31db902f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.925Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "See the daemon's runtime status and clear leaked orphan processes",
+      "parent": {
+        "entityId": "EPIC-57298940cdc341bc",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7544eb6f24a09bd9e92c295ad40fb179a4fabae79bc377b91bab01c91fa48858",
+        "at": "2026-10-22T12:43:06.925Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

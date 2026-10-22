@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-76497497-97fb-483c-bfc6-d4933d571b99",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.285Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Additive type scaffold: selection-request event + selection-decision message + selection RowKinds + selection-outcome TranscriptEntry + markerFor cases",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ac9e8a9cd96d499017cb37a6ff0d241d2afdcd797ded34b76296478fa6e4314d",
+        "at": "2026-10-22T12:43:58.285Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.286Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Additive type scaffold: selection-request event + selection-decision message + selection RowKinds + selection-outcome TranscriptEntry + markerFor cases",
+    "summary": "Add the co-compiling type/enum scaffold across the module: the selection-request member to TurnEvent + 'selection-request' to TURN_EVENT_KINDS (stream-events.ts); the {type:'selection-decision',requestId,selected[]} member to WebviewToHost + 'selection-decision' to WEBVIEW_TO_HOST_TYPES (protocol.ts); the 'selection-request'+'selection-outcome' RowKind members + SelectionOutcomeRowView (render-registry.ts types); the plain-serialisable { role:'selection-outcome'; chosen; at } TranscriptEntry variant (session-store.ts); and the markers.ts markerFor cases (selection-request -> null, selection-outcome -> null) preserving the exhaustive never-default. Existing members unchanged (k1).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "TurnEvent gains selection-request + TURN_EVENT_KINDS gains 'selection-request'; WebviewToHost gains selection-decision + WEBVIEW_TO_HOST_TYPES gains 'selection-decision'; existing members unchanged.",
+      "RowKind gains 'selection-request' + 'selection-outcome'; a SelectionOutcomeRowView payload exists.",
+      "TranscriptEntry gains the plain-serialisable { role:'selection-outcome'; chosen; at } variant; both stores accept it with no migration.",
+      "markers.ts markerFor returns null for both selection-request and selection-outcome; the _never exhaustive default still compiles.",
+      "tsc compiles the whole scaffold together (no half-added union)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "protocol: 'selection-decision' is in WEBVIEW_TO_HOST_TYPES (exhaustiveness test passes); existing types unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "markerFor returns null for selection-request so a replay does NOT re-surface the pending card; never-default preserved"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

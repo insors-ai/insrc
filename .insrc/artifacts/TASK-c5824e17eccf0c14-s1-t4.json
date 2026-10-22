@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4211d7fc-92e0-4cfe-a671-0d5ba47df454",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:37.227Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen ReviewDimension + add the functional-coverage dimension file",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fdc6e2b7635fe724824910267cc7b13b4fbfcb6ad07045f0e5637e322377989b",
+        "at": "2026-10-22T12:44:37.227Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:37.228Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen ReviewDimension + add the functional-coverage dimension file",
+    "summary": "Add 'functional-coverage' to the ReviewDimension union and create dimensions/functional-coverage.ts exporting buildFunctionalCoveragePrompt + judgeFunctionalCoverage mirroring coverage.ts; findings bind to FR ids via the existing DimensionFinding.expectationRef and carry the review Severity verbatim. Not yet wired into the loop.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "ReviewDimension includes 'functional-coverage' and the union still type-checks across existing consumers",
+      "judgeFunctionalCoverage returns a DimensionResult(dimension:'functional-coverage') with expectationRef set to supplied FR ids",
+      "a finding whose expectationRef is not a supplied FR id is rejected",
+      "the verdict reducer computeReviewVerdict/effectiveReviewVerdict is left untouched"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "judgeFunctionalCoverage returns a functional-coverage DimensionResult with expectationRef set to real FR ids and rejects an unknown expectationRef"
+      },
+      {
+        "level": "unit",
+        "name": "a DimensionFinding.expectationRef FR id folds into the existing DimensionResult/CodeReviewBody verdict counts unchanged (reducer untouched)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -21,9 +21,37 @@
     "epicSlug": "regression-hierarchical-label-resolver-listepichashes-src",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-10-02T18:26:58.777Z",
     "parentRef": {
       "slug": "regression-hierarchical-label-resolver-listepichashes-src"
+    },
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d995c6b9a40c74d39c3765d31bf7e51857fd58ff129636de8307758636934eb3",
+        "at": "2026-10-02T18:19:50.067Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-02T18:26:58.777Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

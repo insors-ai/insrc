@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f60c445e-c7e9-4704-917a-d8edebc08609",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.378Z",
+    "epicCreatedAt": "2026-09-30T11:33:03.045Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "71133869f31324f7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the tab component CSS to css/tui.css",
+      "parent": {
+        "entityId": "STORY-71133869f31324f7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-71133869f31324f7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ae5e32512593f9a0fe477076b117320552a14d8f35e9f71fa037ffe9869d6648",
+        "at": "2026-10-22T12:43:44.380Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.381Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the tab component CSS to css/tui.css",
+    "summary": "Add an additive, theme-aware, component-scoped CSS block for the tabs: a [role=tablist] row, [role=tab] buttons (selected/hover/focus via theme tokens), and [role=tabpanel] show/hide keyed off an 'active' hook class the JS sets. Default (no active class) shows ALL panels stacked (the no-JS fallback). Scope selectors so no other page changes.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Tab styles are additive + scoped to the tab component (no other page's layout changes).",
+      "Selected/hover/focus states use the site's theme tokens (work in light + dark).",
+      "With no 'active' hook class, all [role=tabpanel] are visible (fallback); once active, only the selected panel shows."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "no 'active' class -> all panels visible (fallback); active -> only selected panel shows; light+dark states"
+      },
+      {
+        "level": "smoke",
+        "name": "no horizontal overflow at mobile width; tablist wraps/scrolls"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

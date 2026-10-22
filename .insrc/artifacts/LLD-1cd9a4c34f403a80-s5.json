@@ -14,7 +14,40 @@
     "hldBaseRunId": "wf-1784121669696-i1rc6r",
     "hldEffectiveHash": "c7645d42a9f5e691c82633a1edd384aede04bf62007cfc744076c8decb49d90c",
     "hldAmendmentsApplied": [],
-    "approvedAt": "2026-07-15T15:11:10.914Z"
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-1cd9a4c34f403a80-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0fb41c4c136d96663acb71474e893abfcaa5bbfe280a7fd1000bb8da09363f31",
+        "at": "2026-07-15T15:08:33.330Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-15T15:11:10.914Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

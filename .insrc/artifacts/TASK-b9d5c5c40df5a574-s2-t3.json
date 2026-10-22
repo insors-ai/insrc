@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd5171ca-bfe7-4145-8ef7-9ad381641e3b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.853Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The measuring pass over a scope, a data source and an infra directory",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "279560b8f5203ce247b8d127b93974d9715e7065b045f4e6210e852fab7b35c6",
+        "at": "2026-10-22T12:44:24.853Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.854Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The measuring pass over a scope, a data source and an infra directory",
+    "summary": "Add measureResolvedScope, measureRequestScope and measureDataSource to the measuring module, and split the pure rule dataScopeOf out of resolveDataScope, which then calls it. The pass counts by kind of source and scope as the design's section on measureResolvedScope states, including the generic source, a workspace inside and above repos, infra by its own file walk and data by the listings' complete mode, and returns a measure that is not determined, size XL, for everything that cannot be counted. It never throws.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "A small directory and the whole repo get different sizes, and no model call is made",
+      "A scope that cannot be resolved, a scope no registered repo contains, a repo with no stored entity, a failed read of the store, and a registry read that rejects during resolution each give a measure that is not determined, size XL, with its reason; nothing is thrown",
+      "An empty directory inside an indexed repo is XS and determined; a path the index does not hold is never a count of zero",
+      "A workspace a repo contains is counted through the area predicate; one above the repos is summed for a generic request and a direct call, and is not determined for a code or docs request",
+      "An infra request is counted from the files walkFiles visits with no cap, without the stored graph, and is not determined when the root or a directory below it cannot be read",
+      "A data source is counted through the complete mode, its objects compared with the files column; each case that cannot be counted (no listing, not supported, cut, Redis, etcd, ClickHouse, unreachable) is not determined with its own reason",
+      "A data request on a repo is measured by one call per registered connection, each with its connection id, and is not determined when any one is not",
+      "dataScopeOf gives what resolveDataScope gave before for each kind of scope, and the data tasks' existing tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)"
+      },
+      {
+        "level": "integration",
+        "name": "measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)"
+      },
+      {
+        "level": "integration",
+        "name": "a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)"
+      },
+      {
+        "level": "integration",
+        "name": "measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)"
+      },
+      {
+        "level": "integration",
+        "name": "measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not"
+      },
+      {
+        "level": "integration",
+        "name": "an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)"
+      },
+      {
+        "level": "integration",
+        "name": "a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution"
+      },
+      {
+        "level": "integration",
+        "name": "dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

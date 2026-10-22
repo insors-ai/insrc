@@ -64,122 +64,57 @@
     "storyId": "s7",
     "lldRunId": "wf-1785526646157-51k4x3",
     "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/render/shell.ts has a private ASSET_DIR constant + a loadRuntime that reads/parses runtime.json + a RuntimeManifest type — the symbols t1 promotes to DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest().",
-          "evidence": "shell.ts:36 `const ASSET_DIR = join(...,'assets','docgen')`, :38 RuntimeManifest, :48 loadRuntime, :50 `JSON.parse(await readFile(join(ASSET_DIR,'runtime.json')))` — the exact symbols t1 promotes/extracts. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl2",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/analyze/context/boot-validator.ts is the model t2 mirrors: validateAnalyzePrompts collects failures {componentId,path,reason} into a typed AnalyzePromptValidationError with a Fix: line, using stat/readFile + body.trim().length===0.",
-          "evidence": "boot-validator.ts:141 validateAnalyzePrompts, :74 AnalyzePromptValidationError, componentId in failures, :83 'Fix:' line — the pattern t2 mirrors. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl3",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/assets/docgen/runtime.json declares mermaidAsset + svgPanZoomAsset, the two bundle filenames validateDocgenAssets stat+non-empty-checks.",
-          "evidence": "runtime.json:4 mermaidAsset='mermaid.min.js', :5 svgPanZoomAsset='svg-pan-zoom.min.js' — the two bundle filenames the validator checks. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl4",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/index.ts calls validateAnalyzePrompts() at boot — t3 inserts validateDocgenAssets() immediately after it, before the daemon accepts requests.",
-          "evidence": "daemon/index.ts:298 `validateAnalyzePrompts();` at boot — the insertion point for validateDocgenAssets(). Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl5",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/analyze/context/__tests__/boot-validator.test.ts is the test pattern t4 mirrors (present-assets pass silently; missing/empty throws the typed error).",
-          "evidence": "boot-validator.test.ts:76 `assert.doesNotThrow(() => validateAnalyzePrompts())` + throw-branch assertions on err.missing[].componentId — the test pattern t4 mirrors. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl6",
-          "ref": "t6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "assembleShell in shell.ts already wraps loadRuntime and returns sc4 fallbackUnavailable naming copy-assets on a read failure — the degrade path t6 asserts stays unchanged.",
-          "evidence": "shell.ts:247 `runtime = await loadRuntime();` inside the try mapping failure to fallbackUnavailable; :60 _resetRuntimeCacheForTests — the degrade path + cache-reset seam t6 uses. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl7",
-          "ref": "t7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/render/__tests__/shell.test.ts holds the offline self-contained assertion (no <script src=, runtime inlined >1MB) that t7 extends to both backends.",
-          "evidence": "shell.test.ts:64 'assembleShell: offline self-contained shell — runtime INLINED' asserting no external fetch + inlined runtime + supportsZoomPan — the assertion t7 extends. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl8",
-          "ref": "tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly 7 tasks t1–t7.",
-          "evidence": "Seven task sections S007:T001–T007 present; t1–t3 implementation + t4–t7 tests. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl9",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency DAG is acyclic and well-formed: t1(—); t2->t1; t3->t2; t4->t2; t5->t2; t6->t1; t7->t1.",
-          "evidence": "DAG: t1(—); t2->t1; t3->t2; t4->t2; t5->t2; t6->t1; t7->t1. Acyclic, every dep precedes its dependent; t1's shared extraction precedes both the validator (t2) and the regression/smoke tests (t6/t7). Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl10",
-          "ref": "t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The empty-body rule the validator reuses (body.trim().length===0) exists in the boot-validator model.",
-          "evidence": "boot-validator.ts:173 `if (body.trim().length === 0)` — the empty-body rule validateDocgenAssets reuses. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-08-01T05:43:21.348Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-01T05:43:56.602Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "22bdff2bba0b2c8c5eb4ee56b2ee6833e1bd9554dc1fa75dc2ffbd72f6946851",
+        "at": "2026-07-31T20:23:03.787Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T05:43:56.602Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-08-01T05:43:21.348Z",
+        "report": {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-870ed3dd246225f4-s7-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-80cb18af-7990-4c1b-abb0-c780f3b8fb0c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.512Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Perform the park: temporary worktree, commit, push, issue note and cleanup",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81a3cd6e3ccac76b298437f590ce273a4ff5a980dd45bfefe986cc514968cde8",
+        "at": "2026-10-22T12:43:26.512Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.513Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Perform the park: temporary worktree, commit, push, issue note and cleanup",
+    "summary": "Add executePark(plan) and parkDraft(repo, unit, opts) (= parkPlan then executePark): commit the draft artifacts and the checkpoint through a temporary worktree to the handoff branch, push it, add one note through port.issueOps.comment, and clean up the worktree and the local branch on any git failure. A rejected push is reported as another owner having parked first; a failed note returns ok with noted:false without undoing the push.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Parking pushes a branch holding the checkpoint and draft artifacts and adds exactly one issue note, leaving the user's checked-out branch, index and working tree unchanged",
+      "A git failure removes the temporary worktree and local branch and leaves the run in the store",
+      "A failed note returns ok with noted:false; a rejected push is reported as another owner having parked first",
+      "Parking a unit twice reuses the deterministic branch and commits on top"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/handoff-park.test.ts: a git failure cleans up the worktree and local branch, a failed note returns noted false, a rejected push says someone else parked first, and a second park commits on top"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

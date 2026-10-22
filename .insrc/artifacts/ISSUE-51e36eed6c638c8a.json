@@ -21,9 +21,37 @@
     "epicSlug": "bug-insrc-mcp-loses-opaque-server",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-09-29T19:17:53.399Z",
     "parentRef": {
       "slug": "bug-insrc-mcp-loses-opaque-server"
+    },
+    "epicCreatedAt": "2026-09-29T19:17:07.884Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "825a5556b5f975af4ada0fc8977755a236de6725106b45bd62e22be4d136418b",
+        "at": "2026-09-29T19:17:07.884Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T19:17:53.399Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

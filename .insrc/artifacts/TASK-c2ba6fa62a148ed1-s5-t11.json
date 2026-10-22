@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d6780af8-ddaf-4f7c-9b59-9bf2ece770d0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.736Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Contract test pinning the parameters of each guarded search request",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3418b817f9fcd049052addefacec3446a8fe1463768a2b96213f0bbb3e76278",
+        "at": "2026-10-22T12:44:36.736Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.737Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Contract test pinning the parameters of each guarded search request",
+    "summary": "Before the guard is added (decision q4e48e4a6), a test that calls each graph-reading request of src/daemon/index.ts (search.callers, search.callees, search.callers_nhop, search.by_file, search.closure, entity.summary, entity.closure, entity.unreachable, repo.depends_on, repo.search_cross_repo, locate.inferParents, search.query) with its existing parameters against a temporary store and asserts each is accepted and answers, so a change to a handler's params fails the test.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "The test passes on the code before the guard and names each request it pins.",
+      "Renaming or removing a parameter a handler reads (a mutation) makes it fail."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "search request contract: each guarded search request accepts its existing params and answers"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

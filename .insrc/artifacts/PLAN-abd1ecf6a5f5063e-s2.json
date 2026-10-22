@@ -64,70 +64,57 @@
     "storyId": "s2",
     "lldRunId": "wf-1785602839477-zcq43o",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p2-schema",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/runners/brainstorm/schemas.ts exists with the s1 placeholder (brainstormElicitSchema) that t1 replaces with the category+questions shape.",
-          "evidence": "src/workflow/runners/brainstorm/schemas.ts:1 found; brainstormElicitSchema is exported there (imported by registration.test) — the s1 placeholder t1 replaces with the category+questions shape. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2-cat",
-          "ref": "t1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The BRAINSTORM_CATEGORY_CLASSES ids are exactly requirements/design/implementation/testing/general — the enum t1's schema category must equal.",
-          "evidence": "src/shared/brainstorm-classes.ts:23 BRAINSTORM_CATEGORY_CLASSES; ids requirements(:25) … general(:41) — the enum (requirements/design/implementation/testing/general) t1's schema category must equal. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2-elicit",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The elicit StepRunner exists in src/workflow/runners/brainstorm/index.ts (s1 placeholder) for t2 to reshape into an llm-pause runner.",
-          "evidence": "src/workflow/runners/brainstorm/index.ts:39 `const elicit: StepRunner` + registerBrainstormRunners wired into workflow/index.ts:27 — the s1 placeholder t2 reshapes into an llm-pause runner (registration untouched). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2-pause",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "llmPauseRunner is a per-module inline helper in design-story/design-epic/plan (the pattern t2 mirrors, not a shared import).",
-          "evidence": "function llmPauseRunner is a PER-MODULE inline helper at design-epic/index.ts:44, design-story/index.ts:107, plan/index.ts:63 — the pattern t2 mirrors locally (not a shared import), exactly as the plan states. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2-tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly 2 tasks (t1, t2) with DAG t2 depends on t1.",
-          "evidence": "The plan enumerates exactly two tasks t1 (schema) and t2 (runner conversion), DAG t2→t1. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-08-01T17:19:06.596Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-01T17:23:01.470Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2e0ab54dc5b73aab8ff99d2b0350dffcece8424cab8693b596a3ee687bf5b399",
+        "at": "2026-08-01T17:15:01.649Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T17:23:01.470Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-08-01T17:19:06.596Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

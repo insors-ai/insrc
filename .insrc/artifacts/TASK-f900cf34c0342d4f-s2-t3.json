@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fbe8a6c0-cb62-4a86-b68b-4bf961eb3218",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.549Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the DaemonSection component",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e06345150f0692775b4df968f65042f17e59e3ea37b659f30214856bade6bf28",
+        "at": "2026-10-22T12:44:58.549Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.549Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the DaemonSection component",
+    "summary": "Add the DaemonSection component (src/cli/panes/, e.g. DaemonSection.tsx or colocated in panes/debug/) taking `{ services: { readonly debug: DebugService } }`. Drive debug.daemonStatus() via a useEffect+useState once-fetch (mirroring useDaemonStatus's pollMs=0 once pattern) and render inside a Box/Text: reachable -> running + formatUptime(uptimeSec) (from ../ui/format.js) + socket + version/pid (rendered only when present, omitted when undefined) + repo-count with each repo's index state; unreachable -> a single 'stopped / unreachable' line. Read-only, no useInput/keys (k5).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "DaemonSection reachable model renders running + uptime (formatUptime) + socket + version/pid (when present) + repo-count with each repo's index state",
+      "the version/pid lines are OMITTED when those optional fields are undefined (graceful degradation)",
+      "DaemonSection { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields",
+      "zero-repo reachable model renders repo-count 0 with no per-repo rows; an 'indexing'/'error' repo renders that exact status",
+      "the component registers no keybindings (read-only, k5); tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DaemonSection: reachable model renders running + formatUptime(uptimeSec) + socket + version/pid (when present) + repo-count with each repo's index state"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: { reachable:false } renders a single 'stopped / unreachable' line and NONE of the running fields"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: zero-repo reachable model renders repo-count 0 with no per-repo rows"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: a repo with status 'indexing'/'error' renders that exact index state (not collapsed to ready)"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: version/pid lines are omitted when those optional fields are undefined"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

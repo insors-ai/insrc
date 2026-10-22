@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T07:17:05.310Z",
     "parentRef": {
       "slug": "defect-delivery-board-shipped-issue-348d4663"
+    },
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7257ea31bfbbc7a3f617ea8311d7edc0daa043ede61ccac6f5e31370d9972527",
+        "at": "2026-10-10T07:10:07.093Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T07:17:05.310Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

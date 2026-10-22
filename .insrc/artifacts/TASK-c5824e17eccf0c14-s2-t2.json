@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b652b43-2c0a-46a9-80d1-694306431bf7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.206Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Shared render engine + helpers",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cfff57fb84c3eaefa2f768591f1487d85dbf57f6f41fdd441a96dda22f87bb8b",
+        "at": "2026-10-22T12:44:38.206Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.207Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared render engine + helpers",
+    "summary": "Author renderFromFormat (envelope + ordered sections + References), computeSectionNumbers (literal section/nested ordinals; envelope unnumbered), sectionSlug (number-prefixed, collision-disambiguated), renderSharedContextReference (reference line + degraded literal), deriveHldContextRef (engine-derived HLD ref from epicHash). Fail-fast on a required section with no binding.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "renderFromFormat emits envelope + ordered numbered sections; throws on missing required binding",
+      "computeSectionNumbers: 1..N body, N.M items, envelope absent",
+      "deriveHldContextRef returns {sourceArtifactId:'HLD-<epicHash>', sectionId:'2-framework-summary'}"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderFromFormat: envelope + ordered sections + References; throws on missing required binding"
+      },
+      {
+        "level": "unit",
+        "name": "computeSectionNumbers: body 1..N, per-item N.M, envelope unnumbered"
+      },
+      {
+        "level": "unit",
+        "name": "sectionSlug: determinism + numeric-suffix disambiguation + number-prefixed anchors"
+      },
+      {
+        "level": "unit",
+        "name": "renderSharedContextReference + deriveHldContextRef: reference-line shape, engine-derived HLD ref, degraded literal on malformed id"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

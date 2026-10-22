@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-00d80121c593053c-S001 -->
+<!-- insrc:artifact BUILD-00d80121c593053c-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -24,8 +24,8 @@ Diffs in the chat's diff widget are coloured by syntax and open the file at the 
 
 ## Changes
 
-- `.insrc/artifacts/CR-00d80121c593053c-S001.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
-- `.insrc/artifacts/PLAN-00d80121c593053c-S001.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `.insrc/artifacts/CR-00d80121c593053c-s1.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `.insrc/artifacts/PLAN-00d80121c593053c-s1.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
 - `docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/CR.md` — **insrc-build** (2026-10-15T09:37:05.780Z)
 - `docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/PLAN.md` — **insrc-build** (2026-10-15T09:37:05.780Z)
 - `vscode-plugin/gen-webview-libs.mjs` — **insrc-build** (2026-10-15T09:37:05.780Z)

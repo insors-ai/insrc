@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90a21c66-da9a-4642-a5a1-ac4a4237a8f4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.274Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s4",
+    "envelope": {
+      "description": "SteeringContent provider (bundled-resource read + empty/missing guard)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "961a307f5efcd27f26a71c1723c37b7651d357bd07e71b0247b2dc296b5c1e9a",
+        "at": "2026-10-22T12:43:40.274Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.275Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "SteeringContent provider (bundled-resource read + empty/missing guard)",
+    "summary": "Add SteeringContent with steeringBody(): String that reads the bundled /insrc/steering-block.md via getResourceAsStream, trims it, and throws IllegalStateException when the resource is null or trims to empty. The resource stream accessor is injectable so it is unit-testable with present/missing/empty fakes. Read-only, independent of daemon install state.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "steeringBody() returns the non-empty trimmed canonical steering body from the bundled resource.",
+      "A null or empty/whitespace-only resource -> IllegalStateException.",
+      "The resource accessor is injectable (constructor/param seam) for unit tests."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SteeringContentTest.steeringBody_returnsNonEmptyBundledBody"
+      },
+      {
+        "level": "unit",
+        "name": "SteeringContentTest.steeringBody_missingOrEmptyResource_throwsIllegalStateException"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

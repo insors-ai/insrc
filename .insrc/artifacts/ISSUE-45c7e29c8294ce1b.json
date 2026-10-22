@@ -21,7 +21,27 @@
     "epicSlug": "sqlite-temporaltrend-fails-integer-overflow-real",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-07T12:57:21.419Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "4b74f5fdf6f53ecfde84175003382236f43622e549e18438b608b00a4a09fdec",
+        "at": "2026-10-07T12:57:21.419Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "SQLite temporalTrend fails with 'integer overflow' on real timestamps",

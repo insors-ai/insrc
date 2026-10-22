@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cedde0b6-b5fa-4988-a61c-91fec9b6c3fc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.852Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The complete mode of the data listings and the uncapped file walk",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d28066dd6baa337be9b4583111a6aa9dcc9a80344b2c41afbb298a60e31df17",
+        "at": "2026-10-22T12:44:24.852Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.852Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The complete mode of the data listings and the uncapped file walk",
+    "summary": "Add the optional `complete` to listTables and listNamespaces in the driver interface. In sqlite, pg and mysql the clamp is not applied in that mode; in oracle and mssql the query is built without its row-limit clause; the MongoDB, Cassandra, DynamoDB and NATS drivers apply no limit; Redis, etcd and ClickHouse are unchanged. Make the file listing's limit optional, walking to the end when absent. Let walkFiles take null for no cap. Every existing caller is untouched.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Each of the five relational drivers returns every table in the complete mode, with no clamp and no row-limit clause in the query",
+      "The four namespace drivers return every namespace in the complete mode; Redis and etcd ignore the mode",
+      "listFilesForConnection with no limit walks to the end with `truncated` false",
+      "walkFiles with a null cap walks to the end with `truncated` false",
+      "Without the new option every driver, the file listing and walkFiles behave exactly as before, shown by their existing tests passing unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

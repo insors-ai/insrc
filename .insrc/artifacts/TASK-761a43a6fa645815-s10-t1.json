@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-376c464a-4c02-4374-8689-d6cebd3a9dab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.520Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Widen CodeReviewBody.groundingMode to 'full' | 'degraded'",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e145bddc9d73063ba9fadfbe3793b2fd7f98aefd496abd1cd516d2ce86172d02",
+        "at": "2026-10-22T12:43:45.521Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.521Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen CodeReviewBody.groundingMode to 'full' | 'degraded'",
+    "summary": "In src/workflow/code-review/types.ts widen the s9-added CodeReviewBody.groundingMode field from the literal 'full' to the union 'full' | 'degraded'. Additive value; existing 'full' records unaffected. No change to ChangedSymbolSummary/CodeReviewGrounding (reused as-is).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "CodeReviewBody.groundingMode is typed 'full' | 'degraded' in types.ts",
+      "the package still type-checks (tsc) with the widened union",
+      "no existing 'full' stamping site breaks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types: a CodeReviewBody with groundingMode 'degraded' type-checks and round-trips (compile-time + a value assertion)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

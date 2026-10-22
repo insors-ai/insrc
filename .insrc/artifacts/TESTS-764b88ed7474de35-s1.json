@@ -1,0 +1,300 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "764b88ed7474de35",
+    "storyId": "s1",
+    "createdAt": "2026-10-12T05:05:01.697Z",
+    "updatedAt": "2026-10-12T05:05:01.697Z",
+    "standalone": true,
+    "epicSlug": "stamp-ledger-records-their-work-item",
+    "epicCreatedAt": "2026-10-12T04:55:07.994Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b8d1863ea7e98d0d1558e2fa86c0f21fbd80f1bf50baffc3ec397f4f7c814245",
+        "at": "2026-10-12T05:05:01.697Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "b4c9622d",
+        "ranAt": "2026-10-12T05:05:01.697Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/ledger-record-identity.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/__tests__/ledger-record-identity.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/build-record.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/test-record.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/ledger-record-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 530,
+            "titles": [
+              {
+                "title": "764b88ed — a BUILD record stores the label, anchor and kind it was filed under",
+                "result": "pass"
+              },
+              {
+                "title": "764b88ed — a TESTS record stores the label, anchor and kind it was filed under",
+                "result": "pass"
+              },
+              {
+                "title": "764b88ed — a code-review record stores the label, anchor and kind it was filed under",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 689,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified \"at persist time\" semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+                "result": "pass"
+              },
+              {
+                "title": "the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+                "result": "pass"
+              },
+              {
+                "title": "the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+                "result": "pass"
+              },
+              {
+                "title": "when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run",
+                "result": "pass"
+              },
+              {
+                "title": "text that came from the builder is rendered on one line, so it cannot add lines that read as the record's own; and an unreadable record is told from an absent one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

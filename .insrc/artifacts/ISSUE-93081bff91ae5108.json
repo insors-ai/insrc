@@ -21,10 +21,38 @@
     "epicSlug": "build-ledger-record-s-provenance-broken",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-10-02T09:16:56.707Z",
     "parentRef": {
       "slug": "provenance-traceability-workflow-artifact-json-two",
       "storyId": "s2"
+    },
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3a34f87a6f8267c17488f7295809f033cdbccf44da7c7fb14887847c7fb51d80",
+        "at": "2026-10-02T09:15:19.460Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-02T09:16:56.707Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

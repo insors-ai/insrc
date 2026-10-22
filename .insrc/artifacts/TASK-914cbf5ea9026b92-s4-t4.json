@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2b4ff39f-f914-4730-8998-b633b04a4cdc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.485Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Tests: shape helper + per-language recognizers + resolution pass (incl cross-protocol GC)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6252cd7b3fc81f8cb5d5239f28a77c3f5e77b7cbd373fade6fccc016b4920f36",
+        "at": "2026-10-22T12:43:59.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.486Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: shape helper + per-language recognizers + resolution pass (incl cross-protocol GC)",
+    "summary": "Add src/indexer/parser/__tests__/messaging-client-shapes.test.ts (helper contract + TS recognizer, mirroring http-client-shapes.test.ts); extend src/indexer/parser/__tests__/http-recognizer-py-go.test.ts with Python + Go messaging cases; add src/indexer/__tests__/messaging-endpoints.test.ts mirroring external-endpoints.test.ts with an injected fake sc2 resolve (resolved + unresolved), the one-node-two-edges pub+sub case, unresolved-not-dropped, idempotency, and the cross-protocol GC regression (a co-located HTTP endpoint survives the messaging GC and vice-versa). The end-to-end assertions assume t2+t3 both merged.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "All new tests pass under node:test; matchMessagingClient/fileImportsMessagingLibrary/emitMessaging + the TS/Python/Go recognizers are covered",
+      "The resolution-pass integration test proves ac1 (one node per topic, correct direction) and ac2 (resolved + unresolved endpoints), plus the cross-protocol GC regression",
+      "The full indexer test sweep stays green (no regression to the S003 HTTP tests)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ac1 recognizer coverage: producer->PUBLISHES_TO / consumer->SUBSCRIBES_TO across TS/Python/Go"
+      },
+      {
+        "level": "integration",
+        "name": "ac1 resolution coverage: one per-repo endpoint per distinct resolved topic, correct direction, pub+sub share one node"
+      },
+      {
+        "level": "integration",
+        "name": "ac2 coverage: config-built topic resolved -> resolved endpoint; unresolvable -> resolved:false with rawExpression preserved"
+      },
+      {
+        "level": "integration",
+        "name": "full indexer sweep green (npx tsx --test src/indexer/**/__tests__/*.test.ts) with no S003 HTTP regression"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

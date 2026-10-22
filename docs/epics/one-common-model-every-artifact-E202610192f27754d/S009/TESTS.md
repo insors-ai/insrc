@@ -770,7 +770,7 @@ Run at 2026-10-22T11:24:12.560Z on commit `05355f6a`. Tests check: **passed**. 1
 
 **smoke: smoke: preview on a copy of this repository lists the expected 444 renames and 56 flat amendments**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/core-data-model.md, section 's9 build: hand-offs', item 1. Preview (handleRepoConvert, mode preview) on a git clone of this repository listed 453 renamed head files, equal to a direct count of S0nn head files in .insrc/artifacts; the 444 in the plan was an earlier analyzer figure. It listed 56 flat amendments (convert-amendment) and 0 problems. The same preview at the LLD-approval commit gave 453 too. The run also found PLAN-dfc0371b7200f5b5-s001 (a lowercase zero-padded id), now renamed by the conversion.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/plans/core-data-model.md, section 's9 build: hand-offs', item 1. Preview (handleRepoConvert, mode preview) on a git clone of this repository listed 453 renamed head files, equal to a direct count of S0nn head files in .insrc/artifacts; the 444 in the plan was an earlier analyzer figure. It listed 56 flat amendments (convert-amendment) and 0 problems. The same preview at the LLD-approval commit gave 453 too. The run also found PLAN-dfc0371b7200f5b5-s1 (a lowercase zero-padded id), now renamed by the conversion.
 
 **smoke: smoke: apply on the copy reports no unexplained difference and every approved artifact keeps its revision number**
 

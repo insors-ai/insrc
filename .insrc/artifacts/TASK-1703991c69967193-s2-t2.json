@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-919f0105-179b-4e74-b11a-d1f811187abc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.361Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the artifacts/issue.ts record family (mirror spec.ts)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d34004feec046bfedb57b06e69d260fe63dc43b35ae6f23661572e6ee011a78",
+        "at": "2026-10-22T12:43:13.361Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.361Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the artifacts/issue.ts record family (mirror spec.ts)",
+    "summary": "Create src/workflow/artifacts/issue.ts mirroring artifacts/spec.ts: `IssueArtifactBody` (readonly title/reproduction/rootCause/fixIntent), `export type IssueArtifact = WorkflowArtifact<IssueArtifactBody>`, `export const ISSUE_SCHEMA_VERSION = 1`, `renderIssueMarkdown(artifact)` (id-marker header via artifactIdMarker(issueArtifactId(meta.issueHash)) then `# <title>` + `## Reproduction`/`## Root cause`/`## Fix intent` sections — BODY fields only, no magnitude/parentRef), and `isIssueBody` (+ reuse isCitationArray). Imports issueArtifactId + artifactIdMarker from ../storage.js (landed in t1) and types from ../types.js.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "IssueArtifactBody has exactly the four readonly prose fields; IssueArtifact = WorkflowArtifact<IssueArtifactBody>.",
+      "isIssueBody returns true only for a body with all four non-empty string fields; false otherwise.",
+      "renderIssueMarkdown emits the id marker + title heading + the three body sections and NOTHING from meta (magnitude/parentRef/issueHash absent from output).",
+      "ISSUE_SCHEMA_VERSION === 1; tsc compiles (issueArtifactId resolves from t1)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "isIssueBody accepts { title, reproduction, rootCause, fixIntent } (all non-empty) and rejects a body missing/emptying any of the four fields"
+      },
+      {
+        "level": "unit",
+        "name": "renderIssueMarkdown emits the id-marker header + `# <title>` + `## Reproduction`/`## Root cause`/`## Fix intent` sections in order"
+      },
+      {
+        "level": "unit",
+        "name": "renderIssueMarkdown output contains NONE of magnitude/parentRef/issueHash (meta-only fields never leak into the GH body) — k4"
+      },
+      {
+        "level": "unit",
+        "name": "ISSUE_SCHEMA_VERSION === 1"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

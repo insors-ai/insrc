@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c311579f-36c7-4ff2-84c2-dcace17cc79e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:20.287Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add PerRoleSection + activate the sc3 host glue in InsrcSettingsConfigurable",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8281602669ae230d037ed32fbc2d805d5d98e8bcd34870da665ad79ca3b844d4",
+        "at": "2026-10-22T12:44:20.287Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:20.288Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add PerRoleSection + activate the sc3 host glue in InsrcSettingsConfigurable",
+    "summary": "Add PerRoleSection : SettingsSection (a thin Swing shell of role rows — tier chooser + a use-default/remove affordance — bound to the PerRoleOverridesModel, applying via sc2). Add the minimal host glue in InsrcSettingsConfigurable: build a list of SettingsSection on Loaded (the per-role section, from the catalog's roles/tierNames + the perRoleOverrides read), render each section's component() below the global groups, and fan isModified()/reset() to them plus run each section's writes in the SAME off-EDT ProgressManager apply block (onSaved back on the EDT, ConfigurationException on any not-Saved). Unavailable page installs no section. Per the s3 critique, during build land the host-glue change first and re-run ./gradlew test before adding the PerRoleSection rows, so a regression in the shared apply path is caught early. Depends on t1 (gateway) + t2 (model).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "PerRoleSection : SettingsSection renders role rows and applies changes via gateway.writeSetting/clearSetting (segment list), advancing onSaved on Saved.",
+      "InsrcSettingsConfigurable renders registered SettingsSections below the global groups and fans isModified/apply/reset to them.",
+      "Section writes ride the off-EDT ProgressManager apply; a not-Saved section write throws ConfigurationException preserving the pending intent; per-key isolation across roles.",
+      "An Unavailable catalog/overrides page installs no section; no hardcoded role/tier literal (built from catalog.roles)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: InsrcSettingsConfigurable renders registered SettingsSections + fans isModified/apply/reset; section writes ride the off-EDT apply"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

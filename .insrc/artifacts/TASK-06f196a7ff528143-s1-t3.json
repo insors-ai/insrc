@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9624ec29-b430-493c-91b8-6bdc009b6aec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.326Z",
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "06f196a7ff528143",
+    "storyId": "s1",
+    "envelope": {
+      "description": "changedFiles: the Story's commits first, own-file working-tree edits, excludedUncommitted",
+      "parent": {
+        "entityId": "STORY-06f196a7ff528143-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-06f196a7ff528143-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-06f196a7ff528143-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ed244e1f86ac851569c6c295acd1c681c903d20afb97b6fce07466378ce0d68",
+        "at": "2026-10-22T12:43:11.329Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.330Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "changedFiles: the Story's commits first, own-file working-tree edits, excludedUncommitted",
+    "summary": "In src/workflow/runners/build/changed-files.ts: with a base, read the Story's set first (storyChangeSet with storyKey and strict), choosing per-unit diffs by set.perUnit; then add working-tree paths already in that set and report the rest as excludedUncommitted on ChangeSetAttributionReport; a storyKey without a base throws NoBuildChangesError; collectBuildChangeLog forwards ctx.storyKey. Without a base, unchanged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "With a base, an unrelated uncommitted file is never returned and is listed in excludedUncommitted.",
+      "An uncommitted edit to a Story file is returned.",
+      "A clean tree gives the committed-range result.",
+      "A storyKey without a base is refused, and collectBuildChangeLog turns it into [].",
+      "The changed-files.test.ts cases asserting that a dirty tree wins over the range are rewritten to the anchored rule."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-8d4b90c9ab301e66-S001 -->
+<!-- insrc:artifact TESTS-8d4b90c9ab301e66-s1 -->
 
 # Tests: 8d4b90c9ab301e66 S001
 
@@ -478,7 +478,7 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Checked by the
 
 **smoke: By hand in VS Code: a decision sent while a chat turn is running is delivered after that turn ends, and one sent with the chat panel closed opens the chat and is delivered**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: PARTLY OBSERVED, reported as pass on what was seen: on 2026-10-14 a decision sent from the pane ('Review decision: approved LLD-dd277f9cddd6d879-S001 … by Subho Ghosh') was delivered to the chat as a message and the approval was recorded. The user was not asked to try, and did not report, a decision sent while a chat turn was running or one sent with the chat panel closed; those two cases rest on the chat host's tests only
+Reported by the builder, not run by the gate: **pass**. Evidence: PARTLY OBSERVED, reported as pass on what was seen: on 2026-10-14 a decision sent from the pane ('Review decision: approved LLD-dd277f9cddd6d879-s1 … by Subho Ghosh') was delivered to the chat as a message and the approval was recorded. The user was not asked to try, and did not report, a decision sent while a chat turn was running or one sent with the chat panel closed; those two cases rest on the chat host's tests only
 
 **smoke: By hand in VS Code: a sequence diagram, one other mermaid diagram and a UI mock are each drawn in their own tab, with the result recorded for each**
 

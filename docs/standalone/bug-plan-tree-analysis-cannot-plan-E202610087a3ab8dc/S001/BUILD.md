@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-7a3ab8dc4b9d39ea-S001 -->
+<!-- insrc:artifact BUILD-7a3ab8dc4b9d39ea-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -24,7 +24,7 @@ Fixed in commit b7584edd. (1) The planner's, the classifier's and the bundle's s
 
 ## Changes
 
-- `.insrc/artifacts/CR-7a3ab8dc4b9d39ea-S001.json` — **insrc-build** (2026-10-08T11:47:10.912Z)
+- `.insrc/artifacts/CR-7a3ab8dc4b9d39ea-s1.json` — **insrc-build** (2026-10-08T11:47:10.912Z)
 - `.insrc/artifacts/ISSUE-7a3ab8dc4b9d39ea.json` — **insrc-build** (2026-10-08T11:47:10.912Z)
 - `docs/standalone/bug-plan-tree-analysis-cannot-plan-E202610087a3ab8dc/S001/CR.md` — **insrc-build** (2026-10-08T11:47:10.912Z)
 - `src/agent/providers/__tests__/cli-failure-message.test.ts` — **insrc-build** (2026-10-08T11:47:10.912Z)

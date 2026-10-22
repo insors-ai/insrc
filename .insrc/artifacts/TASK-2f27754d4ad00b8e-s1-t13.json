@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0743d754-cba1-4583-a542-ddfc4596f2df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.179Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve references by artifact id",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4fbdabaa06018cce83b5665f577408030ff319d5d059180acd38d3108df1e70c",
+        "at": "2026-10-22T12:43:20.179Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.180Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve references by artifact id",
+    "summary": "Make resolveWorkflowRef try ArtifactIds.parse first and drop the work-item id and uppercase label forms, and define the new ResolvedRef workflowId and slug values.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "resolveWorkflowRef accepts an artifact id, owner/repo#N, #N and an s<n> label and refuses a work-item id and an uppercase label",
+      "the ResolvedRef outputs are documented and tested",
+      "the resolve tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/id-resolve.test.ts: resolveWorkflowRef accepts an artifact id, owner/repo#N, #N and an s<n> label and refuses a work-item id and an uppercase label"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

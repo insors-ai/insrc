@@ -14,137 +14,64 @@
     "hldBaseRunId": "wf-1784970656550-ihypng",
     "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "c-callers",
-          "ref": "c7/migration",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "buildShaperProvider has totalCallers:1 (only prepareWorkflowRun); the ~12 other per-run-provider sites are separate.",
-          "evidence": "ripgrep for `buildShaperProvider(` returns 12 real non-test invocation sites (workflow-rpc.ts:341 plus classifier/scope-picker, classifier/driver, explore/capability-reuse-check, explore/doc-decision-trace, explore/doc-constraint-enumerate, workflow/questions, runtimes/shared/adherence, runtimes/shared/aggregator, planner/driver, context/decomposer, context/synthesizer). The 'totalCallers:1 / its only caller is prepareWorkflowRun' restatement is contradicted — prepareWorkflowRun is the sole run-wide WORKFLOW seam, not the sole caller.",
-          "action": "Correct the 'totalCallers:1 / only caller' phrasing to '~12 callers; prepareWorkflowRun is the sole run-wide workflow seam'. The s3 SCOPE decision is unaffected and correct (reroute only prepareWorkflowRun here; defer the ~11 per-operation analyze sites to S005) — this is an inaccurate citation restatement, not a design defect.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "Replace the undercount restatement in both the precondition note and the migration State-before with the re-derived 12-caller reality, preserving the (correct) sole-run-wide-seam scoping.",
-            "artifactEdits": [
-              {
-                "find": "(s1 usage.example: totalCallers:1 for buildShaperProvider). The ~12 other buildShaperProvider/per-run-provider sites are explicitly deferred to S005",
-                "replace": "(buildShaperProvider actually has ~12 callers; prepareWorkflowRun is its sole run-wide *workflow* seam). The ~11 other per-operation buildShaperProvider sites are explicitly deferred to S005"
-              },
-              {
-                "find": "The usage.example bundle records totalCallers:1 for buildShaperProvider — its only caller is prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344), which constructs ONE provider for the whole run",
-                "replace": "buildShaperProvider has ~12 callers; its sole run-wide *workflow* seam is prepareWorkflowRun (src/daemon/workflow-rpc.ts:319-344), which constructs ONE provider for the whole run"
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "c-shaper-loc",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider is defined at shaper-provider.ts:183-241 and buildSummariserProvider at 256-269.",
-          "evidence": "read at shaper-provider.ts:183 = `export function buildShaperProvider(`; buildSummariserProvider export also present at :256. Matches cited 183-241 / 256-269.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-resolveshaperkind",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "resolveShaperKind is an exported pure function in shaper-provider.ts that decides the AnalyzeShaperProviderKind admission (the single CLI/Ollama runner gate).",
-          "evidence": "resolveShaperKind appears 15 times in the tree (exported pure admission function in shaper-provider.ts). Confirms the single runner-admission choke point the router feeds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-overrides",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ShaperProviderOverrides is an internal interface in shaper-provider.ts (~59-80) carrying sampler/modelHints/repoOverride/clientDefault/cliTimeoutMs.",
-          "evidence": "`interface ShaperProviderOverrides` = 1 match; cliTimeoutMs (4) and repoOverride (22) present. Confirms the overrides bag the router extends additively.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-byrepo",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The byRepo[repoPath] shaperProvider override is resolved via resolveRepoShaperProvider (read fresh), referenced around shaper-provider.ts:65.",
-          "evidence": "resolveRepoShaperProvider = 17 matches — the fresh-disk byRepo override resolver the router reuses exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-prepare",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "prepareWorkflowRun is at workflow-rpc.ts:319-344, PreparedWorkflowRun interface at 302-314, and the single buildShaperProvider call at :341.",
-          "evidence": "workflow-rpc.ts: `interface PreparedWorkflowRun` at 302, `export function prepareWorkflowRun` at 319, and the buildShaperProvider call read verbatim at :341. All three cited anchors resolve.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-sampler",
-          "ref": "c1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An ambient MCP sampler (runWithSamplerContext) routes construction through McpSamplingProvider, taking precedence above tier resolution — an existing behavior of buildShaperProvider.",
-          "evidence": "runWithSamplerContext (14) and McpSamplingProvider (44) both present — the ambient-sampler precedence the router preserves is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-kind-union",
-          "ref": "c1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "AnalyzeShaperProviderKind is the closed union 'ollama' | 'cli-claude' | 'cli-codex' — no direct-REST member.",
-          "evidence": "AnalyzeShaperProviderKind (27) and the cli-codex member (31) present; the union is the closed 'ollama'|'cli-claude'|'cli-codex' with no REST member — the k1 invariant holds structurally.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-repo-test",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "repo-shaper-override.test.ts (lines ~34-82) pins the byRepo-over-global shaperProvider precedence the router extends.",
-          "evidence": "repo-shaper-override.test.ts:34 reads `test('resolveRepoShaperProvider returns the pinned kind for a byRepo entry'...)` — the byRepo precedence pin the integration test extends exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-fakeprovider",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A reusable FakeProvider test fixture exists at src/daemon/__tests__/workflow-rpc.test.ts:33 for the integration harness.",
-          "evidence": "src/daemon/__tests__/workflow-rpc.test.ts:33 = `class FakeProvider implements LLMProvider` — the reusable integration fixture the test strategy names exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 9
-      },
-      "reviewedAt": "2026-07-25T14:48:32.493Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-820cc07b9c74195c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-25T14:50:45.971Z",
-    "reviewOverride": {
-      "reason": "Sole finding was MED (buildShaperProvider caller undercount) — the recurring HLD-carried imprecision; the review already auto-corrected it in the artifact and S003 scope (reroute only prepareWorkflowRun, defer ~11 sites to S005) is unaffected. 0 HIGH, 9 LOW verified sound.",
-      "at": "2026-07-25T14:50:45.971Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3d589bdc97a2d45790c923f75e655572ec022e6deaa8407876e38021da4a3735",
+        "at": "2026-07-25T14:43:40.863Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-25T14:50:45.971Z",
+        "override": {
+          "reason": "Sole finding was MED (buildShaperProvider caller undercount) — the recurring HLD-carried imprecision; the review already auto-corrected it in the artifact and S003 scope (reroute only prepareWorkflowRun, defer ~11 sites to S005) is unaffected. 0 HIGH, 9 LOW verified sound."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 9
+        },
+        "at": "2026-07-25T14:48:32.493Z",
+        "report": {
+          "entityId": "LLD-820cc07b9c74195c-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-820cc07b9c74195c-s3-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

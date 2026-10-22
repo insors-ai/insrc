@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-3c6a109dffcde0c1-S001 -->
+<!-- insrc:artifact BUILD-3c6a109dffcde0c1-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -20,5 +20,5 @@ Added the 'paths' failure kind and checkPathForms to synthesizer.ts and called i
 
 ## Changes
 
-- `.insrc/artifacts/LLD-3c6a109dffcde0c1-S001.json` — **insrc-build** (2026-10-16T08:23:14.166Z)
+- `.insrc/artifacts/LLD-3c6a109dffcde0c1-s1.json` — **insrc-build** (2026-10-16T08:23:14.166Z)
 - `docs/standalone/write-project-file-references-relative-project-E202610163c6a109d/S001/LLD.md` — **insrc-build** (2026-10-16T08:23:14.166Z)

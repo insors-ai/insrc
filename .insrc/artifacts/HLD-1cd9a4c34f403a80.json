@@ -10,7 +10,35 @@
     "schemaVersion": 1,
     "epicHash": "1cd9a4c34f403a80",
     "epicSlug": "add-plan-workflow-insrc-framework-4th",
-    "approvedAt": "2026-07-15T13:57:38.200Z"
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5d9e4660d04f1899e3dcba35eb99446ca96fcb13706c0db93863788d543235c8",
+        "at": "2026-07-15T13:52:56.962Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-15T13:57:38.200Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Implement `plan` as a new fine-grained instance of the shared workflow skeleton, peer to define/design.epic/design.story. A single runner module registers a fixed six-step recipe (context.assemble -> tasks.enumerate -> tasks.critique -> tasks.finalize -> test-strategy.write -> checklist.verify) whose outputs the orchestrator's three per-workflow arms turn into a persisted, cited PlanArtifact for exactly one Story. A new gate reads the Story's approved, non-stale LLD (adding requireApprovedLld by mirroring requireApprovedHld and reusing the existing effective-hash/staleness machinery), and a new storage helper writes the artifact under the as-built slug-md + hash-json convention. Nothing about the executor, state store, approval flow, or MCP phase loop changes except a single 'plan' arm added at each existing seam.",

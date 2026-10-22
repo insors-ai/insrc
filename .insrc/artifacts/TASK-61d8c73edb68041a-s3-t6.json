@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fc81a85f-263e-4b5c-beee-0e3f99a7e2e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.003Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "DaemonProvisioner — delegate to installer / daemon-ctl, map exit codes",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "637c9ebc89c9eacaf9a4dbd9e8d8bc41d26d83980aac813e3e5f7eaff3b75d7f",
+        "at": "2026-10-22T12:43:40.004Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.004Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "DaemonProvisioner — delegate to installer / daemon-ctl, map exit codes",
+    "summary": "Implement run(kind, node): ProvisionOutcome via an injected subprocess runner: put node.executablePath on PATH and spawn the EXISTING tooling unchanged — INSTALL -> scripts/insrc-daemon-install.sh, UPDATE -> daemon-ctl.sh update. Capture the child exit code into ProvisionOutcome (0->ok; 2 prereq / 3 source / 4 git-npm-build -> ok=false with a mapped reason); a missing script or spawn failure is captured (ok=false), not thrown. Never reproduce clone/build logic (lc1/k5).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "INSTALL spawns insrc-daemon-install.sh, UPDATE spawns daemon-ctl.sh update, each with the resolved Node on PATH",
+      "exit 0 -> ProvisionOutcome(ok=true); exit 2/3/4 -> ok=false with the mapped reason; spawn failure / missing script -> ok=false captured (not thrown)",
+      "no clone/npm/build logic is reproduced in the plugin — only the scripts are invoked (lc1/k5)",
+      "the subprocess runner is injected so exit-code mapping + target selection are unit-testable with no real process"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DaemonProvisionerTest#INSTALL_spawnsInstallScript_UPDATE_spawnsDaemonCtlUpdate_withNodeOnPath"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonProvisionerTest#exitCodeMapping (0->ok; 2/3/4->ok=false mapped reason; spawnFailure/missingScript->ok=false captured not thrown)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

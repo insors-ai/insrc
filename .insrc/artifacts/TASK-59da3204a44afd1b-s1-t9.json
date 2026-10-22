@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-70ef6d14-97a4-491d-8901-15cebacceab9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.441Z",
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Real CLIs and the real panel",
+      "parent": {
+        "entityId": "STORY-59da3204a44afd1b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-59da3204a44afd1b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "366eaa53cc2dee560da2bf4b9c8d2794a722e2feef5f4613643cbeb40d6e51b6",
+        "at": "2026-10-22T12:43:36.444Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.444Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Real CLIs and the real panel",
+    "summary": "Checks the gate cannot run, reported by the builder. With the argv each adapter builds for a request with readDirs, the real claude CLI and the real codex CLI answer from an image and a text file in that directory. Then the build is installed and, after the user reloads the window, pasting a screenshot and attaching a document are checked in the panel. The whole plugin suite is run and its TAP output saved to a file that is named as evidence.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "Reported: claude, run with the adapter's own argv for a request with readDirs, answers from the image and the text file",
+      "Reported: codex, run with the adapter's own argv, answers from the image and the text file",
+      "Reported after install and the user's reload: chips appear for a pasted screenshot and an attached document, the sent message shows them, the assistant answers from their content, and a chip click opens the file",
+      "The whole plugin suite passes apart from the two manifest-catalog tests that failed before this Story, with its TAP output saved to a file named as evidence"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "live claude: with the argv the adapter builds for a request with readDirs, a prompt naming an image and a text file in that directory is answered from their content"
+      },
+      {
+        "level": "live",
+        "name": "live codex: with the argv the adapter builds, a prompt naming an image and a text file in the attachments directory is answered from their content"
+      },
+      {
+        "level": "smoke",
+        "name": "in VS Code: pasting a screenshot and attaching a document show chips, the message shows them after sending, the assistant answers from their content, and a chip click opens the file"
+      },
+      {
+        "level": "smoke",
+        "name": "whole plugin suite: every test passes apart from the two manifest-catalog tests that failed before this Story"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0f06749a-7670-489d-ad88-4fe49f91926f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:00.922Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s1",
+    "envelope": {
+      "description": "32-char session-name ellipsis in the header (view-only)",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c15c1a144a3527887edf92471d7583d3439d1bf1ee97fb0cc755b276a6627056",
+        "at": "2026-10-22T12:45:00.922Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:00.923Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "32-char session-name ellipsis in the header (view-only)",
+    "summary": "Add a pure view transform where the header renders the session title in the chrome: names longer than 32 chars truncate to 32 + a trailing ellipsis; names of 32 or fewer chars render in full. The stored title is left unchanged (k4).",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "a session name >32 chars renders truncated to 32 chars + a trailing ellipsis in the header (ac4)",
+      "a session name <=32 chars renders in full with no ellipsis",
+      "the stored/persisted session title is unchanged (view-only transform, k4)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "session-title clamp helper — >32 chars truncates to 32 + ellipsis; <=32 unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "the header renders a >32-char session name clamped with an ellipsis"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

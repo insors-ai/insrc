@@ -1,0 +1,144 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d27fe8996fc3a2db",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T04:54:23.764Z",
+    "updatedAt": "2026-10-15T04:54:23.764Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-14T19:23:57.366Z",
+    "epicSlug": "open-review-pane-existing-editor-group",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "c58a1a1666def9d3d90e5a08d7a9beee5c81f6875ec1bb9dc025b1fd5a02957d",
+        "at": "2026-10-15T04:54:23.764Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "999d729a",
+        "ranAt": "2026-10-15T04:54:23.764Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chooseReviewColumn: groups other than the chat's are chosen (the active one first, else the lowest view column), a group with any chat tab is left out whole, and undefined is returned when only the chat's group is open or there are no groups",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts",
+                "title": "chooseReviewColumn picks a group without the chat tab, the active one first, else the lowest column, and none when only the chat's group is open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts",
+                "title": "chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension.ts's review host createPanel reads vscode.window.tabGroups.all through a try, passes the chosen column (or, when there is none or reading fails, today's placement: ViewColumn.Beside with preserveFocus when quiet, ViewColumn.Active otherwise), and keeps preserveFocus for a quiet open (source scan)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review-wiring.test.ts: TWO existing source scans pin the current createPanel calls and are rewritten: 'review wiring: extension.ts sets the review panel's iconPath...' (about :128, asserts the ViewColumn.Active call) and 'extension wiring: the chat host's presenter opens a document...' (about :175, asserts the quiet Beside/preserveFocus ternary, and its title states the old placement). The new createPanel body keeps the `createPanel: ({ viewType, title, quiet }) => {` block shape their extractor regex expects; the createPanel wiring scan lives in review-wiring.test.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 378,
+            "titles": [
+              {
+                "title": "chooseReviewColumn picks a group without the chat tab, the active one first, else the lowest column, and none when only the chat's group is open",
+                "result": "pass"
+              },
+              {
+                "title": "chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 392,
+            "titles": [
+              {
+                "title": "review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

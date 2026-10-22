@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b231c75-ce73-467c-8706-9e01412c14b9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.548Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Snapshot assembler",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f874be36bd858a1056ca116347805280bdcb619ce71126bc49ab5930764b52e",
+        "at": "2026-10-22T12:43:24.548Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Snapshot assembler",
+    "summary": "New src/workflow/delivery/snapshot.ts exporting the pure assembleSnapshot(recordSet, graph, stages, gates, currency, markdown): every graph item joined with its stage, evidence entries (approval, review, reviewCurrency, mdPath, openWith from the port), task results, amendments and the notices naming it; the build-without-plan incomplete-evidence notice for full-chain / feature / sized-bugfix stories; needsAttention and de-duplicated attentionReasons; store-level notices; counts with every key; schemaVersion 1; plain JSON, deterministic.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Every item of every kind appears once, sorted by id, with the fields the LLD lists; epics and tasks have stage null.",
+      "Two runs over the same inputs, including equal timestamps, are deep-equal.",
+      "needsAttention comes from an sc5 reason or an attention-true notice; attentionReasons list each entry once; notices with no itemIds appear only at the snapshot level.",
+      "A full-chain, feature or sized-bugfix story with a BUILD and no PLAN gets one incomplete-evidence notice; small, small-bugfix, trivial and unknown routes do not.",
+      "The result contains no Map, Set or undefined."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: 'every work item is joined with its stage, evidence, gates, currency and notices'"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: 'two snapshots of the same store, with equal timestamps, are identical in order and counts'"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: 'needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items'"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: 'a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

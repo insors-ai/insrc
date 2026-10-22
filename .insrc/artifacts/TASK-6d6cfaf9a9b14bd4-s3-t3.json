@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-46462db4-dd36-4456-b815-7f21490494ad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.428Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Re-run an untruncated sweep for progress consumers and progress-frame producers",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd7b0b1210d3f4b8b60dea722668996b616368fb6fffec719f132cd27b6ac16e",
+        "at": "2026-10-22T12:43:43.428Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.428Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-run an untruncated sweep for progress consumers and progress-frame producers",
+    "summary": "Read-only verification converting the s1 search.text finding (`truncated: true`) from evidence into proof. Sweep exhaustively for (a) any existing client-side consumption of 'progress'/'delta' stream frames, and (b) the full set of producers emitting 'progress'-kind frames — the s1 inventory named src/daemon/todos-rpc.ts:1146 and src/daemon/tools/types.ts:56 but is explicitly non-exhaustive. Known-unrelated hits (the Ollama model-pull tick at src/cli/services/index.ts:69 and src/cli/services/setup.ts:83-101) are recorded and excluded. If any pre-existing consumer surfaces, the reader must be re-scoped as an addition beside it and the LLD's backwardCompat claim revisited before implementation proceeds. Note that this sweep does NOT gate the choice of structural decode validation — that requirement stands unconditionally in t7 precisely because an inventory of this kind can never be proven exhaustive. Write NO production code in this Task.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The consumer sweep completes without truncation and its result is recorded as either 'no pre-existing client-side progress consumer' (now proven) or a concrete list of consumers found.",
+      "The producer inventory is recorded with file:line for every hit, and the exact sweep command is recorded so a reviewer can re-run it and get the same list.",
+      "Known-unrelated hits (src/cli/services/index.ts:69, src/cli/services/setup.ts:83-101) are listed as excluded with the reason, not silently dropped.",
+      "If any pre-existing consumer is found, a written note states how the reader is re-scoped as an addition beside it and what in backwardCompat must change.",
+      "No file under src/ is modified by this Task."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "sweep-reproducibility: the recorded sweep command re-runs untruncated and reproduces the same consumer and producer file:line lists"
+      },
+      {
+        "level": "smoke",
+        "name": "exclusion-record: src/cli/services/index.ts:69 and src/cli/services/setup.ts:83-101 appear as explicitly excluded hits with a stated reason"
+      },
+      {
+        "level": "smoke",
+        "name": "no-src-diff: `git diff --stat src/` is empty for this Task"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ceea71f-129e-4fcd-8d9d-e7cba78813a6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.932Z",
+    "epicCreatedAt": "2026-09-20T15:58:45.676Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Tests + local gate (tsc + test sweep)",
+      "parent": {
+        "entityId": "STORY-be438ed37a36f5fc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-be438ed37a36f5fc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-be438ed37a36f5fc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-be438ed37a36f5fc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3fece0cd267a94724d31b31067d40625733742feb6e5c602415d21052a400467",
+        "at": "2026-10-22T12:44:28.937Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.938Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests + local gate (tsc + test sweep)",
+    "summary": "Add unit(buildRepoStats) over in-memory rows + stub sizeOf/pendingFor; unit(IndexQueue.depthForRepo) over an enqueue()-seeded queue; integration(collectRepoStats) over a real tmpdir store (setGraphStorePath/closeGraphStore) with seeded entities/edges + real temp files; and a source-scan of index.ts asserting the repo.stats handler shape + read-only. Run npm run build (tsc) + npx tsx --test 'src/**/__tests__/*.test.ts' locally (no GitHub CI).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "unit + integration + source-scan tests cover the LLD test strategy (counts/breakdowns, size best-effort, per-repo queue depth, registry fields, zero-count/orphan/dangling/cross-repo edge, {error} for unregistered, read-only)",
+      "tsc clean and the full test sweep passes locally"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "npm run build (tsc) is clean and npx tsx --test 'src/**/__tests__/*.test.ts' passes (the full repo-stats unit + integration + source-scan suites green)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

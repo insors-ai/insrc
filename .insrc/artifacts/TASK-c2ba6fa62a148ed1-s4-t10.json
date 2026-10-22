@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0544f7ce-b6ce-4cde-aa9e-caa9c0bf5ce4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.445Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Refuse the live store to every process that has not declared itself",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s4-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "251ac011a0cff07abe4a0a68a32367a0173b0c7e85cdf45f4ccabd7af3480e3a",
+        "at": "2026-10-22T12:44:35.445Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.446Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Refuse the live store to every process that has not declared itself",
+    "summary": "Add the owner declaration and the temporary permitted-reader declaration (named so that Story s11 can find and delete it) to the store module; call the first from the daemon's entry point and the second from the MCP server's entry point; make getGraphStore refuse the live path, compared after resolving both sides, to a process that has made neither, with LmdbStoreNotOwnerError, before the library's open is called. Run the full test sweep with it and treat any newly failing test as an opener of the live store. The removal of the permitted-reader declaration is not in this plan: it belongs to Story s11 by that Story's criterion ac6.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "With a temporary home: process A declares ownership and opens the store; process B, with neither declaration, is refused with LmdbStoreNotOwnerError and never opens the lock file; A then writes successfully",
+      "A process with only the permitted-reader declaration opens the live path",
+      "A temporary path set through setGraphStorePath opens without any declaration",
+      "The live path given as a relative path and through a symbolic link is refused",
+      "In a declared process, a close followed by a reopen succeeds, as a store compaction does",
+      "A child process spawned by a declared process is refused the live path",
+      "The full test sweep passes with the refusal on, run under Node 22",
+      "The permitted-reader function's name appears at exactly two places in the source: its definition and the MCP server's one call"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "owner check: default path with no declaration is refused and no file is created"
+      },
+      {
+        "level": "unit",
+        "name": "owner check: after the declaration the same open succeeds, also after a close and reopen"
+      },
+      {
+        "level": "unit",
+        "name": "owner check: a temporary path opens without a declaration"
+      },
+      {
+        "level": "unit",
+        "name": "owner check: the live path as a relative path and through a symbolic link is refused"
+      },
+      {
+        "level": "unit",
+        "name": "owner check: permitted-reader only opens the live path; neither declaration is refused"
+      },
+      {
+        "level": "integration",
+        "name": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused"
+      },
+      {
+        "level": "unit",
+        "name": "source scan: the permitted-reader function's name appears at exactly two places"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79b0742f-bc5c-4760-bd05-053901a2a55a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.508Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the lowest-number duplicate tie-break, gated on the findIssues amendment",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84e58bf71a268e43f542f06a663f19b671404fac8c90c650c7d040d5fd4ab2bb",
+        "at": "2026-10-22T12:43:25.508Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.509Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the lowest-number duplicate tie-break, gated on the findIssues amendment",
+    "summary": "Add step 5 of ensureUnitIssueDetailed: after recording, list every issue carrying the unit label through port.findIssues, adopt the lowest-numbered issue, record it in place of its own, comment on and close its own as a duplicate, and keep the created issue when the listing fails. The build starts this task only after the sc1 findIssues amendment (AMD-315d510cb28100e2-10) is agreed with s1; until then it is exercised against a fake port that implements findIssues.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "A listing with a lower-numbered issue makes the call adopt it, comment on and close its own; a failing close still adopts.",
+      "Two simulated daemons that both create before either lists end with one open issue, the lowest, and both records name it.",
+      "A failed listing keeps the created issue and returns ok with duplicateCheck not-run."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: two simulated daemons that both create converge on the lowest issue"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a failed findIssues listing keeps the recorded issue and a following call makes no tracker call"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

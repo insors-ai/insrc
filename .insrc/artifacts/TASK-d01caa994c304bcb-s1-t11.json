@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-41d1cd56-d92d-4978-8c6a-9e9e324e0e98",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.052Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the optional configReconcile field to MaintenanceResult and pin the interface contract",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0cf012b5ff50ca4f1531ab2c2d5e74f1db7f88b82999dfd5d6d7c78395f2401e",
+        "at": "2026-10-22T12:44:41.058Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.059Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the optional configReconcile field to MaintenanceResult and pin the interface contract",
+    "summary": "Extend MaintenanceResult at src/cli/services/maintenance.ts:40-44 with an additive, optional summary field. The existing interface is all-`readonly`, which the LLD's schemaDiff omitted: declare it `readonly configReconcile?: { readonly changed: boolean; readonly filled: number; readonly repaired: number; readonly error?: string | undefined } | undefined` — optionality written explicitly per exactOptionalPropertyTypes. Counts only; per-key dot-path detail goes to onLog. No existing field changes meaning and UpdateOptions gains nothing. This task owns the seventh LLD contract-level subject (MaintenanceResult.configReconcile is optional and additive, existing field set and meanings unchanged), and discharges it with a real test rather than a build side effect: add a type-level contract fixture that pins the existing field names and types (ok: boolean, steps, error) and asserts configReconcile is optional, so a future retype of `ok` or `steps` fails the suite instead of passing silently. Check the single downstream reader (src/cli/services/index.ts:91 → src/cli/panes/DaemonPane.tsx) still compiles and renders unchanged.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "MaintenanceResult gains only the readonly optional configReconcile field; ok, steps and error are untouched in name, type and meaning",
+      "A committed type-level contract fixture pins the pre-existing MaintenanceResult field names and types and the optionality of configReconcile, and fails to compile if any existing field is renamed, retyped, or made required",
+      "The field and its nested members are readonly with `| undefined` written explicitly, and typecheck passes under exactOptionalPropertyTypes",
+      "UpdateOptions is unchanged — no new flag",
+      "src/cli/services/index.ts and src/cli/panes/DaemonPane.tsx compile unchanged and DaemonPane's rendering is unaffected"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "MaintenanceResult type-level contract fixture — ok/steps/error pinned by name and type and configReconcile asserted optional; a rename, retype or required-ing fails compilation"
+      },
+      {
+        "level": "unit",
+        "name": "configReconcile and its nested members are readonly with explicit `| undefined` and typecheck under exactOptionalPropertyTypes; UpdateOptions gains no field"
+      },
+      {
+        "level": "unit",
+        "name": "downstream reader — src/cli/services/index.ts and src/cli/panes/DaemonPane.tsx compile unchanged and DaemonPane's rendering is unaffected"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-48b2be4d-bfc3-4184-bab9-870264a17f90",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.729Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The validate turn writes the test record and links it",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba87db0a3a3b7d640078fdd411734f24e53f8d428e82eb09f3befab7d88e14cc",
+        "at": "2026-10-22T12:44:02.733Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.734Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The validate turn writes the test record and links it",
+    "summary": "In the validate turn, resolve the time and the standalone flag once for both records, write the test record straight after the checks and before the judge, put the link on the build record's existing write, take the files the change log leaves out from the one function, and carry the record's path in the verdict's evidence.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the record's path",
+      "A second validate turn of the same Task replaces that Task's entry and leaves other Tasks' entries as they were",
+      "When the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time",
+      "When the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written",
+      "The validate turn and the completion record leave out the same files"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-step.test.ts: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path"
+      },
+      {
+        "level": "integration",
+        "name": "build-step.test.ts: when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)"
+      },
+      {
+        "level": "integration",
+        "name": "build-step.test.ts: when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)"
+      },
+      {
+        "level": "integration",
+        "name": "completion-record.test.ts: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

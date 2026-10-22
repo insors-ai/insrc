@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-99ff217e-848d-4382-958c-912e5385ad84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:46.666Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Fake-provider unit tests for the conventions judge",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f089d7f1906897be3c7239f80cfb5bbef8941fb161d3cfbab165c93ea7bee6e2",
+        "at": "2026-10-22T12:43:46.666Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:46.667Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-provider unit tests for the conventions judge",
+    "summary": "Add src/workflow/code-review/dimensions/__tests__/conventions.test.ts mirroring adherence.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any other provider method call throws), a subject(changedFiles) factory (stub approvedLld/Plan cast via unknown), and a grounding(n) factory producing ChangedSymbolSummary[] spanning ≥2 files. Cover: (ac1) a documented-rule breach maps to a finding with the rule id in expectationRef + confidence:'breach' and dimension==='conventions', and buildConventionsPrompt embeds the DOCUMENTED_RULES baseline; (ac2) three distinct TS-rule breaches each survive individually with correct file:line, plus a CONVENTIONS_FINDINGS_SCHEMA per-finding shape assertion; (ac3) a thin-sample idiom finding tagged confidence:'observation' maps through as observation, and the system charge carries the low-confidence-observation discipline; (ac4) a Promise.all-over-LLM breach citing the k4 rule id survives with confidence:'breach'; (ac5) direct-storage (k5) + raw-dump (k6) breaches map through, and an out-of-changedFiles finding is dropped; plus exactly-one-call and retry-exhaustion-propagation (invalid output → assert.rejects) and a prompt-trailing assertion. ADDED per critique: (edge-a) grounding(0) still returns {dimension:'conventions', findings:[]} with no error; (edge-b) a fake returning {findings:[]} yields an empty result (no manufactured finding). No live model.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/code-review/dimensions/__tests__/conventions.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+      "tests cover ac1-ac5 plus exactly-one-call, retry-exhaustion propagation (assert.rejects), out-of-subject drop, the prompt-trailing placement, AND the two empty-result edge cases (empty grounding.symbols → findings:[]; clean-code fake {findings:[]} → no manufactured finding)",
+      "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001 + S002 + S003 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ac1: documented-rule breach → finding with rule id in expectationRef + confidence:'breach' + dimension:'conventions'"
+      },
+      {
+        "level": "unit",
+        "name": "ac2: three distinct TS-rule breaches each survive individually with correct file:line"
+      },
+      {
+        "level": "unit",
+        "name": "ac3: thin-sample idiom drift tagged confidence:'observation' (not breach); system charge carries the low-confidence discipline; grounding spans ≥2 files"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: a Promise.all-over-LLM breach citing the k4 rule id survives with confidence:'breach'"
+      },
+      {
+        "level": "unit",
+        "name": "ac5: direct-storage (k5) + raw-dump (k6) breaches map through; an out-of-changedFiles finding is dropped"
+      },
+      {
+        "level": "unit",
+        "name": "judgeConventions issues exactly ONE completeStructured call (no other provider method touched)"
+      },
+      {
+        "level": "unit",
+        "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+      },
+      {
+        "level": "unit",
+        "name": "edge: grounding(0) → {dimension:'conventions', findings:[]} with no error"
+      },
+      {
+        "level": "unit",
+        "name": "edge: clean-code fake {findings:[]} → empty result, no manufactured finding"
+      },
+      {
+        "level": "live",
+        "name": "judgeConventions against a real buildShaperProvider provider on a fixture with a KNOWN .js-import-extension breach (INSRC_LIVE_TESTS-gated, skips when unset)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

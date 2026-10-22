@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-65d22565-02a1-460a-aeac-d2008979d005",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.720Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Boot-wire brainstorm into registerWorkflowRunners + workflow-id recognition",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2796578805b68a93856ccf817683389731e0623b243e0cfe83d150f5e2206a28",
+        "at": "2026-10-22T12:44:06.721Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.721Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Boot-wire brainstorm into registerWorkflowRunners + workflow-id recognition",
+    "summary": "Add a registerBrainstormRunners() call to registerWorkflowRunners() in src/workflow/index.ts beside the existing registerDesignEpicRunners()/registerDesignStoryRunners() calls, and add the 'brainstorm' literal to the workflow-id type/union consumed by executor.ts and the workflow-step start phase (src/mcp/workflow-step/phases/start.ts) so a start request with workflow:'brainstorm' is recognized rather than rejected.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "registerWorkflowRunners() invokes registerBrainstormRunners(); no other existing register*Runners call is modified, removed, or reordered",
+      "a workflow-step start-phase request with workflow:'brainstorm' passes id validation and reaches executor.getRunner('brainstorm', runnerId) instead of being rejected as an unknown workflow",
+      "existing stages (design.story, design.epic, plan, build) still register and resolve unchanged after this change",
+      "src/workflow/triage/classify.ts route table is not modified by this story — small/trivial requests continue to route to build/standalone-story unchanged (ac5)",
+      "handler.ts's phase-dispatch switch/case list (start/plan/step/synthesize/resolve_question/review_deferred) is unchanged by this task — 'brainstorm' is recognized purely via the workflow-id union consumed by phases/start.ts, with no new phase case added and no modification to handler.ts's switch statement"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerWorkflowRunners() calls registerBrainstormRunners() beside the existing register*Runners (source-level assertion)"
+      },
+      {
+        "level": "unit",
+        "name": "workflow-step handler phase switch gains no new case — brainstorm recognized via workflow-id union only (source assertion)"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_workflow_step start with workflow:'brainstorm' returns a continuation token whose shape matches other stages' tokens (opaque, round-trippable)"
+      },
+      {
+        "level": "integration",
+        "name": "a resume with an unknown/expired token surfaces a clear error rather than silently starting fresh"
+      },
+      {
+        "level": "integration",
+        "name": "existing stages (design.story, design.epic, plan, build) still start/step/synthesize unchanged after brainstorm is registered — no phase-dispatch regression"
+      },
+      {
+        "level": "unit",
+        "name": "triage route table (classify.ts) is unchanged — small/trivial requests still route to build/standalone-story, never inserting the brainstorm stage (ac5)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

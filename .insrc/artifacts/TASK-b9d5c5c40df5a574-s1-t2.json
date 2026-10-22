@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56c8d894-ba4a-4e30-87f8-244e0c0f4019",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.565Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Measure an item's full length from its file",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb5dff349e3001256cb0f02ef4977297f0e48f962ad29d564d7ab160332c8197",
+        "at": "2026-10-22T12:44:24.565Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.566Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Measure an item's full length from its file",
+    "summary": "Add src/analyze/item-length.ts with measureItem: for a document or file entity the file's length, for a section the length of its lines from start line to end line; whether the indexer cut the stored body (longer than the stored body, or the body ends with the marker); and 'not established' with a reason when the file's hash differs from the one recorded at indexing or the file is gone. Export the summariser's 8,192-character cut as a named constant. Nothing in the index changes.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "measureItem returns the real length of a 100,000-character section indexed through the real parser, and says the indexer cut it",
+      "A file changed after indexing, and a removed file, give a length that is not established, with the reason; removing the hash comparison makes that test fail",
+      "The summariser reads its cut from the exported constant and its behaviour is unchanged",
+      "No file under src/indexer or src/db is changed by this task"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "measureItem returns the file's length for a document and the length of its lines for a section, and says when the indexer cut the stored body"
+      },
+      {
+        "level": "unit",
+        "name": "measureItem does not establish a length for a changed or a missing file (mutation: skip the hash comparison)"
+      },
+      {
+        "level": "unit",
+        "name": "the summariser reads its cut from the exported constant and no file under src/indexer or src/db changes"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

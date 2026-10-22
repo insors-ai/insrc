@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-18T16:46:37.381Z",
     "parentRef": {
       "slug": "show-builder-reported-smoke-live-results"
+    },
+    "epicCreatedAt": "2026-10-18T16:46:30.180Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8dfd12e565dc9003f404c2c95b3f7042a74619713a723cd70e59771108e15b5d",
+        "at": "2026-10-18T16:46:30.180Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T16:46:37.381Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

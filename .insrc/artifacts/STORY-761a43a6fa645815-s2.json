@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-f06a558c-1756-4ea0-851a-fb61645200ef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.962Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s2",
+    "envelope": {
+      "description": "See whether the implementation honours the approved design, the plan's tasks, and the Story's acceptance criteria",
+      "parent": {
+        "entityId": "EPIC-761a43a6fa645815",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2bc26cc19f29cfb91af0a11101edae7756ed1f63a62e6096ed0e81a47e1ffd6e",
+        "at": "2026-10-22T12:43:06.962Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

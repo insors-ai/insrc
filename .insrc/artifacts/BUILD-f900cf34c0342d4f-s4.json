@@ -5,9 +5,36 @@
     "epicHash": "f900cf34c0342d4f",
     "storyId": "s4",
     "createdAt": "2026-08-06T00:00:00.000Z",
-    "approvedAt": "2026-08-06T08:57:51.059Z",
     "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3a59aa2444a53990256f4bbc4fa55892236502e31d4cbc5e96e30a300fd8ef0b",
+        "at": "2026-08-06T00:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T08:57:51.059Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "MCP section — connected socket clients (debug-status IPC) + per-client MCP registration in the Debug pane",

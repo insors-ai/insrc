@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a3f2cd23-551c-4fb1-b3b5-338a5fe261ea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.550Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Handlers and daemon entries",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe53c98981f31418c500e203ffd75be89391849051e44d13870e27c2506b9bbc",
+        "at": "2026-10-22T12:43:24.551Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.551Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Handlers and daemon entries",
+    "summary": "New src/workflow/delivery/handlers.ts with handleDelivery (repo resolution, one store read, the four passes, assembleSnapshot with createMarkdownPort, one log line, every failure as { error }) and handleDeliveryEvidence (repo resolution, the anchored id pattern, realpath containment under the store, lift with liftStoreFile, renderedMarkdown through resolveDocsMarkdown); two new lazy-import entries 'workflow.delivery' and 'workflow.deliveryEvidence' in src/daemon/index.ts beside workflow.pending.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A request over a temporary git repository returns one snapshot stamped with the read time and changes no file under the repo, including .git.",
+      "deliveryEvidence returns the meta, body and markdown of a marker-less BUILD.",
+      "An invalid or escaping id is 'invalid artifact id', a missing one 'not found'; an unresolved repo or unreadable store is { error }; an absent store is an empty snapshot.",
+      "A 1,000-record store forming 500 work items is served within 500 ms (best of three) with the real port.",
+      "No existing handler entry changes."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "handlers.test.ts: 'workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched'"
+      },
+      {
+        "level": "integration",
+        "name": "handlers.test.ts: 'workflow.deliveryEvidence reads a marker-less build record through the daemon'"
+      },
+      {
+        "level": "integration",
+        "name": "handlers.test.ts: 'workflow.deliveryEvidence refuses an invalid or escaping id and reports a missing one'"
+      },
+      {
+        "level": "integration",
+        "name": "handlers.test.ts: 'an unresolved repo or an unreadable store is an error and an absent store is an empty snapshot'"
+      },
+      {
+        "level": "integration",
+        "name": "handlers.test.ts: 'a 1,000-record store forming 500 work items is served within 500 ms'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

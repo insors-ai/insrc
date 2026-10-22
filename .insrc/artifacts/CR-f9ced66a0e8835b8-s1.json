@@ -13,7 +13,26 @@
     "reviewedBy": "daemon",
     "epicSlug": "story-code-review-reviews-wrong-code",
     "epicCreatedAt": "2026-10-07T13:50:21.158Z",
-    "standalone": true
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d87fc644f4c52cee93499c2eee5b8d5d55542160edb799d748462fdcc56def31",
+        "at": "2026-10-08T09:38:40.257Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

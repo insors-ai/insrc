@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-80a7fa51-8610-4749-8d12-a7f4586bd245",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:46.937Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Create coverage.ts — schema, two-input prompt builder, judge",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "77f81c5ed1219f2d8282f4bda0ecff55eee3d7b70bf2e97834a4b85a41d14482",
+        "at": "2026-10-22T12:43:46.938Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:46.939Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Create coverage.ts — schema, two-input prompt builder, judge",
+    "summary": "Add src/workflow/code-review/dimensions/coverage.ts mirroring the shipped conventions.ts: (a) COVERAGE_FINDINGS_SCHEMA — IDENTICAL to CONVENTIONS_FINDINGS_SCHEMA (StructuredSchema, additionalProperties:false, findings[] of {severity enum HIGH|MED|LOW, location, message, expectationRef?, confidence? enum 'breach'|'observation'}; required=['findings'], each finding requires severity/location/message); (b) buildCoveragePrompt(subject, grounding, extraNote): LLMMessage[] with the COVERAGE system charge (report each changed symbol exercised/not per testsReaching; each promised test present/missing and passing/failing/unverified; distinguish present-failing from no-test; NEVER assert a pass-state the buildRecord does not support — frame unknown as 'unverified'; exclude pre-existing gaps in touched-but-unchanged neighbours; no-manufactured-findings) and the user message placing grounding.symbols (with testsReaching) then approvedPlan.body.tasks[].tests (the promised tests) then the output-shape reminder TRAILING; tolerate a null subject.buildRecord (degrade to 'pass-state unverified'); (c) private fileOf(location) splitting on ':'; (d) judgeCoverage(subject, grounding, provider): Promise<DimensionResult> — one StructuredCall over provider.completeStructured(buildCoveragePrompt(...note), COVERAGE_FINDINGS_SCHEMA), a StructuredValidator via validateAgainstSchema(COVERAGE_FINDINGS_SCHEMA, raw), await withStructuredRetry(call, validate, 3) POSITIONAL, then map output.findings to DimensionFinding{dimension:'coverage'} spreading expectationRef/confidence conditionally (exactOptionalPropertyTypes) and dropping any finding whose fileOf(location) is outside new Set(subject.changedFiles). Imports use .js extensions; type-only imports use import type; no console.log; no Promise.all.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/code-review/dimensions/coverage.ts exists exporting judgeCoverage, buildCoveragePrompt, COVERAGE_FINDINGS_SCHEMA",
+      "judgeCoverage issues exactly ONE provider.completeStructured call (no Promise.all) wrapped in withStructuredRetry(call, validate, 3) and propagates the throw on 3-attempt exhaustion (no catch-to-empty)",
+      "returned findings all carry dimension:'coverage', map expectationRef + confidence through, and every finding.location file is in subject.changedFiles (out-of-scope dropped)",
+      "buildCoveragePrompt places grounding.symbols+testsReaching, then approvedPlan.body.tasks[].tests, then the output-shape reminder at the TAIL of the user message; system charge distinguishes present-failing from no-test, forbids asserting an unsupported pass-state, and excludes pre-existing neighbour gaps",
+      "buildCoveragePrompt and judgeCoverage tolerate a null subject.buildRecord (the prompt degrades to 'pass-state unverified'; the judge runs without throwing)",
+      "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildCoveragePrompt: grounding.symbols+testsReaching, then approvedPlan promised tests, then output-shape reminder are TRAILING; system charge distinguishes present-failing from no-test, forbids an unsupported pass-state, excludes pre-existing neighbour gaps"
+      },
+      {
+        "level": "unit",
+        "name": "COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional; additionalProperties:false"
+      },
+      {
+        "level": "unit",
+        "name": "judgeCoverage + buildCoveragePrompt tolerate subject.buildRecord===null (runs, returns a valid DimensionResult, prompt degrades to 'unverified')"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

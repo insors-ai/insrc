@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87512cee-ff12-4c81-a88f-5d78a4c2be21",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.566Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Project sequenceDefinition through sc1 and rebuild the daemon",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e9c47c53f0627f1463500024fb02439e7851a1eac739fa3dc22ddc475dab9d94",
+        "at": "2026-10-22T12:44:32.567Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.568Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Project sequenceDefinition through sc1 and rebuild the daemon",
+    "summary": "Land the approved amendment AMD-bfe98ff7f97178cf-1: add `sequenceDefinition?: SequenceDefinition | undefined` to ArtifactReviewView beside its four siblings (artifact-content.ts:63-66) and one conditional-spread line in structuredRecords (:203-215), in exactly the shape the existing four use so absence stays an ABSENT KEY. Mirror it on DocsContent (docs-review-client.ts:34-37) INDEXED off the daemon type rather than restated. componentDependencyDefinition is explicitly NOT added (0 producer bodies). This is the ONLY task that changes a file under src/, so the daemon must be rebuilt — and the live end-to-end confirmation is recorded as a MANUAL check, not as something the build gate can attest, because that sandbox cannot execute anything.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "RUNNABLE IN-PROCESS: a unit test calls structuredRecords directly over the REAL ledger body .insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json and asserts sequenceDefinition comes back VERBATIM (deep-equal to the body's own value, not merely present)",
+      "RUNNABLE IN-PROCESS: a body WITHOUT the field yields a response with no such key — asserted as `'sequenceDefinition' in view === false`, never a null/falsy check",
+      "DocsContent's field is written as `ArtifactReviewView['sequenceDefinition']` rather than restated, matching the four shipped siblings so the shapes cannot drift",
+      "ADDITIVE-ONLY, stated deliberately for the cross-repo mirror: every new field optional, absence an absent key, and NO existing field of ArtifactReviewView changed in name, type or meaning — so the insrc-ide fork, which mirrors this IPC payload shape, needs no coordinated change. Provable by diffing the interface; the conclusion is recorded in the task note so a future reader sees the mirror was considered, not missed",
+      "MANUAL, recorded not attested: after `daemon-ctl.sh update`/rebuild, one real document carrying a sequenceDefinition is opened through the live daemon and the field is confirmed to arrive. The result is written into the task note, explicitly flagged as a manual verification the gate did not run"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "structuredRecords: projects sequenceDefinition VERBATIM from the real LLD-bfe98ff7f97178cf-s2 body (deep-equal, not merely present)"
+      },
+      {
+        "level": "unit",
+        "name": "structuredRecords: a body without sequenceDefinition yields no such key ('sequenceDefinition' in view === false)"
+      },
+      {
+        "level": "unit",
+        "name": "structuredRecords: the four pre-existing records project unchanged — no existing field altered in name, type or meaning"
+      },
+      {
+        "level": "unit",
+        "name": "DocsContent.sequenceDefinition is indexed off ArtifactReviewView rather than restated"
+      },
+      {
+        "level": "live",
+        "name": "MANUAL post-rebuild: a real sequenceDefinition-carrying document arrives through the live daemon (result recorded in the task note, not gate-attested)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

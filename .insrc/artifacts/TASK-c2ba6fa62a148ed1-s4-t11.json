@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-251db6df-0ae9-495e-acc7-b7b869c77ac0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.447Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Log any open of the store's files inside the daemon, and refuse them in its file tools",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c479b0bcb36ab722c344134d13496a27b0ba617aab07387a2054fdd8f67366ce",
+        "at": "2026-10-22T12:44:35.448Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.448Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Log any open of the store's files inside the daemon, and refuse them in its file tools",
+    "summary": "At daemon start-up wrap the fs and fs/promises functions that open a file by path (open, readFile, copyFile, cp and their synchronous and promise forms, and createReadStream), re-sync the built-in exports, and log at warn the call stack of any open whose resolved path is the live store's lock file or data file, once per distinct stack. Add one refusal check, applied after symbolic links are resolved, called from the file tools' shared path helper, from the execute step and approval gate of copy and move for both paths, and from the search tools.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "fs.promises.readFile of the lock file inside the daemon process writes one warn line with a call stack; a second call from the same stack writes none",
+      "Each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link: read, edit, multi-edit, copy as source and as target, move as source and as target, delete, write, and grep",
+      "A file tool call on any other path behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "diagnostic through the tools' route: fs.promises.readFile of the lock file logs one warn line with a stack, once per stack"
+      },
+      {
+        "level": "integration",
+        "name": "file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

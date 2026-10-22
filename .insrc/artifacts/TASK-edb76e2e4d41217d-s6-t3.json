@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-469f4f96-39bc-41e0-abea-1304f423c770",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.462Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Implement handleMessage set-edit-mode + edit-decision",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "635ce62013510b112e1fe01a39718270425c1dd39be8041751b4f75db61dd841",
+        "at": "2026-10-22T12:44:53.462Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.463Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement handleMessage set-edit-mode + edit-decision",
+    "summary": "Fill the reserved handleMessage default case (chat-panel.ts:312) with set-edit-mode (validate mode 'auto'|'review', set session.editMode, store.save per the S005 title-persist pattern, re-render the toggle) and edit-decision (validate path is a string, forward to governor.decide). Malformed payloads keep the existing drop-with-warn. Ordered before t4 so the edit-decision the webview controls emit is handled end-to-end.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "set-edit-mode sets + persists session.editMode via store.save; invalid mode dropped",
+      "edit-decision forwards to governor.decide(path, accept); non-string path dropped",
+      "existing message cases + the drop-with-warn default remain intact"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel: set-edit-mode updates+persists editMode (store.get reflects it); mid-turn switch applies next turn"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel: edit-decision reject reverts via fake fs; accept keeps; stale/unknown path is a no-op"
+      },
+      {
+        "level": "unit",
+        "name": "session-store: editMode 'review' round-trips through save()/get(); defaults 'auto' on create"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

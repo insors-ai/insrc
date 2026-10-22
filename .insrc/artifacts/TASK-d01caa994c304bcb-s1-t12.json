@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7f5170de-9fe4-48e3-b240-4250e37ccc2b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.060Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the reconcile into maintenance.update after the build step",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4b903546c23b6fa5d4ddeee44fc0c610673c26f2be61e194175336f02c8580ae",
+        "at": "2026-10-22T12:44:41.066Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.067Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the reconcile into maintenance.update after the build step",
+    "summary": "Insert the reconcile between src/cli/services/maintenance.ts:112 and :114 — strictly after git fetch/merge and `npm run build`, never before — using the t7 wrapper and the t10 `loadBuiltCatalog` resolution (fall back to defer-to-boot and report the deferral when it returns null). It must run unconditionally (no opt-in flag) and write at most once, only when changed. Because every failure path in update() early-returns `ok: false` (L55/65/75/84/88/99/109) and the whole body sits in one try/catch returning ok:false (L116-118), the non-fatal requirement needs its OWN inner try/catch — a naive throw would flip a successful update to failed. On success populate configReconcile with counts and push 'reconcile' onto the existing `steps` channel; on failure capture the message into configReconcile.error while still returning ok:true, and report a ConfigCatalogError distinguishably (an explicit shipped-catalog-bug message, not an anonymous failure string) so it is not flattened into the same channel as a user-config or I/O failure. onLog carries the per-key detail the LLD requires, not just counts: emit exactly one reconcile summary line plus one detail line per filled and per repaired key naming its catalog dot-path, and for an ancestor collision the detail line also names the discarded scalar value so the loss is stated, not hidden. An explicit no-change line or an explicit failure line is emitted when there is nothing filled or repaired — never silence — and onLog is the only progress channel. Add the rationale comment for the stale-catalog resolution at this call site, and an acceptance-visible pointer to the t7 deviation note covering s8-sbdry3 (the CLI writing ~/.insrc/config.json directly). Ship the update integration tests (stubbed git/build steps, recording onLog collector) alongside.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "The reconcile call sits after the build push and before the final `return { ok: true, steps }`; an ordering assertion over the stubbed steps proves it never precedes git-pull or build",
+      "A reconcile failure after successful git-pull + build still returns ok:true with the reason in configReconcile.error and on onLog, and a ConfigCatalogError is reported with a distinguishable shipped-catalog-bug message",
+      "onLog emits exactly one reconcile summary line plus one detail line per filled and per repaired key, each naming the catalog dot-path; counts stay in configReconcile",
+      "A reconcile that repairs an ancestor collision emits a detail line containing both the colliding catalog path and the discarded scalar value",
+      "An explicit no-change onLog line is emitted when nothing was filled or repaired; a silent no-op fails the test",
+      "The reconcile is wrapped in its own inner try/catch, verified by a test where the reconcile throws and update still returns ok:true",
+      "git-pull and build behaviour is byte-identical to the pre-change baseline and no UpdateOptions flag was added",
+      "The stale-catalog resolution is exercised: loadBuiltCatalog's freshly built catalog is used, and a null return falls back to defer-to-boot and reports the deferral rather than a no-change result",
+      "The call site carries the stale-catalog rationale comment and references the t7 deviation note covering the CLI-writes-config-directly question (s8-sbdry3)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "maintenance.update — ordering assertion over the stubbed steps proves the reconcile is sequenced strictly after git-pull and build"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — success populates MaintenanceResult.configReconcile {changed, filled, repaired} and emits exactly one onLog summary line plus one detail line per filled and per repaired key naming its catalog dot-path"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — nothing filled or repaired emits an explicit no-change onLog line; silence fails the test"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — an ancestor-collision repair emits a detail line naming both the colliding catalog path and the discarded scalar value"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — reconcile failure after successful git-pull + build still returns ok:true with the reason in configReconcile.error and on onLog; a ConfigCatalogError is reported with a distinguishable shipped-catalog-bug message"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — a throwing reconcile is caught by its own inner try/catch and update still returns ok:true"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — no new UpdateOptions flag, reconcile runs unconditionally, git-pull + build behaviour byte-identical to the pre-change baseline"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update — stale-catalog resolution exercised: the post-build loadBuiltCatalog result is used, and a null return falls back to defer-to-boot reporting the deferral instead of a confident no-change against the in-memory pre-update catalog"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b529d367-8eb2-4036-a316-60f2e239e02f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.570Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Carry the diagram records onto the docs-content message",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "21c7972c27740dcd2640942244c4b435b2c0575989bafe2da08b080538f38ddc",
+        "at": "2026-10-22T12:44:32.571Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.572Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry the diagram records onto the docs-content message",
+    "summary": "Add three optional fields to the docs-content variant of HostToWebview (protocol.ts), each typed by INDEXING off DocsContent so protocol → client → daemon stay one declaration deep: `erDefinition`, `sequenceDefinition`, `companions`. Forward them in openDoc by conditional spread beside the existing degradation/functionalDefinition spreads. The webview has no code for them yet, so the rendered surface must be UNCHANGED — and because nothing is inlined into the script yet, the S002 shell baseline is still the correct pin here.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "openDoc forwards all three records BY REFERENCE on the existing docs-content message — no new message type, no new IPC method, no second round trip",
+      "An absent record is an ABSENT KEY in the posted payload, asserted with `'erDefinition' in payload === false` rather than a loose falsy check",
+      "openDoc's FAIL-CLOSED arm posts blocked:true and carries NONE of the three records — so a reviewer who could not read the body can never be shown a diagram drawn from it",
+      "The emitted shell is BYTE-IDENTICAL to the pinned S002 baseline (sha256 + char + byte counts unchanged): this task moves data, not pixels, and nothing has joined the script yet",
+      "The full docs-review suite still passes with NO test modified"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "openDoc: forwards erDefinition, sequenceDefinition and companions BY REFERENCE on the existing docs-content message"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc: an absent record stays an ABSENT KEY across postMessage ('erDefinition' in payload === false)"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc: the fail-closed arm posts blocked:true and carries NO records and NO companions"
+      },
+      {
+        "level": "unit",
+        "name": "shell: emitted HTML is byte-identical to the pinned S002 baseline (sha256 + char + byte) — this task moves data, not pixels"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

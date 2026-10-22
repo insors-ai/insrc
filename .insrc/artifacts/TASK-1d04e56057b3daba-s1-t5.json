@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9137d9bf-f0eb-4ba2-bb8f-a867db2d9e7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.689Z",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1d04e56057b3daba",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add resume() for following a saved segment",
+      "parent": {
+        "entityId": "STORY-1d04e56057b3daba-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1d04e56057b3daba-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1d04e56057b3daba-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b754e718e2787c7151a585f21f0a07649d652b4fa3ab733c3d2c1c8464b89697",
+        "at": "2026-10-22T12:43:16.689Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.690Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add resume() for following a saved segment",
+    "summary": "StreamAdapter.resume({ cursor, pid, startedAt }, { onProgress, signal, onAttach }): maps the segment's lines from the cursor with the same mapper, ends at the terminal event or the segment's end, and ends with an error when the recorded process is gone without one; onAttach hands a TurnProcess whose stop() signals the recorded pid's group only while its start time matches (SIGTERM, then SIGKILL after the grace).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "resume() from a saved cursor yields only the later events and ends at the terminal event.",
+      "When the recorded process is gone and the segment has no terminal event, resume() ends with an error saying the turn ended without a result.",
+      "The handed-over process stops the recorded group only while the start time matches; a reused pid is never signalled."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "cli-adapter.test.ts: resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one"
+      },
+      {
+        "level": "integration",
+        "name": "cli-adapter.test.ts: resume()'s handed-over process stops the recorded pid's group only while its start time matches"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-70facf4c-fab8-4687-9100-a943aace4736",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.061Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the additive deploy-rpc daemon seam",
+      "parent": {
+        "entityId": "STORY-753e0ed64921d937-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-753e0ed64921d937-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0efb4442b42a7889839b7ca51faec1bf3c8b452f81c2a86735d048e45aec6dd7",
+        "at": "2026-10-22T12:43:45.061Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.061Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the additive deploy-rpc daemon seam",
+    "summary": "Create src/daemon/deploy-rpc.ts and register one new deploy method into the daemon/index.ts handler registry, patterned on analyze-rpc.ts/workflow-rpc.ts. This is the seam through which deploy-step sources graph context (k4) without any runner opening a DB directly. The k3 lock-step invariant requires it add only new method names and mutate no existing registration, socket path, or payload shape.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/daemon/deploy-rpc.ts exists and registers a new deploy RPC method into the daemon/index.ts registry via a single additive registration, patterned on analyze-rpc.ts/workflow-rpc.ts.",
+      "The existing socket path (~/.insrc/daemon.sock), pre-existing IPC method names, and existing payload shapes are unchanged (additive-only; no existing registration mutated).",
+      "The seam returns DeploymentContextBundle-shaped, graph-grounded data and never opens LMDB/Lance/DuckDB from outside the daemon-owned graph access.",
+      "Repo resolution surfaces UnregisteredRepoError (naming the unresolved path, pointing at repo.add) when the resolved repo is not registered/indexed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/deploy-rpc.test.ts › registers the additive deploy method only, leaving the pre-existing daemon RPC method set / socket path / payload shapes untouched, and surfaces UnregisteredRepoError for an unregistered resolved repo"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

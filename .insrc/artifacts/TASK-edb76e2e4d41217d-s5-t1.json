@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a099928b-051a-428f-a2c2-6a29d9854417",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.005Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s5",
+    "envelope": {
+      "description": "sc4 store impl: optional maxSessions cap + title-from-prompt support",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aa25a0335356c89a8cb971be8930b9a3c4d3aabb728e429a11df594dbd352575",
+        "at": "2026-10-22T12:44:53.005Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.007Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc4 store impl: optional maxSessions cap + title-from-prompt support",
+    "summary": "In session-store.ts: add optional maxSessions?: number to MementoStoreDeps and, in save(), after appending the id, evict the oldest ids beyond the cap — removing each evicted id from the index AND its insrc.chat.session.<id> key — never evicting the id being saved. Keep create/get/list/append/save signatures byte-identical (interface-compatible; unset maxSessions = S003 unbounded behaviour). Title itself is set by the host (t3) via the existing save(); this task just ensures save() persists an updated title (it already does).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "MementoStoreDeps gains optional maxSessions?: number; ChatSessionStore + create/get/list/append/save signatures unchanged",
+      "save() with maxSessions=N keeps at most N sessions: creating N+2 leaves list().length===N, oldest evicted (get()->undefined) with no orphaned session key",
+      "eviction never removes the id being saved / active session, even if oldest",
+      "unset maxSessions preserves S003 unbounded behaviour; corruption tolerance preserved"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "save() with maxSessions=N keeps at most N sessions; oldest evicted (get->undefined, no orphaned session key)"
+      },
+      {
+        "level": "unit",
+        "name": "eviction never removes the id being saved / active session even when oldest; unset maxSessions = unbounded"
+      },
+      {
+        "level": "unit",
+        "name": "a title updated to a first-prompt string round-trips through get()/list() (ChatSummary.title); list() still sorts updatedAt desc"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

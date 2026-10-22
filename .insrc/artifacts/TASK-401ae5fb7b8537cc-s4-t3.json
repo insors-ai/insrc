@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dff1d5e7-b286-46f0-91fb-1f68ce84214a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.193Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "DaemonDataGateway core (panels/daemon-gateway.ts) — all 5 methods wired",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a6813f96835a3c2484f4d63ebb019a9655e99e136377b5ce9994f458feacac22",
+        "at": "2026-10-22T12:43:30.193Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.193Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "DaemonDataGateway core (panels/daemon-gateway.ts) — all 5 methods wired",
+    "summary": "Implement createDaemonDataGateway(deps) as the VS-Code-free read-only facade wiring all five methods: status()->client.rpc('daemon.status') mapped to DaemonStatusView{state,detail?} (tolerating absent optional fields); registeredRepos()->repo.list mapped to RepoRef[]; mcpClients()->daemon.debug-status mapping clients ONLY on the reachable branch of the {reachable}-discriminated union (unreachable -> empty McpClientView[]); workflowChain()->local .insrc/artifacts read (absent root -> empty rows, read/parse failure -> GatewayReadError); scanOrphans()->injected ProcessScan (read-only, never kills). Each method reaches only sc1/local fs/process — no cloud/HTTP; failures reject GatewayReadError (the gateway surfaces no UI).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "status/registeredRepos/mcpClients map their sc1 rpc payloads into the View types; mcpClients reads clients on the reachable branch only (unreachable -> empty McpClientView[])",
+      "workflowChain returns empty rows on absent artifactsRoot and rejects GatewayReadError on read/parse failure; scanOrphans is read-only",
+      "The core imports no 'vscode' and uses no undici/fetch/http — only the sc1 client + node fs/process (ac4/k2/k3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "status() maps a DaemonStatus payload (incl. one with missing optional fields) to a valid DaemonStatusView { state, detail? }"
+      },
+      {
+        "level": "unit",
+        "name": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients on the reachable branch -> McpClientView[], and an unreachable payload -> empty McpClientView[]"
+      },
+      {
+        "level": "unit",
+        "name": "workflowChain() returns empty rows on absent artifactsRoot and rejects GatewayReadError on a malformed/unreadable chain file"
+      },
+      {
+        "level": "unit",
+        "name": "scanOrphans() maps a scripted process scan to OrphanProcess[], rejects GatewayReadError on scan failure, and never mutates/kills"
+      },
+      {
+        "level": "unit",
+        "name": "Each daemon-backed method calls ONLY its expected sc1 rpc method name (fake client records it) and the source-scan confirms no undici/fetch/http and no 'vscode' import in daemon-gateway.ts"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

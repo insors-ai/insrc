@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f881ed7-52a2-4e83-9be7-2354a2076543",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.002Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "PrivateNodeProvisioner — ensure/reuse a private Node under ~/.insrc/node (ac3)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cad288e4b4b6a1fc002adbbb107fada4329839d81666faf60a82da542a96fe1e",
+        "at": "2026-10-22T12:43:40.002Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.002Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "PrivateNodeProvisioner — ensure/reuse a private Node under ~/.insrc/node (ac3)",
+    "summary": "Implement the concrete PrivateNodeProvisioner (the interface from t1): ensure a private Node >= NODE_MIN_MAJOR under ~/.insrc/node for the current os/arch — reuse an already-provisioned one (idempotent, no re-download), else download + verify + extract; throw NodeProvisioningException on download/verify/arch/offline failure. Fetches only a Node binary — no cloud LLM/REST path (k1). This is the one genuinely new/risky task; keep the network/fs steps behind small injectable seams so its logic is testable without a real network fetch.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "an already-provisioned private Node under ~/.insrc/node is reused with no re-download (idempotent)",
+      "when absent, it downloads+verifies+extracts a Node >= NODE_MIN_MAJOR for the current os/arch and returns its executable path",
+      "download/verify/arch/offline failure -> NodeProvisioningException (no partial/unusable runtime returned)",
+      "fetches only a Node runtime binary — opens no cloud LLM/REST endpoint (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PrivateNodeProvisionerTest#alreadyPresent_reusedNoReDownload (idempotent, injected fetcher not called)"
+      },
+      {
+        "level": "unit",
+        "name": "PrivateNodeProvisionerTest#absent_downloadVerifyExtract_returnsExecutable (injected fetcher/extractor)"
+      },
+      {
+        "level": "unit",
+        "name": "PrivateNodeProvisionerTest#fetchOrVerifyFailure_throwsNodeProvisioningException_noPartialRuntime; targetUrlIsNodeBinaryOnly_noCloudEndpoint"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

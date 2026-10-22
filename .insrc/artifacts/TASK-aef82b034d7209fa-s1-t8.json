@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ec17cbb-74e9-4b37-9f32-22be407f73c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.410Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Coverage strategy",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "63c9b16ae87d7cf7c7cae85ec319e837cd96205673823b273e7bbef2faafb7a5",
+        "at": "2026-10-22T12:44:15.410Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.411Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Coverage strategy",
+    "summary": "DimensionStrategy for coverage: test-record atoms (a file-status atom per file always, title atoms carrying file metadata, reported tests, BUILD task results, notes), MAP with only the reached files' atoms, REDUCE per promised test with its record atoms, context-only calls when there are no symbols, normalizeCoverageFindings once after the merge.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "With a test record larger than the budget, or no symbols, every promised test is adjudicated on all its evidence; a missing one is reported and a passing one is not.",
+      "A title-less failing or malformed test file keeps its state in every call naming it."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with a test record larger than the budget, every coverage call fits when serialised and every promised test is adjudicated on all its record evidence and notes'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a single test file whose titles exceed the budget is split into title atoms with its file metadata and every promised test is adjudicated on all of them'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'timed-out, non-zero-exit and malformed test files with no titles keep their state through the file-status atom in every call that names them'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with no symbols and a test record over the budget, context-only calls judge every promised test, reporting the missing one and not the passing one'"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

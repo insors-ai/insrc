@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62c69d09-9e94-43f3-85e4-e8896e102687",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.801Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Review decision on the lifecycle",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afa5ef79838b9b9620e353fd204f48af8484d3add173f97f4d590b608ca56fef",
+        "at": "2026-10-22T12:43:22.801Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.802Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Review decision on the lifecycle",
+    "summary": "Move src/workflow/review-decision.ts off meta.review, meta.reviewResolutions and body.feedback, recording resolutions as review-resolution log entries. Update src/workflow/__tests__/review-decision.test.ts.",
+    "size": "M",
+    "order": 30,
+    "acceptanceChecks": [
+      "A review decision records its resolution as a log entry and its comments through FeedbackService",
+      "The decision writes no legacy stamp"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "review-decision.test.ts: a review decision records its resolution as a log entry"
+      }
+    ],
+    "planTaskId": "t30"
+  },
+  "citations": []
+}

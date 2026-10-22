@@ -20,31 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "1703991c69967193",
     "epicSlug": "add-bugfix-triage-category-insrc-framework",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl10",
-          "ref": "rollout",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The Epic story dependency graph is s1 (no deps) → s2,s3 (each depends only on s1) → s4 (depends s2,s3), s5 (depends s2,s3); rollout phase order and shared-contract owner-before-consumer follow this graph.",
-          "evidence": "The probe's read anchor `docs/epics/add-bugfix-triage-category-insrc-framework-E202609181703991c/EPIC.md:1` was not found (the approved epic doc is not named EPIC.md at that path), so the story-dependency ordering could not be re-derived from the source tree by this probe. The ordering claim itself (s1 -> {s2,s3} -> {s4,s5}) is internally consistent across the HLD's storyBoundaries, rollout phases, and shared-contract owner->consumer edges, and was already validated by the design.epic checklist (ro2 passed).",
-          "action": "No artifact change needed — the missing anchor is a probe artifact (wrong doc filename), not a defect in the HLD. Ordering is corroborated internally; no source contradiction was found.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 1
-      },
-      "reviewedAt": "2026-09-18T10:21:55.823Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-18T11:41:26.298Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5be68021e6fc6de103e85a3cc2a0e2da07cab008fc87e318391d41dd20996f19",
+        "at": "2026-09-18T10:20:04.655Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T11:41:26.298Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 1
+        },
+        "at": "2026-09-18T10:21:55.823Z",
+        "report": {
+          "entityId": "HLD-1703991c69967193",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-1703991c69967193-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Bugfix becomes a first-class, scope-gated category that reuses the existing stage/artifact/approve/tracker machinery end-to-end. Triage gains a new `bugfix` SizeClass carrying a magnitude (a small fix vs an M/L fix) and a route that is NOT a single fixed startStage but branches on that magnitude. The flow's first stage is a new first-class `issue` workflow whose synthesized IssueArtifact — reproduction + root cause + fix intent — is the single source of truth serving both the internal chain record and, later, the GitHub issue body. A tiered parent-locator (deterministic ref-resolver → graph code-ownership → semantic match → user prompt → standalone) attaches the fix to the epic/story whose behaviour it corrects, recording which tier decided and at what confidence, with auto-attach only above a high threshold. A scope-gated orchestrator then routes a small fix issue→build and an M/L fix issue→design→plan→build, with the existing post-build code-review gating completion; where a tracker is configured a GitHub issue is created from the same issue content, linked to the located parent, and closed on completion. All five constraints k1–k6 are satisfied by conforming to the framework's own conventions rather than inventing a parallel mechanism.",

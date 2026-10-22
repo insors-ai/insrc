@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7389b42-0cc7-4622-86e5-b9d431c46450",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.306Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Review currency and amendments",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c2b620eb8c2a5202ce1e2058caf81a999dea7acb3ee7676cf4739c3e58d08177",
+        "at": "2026-10-22T12:43:24.306Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.306Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Review currency and amendments",
+    "summary": "New src/workflow/delivery/currency.ts exporting deriveCurrency(graph, recordSet). One ArtifactCurrency per record: null without a review; stale when reviewedAt precedes createdAt; an LLD (the only one on its story, not standalone, epic HLD in the set) current or stale against computeHldEffectiveHash over the HLD runId and the epic's counted amendments in scanner order (numeric suffix, then stable approvedAt), with basis hld-rerun, the first missing amendment, or the unexplained-hash case; a PLAN (the only one, single LLD on its story) against lldRunId / lldEffectiveHash; everything else, every CR included, unknown. One EffectiveAmendment list per epic item, sorted by amendmentId, with appliesToHld from isAmendmentRecord plus meta.status 'approved' plus a string approvedAt. Tests pass epicSlug, hldBaseRunId, rationale, citations and proposedBy through amdRecord's fields for a counted amendment; no fixture change is needed. Returns an empty notice list until t3.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "current and stale appear only where the LLD or PLAN rule's recorded fields settle it; DEF, HLD, SPEC, ISSUE, EXT and CR reviews read unknown; BUILD, AMD and review-less records read null.",
+      "An LLD reads stale with basis hld-rerun, with the missing amendment, or with the unexplained-hash basis, and current when the hashes match; a stale-acknowledged LLD stays stale.",
+      "Approved amendments are hashed in numeric-suffix then approvedAt order; a malformed approved AMD has appliesToHld false and is not hashed; the list is sorted by amendmentId.",
+      "Two LLDs on one story, a standalone LLD and an epic with no HLD read unknown; malformed fields never throw."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'a review is current or stale only where a recorded field settles it, and unknown otherwise'"
+      },
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'amendments are hashed in approvedAt order and listed in amendmentId order with their status'"
+      },
+      {
+        "level": "unit",
+        "name": "currency.test.ts: 'a review stamped before its record, a standalone design and malformed fields never throw and invent no currency'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

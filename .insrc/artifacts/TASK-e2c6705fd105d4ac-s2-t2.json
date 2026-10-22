@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0efa70f3-74fe-44cd-9471-6873cca4400c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:48.536Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire ensureBuildRecordOnCompletion into the BUILD approve/completion path (approveWorkflowTarget → async)",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e2c6705fd105d4ac-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84036beb5effde722654fb74a7dfc49c8b813bd38fd47d976b55e30db0b40f00",
+        "at": "2026-10-22T12:44:48.536Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:48.537Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire ensureBuildRecordOnCompletion into the BUILD approve/completion path (approveWorkflowTarget → async)",
+    "summary": "Invoke ensureBuildRecordOnCompletion for a BUILD story target BEFORE the record is approved so a controller-side build's BUILD-<hash>-<story> record is materialised in time (no ArtifactMissingError). RESOLVED design decision (per s3 critique): approveWorkflowTarget (gates.ts:636) becomes ASYNC (Promise<WorkflowApproveResult>) — the create MUST be awaited before the single-artifact existsSync at :694, so awaiting inside the LLD-named seam is the correct placement. This is a KNOWN, backward-compatible-for-awaiting-callers refinement of the LLD's 'no signature change to approveWorkflowTarget' assertion (recorded as a plan note, not a silent drift). For a BUILD- target: single path parses epicHash/storyId from the BUILD-<epicHash>-<storyId> basename via a deterministic inverse of buildArtifactId (reuse a storage.ts helper if one exists, else add one keyed on the BUILD- prefix + fixed id shape so a hyphen-in-id can't mis-split); batch path uses readArtifactMeta per pending BUILD artifact. Await ensureBuildRecordOnCompletion, then proceed to existsSync/approveOne. Update EVERY approveWorkflowTarget caller (daemon approve IPC handler + any MCP/CLI approve) to await. Non-BUILD approvals + the code-review gate/withhold + approvedAt stamping + approveArtifactByJsonPath stay unchanged.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "approveWorkflowTarget is async (Promise<WorkflowApproveResult>) and EVERY caller is updated to await it; tsc clean, no un-awaited/floating-promise lint — the create is awaited BEFORE the existsSync (no race).",
+      "A single-artifact insrc_workflow_approve of a BUILD-<hash>-<story> target whose json does NOT yet exist create-materialises the record (change-log from the changed set) THEN stamps meta.approvedAt — no ArtifactMissingError (ac1).",
+      "The BUILD- basename → { epicHash, storyId } parse is the exact inverse of buildArtifactId (round-trips even with a hyphen in an id) and the batch path resolves ids via readArtifactMeta per pending BUILD artifact; a validate-then-complete sequence yields exactly one merged BUILD record (ac2/k3).",
+      "A non-BUILD artifact approval writes no BUILD record and its approve behaviour + the code-review withhold/gate logic are byte-for-byte unchanged (BUILD-scoped by the BUILD- prefix)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approve-completion: controller-side create — single-artifact approve of a BUILD- target with NO prior json (stubbed changed set) creates the record THEN stamps approvedAt; isApproved true, no ArtifactMissingError (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "approve-completion: epic-batch over two BUILD stories → each record created/merged before approval, no cross-story interference; validate-then-complete = exactly one merged record (ac2/k3)"
+      },
+      {
+        "level": "integration",
+        "name": "approve-completion: non-BUILD artifact (LLD/PLAN) approved → no BUILD record written, approve + code-review-gate behaviour byte-for-byte unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

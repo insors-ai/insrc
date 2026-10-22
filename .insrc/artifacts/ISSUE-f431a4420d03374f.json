@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-20T12:48:29.473Z",
     "parentRef": {
       "slug": "count-commit-story-s-when-its"
+    },
+    "epicCreatedAt": "2026-10-20T12:47:09.806Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b963cf4279894f2f66cb0924f50df6591f251372654a0958637f5f1c2ddb4115",
+        "at": "2026-10-20T12:47:09.806Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T12:48:29.473Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

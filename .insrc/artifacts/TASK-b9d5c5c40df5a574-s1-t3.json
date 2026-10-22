@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a28f0b2-f831-43d3-8918-2ee0c356a595",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.566Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The text search reports what it left out and fails when it cannot read its root",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e9eb938a99f2c275bec8b1118fbf42fb8f4ffa6738f4190c9391dd06f71695ae",
+        "at": "2026-10-22T12:44:24.567Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.567Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The text search reports what it left out and fails when it cannot read its root",
+    "summary": "In the search primitive: add `omitted` to the result (skipped files with a reason, shortened lines with their full length, the per-file limit being reached, discarded output, a ripgrep run that started and failed, and each backend's exclusion rule in full); make an unreadable root throw and an unreadable directory below it a skipped entry; add `stdoutTruncated` to the shell helper's result and read it; make the search tool report a failure that is not a bad regex as 'search-failed' with the real message.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The Node backend reports a file skipped for its size, an unreadable file, an unreadable directory and a shortened line, on a real temporary directory",
+      "A search whose root cannot be read throws on the real primitive; restoring the catch that returns makes the test fail",
+      "A ripgrep stand-in that exits with code 2, and one that writes past the cap, give backendFallback and outputDiscarded",
+      "The Node backend's rule text names dot-named entries and non-regular files, checked against a fixture holding both",
+      "The search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex",
+      "The hits and limits of the search are unchanged for its existing callers, and the existing search tests pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the Node backend reports a file skipped for its size, an unreadable file and a shortened line with its full length"
+      },
+      {
+        "level": "unit",
+        "name": "the ripgrep backend reports shortened lines, the per-file limit, discarded output and its exclusion rule"
+      },
+      {
+        "level": "unit",
+        "name": "on the real primitive an unreadable root throws and an unreadable directory below it is skipped (mutation: restore the catch that returns)"
+      },
+      {
+        "level": "unit",
+        "name": "a ripgrep run that exits with another code or times out is recorded as backendFallback, and output past the cap sets outputDiscarded"
+      },
+      {
+        "level": "unit",
+        "name": "the search tool on an unreadable root fails with 'search-failed' and still says 'bad regex' for an invalid regex"
+      },
+      {
+        "level": "unit",
+        "name": "the Node backend's rule text names dot-named entries and non-regular files, against a fixture holding both"
+      },
+      {
+        "level": "unit",
+        "name": "the search's hits and limits are unchanged for its other callers"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

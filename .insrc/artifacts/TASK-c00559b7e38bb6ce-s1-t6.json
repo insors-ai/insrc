@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6a1599a9-eb9f-4b21-9d4f-d16f3509f43e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.382Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Consolidate this repo's split standalone folders",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c00559b7e38bb6ce-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c00559b7e38bb6ce-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "74859623b899b52e1b9321d3988927af531853ff46f715bbe11913a513bc2ff4",
+        "at": "2026-10-22T12:44:33.383Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.383Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Consolidate this repo's split standalone folders",
+    "summary": "Run planMigration as a dry run over this repo, show the listed moves (including d9f85b3c's LLD + PLAN) to the user, and on approval run applyMigration (git mv, per-work-item commits).",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "The dry run lists d9f85b3c's PLAN moving next to its LLD and reports no unmappable standalone entries.",
+      "After apply, each anchorless standalone item's docs sit in one folder and post-move link validation passes."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "planMigration dry run over this repo lists d9f85b3c's consolidation with no unmappable standalone entries"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-471fc5fd-e65c-4136-82d2-8fb2ac232550",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.150Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Export `isTransientCliError`",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "07e41512c35d2dae0feb6e46ac69010e7105e7a49638245105ec97c16e863899",
+        "at": "2026-10-22T12:43:17.150Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.151Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export `isTransientCliError`",
+    "summary": "Widen `isTransientCliError` (cli-provider.ts:409) from module-private to exported. One keyword, but kept as its own task because it widens a module surface for testability and a reviewer should see that as a deliberate line item rather than discover it inside a behavioural change. Without it the non-retryability claim can only be asserted by wall-clock timing, which is a weak proof on a loaded machine. Per the s3 critique: this task's `order` is FREE — it has no prerequisites and may be done at any point before t6, which is the first task that consumes the export.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "`isTransientCliError` is exported; its body and regex are unchanged.",
+      "`tsc --noEmit` is clean and no existing behaviour changes — the only effect is that the symbol becomes importable."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "`isTransientCliError` is importable from cli-provider.js and its regex behaviour is byte-unchanged on a known transient string"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

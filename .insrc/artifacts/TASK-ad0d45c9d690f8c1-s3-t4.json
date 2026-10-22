@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7dbd61c8-7cfc-43b4-b4c4-8bcbef50b263",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.069Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Extend vscode.d.ts (extensions/env) + wire the host registry into extension.ts",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d532ee77327f85ed9b6fad537f7ec8baacfe5d29b2e0caf6d03dbb601e92459f",
+        "at": "2026-10-22T12:44:13.069Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.070Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend vscode.d.ts (extensions/env) + wire the host registry into extension.ts",
+    "summary": "Extend vscode-plugin/src/vscode.d.ts with the public members the real HostEnv binds: `extensions.getExtension(id): { id: string } | undefined` and `env.appName: string` + `env.uriScheme: string`. In extension.ts (sole 'vscode' importer): construct the real HostEnv (over vscode.extensions/vscode.env) + real HostFileSystem (node:fs) + a launch-target resolver reusing the S002 DaemonPaths daemon home, build the AiHostRegistry from the HostSpec list, call registerHostCommands with the s1 surfaces, and fire a MINIMAL activation-time combined-consent wire offer when present hosts are unwired — fire-and-forget + guarded so activate() never throws / never blocks (S001 preserved). The install→register→wire coalescing stays s5's job. ADD the single insrc.hosts.wire entry to the EXISTING contributes.commands array (do not remove the S002 daemon entries) so the wire command is Command-Palette reachable (k6).",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "vscode.d.ts declares extensions.getExtension + env.appName/uriScheme; the package typechecks (tsc -p tsconfig.json)",
+      "extension.ts constructs the AiHostRegistry (real HostEnv/HostFileSystem + launch-target resolver) and calls registerHostCommands with the s1 surfaces",
+      "the activation-time combined-consent wire offer is fire-and-forget + guarded so activate() never throws / never blocks; it only fires when present hosts exist",
+      "insrc.hosts.wire is ADDED to the existing contributes.commands array (S002 daemon entries untouched) so a dismissed offer stays Command-Palette reachable (k6)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extension.ts constructs the AiHostRegistry (HostSpec list + real HostEnv/HostFileSystem) and calls registerHostCommands with the s1 surfaces; the activation-time wire offer is fire-and-forget + guarded (never throws/blocks) and only fires when present hosts exist (source-scan)"
+      },
+      {
+        "level": "unit",
+        "name": "contributes.commands includes insrc.hosts.wire alongside the S002 daemon entries (palette reachability, k6)"
+      },
+      {
+        "level": "smoke",
+        "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the vscode.d.ts extensions/env shim + the hosts wiring added"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -24,111 +24,6 @@
     "hldBaseRunId": "wf-1790343836936-uhegob",
     "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contractDetails/open",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts open() posts theme + session-restored for the initial session but does NOT currently post a history-list (the S005 gap).",
-          "evidence": "CONFIRMED: chat-panel.ts open() posts type:'theme' (:289) + type:'session-restored' (:290); a grep of the whole file finds NO type:'history-list' — the S005 gap is real and accurately stated.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "contractDetails/handleMessage",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "handleMessage dispatches new-chat (store.create) and open-chat (store.get), each calling cancelActive() + ++generation before switching session (the single-in-flight guard S005 preserves).",
-          "evidence": "CONFIRMED: handleMessage case 'new-chat' (:237) + case 'open-chat' (:247), each calling cancelActive() (:241, :254) before the switch — the single-in-flight guard is present as claimed.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "contractDetails/runTurn",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "runTurn already wires native resume: it builds req.resume from s.nativeSessionId and, on the done event, sets s.nativeSessionId = ev.sessionId and saves (so ac3 is already implemented; S005 only verifies it).",
-          "evidence": "CONFIRMED: runTurn builds req.resume={provider, nativeSessionId} from s.nativeSessionId (:163-164) and captures ev.sessionId into s.nativeSessionId on done (:182) — native resume is already implemented (ac3), S005 only verifies.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "dataModel/title",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "session-store.ts create() hard-codes title: 'new chat' and nothing ever updates it (the S005 title-from-prompt target).",
-          "evidence": "CONFIRMED by the tool's read: session-store.ts:122 = `title: 'new chat',` in create() — hard-coded and never updated. Accurate.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "dataModel/index-cap",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "session-store.ts save() only appends to the insrc.chat.index id list and nothing evicts it (the unbounded-index S003 L4 gap S005 caps).",
-          "evidence": "CONFIRMED: session-store.ts save() (:110) only appends session.id to the index (writeIndex([...ids, session.id])) and nothing evicts — the unbounded-index S003 L4 gap is real.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "interactionWithShared/sc4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ChatSession.provider is readonly (a chat's provider is fixed at creation; switching provider must mean a new chat, lc2).",
-          "evidence": "CONFIRMED by the tool's read: session-store.ts:23 = `readonly provider: ProviderId;` — provider is fixed at creation (lc2). Accurate.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "interactionWithShared/sc3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "sc3 protocol.ts ALREADY declares the messages S005 needs: HostToWebview 'history-list'{chats} and WebviewToHost 'new-chat'{provider} + 'open-chat'{chatId} — so S005 adds no new sc3 message.",
-          "evidence": "CONFIRMED by direct grep of protocol.ts: history-list (:36), new-chat{provider} (:44), open-chat{chatId} (:45) all already declared — S005 adds no new sc3 message (tool greps were scoped to backend src/ = hollow; verified against the real subtree).",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "interactionWithShared/sc5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc5 cli-adapter.ts ALREADY provides ProviderRegistry.available + StreamAdapter.capabilities.resume + TurnRequest.resume (so the provider-selector + resume consume existing sc5 surface, no reshape).",
-          "evidence": "CONFIRMED by direct grep of cli-adapter.ts: TurnRequest.resume? (:43), capabilities.resume (:53), ProviderRegistry.available (:58) all present — S005 consumes existing sc5 surface, no reshape.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "contractDetails/renderShell",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderShell builds the webview shell with exactly one nonce'd inline <script> under a strict CSP and only #insrc-term + #insrc-input (no provider-selector/history-dropdown yet).",
-          "evidence": "CONFIRMED: renderShell builds the one nonce'd script + strict CSP shell (verified in the S004 pass) with only #insrc-term + #insrc-input — the S005 selector/dropdown are net-new additions inside that same script.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-25T18:35:12.221Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-25T18:56:21.075Z",
     "questionResolutions": {
       "qb5e33325": {
         "question": "S004 MED-1 follow-up (persist a marker cssClass on TranscriptEntry so restore reproduces per-kind glyph/tone) is OUT of S005 scope — file as its own small tracked story that amends sc4.",
@@ -137,6 +32,61 @@
         "rationale": "The MED-1 fix mutates sc4/TranscriptEntry, a contract this epic's HLD owns, so the amendment trail + restore-fidelity criterion belong on epic edb76e2e4d41217d next to S004 — not folded into S005 (scope discipline) nor detached. To be filed as a new small story AFTER S005 ships.",
         "resolvedAt": "2026-09-25T18:57:36.351Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e6607eccb6b56704b2d0ffb3a43c33563245421eb11b7359fa08e241444dab69",
+        "at": "2026-09-25T18:33:23.999Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-25T18:56:21.075Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-25T18:35:12.221Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

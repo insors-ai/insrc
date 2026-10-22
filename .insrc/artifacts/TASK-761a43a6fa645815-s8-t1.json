@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8813e10a-765a-42b6-a549-3baa638105df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.682Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s8",
+    "envelope": {
+      "description": "fetchCodeReviewGrounding helper (unaryRpc over codeReview.grounding)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fffb3c52c528a9e99ad1f11677e08df13114d7e69c98fc5055f01a30184b97db",
+        "at": "2026-10-22T12:43:48.682Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.683Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "fetchCodeReviewGrounding helper (unaryRpc over codeReview.grounding)",
+    "summary": "Add an exported fetchCodeReviewGrounding(params: { repo: string; epicHash: string; storyId: string }, deps?: UnaryRpcDeps): Promise<{ ok:true; grounding: CodeReviewGrounding } | { ok:false; reason: string }> in src/mcp/daemon-stream.ts, wrapping the existing private unaryRpc('codeReview.grounding', params, deps). It maps the daemon response ({ok:true,grounding} | {ok:false,reason} | {error}) to the {ok:true,grounding}|{ok:false,reason} shape, and a socket reject ('daemon is not running') to {ok:false, reason}. Reuses the existing UnaryRpcDeps { connect? } seam so tests stub the socket. No existing helper edited; additive export. This is the ONLY graph access for the MCP tool (k5/k6, ac4).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/mcp/daemon-stream.ts exports fetchCodeReviewGrounding wrapping unaryRpc('codeReview.grounding', {repo,epicHash,storyId}), returning {ok:true,grounding}|{ok:false,reason}",
+      "a daemon {ok:false,reason}/{error} response and a socket reject both map to {ok:false, reason} (never throws out)",
+      "the UnaryRpcDeps { connect? } seam is threaded so a test can inject a fake socket; no existing daemon-stream export changed",
+      "tsc --noEmit clean; .js imports + import type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "fetchCodeReviewGrounding with an injected fake socket returns {ok:true,grounding} on a daemon {ok:true,grounding}, and maps {ok:false,reason}/{error}/socket-reject to {ok:false,reason} (never throws) — the sole graph access (ac4)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

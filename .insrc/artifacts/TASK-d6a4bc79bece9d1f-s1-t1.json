@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-294e6635-0abc-4c55-afbb-f87368210c46",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.859Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the in-memory session lock",
+      "parent": {
+        "entityId": "STORY-d6a4bc79bece9d1f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d6a4bc79bece9d1f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "283beff5422bca2aebbb2c55c81b47eb0513f3b533855973c61de5c5c4669a71",
+        "at": "2026-10-22T12:44:42.859Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.861Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the in-memory session lock",
+    "summary": "New vscode-free vscode-plugin/src/chat/session-lock.ts with the SessionLocks / SessionLease types and the in-memory registry: acquire(sessionId, { timeoutMs, onWaiting, signal }) -> SessionLease { attach(proc), release() }. One lease per session; the lease is released when the attached process's exit settles (or by release() when no process was started). A newer waiter replaces an older one (the older rejects as superseded); an aborted wait rejects without stopping anything. Past timeoutMs the holder's stop is escalated: SIGTERM, then SIGKILL after a grace (default 5 s), then the exit is awaited; if it never settles the lease is granted anyway with an error logged. Seams: now/timers, graceMs, logger.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A second acquire for the same session waits until the holder's process exits, then is granted; different sessions do not block each other.",
+      "Past timeoutMs the holder is stopped with SIGTERM, then SIGKILL after the grace, and the lease is granted only after the exit is confirmed (or after the second grace, with an error logged).",
+      "An aborted wait rejects without stopping anything; a newer waiter supersedes an older one; a process that exits by itself grants the waiter at once without any stop."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: one lease per session; a second acquire waits until the holder's process exits, then is granted"
+      },
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted"
+      },
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

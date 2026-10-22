@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e423181-31b6-41cc-92cb-8cb6762e83b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:19.429Z",
+    "epicCreatedAt": "2026-09-29T07:46:38.613Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2d9e9e694a94116b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen the pendingPerms value and populate it",
+      "parent": {
+        "entityId": "STORY-2d9e9e694a94116b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2d9e9e694a94116b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2d9e9e694a94116b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2d9e9e694a94116b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d13d2360a3c0f5a754671f2c56816654e21e690aa4f15204a152fc238e20033",
+        "at": "2026-10-22T12:43:19.429Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:19.429Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the pendingPerms value and populate it",
+    "summary": "Widen the pendingPerms map value in chat-panel.ts from the bare toolName:string to { toolName: string; command?: string; blockKind: 'tool-gate' | 'dir-block' }, populated where the approval-request event is registered (:581) from the event's command and classifyPermissionDenial(detail). Host-internal; no external consumer.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "pendingPerms value carries { toolName, command?, blockKind } populated from the approval-request event + classifyPermissionDenial(detail)",
+      "No external consumer of pendingPerms is broken (it is host-internal)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-panel: the pendingPerms value carries { toolName, command?, blockKind } populated from the event + classifyPermissionDenial(detail)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

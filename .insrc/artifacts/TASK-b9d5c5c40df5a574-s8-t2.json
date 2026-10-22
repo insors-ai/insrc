@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e4f3f4df-c2db-4709-8352-d0c90c2fec65",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.249Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s8",
+    "envelope": {
+      "description": "The module list returns the directories that hold source",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0860010fed119afc02114ee61f04757066059891e2bed6f77df9bf5f0f183e1",
+        "at": "2026-10-22T12:44:26.249Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.250Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The module list returns the directories that hold source",
+    "summary": "Move code.discovery.modules to sourceModulesOf: one call of listEntitiesForRepo kept whole, the area's entities and the stored module entities both taken from it. Its records gain `directory` and `fileCount`, `entityId` becomes optional, and the completeness record's rule says what a module is. Correct the template's description in the planner's catalog. Rewrite the source scan (src/analyze/runtimes/__tests__/scope-sources.test.ts) so that each code runtime has its own expected form: the new form for discovery-modules.ts, today's form for structure-module-tree.ts and discovery-entrypoints.ts.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "On a graph with no module entity for the repository's directories the list is the directories that directly hold a stored source file, sorted by directory, with no limit",
+      "A stored module entity the area contains is returned with the fields it has today plus `directory` and `fileCount`, and no directory in or under its directory is listed",
+      "Under a file scope on a source file and under a symbol scope the list is empty; a file scope that names a stored module entity's own file returns that module",
+      "The completeness record keeps the basis 'graph' and its rule states what a module is and what a scope of one file or one symbol gives",
+      "The runtime makes exactly one call of listEntitiesForRepo and uses its whole result only to pick the stored module entities; the source scan asserts this form for discovery-modules.ts and today's form for the tree and the entry-points runtimes, and passes",
+      "The template's description says the directories of the scope that hold source files are returned",
+      "The existing assertions of scope-area.test.ts on the module list hold unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "on a graph with no module entity for the repository's directories, the module list returns the directories that hold source, and its record's rule says what a module is (mutation: keep only entities of kind 'module', as before)"
+      },
+      {
+        "level": "integration",
+        "name": "the module list keeps a stored module entity with the fields it had and lists no directory in or under its directory; a file scope that names a module entity's own file returns that module; a run scoped under a stored module's directory lists none (mutation: make a directory module of the sub-directory)"
+      },
+      {
+        "level": "integration",
+        "name": "under a module scope the module list keeps to the area, and under a file scope on a source file and a symbol scope it is empty"
+      },
+      {
+        "level": "unit",
+        "name": "the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

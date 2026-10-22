@@ -25,7 +25,34 @@
     "lldEffectiveHash": "381fe69e77e409d505db564a5981d474ae65c6197d503bfb89d3619f99f11854",
     "authoredBy": "controller",
     "rangeBase": "bcd270b5f98581859b6b2c1c914f771c2dc6bfe6",
-    "approvedAt": "2026-10-17T06:54:55.665Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "383b9545d6d4061403c99ed9eeb1ef423b3b29aadf4f8fc37602969ffda84e1d",
+        "at": "2026-10-17T06:17:20.975Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T06:54:55.665Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

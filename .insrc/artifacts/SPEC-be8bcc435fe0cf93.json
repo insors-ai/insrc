@@ -20,7 +20,35 @@
     "specHash": "be8bcc435fe0cf93",
     "epicSlug": "team-signoff-claim-based-workflow",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-16T13:35:15.883Z"
+    "epicCreatedAt": "2026-10-16T13:31:07.106Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9c5ab6398e872b3d04e06038b1f9cb4d9d16eedacfc63754d264f463f0439eca",
+        "at": "2026-10-16T13:31:07.106Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T13:35:15.883Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Team signoff and claim-based workflow",

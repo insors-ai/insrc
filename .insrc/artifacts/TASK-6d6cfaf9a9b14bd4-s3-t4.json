@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b872f20-dc11-4f2e-a795-d71437a4591c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.429Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Confirm the sc1 ProgressEvent types have landed from s1",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "593831917ae9b728bde041e926ded01b33501a90a6d9cd09cde47fa576c835b7",
+        "at": "2026-10-22T12:43:43.429Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.430Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Confirm the sc1 ProgressEvent types have landed from s1",
+    "summary": "Hard gate matching storyDependsOn: ['s1']. Verify that ProgressOperation, StageProgressEvent, TokenProgressEvent and the ProgressEvent union exist adjacent to IpcStreamMessage in src/shared/types.ts (around :734), exported and importable, with field shapes matching the sc1 interfaceSketch exactly. Also verify IpcStreamKind (:732) still contains 'progress' and 'delta' and that no new member was added. If the types are absent, STOP — the LLD explicitly forbids stubbing local copies, which would create a second source of truth. This Task gates every subsequent type-adding Task and satisfies the `s1-sc1-types-landed` prerequisite flag from migration step 3.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "ProgressOperation, StageProgressEvent, TokenProgressEvent and ProgressEvent are confirmed present, exported, and importable from src/shared/types.ts.",
+      "Each field of each sc1 type matches the published interfaceSketch verbatim — no field added, narrowed, renamed, or reinterpreted on this side.",
+      "IpcStreamKind is confirmed to still contain 'progress' and 'delta' with no member added by s1 or this Story.",
+      "No local stub, re-declaration, or structural copy of any sc1 type exists anywhere in this Story's code.",
+      "If any sc1 type is absent, the Story is halted with the gap recorded rather than proceeding with a stub."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc1-types-importable: a type-only import of ProgressOperation / StageProgressEvent / TokenProgressEvent / ProgressEvent from src/shared/types.js type-checks clean under `npm run build`"
+      },
+      {
+        "level": "unit",
+        "name": "sc1-field-shapes-match-sketch: each sc1 type's fields are asserted against the published interfaceSketch — no field added, narrowed, or renamed"
+      },
+      {
+        "level": "unit",
+        "name": "ipc-stream-kind-unchanged: IpcStreamKind still contains 'progress' and 'delta' and has no added member"
+      },
+      {
+        "level": "smoke",
+        "name": "no-local-sc1-stub: a repo sweep finds no local re-declaration or structural copy of any sc1 type in this Story's code"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

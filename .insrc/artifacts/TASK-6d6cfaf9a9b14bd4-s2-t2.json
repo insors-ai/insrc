@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-13d6b2a9-3242-4d20-a409-f491e35e3d79",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.200Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Declare the net-new progress type surface (additive, no call sites)",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "356361677f2416d809c7672ca1e921768a64b628e4a221a80bcf9e9c68e7dbbd",
+        "at": "2026-10-22T12:43:43.200Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.200Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the net-new progress type surface (additive, no call sites)",
+    "summary": "Add the sc2 type surface to src/mcp/ as free functions plus interfaces — confirmed net-new by a repo-wide grep for progressToken | notifications/progress | sendNotification that returned zero hits, so there is nothing to extend in place. Declare: interface ProgressSink { report(event: ProgressEvent): void }, declare const NOOP_PROGRESS_SINK: ProgressSink, the mcpProgressSink(server, progressToken) factory signature, interface LongRunningToolMeta { progressToken?: string | number }, and interface McpProgressNotification with params.progress kept REQUIRED (the a4 narrowing that made it optional was explicitly rejected). ProgressEvent is imported verbatim from sc1 — not redeclared, not widened, not narrowed. Purely additive declarations with no call sites; the build's behaviour is unchanged. Naming follows the module actually being edited: camelCase functions, PascalCase types, kebab-case filename (state-store.ts / questions-gate.ts are the attested siblings). Note the s1 correction: the 'class sample size 0' rationale does NOT hold for src/mcp/workflow-step, which has 32 unanimously-PascalCase classes — free functions remain the design choice, but do not justify it with that sample size.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "ProgressSink, NOOP_PROGRESS_SINK, mcpProgressSink, LongRunningToolMeta, and McpProgressNotification are declared in src/mcp/ and compile under strict / exactOptionalPropertyTypes / noUncheckedIndexedAccess.",
+      "McpProgressNotification.method is the 'notifications/progress' string literal; params.progressToken and params.progress are required; params.total and params.message are optional.",
+      "ProgressSink.report takes the sc1 ProgressEvent union by import, with no field added, narrowed, or reinterpreted; sc1 is not redeclared locally.",
+      "ProgressSink.report is declared as returning void — the signature admits no awaitable result.",
+      "No class is introduced; every added symbol is a camelCase free function, a PascalCase type, or a SCREAMING_SNAKE const, and the new file name is kebab-case.",
+      "The declarations have zero call sites — `npm run build` succeeds and no existing behaviour changes."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "contract: McpProgressNotification pins method to the 'notifications/progress' literal with params.progressToken and params.progress required and total/message optional — a type-level assertion that fails if progress is made optional"
+      },
+      {
+        "level": "unit",
+        "name": "contract: LongRunningToolMeta { progressToken?: string | number } typechecks reproduced unchanged from the sc2 sketch under exactOptionalPropertyTypes"
+      },
+      {
+        "level": "unit",
+        "name": "contract: ProgressSink.report accepts a representative instance of each sc1 ProgressEvent variant verbatim and is declared returning void"
+      },
+      {
+        "level": "smoke",
+        "name": "additive-declarations build guard: `npm run build` succeeds with zero call sites and the existing sweep is unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-49b2dc08-fd9c-4c26-98cb-819113ccad2f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.950Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Add the unit + integration tests and run the suites green",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ed0e39ee80ac6f74eb7601c279e84b9885101efdf05373beb09e1705259864c",
+        "at": "2026-10-22T12:43:48.950Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.950Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the unit + integration tests and run the suites green",
+    "summary": "Wire the tests authored alongside t1-t6 into the suites and run them green: the handler unit tests + daemon freshness-compute unit tests (incl. non-indexable-path exclusion + never-indexed=stale as distinct assertions) + the gated integration tests (codeReview.freshness IPC socket round-trip + config reconcile). Confirm the code-review + mcp suites pass and no untouched dimension/conventions/quality behaviour regressed.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "unit tests cover all ac1-ac5 handler behaviours + the daemon freshness compute cases (incl. non-indexable-path exclusion + never-indexed=stale as distinct assertions), using injected seams (no real daemon/wall-clock)",
+      "the gated integration test exercises the codeReview.freshness IPC over the socket + config reconcile",
+      "npx tsx --test over src/mcp/code-review-step/**/*.test.ts + the daemon freshness test passes green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "full code-review + mcp sweep passes green (npx tsx --test), confirming no untouched conventions/quality/dimension behaviour regressed"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

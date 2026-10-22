@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-b6bf7c5369deabe8-S001 -->
+<!-- insrc:artifact LLD-b6bf7c5369deabe8-s1 -->
 
 # LLD: S001
 

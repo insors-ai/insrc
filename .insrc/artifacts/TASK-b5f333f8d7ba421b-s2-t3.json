@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c610d4aa-bcc6-4435-8a61-c9a5c05d6cd6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:19.003Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the pure sc3 view types: SettingsGroupModel + SettingsView + SettingsSection",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "02bf3b9e69e86e0f32e8d63d410aca3c9471781261913d4c3bb0af8763cc4f48",
+        "at": "2026-10-22T12:44:19.003Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.004Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pure sc3 view types: SettingsGroupModel + SettingsView + SettingsSection",
+    "summary": "In a new plugin settings package add SettingsGroupModel(group, options), the pure `object SettingsView { groupsOf(catalog): List<SettingsGroupModel>; displayValue(option): String }`, and the SettingsSection extension interface. groupsOf buckets options into SettingsGroupModels in payload.groups order (an option whose group is absent from groups[] goes into a trailing bucket; an empty group yields no model; every option appears exactly once). displayValue returns the current value when isSet, else the default with an explicit default marker.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "SettingsView.groupsOf orders groups by payload.groups, drops no option, emits no empty-group model, and trailing-buckets an out-of-groups option.",
+      "SettingsView.displayValue shows the actual value when isSet and the default with an explicit default marker when unset.",
+      "SettingsView is pure — no Swing/IO imports; SettingsSection is declared for downstream override sections."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SettingsViewTest: groupsOf orders by payload.groups, every option in exactly one model, out-of-groups -> trailing bucket, empty group -> no model"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsViewTest: displayValue shows the value when isSet and the default with an explicit marker when unset"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsViewTest: an unrecognized type still yields a display string (text fallback), never dropped/thrown"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

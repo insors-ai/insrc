@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-65cb3411-4540-48e8-8b50-2222872f75f9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.055Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add backup/compact/shutdown to the DaemonGateway interface + DaemonGatewayImpl",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "46322cd947884ac4d2188f99992773f6c7ec31424e2250403723e6353fb69770",
+        "at": "2026-10-22T12:43:33.055Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.056Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add backup/compact/shutdown to the DaemonGateway interface + DaemonGatewayImpl",
+    "summary": "Add fun backup(targetDir: String): DaemonActionResult, fun compact(): DaemonActionResult, fun shutdown(): DaemonActionResult to the DaemonGateway interface and implement them in DaemonGatewayImpl: new companion constants METHOD_BACKUP='daemon.backup'/METHOD_COMPACT='daemon.compact'/METHOD_SHUTDOWN='daemon.shutdown' (reuse PARAM_PATH='path' for backup); each rpc.call classifies ok->Ok, !r.ok||error->Failed(reason) (compact busy-refusal forwarded verbatim), DaemonUnavailableException->a clear terminal result, RuntimeException->Failed; never throws — cloning the repoStats()/daemonStatus() template. Leave probe()/daemonStatus() unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the interface declares backup(targetDir)/compact()/shutdown(): DaemonActionResult",
+      "DaemonGatewayImpl.backup sends METHOD_BACKUP with {path:targetDir}; compact sends METHOD_COMPACT; shutdown sends METHOD_SHUTDOWN (empty params)",
+      "each classifies ok->Ok, framed-error/unreachable/RuntimeException->Failed and never throws; the compact busy message is forwarded verbatim",
+      "the existing probe()/daemonStatus()/repoStats() reads are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "backup(targetDir) sends METHOD_BACKUP with {path:targetDir} and maps ok->Ok; a framed error (incl. 'target path required') -> Failed"
+      },
+      {
+        "level": "unit",
+        "name": "compact() sends METHOD_COMPACT and maps ok->Ok; the busy-refusal framed error -> Failed forwarding the busy message verbatim"
+      },
+      {
+        "level": "unit",
+        "name": "shutdown() sends METHOD_SHUTDOWN; ok->Ok; DaemonUnavailableException -> a clear terminal result; a malformed reply -> Failed, never a throw"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

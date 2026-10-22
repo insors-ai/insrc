@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87ada2f9-795e-4433-8145-4f5f731b8354",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:55.459Z",
+    "epicCreatedAt": "2026-10-05T06:10:31.833Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f2f08ccf89f8ab25",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record a finding's outcome and gate on it",
+      "parent": {
+        "entityId": "STORY-f2f08ccf89f8ab25-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f2f08ccf89f8ab25-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "243a5f1ade7c1d0852c89b30122c1104370175f446e5f4f8ad375914f5dc5b0f",
+        "at": "2026-10-22T12:44:55.463Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:55.464Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record a finding's outcome and gate on it",
+    "summary": "Add the optional outcome and item fields to a finding and the template id and unverified count to a report. Set a template finding's severity from its outcome, make the verdict warn when only could-not-verify findings exist, render 'Does not hold' and 'Could not verify' as two labelled lists, and keep a holds result out of the findings that need a human. Reviews with no outcome behave exactly as today.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A review with a does-not-hold finding blocks approval; one with only could-not-verify findings gives warn and is approvable; one with only holds gives pass",
+      "The rendered review lists the two problem kinds separately and says which one blocks",
+      "A review record with no outcome fields keeps its verdict, its rendering and its gate result"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T4 severity follows outcome"
+      },
+      {
+        "level": "unit",
+        "name": "T5 verdict by outcome, and today's verdict when no outcome is present"
+      },
+      {
+        "level": "unit",
+        "name": "T6 the rendered review lists the two problem kinds separately"
+      },
+      {
+        "level": "unit",
+        "name": "T7 approval with could-not-verify only, with does-not-hold, and after a resolution or override"
+      },
+      {
+        "level": "unit",
+        "name": "T8 an older review record keeps its verdict and gate result"
+      },
+      {
+        "level": "unit",
+        "name": "T17 a holds result is not among the findings that need a human"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-58626860-8405-48c8-ab5a-86fc9c41f827",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:11.300Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Stamp meta.seededFromSpec in finalizeStandaloneLld + surface it in renderLldMarkdown",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5eb71aea760bc1b672683d72b1bd5a30f3cf5660a59c04d3c9ec6093b3c1fd88",
+        "at": "2026-10-22T12:44:11.300Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:11.300Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp meta.seededFromSpec in finalizeStandaloneLld + surface it in renderLldMarkdown",
+    "summary": "In src/workflow/orchestrator.ts finalizeStandaloneLld (:1629, meta literal ~:1660), when intent.params.specHash is a non-empty string spread ...{seededFromSpec} into the LLD meta (beside standalone:true/sizeClass), mirroring s8's finalizeDefine (:867). In src/workflow/artifacts/lld.ts renderLldMarkdown (:220), when (meta as {seededFromSpec?:string}).seededFromSpec is set emit a `**Seeded from:** SPEC-<hash>` header line (mirroring define.ts:97). ArtifactMetaBase.seededFromSpec already exists (types.ts:347) — no type change.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "finalizeStandaloneLld writes meta.seededFromSpec = intent.params.specHash when present; leaves it unset otherwise (ac4)",
+      "renderLldMarkdown emits the seeded-from line only when meta.seededFromSpec is set",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "seed-focus.test.ts: finalizeArtifact('design.story') standalone+specHash -> meta.seededFromSpec = hash + renderLldMarkdown contains SPEC-<hash>; plain -> unset (covered in t3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-5edd3bdf-c767-47ee-96d0-852780afef72",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.919Z",
+    "epicCreatedAt": "2026-07-30T08:13:01.984Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4152d0e88a8cec7c",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Search shared and local context together in one federated query",
+      "parent": {
+        "entityId": "EPIC-4152d0e88a8cec7c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "ac78bdab054292aa403a2f7a490a73f69cc195aa9c4890efe6efb748afa792dd",
+        "at": "2026-10-22T12:43:06.919Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

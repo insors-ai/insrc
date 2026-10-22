@@ -22,7 +22,34 @@
     "epicSlug": "complete-consistent-richer-code-index-one",
     "storyId": "s11",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T08:32:56.533Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d2010ec02b39ba38d27aad9a3d53b00954f029edbc9d8e6f2c4ea99eab44f00e",
+        "at": "2026-10-11T08:30:52.244Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T08:32:56.533Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "L",

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aac892c2-834f-4f49-8fdc-5cf7be31abeb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.970Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the s1-internal workflow token counting/batching accumulator",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "da79f59fb28206f8e8bd67715e6c8d2ad41973b066981a2a994525f5add47780",
+        "at": "2026-10-22T12:43:42.970Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the s1-internal workflow token counting/batching accumulator",
+    "summary": "Add an accumulator inside the workflow run path that consumes the existing `onToken(stepId: string, token: string)` callback (src/daemon/workflow-rpc.ts:78) and produces numeric (tokensDelta, tokensTotal) pairs at the operation's natural batch cadence, never one pair per token. This task delivers the accumulator ONLY — it does not touch line 239 and makes no claim about what reaches the wire; t6 owns the wrap site and the removal of the incumbent emission.\n\nNOTE the grounding correction to the LLD's stateBefore: workflow-rpc.ts:239 ALREADY emits `onToken: (stepId, token) => send({ id: 0, stream: 'delta', data: { stepId, token } })` — a live delta population carrying a raw token string, one frame per token, itself a violation of the LLD's own never-one-frame-per-token rule. That population is an affected backward-compat surface; t6 replaces it and t10 announces it.\n\nInclude the numeric guard immediately before any pair is published: `Number.isFinite(delta) && delta >= 0 && total >= lastEmittedTotal` — on failure, suppress the pair, retain the last known-good cumulative, and log at debug, so NaN or a regressing total can never reach a caller. stageId comes from the stepId argument and is null when unattributable. Keep the accumulator entirely s1-internal (camelCase, not added to any exported shape); leave the WorkflowProgress interface at workflow-rpc.ts:61 untouched.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Feeding a stream of N token strings to the accumulator in isolation yields strictly fewer than N (delta,total) pairs, with tokensDelta routinely > 1 and the sum of all deltas equal to the final tokensTotal.",
+      "NaN, a negative delta, or a total below the last published total suppresses that pair, debug-logs, and retains the last known-good cumulative; the next valid batch publishes a corrected total.",
+      "Tokens with an unattributable stepId yield stageId:null as a first-class value with correct delta/total.",
+      "The accumulator is exercised with no send/wire involved at all — its unit tests construct it directly and assert only its published pairs.",
+      "The WorkflowProgress interface at workflow-rpc.ts:61 and its eight emission sites (110,112,123,131,134,151,166,184) are diff-clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "token-accumulator: feeding N token strings yields strictly fewer than N (delta,total) pairs, tokensDelta routinely > 1, and the sum of all deltas equals the final tokensTotal — constructed directly with no send/wire"
+      },
+      {
+        "level": "unit",
+        "name": "token-accumulator: tokens with an unattributable stepId publish stageId:null as a first-class value with correct delta/total"
+      },
+      {
+        "level": "unit",
+        "name": "token-accumulator-guard: NaN, negative delta, or a total below the last published total suppresses the pair, debug-logs against the stub logger, retains the last known-good cumulative, and the next valid batch publishes a corrected total"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

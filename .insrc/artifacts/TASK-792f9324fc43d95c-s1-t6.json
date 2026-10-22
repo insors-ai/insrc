@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-91151143-d966-487f-9d13-55a046b66354",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.228Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewrite the three tests that encode the old behaviour — invert, do not delete",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8afcc0308458f13c104a07debfce72e1ea937afa3f1ffff0f5695a31bad8a9b9",
+        "at": "2026-10-22T12:43:49.228Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.228Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewrite the three tests that encode the old behaviour — invert, do not delete",
+    "summary": "Three edits that look destructive in review and must be visible as their own task. (1) id-resolve.test.ts:459 asserts the regressed expectation as desired; its assertion INVERTS and the test is renamed to state the verification contract — its second arm, that an explicit scope disambiguates, stays valid and must be KEPT. (2) id-resolve.test.ts:447 is named for regression protection but uses setupRepo(), whose fixture has NO ISSUE file, so it cannot exercise the widened enumeration; its fixture gains one. (3) tracker.test.ts:283's multi-epic arm is restated: it refuses because both epics contain the label, not because two epics exist.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "id-resolve.test.ts:459's assertion is inverted and the test renamed; its explicit-scope arm is preserved, not dropped",
+      "id-resolve.test.ts:447's fixture contains an ISSUE artifact, so the test named for regression protection actually exercises the widened enumeration",
+      "tracker.test.ts:283's multi-epic arm is restated in containment terms, and its single-epic arm still passes",
+      "No test is DELETED — confirmable by diff that all three survive as rewrites",
+      "MUTATION PROOF per rewrite, run and recorded: reverting t3 or t4 turns each rewritten assertion RED. A rewrite that passes under both the old and new rules proves nothing and must be redone"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "REWRITE of id-resolve.test.ts:459 — its scenario now RESOLVES, so the assertion inverts and the test is renamed to state the verification contract; the explicit-scope arm is KEPT"
+      },
+      {
+        "level": "unit",
+        "name": "REWRITE of id-resolve.test.ts:447 — the fixture gains an ISSUE artifact so the test named for regression protection actually exercises the widened enumeration"
+      },
+      {
+        "level": "unit",
+        "name": "REWRITE of tracker.test.ts:283 — the multi-epic arm restated in containment terms, single-epic arm still passing"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF per rewrite: reverting t3 or t4 turns each inverted assertion RED — a rewrite green under both rules proves nothing"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

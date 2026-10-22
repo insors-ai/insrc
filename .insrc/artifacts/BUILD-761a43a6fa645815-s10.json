@@ -6,9 +6,36 @@
     "storyId": "s10",
     "createdAt": "2026-08-05T07:35:15.073Z",
     "updatedAt": "2026-08-05T07:35:15.073Z",
-    "approvedAt": "2026-08-05T07:53:56.682Z",
     "epicSlug": "add-daemon-driven-code-review-stage",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "56dc4095d923e021d41be6bc4a4380f676a385df1425c6e1cc7485af399d6287",
+        "at": "2026-08-05T07:35:15.073Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T07:53:56.682Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "s10 diff-only degraded fallback: assembleDiffCodeReviewGrounding (working-tree diff, HEAD^ fallback), runCodeReview groundingMode+capVerdictAtWarn, decline branch -> diff-only path",

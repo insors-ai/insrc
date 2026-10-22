@@ -19,91 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "914cbf5ea9026b92",
     "epicSlug": "work-framed-approved-spec-proceed-from",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "sc1/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The graph vocabulary sc1 extends lives in src/shared/types.ts (EntityKind + RelationKind unions + deterministic entity id).",
-          "evidence": "read src/shared/types.ts:515 -> FOUND `export type EntityKind =`; RelationKind also present — the vocabulary sc1 extends is real.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "s1/c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The LMDB graph layer has a migrations seam (migrations.ts) and a closure traversal (transitiveClosure) that S001/S008 build on.",
-          "evidence": "src/db/graph/migrations.ts + traversal.ts both resolve; transitiveClosure has 35 matches — the migration seam (S001) + closure traversal (S008) exist.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "s1/c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The graph codec (codec.ts) + deterministic ids (ids.ts) are the surfaces the new node/edge kinds + endpoint dedup id extend.",
-          "evidence": "src/db/graph/codec.ts + ids.ts both resolve — the node/edge serialization + deterministic-id surfaces sc1 extends are real.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "sc3/c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The repo registry src/db/repos.ts is where the per-repo service identity (sc3) attaches and what cross-repo matching/backfill key off.",
-          "evidence": "src/db/repos.ts resolves with repo/repoId references — the registry where sc3 attaches + matching/backfill key off is real.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "sc2/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The tree-sitter indexer (src/indexer, manifest.ts, parser/) is the per-language parse harness the detectors attach to; manifest.ts parses only package-dependency manifests, so the config/.env/k8s/docker resolver is new.",
-          "evidence": "src/indexer/manifest.ts:19 -> FOUND `export function parseManifest(...)` — the package-only manifest parser; the config/.env/k8s/docker resolver (sc2) is genuinely new construction on the existing parse harness.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "s1/c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A k8s built-in tool namespace exists (src/daemon/tools/builtins/k8s) that the resolution engine can reuse as a deploy-time config source.",
-          "evidence": "src/daemon/tools/builtins/k8s/index.ts resolves — the k8s builtin the resolution engine reuses as a deploy-time source exists.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "architecture/ownership",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every shared contract is owned by a story that all its consumers transitively depend on (sc1@s1->s3/s4/s5/s8/s9; sc2@s2->s3/s4/s5; sc3@s7->s8/s9; sc4@s6->s8/s9; sc5@s8->s9), so the ownership graph is acyclic and consistent (cg1/cg2/cg3).",
-          "evidence": "Design-internal consistency: the HLD finalized without a contract-dependency-graph error, meaning cg1 (acyclic) + cg2 (consumers downstream of owners) + cg3 (depends == inverse of consumedByStories) all hold for sc1@s1->s3/s4/s5/s8/s9, sc2@s2->s3/s4/s5, sc3@s7->s8/s9, sc4@s6->s8/s9, sc5@s8->s9.",
-          "action": "None — ownership graph verified consistent + acyclic.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-08-06T16:05:52.003Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-06T16:09:52.327Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "749cea4d6226bcc3f6d92112d847913150bf3c1c3cf381a105a1ec3e0968d25b",
+        "at": "2026-08-06T16:04:32.531Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T16:09:52.327Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-08-06T16:05:52.003Z",
+        "report": {
+          "entityId": "HLD-914cbf5ea9026b92",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-914cbf5ea9026b92-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Pipeline-integrated external-service graph tracing. The graph gains one new node kind (ExternalEndpoint, carrying a protocol + resolved/unresolved tag) and four typed boundary edge kinds (CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC), added once to the graph vocabulary and gated by a graph-schema migration so existing indexes evolve without a full re-index. Per-language outbound and inbound detectors run as thin plugins inside the existing tree-sitter parse; a shared protocol-agnostic resolution engine turns indirect/configured targets into a concrete identity (or an explicit unresolved marker) from layered config sources with a fixed precedence. Cross-repo linking is a separate daemon-side matching pass, keyed off a per-repo service-identity registry, that forms a real dependency edge onto the target repo's actual handler entity and inserts it into the DEPENDS_ON closure; the same pass, re-fired on repo register/re-index events, is the out-of-order backfill.",

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4e5e533b-03e3-446d-a384-1a692aa573dd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.953Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Pure ApproveDecision helpers + Approve action wired into ArtifactContentPane",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc8f4e6d187caa6abe4d796dcef47a58a213c274e5577f69f7940894a2187863",
+        "at": "2026-10-22T12:43:18.953Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.953Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure ApproveDecision helpers + Approve action wired into ArtifactContentPane",
+    "summary": "FIRST extract the load-bearing decisions into a standalone pure object ApproveDecision: enabled(view) = view.approvable; normalizeOverride(reason) = reason?.trim().ifEmpty(null) (blank -> no override); shouldRefresh(result) = result is Approved. THEN wire the Approve action into ArtifactContentPane: retain the current ArtifactReviewViewDto (mdPath/approvable/blockReason) as pane state on render(); an Approve button in BOTH the JCEF and native cards (Approve is not a JCEF feature) enabled per ApproveDecision.enabled with blockReason shown when false; an 'Approve anyway' override prompt (Messages.showInputDialog; normalizeOverride applied); an off-EDT gateway.approve call marshaled to the EDT (mirrors S004 submit); outcome via the existing notifyUser (S004) — on Approved notify + invoke onApproved, on Withheld show the reason, on Unavailable surface the failure. Guard: no mdPath / no project.basePath -> Approve disabled/no-op. The Swing button + dialog + EDT wiring is the manual/backstopped residual.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "ApproveDecision is a standalone pure object (enabled=approvable, normalizeOverride blank->null, shouldRefresh=Approved) — unit-testable headlessly",
+      "Approve is enabled only when approvable is true (blockReason shown otherwise) and available in both the JCEF and native views",
+      "'Approve anyway' sends overrideReview via normalizeOverride; a blank reason is treated as no override",
+      "On Approved the panel notifies + invokes onApproved; on Withheld/Unavailable it surfaces the reason and does not refresh; no mdPath/repo -> disabled/no-op"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ApproveDecision.enabled = view.approvable (true enables, false disables + blockReason shown)"
+      },
+      {
+        "level": "unit",
+        "name": "ApproveDecision.normalizeOverride: blank/whitespace -> null (no override); non-blank -> trimmed reason"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

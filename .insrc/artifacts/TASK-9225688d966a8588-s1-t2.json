@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dfc1b12d-5a2e-4198-addf-e79a0527d737",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.411Z",
+    "epicCreatedAt": "2026-09-20T11:24:43.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9225688d966a8588",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Consume the SettingsTableModel + cell editor/renderer + SettingsEditModel unchanged",
+      "parent": {
+        "entityId": "STORY-9225688d966a8588-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9225688d966a8588-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b7dc2e865e839a64d49373d57727688524a0c08585a890a09f28e30af006b5b7",
+        "at": "2026-10-22T12:44:00.414Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.414Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Consume the SettingsTableModel + cell editor/renderer + SettingsEditModel unchanged",
+    "summary": "Reuse SettingsTableModel (Key/Value/Default, only-Value-editable, getValueAt path/controlValue/renderScalar(default), setValueAt->editField, resetToDefault->markResetToDefault) with SettingsValueCellRenderer/SettingsValueCellEditor on the Value column as each category panel's body, over the shared SettingsEditModel. No logic change to these types — only their host changes (collapsible panel vs CardLayout card). This is an explicit reuse checkpoint pinning the invariant that the edit stack must not be forked; its wiring is realized in t3.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "The category panel body is a JTable over the existing SettingsTableModel with the per-type SettingsValueCellRenderer/Editor on the Value column; a dirty Value cell contributes to isModified()/collectDirty() through the shared SettingsEditModel exactly as before, and reset maps to a Clear",
+      "SettingsTableModel/SettingsValueCellRenderer/SettingsValueCellEditor/SettingsEditModel are unchanged in behaviour (no fork/bypass of the edit model)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SettingsTableModelTest (unchanged): 3 columns Key/Value/Default, only Value editable, getValueAt reads path/controlValue/renderScalar(default)"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsTableModelTest (unchanged): setValueAt routes to editField, boolean round-trips as Boolean, isModified/collectDirty reflect the edit"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsTableModelTest (unchanged): resetToDefault maps to markResetToDefault (Value shows default; apply would Clear)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

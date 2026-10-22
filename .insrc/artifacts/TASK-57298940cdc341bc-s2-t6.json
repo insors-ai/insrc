@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3375b7b4-403f-43b9-b186-445644f086ed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.060Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Tests + version bump",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9735eff6047079a69d9de5c95ce64719a1075e7f80b9838c6997f12ed0834f88",
+        "at": "2026-10-22T12:43:33.060Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.060Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests + version bump",
+    "summary": "Add the gateway unit tests (backup/compact/shutdown classification + wire shape via a fake DaemonRpc), the runner unit tests (subcommand + exit-code mapping via a fake SubprocessRunner/locator), and the Daemon page source-scan test (six-action wiring, off-EDT, backup chooser, parent-untouched); bump the plugin version; verify locally with gradlew test buildPlugin (cache off) under JDK21.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "a DaemonActionGatewayTest drives backup/compact/shutdown Ok/Failed classification against fake DaemonRpc replies (incl. the compact busy message + backup path param)",
+      "a DaemonLifecycleCommandRunnerTest drives run() exit-code mapping via a fake SubprocessRunner + fake locator with no real process",
+      "a Daemon page source-scan test asserts the six-action wiring + ProgressManager + backup chooser + parent-untouched",
+      "gradlew test buildPlugin green locally (JDK21); the plugin version is bumped"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "gradlew test buildPlugin runs the full suite + assembles the plugin green locally (JDK21, cache off) with the version bumped"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

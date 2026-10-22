@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4d933411-66be-49ae-b794-9c7732752f45",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.850Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The measuring module: the measure, the table and the pure functions",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d31a6c94f3a2deab976c4f3a90a0a1d8eb737eb7887f87118fbefbad0c310bde",
+        "at": "2026-10-22T12:44:24.850Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.851Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The measuring module: the measure, the table and the pure functions",
+    "summary": "Before any change, record the baseline: the result line of every top-level test of the analyze, planner, classifier, data-driver and daemon suites, run without the force-exit flag under Node 22, kept in the Story's folder. Then add src/analyze/measure.ts with the RequestMeasure type as the HLD gives it, the one table SIZE_THRESHOLDS, sizeOfCounts, measureNamedArea, measureLookupResults, renderMeasureLine and the type UnsizedIntent, and add filesNamedBy beside the lookup output types. Nothing calls them yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "The baseline files exist in the Story's folder with a note of the commit and the commands",
+      "sizeOfCounts maps the two counts through the one table, takes the larger size, and throws RangeError for a negative or fractional count",
+      "measureNamedArea counts the entities of the scope's area and their distinct file paths, and gives XS, determined, for an empty area",
+      "measureLookupResults sums the returned counts, counts each file once through filesNamedBy, records the characters, and is not determined (XL) when no output carries a completeness record",
+      "filesNamedBy has one case per member of the output union with no default, and returns no file for the three data outputs and for a failed or unsupported output",
+      "Every measure records a hint without letting it change the size; renderMeasureLine states size, source, counts, note and hint",
+      "No existing file other than src/analyze/explore/types.ts is changed, and no existing behaviour changes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)"
+      },
+      {
+        "level": "unit",
+        "name": "measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)"
+      },
+      {
+        "level": "unit",
+        "name": "measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'"
+      },
+      {
+        "level": "unit",
+        "name": "measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)"
+      },
+      {
+        "level": "unit",
+        "name": "measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record"
+      },
+      {
+        "level": "unit",
+        "name": "every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)"
+      },
+      {
+        "level": "unit",
+        "name": "renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given"
+      },
+      {
+        "level": "unit",
+        "name": "filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

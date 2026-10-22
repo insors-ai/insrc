@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-759994fc-97eb-41ec-95fc-ff5dc3d3567f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.982Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture the real-world config regression fixture and the pre-change defaults literal",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6e92ce75fac05cae1dbc7505d96e635f166ac22503ee1fd0b465dd70c28c1c1",
+        "at": "2026-10-22T12:44:40.986Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.987Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Capture the real-world config regression fixture and the pre-change defaults literal",
+    "summary": "Take a verbatim copy of an actual ~/.insrc/config.json into src/config/__tests__/fixtures/ (redacting only secrets, preserving structure) that carries populated values in all three catalog-unenumerable namespaces — models.analyze.roleTiers.<roleId>, models.analyze.byRepo.<absPath>.*, models.agents — plus at least one key absent from the current 41-row CONFIG_CATALOG and one key whose value is type-invalid for its catalog row. Keep the untouched original alongside it as the pre-change baseline so before/after can be diffed byte-for-byte. This must be a captured document, not hand-authored: no s1 exploration touched those namespaces' on-disk shape, and blind preservation is the acceptance requirement with the least evidence behind it — so commit a provenance note (README or JSON header comment file) recording that it was captured from a real ~/.insrc/config.json, the capture date, and exactly which values were redacted and how, with every redaction a structure-preserving substitution (same key set, same value types, same nesting depth as the original). Also capture, as a second fixture in the same directory, the hand-rolled defaults literal currently at src/daemon/index.ts:180-192 verbatim as JSON — t9 needs it as the pre-change baseline to prove first-boot equivalence, and it disappears from the source when t9 lands. No production code is touched by this task.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "A fixture file exists under src/config/__tests__/fixtures/ containing non-empty objects at models.analyze.roleTiers, models.analyze.byRepo (with at least one absolute-path key), and models.agents",
+      "The fixture contains at least one dot-path present in CONFIG_CATALOG whose value violates the row's declared type, and at least one CONFIG_CATALOG path that is absent entirely",
+      "An unmodified copy of the same document is committed as the before-baseline, and the two are byte-identical at capture time",
+      "A provenance note is committed alongside recording the real-config origin, the capture date, and the redaction list; each redaction is structure-preserving (same key set, value types and nesting depth as the captured original), stated explicitly so a reviewer can distinguish the fixture from a hand-authored guess",
+      "A second fixture holds the pre-change src/daemon/index.ts:180-192 defaults literal verbatim as JSON, with its key set matching the literal exactly",
+      "Both fixtures parse as valid JSON and contain no credential or token values"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "captured config fixture — parses, carries non-empty models.analyze.roleTiers / models.analyze.byRepo (absolute-path key) / models.agents, one absent catalog path and one type-invalid catalog path"
+      },
+      {
+        "level": "unit",
+        "name": "fixture baseline integrity — the before-baseline copy is byte-identical to the captured document and neither contains a credential or token value"
+      },
+      {
+        "level": "unit",
+        "name": "captured defaults-literal fixture — key set matches the pre-change src/daemon/index.ts:180-192 literal exactly"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

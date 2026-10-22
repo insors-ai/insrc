@@ -30,5 +30,5 @@ A BUILD record for a standalone story must be recognised as standalone and filed
 - **[[c3]]** `code` `src/workflow/storage.ts` — "for (const artifactId of [defineArtifactId(epicHash), issueArtifactId(epicHash)]) {"
 - **[[c4]]** `code` `src/workflow/storage.ts` — "workItemKind: standalone ? 'standalone' : 'epic',"
 - **[[c5]]** `code` `src/workflow/runners/build/completion-record.ts` — "const standaloneFlag = inheritedStandalone(repoPath, ref.epicHash);"
-- **[[c6]]** `prior-artifact` `.insrc/artifacts/BUILD-c4c420c22b71651e-S001.json` — "as first written: meta = { workflow: 'build', epicHash, storyId, createdAt, updatedAt } with no standalone and no sizeClass"
+- **[[c6]]** `prior-artifact` `.insrc/artifacts/BUILD-c4c420c22b71651e-s1.json` — "as first written: meta = { workflow: 'build', epicHash, storyId, createdAt, updatedAt } with no standalone and no sizeClass"
 - **[[c7]]** `prior-artifact` `ISSUE-43d72766d3b9a2c1` — "build-record-writer-mis-files-standalone"

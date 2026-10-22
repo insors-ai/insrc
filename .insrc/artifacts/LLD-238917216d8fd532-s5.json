@@ -24,20 +24,61 @@
     "hldBaseRunId": "wf-1789799576767-kl7v1b",
     "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-19T13:40:52.980Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-19T13:55:42.427Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "603fbdf79a7080353a1651c348337901b55d6cba6eeb52645d2bd2566111f3db",
+        "at": "2026-09-19T13:39:59.270Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T13:55:42.427Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-19T13:40:52.980Z",
+        "report": {
+          "entityId": "LLD-238917216d8fd532-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-238917216d8fd532-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

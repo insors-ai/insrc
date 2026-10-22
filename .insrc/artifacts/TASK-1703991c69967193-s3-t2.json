@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19c9598d-b019-473d-b2fd-dcf18eeae84e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.178Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the daemon-side inferParentCandidates function",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "317012867c476964386c748481a7651a1c40f7c71594440604c21e848f091c0b",
+        "at": "2026-10-22T12:43:14.178Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.179Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the daemon-side inferParentCandidates function",
+    "summary": "Implement inferParentCandidates(db: DbClient, req: { touchedPaths; defectDescription; repoPath }): Promise<InferredCandidates> daemon-side. FIRST resolve readArtifactCore's visibility: it is currently module-private in storage.ts (line 213) — export it or add a sibling accessor before composing it. Graph tier: map each touched path to its indexed entity, expand via findCallers/inNeighbors (src/db/search.ts, src/db/graph/edges.ts), map owning entities back to a work item through the artifact tree (listWorkItems/listArtifactMdPaths + readArtifactCore), producing RankedCandidate[] with raw score + cited evidence. Semantic tier: embed(defectDescription) (serial, never Promise.all) then artifact-vec ANN (src/db/lance/artifact-vec.ts) over epic/story artifact vectors. Returns raw scores ONLY — no threshold, no attach decision. Empty candidates is a valid empty array, not an error.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Returns { graph, semantic } RankedCandidate arrays; a touched path owned by a story's artifacts yields a graph candidate carrying that WorkItemRef + evidence.",
+      "An unindexed touched path contributes no graph candidate but does not throw; all-unindexed yields graph:[].",
+      "No threshold/filter is applied inside the function; embeds are issued serially (for...of).",
+      "readArtifactCore is reachable from the daemon inference (exported or via a sibling accessor); tsc + existing db test subset green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "inferParentCandidates: a touched path whose entity is owned by a story's artifacts yields a graph RankedCandidate with that WorkItemRef + cited evidence"
+      },
+      {
+        "level": "unit",
+        "name": "inferParentCandidates: unindexed path contributes no graph candidate; other paths still resolve"
+      },
+      {
+        "level": "unit",
+        "name": "inferParentCandidates: returns raw scores only; no filtering/threshold applied (policy stays in the controller)"
+      },
+      {
+        "level": "unit",
+        "name": "inferParentCandidates: embeds are issued serially (for...of), not Promise.all"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

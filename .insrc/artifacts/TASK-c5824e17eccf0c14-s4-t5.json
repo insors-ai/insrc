@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed602c0b-e7ec-4a61-b58b-2c0d0de4eaad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.124Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "First-class 'ux' ReviewDimension: union literal + judgeUx + hasUxAcceptance gate",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8310503762d865f180e72ce0043a19471c9de178c53721cf9b748e89da240bb",
+        "at": "2026-10-22T12:44:39.124Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.125Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "First-class 'ux' ReviewDimension: union literal + judgeUx + hasUxAcceptance gate",
+    "summary": "Add 'ux' to the ReviewDimension union (types.ts:36). Add a judgeUx dimension judge (a dimensions/ux/ module, or alongside functional-coverage) that judges the built experience against the referenced ux-mock companion + authored uxDefinition and reports DimensionFinding{ dimension:'ux' } (HIGH when uxAcceptance required but no uxDefinition/ux-mock evidence). Add hasUxAcceptance(subject):boolean (true when the recorded adherence selection includes 'ux' OR a uxDefinition is present), mirroring hasFunctionalDefinition/hasDiagramReferences. Validate the recorded adherence selection against the AdherenceDimension set.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "ReviewDimension union includes 'ux'",
+      "judgeUx reports dimension:'ux'; emits HIGH when uxAcceptance is required but no uxDefinition/ux-mock is present",
+      "hasUxAcceptance returns true when the adherence selection includes 'ux' or a uxDefinition is present, false otherwise",
+      "the recorded adherence selection is validated against the AdherenceDimension set"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "hasUxAcceptance(subject): true when the recorded adherence selection includes 'ux' OR a uxDefinition is present; false otherwise"
+      },
+      {
+        "level": "unit",
+        "name": "judgeUx: emits dimension:'ux' findings; HIGH when uxAcceptance is required but no uxDefinition/ux-mock evidence is present"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6d593fd3-d90e-4239-8b4a-f0982c89ea82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.486Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Wire runOnboarding into extension.ts (replace the 3 offer IIFEs) + declare the vscode:uninstall hook",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5184763a38e29cd1945083977f0421b7c37471cfcb6eeca375d204eb0894137a",
+        "at": "2026-10-22T12:44:14.486Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.487Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire runOnboarding into extension.ts (replace the 3 offer IIFEs) + declare the vscode:uninstall hook",
+    "summary": "In extension.ts (sole vscode importer): construct the default OnboardingStore over context.workspaceState (per-root namespaced key distinct from S004's register-dismissed key; get/update try-guarded) and REPLACE the three independent fire-and-forget offer IIFEs (offerDaemonInstall/offerHostWiring/offerWorkspaceRegistration, ~lines 72/85/97) with ONE guarded fire-and-forget runOnboarding({ controller, registrar, registry, consent, status, folders, prompts, onboarded }) call - preserving the S001 never-throws/off-UI contract. activateExtension + registerDaemonCommands/registerHostCommands/registerWorkspaceCommands stay untouched (ac2). ADD scripts['vscode:uninstall'] = 'node ./out/uninstall.js' to package.json (the ac3 hook declaration; its execution is completed by S006 emit/.vsix per the resolved open question). The daemon/hosts/workspace offer imports stay for reuse by runOnboarding.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "extension.ts calls runOnboarding exactly ONCE (guarded fire-and-forget) and NO LONGER fires the three separate offer IIFEs; the scattered-pop-up defect is removed (S001 never-throws preserved)",
+      "extension.ts constructs the OnboardingStore over context.workspaceState (per-root key distinct from the S004 register-dismissed key; get/update guarded)",
+      "package.json declares scripts['vscode:uninstall'] = 'node ./out/uninstall.js'",
+      "the vscode-plugin package typechecks (tsc -p tsconfig.json); the S002/S003/S004 durable commands remain in contributes.commands (subset check, k6)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extension.ts calls runOnboarding exactly ONCE (guarded fire-and-forget) and NO LONGER fires the three separate offer IIFEs - the scattered-pop-up defect is gone (S001 never-throws preserved)"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: vscode-plugin/src/onboarding/ imports only node builtins + the shipped daemon/hosts/workspace command modules + the s1 surfaces - no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+      },
+      {
+        "level": "unit",
+        "name": "package.json declares scripts['vscode:uninstall'] = 'node ./out/uninstall.js' (the ac3 hook is declared)"
+      },
+      {
+        "level": "smoke",
+        "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with src/onboarding/ + src/uninstall.ts + the extension.ts rewrite"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

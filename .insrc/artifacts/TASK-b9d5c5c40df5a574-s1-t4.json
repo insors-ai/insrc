@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dc55234c-7036-4c17-8e23-c7cab5a8c80f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.568Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Every lookup output carries a completeness record",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "defa575e540f0e530e7b175317e433f69d6afa05c96f4a35784495813c684c78",
+        "at": "2026-10-22T12:44:24.568Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.568Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Every lookup output carries a completeness record",
+    "summary": "Add `completeness` to each of the twenty lookup output types and fill it in each lookup with its basis and every count limit it reaches (several for data-model.trace); read the search's omissions into the record in search.text and config.trace, and the data driver's cut flag in the table listing. The fields it replaces stay in place in this task, so the type checker stays green.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "A table test over all twenty lookup types finds a completeness record with the stated basis on each output",
+      "Each lookup that stops at a count reports the limit with its scope; data-model.trace reports its overall limit and both per-target limits",
+      "search.text and config.trace turn skipped files, shortened lines and a reached limit into the record",
+      "The table listing reads the data driver's cut flag into a limit",
+      "Every graph-based result carries the note that the stored graph's own coverage is not established",
+      "tsc is clean and the analyze suites pass under Node 22"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a table test over all twenty lookup types finds a completeness record with its stated basis"
+      },
+      {
+        "level": "unit",
+        "name": "each lookup that stops at a count reports the limit with its scope"
+      },
+      {
+        "level": "unit",
+        "name": "data-model.trace reports its overall limit and both per-target limits"
+      },
+      {
+        "level": "unit",
+        "name": "search.text and config.trace turn the search's omissions into skipped, partlyRead and limited"
+      },
+      {
+        "level": "unit",
+        "name": "the table-listing lookup reads the data driver's cut flag into a limit"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

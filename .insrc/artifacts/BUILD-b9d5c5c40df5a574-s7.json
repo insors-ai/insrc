@@ -6,9 +6,36 @@
     "createdAt": "2026-10-08T14:37:06.508Z",
     "updatedAt": "2026-10-09T10:41:54.380Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T10:41:55.381Z",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "epicCreatedAt": "2026-10-06T17:47:38.720Z"
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "56fe3cb63f62245cec5d81372af7ef3d177b70975b4ea56a5f830d39e0c74243",
+        "at": "2026-10-08T14:37:06.508Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T10:41:55.381Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -85,14 +112,14 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-9b4a74dcdf47852a-S001.json"
+          "file": ".insrc/artifacts/BUILD-9b4a74dcdf47852a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T10:41:54.380Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-9b4a74dcdf47852a-S001.json"
+          "file": ".insrc/artifacts/CR-9b4a74dcdf47852a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T10:41:54.380Z"
@@ -113,7 +140,7 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json"
+          "file": ".insrc/artifacts/LLD-9b4a74dcdf47852a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T10:41:54.380Z"
@@ -141,14 +168,14 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-9b4a74dcdf47852a-S001.json"
+          "file": ".insrc/artifacts/PLAN-9b4a74dcdf47852a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T10:41:54.380Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-9b4a74dcdf47852a-S001.json"
+          "file": ".insrc/artifacts/TESTS-9b4a74dcdf47852a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-09T10:41:54.380Z"

@@ -20,7 +20,27 @@
     "issueHash": "1b6efc825063871b",
     "epicSlug": "daemon-update-does-not-reach-mcp",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "epicCreatedAt": "2026-10-04T05:11:18.745Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "9f1b6f336d6df48ddbbdc4fc41de28310a7c0ec9f97b9450b3c45aa23c823bf9",
+        "at": "2026-10-04T05:11:18.745Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Updating the daemon does not update the MCP tools, and nothing says so",

@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ab934d0926ef5dc7",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T11:11:47.931Z",
+    "updatedAt": "2026-10-16T11:27:47.529Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicCreatedAt": "2026-10-16T09:34:47.379Z",
+    "epicSlug": "set-cheap-tier-claude-haiku-codex",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f79c923ed5cc64d97b7394cd5f196935918864a69feebb8f5ca3d69b445c6925",
+        "at": "2026-10-16T11:11:47.931Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T11:27:48.251Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "The cheap tier now defaults to cli-claude / haiku in DEFAULT_TIERS, the config catalog and the plugin manifest; the installer's claude choice writes cheap haiku and its codex choice writes gpt-6-astra, gpt-6.1-sol and gpt-6-luna (both copies); the shipped cloud catalog lists the three GPT-6 Codex models; the summariser follows the cheap tier and pins its model for a CLI, replacing an Ollama-shaped id with the built-in cheap model for that CLI (haiku, gpt-6-luna) so the CLI default never runs; docs, site pages and stale comments name the new values. Existing config files are unchanged.",
+    "testRecord": {
+      "md": "docs/standalone/set-cheap-tier-claude-haiku-codex-E20261016ab934d09/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "docs/index.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "docs/installation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-code-references-docgen-companion-html-E20261016f52996c2/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/set-cheap-tier-claude-haiku-codex-E20261016ab934d09/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "scripts/insrc-daemon-install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "site/cli.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/role-router.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/summariser-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/role-router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/shaper-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/models/cloud-model-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/model-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/tier-defaults.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/config/analyze.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/model-recommender.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/insrc-daemon-install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:27:47.529Z"
+      }
+    ],
+    "commit": "30ea327c"
+  }
+}

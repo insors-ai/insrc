@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6451b049-3884-4dd2-8eca-37334b8fa751",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.319Z",
+    "epicCreatedAt": "2026-07-28T15:15:41.182Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5ef8ac073911ace",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Tests: per-family fixtures + registration + edge cases",
+      "parent": {
+        "entityId": "STORY-a5ef8ac073911ace-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5ef8ac073911ace-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a5ef8ac073911ace-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "85029cdff23bc5189444a300246000dd456f02a6ff0326399e42ae1e56d71a97",
+        "at": "2026-10-22T12:44:06.322Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.323Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: per-family fixtures + registration + edge cases",
+    "summary": "Extend src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts (or a sibling): tmp-fixture integration tests for each new runtime (Chart.yaml+templates+values; multi-stage Dockerfile+compose; GHA workflow+.gitlab-ci.yml) asserting output shapes; unit tests for GHA `on` normalization, GitLab reserved-key exclusion, Dockerfile multi-stage/build-only edge cases; registration-parity (INFRA_RUNTIMES/INFRA_TEMPLATES both 8 + produces-key match); description-trim assertion; parse-failure-swallowed + empty-scope cases.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "integration tests cover helm/docker/ci output shapes over tmp fixtures",
+      "unit tests cover on-normalization, gitlab reserved-key exclusion, dockerfile edges, registration parity, description trim, parse-failure-swallowed, empty scope",
+      "full infra + analyze test sweep passes; tsc + build clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a malformed YAML fixture file is skipped (not thrown) and siblings still inventoried; an empty scope yields a well-formed empty inventory (not an error)"
+      },
+      {
+        "level": "unit",
+        "name": "the assembled infra test file wires all new cases into the existing infra-runtimes.test.ts harness (registerBuiltinRuntimes/getRuntime) and the full sweep is green"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

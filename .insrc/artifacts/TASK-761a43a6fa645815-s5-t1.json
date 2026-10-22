@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1697ba70-e03f-44dc-8d41-37933fb79dc0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.225Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Create quality.ts — schema, prompt builder, judge",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d797ae5d13270b38b405146015037d548e1a736984f69d68b3d5911535dccb2e",
+        "at": "2026-10-22T12:43:47.225Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.226Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Create quality.ts — schema, prompt builder, judge",
+    "summary": "Add src/workflow/code-review/dimensions/quality.ts mirroring the shipped conventions.ts/coverage.ts: (a) QUALITY_FINDINGS_SCHEMA — the adherence per-finding shape (StructuredSchema, additionalProperties:false, findings[] of {severity enum HIGH|MED|LOW, location, message}) but its distinctive optional field is counterpartRef (NOT expectationRef) + optional confidence enum 'breach'|'observation'; required=['findings'], each finding requires severity/location/message; (b) buildQualityPrompt(subject, grounding, extraNote): LLMMessage[] with the QUALITY system charge (report the FOUR risk classes correctness/avoidable-complexity/duplication/unhandled-error each with location + severity; when flagging duplication name the existing counterpart in counterpartRef, citing only symbols visible in the grounding or their callers/callees; cap matters of taste at LOW severity so they never block; no manufactured findings) and the user message placing grounding.symbols (signature/callers/callees) then the output-shape reminder TRAILING; (c) private fileOf(location) splitting on ':'; (d) judgeQuality(subject, grounding, provider): Promise<DimensionResult> — one StructuredCall over provider.completeStructured(buildQualityPrompt(...note), QUALITY_FINDINGS_SCHEMA), a StructuredValidator via validateAgainstSchema(QUALITY_FINDINGS_SCHEMA, raw), await withStructuredRetry(call, validate, 3) POSITIONAL, then map output.findings to DimensionFinding{dimension:'quality'} spreading counterpartRef/confidence conditionally (exactOptionalPropertyTypes) and dropping any finding whose fileOf(location) is outside new Set(subject.changedFiles). Reads ONLY grounding.symbols + subject.changedFiles (not approvedPlan/buildRecord). Imports use .js extensions; type-only imports use import type; no console.log; no Promise.all.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/code-review/dimensions/quality.ts exists exporting judgeQuality, buildQualityPrompt, QUALITY_FINDINGS_SCHEMA",
+      "QUALITY_FINDINGS_SCHEMA's distinctive optional field is counterpartRef (NOT expectationRef); each finding requires severity/location/message; counterpartRef + confidence optional; additionalProperties:false",
+      "judgeQuality issues exactly ONE provider.completeStructured call (no Promise.all) wrapped in withStructuredRetry(call, validate, 3) and propagates the throw on 3-attempt exhaustion (no catch-to-empty)",
+      "returned findings all carry dimension:'quality', map counterpartRef + confidence through, and every finding.location file is in subject.changedFiles (out-of-scope dropped); reads only grounding.symbols + subject.changedFiles",
+      "buildQualityPrompt places grounding.symbols (signature/callers/callees) then the output-shape reminder at the TAIL; system charge enumerates the four risk classes, instructs counterpartRef on duplication, and caps matters of taste at LOW severity",
+      "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "QUALITY_FINDINGS_SCHEMA: distinctive field is counterpartRef (not expectationRef); per-finding requires severity/location/message; counterpartRef + confidence optional; additionalProperties:false"
+      },
+      {
+        "level": "unit",
+        "name": "buildQualityPrompt: grounding.symbols (signature/callers/callees) then output-shape reminder TRAILING; charge enumerates the four risk classes, instructs counterpartRef on duplication, caps taste at LOW"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

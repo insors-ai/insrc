@@ -11,7 +11,26 @@
     "epicHash": "c5824e17eccf0c14",
     "storyId": "s2",
     "epicSlug": "make-workflow-framework-s-generated-artifact",
-    "epicCreatedAt": "2026-09-27T14:36:39.039Z"
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "f036b23b9fd4408b073178c07063da9721017b1234055f1d219df5594cb73253",
+        "at": "2026-09-28T05:33:26.623Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

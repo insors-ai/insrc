@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e2558171-d47d-46d4-a041-4c078cb28433",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.177Z",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add BuildRecord.body.summary + the `## Summary` omit-slot render section",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b72686c1746af2b-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec2eaf9173b401b7b9a2fe8739da87f5842b9de0e5348d693a3244f6d8fad712",
+        "at": "2026-10-22T12:44:04.177Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.178Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add BuildRecord.body.summary + the `## Summary` omit-slot render section",
+    "summary": "In src/workflow/runners/build/standalone-record.ts: (a) add `readonly summary?: string | undefined` to the BuildRecord.body interface (additive, optional); (b) in renderPlanBuildRecordMd add a `## Summary` section pushed ONLY when rec.body.summary is a non-empty (trimmed) string, mirroring the existing `## Changes`/`## Feedback` omit-slot pattern, positioned reader-first (after the header/commit line). Do NOT touch mergeWithPrior (its {...prior.body, ...rec.body} already carries the new field and preserves an omitted one) or the S002-owned standalone resolution. In-cycle feedback needs NO new code — the existing appendFeedback writer already appends to the BUILD json and renderPlanBuildRecordMd already renders `## Feedback`.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "BuildRecord.body has an additive optional `summary?: string` field; every existing record json stays valid (no data rewrite)",
+      "renderPlanBuildRecordMd emits a `## Summary` section carrying the narrative only when body.summary is a non-empty string; an empty/whitespace or absent summary emits no heading",
+      "A record with neither summary nor feedback renders byte-identically to the pre-S003 output (k4)",
+      "mergeWithPrior, the persistBuildRecord signature, and the S002-owned standalone resolution are unchanged (sc1 consumed as-is); npx tsc --noEmit is clean"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "smoke: npx tsc --noEmit is clean after adding body.summary + the `## Summary` omit-slot section"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

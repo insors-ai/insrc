@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-18T16:46:34.160Z",
     "parentRef": {
       "slug": "keep-stored-good-summary-when-full"
+    },
+    "epicCreatedAt": "2026-10-18T16:45:26.670Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "15708b54dc9926eb8fbe3e0f9ac95986b960f8907cc96eece4deb1af42a0e667",
+        "at": "2026-10-18T16:45:26.670Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T16:46:34.160Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

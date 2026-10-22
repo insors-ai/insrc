@@ -18,8 +18,8 @@ ambiguous: "depth" could equally mean rendered DOM depth, and the two differ.
 | :--- | ---: |
 | `HLD-bfe98ff7f97178cf` (this Epic) | 2 |
 | `LLD-bfe98ff7f97178cf-s2` (this Epic) | 4 |
-| `LLD-85e6a58693579b6d-S001` | 3 |
-| `LLD-7c219c7471d79496-S001` | 4 |
+| `LLD-85e6a58693579b6d-s1` | 3 |
+| `LLD-7c219c7471d79496-s1` | 4 |
 
 **Measured real maximum: element depth 4.**
 

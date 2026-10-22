@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f66b655a-53f3-4339-bc6d-8f0b036d1983",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.764Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the static ConfigKeyMap (native-key <-> catalog-path <-> ConfigOption)",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5317dfa7da77bcb4318d99c34e0520864bcc750a4d044ea44c4a2a52b53e7d3a",
+        "at": "2026-10-22T12:43:28.764Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.764Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the static ConfigKeyMap (native-key <-> catalog-path <-> ConfigOption)",
+    "summary": "Add a pure, VS-Code-free module that derives, from the imported global CONFIG_CATALOG, a static bidirectional table pairing each native key (`insrc.<path>`) with its catalog path and its ConfigOption (type + enumValues for validation). This is the single source sc8's pull/apply lookups and the manifest<->catalog contract test both read. Private to the sc8 boundary.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "a VS-Code-free module exports a ConfigKeyMap covering all 31 global CONFIG_CATALOG options with native key, catalog path, and ConfigOption",
+      "the module imports CONFIG_CATALOG from the daemon config-catalog source and imports no 'vscode'",
+      "lookups are 1:1 and total over the global options (nativeKey->option and path->option both resolve)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ConfigKeyMap covers all 31 global options and resolves both nativeKey->option and path->option 1:1"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

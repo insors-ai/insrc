@@ -19,128 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "bfe98ff7f97178cf",
     "epicSlug": "build-vs-code-plugin-ui-integration",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "n1",
-          "ref": "c10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "marked v4.3.0 is a declared runtime dependency of the VS Code plugin and esbuild bundles it, so a markdown renderer already ships in the VSIX and S001 reuses rather than builds one.",
-          "evidence": "The read anchor is exact: vscode-plugin/package.json:744 reads '\"marked\": \"^4.3.0\"', mirrored at vscode-plugin/package-lock.json:12. The bundler is real: vscode-plugin/esbuild.mjs:56 reads '// Run as a script (`node esbuild.mjs`) -> bundle into ./out.' A markdown renderer already ships in the VSIX, so S001 reuses rather than builds one.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n2",
-          "ref": "c10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "MARKED_SRC in vscode-plugin/src/chat/webview-marked.ts is GENERATED from the npm package by gen-webview-libs.mjs, so the vendored renderer cannot drift from the declared dependency.",
-          "evidence": "vscode-plugin/gen-webview-libs.mjs:30 reads '`export const MARKED_SRC: string = ${JSON.stringify(markedSrc)};\\n`;' — the vendored string is GENERATED from the npm package rather than hand-copied, so it cannot silently drift from the declared dependency. This strengthens the reuse case: the renderer is single-sourced.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n3",
-          "ref": "c10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The chat surface's shipped render path is marked.parse into innerHTML, then the guardMd sanitiser, with a textContent fallback on throw — and guardMd is test-pinned.",
-          "evidence": "vscode-plugin/src/chat/render-registry.ts:228 carries the whole pattern in one expression — \"try{div.innerHTML=(typeof marked!=='undefined'&&marked&&marked.parse)?marked.parse(src,...):src;guardMd(div);}catch(e){div.textContent=src;}\" — library render, sanitiser scrub, textContent fallback. It is test-pinned at render-registry.test.ts:384, which asserts /function guardMd\\(/ 'defines the sanitizer'. S001 has a shipped, tested pattern to reuse.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n4",
-          "ref": "c10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "marked REPLACED this plugin's own incomplete hand-rolled markdown parser, which is why the JetBrains hand-rolled conservative-subset renderer is not the reuse target and the extraction was reversed.",
-          "evidence": "render-registry.ts:210 reads '// S001 (bugfix): assistant content is rendered by the bundled `marked` library (GFM: tables,' and :211 '// ordered/nested lists, code, blockquotes — replacing the incomplete hand-rolled parser)'. The single source match is decisive: this plugin already tried a hand-rolled parser and replaced it. Adopting the JetBrains conservative-subset renderer would have regressed the VS Code surface, which is precisely why the extraction was reversed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n5",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The docs-review surface's contract test still asserts no innerHTML on that surface, so adopting the chat pattern there requires deliberately updating that test.",
-          "evidence": "The read anchor is exact: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:243 reads \"test('rendered shell: one nonce, strict CSP, docs-review surface, no innerHTML', () => {\". The stricter discipline on the docs-review surface is real and still in force, so adopting the chat pattern there is a deliberate, test-changing decision — exactly as k1 now states. (As last round: only the test's name and intent are pinned by this evidence, not its assertion mechanism; the HLD should read the body before amending it.)",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n6",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "INTERNAL CONSISTENCY RESOLVED: the c2 assumption no longer forbids relaxation outright. It now states the discipline may be satisfied as-is OR the marked+guardMd pattern adopted with the contract test updated deliberately per k1, matching k1's own wording, so the two clauses agree and the earlier contradiction is gone.",
-          "evidence": "The contradiction is resolved in the artifact body. The old absolute phrasing 'rather than relaxing it' now survives ONLY in the appended review history — DEF.md:192 (the prior finding row) and :207 (the recorded proposed fix) — and no longer in any live clause. The live assumption at DEF.md:75 ends 'The discipline is never relaxed incidentally', and k1 at DEF.md:82 says 'never an incidental relaxation'. The two now say the same thing in the same direction, so an HLD reading both gets one unambiguous rule: satisfy the discipline as it stands, or adopt the marked+guardMd pattern and update the contract test deliberately in the same change.",
-          "action": "none — verified sound; the earlier MED is resolved",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n7",
-          "ref": "c6",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "ArtifactReviewView still carries no companion or structured-body field, so the k2 additive extension remains required for S003/S004.",
-          "evidence": "src/workflow/artifact-content.ts:45 reads 'export interface ArtifactReviewView {' with renderedMarkdown at :48 ('the artifact's own .md read verbatim (k5/lc1)'). No companion or structured-body field is present, so the k2 additive extension remains necessary for S003/S004 — unaffected by the reversal, which only changed the renderer decision.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n8",
-          "ref": "c11",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "CompanionKind remains a closed three-member union, so S003's lc1 routing of the unproduced diagram-html still applies.",
-          "evidence": "src/workflow/artifacts/companion/types.ts:24 still reads \"export type CompanionKind = 'diagram-mermaid' | 'diagram-html' | 'ux-mock';\". Three members, unchanged, so S003's lc1 routing of the declared-but-unproduced diagram-html to the ac3 cannot-be-shown path remains correct and necessary.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n9",
-          "ref": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The review pane's read path remains workflow.pending plus workflow.artifactContent over the shared client.",
-          "evidence": "The docs-review-client.ts read anchor resolved and 'workflow.artifactContent' resolves widely (50 matches, truncated). The read path is unchanged by the reversal; the Epic's own clauses at DEF.md:63 (non-goal 2) and :72 (the c6 assumption) both name workflow.pending / workflow.artifactContent consistently.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n10",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The reversal is internally complete: k7 enumerates exactly two obligations, non-goal 3 rules out both JetBrains rendering and renderer convergence, and no extraction language remains in the Epic body.",
-          "evidence": "The reversal is complete in the body. 'check for both obligations' resolves at DEF.md:88 — k7 now enumerates two obligations, the JetBrains no-regression one having been dropped. 'shared markdown-parser module' returns ZERO matches anywhere. 'EXTRACTS the markdown parser' returns exactly ONE match, at DEF.md:201 — inside the appended review-history table, not a live clause. No extraction language remains in the Epic proper.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "n11",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The Story dependency graph is unchanged and acyclic — S002 and S003 depend on S001, S004 on S003 — with S001 resized to M because its renderer is reused while S003/S004 remain L.",
-          "evidence": "Judged from the artifact text supplied to this review, since the grep only confirms the S004 ids exist (5 matches, all within this Epic's DEF): S002 'Depends on: s1', S003 'Depends on: s1', S004 'Depends on: s3' — a tree rooted at S001, no cycle. S001 reads 'size: M' (reduced from L now that its renderer is reused), S002 'size: M', S003 and S004 'size: L' — consistent with diagram and UX-mock rendering remaining net-new.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 11
-      },
-      "reviewedAt": "2026-09-29T09:44:36.507Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-29T09:44:41.727Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5e0a06c00526ec9425f7b0bf767434466bef78551cf22f537034186f2738dc99",
+        "at": "2026-09-29T08:46:37.128Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T09:44:41.727Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-09-29T09:44:36.507Z",
+        "report": {
+          "entityId": "DEF-bfe98ff7f97178cf",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-bfe98ff7f97178cf-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

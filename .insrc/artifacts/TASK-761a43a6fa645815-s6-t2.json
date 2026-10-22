@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9e0ac677-f614-4c99-8111-edae0ebd71f4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.500Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Additive storage peers codeReviewArtifactId / codeReviewArtifactPaths",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "be1e3d8207c6616927722828c94e5182944b66299c635e7994a0a852cef0f9ac",
+        "at": "2026-10-22T12:43:47.500Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.501Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Additive storage peers codeReviewArtifactId / codeReviewArtifactPaths",
+    "summary": "Add to src/workflow/storage.ts, alongside buildArtifactId (:161) + buildArtifactPaths (:285): codeReviewArtifactId(epicHash, storyId): string => `CR-${epicHash}-${storyId}`, and codeReviewArtifactPaths(repoPath, epicHash, storyId, epicSlug?): {readonly md; readonly json} with json = join(repoPath, ARTIFACTS_DIR, `${codeReviewArtifactId(epicHash, storyId)}.json`) and md using the fileSeg(epicSlug ?? epicHash) convention buildArtifactPaths uses (choose the code-review docs dir or ARTIFACTS-adjacent per the sibling pattern). No existing storage function is edited; the CR- namespace is new.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/storage.ts exports codeReviewArtifactId => 'CR-<epic>-<story>' and codeReviewArtifactPaths => {md, json}",
+      "codeReviewArtifactPaths.json lands under ARTIFACTS_DIR ('.insrc/artifacts') as `${codeReviewArtifactId(...)}.json`, mirroring buildArtifactPaths",
+      "the CR- prefix is distinct from every existing artifact id prefix (DEF/HLD/LLD/PLAN/BUILD/EXT/SPEC); no existing *ArtifactId/*ArtifactPaths edited",
+      "tsc --noEmit is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "codeReviewArtifactId returns 'CR-<epic>-<story>' (starts 'CR-', distinct from BUILD-/LLD-/PLAN-...); codeReviewArtifactPaths.json is join(repoPath, ARTIFACTS_DIR, id+'.json') — asserted in the runner test's ac3"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

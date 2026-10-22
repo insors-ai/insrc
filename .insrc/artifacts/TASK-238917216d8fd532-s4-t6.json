@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4245acd3-eb76-4a40-ae9e-2457bd6c217e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.734Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Submit action wired into the S003 comment panel",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c0b3a515cb43e9979e0a21a62b3b1145ec0fdbaf702ae65edb2d6d02b5e3318",
+        "at": "2026-10-22T12:43:18.734Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.735Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Submit action wired into the S003 comment panel",
+    "summary": "Wire Submit end-to-end: extract the pure submit-outcome DECISION (recorded===submitted -> clear the buffer, else keep it) into a testable Kotlin function; the ArtifactContentPane/ArtifactCommentLayer Submit path reads CommentBuffer.snapshot(), maps to DTOs, calls gateway.resolveComment off-EDT, marshals the result to the EDT, applies the decision (clear+re-push+refresh the S002 view on full success, else keep+notify via the 'insrc' group). The comment-layer.js Submit button + JBCefJSQuery bridge call is the manual/backstopped residual (recorded honestly in the CR).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "The pure submit-outcome decision is a standalone testable function (recorded===submitted -> clear, else keep)",
+      "Submit reads CommentBuffer.snapshot(), calls resolveComment off-EDT, and marshals the result to the EDT",
+      "On Recorded with recorded===submitted the buffer is cleared + re-pushed; otherwise the whole buffer is kept and the failure surfaced (ac3)",
+      "Submit is unavailable/no-op with an empty buffer or in the native (non-JCEF) fallback"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "submit-outcome decision: recorded===submitted -> clear the buffer; else keep the whole buffer"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

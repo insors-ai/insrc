@@ -23,20 +23,56 @@
     "storyId": "s3",
     "lldRunId": "wf-1789882506964-6msmw0",
     "lldEffectiveHash": "ee39a9f5fd11df006188d3b2038117bb0cd01aa61eaff9cccc9ea69fbfb78612",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-20T05:54:51.521Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-20T05:56:20.527Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "44b5b8780c79212cff8c33a19236e9fa79264d8619c7623c7f8f5f71cc7b36a6",
+        "at": "2026-09-20T05:54:00.518Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-20T05:56:20.527Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-20T05:54:51.521Z",
+        "report": {
+          "entityId": "PLAN-b5f333f8d7ba421b-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-b5f333f8d7ba421b-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

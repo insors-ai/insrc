@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4cc1eef2-47ca-43d6-874f-8cc4ca48dcfe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:20.281Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the config.show-backed perRoleOverrides gateway read",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7e46867d9168a5d20767cb11b44b62d04f34ca09a8463369aefba8ae452464de",
+        "at": "2026-10-22T12:44:20.281Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:20.283Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the config.show-backed perRoleOverrides gateway read",
+    "summary": "In DaemonGateway.kt add PerRoleOverridesResult (sealed Loaded(overrides: Map<String,String>) | Unavailable(reason: String)), add perRoleOverrides(): PerRoleOverridesResult to the interface, implement it in DaemonGatewayImpl over rpc.call(METHOD_CONFIG_SHOW='config.show') — parse data.models.tasks as? Map, keep only string-valued entries, missing/non-map -> Loaded(empty), catch DaemonUnavailableException/RuntimeException -> Unavailable — + a METHOD_CONFIG_SHOW const; add the DaemonGatewayService delegate override; add a perRoleOverrides stub to the 4 test doubles (DaemonLifecycleServiceTest throws AssertionError, the 3 Onboarding tests return Unavailable('not used')). Land the gateway Fake + WireRpc real-parse tests with this task.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonGateway declares perRoleOverrides(): PerRoleOverridesResult; PerRoleOverridesResult is a sealed interface Loaded(Map<String,String>)|Unavailable(String).",
+      "DaemonGatewayImpl.perRoleOverrides calls config.show and parses data.models.tasks into a Map<String,String> (string entries only); missing/non-map -> Loaded(empty); DaemonUnavailable/RuntimeException -> Unavailable (never throws).",
+      "DaemonGatewayService delegates it; all 4 test doubles compile with the new stub; ./gradlew test green.",
+      "A WireRpc test over the real UnixSocketDaemonRpc.parse maps a config.show reply {result:{models:{tasks:{...}}}} to Loaded with the map."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "perRoleOverrides Loaded(map) from data.models.tasks; missing/non-map -> Loaded empty; non-string skipped"
+      },
+      {
+        "level": "unit",
+        "name": "perRoleOverrides DaemonUnavailable/RuntimeException -> Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "WireRpc real UnixSocketDaemonRpc.parse: {result:{models:{tasks:{...}}}} -> Loaded"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

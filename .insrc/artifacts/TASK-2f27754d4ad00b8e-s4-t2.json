@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aeaea9eb-018e-486e-a8d5-396b96877f2c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.921Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the file-backed sidecar store and its reader",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "08039319bcb878f4c0669576b3a2c825ab56724f8798cc46fa26420b97470b58",
+        "at": "2026-10-22T12:43:20.921Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.922Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the file-backed sidecar store and its reader",
+    "summary": "Add the file SidecarIo and SidecarStore: filesOf (a TASK id maps to its Story's TASKS files), appendRecord through appendSidecarLine, and readRecords that keeps the lines of the requested artifact, skips an abandoned fragment and merge debris with a log line, refuses a complete frame with bad json or a repeated (artifactId, entry id) with different content with HistoryReadError, collapses identical repeats and orders by timestamp then entry id; mergeAttributes returns the two union rules.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "filesOf names the head, log and feedback files of an id and gives every Task of a Story the same Tasks files",
+      "readRecords skips a torn fragment and later records are still read, and a complete frame with bad json raises HistoryReadError naming the file and line",
+      "repeated identical frames count once and a conflicting duplicate raises",
+      "entries are ordered by timestamp then entry id, and lines of other artifacts in the file are ignored",
+      "a torn append, a later append, a re-read and a journal retry leave the entry once"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sidecar-files.test.ts: filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules"
+      },
+      {
+        "level": "unit",
+        "name": "sidecar-read.test.ts: readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate"
+      },
+      {
+        "level": "unit",
+        "name": "sidecar-append.test.ts: a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

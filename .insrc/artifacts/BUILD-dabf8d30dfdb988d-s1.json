@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "dabf8d30dfdb988d",
+    "storyId": "s1",
+    "createdAt": "2026-10-19T04:26:54.745Z",
+    "authoredBy": "controller",
+    "triageRationale": "Two mechanical de-duplications with no behaviour change and no new contract.",
+    "epicCreatedAt": "2026-10-19T04:26:54.745Z",
+    "updatedAt": "2026-10-19T04:35:08.737Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4b6d06ef2b3e1c128341016f593954979f01b972e28a6c46d4eb983b6704f46b",
+        "at": "2026-10-19T04:26:54.745Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T04:35:09.888Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Remove two duplications left by s6: S6-1 keep one runIsForUnit in src/workflow/team/handoff.ts and import it from src/daemon/steps/workflow-step/park-offer.ts; S6-2 make src/workflow/team/__tests__/handoff-resume.test.ts import its two-clone world from helpers/handoff-world.ts instead of defining it inline. No behaviour change.",
+    "producesLld": false,
+    "commit": "30581043",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/dabf8d30dfdb988d-E20261019dabf8d30/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/s6-open-issues.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:35:08.737Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-signoff-issues-inventory.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:35:08.737Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/park-offer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:35:08.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-resume.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:35:08.737Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/handoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:35:08.737Z"
+      }
+    ]
+  }
+}

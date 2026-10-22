@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2095f265-c85d-47f7-a9d3-9eb51cad1954",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.776Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add the pure LogModel core (LogLine/LogFilter/LogCategory/LogLevels + parseLogLine + matchesFilter)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "33939f62ad107a5cb0eb74e473362523d915c673f5c8d2f75be35793443cba7b",
+        "at": "2026-10-22T12:43:34.776Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.777Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pure LogModel core (LogLine/LogFilter/LogCategory/LogLevels + parseLogLine + matchesFilter)",
+    "summary": "New debug/LogModel.kt mirroring the CLI byte-for-byte: data class LogLine{raw:String,timeMs:Long?,level:Int?,module:String?,msg:String?} + parseLogLine(raw):LogLine (Gson JsonParser best-effort: time->timeMs, level->level, name->module, msg->msg; non-JSON/malformed -> raw only, never throws); data class LogFilter{minLevel:Int?,module:String?,text:String?} + matchesFilter(line,filter):Boolean (minLevel drops no-level; module case-insensitive substring on module, no-module dropped; text case-insensitive substring over raw incl. non-JSON; ANDed; empty matches all); enum LogCategoryId{DAEMON,AGENT} + data class LogCategory{id,title,stem} + object LogCategories(all=[Daemon('daemon'),Agent('agent')]); object LogLevels(trace10/debug20/info30/warn40/error50/fatal60 + label(Int?):String + parseLevel(String):Int?). Pure, no platform.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "LogLine/LogFilter/LogCategory/LogCategoryId/LogLevels match the CLI shapes; parseLogLine + matchesFilter mirror the CLI byte-for-byte and never throw",
+      "LogLevels carries the exact numeric map (trace10..fatal60); parseLevel handles a name, a numeric string, and '' (->null); label falls back to the raw number for an unknown level",
+      "The file is pure Kotlin (no IntelliJ-platform import); an empty LogFilter matches every line"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "LogModelTest.parseLogLineMirrorsCli (canonical pino-JSON, name-but-no-msg, non-JSON, partial JSON -> raw only, never throws)"
+      },
+      {
+        "level": "unit",
+        "name": "LogModelTest.matchesFilterMirrorsCli (minLevel keep/drop incl. no-level; module substring incl. no-module; text over raw incl. non-JSON; ANDed; empty matches all)"
+      },
+      {
+        "level": "unit",
+        "name": "LogModelTest.logLevelsParseAndLabel ('warn'->40, '40'->40, ''->null, junk->null; label 35->'35', 30->'info')"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

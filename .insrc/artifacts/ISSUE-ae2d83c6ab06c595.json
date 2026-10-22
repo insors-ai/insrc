@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-16T18:27:41.334Z",
     "parentRef": {
       "slug": "add-test-record-artifact-build-flow",
       "storyId": "s1"
+    },
+    "epicCreatedAt": "2026-10-16T18:26:02.261Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f3488c4476c9d63f54c1190dfa943caf3a21096f28fe51d2f5a40cc4235b5a60",
+        "at": "2026-10-16T18:26:02.261Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T18:27:41.334Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -23,103 +23,62 @@
     "hldBaseRunId": "wf-1785421889464-2ayzlc",
     "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "outNeighbors exists in src/db/graph/edges.ts and accepts a kindFilter option (used with ['CALLS']), and CALLS is a RelationKind in src/shared/types.ts.",
-          "evidence": "outNeighbors at edges.ts:87; kindFilter option + 'CALLS' RelationKind both present. The CALLS traversal primitive the design leans on exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "findCallees is a real domain wrapper (1-hop CALLS successors) in src/db/search.ts.",
-          "evidence": "findCallees at search.ts:193 (1-hop CALLS successors) exists as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "findEntitiesByName exists in src/db/entities.ts for resolving an entry-point symbol (ac4), and getEntity exists there too.",
-          "evidence": "findEntitiesByName:578, getEntity, entityIdsByU64s, entityU64ForId all exist in entities.ts — entry-point resolution (ac4) + u64 mapping are real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "'function' and 'method' are valid EntityKind values in src/shared/types.ts (the entry-point kinds), and Entity carries startLine.",
-          "evidence": "'function'/'method' EntityKind values + Entity.startLine present in types.ts — participant identity (ac1) is graph-backed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc4 DocGenOutcome constructors notFound/truncated/sourceNotReady/emptyScope/ok exist in src/docgen/outcome.ts.",
-          "evidence": "sc4 constructors notFound, truncated, sourceNotReady, emptyScope all exported from outcome.ts — the outcome variants s3 routes to exist.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "documentIRToMermaid in src/docgen/render/shell.ts currently dispatches classDiagram (type-structure) vs flowchart (component-dependency); s3 adds a third sequenceDiagram branch.",
-          "evidence": "documentIRToMermaid at shell.ts:111 with flowchart LR + classDiagram branches present — s3's third sequenceDiagram branch extends a real dispatch.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The vendored Mermaid runtime (src/assets/docgen/mermaid.min.js) supports 'sequenceDiagram', so the a1 render form is available offline.",
-          "evidence": "'sequenceDiagram' appears in the vendored mermaid.min.js (11 matches) — the a1 render form is available offline.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "transitiveClosure exists in src/db/graph/traversal.ts (correctly rejected by the design as unbounded/cycle-collapsing in favor of a bounded DFS).",
-          "evidence": "transitiveClosure at traversal.ts:134 exists; the design correctly rejects it (unbounded/cycle-collapsing) in favor of a bounded DFS — a sound, evidence-based rejection.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "sc1 DocumentIR's IrNode.kind and IrEdge.kind are open string fields already listing 'call-frame' and 'calls', so s3's new kind values need no type change.",
-          "evidence": "types.ts has interface IrNode/IrEdge with open string kind fields and already references 'call-frame'; s3's new kind values need no type change.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-07-31T05:30:18.711Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-31T05:45:45.966Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9ef0b48a44903f4bf22270ffbc2858e145127814fb1b740ecd80965dd21d18a4",
+        "at": "2026-07-31T05:24:15.754Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T05:45:45.966Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-07-31T05:30:18.711Z",
+        "report": {
+          "entityId": "LLD-870ed3dd246225f4-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-870ed3dd246225f4-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

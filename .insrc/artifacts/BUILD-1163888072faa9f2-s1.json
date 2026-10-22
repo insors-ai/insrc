@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "1163888072faa9f2",
+    "storyId": "s1",
+    "createdAt": "2026-09-30T13:41:04.969Z",
+    "updatedAt": "2026-09-30T13:57:05.989Z",
+    "triageRationale": "bugfix/small: rendering defect confined to vscode-plugin/src/chat; reuses sc1 collapsible primitive; no event/storage/IPC change.",
+    "epicSlug": "bug-vscode-plugin-dev-chat-each",
+    "epicCreatedAt": "2026-09-30T13:39:50.043Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "63f93d09248781f19388cf8fa7975d088dc43bef9d144201cb9b237488562275",
+        "at": "2026-09-30T13:41:04.969Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T13:57:06.056Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "ISSUE-1163888072faa9f2 (bugfix/small, issue -> build): Merge dev-chat tool result into its tool row and collapse long commands. Render one row per tool invocation: when a tool result arrives, attach its collapsed output to the pending tool row instead of drawing a new row repeating the command; fall back to a standalone result row when no pending tool row exists. Make commands over ~2 lines collapsible via the existing chevron collapse primitive. Keep restored-chat rendering consistent with the live single-row shape. No change to TurnEvent kinds, transcript storage shape, or daemon IPC; bump vscode-plugin 0.5.2 -> 0.5.3.",
+    "producesLld": false,
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-09-30T13:57:05.989Z"
+      }
+    ]
+  }
+}

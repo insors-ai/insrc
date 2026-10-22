@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "b77e3f38969bc8f4",
     "epicSlug": "redesign-brainstorm-elicit-interaction-from-single",
-    "approvedAt": "2026-08-04T14:06:02.558Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-08-04T14:03:31.524Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1598fa9361e21c576a33a690f99746b76640a3dd832653aff4d662b11457e7ba",
+        "at": "2026-08-04T14:03:31.524Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T14:06:02.558Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

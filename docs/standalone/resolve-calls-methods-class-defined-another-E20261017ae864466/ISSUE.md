@@ -19,4 +19,4 @@ A method of an exported class is visible, through the existing import-scoped rul
 - **[[c1]]** `code` `src/indexer/parser/typescript.ts:364` — "extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, now, entities, relations);"
 - **[[c2]]** `code` `src/indexer/cross-file-resolver.ts:506` — "if (e.isExported !== true) continue;"
 - **[[c3]]** `code` `src/indexer/cross-file-resolver.ts:72` — "const CALL_TARGET_KINDS: readonly EntityKind[] = ['function', 'method', 'class'];"
-- **[[c4]]** `prior-artifact` `.insrc/artifacts/CR-b94cf2c9058fd82a-S001.json (round 1, 2026-10-17): empty testsReaching for IndexQueue and IndexerService methods`
+- **[[c4]]** `prior-artifact` `.insrc/artifacts/CR-b94cf2c9058fd82a-s1.json (round 1, 2026-10-17): empty testsReaching for IndexQueue and IndexerService methods`

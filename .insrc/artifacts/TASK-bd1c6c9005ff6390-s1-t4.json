@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b15a7e3-d9df-4598-bf5b-82aade2de467",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.479Z",
+    "epicCreatedAt": "2026-10-17T08:20:53.100Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd1c6c9005ff6390",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A TypeScript test file reaches the code-review grounding end to end",
+      "parent": {
+        "entityId": "STORY-bd1c6c9005ff6390-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bd1c6c9005ff6390-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bd1c6c9005ff6390-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-bd1c6c9005ff6390-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff8fff4dee19d93248c4fe30ab3460938c7216e22fe4fc264c1d0726f2c610ba",
+        "at": "2026-10-22T12:44:28.479Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.480Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A TypeScript test file reaches the code-review grounding end to end",
+    "summary": "An integration test runs the real TypeScript parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps for a test file whose test callback calls an imported function, and asserts the test file's entity in that function's testsReaching.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The called function's testsReaching lists the test file's entity, produced without any fixture-supplied caller edge."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

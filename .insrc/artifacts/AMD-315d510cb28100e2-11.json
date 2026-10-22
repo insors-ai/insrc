@@ -1,27 +1,60 @@
 {
-  "id": "AMD-315d510cb28100e2-11",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "resolveIssueId",
-      "signature": "resolveIssueId(ref: IssueRef): PortResult<number>",
-      "purpose": "Returns the tracker's internal numeric id of an issue given its ref, so a creator that adopted an issue by label (after a create that timed out) can still link it as a sub-issue of its parent, which GitHub does by internal id and not by issue number. Additive; the GitHub adapter test is s1's to add."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-18T12:53:53.151Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "da20486dd5516974ba6b9babd59ed7e2be566873380b384da36e31d3dbce8620",
+        "at": "2026-10-18T12:53:53.151Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T04:16:12.336Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "After a create that times out, the next call finds the issue by its per-unit label and has only its ref, so the native sub-issue link under the parent cannot be made. s4 records a pending link only when it knows the id (a successful create). A ref-to-id lookup lets the adopted issue be linked too.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792297318763-1dp38i",
-    "storyId": "s4",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-11",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "resolveIssueId",
+        "signature": "resolveIssueId(ref: IssueRef): PortResult<number>",
+        "purpose": "Returns the tracker's internal numeric id of an issue given its ref, so a creator that adopted an issue by label (after a create that timed out) can still link it as a sub-issue of its parent, which GitHub does by internal id and not by issue number. Additive; the GitHub adapter test is s1's to add."
+      }
+    },
+    "rationale": "After a create that times out, the next call finds the issue by its per-unit label and has only its ref, so the native sub-issue link under the parent cannot be made. s4 records a pending link only when it knows the id (a successful create). A ref-to-id lookup lets the adopted issue be linked too.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792297318763-1dp38i",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-18T12:53:53.151Z",
+    "approvedBy": "Subho Ghosh"
   },
-  "proposedAt": "2026-10-18T12:53:53.151Z",
-  "status": "approved",
-  "approvedAt": "2026-10-19T04:16:12.336Z",
-  "approvedBy": "Subho Ghosh"
+  "citations": []
 }

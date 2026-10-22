@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c0f46aae-4069-42bc-a396-8f0f4ca1a94d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.998Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add settingsCatalog gateway method + DTOs + parseCatalog",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "736b0f890c2db8417af77055962b1bee4623a6e3f499dbad8e5cbcae9cb249af",
+        "at": "2026-10-22T12:44:18.998Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.000Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add settingsCatalog gateway method + DTOs + parseCatalog",
+    "summary": "In DaemonGateway.kt add `fun settingsCatalog(): SettingsCatalogResult` to the interface, the sealed SettingsCatalogResult (Loaded|Unavailable) + data-class DTOs (SettingsCatalogDto, ConfigOptionDto, RoleDto), a parseCatalog helper (parse options/groups/roles/tierNames from the reply map; fold payload.values into each ConfigOptionDto.currentValue/isSet), and implement settingsCatalog() in DaemonGatewayImpl following the pendingArtifacts/artifactReviewView idiom (rpc.call config.catalog; !ok||error -> Unavailable; DaemonUnavailableException + RuntimeException -> Unavailable; else Loaded).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonGatewayImpl.settingsCatalog() returns Loaded(SettingsCatalogDto) on an ok reply with options/groups/roles/tierNames parsed and values folded into currentValue/isSet.",
+      "!ok||error, DaemonUnavailableException, and a malformed reply (e.g. options not a list) all map to Unavailable(reason) — never a blank Loaded, never a throw.",
+      "The call issues method 'config.catalog' with no params over the existing DaemonRpc transport."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SettingsCatalogGatewayTest: ok+data -> Loaded with options/groups/roles/tierNames parsed and values folded into currentValue/isSet (over a FakeDaemonRpc)"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsCatalogGatewayTest: !ok/error/DaemonUnavailable/malformed(options not a list) -> Unavailable, no throw"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsCatalogGatewayTest: over the real UnixSocketDaemonRpc.parse, {result:{payload}} -> Loaded and {result:{error}} -> Unavailable (framing)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b101f4f0-6e36-4a06-9641-f56f67c18995",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.515Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Restore and resume: apply the plan with rollback and return the next turn",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "737b9c95fe6eacbbc2141717c3cfb1db99e7496dfc01fd4c78d2626d2bab3088",
+        "at": "2026-10-22T12:43:26.516Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.516Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Restore and resume: apply the plan with rollback and return the next turn",
+    "summary": "Add applyResume(plan) and resumeStage(repo, unit, opts) (= resumeCheck then applyResume): restore the parked files keeping the pre-restore copies, roll every file back if any step fails, rebind both intents to the receiving clone with rebindCheckpoint, store the run with the actor as owner and the checkpoint's snapshot, and return the next turn (emit_plan, emit_step or emit_synthesize); a draft-only checkpoint restores the draft and returns restart with draftRestored.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A run parked before the plan and one parked mid-steps resume on a clone at another absolute path at the right turn with earlier step outputs",
+      "A failed restore leaves the working tree exactly as it was and saves no state",
+      "A draft-only checkpoint restores the draft and returns restart for the inferred stage with draftRestored true",
+      "The stored run is owned by the actor and carries the checkpoint's upstream snapshot"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/handoff-resume.test.ts: a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

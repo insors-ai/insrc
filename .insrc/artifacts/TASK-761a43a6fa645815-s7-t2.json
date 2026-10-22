@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e2b2abb2-bc02-40d9-9fa8-ab053a1573c7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.430Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The gate: CodeReviewGateResult + enforceCodeReviewGate (pure, read-only, fail-open)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "52dd77f63408a2cf09f7d97242fa192e9bf838ef6a07349d8122a478469bf86e",
+        "at": "2026-10-22T12:43:48.430Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.431Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The gate: CodeReviewGateResult + enforceCodeReviewGate (pure, read-only, fail-open)",
+    "summary": "Add src/workflow/code-review/gate.ts exporting the CodeReviewGateResult discriminated union (no-review | pass | warn | blocked | overridden; counts mirrors CR body.counts, verdict reuses ReviewVerdict from ../review/types.js via import type) and enforceCodeReviewGate(repoPath, epicHash, storyId, opts?: { overrideReview?: string; enforce?: boolean }): CodeReviewGateResult. Flow: locate the CR json via codeReviewArtifactPaths(repoPath,epicHash,storyId).json (S006); if it does not exist => 'no-review'. Read+JSON.parse; a parse failure or a body.verdict outside the closed set {'pass','warn','block'} => fail-open 'no-review' (logged via getLogger, never a spurious block). Resolve effective enforce = opts.enforce ?? (a private readEnforceFlag() that reads codeReview.enforce from PATHS.config JSON, DEFAULTING to false when the file is absent or the key is missing and NEVER throwing). Branch: verdict 'pass' => {status:'pass',counts}; 'warn' => {status:'warn',counts,message}; 'block' with enforce OFF => a NON-BLOCKING advisory {status:'warn', advisory:true, counts, message} whose message explicitly states the underlying verdict was 'block' and enforcement is off (DISTINGUISHABLE from a genuine warn via advisory:true — critique 1); 'block' with enforce on + a non-empty overrideReview => {status:'overridden',verdict:'block',counts,overrideReason,at:new Date().toISOString()}; 'block' with enforce on + no override => {status:'blocked',verdict:'block',counts,message}. An override on a non-block verdict is a no-op. Read-only: never writes/mutates the CR record and never touches meta.review; an UnregisteredRepoError from a downstream read propagates unchanged. .js imports, import type, getLogger not console.log, strict optional/indexed handling.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/code-review/gate.ts exports enforceCodeReviewGate + CodeReviewGateResult; CodeReviewGateResult is the {no-review|pass|warn|blocked|overridden} discriminated union with counts + (block arms) verdict + the warn arm carrying an optional advisory flag, reusing ReviewVerdict from ../review/types.js",
+      "locates the record via codeReviewArtifactPaths(...).json (S006, storage.ts:318); absent/malformed/unknown-verdict json => fail-open 'no-review' (never a spurious block), logged via getLogger",
+      "effective enforce = opts.enforce ?? readEnforceFlag(); enforce on + block + no override => 'blocked' with counts + message; enforce on + block + overrideReview => 'overridden' with overrideReason + at",
+      "enforce OFF + block => a NON-BLOCKING outcome that is DISTINGUISHABLE from a genuine warn (advisory:true + a message naming the demoted 'block' verdict) and NEVER withholds completion (critique 1)",
+      "readEnforceFlag defaults to false when PATHS.config is absent or lacks codeReview.enforce and NEVER throws; opts.enforce always wins when provided (critique 2)",
+      "verdict 'warn' => 'warn' (enforce on or off); 'pass' => 'pass'; an override reason on a non-block verdict is a no-op; the gate reads body.verdict/counts VERBATIM and never touches meta.review or writes the record",
+      "tsc --noEmit clean; .js imports + import type; no console.log; read-only (no writeAtomic; no provider used)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "enforceCodeReviewGate reads body.verdict from a temp CR json and returns the discriminated CodeReviewGateResult"
+      },
+      {
+        "level": "unit",
+        "name": "enforce on + verdict 'block' + no override => { status:'blocked', counts, message } (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "enforce on + verdict 'block' + overrideReview => { status:'overridden', overrideReason, at } (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "verdict 'warn' => { status:'warn', counts, message } under enforce on AND off (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "verdict 'pass' => { status:'pass', counts }; the gate is pure + performs no write (ac4/read-only)"
+      },
+      {
+        "level": "unit",
+        "name": "enforce OFF + block => non-blocking advisory (advisory:true + message naming the demoted block, distinct from a genuine warn) (critique 1)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-acd7318d-ead4-4ac3-9636-fa53524a29ab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:20.639Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Gateway reads + DTOs (perRepoOverrides over config.show, registeredRepos over repo.list)",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84d9e38ed4d704fad5b468536dc74c432c0176323468c9bbb6912da72ebd0cf2",
+        "at": "2026-10-22T12:44:20.639Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:20.640Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gateway reads + DTOs (perRepoOverrides over config.show, registeredRepos over repo.list)",
+    "summary": "Add PerRepoOverridesResult (Loaded(Map<String,RepoOverrideDto>)|Unavailable) + RegisteredReposResult (Loaded(List<String>)|Unavailable) + RepoOverrideDto {coreFloor:String?, tasks:Map<String,String>, tiers:Map<String,TierSpecDto>} + TierSpecDto {runner:String?, model:String?} sealed/data types in the daemon package. Implement perRepoOverrides() on DaemonGatewayImpl over the EXISTING config.show IPC (METHOD_CONFIG_SHOW), parsing data.models.byRepo per-level with as? Map / string-cast guards (coreFloor String? or null; tasks string tiers only; tiers map of {runner,model} string leaves only; missing/non-map -> Loaded empty/skip; DaemonUnavailable/RuntimeException -> Unavailable, never throws). Implement registeredRepos() over the EXISTING repo.list (METHOD_REPO_LIST) coercing data.repos -> List<String> (!ok/result.error/thrown -> Unavailable). Add both to the DaemonGateway interface + DaemonGatewayService delegates + stubs in the 4 test doubles (DaemonLifecycleServiceTest, OnboardingCleanupIntegrationTest, OnboardingWiringTest, OnboardingLifecycleTest) so the module still compiles.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "perRepoOverrides() reads config.show and returns Loaded parsing the full models.byRepo entry (coreFloor + tasks map + tiers map of {runner,model}); missing/non-map/non-string -> Loaded empty/skip/null; DaemonUnavailable -> Unavailable",
+      "registeredRepos() reads repo.list and returns Loaded(data.repos as List<String>); !ok/error/DaemonUnavailable -> Unavailable",
+      "DaemonGateway interface + DaemonGatewayService + all 4 test doubles gain both methods; the module compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesGatewayTest: perRepoOverrides parses the full data.models.byRepo shape (coreFloor + tasks + tiers{runner,model}) over FakeDaemonRpc; missing/non-map/non-string -> Loaded empty/skip/null; DaemonUnavailable -> Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesGatewayTest: registeredRepos parses repo.list data.repos over FakeDaemonRpc; !ok/error/DaemonUnavailable -> Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesGatewayTest (WireRpc): over real UnixSocketDaemonRpc.parse a config.show reply yields the full nested byRepo Loaded and a repo.list reply yields Loaded repos"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-1716f77ba9ba017b-S001 -->
+<!-- insrc:artifact BUILD-1716f77ba9ba017b-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -27,7 +27,7 @@ Build of review routing to the other party (ISSUE-1716f77b), tasks t1-t12. t12 e
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-1716f77ba9ba017b-S001.json` — **insrc-build** (2026-10-05T10:59:13.107Z)
+- `.insrc/artifacts/PLAN-1716f77ba9ba017b-s1.json` — **insrc-build** (2026-10-05T10:59:13.107Z)
 - `src/daemon/__tests__/code-review-rpc.test.ts` — **insrc-build** (2026-10-05T10:59:13.107Z)
 - `src/daemon/__tests__/workflow-review-rpc.test.ts` — **insrc-build** (2026-10-05T10:59:13.107Z)
 - `src/daemon/__tests__/workflow-rpc.test.ts` — **insrc-build** (2026-10-05T10:59:13.107Z)

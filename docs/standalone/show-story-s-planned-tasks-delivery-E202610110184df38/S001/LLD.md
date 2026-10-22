@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-0184df38314415ae-S001 -->
+<!-- insrc:artifact LLD-0184df38314415ae-s1 -->
 
 # LLD: E202610110184df38:S001
 
@@ -210,4 +210,4 @@ Only a premise that does not hold blocks approval. One that could not be verifie
 
 | Check item | Premise | What was tried and what was missing | Action |
 | --- | --- | --- | --- |
-| coverage-of-intent | The ac1–ac3 acceptance criteria named in §5 trace to an upstream spec or triage record. | I grepped the repo for '0184df38'. It matches only the LLD itself (docs/standalone/.../S001/LLD.md and .insrc/artifacts/LLD-0184df38314415ae-S001.json). No SPEC or triage artifact defines ac1..ac3, so I could not check the criteria's wording against an upstream source. | Spell out ac1–ac3 in the LLD, or link the triage/spec record that defines them. |
+| coverage-of-intent | The ac1–ac3 acceptance criteria named in §5 trace to an upstream spec or triage record. | I grepped the repo for '0184df38'. It matches only the LLD itself (docs/standalone/.../S001/LLD.md and .insrc/artifacts/LLD-0184df38314415ae-s1.json). No SPEC or triage artifact defines ac1..ac3, so I could not check the criteria's wording against an upstream source. | Spell out ac1–ac3 in the LLD, or link the triage/spec record that defines them. |

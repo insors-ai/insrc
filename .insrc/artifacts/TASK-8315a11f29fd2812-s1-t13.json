@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e214a541-cf53-4a04-8cd3-d3d2a9a68fea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.247Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rebuild and update the installed daemon",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f9fb1e62890584f411e461c0847e651286e48850354160e227bda5f049c8cecf",
+        "at": "2026-10-22T12:43:51.247Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.248Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rebuild and update the installed daemon",
+    "summary": "Rebuild and update the installed daemon (maintenance.update). Then run one real code review and one real design review under the limit on it, and confirm each completes with today's result shape.",
+    "size": "S",
+    "order": 13,
+    "acceptanceChecks": [
+      "The installed daemon runs the new build.",
+      "A real under-limit code review and design review complete on it."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Installed daemon: a real under-limit code review and a real design review complete with today's result shape (manual smoke recorded in the BUILD record)"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

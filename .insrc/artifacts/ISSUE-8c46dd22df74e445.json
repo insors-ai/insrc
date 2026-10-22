@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-07T10:37:53.165Z",
     "parentRef": {
       "slug": "replace-better-sqlite3-native-dependency-node"
+    },
+    "epicCreatedAt": "2026-10-07T10:31:55.507Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c275074d7470d0ccda5cbe2bce36451a3cef0d505cd01dcf8e940308c89ec7b6",
+        "at": "2026-10-07T10:31:55.507Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-07T10:37:53.165Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

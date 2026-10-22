@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7f0b89e-d2ed-4583-a650-4902d2eaf313",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.275Z",
+    "epicCreatedAt": "2026-09-18T06:53:41.492Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d565a953288f511",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Host-probe: swap to public PluginManager.findEnabledPlugin",
+      "parent": {
+        "entityId": "STORY-0d565a953288f511-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0d565a953288f511-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d9de4bfda43c91149e60dc9a2f1da217184a5c231a4bc9b891bda6a565d40df",
+        "at": "2026-10-22T12:43:12.278Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.279Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host-probe: swap to public PluginManager.findEnabledPlugin",
+    "summary": "In JetBrainsHostProbes.isInstalledAndEnabled, replace `PluginManagerCore.getPlugin(PluginId.getId(id))` + `descriptor != null && descriptor.isEnabled` with `PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null`. Drop the `com.intellij.ide.plugins.PluginManagerCore` import; keep public `PluginManager` + `PluginId`. Semantics unchanged (installed AND enabled; a disabled/absent host stays 'not present'). Independent of the app-init migration.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "isInstalledAndEnabled resolves each id via PluginManager.getInstance().findEnabledPlugin(PluginId.getId(id)) != null; no PluginManagerCore.getPlugin or PluginDescriptor.isEnabled remains in the file.",
+      "The PluginManagerCore import is removed; the file compiles (./gradlew compileKotlin) with only public PluginManager + PluginId imports.",
+      "A disabled or absent host plugin still yields not-present (return value semantics identical to before)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "JetBrainsHostProbes host detection: a present+enabled host resolves, an absent/disabled host is omitted (via the public findEnabledPlugin path)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf2ceecd-553d-4a69-b863-7ff9c32d0289",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.829Z",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Issues body in stage sections, built by the board screens' section rule",
+      "parent": {
+        "entityId": "STORY-7405471c72bd3e88-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7405471c72bd3e88-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9df8051c1842e3616a2474f17b4ffcb556b98394725c51256ae6d670ec096d5e",
+        "at": "2026-10-22T12:43:44.830Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.830Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Issues body in stage sections, built by the board screens' section rule",
+    "summary": "Lift the section-default rule (defaultOpen, emptyText, hint, attentionCount) and the fold text out of buildBoardViewModel into shared helpers sectionDefaults/foldOf in board-model.ts. Add IssueSectionView to board-protocol.ts and change IssuesBody to { kind, totalsLabel, showAll, sections, fold, emptyPanel }. buildIssueView groups placeable matches into six sections in STAGE_ORDER using the helpers. board-state.ts looks the issue screen's entry up across the sections. The webview's issues renderer iterates the sections as a flat list until t5 rewrites it, so the suite stays green.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "buildBoardViewModel produces equal StagesBody models before and after the refactor (existing board-model tests pass unchanged).",
+      "buildIssueView returns six sections in stage order; each matching issue is in exactly one section, its stage's; defaultOpen/emptyText/hint and fold follow the board screens' rule; totals and panels are unchanged.",
+      "The issue screen still finds its entry; the full delivery suite passes after this task, with the webview iterating the sections as a flat list; typecheck is clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: the Issues body groups issues into stage sections with the board screens' defaults and fold"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: sectionDefaults and foldOf give the board screens' existing section models"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

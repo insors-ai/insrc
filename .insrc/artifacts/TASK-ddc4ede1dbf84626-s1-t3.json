@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-581f5792-d956-44be-9861-8fed0cd37b6f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:45.499Z",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Host: write-then-post with row indexes, and answer load-older",
+      "parent": {
+        "entityId": "STORY-ddc4ede1dbf84626-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ddc4ede1dbf84626-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ddc4ede1dbf84626-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ddc4ede1dbf84626-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "171e4dc40393358c9f86c65411c32ff0483f27f134b7c282500c1dabe7e191f7",
+        "at": "2026-10-22T12:44:45.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:45.504Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host: write-then-post with row indexes, and answer load-older",
+    "summary": "In chat-panel.ts make appendEvent return the index of the row it wrote; in the run sink and the followed-turn sink call appendEvent first and post second with `rowIndex` (in the followed sink the write stays before and outside the `!disposed && session === s` guard); in recordPermissionOutcome and recordSelectionOutcome push first and post with `rowIndex` (none when there is no session); add `rowIndex` to runTurn's user-row. Add the `load-older` handler: validate sessionId and before, ignore a request for a session that is not active, and post one transcript-page cut by pageBefore. session-restored still carries the whole transcript, now with firstIndex 0 and total; any existing deep-equality assertion on that payload is updated here. AMENDED: the earlier check that a turn followed for a session that is not shown 'still writes its rows' described a state that cannot occur, because a chat switch or a closed panel aborts the follow at once; it is replaced by what the code does.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Every persisted live row (assistant, marker, tool-result, user, permission outcome, selection outcome) is posted with the absolute index of a row the transcript already holds; status and approval-request carry none",
+      "The rows written to the transcript are unchanged",
+      "A followed turn's row is written before it is posted with its index; after a chat switch the follow stops, posting and writing nothing more (the rest is read again on the next resume, as before this change); in the followed-turn sink the write is before and outside the shown-session guard",
+      "load-older for the active session answers one transcript-page ending just before `before`; repeated requests walk back to 0",
+      "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+      "session-restored carries firstIndex 0 and total, and the existing session-restored assertions pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none"
+      },
+      {
+        "level": "integration",
+        "name": "write-then-post order: when each live row is posted, the transcript already holds it at that index"
+      },
+      {
+        "level": "integration",
+        "name": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard"
+      },
+      {
+        "level": "integration",
+        "name": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0"
+      },
+      {
+        "level": "integration",
+        "name": "load-older for another session id, or with a malformed before or sessionId, posts nothing"
+      },
+      {
+        "level": "integration",
+        "name": "session-restored carries firstIndex 0 and total while the whole transcript is still sent"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

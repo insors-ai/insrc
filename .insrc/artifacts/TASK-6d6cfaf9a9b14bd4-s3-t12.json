@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ee4122ee-5c1b-481f-887b-8b99502568a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.441Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Attach the reader to the RPC client behind a feature flag",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7c39ad66ff07087dd08de027703f481de16c7a1ccaac5afbc75b7509b2581a42",
+        "at": "2026-10-22T12:43:43.441Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.441Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Attach the reader to the RPC client behind a feature flag",
+    "summary": "Wire the reader into the RPC client at the seam mapped in t2, so a caller driving 'workflow.run' or 'analyze.run' obtains a reader bound to that operation and inbound frames reach the decode path. This is the first Task that changes observable client behaviour. Gate it behind the `insrc-progress-reader-enabled` prerequisite flag so it can be turned off without reverting code — the LLD notes no flag mechanism was surfaced by any grounding bundle, so confirming or creating that mechanism is part of this Task, not an assumption. No daemon-side file is touched: WorkflowProgress, the eight phase sites, the transport binding at :238, the error frame at :218, and the IpcStreamKind / IpcStreamMessage wire types all keep their current shapes, and no new wire literal or IpcStreamKind member is introduced.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "A caller driving 'workflow.run' or 'analyze.run' can obtain a reader bound to that operation, and inbound frames reach the decode path.",
+      "With the flag off, a spy over the decode path records zero invocations across a driven operation and no reader object is constructed.",
+      "The flag mechanism is confirmed to exist (or is created in this Task) rather than referenced as if pre-existing.",
+      "No file under src/daemon/ and no wire type in src/shared/types.ts is modified — verified by diff.",
+      "The full test sweep passes with the flag both on and off."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "flag-on-attach: with insrc-progress-reader-enabled on, a caller driving 'workflow.run' obtains a bound reader and fake-client frames reach the decode path"
+      },
+      {
+        "level": "unit",
+        "name": "flag-off-inert: with the flag off, a decode-path spy records zero invocations and no reader object is constructed"
+      },
+      {
+        "level": "smoke",
+        "name": "no-daemon-or-wire-diff: `git diff` shows no change under src/daemon/ and no wire-type change in src/shared/types.ts"
+      },
+      {
+        "level": "smoke",
+        "name": "full-sweep-both-flag-states: `npx tsx --test 'src/**/__tests__/*.test.ts'` passes with the flag on and with it off"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

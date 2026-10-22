@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f0fd2768-b2a5-49af-9db4-bf43d2fc1aaa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.948Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Centralize registered/indexed precondition in generateDocument",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8222c6b091d776cafd246fdfa10193e7a91dea45b8052b4e9d5f0327f6a96ffb",
+        "at": "2026-10-22T12:43:54.948Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.949Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Centralize registered/indexed precondition in generateDocument",
+    "summary": "In src/docgen/index.ts, reshape generateDocument to run the registered+indexed precondition (repo registry membership + pinned graph revision) BEFORE dispatching to the resolved extractor, returning the existing source-not-ready DocGenOutcome variant on failure and not-found for an unknown docType. Not-found precedence wins over source-not-ready when both conditions hold (unknown docType against an unregistered/unindexed repo). This centralizes ac3 so every surface (tool, IPC, MCP) inherits it for free instead of re-checking per surface.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "generateDocument returns sc4 source-not-ready before any extractor runs when the target repo is unregistered or has no pinned graph revision",
+      "generateDocument still returns sc4 not-found when docgenRegistry.get(docType) is undefined",
+      "the existing no-revision source-not-ready path already emitted by extractors is reused, not duplicated by a second/conflicting check",
+      "an unknown docType requested against an unregistered/unindexed repo returns not-found, not source-not-ready, pinning not-found-first precedence",
+      "a unit test asserts the registered/indexed precondition check runs before extractor resolution/dispatch for every registered docType"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "generateDocument runs the registered+indexed precondition before extractor dispatch and returns source-not-ready pre-extraction, with not-found precedence over source-not-ready when both conditions hold"
+      },
+      {
+        "level": "unit",
+        "name": "generateDocument forwards the whole input to the resolved extractor (call-sequence {repo,symbol} and narrative {repo,base,question} reach parseScope, no longer dropped to {repo,path})"
+      },
+      {
+        "level": "unit",
+        "name": "a missing per-type required field (call-sequence without symbol) surfaces empty-scope with the extractor's reason"
+      },
+      {
+        "level": "live",
+        "name": "an unregistered repo path returns source-not-ready over the live IPC"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

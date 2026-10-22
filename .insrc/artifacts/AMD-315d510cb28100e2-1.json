@@ -1,14 +1,57 @@
 {
-  "id": "AMD-315d510cb28100e2-1",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "storyBoundary.addStory",
-    "storyId": "s9",
-    "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-16T19:08:59.864Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "fd8318cd65f9c567d08cbcfa03930e3abafd697b376974a425acefbcc9bb00f0",
+        "at": "2026-10-16T19:08:59.864Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T04:34:12.450Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Extends Epic `team-signoff-claim-based-workflow` (315d510cb28100e2), building on DEF-315d510cb28100e2 and HLD-315d510cb28100e2 and on code in src/workflow/tracker-auto.ts, src/workflow/tracker/ and src/cli/services/workflow.ts.",
+  "body": {
+    "id": "AMD-315d510cb28100e2-1",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s9",
+      "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+    },
+    "rationale": "Extends Epic `team-signoff-claim-based-workflow` (315d510cb28100e2), building on DEF-315d510cb28100e2 and HLD-315d510cb28100e2 and on code in src/workflow/tracker-auto.ts, src/workflow/tracker/ and src/cli/services/workflow.ts.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1792177705390-akd7gf",
+      "storyId": "s9",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-16T19:08:59.864Z",
+    "approvedBy": "subhagho@gmail.com"
+  },
   "citations": [
     {
       "id": "c1",
@@ -37,15 +80,5 @@
       "kind": "code",
       "ref": "src/workflow/tracker/refs.ts:24-37"
     }
-  ],
-  "proposedBy": {
-    "workflow": "define",
-    "runId": "wf-1792177705390-akd7gf",
-    "storyId": "s9",
-    "stepId": "scope.assess"
-  },
-  "proposedAt": "2026-10-16T19:08:59.864Z",
-  "status": "approved",
-  "approvedAt": "2026-10-17T04:34:12.450Z",
-  "approvedBy": "subhagho@gmail.com"
+  ]
 }

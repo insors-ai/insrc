@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c280572-ef9c-46a4-9c79-0073633ec76c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.562Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the DebugPane component with placeholder sections",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c24d37c58271aaa96ed241b893bfc2a56652b63e774a26524c2c953eaf418208",
+        "at": "2026-10-22T12:44:57.562Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.563Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the DebugPane component with placeholder sections",
+    "summary": "Create src/cli/panes/DebugPane.tsx: a function component returning ReactElement that accepts DebugPaneProps, holds pane-local `useState<DebugSectionId>('daemon')`, renders an inner tab strip from `props.services.debug.sections` (nullish-guarded to [] for malformed fakes), and mounts exactly the one active section's component from a pane-local id->placeholder-component map (each placeholder a simple labelled Text). Drive inner-section navigation with its own `useInput` gated on `!useCaptured()` (matching the existing pane idiom); render inside Panel + show KeyHints. Handle the map-miss with an inline 'unknown section' fallback.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "DebugPane renders all three section tabs with exactly one shown (default 'daemon')",
+      "A section-switch keypress changes the active section without unmounting the pane",
+      "useInput is gated on !useCaptured() so modal capture suspends section navigation",
+      "An unknown active id renders an inline placeholder rather than throwing",
+      "props.services.debug.sections undefined falls back to an empty section list (no throw)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DebugPane test: initial render shows three section tabs (Daemon/MCP/Logs) with exactly one active"
+      },
+      {
+        "level": "unit",
+        "name": "DebugPane test: a section-switch keypress changes the active section and hides the prior one while the pane stays mounted"
+      },
+      {
+        "level": "unit",
+        "name": "DebugPane test: inner-section navigation is suppressed while useCaptured() is true"
+      },
+      {
+        "level": "unit",
+        "name": "DebugPane test: cycling back to the already-active section is a no-op (idempotent switch)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

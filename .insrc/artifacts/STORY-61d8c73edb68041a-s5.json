@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-be14a654-8d23-4b52-b5fa-d8bf06700a4e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.941Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Connect a project to insrc by explicit choice, stay silent when there is nothing to do, and remove cleanly",
+      "parent": {
+        "entityId": "EPIC-61d8c73edb68041a",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e51d83a7a0d175eead4a6ec6158c5fd7f428dac97402071839744ab1a21b85f8",
+        "at": "2026-10-22T12:43:06.941Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

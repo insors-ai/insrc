@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b7330857-7eb2-45d9-8f0c-20aa3c975e14",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.524Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add colocated node:test tests for the catalog validator + accessor + boot wiring + packaging",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3651b57d2d715e61780a5626f57c0f92efc18fbeed566ac08b2b51c362939c0c",
+        "at": "2026-10-22T12:44:26.524Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.525Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add colocated node:test tests for the catalog validator + accessor + boot wiring + packaging",
+    "summary": "Add colocated tests (sibling of src/docgen/__tests__/asset-validator.test.ts) staging a fake asset dir per case (tmpAssetDir pattern): validateModelCatalog pass/missing/non-JSON/schema-invalid branches; modelsFor populated / provider-omitted / empty-array; the boot-ordering guard; a boot-integration test (validateModelCatalog runs in the boot block and a missing/malformed catalog aborts boot); a contract test that the real shipped catalog validates against the schema; and a copy-assets smoke that out/assets/ carries the file. node:test (tsx --test).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a colocated *.test.ts exercises validateModelCatalog's pass/missing/non-JSON/schema-invalid branches and the modelsFor accessor cases (populated / provider-omitted / empty array) + the boot-ordering guard",
+      "a boot-integration test asserts validateModelCatalog is invoked in the boot block and a missing/malformed catalog aborts boot (re-raises) rather than starting a degraded daemon",
+      "a contract test validates the actual shipped src/assets catalog against the CloudModelCatalogFile schema (every entry id is a string; displayName when present is a string)",
+      "a smoke test confirms the catalog is present under out/assets/ after copy-assets runs",
+      "the full local test sweep passes (npx tsx --test) with no network access"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "after `npm run build` (or a copy-assets run), the catalog file exists under out/assets/ at the path validateModelCatalog reads"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

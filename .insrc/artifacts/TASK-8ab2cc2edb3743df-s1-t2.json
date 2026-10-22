@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f304a15b-54b8-403f-8db3-66f5caf238c7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.512Z",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ab2cc2edb3743df",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The five aggregate prompts describe their input as it is rendered",
+      "parent": {
+        "entityId": "STORY-8ab2cc2edb3743df-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ab2cc2edb3743df-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ab2cc2edb3743df-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "598d031c3bffe96a0da744aa26cb1e4293444f14af0e4c245c24f6f4c17edd91",
+        "at": "2026-10-22T12:43:55.512Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.513Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The five aggregate prompts describe their input as it is rendered",
+    "summary": "Correct, in the five aggregate system prompts (src/prompts/analyze/code, data, docs, generic and infra .aggregate.system.md), the description of the block `Upstream task outputs:`: one `### <output name>` section per name, and, when several tasks produced the name, one `#### <name> from task <taskId> (<template>)` sub-section per task with its `params:` line; the report must cover every sub-section. No other instruction of the prompts changes.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "None of the five prompts says one `### <taskId>` section per input; each describes the name section and the per-task sub-section in the words the renderer uses.",
+      "Apart from that description, each prompt's text is unchanged.",
+      "The prompt validation that runs at daemon boot still passes for the five files."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "each of the five aggregate prompts describes the block as it is rendered and no longer says one section per task id"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

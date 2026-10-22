@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ffcb86ef-366b-4ce7-b834-04a17ea583dd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.790Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Pending, admit, chain and artifact-content read the lifecycle",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e73edd907474a94bfe794fecd6af1e158f508de0d664992f91a2556eacabd3aa",
+        "at": "2026-10-22T12:43:22.790Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.790Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pending, admit, chain and artifact-content read the lifecycle",
+    "summary": "Move src/workflow/pending.ts, src/workflow/bugfix/admit.ts, src/workflow/chain.ts and src/workflow/artifact-content.ts to the lifecycle. Update src/workflow/__tests__/pending.test.ts, artifact-content.test.ts, artifact-kinds.test.ts and src/workflow/runners/build/__tests__/admit-build.test.ts.",
+    "size": "M",
+    "order": 22,
+    "acceptanceChecks": [
+      "Pending approvals, admission and the chain report read the lifecycle",
+      "None of the four files names the legacy stamps"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "pending.test.ts: pending approvals read the lifecycle"
+      }
+    ],
+    "planTaskId": "t22"
+  },
+  "citations": []
+}

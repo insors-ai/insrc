@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "be8708a9cd20e286",
+    "storyId": "s1",
+    "createdAt": "2026-09-26T00:00:00.000Z",
+    "updatedAt": "2026-09-26T00:00:00.000Z",
+    "epicSlug": "add-insrc-icon-vs-code-activity",
+    "epicCreatedAt": "2026-09-26T00:00:00.000Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bdc85563772a6b0e91537765536895407575f63f55cbe9b970939f16b5b8bbce",
+        "at": "2026-09-26T00:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T08:43:07.990Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "commit": "feba6f0",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ]
+  }
+}

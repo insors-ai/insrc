@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d9bf94bc-0774-4d40-a991-fd9a308d0fa4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.514Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Bind after the duplicate check and define the failure results",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b1630def7c103cec676afc7b3bda4d762acd7b5070d3f780ab0f62d5ed641e48",
+        "at": "2026-10-22T12:43:21.514Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.515Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bind after the duplicate check and define the failure results",
+    "summary": "In src/workflow/tracker/unit-issue.ts bind an issue this call creates only after the duplicate check, so tieBreak binds the lowest-numbered issue once and closes this call's own as a duplicate (keeping the created issue when the listing fails); a head that cannot be read (malformed binding, missing file) fails ensureUnitIssueDetailed before any lookup or create; a bind that fails to write after a create or adopt returns ok with the issue and leaves the unit unsettled, never a before-create failure.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "two racing creates bind the lowest-numbered issue once and close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+      "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and the store read of that artifact keeps failing until repaired",
+      "a bind that fails to write after the create returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "unit-issue-bind-failures.test.ts: two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list"
+      },
+      {
+        "level": "integration",
+        "name": "unit-issue-bind-failures.test.ts: a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired"
+      },
+      {
+        "level": "integration",
+        "name": "unit-issue-bind-failures.test.ts: a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

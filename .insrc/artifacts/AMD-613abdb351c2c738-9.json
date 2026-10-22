@@ -1,33 +1,66 @@
 {
-  "id": "AMD-613abdb351c2c738-9",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "markNotDeliveredIfHead",
-      "signature": "markNotDeliveredIfHead(seq: number): boolean",
-      "purpose": "marks the head message not-delivered (its window is closed) in one transaction, only if it is still the head and still queued or retrying; false otherwise"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T19:08:37.063Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "52732708d8f1c18a00c6f170f425ff03a2f33555ad0efe8a0a06cebe618c1966",
+        "at": "2026-10-14T19:08:37.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:10:17.103Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "S003 added it to the store: a message whose window closed must leave the queue head so the queue moves on, and it must be one guarded transaction. Built and approved in S003; the HLD sketch did not name it.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-9",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "markNotDeliveredIfHead",
+        "signature": "markNotDeliveredIfHead(seq: number): boolean",
+        "purpose": "marks the head message not-delivered (its window is closed) in one transaction, only if it is still the head and still queued or retrying; false otherwise"
+      }
+    },
+    "rationale": "S003 added it to the store: a message whose window closed must leave the queue head so the queue moves on, and it must be one guarded transaction. Built and approved in S003; the HLD sketch did not name it.",
+    "proposedBy": {
+      "workflow": "epic-end-batch",
+      "runId": "manual-2026-10-14T19:08:37.063Z",
+      "storyId": "s3",
+      "stepId": "batch"
+    },
+    "proposedAt": "2026-10-14T19:08:37.063Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "epic-end-batch",
-    "runId": "manual-2026-10-14T19:08:37.063Z",
-    "storyId": "s3",
-    "stepId": "batch"
-  },
-  "proposedAt": "2026-10-14T19:08:37.063Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T19:10:17.103Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

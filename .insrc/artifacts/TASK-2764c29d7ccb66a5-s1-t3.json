@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a11b5ea1-d972-45d2-ac63-6febc32d725c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:19.181Z",
+    "epicCreatedAt": "2026-10-10T14:46:43.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the clean-up pass and keep ignored files out of file jobs",
+      "parent": {
+        "entityId": "STORY-2764c29d7ccb66a5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2764c29d7ccb66a5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2764c29d7ccb66a5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2764c29d7ccb66a5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0bcdbbb0c49ef56cb828b02d2d0970135fe11e7a6761b75c54d5c4c254663234",
+        "at": "2026-10-22T12:43:19.181Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:19.183Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the clean-up pass and keep ignored files out of file jobs",
+    "summary": "Implement reconcileRepo(repoPath) on IndexerService: guard a missing repository root; read the stored files (t1); for each, decide absent (the presence check answers ENOENT or ENOTDIR), ignored (a path segment relative to the repository is in resolveRepoIgnore's list, the rule of hasIgnoredSegment), not checked (any other error; kept) or kept; remove an absent or ignored file's entities with deleteEntitiesById and its unresolved relations with deleteUnresolvedForRepoFile. Return the counts; reconcileRepo itself runs no resolver and removes no cached result. In the `reconcile` job: when at least one file was removed, run runCrossFileResolver once for the repository and the two endpoint passes (not fatal), and call deleteCachedExplorationsForRepo; arm no settle timer; log the counts. The presence check is a function held by the service, the real stat by default, replaceable through an optional last constructor argument. In fileEvent, make a create or update for a file with an ignored segment end after a debug log; a delete is unchanged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A file that is gone, one whose parent directory became a file, and one under an ignored directory lose their entities, edges, unresolved relations and vector rows; every other file of the repository and every file of another repository is as before.",
+      "A file that exists and is not ignored, an entity with no file path and a file whose name only contains an ignored name are kept.",
+      "A missing repository root removes nothing; a file whose presence cannot be told is kept and counted once as not checked.",
+      "A nested registered repository keeps its entities for files under a directory its parent ignores.",
+      "After removals the resolver ran once in the job, no settle timer is armed and the repository's cached exploration results are gone; with no removals they are kept and no resolver ran.",
+      "reconcileRepo called directly removes the stale files, runs no resolver and removes no cached result; only the job does.",
+      "A second run removes nothing.",
+      "A create or update file job for a file under an ignored directory indexes nothing; one for a file elsewhere is indexed.",
+      "A kept file's link into a removed entity is gone and its other links stay."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was"
+      },
+      {
+        "level": "integration",
+        "name": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept"
+      },
+      {
+        "level": "integration",
+        "name": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept"
+      },
+      {
+        "level": "integration",
+        "name": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was"
+      },
+      {
+        "level": "integration",
+        "name": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them"
+      },
+      {
+        "level": "integration",
+        "name": "a file whose parent directory became a file is removed as absent"
+      },
+      {
+        "level": "integration",
+        "name": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it"
+      },
+      {
+        "level": "integration",
+        "name": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain"
+      },
+      {
+        "level": "integration",
+        "name": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed"
+      },
+      {
+        "level": "integration",
+        "name": "a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay"
+      },
+      {
+        "level": "integration",
+        "name": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

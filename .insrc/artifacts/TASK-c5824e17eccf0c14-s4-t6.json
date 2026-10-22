@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35277438-327f-4f39-8b0b-de324abe5805",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.125Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Lock-step wiring: expectedDimensions push + union recorded selection + DEFAULT_JUDGES 'ux' slot",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0d4fe3ac13d0ab4a8e7a5dfae5f4b569479ee00091b2a8406021e9dd3432945f",
+        "at": "2026-10-22T12:44:39.125Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.126Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Lock-step wiring: expectedDimensions push + union recorded selection + DEFAULT_JUDGES 'ux' slot",
+    "summary": "In ONE change, extend expectedDimensions (handler.ts:65) to push 'ux' when hasUxAcceptance(subject) AND union the body's recorded adherence selection with the content-derived gates; add the matching 'ux' JudgeSlot to the runner DEFAULT_JUDGES (runner.ts:114) so effectiveJudges/buildJudgementsSchema stay lock-step (buildJudgementsSchema auto-widens from the computed dims); update the runner.test.ts:273 pinned order to include 'ux' at its slot. Both sides flipped together so the emitted-judgements validation never sees a one-sided drift.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "expectedDimensions pushes 'ux' when hasUxAcceptance and unions the recorded adherence selection with the content-derived gates; base four unchanged when neither fires",
+      "DEFAULT_JUDGES carries a 'ux' JudgeSlot; effectiveJudges + buildJudgementsSchema include 'ux' iff computed; runner.test.ts pinned order updated to include 'ux'",
+      "a HIGH 'ux' finding folds through computeReviewVerdict + codeReview.enforce WITHOUT forking the reducer (k4)",
+      "no one-sided dimension drift: the emitted-judgements validation accepts the 'ux'-inclusive set"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "expectedDimensions: pushes 'ux' when hasUxAcceptance(subject); UNIONS the body's recorded adherence selection with the content-derived gates; base four unchanged when neither fires"
+      },
+      {
+        "level": "unit",
+        "name": "buildJudgementsSchema: admits 'ux' in the judgements[].dimension enum exactly when 'ux' is in the computed dims"
+      },
+      {
+        "level": "unit",
+        "name": "runner DEFAULT_JUDGES / effectiveJudges: carries a 'ux' JudgeSlot; order pinned (extend runner.test.ts:273 pinned order to include 'ux' at its slot); a drift (dim present one side, absent the other) surfaces via the emitted-judgements validation (handler.test.ts negative table)"
+      },
+      {
+        "level": "unit",
+        "name": "verdict fold: a HIGH 'ux' finding withholds completion via computeReviewVerdict + codeReview.enforce WITHOUT forking the reducer (adherence/conventions/coverage/quality/functional-coverage/diagram/ux all fold identically)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

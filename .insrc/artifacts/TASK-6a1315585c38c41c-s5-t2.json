@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa5ad6ad-9a9c-4b3e-b4a9-36525df02a87",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.483Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Host announcements for selection and settled refresh",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "689a14229f4a1622d15ef15a8bab25f5fea7258ccaa6ba34361ebd878aea0802",
+        "at": "2026-10-22T12:43:42.484Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.484Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host announcements for selection and settled refresh",
+    "summary": "The host posts { type: 'announce' } once when an accepted select-item changes the selected item: 'Selected: <title>', plus ' · <stage label>' when the item has a stage. It also posts one when a refresh settles: 'Board refreshed: N items, M needing attention', both counted over the snapshot's placeable items, or the status message for empty, unavailable or failed. The refresh announce goes after the applied try, in its own logging try. No announce for loading, superseded or closed answers, 'ready' or the other intents.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A select-item that changes the selection posts exactly one announce, after the view and details messages; reselecting the same item posts none, and neither does a selection whose item is not in the shown snapshot.",
+      "A settled refresh posts exactly one announce with the snapshot-wide counts or the status message; loading, superseded and closed-panel answers post none.",
+      "A webview reload ('ready') re-posts the board but no announce, and close-details, set-view, set-search, set-scope, set-attention, set-density and show-more post none.",
+      "A throwing announce post is only logged and never turns a rendered board into a failed refresh."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'a selection and a settled refresh are each announced once, and loading, superseded answers, reloads and other intents announce nothing'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

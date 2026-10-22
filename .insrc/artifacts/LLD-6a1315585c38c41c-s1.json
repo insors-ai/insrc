@@ -25,194 +25,62 @@
     "hldEffectiveHash": "e74ad3720f264d1fa81053294dfcd822eca2512a5bf5d4a718f9aec6380c02c6",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s1's six acceptance criteria (DEF §6.1 ac1–ac6) and FR001–FR003 are each designed: editor-tab open command + manual refresh, taken-at time and stale-on-failure, distinct empty/unavailable/failed/partial states, superseded-response drop, selection kept across refresh, read-only.",
-          "evidence": "DEF.md:109-114 lists ac1–ac6 for S001. LLD §2.4 postconditions cover ac2/ac3/ac5 (stale last snapshot, empty vs ready-partial, selection kept/cleared with notice), §2.4/§2.8 cover ac4 (seq drop, dispose discard), §2.8 covers ac1 (view type, title, CSP HTML, refresh on open), and §5 invariants cover ac6 (c6). The placement check from c9 ('validate against a tool-window entry point') appears as lc1 and is recorded in the BUILD summary. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The interim 'items' down-message the LLD posts is backed by an HLD amendment to sc3.",
-          "evidence": "HLD.md:146-152 BoardDownMessage has no 'items' variant. .insrc/artifacts/AMD-6a1315585c38c41c-1.json exists: type 'sharedContract.fieldAdd', contractId 'sc3', breaking false, field \"BoardDownMessage 'items' variant\", status 'pending'. Its field type (itemId, kind, title|null, stageLabel|null) matches LLD §2.5. One wording difference: the AMD says s2 'stops sending it once board is posted', while the LLD says s2 'replaces' it. The amendment must be approved before the build. [files: .insrc/artifacts/AMD-6a1315585c38c41c-1.json, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
-          "action": "Approve AMD-6a1315585c38c41c-1 before building s1, and make the AMD and LLD wording agree on whether s2 drops 'items'.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "rpc rejects with the fixed 'daemon is not running' message on ENOENT/ECONNREFUSED, sets no timeout of its own, and turns an envelope error (for example, an unknown method on an older daemon) into a rejection with the daemon's text.",
-          "evidence": "src/shared/ipc-client.ts:76-81: `if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') reject(new Error('daemon is not running — start it with: insrc daemon start'))`; :67 `if (res.error) reject(new Error(res.error))`; rpc() has no timer. src/daemon/server.ts:173/201 send `error: \\`unknown method: ${request.method}\\``. So the daemon-unavailable / read-failed split by message prefix works (DAEMON_DOWN_PREFIX at :31 is not exported, so the client must repeat or match the literal). [files: src/shared/ipc-client.ts, src/daemon/server.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "workflow.delivery returns a DeliveryError object (it resolves and does not reject) for a missing repo or an unreadable store, and uses params.repo when it is given.",
-          "evidence": "src/workflow/delivery/handlers.ts:45-48 repoOf takes params.repo when it is a non-empty string, otherwise INSRC_REPO. :58 `return { error: 'workflow.delivery: `repo` is required' }`; :82-83 catch → `return { error: ... }`. src/daemon/index.ts:710-713 returns the handler result, so the error arrives as a resolved result with an `error` field, as LLD §2.2 and §5 say. [files: src/workflow/delivery/handlers.ts, src/daemon/index.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "extension.ts today has a warn-only panelLog and builds webview panels with createWebviewPanel(viewType, title, ViewColumn.Active, { enableScripts: true }) wrapped as a ChatPanelChannel-shaped object.",
-          "evidence": "vscode-plugin/src/extension.ts:255 `const panelLog = { warn: (message: string): void => console.warn(`[insrc] ${message}`) };` (no error method, so the LLD's added error sink is needed for ChatPanelLogger, whose interface at chat-panel.ts:47-50 requires warn+error). extension.ts:610-628 shows the docs-review panel wrapped with setHtml/postMessage/onMessage/onDidDispose/reveal/dispose, which matches ChatPanelChannel at chat-panel.ts:37-45. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The six unions the type mirror is to re-export (DeliveryStage, AttentionReason, NoticeCode, TaskResult, ApprovalState, ReviewVerdict) all exist in src/workflow/delivery/types.ts, and the mirror does not export them yet.",
-          "evidence": "types.ts:148 DeliveryStage, :208 AttentionReason, :117 NoticeCode, :198 TaskResult, :25 ApprovalState, :17 `export type { ReviewVerdict }` (re-exported from ../review/types.js). vscode-plugin/src/delivery/delivery-contract.ts:14-36 exports only the nine Delivery* types, so the additions are new and type-only. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The reused shared client exposes rpc with the shape DeliveryClientDeps.rpc expects: <T>(method, params?) => Promise<T>.",
-          "evidence": "ipc-client.ts:93 `rpc<T = unknown>(method: string, params?: unknown): Promise<T>;` and createIpcClient at :115-120 returns `rpc: call`. That matches HLD sc1 DeliveryClientDeps.rpc (HLD.md:67). [files: src/shared/ipc-client.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Adding insrc.delivery.openBoard requires extending the closed InsrcCommandId union, packaging.test.ts's exact command list, and truthful-sync.test.ts's count from 13 to 14.",
-          "evidence": "command-registry.ts:14-28 InsrcCommandId is a closed union of 14 ids, and CommandDescriptor.id is typed by it (:31). package.json contributes 13 commands (lines 36-100; insrc.status.menu is not contributed). truthful-sync.test.ts:201 `assert.equal(cmds.length, 13)`. packaging.test.ts:60-63 deepEqual over the exact sorted list. All three change sites are named in LLD §3.3. [files: vscode-plugin/src/surfaces/command-registry.ts, vscode-plugin/src/config/__tests__/truthful-sync.test.ts, vscode-plugin/src/__tests__/packaging.test.ts, vscode-plugin/package.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The mirror's additions keep compiling under tsconfig.delivery-contract.json, and the new delivery/ modules are typechecked by the plugin's main tsconfig.",
-          "evidence": "tsconfig.delivery-contract.json extends ./tsconfig.json and includes only src/delivery/delivery-contract.ts. tsconfig.json includes src/**/*.ts (excluding tests), so new src/delivery/*.ts files are compiled by `tsc -p tsconfig.json` (package.json:769). [files: vscode-plugin/tsconfig.delivery-contract.json, vscode-plugin/tsconfig.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Nothing is persisted, and a snapshot from an incompatible or older daemon is rejected rather than half-rendered (schemaVersion-1 check; an unknown method maps to read-failed).",
-          "evidence": "DeliverySnapshot.schemaVersion is the literal type 1 (types.ts:311). BoardState is held in memory only (LLD §3.2). An older daemon without workflow.delivery answers with an envelope `unknown method:` error (server.ts:173), which rpc rejects with (ipc-client.ts:67) and which does not start with 'daemon is not running', so it falls into read-failed as LLD §5 states. [files: src/workflow/delivery/types.ts, src/daemon/server.ts, src/shared/ipc-client.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s1 stays within sc1–sc4. It parses every up-message but acts on no s4-owned intent (open-evidence), renders no columns (s2/sc5), and does not call evidence().",
-          "evidence": "HLD.md:340 s1 owns sc1–sc4. LLD §2.8 lists the selection intents it applies (set-view, set-scope, set-search, set-attention, select-item, close-details, set-density). open-evidence is not among them, and §2.3 says 's1 does not call it'. LLD §2.5 keeps rendering to 'status' plus the interim 'items' message, which s2 replaces. The LLD's extra latestSeq on BoardState changes sc2, which s1 owns. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each failure (no workspace, stopped daemon, DeliveryError result, unknown method, timeout, bad schemaVersion, malformed webview message, answer after panel close) can be detected from the real client and handler behaviour, and its handling is stated.",
-          "evidence": "Each detection rests on code: the null repo is checked before rpc; the not-running message is fixed (ipc-client.ts:78); DeliveryError comes back as a resolved {error} (handlers.ts:58,83); the unknown-method envelope error is rejected with its text (server.ts:173 → ipc-client.ts:67); there is no rpc timeout, so the client's own race is required (ipc-client.ts:46-83 has no timer); schemaVersion is literally 1. rpc's 'invalid response from daemon' rejection (ipc-client.ts:71) falls under 'any other reason' and maps to read-failed. One gap: after a timeout the underlying socket stays open until the daemon answers. Results are ignored, so this is not a correctness issue. [files: src/shared/ipc-client.ts, src/workflow/delivery/handlers.ts, src/daemon/server.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every s1 acceptance criterion maps to at least one named test, and the existing-test edits (the packaging list, the truthful-sync count) are planned.",
-          "evidence": "LLD §6 maps ac1–ac6 to named tests across board-host, board-state, delivery-client and packaging. The ac1 packaging test name matches the existing test at packaging.test.ts:44, which the LLD says gains the new id. truthful-sync.test.ts:201 (count 13) is planned to go to 14 in §3.3. [files: vscode-plugin/src/__tests__/packaging.test.ts, vscode-plugin/src/config/__tests__/truthful-sync.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The ac6 integration test can run the daemon's real handleDelivery from inside the plugin's test suite.",
-          "evidence": "Plugin tests already import runtime daemon modules by relative path: docs-review-panel.test.ts:2722-2723 does `await import('../../../../src/workflow/artifacts/companion/er.js')`. The k5 source-scan tests are scoped per directory (hosts/, workspace/, daemon/, onboarding/) and do not scan __tests__ in a new delivery/ folder. The plugin's test script is `tsx --test 'src/**/__tests__/*.test.ts'` (package.json:770). handleDelivery accepts DeliveryDeps seams (types.ts:356-360) and takes a real repo path. [files: vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, src/workflow/delivery/handlers.ts, vscode-plugin/package.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 14,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-08T19:24:53.930Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
+    "staleAckedReason": "The only change since approval is AMD-6a131558-1, which this LLD itself proposed (the interim 'items' down-message on sc3) and already designs against; nothing in the LLD depends on the pre-amendment HLD.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-08T19:35:30.626Z",
-    "staleAckedAt": "2026-10-08T19:36:06.909Z",
-    "staleAckedReason": "The only change since approval is AMD-6a131558-1, which this LLD itself proposed (the interim 'items' down-message on sc3) and already designs against; nothing in the LLD depends on the pre-amendment HLD."
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "165c31cc6316ad4766d590c76aa5c07c9460ff820ef8f6e0fc3106f33d9dde47",
+        "at": "2026-10-08T19:16:55.099Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T19:35:30.626Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 14
+        },
+        "at": "2026-10-08T19:24:53.930Z",
+        "report": {
+          "entityId": "LLD-6a1315585c38c41c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-6a1315585c38c41c-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

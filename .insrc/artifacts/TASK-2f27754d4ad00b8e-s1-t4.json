@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5675e49d-3ad2-41ec-a154-0420a5605fa0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.166Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Introduce WorkItemKey and folderSegment in the path scheme",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9a4a1fcff2221e60448a6b6f974ea618d11deb9d372b030632ad635216d0ac2f",
+        "at": "2026-10-22T12:43:20.166Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.167Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Introduce WorkItemKey and folderSegment in the path scheme",
+    "summary": "Add WorkItemKey and folderSegment to path-scheme.ts, change resolveArtifactMdPath and resolveCompanionPath and the storage.ts path builders and pending.ts to take a key (story ordinal read through ArtifactIds.parse), and remove the re-exports of the identity constructor and type. Folder text stays exactly as today. id.ts keeps compiling for its other importers.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "paths for every artifact kind equal the paths built before the change",
+      "two artifacts of one Epic written on different days get the same segment",
+      "a story-scoped kind without a story throws InvalidArtifactKeyError",
+      "path-scheme and storage tests pass and the repository type-checks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-scheme.test.ts: paths over a WorkItemKey equal the paths built before and a story-scoped kind without a story is rejected"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-scheme.test.ts: two artifacts of one Epic written on different days land in the same folder"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

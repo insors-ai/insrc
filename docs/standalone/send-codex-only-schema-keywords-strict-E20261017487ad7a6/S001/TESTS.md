@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-487ad7a67474d321-S001 -->
+<!-- insrc:artifact TESTS-487ad7a67474d321-s1 -->
 
 # Tests: 487ad7a67474d321 S001
 

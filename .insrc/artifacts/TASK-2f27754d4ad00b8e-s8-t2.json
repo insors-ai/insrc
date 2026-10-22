@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7bbfb791-3b08-432a-b615-3386341382c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.500Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Add postComment to the tracker port and mark the attach comment",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b05a77bd5f75ea23aa3e419a680da8cda1581de00000f8971674b10ee8dd9aae",
+        "at": "2026-10-22T12:43:22.500Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.501Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add postComment to the tracker port and mark the attach comment",
+    "summary": "Add TrackerPort.postComment(issue, body) answering { externalId } to src/workflow/tracker/port.ts, implement it in src/workflow/tracker/github-adapter.ts through ghPostCommentReturningId, give the attach comment the first-line marker <!-- insrc:attach:<artifact id> -->, and add postComment to the two other test fakes (src/workflow/__tests__/approve-fallback-kit.ts and src/workflow/tracker/__tests__/attach.test.ts).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The GitHub adapter's postComment posts one comment and answers its id, and answers a failed PortResult when the post fails or returns no id",
+      "The attach comment starts with the marker line and still holds the Attached line and the link, so s6's reconciliation by link still finds it",
+      "Every TrackerPort fake in the repository typechecks with postComment",
+      "issueOps.comment keeps its behaviour"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "port-post-comment.test.ts: the GitHub adapter's postComment answers the comment id and attach posts its marker"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

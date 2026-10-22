@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3e34de6d-ba3a-48cf-8e62-cadf33052ffd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.425Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Make the CLI's stop and restart always end the daemon",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9060f0ede54851ce03472ba2f5d5004e7b0e1ba4a9d4366c5ba7629a9f2c50e",
+        "at": "2026-10-22T12:44:35.426Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.427Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the CLI's stop and restart always end the daemon",
+    "summary": "stopDaemon bounds its shutdown request at 5 seconds, waits as today, and after a wait without a stop kills the pid in the pid file, but only when that pid's command line ends in daemon/index.js; it removes the pid file and socket after a kill and returns an outcome with forced and pid. A live pid that does not match is not killed and nothing is removed. A stop with no daemon running still rejects as today. Update the service type and the three callers; restart reports a forced stop and goes on to start. Ordered first with the next Task: neither depends on anything, and they are what helps against the hang as it occurs today.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "With an injected process table: forced false when the daemon stops by itself; forced true with the pid after the wait when it does not",
+      "A child that accepts the connection and never replies is ended after the 5-second bound and the wait",
+      "A child that ignores the request and SIGTERM is ended, and its pid file and socket are removed",
+      "A live pid whose command line does not end in daemon/index.js is not killed, its pid file is kept, and the stop fails naming it",
+      "With no socket and no live pid the stop rejects with 'daemon is not running'",
+      "restart's steps include 'force-stop' after a forced stop and the start follows"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill"
+      },
+      {
+        "level": "unit",
+        "name": "stop outcome: no socket and no live pid rejects with 'daemon is not running'"
+      },
+      {
+        "level": "unit",
+        "name": "stop outcome: a live pid whose command line does not match is not killed and its pid file is kept"
+      },
+      {
+        "level": "integration",
+        "name": "forced stop: a child that ignores the request and SIGTERM is ended by stopDaemon"
+      },
+      {
+        "level": "integration",
+        "name": "forced stop, silent daemon: a child that accepts the connection and never replies is ended"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

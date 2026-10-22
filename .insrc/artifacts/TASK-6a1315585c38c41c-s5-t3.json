@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d924b379-1034-4317-8b49-5eebaa5425c0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.485Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Webview keyboard: focusable cards, arrows, Escape and focus return",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a2437d0813fb092f84475d05680307e441323c50cae15f83ee0f3857f7068da2",
+        "at": "2026-10-22T12:43:42.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.485Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Webview keyboard: focusable cards, arrows, Escape and focus return",
+    "summary": "In BOARD_WEBVIEW_SCRIPT, give every card tabindex=0. Enter and Space (keydown) post select-item, and ArrowDown/ArrowUp move between #board's li.card elements with no wrap. When a details message names a new item, remember it and focus the details heading (tabindex=-1). Escape inside the details posts close-details. On a null model, focus returns to the li.card with the remembered id, or to the shown view's tab when that card is gone. The fake DOM gains body, activeElement, focus(), key events and querySelectorAll('li.card').",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Every card in the board, rollup and issue views is focusable, keeps its aria-label (accessibleLabel), and posts select-item on Enter or Space.",
+      "Arrow keys move focus between cards in document order without wrapping, with preventDefault so the pane does not scroll.",
+      "Opening details focuses their heading, Escape posts close-details, and closing returns focus to the opening card, or to the shown view's tab when the card is gone."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'every card is focusable and opens with Enter or Space, arrows move between cards, and closing the details returns focus to the card'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'when the card that opened the details is gone, closing them focuses the shown view's tab'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

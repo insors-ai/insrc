@@ -21,207 +21,58 @@
     "epicHash": "c2ba6fa62a148ed1",
     "epicSlug": "complete-consistent-richer-code-index-one",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every Story's acceptance criteria in the Define (s1 ac1-4 through s10 ac1-6) has a designed counterpart in the HLD's Story boundaries, and no Define non-goal is built.",
-          "evidence": "Read DEF.md sections 2, 3, 5 and 6 against HLD section 6. Each criterion has a counterpart: s1 ac2/ac3 (repair, re-export) in 6.1; s2 ac3 (missing vectors found and written) in 6.2; s3 ac4 (existence check) in 6.3; s5 ac1-3 in 6.5; s6 ac1-9 in 6.6 including the model proposal, its fallback and 'an existing file is never written'; s7 ac2 ('chosen' reserved, ambiguous stays pending) in 6.7; s8 ac5, s9 ac3/ac4, s10 ac2/ac6 in 6.8-6.10. Non-goals respected: only git's ignore sources plus the two built-ins that constraint k11 itself names; no store replaced; no query language; external-service kinds not renumbered.",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A relationship is lost at six places in src/db/relations.ts: the resolved write's skip on a missing endpoint and on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without file/repository and of a row whose repository is not registered.",
-          "evidence": "relations.ts:135-142 (`skipped++; continue;` for missing endpoint and for `kindByte === undefined`, logged at debug); :394-403 promoteToResolved logs 'resolved edge skipped (unresolved row still removed)' then `deleteUnresolvedRowInTxn`; :433-437 promoteResolvedBatch removes the row with no log at all when the edge is not written; :223-228 'unresolved relation missing meta.file/meta.repo -- dropping'; :253-262 'repo not registered; dropping'. [files: src/db/relations.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "reindexFile replaces a file's entities in one transaction, removes relationships only for entities that disappeared, writes no relationships or pending rows, and has no caller outside tests.",
-          "evidence": "entities.ts:403-486: one `withWriteTxn`, upserts parsed entities, then `detachDeleteEntitiesInTxn(s, toDelete)` only for u64s not seen; no edge or unresolved write. Callers of `reindexFile(` in src are only src/db/__tests__/reindex-file-lmdb.test.ts and entities-lance-integration.test.ts. Two details the commit must not inherit: its snapshot of the file's rows is a full scan of the entity table (:417), and it skips an existing module stub but does not route a new one to the shared-modules row as upsertEntities does (:239-247), which the design already states. [files: src/db/entities.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The manifest step writes DEPENDS_ON from a repository entity that is never stored, so every one of those writes is skipped today.",
-          "evidence": "index.ts:1065 `repoEntityId = makeEntityId(repoPath, '', 'repo', repoPath)`; :1076 upserts only the module entity; :1081 writes `{kind:'DEPENDS_ON', from: repoEntityId, ..., resolved: true}`. No non-test code stores an entity of kind 'repo' (search for `kind: 'repo'` and `'repo'` in src/indexer, src/db, src/daemon finds only the id computation, a reader in src/db/search.ts:95 and a test fixture). The resolved write then skips at relations.ts:135 because `fromU64 === undefined`. [files: src/indexer/index.ts, src/db/relations.ts, src/db/search.ts]",
-          "action": "None. Story s1's design should note that src/db/search.ts already reads entities of kind 'repo' for the dependency closure, so storing the entity changes what that reader finds.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The entity row is marked embedded before its vector is written, a failed vector write leaves no trace in the graph store, and the reembed job forces every entity, sets the marker first and passes one fixed model name.",
-          "evidence": "embedder.ts:165 and :193 set `entity.embeddingModel` in memory; entities.ts:100 writes it into the row inside the transaction; the Lance write follows at :308-331 and its failure is only `log.warn(... 'vectors not persisted; rerun reembed to backfill')`, while listUnembeddedEntities (:851) skips any row with a non-empty marker, so the backfill cannot find it. index.ts:968 `embedEntities(entities, { force: true })` (the normal selection at embedder.ts:144 is `e.embedding.length === 0 && e.body !== ''`); :976 passes `EMBEDDING_MODEL` although the ONNX path stamps `ONNX_EMBEDDING_MODEL`; entities.ts:926-952 updateEmbedding puts the row first and writes Lance after. No non-test code enqueues a `reembed` job, so the job does not run by itself today. [files: src/db/entities.ts, src/indexer/embedder.ts, src/indexer/index.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.5",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The job queue is one first-in-first-out line with no priorities, so a file event waits behind whatever is running.",
-          "evidence": "src/daemon/queue.ts: `private readonly queue: IndexJob[]`, `this.queue.push(job)` (:156), `this.queue.shift()` (:168), one `await processor(job)` at a time; no priority field or ordering. The comments in src/indexer/index.ts:728 and :881 that call doc summarisation 'background priority' describe something the queue does not do. [files: src/daemon/queue.ts]",
-          "action": "None. Story s2 should correct those two comments when it adds the precedence rule.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The existing cross-file pass, reused as it runs today, completes an incoming relationship that the commit returned to pending 'if the target returns'.",
-          "evidence": "A returned-to-pending row belongs to its SOURCE file. After a file event the only cross-file run is the settle pass, and it is scoped to the files touched in the window: index.ts:833-836 `runCrossFileResolver({ ..., scopeFile: file })` for each file in `scope`; cross-file-resolver.ts:276 `listUnresolvedRelations(opts.db, opts.repoRoot, opts.scopeFile)`; relations.ts:288-298 reads only the `(repoId, fromFile)` index for that file. When the target's file is committed again (a function removed and restored, or a file deleted and recreated by a branch switch), the settle pass looks only at rows whose source is the target's file; the rows under the untouched source files are never visited. They stay 'awaiting-target' with a target that now exists, so the callers stay missing and the repository reads incomplete until a full index or a repair, which also holds back every derived pass. Pass 2 also handles only INHERITS, IMPLEMENTS and CALLS (cross-file-resolver.ts:306-313, every other kind is skipped), so the extension to 'awaiting a target by id' has to cover IMPORTS and the other kinds too. The design states neither change to the event path. [files: src/indexer/index.ts, src/indexer/cross-file-resolver.ts, src/db/relations.ts]",
-          "action": "State in the architecture and in s1/s2's boundaries how pending rows of other files are completed after a file event: either the settle pass also visits rows awaiting, by id, an entity of the files committed in the window (which needs a lookup of pending rows by target id), or it runs unscoped for the awaiting-target class. Add a test: remove a called function, restore it by a second file event, and check that the caller is returned and the repository reads complete without a full index.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The class of a pending relationship can be stored on the pending row in its existing free-form record, so no stored form changes.",
-          "evidence": "relations.ts:233-242 builds the row with `meta` taken whole from the relation (`Record<string, unknown>`); updateUnresolvedMetaBatch (:442-454) rewrites it, and the resolver's ambiguous update spreads the old record (`{ ...row.meta, candidates }`, cross-file-resolver.ts:433, :454), so an added key survives. Today a row with no candidate gets no write at all (cross-file-resolver.ts:320-321 only counts it), so s1 must add that write for the stored class to exist. [files: src/db/relations.ts, src/indexer/cross-file-resolver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "There are seven raw put and remove sites for entity rows across src/db/entities.ts and src/db/graph/migrations.ts, and no other.",
-          "evidence": "Search for `.entity.put(` / `.entity.remove(` over src outside tests: entities.ts:270, :287, :463, :933 (put) and :1133 (remove); migrations.ts:265 (put) and :344 (remove). Seven, none elsewhere. The name index is kept by `rewireNameIndexInTxn` at :274 and :464, by a direct put at :291 and a direct remove at :1124, which matches 'a helper each site must remember to call'. [files: src/db/entities.ts, src/db/graph/migrations.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The inventory of places that decide what is left out is complete: six sites in src/indexer/index.ts, the watcher, five analyzer and indexer walkers that move onto the filter, and five that are deliberately left.",
-          "evidence": "index.ts: :347 (start-up scan), :486 (clean-up), :604 (full walk), :766 (file event), :284 and :372 (`initRepoIgnore` seeding). watcher.ts:13 `IGNORE_DIRS`, passed to the subscription at :58. Own lists: analyze/explore/concept-resolve.ts:322, analyze/explore/module-profile.ts:49, analyze/runtimes/infra/_shared.ts:55, indexer/source-roots.ts:245, and analyze/context/repo-ignore-filter.ts (asks git, permissive outside it). Left as they are: search/grep.ts:52, glob.ts:24, list-dir.ts:29, recent.ts:31 and workflow/review/probe.ts:88. A search for list names and for the literal 'node_modules' found no other walker; indexer/repo-type.ts:28 and repo-ignore-config.ts are the seed of the bare-name list being retired. `isGeneratedOrMinified` is called only at index.ts:611 (full walk). One thing the design leaves to s6: the watcher's `ignore` option takes paths and globs, not a predicate, so with only .git and .insrc left out of the subscription every event under node_modules and build output reaches the handler and is refused there. [files: src/indexer/index.ts, src/indexer/watcher.ts, src/indexer/source-roots.ts]",
-          "action": "None for the inventory. s6's design should say how the watcher subscription is narrowed (for example by passing the filter's ignored top-level directories as globs) so the handler is not flooded.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every stored relationship row holds an empty value today and is read by key only, so a one-byte evidence value can be added and an existing row reads as 'unknown' with no rewrite and no key change.",
-          "evidence": "The only edge puts in src are relations.ts:144-145, :395-396 and :434-435, each `put(key, Buffer.alloc(0))` on both out_edge and in_edge. Readers take the key only: db/graph/edges.ts:52 `for (const { key } of db.getRange(...))`, entities.ts:1141 and :1164 likewise. store.ts:128 `SCHEMA_VERSION = 4`. Both mirror rows must carry the value, and all three writers are in one file, which is what s7 states. [files: src/db/relations.ts, src/db/graph/edges.ts, src/db/graph/store.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "An entity whose id was first allocated in the same commit cannot have a vector row, so the plain insert is safe for it.",
-          "evidence": "The vector table is keyed by the entity's string id, which is deterministic (SHA of repo, file, kind, name), not by the allocated u64. A removed entity's vector row is deleted only after the graph transaction has committed and outside it: entities.ts:1087-1091 (`withWriteTxn(...)` then `deleteEntityVecsByIds`) and :487-491 in reindexFile, with no retry and no record. If that delete fails or the daemon stops between the two, the vector row outlives the entity. When the same file and name come back, the entity is 'first allocated in the same commit' and yet a vector row with its id exists; the plain insert is `addEntityEmbeddings`, described at entities.ts:299 as 'raw .add(), no JOIN', so it adds a second row for the same id. The design's compare of entity ids with the vector table on open is stated only as a count of what is missing. [files: src/db/entities.ts]",
-          "action": "State that the compare on open also removes vector rows whose entity id is not in the graph store, and that it runs before any plain insert can meet such a row; or record removed ids so the delete is retried. Add the case to s2's vector tests.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The two endpoint passes of Epic 914cbf5e own the four external-service kinds, run after the cross-file pass, write their endpoint entities outside any file write, and are not redesigned by this Epic.",
-          "evidence": "cross-file-resolver.ts:83-85 `BOUNDARY_RELATION_KINDS` = CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC, skipped at :301-304. index.ts:679 cross-file pass, then :688 resolveExternalEndpoints and :699 resolveMessagingEndpoints, each in its own try/catch; the same order at :569-586 and :834-865. external-endpoints.ts:141-142 `upsertEntities` for the endpoint entities then `promoteResolvedBatch`; :185 orphan removal by `deleteEntitiesById`. The changes this Epic makes inside them are an evidence argument (s7) and the changed rule in promoteResolvedBatch (s1); the pass stores its endpoint entity before promoting and checks the source entity at :101-102, so the new rule does not change what it stores. [files: src/indexer/external-endpoints.ts, src/indexer/cross-file-resolver.ts, src/indexer/index.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today a file whose parse or write throws is logged and skipped while the repository is still set ready, and a failed endpoint pass is non-fatal and leaves no record; the design's counts replace both.",
-          "evidence": "index.ts:627-634 `catch ... log.error('full index: file error (skipping)'); skipped++` and :726 `updateRepoStatus(..., 'ready', ...)` regardless. On a file event the throw leaves fileEvent and is caught by the queue (queue.ts:180-181 `log.error({ err }, 'job failed')`), with the status untouched. Endpoint passes: index.ts:690-694 and :701-705 'pass failed (non-fatal)'. The design names a detection and a handling for each: `uncommittedFiles` with paths, `endpointPassFailed`, `unwritable` with a reason logged at warn, and the unavailable embedding backend as its own reason. [files: src/indexer/index.ts, src/daemon/queue.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion maps to a test, and the figures the fixed tests rest on are true of the source.",
-          "evidence": "The HLD fixes four tests (the manifest-and-ambiguous-call fixture, the matcher's conformance with git, the failed vector write, the repair checked against a recount) and passes the mapping of every criterion to a test to each Story's design, which is the level an HLD can state it at. The figure the repair is measured on is right: `runGrepSearch(` has 4 call sites outside its definition (analyze/explore/search-text.ts:104, analyze/explore/config-trace.ts:104, daemon/tools/builtins/search/grep.ts:217, workflow/review/probe.ts:62), and ISSUE-12f70133 line 15 records 'stillUnresolved 20,590'. The fixed tests do not cover the two findings above: a relationship returned to pending and completed after a file event, and a vector row left behind by a removed entity. [files: docs/standalone/bug-code-graph-missing-most-cross-E2026100712f70133/ISSUE.md]",
-          "action": "Add those two cases to the tests fixed in the HLD's verification paragraph when the findings are resolved.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 1,
-        "med": 1,
-        "low": 13,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-11T07:00:30.601Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-10-11T07:31:10.140Z",
-    "reviewOverride": {
-      "reason": "Stakeholder override, 2026-10-11: nine daemon review rounds were run on this design, with blocking findings of 7, 6, 4, 3, 2, 6, 1, 1 and 2. Every finding was corrected in the design. The corrections for the ninth round (one HIGH, one MED) were made after the last review and were not re-reviewed, so the recorded verdict is a block. The findings had moved from the shape of the design to details that each Story's own design settles, and each of the ten Stories gets its own design and daemon review before any code is written. Details are in the design's feedback record.",
-      "at": "2026-10-11T07:31:10.139Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1ab9faafac534c60bf441ecf6a0889ed90e4d2facc75776700c535eae9bd5fd6",
+        "at": "2026-10-11T05:48:30.384Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T07:31:10.140Z",
+        "override": {
+          "reason": "Stakeholder override, 2026-10-11: nine daemon review rounds were run on this design, with blocking findings of 7, 6, 4, 3, 2, 6, 1, 1 and 2. Every finding was corrected in the design. The corrections for the ninth round (one HIGH, one MED) were made after the last review and were not re-reviewed, so the recorded verdict is a block. The findings had moved from the shape of the design to details that each Story's own design settles, and each of the ten Stories gets its own design and daemon review before any code is written. Details are in the design's feedback record."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 1,
+          "med": 1,
+          "low": 13
+        },
+        "at": "2026-10-11T07:00:30.601Z",
+        "report": {
+          "entityId": "HLD-c2ba6fa62a148ed1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-c2ba6fa62a148ed1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -707,98 +558,6 @@
         "kind": "diagram-mermaid",
         "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/er-model.html",
         "title": "ER model"
-      }
-    ],
-    "feedback": [
-      {
-        "id": "96005441",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T07:31:05.272Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Review history, 2026-10-11: nine daemon review rounds, with blocking findings of 7, 6, 4, 3, 2, 6, 1, 1 and 2. Every finding was corrected in this design; the corrections for the ninth round (the cross-file pass after a file event visiting pending rows that await the files just committed, with completion by id extended to imports; the start-up comparison removing a vector whose entity is gone) were NOT re-reviewed. One review attempt failed on the reviewer's side (17 premises against a template limit of 16) and recorded nothing. Stakeholder decisions recorded in this design: completeness as a separate field with the four status values kept; all three git ignore sources; tracked files indexed; generated or minified files and the .insrc directory left out everywhere; ambiguous relationships reported apart and not counted as incompleteness; the repository entity stored so that manifest dependencies are written. Findings of this depth are expected to continue in each Story's own design review.",
-        "kind": "comment"
-      },
-      {
-        "id": "be0336f7",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T07:43:12.990Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: reindex is the one command and indexes every file from scratch, whether or not its content has changed; there is no separate repair. Today repo.reindex skips every file whose stored content hash is unchanged (src/indexer/index.ts:628 and :1004-1008). Not re-reviewed. Open for the stakeholder to confirm: unchanged text with an unchanged embedding model keeps its vector.",
-        "kind": "comment"
-      },
-      {
-        "id": "54f1f469",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T07:46:08.679Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Clarified by the stakeholder, 2026-10-11: a reindex calls the delete operations on the graph store and the vector store for the repository and builds everything again, vectors and document summaries included. This supersedes the earlier note that unchanged text keeps its vector. Not re-reviewed.",
-        "kind": "comment"
-      },
-      {
-        "id": "5d49450b",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T07:53:00.827Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: while a repository is being indexed or reindexed, search and analyze requests about it return a named error that states the indexing state, and no partial answer. Carried by Story s5 (a new requirement and acceptance criterion ac4 in the definition). Not re-reviewed.",
-        "kind": "comment"
-      },
-      {
-        "id": "c29d060e",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T07:56:39.212Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Stakeholder decision, 2026-10-11: a reindex is queued at once, for a request and for the migration alike; only the repository being reindexed is offline, from the start of its own run until that run completes, and other repositories are answered as usual. Not re-reviewed.",
-        "kind": "comment"
-      },
-      {
-        "id": "0dcd0429",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T08:16:16.235Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Amended after approval, 2026-10-11, on the stakeholder's decision: Story s4 is reworded to the cause reproduced that day. The failure is not the semaphore limit: the daemon loses its file lock on the lock file when another descriptor on it is closed in-process, and another process that opens and closes the store then removes the semaphores. The title, the first and third criteria and the first requirement of s4 now speak of the store not being broken by another process. Not re-reviewed.",
-        "kind": "comment"
-      },
-      {
-        "id": "e7105cdb",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-11T09:27:55.718Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md"
-        },
-        "comment": "Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).",
-        "kind": "comment"
-      },
-      {
-        "id": "592cddbb",
-        "author": "subho@insors.io (decision, recorded by the controller)",
-        "timestamp": "2026-10-14T08:19:01.804Z",
-        "target": {
-          "file": "src/indexer/repo-type.ts"
-        },
-        "comment": "For Story s6 (stakeholder decision 2026-10-14: no separate issue, s6 addresses it). Concrete case in this repository: the bare-name ignore list for Node repositories contains 'build' (src/indexer/repo-type.ts:29), and hasIgnoredSegment (src/indexer/index.ts:104) matches it at any depth, so src/workflow/runners/build/ (19 files, all tracked by git; .gitignore has no rule for it, git check-ignore reports none) is never indexed. 19 files in src/ make 38 imports into it, all missing from the graph with the calls through them. s6's design should use this as an acceptance case: after s6, these 19 files are indexed and the 38 imports stored. It also affects Story s1's completeness until s6 lands: imports into that directory resolve to file ids that are never stored, so this repository reads not complete with them counted.",
-        "kind": "comment"
-      },
-      {
-        "id": "74e142f6",
-        "author": "subho@insors.io (decision, recorded by the controller)",
-        "timestamp": "2026-10-14T08:19:18.604Z",
-        "target": {
-          "file": "src/indexer/repo-ignore-config.ts"
-        },
-        "comment": "CORRECTION to entry 592cddbb (2026-10-14): in THIS repository src/workflow/runners/build/ IS indexed. Its .insrc/config.json ignore list no longer contains 'build' (removed 2026-10-10), and resolveRepoIgnore (src/indexer/repo-ignore-config.ts:58-62) uses a repository's own list instead of IGNORE_DIRS, so the 38 imports into it are stored and Story s1's completeness is not affected. The defect stands for any repository on the default list: IGNORE_DIRS for Node contains 'build' (src/indexer/repo-type.ts:29, also 'dist' and 'out'; Python 'build'/'dist'; Java 'target'/'build'/'out') and hasIgnoredSegment (src/indexer/index.ts:104) matches it at any depth, hiding nested source directories that git tracks. s6 addresses it; use a nested tracked 'build' directory in a fixture repository as its acceptance case.",
-        "kind": "comment"
       }
     ]
   },

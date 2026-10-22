@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dcf2d4a0-bb28-4435-8592-74e3a78e9bb9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.096Z",
+    "epicCreatedAt": "2026-07-27T06:54:16.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5a6e60ccefd9be4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Trim the write-side: recommender + setup + Config type",
+      "parent": {
+        "entityId": "STORY-f5a6e60ccefd9be4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f5a6e60ccefd9be4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f5a6e60ccefd9be4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0a522264cccc5225bb5aa5ec08979df60b076138ab7bb7acfb654f230d94b2fb",
+        "at": "2026-10-22T12:44:57.099Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.100Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Trim the write-side: recommender + setup + Config type",
+    "summary": "model-recommender.toConfig() drops the models.{local,embedding,embeddingDim,tiers,context} literal (keep providers.local + ollama.host); RecommendedConfig trims accordingly; setup.ts drops the local/embedding/embeddingDim/context/tiers spreads; shared/types.ts trims the legacy top-level model keys. Coupled type edits land together so tsc stays green.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "model-recommender.toConfig() output contains none of the retired paths (only providers.local + ollama.host + analyze if any)",
+      "setup.ts no longer writes models.local/embedding/embeddingDim/context/tiers",
+      "Config/RecommendedConfig types no longer declare the legacy keys and npm run build is clean"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "smoke: setup write-side — model-recommender.toConfig()/setup output contains none of the retired paths"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

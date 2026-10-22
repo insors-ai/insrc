@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-066d3ce9-045f-4dc8-bbd6-315dc91ea017",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.959Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Distinguish reusable infrastructure from net-new needs",
+      "parent": {
+        "entityId": "EPIC-753e0ed64921d937",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "20677f06c6cc34624f3b972b595919af0b1959815c30a8e7539abbb11ec2bafc",
+        "at": "2026-10-22T12:43:06.959Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

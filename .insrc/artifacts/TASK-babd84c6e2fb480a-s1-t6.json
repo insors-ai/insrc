@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ec329ee6-a087-410b-9158-6b980130621f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.094Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Live checks in a running VS Code",
+      "parent": {
+        "entityId": "STORY-babd84c6e2fb480a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-babd84c6e2fb480a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6bbf96fbd8508b390d04e99a7786dcda1a69e173e91ad7f6049befdf6c6ecf49",
+        "at": "2026-10-22T12:44:28.097Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.097Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live checks in a running VS Code",
+    "summary": "Click an http link, a code reference with a line and a code reference while the chat group is the only group, in both the chat and the review pane, and record the results as reported evidence at validate. The gate cannot run these, so the result is the builder's own record and maps to no test file.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "an http link opens in the browser exactly once",
+      "a code reference opens at its line",
+      "the file opens in the chosen editor group, and Beside when only the chat group exists"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "an http link opens in the browser exactly once, in the chat and in the review pane"
+      },
+      {
+        "level": "live",
+        "name": "a code reference opens at its line, in the chosen editor group, and Beside when only the chat group exists"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

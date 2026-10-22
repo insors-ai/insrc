@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cabc3dde-f082-4946-aef1-468f037f83df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.377Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Name head artifacts from a written title",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c00559b7e38bb6ce-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe19e4185c90e93f3ffa02244650ce6479e1a17b1d2ee0b9228c174406aa5b58",
+        "at": "2026-10-22T12:44:33.377Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.378Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Name head artifacts from a written title",
+    "summary": "Add optional title to SpecArtifactBody and DefineBody and ask for it in the brainstorm and define synthesizer prompts/schemas; finalizeBrainstorm, finalizeIssue and finalizeDefine label from body.title, and finalizeStandaloneLld (when no head exists yet) from params.storyTitle, each falling back to safeDeriveSlug(focus).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A SPEC/DEF/ISSUE with a title gets a folder slug derived from it.",
+      "Absent or degenerate titles fall back to the focus-derived slug.",
+      "Existing title-less artifacts keep their stored epicSlug.",
+      "A first-time standalone LLD is labelled from storyTitle; a re-finalized one keeps the label its existing LLD head carries."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "head naming from title with focus fallback (SPEC, DEF, ISSUE, standalone LLD)"
+      },
+      {
+        "level": "integration",
+        "name": "regression guard: standalone design.story with specHash stamps seededFromSpec and renders the Seeded-from line"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

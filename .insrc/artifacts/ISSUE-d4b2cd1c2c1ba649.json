@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-19T05:22:01.887Z",
     "parentRef": {
       "slug": "stalled-premise-call-discards-daemon-s"
+    },
+    "epicCreatedAt": "2026-10-19T05:18:18.372Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b4b3770affc668380e337123667e9614a1b1daaa24818141b751967a7a7aa3aa",
+        "at": "2026-10-19T05:18:18.372Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T05:22:01.887Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

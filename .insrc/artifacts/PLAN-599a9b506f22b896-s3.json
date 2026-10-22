@@ -22,72 +22,57 @@
     "storyId": "s3",
     "lldRunId": "wf-1789549723188-h2juk8",
     "lldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc1 deriveWorkItemIdentity (id.ts) + sc2 resolveArtifactMdPath/listWorkItems/listArtifactMdPaths (path-scheme.ts) exist for the migration to consume.",
-          "evidence": "id.ts:202 deriveWorkItemIdentity; path-scheme.ts:118/157/178 resolveArtifactMdPath/listWorkItems/listArtifactMdPaths — sc1+sc2 available.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The insrc:artifact marker regex (ARTIFACT_ID_MARKER_RE) + artifactIdMarker + the 8 *ArtifactId helpers + artifactJsonPath + ARTIFACTS_DIR exist in storage.ts — the enumerate/locate surface.",
-          "evidence": "storage.ts: ARTIFACT_ID_MARKER_RE present, 8 *ArtifactId helpers (:148+), artifactJsonPath:251, ARTIFACTS_DIR='.insrc/artifacts':53 — the enumerate/locate surface exists.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The authoritative artifact set is the .insrc/artifacts/*.json store; BUILD companion JSON is hash-named (BUILD-<hash>-<story>.json) and its md is markerless (located by hash filename), while other kinds are located via the insrc:artifact marker.",
-          "evidence": "Direct on-disk verification during grounding: the artifact set is .insrc/artifacts/*.json; BUILD-*.json companions are hash-named and their md are markerless (located by hash filename), other kinds carry the insrc:artifact marker. The plan's enumerate/locate split holds.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "path-scheme.test.ts exists as the mkdtemp tmp-repo seeding pattern the migration tests mirror.",
-          "evidence": "path-scheme.test.ts uses mkdtempSync (confirmed among the src matches) — the tmp-repo seeding pattern the migration tests mirror exists.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p5",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Task dependsOn is acyclic (t1[]; t2←t1; t3←t1,t2; t4←t1,t2; t5←t3,t4) with order 1..5 a valid topological order.",
-          "evidence": "Task dependsOn: t1[], t2[t1], t3[t1,t2], t4[t1,t2], t5[t3,t4] — acyclic; order 1..5 is a valid topological order (no Task precedes a dependency).",
-          "action": "None — ordering valid.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-16T09:51:06.677Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-16T09:51:10.286Z",
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c182776f316b370e72dd450bc97936c7ec82dc0f6cf64bbc658f1538cd6d92b2",
+        "at": "2026-09-16T09:48:36.530Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-16T09:51:10.286Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-16T09:51:06.677Z",
+        "report": {
+          "entityId": "PLAN-599a9b506f22b896-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-599a9b506f22b896-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

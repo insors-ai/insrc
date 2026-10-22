@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-fa52d819-3a19-4f11-a378-358eeb41b665",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.975Z",
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Declare capability tiers and assign reasoning roles to them",
+      "parent": {
+        "entityId": "EPIC-820cc07b9c74195c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "be0524a21963ee33a4bfebdeaa1afcd60d3a169f4aec826d0ae634472ca66f79",
+        "at": "2026-10-22T12:43:06.975Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

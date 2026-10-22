@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T12:09:33.517Z",
     "parentRef": {
       "slug": "send-codex-structured-output-schemas-openai",
       "storyId": "s1"
+    },
+    "epicCreatedAt": "2026-10-17T10:47:23.903Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "509ab47860dab1045a1bd36e488d0e717e8e27f373752e088c6571b8beaf40f4",
+        "at": "2026-10-17T10:47:23.903Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T12:09:33.517Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

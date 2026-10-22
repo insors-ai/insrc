@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cad3760b-7504-452d-ba99-68b482693c18",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.684Z",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1d04e56057b3daba",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the session-output module: segments, markers and the tail reader",
+      "parent": {
+        "entityId": "STORY-1d04e56057b3daba-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1d04e56057b3daba-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5f1de1e9c217593345fd03ce51d6cf690be6bce65ea6e48b2f04e7bd48cf79a8",
+        "at": "2026-10-22T12:43:16.684Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.685Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the session-output module: segments, markers and the tail reader",
+    "summary": "New vscode-free vscode-plugin/src/chat/session-output.ts: createSessionOutput({ root, fs, maxBytes, pollMs, now }) with beginTurn (generation header on a new file, closes an open segment with a turn-end marker of unknown code, appends turn-start, truncates the err log, returns paths and cursor), endTurn (turn-end marker), tail(cursor, { finished, signal }) yielding complete CLI lines of one segment with the cursor after each (markers skipped; ends at the segment's turn-end, the next turn-start, or EOF once finished), errTail, and the marker grammar (top-level \"insrc.marker\" key only).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A segment is exactly the CLI lines between its turn-start and turn-end markers; markers are never yielded.",
+      "tail holds back a half-written line until its newline and follows growth until finished() is true; a final unterminated line is yielded only then.",
+      "Tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end ends at the next turn-start or once finished at EOF, and the next beginTurn closes it with a turn-end of unknown code.",
+      "A CLI line that merely contains the text insrc.marker inside a string is yielded as a CLI line."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "session-output.test.ts: a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes"
+      },
+      {
+        "level": "unit",
+        "name": "session-output.test.ts: tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end marker ends at the next turn-start or once the writer is finished"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

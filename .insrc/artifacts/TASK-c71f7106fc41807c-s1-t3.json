@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7795bccd-2d29-4502-9348-de4d12e4e827",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.561Z",
+    "epicCreatedAt": "2026-09-29T19:27:37.375Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c71f7106fc41807c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "analyze-step: add replaceState/reencodeState + switch its leaking intermediate phases",
+      "parent": {
+        "entityId": "STORY-c71f7106fc41807c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c71f7106fc41807c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c71f7106fc41807c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aa967e6ca24a2bcb9c9b02b9cf87366a494a8f6c6abfc16b977d2bbad7c40ac1",
+        "at": "2026-10-22T12:44:39.566Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.567Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "analyze-step: add replaceState/reencodeState + switch its leaking intermediate phases",
+    "summary": "Apply the identical fix to the OTHER leaking store: add replaceState to src/mcp/analyze-step/state-store.ts + reencodeState to analyze-step/state.ts, and switch the mint-without-release sites at phases/plan.ts:164/214 + phases/narrow.ts:213/257 to reencodeState(input.state, next). start.ts (first mint) + bundle.ts:122 (terminal release) unchanged. Keep analyze-step's own MAX_ENTRIES/TTL_MS constants (no store merge). Mirrors t1+t2 for the analyze-step store.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "analyze-step plan.ts + narrow.ts advance via reencodeState(input.state, next); _stateStoreSize stays ~1 across a long run",
+      "analyze-step start.ts + bundle.ts terminal release unchanged",
+      "analyze-step keeps its own module-local MAX_ENTRIES/TTL_MS (no shared module)",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "analyze-step-state.test.ts — analyze-step replaceState/reencodeState bound live tokens (~1) across a long run; single-use + version guard hold; _stateStoreSize stays bounded past MAX_ENTRIES turns"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

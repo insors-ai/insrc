@@ -7,7 +7,26 @@
     "updatedAt": "2026-10-20T13:05:18.377Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
-    "epicSlug": "chunked-review-pipeline-every-review"
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "51523151bf9c64f9352fecf54eaa683fd8882edc9588d95e8e0c3ec0a9ebd82c",
+        "at": "2026-10-20T08:14:23.816Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -64,21 +83,21 @@
         "passed": true
       }
     ],
-    "summary": "t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt. The installed daemon runs the new build: checkout 973fc8bd, built 18:26:28 IST; the daemon process (pid 43853, from ~/.insrc/daemon.pid) started 18:26:30 IST running ~/.insrc/daemon/out/daemon/index.js and has not restarted. On that process: an under-limit code review (CR-f431a4420d03374f-S001: 2 changed files, one chunk, verdict pass, daemon, full grounding; daemon log 12:57:11 UTC 'code-review record written') and an under-limit template design review (36,594-character LLD copy against the 384,000-character limit; one session, 169 s, verdict block H1 M1 L10, design-spec; daemon log 13:04:26 UTC 'workflow.review: reviewed'), both in today's result shape. Earlier premise and template smokes on the previous build 99ae70fc are kept as well.",
+    "summary": "t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt. The installed daemon runs the new build: checkout 973fc8bd, built 18:26:28 IST; the daemon process (pid 43853, from ~/.insrc/daemon.pid) started 18:26:30 IST running ~/.insrc/daemon/out/daemon/index.js and has not restarted. On that process: an under-limit code review (CR-f431a4420d03374f-s1: 2 changed files, one chunk, verdict pass, daemon, full grounding; daemon log 12:57:11 UTC 'code-review record written') and an under-limit template design review (36,594-character LLD copy against the 384,000-character limit; one session, 169 s, verdict block H1 M1 L10, design-spec; daemon log 13:04:26 UTC 'workflow.review: reviewed'), both in today's result shape. Earlier premise and template smokes on the previous build 99ae70fc are kept as well.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-f431a4420d03374f-S001.json"
+          "file": ".insrc/artifacts/BUILD-f431a4420d03374f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-20T13:05:18.377Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-f431a4420d03374f-S001.json"
+          "file": ".insrc/artifacts/CR-f431a4420d03374f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-20T13:05:18.377Z"
@@ -92,7 +111,7 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-f431a4420d03374f-S001.json"
+          "file": ".insrc/artifacts/TESTS-f431a4420d03374f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-20T13:05:18.377Z"

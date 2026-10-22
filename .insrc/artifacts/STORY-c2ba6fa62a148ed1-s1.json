@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-84eba11d-3f28-4a7c-8ee4-0c4614cf202e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.068Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "No relationship between indexed files is lost, and a damaged index can be repaired (ISSUE-12f70133)",
+      "parent": {
+        "entityId": "EPIC-c2ba6fa62a148ed1",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f82fd8a25739e7a5d79f7ad9c8fc9d97e5e878806d6bab45eaf113d4e336bd8",
+        "at": "2026-10-22T12:43:07.069Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

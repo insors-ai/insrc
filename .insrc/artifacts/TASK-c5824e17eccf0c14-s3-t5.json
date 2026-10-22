@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ec7255c0-c3ce-4773-88d0-37529c17aa07",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.658Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s3",
+    "envelope": {
+      "description": "erDefinitionToIr + renderErCompanion (deterministic assembleShell render)",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "39b6bc561c0b0bad7a90dc3080d78c6e593f3145417b6fe95186ef296c9e4801",
+        "at": "2026-10-22T12:44:38.658Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.659Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "erDefinitionToIr + renderErCompanion (deterministic assembleShell render)",
+    "summary": "In companion/er.ts + companion/render.ts, add erDefinitionToIr(erDef): DocumentIR (classes->entity nodes, scalar slots->attributes, class-ranged slots->relationship edges w/ crow's-foot cardinality) and renderErCompanion(erDef, title, destPath) that builds the IR + awaits docgen assembleShell + writes the sibling HTML + returns a CompanionArtifactRef. Deterministic; non-ok DocGenOutcome -> DiagramGenerationError + omit.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "erDefinitionToIr is deterministic (same erDef -> same IR) and maps scalar vs class-ranged slots correctly",
+      "renderErCompanion writes the sibling via assembleShell and returns a diagram-mermaid CompanionArtifactRef",
+      "a non-ok assembleShell outcome yields DiagramGenerationError + no file written",
+      "no generateDocument, no Python, no cloud REST is exercised"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "erDefinitionToIr: classes->entities, scalar slots->attributes, class slots->relationships w/ crow's-foot cardinality; deterministic"
+      },
+      {
+        "level": "unit",
+        "name": "renderErCompanion: builds IR + spied assembleShell + writes sibling; non-ok -> no file + DiagramGenerationError"
+      },
+      {
+        "level": "unit",
+        "name": "renderErCompanion renders ONLY via assembleShell (local docgen seam) — no generateDocument, no Python, no cloud REST"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

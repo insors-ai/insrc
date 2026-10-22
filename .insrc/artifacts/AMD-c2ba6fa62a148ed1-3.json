@@ -1,35 +1,58 @@
 {
-  "id": "AMD-c2ba6fa62a148ed1-3",
-  "epicHash": "c2ba6fa62a148ed1",
-  "epicSlug": "complete-consistent-richer-code-index-one",
-  "hldBaseRunId": "wf-1791697214822-7bombm",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc1",
-    "field": {
-      "name": "reasonCounts",
-      "type": "{ unwritable: Record<string, number>; awaiting: Record<string, number> }",
-      "optional": false,
-      "purpose": "counts of unwritable relationships and of awaiting-target rows by reason, so completeness can say why a repository is incomplete (e.g. targets excluded by an ignore rule vs. not stored yet)"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "createdAt": "2026-10-14T08:28:31.484Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "rejected",
+      "revision": {
+        "number": 0,
+        "contentHash": "624db48fe2a43c2939dd5328388e058384f303c6c548e3026ba78fd05e82db88",
+        "at": "2026-10-14T08:28:31.484Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "RepoCompleteness.reasons must name each cause with its count; the sketch's unwritable and pending['awaiting-target'] are single numbers, and an import of a file an ignore rule excludes (a real gap the user must see) must be told apart from a target that is not stored yet. The field is additive and owned by s1.",
+  "body": {
+    "id": "AMD-c2ba6fa62a148ed1-3",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "reasonCounts",
+        "type": "{ unwritable: Record<string, number>; awaiting: Record<string, number> }",
+        "optional": false,
+        "purpose": "counts of unwritable relationships and of awaiting-target rows by reason, so completeness can say why a repository is incomplete (e.g. targets excluded by an ignore rule vs. not stored yet)"
+      },
+      "breaking": false
+    },
+    "rationale": "RepoCompleteness.reasons must name each cause with its count; the sketch's unwritable and pending['awaiting-target'] are single numbers, and an import of a file an ignore rule excludes (a real gap the user must see) must be told apart from a target that is not stored yet. The field is additive and owned by s1.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1791966510451-11zqwp",
+      "storyId": "s1",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-14T08:28:31.484Z"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "step-output",
       "ref": "s1 context.assemble bundle 6 (facts 18-21)"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1791966510451-11zqwp",
-    "storyId": "s1",
-    "stepId": "s4"
-  },
-  "proposedAt": "2026-10-14T08:28:31.484Z",
-  "status": "rejected",
-  "rejectedAt": "2026-10-14T08:41:25.782Z",
-  "rejectedReason": "Duplicate of AMD-c2ba6fa62a148ed1-2 (identical sharedContract.fieldAdd reasonCounts on sc1), re-filed by each re-run of design.story for s1 on 2026-10-14; stakeholder decision: approve AMD-2, reject the duplicates."
+  ]
 }

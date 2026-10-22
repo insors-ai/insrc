@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9859f3b-52f1-405d-843c-06c6c4463860",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:50.561Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Five drift-locked terminal-styled mock HTML deliverables",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8e4cb53cac727f3e0dc260d8c138bf189109c978bf57f03e467c43fec28be9a",
+        "at": "2026-10-22T12:44:50.561Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:50.562Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Five drift-locked terminal-styled mock HTML deliverables",
+    "summary": "Add the five per-surface mock HTML files under vscode-plugin/src/chat/mocks/ (one per SurfaceKind: chat, provider-dropdown, history-dropdown, inline-diff, docs-review), derived from the approved reference mock at docs/epics/.../S001/mocks.html. Per the s3 critique, each mock's <style> block is GENERATED programmatically from renderTerminalStyle(terminalTheme) (a small checked-in generator, e.g. vscode-plugin/src/chat/mocks/gen-mocks.ts, run to (re)produce the files) so the drift-lock passes by construction; only the per-surface body markup (targeting the surface's TERMINAL_SURFACE_CLASS root class, using the terminal vocabulary: box-drawing chrome, monospace, marker glyphs, not chat-bubble) is hand-authored.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Exactly five mock files exist, one per SurfaceKind, each referencing its TERMINAL_SURFACE_CLASS root class.",
+      "Each mock's embedded <style> block is generated from renderTerminalStyle(terminalTheme) and equals it byte-for-byte (drift-lock holds by construction; regenerating produces no diff).",
+      "Mock markup uses the terminal vocabulary (box-drawing/monospace/marker glyphs) and references no remote origin / asWebviewUri (VS Code webview surface only)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Mock round-trip: each of the five mock files' <style> equals renderTerminalStyle(terminalTheme) byte-for-byte"
+      },
+      {
+        "level": "integration",
+        "name": "Mock coverage: exactly five SurfaceKind mock files exist, each referencing its TERMINAL_SURFACE_CLASS root class"
+      },
+      {
+        "level": "integration",
+        "name": "Mock files reference no remote origin / asWebviewUri (VS Code webview surface only)"
+      },
+      {
+        "level": "integration",
+        "name": "Anti-chat-bubble scan: mock markup uses box-drawing/monospace/marker vocabulary, no chat-bubble constructs"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

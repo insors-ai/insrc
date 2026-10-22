@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bade442e-d82f-4e23-87ef-187b863681fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.044Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "envelope": {
+      "description": "PolicyRefresh fetch and record",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c75d984f002688a6777e33bbd6885ac17da2001e386f770b2b36206fca94347d",
+        "at": "2026-10-22T12:43:25.044Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.045Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "PolicyRefresh fetch and record",
+    "summary": "Implement the guarded refresh sequence under the per-repository lock and one 10 second deadline: use the resolved branch, fetch only that branch with an explicit refspec, --refmap= and the isolating flags, read the policy from the updated tracking ref, find the anchor, write the sighting (or remove it when the file is absent) before the cosmetic remote HEAD update, return ok false when the sighting cannot be recorded after the ref moved, and treat a failed cosmetic update as a warning.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Only the default branch tracking ref changes; no tag, other tracking ref, FETCH_HEAD or prune effect.",
+      "A refresh brings a changed policy into the tracking ref and the reader then applies it.",
+      "An unreachable remote reports failure and leaves the last fetched policy in use.",
+      "A sighting write failure reports failure, a cosmetic HEAD failure is only a warning (except where the HEAD still points at another retained branch, see the removal check), and a second refresh is refused while the lock is held.",
+      "The policy file removed from the default branch removes the sighting and the repo reads as none; the one exception is a remote HEAD that still points at another retained branch and cannot be updated, where the previous record is put back and the refresh fails closed so the old branch's policy cannot be resurrected."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: refresh brings a changed policy into the tracking ref and the reader applies it"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: unreachable remote reports failure and the last fetched policy stays in use"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a supplied branch is refused when the remote is unreachable and nothing is recorded"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: sighting write failure reports failure and cosmetic HEAD failure is a warning only"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a second refresh is refused while the lock is held and a stale lock is taken over"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-refresh.test.ts: default-branch rename and policy file removal"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

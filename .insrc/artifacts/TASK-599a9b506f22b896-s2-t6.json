@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-703d5d20-190c-4657-a45f-37dee181b7ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.289Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "envelope": {
+      "description": "sc2 unit tests + update the existing gate suites for the nested layout",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "21bb94fdc091f112065e80797ab0622ed9eaa2f8db32ca4ae582eea3bfa23a42",
+        "at": "2026-10-22T12:43:35.289Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.289Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc2 unit tests + update the existing gate suites for the nested layout",
+    "summary": "Add src/workflow/__tests__/path-scheme.test.ts (resolveArtifactMdPath per ArtifactKind + epic/standalone, story-scoped-with-epic-identity throw, identity-not-filename keying, listWorkItems/listArtifactMdPaths over a seeded 2-story epic + 1 standalone tree, empty-dir tolerance, *ArtifactPaths md-delegates/json-unchanged, *MdRel matches). Update plan-gate.test.ts / gates.test.ts seeding for the widened helper signatures so they exercise the nested tree end-to-end. Run the full workflow+mcp sweep; the amendments/questions/tracker-resolve JSON-store suites act as the untouched-store tripwire.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "New path-scheme.test.ts covers every ac1/ac2/ac3 proving-test subject from the LLD test strategy",
+      "At least one test asserts the standalone workItemKind path (docs/standalone/...) so a mis-derived kind from t3 is caught by a test, not only review",
+      "plan-gate.test.ts + gates.test.ts pass against the nested layout with the widened helper signatures",
+      "Full `npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'` sweep passes (JSON-store suites green — confirming that side untouched); tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "path-scheme.test.ts: full sc2 resolver + listing suite (fixtures via deriveWorkItemIdentity + a seeded 2-story epic + 1 standalone tree)"
+      },
+      {
+        "level": "integration",
+        "name": "amendments / questions / tracker-resolve JSON-store suites still pass unchanged (hash-flat store + scanners not re-pointed)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-46ba5571-c31a-4004-ac3a-3b4190bb6612",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.947Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Extend the code-review-step protocol types for the confirm_wait handshake",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4781f530bb49b18e9a8bdf43c45994f5c4706888d5834870419a6a11388343af",
+        "at": "2026-10-22T12:43:48.947Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.947Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the code-review-step protocol types for the confirm_wait handshake",
+    "summary": "In src/mcp/code-review-step/types.ts: add optional proceed?/state? to CodeReviewStepInputStart (:31); add the CodeReviewStepConfirmWait member { next:'confirm_wait'; staleFiles; isProcessing; guidance; state } to the CodeReviewStepOutput union (:91); make CodeReviewStepStatePayload.grounding optional (:100) so the pre-grounding confirm_wait state is representable. All additive to the existing start/judgements envelope (k2).",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "CodeReviewStepInputStart accepts optional proceed?/state?; the plain { phase:'start', epicHash, storyId, repo? } call still typechecks",
+      "CodeReviewStepOutput includes the ConfirmWait member; CodeReviewStepStatePayload.grounding is optional"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types compile: CodeReviewStepInputStart accepts optional proceed?/state?, the plain start call still typechecks, and the ConfirmWait output member is assignable (tsc over the code-review-step module)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-f6fc3bad-621a-4225-9f4e-9c6b3f609d46",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.033Z",
+    "epicCreatedAt": "2026-10-11T14:50:53.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b452bdbfc94c0a8f",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Apply active guidelines to page work without restarting design",
+      "parent": {
+        "entityId": "EPIC-b452bdbfc94c0a8f",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "97e89fc51c1b74a357ce608227005c5d92bb9578b170448ff949a1ea79d795fe",
+        "at": "2026-10-22T12:43:07.034Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

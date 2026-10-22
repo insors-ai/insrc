@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7f6c7677-7a58-4172-9161-b263ddc11bfb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.165Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the folder anchor read recognise an ISSUE, so the identity segment stops drifting",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "14e9b426b807e7b76ccbbcb5219164c37a1715c5d76f474b91350be316551396",
+        "at": "2026-10-22T12:44:47.165Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.166Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the folder anchor read recognise an ISSUE, so the identity segment stops drifting",
+    "summary": "Route readEpicCreatedAt through the new accessor instead of reading the define artifact alone, keeping its signature and its stated meaning. Sequenced immediately after the accessor and BEFORE any label work, because it fixes the deeper fork: while the anchor can differ per stage, two stages land in different folders even when their labels agree perfectly. Its four callers each apply a nowISO fallback and none needs editing. The test that proves it must straddle a UTC date boundary — the identity segment is built from the anchor DATE only, so a same-day fixture passes whether or not the fix works, which is exactly why the live four-folder work item masked this.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "An ISSUE-anchored work item yields the ISSUE's createdAt where it previously yielded undefined",
+      "Signature and return meaning are unchanged, and a DEF-bearing epic behaves exactly as before",
+      "Its four callers are UNEDITED — asserted by diff, not assumed",
+      "CROSS-MIDNIGHT, mandatory: two stages finalized with their own clocks on opposite sides of midnight UTC resolve to ONE identity segment. A same-day fixture is explicitly insufficient and must not be the only coverage",
+      "The rule that this is a finalize-time stamp helper, never called during path resolution, still holds",
+      "MUTATION PROOF, run and recorded: restoring the DEF-only read turns the cross-midnight test red while a same-day fixture stays green — which is itself the proof that a same-day fixture was worthless"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined"
+      },
+      {
+        "level": "unit",
+        "name": "signature and return meaning unchanged for a DEF-bearing epic"
+      },
+      {
+        "level": "smoke",
+        "name": "CLOCK INDEPENDENCE: two stages finalized on opposite sides of midnight UTC resolve to one identity segment"
+      },
+      {
+        "level": "smoke",
+        "name": "the definition artifact is consulted at finalize time only and never during path resolution"
+      },
+      {
+        "level": "smoke",
+        "name": "MUTATION PROOF: restoring the DEF-only read reds the cross-midnight fixture while a same-day fixture stays green"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

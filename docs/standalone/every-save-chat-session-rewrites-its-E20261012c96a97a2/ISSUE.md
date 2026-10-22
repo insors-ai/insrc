@@ -12,7 +12,7 @@ The store keeps one record per session with the transcript inline: createMemento
 
 ## Fix intent
 
-Make the cost of a save depend on what changed, not on the length of the history, for example by keeping the transcript in separate pages from the session's head record. Existing sessions must keep working and must not be lost or corrupted by the change, including when several windows share the same global state and when a session is evicted. Building the history list should not need every transcript. The view-side paging from the earlier design (LLD-ddc4ede1dbf84626-S001) is separate and does not depend on this.
+Make the cost of a save depend on what changed, not on the length of the history, for example by keeping the transcript in separate pages from the session's head record. Existing sessions must keep working and must not be lost or corrupted by the change, including when several windows share the same global state and when a session is evicted. Building the history list should not need every transcript. The view-side paging from the earlier design (LLD-ddc4ede1dbf84626-s1) is separate and does not depend on this.
 
 ## Citations
 

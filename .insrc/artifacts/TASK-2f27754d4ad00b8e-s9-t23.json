@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31459dba-69ef-4168-8eb5-0d1a45675e3f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.791Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Completion evidence, tracker readers and workflow types",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9f735c5682fd819025546496840583130d0c09edec6f5f27c0fb7e5c107d8894",
+        "at": "2026-10-22T12:43:22.791Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.792Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Completion evidence, tracker readers and workflow types",
+    "summary": "Move src/workflow/artifact-core/completion-evidence.ts, src/workflow/runners/tracker/context.ts, src/workflow/tracker/conventions.ts and src/workflow/types.ts to the lifecycle. Update src/workflow/artifact-core/__tests__/completion-evidence.test.ts, src/workflow/tracker/__tests__/tracker.test.ts and src/workflow/tasks/__tests__/task-readers.test.ts.",
+    "size": "M",
+    "order": 23,
+    "acceptanceChecks": [
+      "Completion evidence and the tracker context read the lifecycle",
+      "The WorkflowArtifactMeta type no longer declares the approval stamps"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "completion-evidence.test.ts: completion evidence reads the lifecycle"
+      }
+    ],
+    "planTaskId": "t23"
+  },
+  "citations": []
+}

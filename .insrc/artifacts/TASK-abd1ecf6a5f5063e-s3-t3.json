@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c9e3eae9-e542-48e1-8284-828c5360f6ce",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:08.441Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Wire BrainstormElicitState to carry real convergence data across turns",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7beb1dbb809b03d94c5f24fb8bfced3bae5966c09e6b3115436b70fff6b2bce2",
+        "at": "2026-10-22T12:44:08.441Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:08.441Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire BrainstormElicitState to carry real convergence data across turns",
+    "summary": "In src/mcp/workflow-step/state.ts and state-store.ts, pin the convergence semantics of the existing BrainstormElicitState { workingStatement, answered, openQuestions } continuation shape: update its type-level doc comment from the s1 'inert placeholder' description to document the real fold/reask invariants (workingStatement is the running fold, answered tracks settled answers, openQuestions mirrors the runner's remaining openItems), and verify the existing state-store read/write (pack/unpack) path for this state correctly persists and returns t2's real per-turn values end-to-end rather than the previously-unused placeholder defaults. No new field or new store is introduced — this is a semantics/verification task on existing code paths, not a shape change.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "BrainstormElicitState round-trips through the existing state-store (state.ts/state-store.ts) unchanged in shape — no new field or new store introduced",
+      "The opaque continuation state token is preserved byte-identical across a convergence turn",
+      "state.ts's BrainstormElicitState doc comment no longer describes it as an 's1 inert placeholder' and instead documents the fold/reask semantics; a state-store round-trip test using t2's runner-produced values confirms workingStatement/answered/openQuestions are written and read back exactly (not dropped, renamed, or defaulted) across a paused-turn boundary"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "posting a confirmed:false resume pauses the run again and the opaque state token is byte-identical across the turn (k8/k9)"
+      },
+      {
+        "level": "integration",
+        "name": "BrainstormElicitState { workingStatement, answered, openQuestions } round-trips through the state-store unchanged across turns"
+      },
+      {
+        "level": "integration",
+        "name": "a run left paused (never resumed with confirmed:true) writes no DEF/SpecArtifact and leaves only transient state-store state (ac5)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

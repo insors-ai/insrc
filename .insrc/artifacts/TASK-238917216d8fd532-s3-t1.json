@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5bf41a25-7ef2-409b-9d18-b5990c4ac9f5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.480Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Plugin: sc3 model (ReviewComment/CommentAnchor) + pure CommentBuffer",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "80cf24073148b823d1a511bad61e7ed0276ee7885e62ae7f0f141808fb9512e3",
+        "at": "2026-10-22T12:43:18.480Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.481Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: sc3 model (ReviewComment/CommentAnchor) + pure CommentBuffer",
+    "summary": "Add the sc3 Kotlin data classes ReviewComment(id, anchor, body) + CommentAnchor(sectionPath?, quote?, openQuestionId?) and the pure Kotlin-owned CommentBuffer (add mints a client id + appends and returns the ReviewComment; edit(id,body)->Boolean; remove(id)->Boolean; snapshot()->immutable List in insertion order; clear()). Source of truth, headlessly testable. Presentation-only (lc1/k1) — in-memory only, no persistence, no daemon call.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ReviewComment/CommentAnchor compile with all anchor fields optional; add mints a client id, appends, returns the ReviewComment carrying anchor+body.",
+      "edit(known)->true + reflected in snapshot; edit(unknown)->false, no change; remove(known) drops it; remove(unknown)->false.",
+      "snapshot() is an immutable copy in insertion order; clear() empties it; two adds to the same sectionPath get distinct ids.",
+      "No file/daemon access; compiles under JDK21/Gradle 8.10."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "CommentBuffer.add mints a client id, appends, and returns the ReviewComment carrying the anchor+body (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "CommentBuffer.edit(known id) updates the body and is reflected in snapshot; edit(unknown id) returns false and changes nothing (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "CommentBuffer.remove(known id) drops it from snapshot; remove(unknown id) returns false (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot() returns an immutable copy in insertion order; clear() empties it"
+      },
+      {
+        "level": "unit",
+        "name": "two adds to the same sectionPath get DISTINCT ids and each retains its own quote (ac2)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

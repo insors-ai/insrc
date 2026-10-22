@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T09:07:53.194Z",
+    "updatedAt": "2026-10-15T09:37:05.780Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "epicSlug": "add-syntax-highlighting-chat-diff-widget",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "fb2f5c55288880d48c1b30240cde18d0b2fb8d61e349d9b21a2957b4aad4f717",
+        "at": "2026-10-15T09:07:53.194Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T09:37:06.379Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-00d80121c593053c-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-00d80121c593053c-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/gen-webview-libs.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/diff-highlight.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/webview-hljs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T09:37:05.780Z"
+      }
+    ],
+    "commit": "9e31763f",
+    "summary": "Diffs in the chat's diff widget are coloured by syntax and open the file at the clicked line. highlight.js core plus a fixed language subset is bundled as its own generated module (webview-hljs.ts, 69 KB of a 250 KB budget) and loaded in the chat shell only; each side of a diff section is tokenised separately and the lines are built from text nodes and class-named spans, never assigned markup, with a plain-text fallback. Token colours reuse the chat's existing theme variables. A diff line or the header path posts open-code-ref through the links story's sink and host opener. One departure from the LLD wording, approved in the plan: the shared fake DOM gained a textOf helper instead of a children-joining textContent getter, because the getter change broke 11 unrelated UX-card tests. Live checks were run by the user in VS Code; scope in the evidence."
+  }
+}

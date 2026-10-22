@@ -23,112 +23,62 @@
     "hldBaseRunId": "wf-1785928117126-v61buv",
     "hldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "IpcRequest is defined in src/shared/types.ts around line 749 with fields id/method/params/stream? (the surface s4 extends with an optional client envelope).",
-          "evidence": "src/shared/types.ts:749 reads `export interface IpcRequest {` — confirmed; the additive optional client envelope extends a real type.",
-          "action": "None — citation confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/server.ts IpcServer.handleConnection(socket) exists and today tracks no per-connection state (the hook point for the connection registry).",
-          "evidence": "src/daemon/server.ts:75 reads `private handleConnection(socket: Socket): void {` — the registry hook point exists exactly as cited.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/server.ts IpcServer.handleMessage dispatches a request by request.method to the handler map (where request.client/method would update the registry).",
-          "evidence": "src/daemon/server.ts:93 reads `private async handleMessage(raw: string, socket: Socket): Promise<void> {` — the per-message update site exists as cited.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon.status handler is registered in the src/daemon/index.ts handler map (around line 849), and the IpcServer is constructed there (around line 452) — the peer location for the new daemon.debug-status handler.",
-          "evidence": "src/daemon/index.ts:849 reads `'daemon.status': async () => {` and index.ts:452 reads `const server = new IpcServer({` — both peer/construction sites confirmed for the new daemon.debug-status handler.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts rpc() opens an ephemeral per-call connection and calls socket.end() after the first response (the write site where the client envelope is populated).",
-          "evidence": "src/cli/client.ts:11 reads `export async function rpc<T = unknown>(method: string, params: unknown = {}): Promise<T> {` — the rpc write site to carry the client envelope exists.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon.status IPC is consumed CLI-side via rpc<DaemonStatus>('daemon.status') in src/cli/services/daemon.ts (~line 50) — the precedent attachedClients() mirrors.",
-          "evidence": "The cited symbol resolves at src/cli/services/daemon.ts:52 (`return rpc<DaemonStatus>('daemon.status');`) — the artifact said ~line 50 (off by two, the line-50 read landed on the doc comment). Symbol confirmed; the precedent attachedClients() mirrors is real.",
-          "action": "None material — minor line drift, symbol present.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/mcp-register.ts provides runCli (never-throwing subprocess capture) and alreadyRegistered (/^\\s*insrc\\b/m) that the client-side mcpStatus parse reuses for ac1.",
-          "evidence": "src/daemon/mcp-register.ts:55 reads `function runCli(...)` and :87 reads `function alreadyRegistered(stdout: string): boolean {` — both reusable client-side for ac1 as cited.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The DebugService facade (sc1) currently has sections/daemonStatus/scanOrphans/killOrphans and s4 adds attachedClients + mcpStatus additively; the in-repo debug fakes needing the new stubs live in the tui/command/DebugPane/DaemonSection test files.",
-          "evidence": "src/cli/services/debug-types.ts:35 reads `export interface DebugService {` (with scanOrphans/killOrphans present per s3) and DebugPane's 'MCP diagnostics' placeholder is the swap target; additive widening is well-founded.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are exactly two MCP clients (claude, codex) that mcpStatus reports one McpClientStatus each, matching the two ClientPlan entries in mcp-register.ts.",
-          "evidence": "src/daemon/mcp-register.ts:105 reads `const plans: ClientPlan[] = [` with exactly the claude + codex entries — the two-client inventory matches; mcpStatus returning one per client is grounded.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The IpcServer socket lifecycle exposes a 'close' event (used to delete the registry entry) alongside the existing 'data'/'error' handling in handleConnection.",
-          "evidence": "server.ts handleConnection registers socket.on('data') + socket.on('error'); a socket 'close' listener is added by s4 for registry deletion (the stream path already listens on 'close' at server.ts:149). The 'close' lifecycle event is available as the design assumes.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-08-06T08:19:38.878Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-06T08:20:30.780Z",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2d99447c14259951bbf285f02cd530ff0a04a662244d7bd74b1bd2945d941fe6",
+        "at": "2026-08-06T08:18:22.599Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T08:20:30.780Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-08-06T08:19:38.878Z",
+        "report": {
+          "entityId": "LLD-f900cf34c0342d4f-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-f900cf34c0342d4f-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

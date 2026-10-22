@@ -21,9 +21,37 @@
     "epicSlug": "bug-docs-review-pane-s-opendoc",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-01T11:43:05.812Z",
     "parentRef": {
       "slug": "bug-docs-review-pane-s-opendoc"
+    },
+    "epicCreatedAt": "2026-10-01T11:34:59.990Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a4af5e9de26397d1dbe60a944a56ebc72a24cd02c9fa06c92cc4c34e3cd7fd92",
+        "at": "2026-10-01T11:34:59.990Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T11:43:05.812Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-f2f08ccf89f8ab25-S001 -->
+<!-- insrc:artifact PLAN-f2f08ccf89f8ab25-s1 -->
 
 # Plan: E20261005f2f08ccf:S001
 
@@ -120,6 +120,6 @@ Run the finished non-controller review on two real designs in this repo, one ans
 
 ## 3. References
 
-- **[[c1]]** `prior-artifact` `LLD S001 contract details, data model changes, error paths and test strategy (LLD-f2f08ccf89f8ab25-S001)`
+- **[[c1]]** `prior-artifact` `LLD S001 contract details, data model changes, error paths and test strategy (LLD-f2f08ccf89f8ab25-s1)`
 - **[[c2]]** `prior-artifact` `LLD S001 invariants to preserve: a DEF, an ISSUE and every other non-design artifact is reviewed by the existing pipeline unchanged`
 - **[[c3]]** `stakeholder` `user, 2026-10-05, resolution of the LLD's three open questions` — "yes, go with recommended"

@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-319fae32-ef33-4ae2-aecc-444ee8fbb4c4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:57.433Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s3",
+    "envelope": {
+      "description": "permission-decision handler records the outcome + suppresses the grant echo (ac2/ac3/ac4/k4)",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6aaafe38c9866f422dcc7281b0f8b29ef01d9f84ae40fbbde8224cbd70f7737b",
+        "at": "2026-10-22T12:43:57.433Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:57.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "permission-decision handler records the outcome + suppresses the grant echo (ac2/ac3/ac4/k4)",
+    "summary": "In the permission-decision handler (chat-panel.ts:745-796), on approve AND deny of a pending tool-gate push the { kind:'permission-outcome', toolName, decision } TranscriptEntry (persist it and emit it live via the same toViewModel/renderer t1 adds — no bespoke render), and pass { suppressEcho: true } to the two grant re-runs at :779/:782. Leave the dir-block informational branch (:764-775), the codex decide() relay (:787-794), pendingPerms, and the approval-request/permission-decision messages UNCHANGED.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "On approve (command or tool-name fallback) the host records permission-outcome(approved) and both grant re-runs pass { suppressEcho: true } (no user-row echo) while still running the resume turn with [toolName].",
+      "On deny the host records permission-outcome(rejected); no resume turn, no echo.",
+      "An unknown/stale requestId records no outcome and falls through to the codex decide() relay unchanged; the dir-block branch still posts its informational message and records approved without a grant.",
+      "The grant/resume path, pendingPerms correlation, and permission-decision message are byte-identical to today (k4)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "approve WITH command: host pushes permission-outcome(approved) AND the grant re-run posts NO user-row echo (suppressEcho) while still issuing the resume turn with [toolName]"
+      },
+      {
+        "level": "unit",
+        "name": "tool-name fallback grant (no command): records approved + suppresses echo + still resumes"
+      },
+      {
+        "level": "unit",
+        "name": "deny: records permission-outcome(rejected), no resume turn, no echo"
+      },
+      {
+        "level": "unit",
+        "name": "unknown/stale requestId records no outcome and falls through to the codex decide() relay unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "dir-block approve still posts its informational message unchanged and records an approved outcome without a grant"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-72b1bee074ba2dab-S001 -->
+<!-- insrc:artifact BUILD-72b1bee074ba2dab-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -19,7 +19,7 @@ One additive port method and its use in the adoption path.
 ## Changes
 
 - `.insrc/artifacts/AMD-315d510cb28100e2-11.json` — **insrc-build** (2026-10-19T04:26:17.190Z)
-- `.insrc/artifacts/LLD-72b1bee074ba2dab-S001.json` — **insrc-build** (2026-10-19T04:26:17.190Z)
+- `.insrc/artifacts/LLD-72b1bee074ba2dab-s1.json` — **insrc-build** (2026-10-19T04:26:17.190Z)
 - `docs/standalone/link-adopted-unit-issue-under-its-E2026101972b1bee0/S001/LLD.md` — **insrc-build** (2026-10-19T04:26:17.190Z)
 - `src/workflow/tracker/__tests__/fixtures/issue-ops-signatures-broken.ts` — **insrc-build** (2026-10-19T04:26:17.190Z)
 - `src/workflow/tracker/__tests__/fixtures/issue-ops-signatures.ts` — **insrc-build** (2026-10-19T04:26:17.190Z)

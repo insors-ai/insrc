@@ -14,13 +14,45 @@
     "hldBaseRunId": "wf-1784476347429-dbnaq6",
     "hldEffectiveHash": "2699deb1622741156a80ddbf2c951c2e924e7e98d7183cee9dae0693b835ea99",
     "hldAmendmentsApplied": [],
-    "approvedAt": "2026-07-20T11:37:23.242Z",
     "tracker": {
       "adapter": "github",
       "storyRef": "insors-ai/insrc#44",
       "pushedAt": "2026-07-20T11:37:25.439Z"
     },
-    "epicCreatedAt": "2026-07-19T15:51:03.713Z"
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c732fee0c363d069ab724b7658db42777b98ba32b2ce66ff66939f783cfbd749",
+        "at": "2026-07-20T11:37:23.201Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-20T11:37:23.242Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

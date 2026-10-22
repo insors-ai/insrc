@@ -1,0 +1,282 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792136535934-9zlm5y",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T07:43:42.510Z",
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 86571,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "epicSlug": "write-project-file-references-relative-project",
+    "storyId": "s1",
+    "lldRunId": "wf-1792135419222-dzfrxi",
+    "lldEffectiveHash": "3c6a109dffcde0c18281a30e395abdc5b0a99bd930b4749fcefc69a17d60459c",
+    "authoredBy": "controller",
+    "rangeBase": "d0d087433ef64863272b96797185addbdd3547c0",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "109d1f170307d66dbdc088400daeda8dc5686ec32e9b2b28e7c68256cc101987",
+        "at": "2026-10-16T07:43:42.510Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T07:47:08.669Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The build adds the one shared wording of the path rule and puts it in the schema descriptions, then in every synthesize prompt and the step prompts that author paths, and only then adds the write-time check that refuses a call site or a code or doc citation that is not in that form. The order keeps the check from refusing stages that have not yet been told the rule. Existing records are not touched.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add PATH_FORM_RULE and describe the path-valued schema fields with it",
+        "summary": "Add the PATH_FORM_RULE string constant to src/workflow/runners/scope-prompts.ts, stating the form (project file relative to the root, optional :N, :N-M or :N:C and #anchor, no prose in the span, never shortened; external file written in full; a path copied from a step output that is not in this form is corrected rather than copied). Add a description carrying that wording to the callSites and pathsCited fields in the design-story, define, design-epic and plan schemas, without adding a pattern.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "PATH_FORM_RULE is exported from src/workflow/runners/scope-prompts.ts and nowhere else defines the wording",
+          "The callSites field in the design-story schema and the pathsCited field in the design-story, define, design-epic and plan schemas have a description that carries the rule wording",
+          "No schema gains a pattern or a new required field, and the existing schema tests still pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Put the rule in every synthesize prompt and the path-authoring step prompts",
+        "summary": "Interpolate PATH_FORM_RULE into the stub, brainstorm, issue, define, design.epic, design.story and plan synthesize prompts in src/workflow/orchestrator.ts, and into the step prompts that author callSites or pathsCited (the design-story s1 and s4 prompts and the issue capture prompt). In the design.story synthesize prompt, state the exception beside the 'verbatim from s4' hard rule: dataModelChanges are copied from s4 except that a call site is written in the path form. The tracker synthesize prompt is left alone because it does not reach validateBodyAndCitations.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The seven synthesize prompts for stub, brainstorm, issue, define, design.epic, design.story and plan each contain PATH_FORM_RULE, imported and not retyped, and the tracker synthesize prompt is not changed",
+          "The design-story s1 and s4 prompts and the issue capture prompt contain PATH_FORM_RULE",
+          "The design.story synthesize prompt lets a call site taken from s4 be written in the path form, beside the verbatim rule",
+          "The existing prompt-pinning tests (adjacent-scope-gate and the synthesizer tests) still pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the path check and the 'paths' failure kind",
+        "summary": "Add the 'paths' kind to ValidationFailure in src/workflow/synthesizer.ts and add checkPathForms(citations, callSites), which checks the ref of code and doc citations and an LLD's call sites by their strings only (accepting the line forms and #anchor, absolute paths and http(s) URLs, refusing prose, whitespace, a leading ./ and .. segments, and naming every offending entry). Call it from validateBodyAndCitations after the boundary and citation checks, reading dataModelChanges[].callSites from the body when present. Added last, after the prompts carry the rule. Leave the daemon correction loop in src/daemon/workflow-rpc.ts and the in-session phase in src/daemon/steps/workflow-step/phases/synthesize.ts unchanged and confirm they handle the new kind.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "checkPathForms accepts a relative path with :N, :N-M, :N:C and #anchor, an absolute path and an http(s) URL, and refuses prose, whitespace, a leading ./ and a .. segment, naming each offending entry",
+          "Only citations of kind code and doc are checked, and an artifact with no dataModelChanges reads no call sites",
+          "validateBodyAndCitations returns the existing boundary and citation results unchanged for a well-formed artifact and a 'paths' failure otherwise",
+          "The daemon correction loop still tests only 'boundary', and the in-session phase returns a retryable synthesize-paths error with the entries in its message"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails: validateBodyAndCitations, checkPathForms (new), PATH_FORM_RULE (new)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges: ValidationFailure kind, callSites and pathsCited field descriptions"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths: prose beside a path, retry limit, shortened path limit, edge cases"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy: path-forms.test.ts subjects and acceptance mapping ac1-ac3"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration: three rollbackable steps (rule, check, prompts)"
+    }
+  ]
+}

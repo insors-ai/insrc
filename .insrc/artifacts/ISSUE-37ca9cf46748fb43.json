@@ -21,7 +21,27 @@
     "epicSlug": "bug-vs-code-plugin-s-settings",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-12T09:58:42.070Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "ae30765e978c507a4412531eda8b514eaf34e756d3977ea70bceebff92df4107",
+        "at": "2026-10-12T09:58:42.070Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Declare analyzer.dataSourceListingTimeoutMs in the VS Code settings manifest",

@@ -23,89 +23,65 @@
     "hldBaseRunId": "wf-1786031712974-qqqe5k",
     "hldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "http-client-shapes.ts is the S003 template with HttpClientShape + matchHttpClient + emitCallsHttp + fileImportsHttpLibrary that S004 mirrors.",
-          "evidence": "http-client-shapes.ts exports matchHttpClient, emitCallsHttp, fileImportsHttpLibrary and interface HttpClientShape (4/4 matched) — the template S004 mirrors exists as described.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "external-endpoints.ts resolveExternalEndpoints filters CALLS_HTTP and its gcOrphanEndpoints is protocol-BLIND (lists all externalEndpoint nodes, GCs by CALLS_HTTP in-edges only) — the latent cross-protocol hazard S004 fixes.",
-          "evidence": "external-endpoints.ts:77 resolveExternalEndpoints filters kind==='CALLS_HTTP'; :166 gcOrphanEndpoints(repo) lists ALL externalEndpoint nodes (:167 listEntitiesByKind(null,'externalEndpoint')) and gates on kindFilter:['CALLS_HTTP'] (:174) — protocol-blind, confirming the cross-protocol GC hazard S004 fixes.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "promoteResolvedBatch preserves each unresolved row's ORIGINAL kind via RELATION_KIND_BYTE[unresolved.kind], so a PUBLISHES_TO/SUBSCRIBES_TO row promotes to a resolved edge of that same kind (not hardcoded to CALLS_HTTP).",
-          "evidence": "relations.ts:405 promoteResolvedBatch uses RELATION_KIND_BYTE[unresolved.kind] — the promoted edge kind is the row's own kind, so PUBLISHES_TO/SUBSCRIBES_TO survive promotion (not hardcoded to CALLS_HTTP).",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The sc1 vocabulary already carries PUBLISHES_TO=14 / SUBSCRIBES_TO=15 relation bytes + externalEndpoint entity byte, so S004 adds no new graph kinds.",
-          "evidence": "keys.ts: PUBLISHES_TO:14, SUBSCRIBES_TO:15, externalEndpoint:13 — sc1 vocabulary already carries the messaging kinds; S004 adds none.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "sc2 resolve accepts protocol 'messaging' (ExternalProtocol = 'http'|'messaging'|'rpc'), and makeExternalEndpointId takes a generic protocol param, so a messaging pass reuses both unchanged.",
-          "evidence": "shared/types.ts:551 `type ExternalProtocol = 'http' | 'messaging' | 'rpc'`; base.ts:35 makeExternalEndpointId is generic over a protocol param — both reusable for 'messaging' unchanged.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The Java parser carries an import-gate flag (ctx.httpEnabled) computed from fileImportsHttpLibrary that S004's messagingEnabled mirrors.",
-          "evidence": "java.ts has 6 references to httpEnabled/fileImportsHttpLibrary — the import-gate flag S004's messagingEnabled mirrors exists.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The S003 test files S004 extends exist and use the parse()->relations harness under node:test.",
-          "evidence": "All three test files (http-client-shapes.test.ts, http-recognizer-py-go.test.ts, external-endpoints.test.ts) exist — the harness S004 extends is present.",
-          "action": "",
-          "fixability": "manual"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3314d8376746e86a8c1f26784d84252c2b4f91a8d3d99811b9a234ac49edf9a6",
+        "at": "2026-08-07T15:50:31.332Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
         }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 7,
-        "low": 0
       },
-      "reviewedAt": "2026-08-07T15:51:45.697Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-08-07T15:54:22.282Z",
-    "reviewOverride": {
-      "reason": "true",
-      "at": "2026-08-07T15:54:22.282Z"
-    },
-    "epicCreatedAt": "2026-08-06T15:51:10.850Z"
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-07T15:54:22.282Z",
+        "override": {
+          "reason": "true"
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 7,
+          "low": 0
+        },
+        "at": "2026-08-07T15:51:45.697Z",
+        "report": {
+          "entityId": "LLD-914cbf5ea9026b92-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-914cbf5ea9026b92-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

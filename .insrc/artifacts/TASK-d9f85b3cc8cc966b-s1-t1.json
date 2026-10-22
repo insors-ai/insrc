@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-94931f4b-881a-409d-935a-42f2a7918362",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.511Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add optional narrative/description fields to the four definitions and every schema that validates them",
+      "parent": {
+        "entityId": "STORY-d9f85b3cc8cc966b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d9f85b3cc8cc966b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "705561ee8055219f813b267e93fecd4b306fc703a881ad30e155c22e228ff9d8",
+        "at": "2026-10-22T12:44:44.515Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.516Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add optional narrative/description fields to the four definitions and every schema that validates them",
+    "summary": "Extend ErDefinition/ErClass/ErSlot, SequenceDefinition/participants/messages, ComponentDependencyDefinition/components (+ path), UxDefinition/elements/actions with optional narrative/description; mirror them in the four *_PROPERTY_SCHEMA objects AND the vendored closed linkml-metamodel.schema.json and adaptive-cards.schema.json; update the four *_CONTENT_GATE_RULE strings to ask for a narrative and per-element descriptions.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A definition of each kind carrying narrative + descriptions gets no HIGH from its validate*Definition.",
+      "A sound definition without the new fields still returns [] from every validator.",
+      "The design.story and design.epic synthesizer schemas expose the new optional fields."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "er/ux/sequence/component validators: described definition (narrative + descriptions) -> no HIGH"
+      },
+      {
+        "level": "unit",
+        "name": "er/ux/sequence/component validators: sound undescribed definition -> []"
+      },
+      {
+        "level": "unit",
+        "name": "body-fields / ux-body-fields: synth property schemas admit narrative + description"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

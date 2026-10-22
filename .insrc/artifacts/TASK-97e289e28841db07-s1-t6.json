@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d1ca74a-7181-40df-8629-2c6c17daefe5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.307Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Supply the sibling-.md source link from the orchestrator finalize helpers",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97e289e28841db07-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3025bcfee87910f2cca5c2ea5bbd54d014e1f310fd722c9cc31ed6d062a6eda5",
+        "at": "2026-10-22T12:44:01.311Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.311Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Supply the sibling-.md source link from the orchestrator finalize helpers",
+    "summary": "In renderErCompanionForBody / renderUxCompanionForBody / renderDiagramCompanionsForBody (orchestrator.ts), derive the sibling-.md relative link (./HLD.md at the design.epic site, ./LLD.md at the design.story + standalone-LLD sites) from the .md path already in scope and pass it as the sourceLink opt.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "Each finalize helper passes { repoPath, sourceLink: { label, href: <relative sibling .md> } } to its renderer.",
+      "The href resolves to ./HLD.md at the finalizeDesignEpic site and ./LLD.md at the design.story + standalone-LLD sites.",
+      "The link is a relative path only (no absolute/remote URL)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "renderErCompanionForBody/renderUxCompanionForBody/renderDiagramCompanionsForBody via finalizeArtifact: Purpose text + relative ./HLD.md (design.epic) / ./LLD.md (design.story + standalone-LLD) link + Legend present"
+      },
+      {
+        "level": "integration",
+        "name": "no remote URL; nothing inlined into the .md"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -7,8 +7,36 @@
     "updatedAt": "2026-10-10T06:56:51.784Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-10T06:56:52.711Z",
-    "epicSlug": "defect-against-e2-6a131558-issue-b2687832"
+    "epicSlug": "defect-against-e2-6a131558-issue-b2687832",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "42579722c22e1f57b72f7b9369a73d2f50f35248dfedcff8d19d846db4cb8d7a",
+        "at": "2026-10-10T05:47:27.819Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T06:56:52.711Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

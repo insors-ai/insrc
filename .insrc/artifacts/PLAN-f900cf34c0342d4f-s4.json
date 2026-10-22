@@ -22,122 +22,57 @@
     "storyId": "s4",
     "lldRunId": "wf-1786003781032-qjmy7p",
     "lldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "IpcRequest is defined in src/shared/types.ts around line 749 (the additive client field target).",
-          "evidence": "src/shared/types.ts:749 reads `export interface IpcRequest {` — the additive client-envelope target confirmed.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/server.ts IpcServer has handleConnection + handleMessage and a constructor taking handlers + streamHandlers (the registry hook points + the 3rd now-clock arg target).",
-          "evidence": "src/daemon/server.ts:75 `private handleConnection(socket: Socket): void {` confirmed; class IpcServer + handleMessage exist as the registry hook points.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/index.ts constructs `new IpcServer(...)` (~line 452) and registers the 'daemon.status' handler (~line 849), the peer site for daemon.debug-status.",
-          "evidence": "src/daemon/index.ts:452 `const server = new IpcServer({` and :849 `'daemon.status': async () => {` — both the IpcServer construction site (holds the ref for attachedClients()) and the peer handler location confirmed.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts rpc() writes an IpcRequest object (~line 17) — the single site to attach the client envelope.",
-          "evidence": "src/cli/client.ts:11 confirms rpc(); the request-write site (const req: IpcRequest) is where the client envelope attaches.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/debug-types.ts hosts the DebugService interface (with s2 daemonStatus + s3 scanOrphans/killOrphans) that t5 widens, and src/cli/services/debug.ts holds the injectable-deps cores + realDeps.",
-          "evidence": "src/cli/services/debug-types.ts:35 `export interface DebugService {` confirmed — the facade t5 widens (with s2/s3 members present); debug.ts holds the injectable-deps cores.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/mcp-register.ts provides runCli + alreadyRegistered + a two-client (claude, codex) ClientPlan list that the client-side mcpStatusWith parse reuses.",
-          "evidence": "src/daemon/mcp-register.ts:105 `const plans: ClientPlan[] = [` with the claude + codex entries confirmed; runCli/alreadyRegistered present — the two-client parse shape mcpStatusWith reuses.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "t6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/panes/DebugPane.tsx has a SECTION_VIEWS mcp placeholder ('MCP diagnostics') that t6 swaps for <MCPSection/>, mirroring how the daemon section is wired.",
-          "evidence": "src/cli/panes/DebugPane.tsx:36 `const SECTION_VIEWS: Partial<Record<string, () => ReactElement>> = {` confirmed — the mcp placeholder swap target (mirrors the daemon-section wiring).",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "t7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The in-repo debug facade fakes needing attachedClients/mcpStatus stubs live in exactly these test files: tui.test.ts, command.test.ts, DebugPane.test.ts, DaemonSection.test.ts (plus the new MCPSection test).",
-          "evidence": "grep for daemonStatus:/scanOrphans: matches across the four named test files (tui/command/DebugPane/DaemonSection); the fake inventory to widen is accurate (the new MCPSection test adds its own fake).",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "t2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The IpcServer socket lifecycle exposes a 'close' event (used to delete the registry entry) alongside the existing 'data'/'error' handlers in handleConnection.",
-          "evidence": "server.ts handleConnection registers socket.on('data')+('error'); the stream path already uses socket.on('close') at server.ts:149, so the 'close' lifecycle event t2 relies on for registry deletion is available.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "plan",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency graph is acyclic (t1 root; t2<-t1; t3<-t2; t4<-t1; t5<-t1; t6<-t5; t7<-t5) with order 1..7 a valid topological sort.",
-          "evidence": "dependency graph t1 root -> {t2,t4,t5}; t2->t3; t5->{t6,t7} is acyclic with order 1..7 a valid topological sort; matches the checklist.verify audit.",
-          "action": "None — ordering consistent.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-08-06T08:26:42.135Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-06T08:28:47.107Z",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "932f8bb6374bd6945ea5818a99d8dabfe322f7679685c0337f0fda8f8390cb1e",
+        "at": "2026-08-06T08:25:37.782Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T08:28:47.107Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-08-06T08:26:42.135Z",
+        "report": {
+          "entityId": "PLAN-f900cf34c0342d4f-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-f900cf34c0342d4f-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

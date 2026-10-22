@@ -24,101 +24,61 @@
     "hldBaseRunId": "wf-1790696212238-iuz6vo",
     "hldEffectiveHash": "35f2a2c76e97400c9aa521427a38dfe21bdef17dd1556ae696936902971fd34c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "m1",
-          "ref": "2.4/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "approveWorkflowTarget is defined in src/workflow/gates.ts (around line 636) — the insrc_workflow_approve landing S2 hooks the completion record into.",
-          "evidence": "READ confirms gates.ts:636 = `export function approveWorkflowTarget(` — the insrc_workflow_approve landing S2 hooks.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m2",
-          "ref": "2.5/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "approveArtifactByJsonPath is defined in src/workflow/gates.ts (around line 498) and throws ArtifactMissingError when the json path is absent, stamping meta.approvedAt on an existing artifact.",
-          "evidence": "READ confirms gates.ts:498 = `export function approveArtifactByJsonPath(jsonPath: string, ...): ApprovalResult {`; ArtifactMissingError is present in gates.ts. Accurate.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m3",
-          "ref": "2.2/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "persistBuildRecord is defined in src/workflow/runners/build/standalone-record.ts (around line 172) as a read-merge-write upsert.",
-          "evidence": "READ confirms standalone-record.ts:172 = `export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {`.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m4",
-          "ref": "2.3/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "collectBuildChangeLog is defined in src/workflow/runners/build/changed-files.ts (around line 67) with an injectable listChanged parameter defaulting to changedFiles.",
-          "evidence": "READ confirms changed-files.ts:67 = `export async function collectBuildChangeLog(`; grep confirms it is the single definition with the injectable listChanged param.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m5",
-          "ref": "3.1/c2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "persistBuildRecord has EXACTLY ONE production caller — handleValidate in src/mcp/build-step/phases/validate.ts (the record-construction pattern S2 mirrors); all other callers are tests or the internal delegate.",
-          "evidence": "grep `persistBuildRecord\\(` shows the only production caller is validate.ts:102; standalone-record.ts:195 is the module's own internal delegate, all others are tests. Sole-production-caller premise holds — the completion path is genuinely a NEW second invocation site.",
-          "action": "Confirmed — the S2 completion-path invocation is a new site.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m6",
-          "ref": "migration/c2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The validate-phase BuildRecord construction (validate.ts ~:102) builds meta.workflow='build', standalone:false with author 'insrc-build', and omits an empty change-log — the shape S2 mirrors at the completion site.",
-          "evidence": "grep confirms validate.ts:101 uses author 'insrc-build' and validate.ts:103 builds `meta: { workflow: 'build', standalone: false, epicHash, storyId, createdAt: now, updatedAt: now }` — the exact record shape S2 mirrors at the completion site.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m7",
-          "ref": "5/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A dedicated approve-build-completion.test.ts exists proving BUILD-as-story-completion is BUILD-scoped (keyed on the BUILD- basename / meta.workflow==='build').",
-          "evidence": "READ confirms src/workflow/__tests__/approve-build-completion.test.ts exists (BUILD-as-story-completion test S2's integration tests extend).",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m8",
-          "ref": "2.1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "ensureBuildRecordOnCompletion and its module src/workflow/runners/build/completion-record.ts are NET-NEW — they do not exist yet (S2 creates them), so no current source defines them.",
-          "evidence": "grep `ensureBuildRecordOnCompletion` = 25 matches, all in docs (this LLD), zero in src/. The function + completion-record.ts module are genuinely net-new — S2's deliverable, not a mis-cited existing symbol.",
-          "action": "Confirmed — net-new module, correctly not claimed to exist.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-29T17:03:05.497Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-29T17:03:25.559Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ea541ceb4c9cdc83380ff941e1db8e6b2f7f74c4cfed8f9d4867cdd75731a5e9",
+        "at": "2026-09-29T17:01:58.999Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T17:03:25.559Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-29T17:03:05.497Z",
+        "report": {
+          "entityId": "LLD-e2c6705fd105d4ac-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-e2c6705fd105d4ac-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

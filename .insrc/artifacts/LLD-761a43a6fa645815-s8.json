@@ -23,21 +23,62 @@
     "hldBaseRunId": "wf-1785741597494-lbzdo7",
     "hldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-08-04T08:35:57.857Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-04T11:01:13.388Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5aead5111f6aaaa4a658a3f3c1ef5be55bcef4a62696eb1e8351cca19b181c9f",
+        "at": "2026-08-04T08:35:03.902Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T11:01:13.388Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-08-04T08:35:57.857Z",
+        "report": {
+          "entityId": "LLD-761a43a6fa645815-s8",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-761a43a6fa645815-s8-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

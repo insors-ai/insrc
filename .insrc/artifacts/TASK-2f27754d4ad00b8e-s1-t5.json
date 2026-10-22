@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ebb30c58-bcc7-4af7-9063-7273439749ca",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.168Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve the Epic anchor in one place and stamp it",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59cbca7e2f24c5e1ad68f2a5c97b7b865b0f4bb3e81bc9575be5fd91a2d88301",
+        "at": "2026-10-22T12:43:20.168Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.169Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve the Epic anchor in one place and stamp it",
+    "summary": "Add resolveEpicAnchor (by head kind) and stampRootAnchor next to readEpicCreatedAt; remove the LLD-own-createdAt fallback from readEpicDefinitionCore; make workItemAnchorCreatedAt require the stamp and raise MissingAnchorError; make finalizeDefine, finalizeBrainstorm, finalizeIssue and finalizeStandaloneLld (always, even as the first record) stamp epicCreatedAt through stampRootAnchor. The record-folder helpers and the ledger writers are left to t6.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "resolveEpicAnchor returns the DEF or ISSUE head's createdAt, a stamped LLD head's stamp, and undefined for an unstamped LLD head",
+      "workItemAnchorCreatedAt throws MissingAnchorError without a stamp",
+      "each root producer stamps epicCreatedAt and a later record reads it",
+      "a work item with a DEF head keeps its existing folder"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/anchor-resolver.test.ts: resolveEpicAnchor by head kind, an unstamped standalone LLD head yields undefined, and workItemAnchorCreatedAt raises MissingAnchorError without a stamp"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/anchor-producers.test.ts: every root producer stamps epicCreatedAt and later records read it"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

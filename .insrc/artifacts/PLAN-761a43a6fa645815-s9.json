@@ -22,102 +22,57 @@
     "storyId": "s9",
     "lldRunId": "wf-1785906598929-39vvjl",
     "lldEffectiveHash": "48d9de9916c63edc69ab72daa80e9ee08e96148564e6257314474ecb327ed627",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "codeReview.enforce is a CONFIG_CATALOG entry at src/config/config-catalog.ts:84 — where t1's additive codeReview.freshnessTimeoutMs peer lands.",
-          "evidence": "config-catalog.ts:84 resolves (codeReview.enforce CONFIG_CATALOG entry) — t1's peer key lands there.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon handler map registers codeReview.grounding at src/daemon/index.ts:594 and queue.isProcessing is at src/daemon/queue.ts:154 — the peer + surfaces t2's codeReview.freshness handler registers beside and reads.",
-          "evidence": "index.ts:594 (codeReview.grounding handler) + queue.ts:154 (isProcessing getter) both resolve — the peer + surfaces t2 registers beside/reads.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The per-file indexedAt watermark exists on EntityRow at src/db/graph/codec.ts:159 (parsed at src/db/entities.ts:101) — the granularity t2's freshness compute reads.",
-          "evidence": "codec.ts:159 + entities.ts:101 (indexedAt) resolve — the per-file watermark t2's compute reads exists.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "fetchCodeReviewGrounding is the controller IPC client at src/mcp/daemon-stream.ts:301 — the peer t3's fetchCodeReviewFreshness mirrors.",
-          "evidence": "daemon-stream.ts:301 (export function fetchCodeReviewGrounding) resolves — the client peer t3 mirrors.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "runCodeReview (src/workflow/code-review/runner.ts) + the record body types (src/workflow/code-review/types.ts) exist — where t4 stamps groundingMode:'full'.",
-          "evidence": "runCodeReview + CodeReviewBody/CodeReviewArtifact resolve — the record-fold/persist path t4 stamps groundingMode:'full' on exists.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The code-review-step protocol types t5 extends exist: CodeReviewStepInputStart (types.ts:31), the output union (types.ts:91), CodeReviewStepStatePayload (types.ts:100).",
-          "evidence": "types.ts:31 (CodeReviewStepInputStart) + :100 (CodeReviewStepStatePayload) + the output union resolve — the protocol types t5 extends exist.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "t6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "handler.ts imports fetchCodeReviewGrounding (handler.ts:26) with DEFAULT_DEPS + DIMENSIONS + state-store seams — the start phase t6 inserts the gate before, and the state-store (StateTokenNotFound/loadState) the abort path uses.",
-          "evidence": "handler.ts:26 (fetchCodeReviewGrounding import) + DEFAULT_DEPS + StateTokenNotFound/loadState resolve — the start-phase insertion point + state-store seams t6 uses exist.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency graph (t3←t2; t6←{t3,t4,t5}; t7←{t2,t6}) is acyclic and order 1..7 is a valid topological order.",
-          "evidence": "Edges t3←t2, t6←{t3,t4,t5}, t7←{t2,t6} form a DAG; order 1..7 places each task after its deps. Acyclic + valid topological order.",
-          "action": "None — consistent.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-05T05:34:06.016Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-05T05:35:56.096Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "02c44e7a03e960c251b7f23e26d8ed10f27d00b3373aaf7f88646bce6a42fbab",
+        "at": "2026-08-05T05:33:06.275Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T05:35:56.096Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-05T05:34:06.016Z",
+        "report": {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-761a43a6fa645815-s9-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3c7cf98b-5481-40ed-8a16-576dd951ccac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.505Z",
+    "epicCreatedAt": "2026-09-30T04:45:09.517Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c219c7471d79496",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Read-only status bar via relocating provider+mode selects to the header (delta 3)",
+      "parent": {
+        "entityId": "STORY-7c219c7471d79496-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7c219c7471d79496-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7c219c7471d79496-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8bf6fcfc8a22895e395a9b744ee9cec3af0efe56068dc503c68c6f206e0538c8",
+        "at": "2026-10-22T12:43:49.507Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.508Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Read-only status bar via relocating provider+mode selects to the header (delta 3)",
+    "summary": "In renderShell (chat-panel.ts): move the #insrc-provider seg (:516) and the #insrc-modeseg span wrapping #insrc-mode (:517) verbatim out of the .statusbar and into the header .chrome region (:497) beside #insrc-history — same ids/options/classes so the :424-460 bootstrap wiring (pmode/pmseg/updatePermSeg/change-handler/session-restored) binds unchanged. Rebuild the .statusbar (:515-518) as read-only segments 'session <id>' + 'edits <mode>' + the existing '✓ idle' seg, with NO <select>. Add a mode→label map (manual→'review', edit-auto→'auto-edit', auto→'auto') for the 'edits' label and re-render it from pmode on the mode change-handler + session-restored (reusing the existing updatePermSeg path; no new message).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      ".statusbar renders read-only 'session <id>' + 'edits <mode>' + '✓ idle' segments and contains NO <select>",
+      "#insrc-provider and #insrc-mode <select>s are emitted inside the header (.chrome) region, retaining their ids, options (manual/edit-auto/auto) and provider option list",
+      "the 'edits <mode>' label maps manual→'review', edit-auto→'auto-edit', auto→'auto' and re-renders from pmode on change + session-restored",
+      "no HostToWebview/WebviewToHost message shape changes (presentation-only)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderShell .statusbar renders read-only 'session <id>' + 'edits <mode>' + '✓ idle' with no <select>"
+      },
+      {
+        "level": "unit",
+        "name": "renderShell emits #insrc-provider + #insrc-mode <select>s inside the header (.chrome) with ids/options preserved"
+      },
+      {
+        "level": "unit",
+        "name": "the 'edits <mode>' label maps manual→'review' / edit-auto→'auto-edit' / auto→'auto'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

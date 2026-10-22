@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-91bb9c69-8c0e-4655-9a65-c198287e6bcb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.172Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove the date fallbacks in the read paths",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b7a08c9da0bf701d5775fee180a14959ccf72fdd2483ad958f4f3b367b127072",
+        "at": "2026-10-22T12:43:20.173Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.173Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the date fallbacks in the read paths",
+    "summary": "Replace the fallbacks in the read paths with the resolved anchor and a failure before any write: code-review subject-paths.ts, questions.ts, pending.ts, delivery/graph.ts, and the helper callers in gates.ts, chain.ts and the implement.ts and validate.ts folder lookups. Add the cross-day folder tests for the epic and standalone routes and the missing-anchor tests for these sites.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on both routes, including delivery grouping",
+      "each listed read site fails before any file is created when no anchor exists",
+      "subject-paths.ts no longer uses new Date()",
+      "the workflow, delivery and code-review tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/anchor-folders.test.ts: HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/anchor-folders.test.ts: an unstamped standalone LLD head does not yield its own createdAt as the anchor"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/anchor-missing-read.test.ts: subject-paths, questions and the helper callers each fail before any file is created when no anchor exists"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -23,82 +23,62 @@
     "hldBaseRunId": "wf-1785587820064-46kctq",
     "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "q1",
-          "ref": "contract/SpecArtifact",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "define.ts and plan.ts are the artifact record+renderer template s6's new spec.ts mirrors (typed body + renderer importing artifactIdMarker + WorkflowArtifact).",
-          "evidence": "src/workflow/artifacts/define.ts:20 imports artifactIdMarker+defineArtifactId, :23 imports WorkflowArtifact; declares the typed body + renderer — the template SpecArtifact/spec.ts mirrors. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "q2",
-          "ref": "contract/specArtifactPaths",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "storage.ts holds the <t>ArtifactId/<t>ArtifactPaths/<t>MdRel family + ARTIFACTS_DIR + writeAtomic that specArtifactId/specArtifactPaths/specMdRel/SPECS_DIR mirror; no spec* peer exists yet.",
-          "evidence": "src/workflow/storage.ts:194 defineArtifactPaths, :50 ARTIFACTS_DIR, :71 writeAtomic present; no specArtifactPaths/SPECS_DIR in src yet (all matches in docs) — exactly the additive peers s6 introduces. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "q3",
-          "ref": "dataModel/wiring",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "orchestrator.ts prepareSynthesize + finalizeArtifact currently throw 'not yet supported' for workflow 'brainstorm' (the arms s6 replaces); finalizeDefine/finalizePlan are the pattern.",
-          "evidence": "src/workflow/orchestrator.ts routes brainstorm (case at :137) and defines finalizeDefine (:649); prepareSynthesize/finalizeArtifact throw 'not yet supported' for brainstorm (the arms s6 replaces, mirroring finalizeDefine/finalizePlan). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "q4",
-          "ref": "contract/SpecArtifact",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "WorkflowArtifact<Body> is the generic artifact envelope in types.ts that SpecArtifact specializes.",
-          "evidence": "src/workflow/types.ts:396 `export interface WorkflowArtifact<Body = unknown>` — the generic envelope SpecArtifact specializes. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "q5",
-          "ref": "dataModel/SpecArtifactBody",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "BrainstormCategory (the real union reused for SpecArtifactBody.category) is defined in src/shared/brainstorm-classes.ts.",
-          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` + :23 BRAINSTORM_CATEGORY_CLASSES — the real union reused for SpecArtifactBody.category. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "q6",
-          "ref": "dataModel/mapping",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The converged elicit output the synthesizer maps from is { category, workingStatement, openItems, confirmed, decisions[{chosen,ruledOut,reason}], nonGoals } in brainstorm/schemas.ts.",
-          "evidence": "The probe over-capped on docs (50 matches all in md artifacts), but the shipped s3/s4 brainstormElicitSchema in src/workflow/runners/brainstorm/schemas.ts carries workingStatement/openItems/confirmed/decisions{chosen,ruledOut,reason}/nonGoals (commits aeea535/b48d53a) — the converged output the synthesizer maps from. Confirmed via the shipped schema.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-02T10:05:34.061Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-02T11:10:03.451Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "dae911033a74519d97b064db666b6d0ee28c912256d19f4a448d1270d9010751",
+        "at": "2026-08-02T10:04:24.496Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T11:10:03.451Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-02T10:05:34.061Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

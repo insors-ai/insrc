@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02ed04b2-cb3b-4cdf-8fc7-69f192321332",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.274Z",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ca7382b0952a539",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Switch createChatPanelHost to the module",
+      "parent": {
+        "entityId": "STORY-8ca7382b0952a539-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ca7382b0952a539-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eb4aa698e519c85a13d511b801361ea2210b8c7afca7b8820075c4d1591bd3c5",
+        "at": "2026-10-22T12:43:56.274Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.274Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Switch createChatPanelHost to the module",
+    "summary": "In chat-panel.ts, create one lifecycle from the resolved deps (with isOpen = !disposed and the store). runTurn keeps the echo, title and request building, and calls lifecycle.start with a TurnSink (post waiting status, governor.beginTurn, post+appendEvent+pending perms/selections+governor.observe, store.save+resolveTurn+postHistory, error post). followLiveTurn becomes lifecycle.follow with a FollowSink. Map the call sites: cancel-turn to stop; new-chat and open-chat to detach then invalidate; dispose, onDidDispose and adopt to detach; decision to live. Remove the moved state and functions, and re-export DEFAULT_TURN_LOCK_TIMEOUT_MS.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "chat-panel.test.ts and extension-chat-wiring.test.ts pass with no test edits",
+      "the full plugin suite shows no new failures against the known baseline",
+      "plugin tsc --noEmit is clean",
+      "extension.ts is unchanged and still imports DEFAULT_TURN_LOCK_TIMEOUT_MS from chat-panel.js",
+      "runTurn calls lifecycle.start after the echo, title and save, with no await before it",
+      "createChatPanelHost no longer declares the moved turn state or functions"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts passes unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts passes unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

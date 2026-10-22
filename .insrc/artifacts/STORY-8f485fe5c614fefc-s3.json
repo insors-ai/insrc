@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-96a0eb5a-8bea-44ed-8c6d-8c9bb6172815",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.003Z",
+    "epicCreatedAt": "2026-07-29T11:44:50.811Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8f485fe5c614fefc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "See which of a module's behaviour tests reach and which they leave unverified",
+      "parent": {
+        "entityId": "EPIC-8f485fe5c614fefc",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "291a1a4c9b1258e6050675020dfe2776ef8bd509cc3bab8bf5fb5cb1dc2fd912",
+        "at": "2026-10-22T12:43:07.004Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

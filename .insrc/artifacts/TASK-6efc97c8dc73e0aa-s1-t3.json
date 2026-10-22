@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b796c7b6-ea6e-4872-bf7c-63e01f5fe611",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.152Z",
+    "epicCreatedAt": "2026-09-17T18:27:16.414Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Additive wiring (Language union, namespace map, VALID_LANGUAGES x2, side-effect import)",
+      "parent": {
+        "entityId": "STORY-6efc97c8dc73e0aa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6efc97c8dc73e0aa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6efc97c8dc73e0aa-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d23d46919bc12d08f564abce5f639e966cd7db008f5999c971c2020c80281ec5",
+        "at": "2026-10-22T12:43:44.154Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.155Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Additive wiring (Language union, namespace map, VALID_LANGUAGES x2, side-effect import)",
+    "summary": "Wire the additive edits so kotlin is a first-class language: add 'kotlin' to the Language union (shared/types.ts:510, after 'scala'); add kotlin:'jvm' to the lang→namespace map (shared/repo-namespaces.ts:69-70, after java/scala); add `import './parser/kotlin.js';` to the side-effect imports in src/indexer/index.ts (so registration fires); add 'kotlin' to both VALID_LANGUAGES sets (config/frontmatter.ts:47 and daemon/tools/builtins/code/class-locate.ts:47). All additive — no existing value changed.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "'kotlin' is in the Language union and in both VALID_LANGUAGES sets; kotlin:'jvm' is in the namespace map (so Kotlin imports share the jvm shared-modules repo id).",
+      "src/indexer/index.ts imports './parser/kotlin.js' among the side-effect parser imports so KotlinParser self-registers at startup.",
+      "tsc typechecks clean after the edits (the widened union type-checks everywhere)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "after importing the indexer, getParser('X.kt'/'X.kts') returns KotlinParser + supportedExtensions() includes them (registration wiring)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

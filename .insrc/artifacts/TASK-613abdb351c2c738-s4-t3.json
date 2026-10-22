@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-26b5fdfe-52a9-471b-90ae-ec6450397f48",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.485Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Carry the provider's error text on done ok:false and treat it as a failure",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a11a83c746d37b1b364f15f5c516d8cd3540e0fc145b07d9d44c132f44879b19",
+        "at": "2026-10-22T12:43:38.485Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.486Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry the provider's error text on done ok:false and treat it as a failure",
+    "summary": "Add the optional message field to the done TurnEvent in stream-events.ts; make the claude result mapper (cli-adapter.ts ~:655) set it from obj.result when is_error is true and the codex result mapper (~:781) set it from the error text; carry it through both doneEvent wrappers (live and resumed) with the session id; make onTerminal in chat-panel.ts treat done with ok:false as a failure (q.error = message, or 'the turn ended with an error' when there is none) so settleQueued resolves failed. This alone turns a failed claude or codex turn from done into failed before any retry exists, adds a regression test so it cannot be recorded as done again, and finds and updates every existing test that pinned the old done behaviour (named in the build summary).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+      "a queued turn ending with done ok:false resolves failed with the text, not done",
+      "every existing consumer of done renders as before (the field is additive)",
+      "a regression test fails if an is_error result is recorded as done again",
+      "every existing test that pinned the old behaviour (an is_error result resolving done) is found and updated in this task, and the build summary names them"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a queued turn that ends with done ok:false resolves failed with the text, not done"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

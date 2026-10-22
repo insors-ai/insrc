@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-12996759-ea93-4388-8b41-112962d77f75",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.775Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stylesheet for screens, accordions and minimum widths",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "393b2a8926d92e10a97a7ab43bf24e64ea439c0125d6c1ca8c14cbe9732a973b",
+        "at": "2026-10-22T12:43:26.775Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.776Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stylesheet for screens, accordions and minimum widths",
+    "summary": "Rewrite BOARD_STYLE: body min-width 320px; #main as an inline-size container; card grid repeat(auto-fill,minmax(min(240px,100%),1fr)); epic rows with a 220px minimum title column; the story overview as two columns minmax(340px,1.4fr) minmax(280px,1fr) stacking under @container (max-width:760px) with why and chain first; records table min-width 620px inside .table-wrap{overflow-x:auto}; stage section summaries with label, count and hint; breadcrumb, back, filter bar and banner styles. The six-column grid, the side column and the 600px block are removed. From this task on the full plugin suite is at its baseline.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "BOARD_STYLE contains body{min-width:320px}, container-type:inline-size on #main, the card-grid minimum, the 340/280 column minimums, the 760px container rule with order, and table.records min-width 620px inside .table-wrap with overflow-x:auto.",
+      "BOARD_STYLE uses only var(--vscode-*) colours and contains no display:none, visibility:hidden, clip, overflow:hidden, height:0 or text-overflow.",
+      "Both densities change only spacing and font size.",
+      "Headless-Chrome screenshots of each screen at 1200, 600 and 360 px show no overlapping or squeezed content.",
+      "The full plugin suite is at its baseline."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'BOARD_STYLE keeps a 320px minimum, card and column minimums, the records table scroll wrapper and only var(--vscode-*) colours, with no hiding rule'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

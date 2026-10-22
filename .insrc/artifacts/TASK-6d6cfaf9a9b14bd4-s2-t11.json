@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2109170b-7f12-405f-b43a-04ad7ea13714",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.212Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "End-to-end verification and dormant-token-branch record",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "226110568ae042c217534b240064f13c216a6c3a3fd9ef3335b564855ff1c720",
+        "at": "2026-10-22T12:43:43.212Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.213Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "End-to-end verification and dormant-token-branch record",
+    "summary": "Observation only, no code change — the design-record corrections that once rode along here now live in t4, so this Task is purely a real-run confirmation. Drive a real long-running run through the MCP server and confirm: notifications arrive keyed to the supplied token as the operation advances; a token-less invocation completes normally with zero notifications; and two overlapping invocations stay correctly keyed despite the id: 0 framing. Then record the ac3 split explicitly — the stage half is live on merge, while the token half is contract-complete and unit-tested against synthetic events but has no producer, since all eight daemon emission sites are stage-shaped today. No further s2 change is expected when s1 ships a token emitter; the branch is already implemented and covered, so the follow-up is re-verification, not rework. This Task inherits t7's s1 gate and is in fact strictly more dependent on it: observing real notifications is impossible until the daemon's `data` payload is a sc1 ProgressEvent. Attempted early, it will observe zero conforming notifications against WorkflowProgress-shaped frames and be misread as a wiring defect.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "This Task is not executed before s1's sc1 ProgressEvent reshape is merged; running it against WorkflowProgress-shaped frames is explicitly out of scope and is not a t7/t8 defect.",
+      "A real long-running run driven through the MCP server with a progressToken is observed emitting notifications/progress keyed to that token as it advances, and the observation is recorded.",
+      "The same operation run without a progressToken is observed completing normally with zero notifications.",
+      "Two overlapping real invocations are observed staying correctly keyed to their own tokens.",
+      "A written record states that the stage half of ac3 is live and the token half is contract-complete, test-covered against synthetic events, and dormant pending s1's token emitter.",
+      "No source file changes as part of the verification itself."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "real long-running run through the MCP server with a progressToken emits notifications/progress keyed to that token as it advances (gated on s1's sc1 ProgressEvent reshape)"
+      },
+      {
+        "level": "live",
+        "name": "the same real operation run without a progressToken completes normally with zero notifications"
+      },
+      {
+        "level": "live",
+        "name": "two overlapping real invocations stay correctly keyed to their own tokens despite the id: 0 framing"
+      },
+      {
+        "level": "smoke",
+        "name": "observation-only guard: the full sweep stays green and no source file changed as part of the verification"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

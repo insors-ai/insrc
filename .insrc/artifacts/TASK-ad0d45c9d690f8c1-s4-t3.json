@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-474c6600-50c5-43bd-bd60-08267bf1fbd1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.419Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "vscode.d.ts additions + wire the registrar/command/offer into extension.ts",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d0779e816887a11333b6197a6ed6f0503a15a66740bcc2de7314b5a5c592f4cd",
+        "at": "2026-10-22T12:44:13.419Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.420Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "vscode.d.ts additions + wire the registrar/command/offer into extension.ts",
+    "summary": "Extend vscode-plugin/src/vscode.d.ts with vscode.workspace.workspaceFolders (readonly { uri: { fsPath: string } }[] | undefined) + ExtensionContext.workspaceState (a Memento with get<T>(key, default) / update(key, value)). In extension.ts (sole 'vscode' importer): construct the real WorkspaceFolders (() => vscode.workspace.workspaceFolders?.map(f => f.uri.fsPath) ?? []) + the default PromptStore over context.workspaceState, build createWorkspaceRegistrar over the existing shared client, call registerWorkspaceCommands with the s1 surfaces, and fire a guarded fire-and-forget activation-time offerWorkspaceRegistration (preserving S001 never-throws). ADD insrc.workspace.register to the EXISTING contributes.commands array (S002 daemon + S003 hosts entries untouched) so the command is palette-reachable (k6).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "vscode.d.ts declares vscode.workspace.workspaceFolders + ExtensionContext.workspaceState; the package typechecks (tsc -p tsconfig.json)",
+      "extension.ts constructs the registrar (over the shared client) + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces",
+      "the activation-time offerWorkspaceRegistration is fire-and-forget + guarded so activate() never throws/blocks (S001) and only acts when a root is open",
+      "insrc.workspace.register is ADDED to the existing contributes.commands array (S002/S003 entries untouched) so it stays palette-reachable (k6)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extension.ts constructs createWorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and calls registerWorkspaceCommands with the s1 surfaces; the activation-time offerWorkspaceRegistration is fire-and-forget + guarded (never throws/blocks, S001) — source-scan"
+      },
+      {
+        "level": "unit",
+        "name": "contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)"
+      },
+      {
+        "level": "smoke",
+        "name": "the vscode-plugin package typechecks (tsc -p tsconfig.json) with the workspace module + the workspaceFolders/workspaceState vscode.d.ts additions"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

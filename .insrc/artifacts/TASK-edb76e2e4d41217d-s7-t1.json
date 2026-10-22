@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-07a87c41-bd95-4d73-abd2-2856d48ea075",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:54.539Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Add the additive sc3 docs-content + open-doc messages",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "17699f6d77fa208ac55b3f39728a1510f8dd527aaea39b2d9cc9d508ac19034b",
+        "at": "2026-10-22T12:44:54.540Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:54.541Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the additive sc3 docs-content + open-doc messages",
+    "summary": "In vscode-plugin/src/chat/protocol.ts add the two additive optional union members: HostToWebview `{ type:'docs-content'; artifactId; markdown; openQuestions: string[]; blocked: boolean }` + WebviewToHost `{ type:'open-doc'; artifactId }`, plus their entries in the HOST_TO_WEBVIEW_TYPES / WEBVIEW_TO_HOST_TYPES arrays. Additive; existing consumers ignore unknown types.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "protocol.ts declares docs-content (HostToWebview) + open-doc (WebviewToHost) with the stated fields; the *_TYPES arrays include them",
+      "docs-list/docs-decision + all existing message shapes are unchanged (additive only)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "docs-review-panel shell: renderShell has exactly one <script nonce=...> under strict CSP (the docs-content message the shell handles rides sc3)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

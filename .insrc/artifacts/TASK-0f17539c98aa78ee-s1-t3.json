@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-560b30ae-099b-4002-9fdf-33ee5602d05f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.505Z",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f17539c98aa78ee",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The templates and plan validation: a topic or an override is required, and the upstream-task route is gone",
+      "parent": {
+        "entityId": "STORY-0f17539c98aa78ee-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0f17539c98aa78ee-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0f17539c98aa78ee-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8209817ab9222ca40addf942da238732cf2ae5f6d460da9c9fc9aa5cf525e857",
+        "at": "2026-10-22T12:43:12.505Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.505Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The templates and plan validation: a topic or an override is required, and the upstream-task route is gone",
+    "summary": "Change the three adherence templates (code, data, infra): add constraintTopic and maxConstraintSources, remove constraintsSource, add the anyOf that requires one of constraintTopic, constraints or constraintIds, rewrite the template descriptions and the descriptions of the constraints and constraintIds properties so that they name only the ways that work and their order, list the two new output fields in the outputSchema where one is declared, and raise the revision to r2. In src/analyze/planner/validate.ts add, beside refusedScopeKind in the INV-5 loop, a check that fails a task of a template that declares constraintTopic when it has no non-empty topic, no non-empty inline list and no non-empty ids (message: the task, the template, that an adherence check needs constraints, the three ways, that the task may be left out) and when it carries constraintsSource (message: no longer accepted, give constraintTopic instead). Extend the INV-5 entry of src/analyze/planner/invariant-fix-hints.ts with the remedy for an adherence task with no source, including removing the task and renumbering the ids that follow.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A plan whose adherence task has no topic, no inline list and no ids fails INV-5 with the stated message, for the code, the data and the infra template.",
+      "A task with a topic, with a non-empty inline list or with non-empty ids validates; a non-empty override with an empty list beside it validates; one whose only source is an empty topic or an empty list does not.",
+      "A task that carries constraintsSource fails with the message that says to give constraintTopic instead, in a generic plan that holds the docs task and beside a usable override too.",
+      "The catalog rendered for each of the three templates names constraintTopic and names neither constraintsSource nor docs.constraint.enumerate.",
+      "Each adherence template that declares an outputSchema lists constraints and constraintSource as properties and does not require them.",
+      "The INV-5 fix hint names the three ways and the option to remove the task and renumber.",
+      "The planner suites pass (templates, validate, driver-unit, recursive, schema); `npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow"
+      },
+      {
+        "level": "unit",
+        "name": "an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override"
+      },
+      {
+        "level": "unit",
+        "name": "the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

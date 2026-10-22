@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-d50f2b33-3eb0-4d0b-a6e0-30962e63283e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.106Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Approvals & auto-mode: surface tool-permission requests and relay the chosen mode",
+      "parent": {
+        "entityId": "EPIC-f9563bf5bbb29c43",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "55ea473aa2deb0365e4828a7f934fe0f66c8a6e67109371059647aa8f9d6fa9f",
+        "at": "2026-10-22T12:43:07.106Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

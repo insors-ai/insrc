@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-23ed9114-eacb-4c39-8fee-bff9df2712f3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.804Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Completion record and standalone record",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d6beb15cd4b49c558121516bf4b740a841f3a239799a14f86a9141fe5f01712b",
+        "at": "2026-10-22T12:43:22.804Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.805Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Completion record and standalone record",
+    "summary": "Move src/workflow/runners/build/completion-record.ts and standalone-record.ts off the legacy stamps and off body.feedback. Update src/workflow/runners/build/__tests__/build-record.test.ts, build-record-enrichment.test.ts and src/daemon/steps/build-step/__tests__/build-step.test.ts, build-start.test.ts, validate-task-round.test.ts, gate-call-sites.test.ts and comment-sync-callers.test.ts.",
+    "size": "M",
+    "order": 32,
+    "acceptanceChecks": [
+      "The completion record and the standalone record need no legacy stamp",
+      "The build-step tests pass on lifecycle fixtures"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-record.test.ts: the completion record needs no legacy stamp"
+      }
+    ],
+    "planTaskId": "t32"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ac6f6de2-6d37-49f1-b16e-d14739766e9c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.367Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Snapshot the working tree as a git tree and report its changes",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e0c21d606d5853e844f7751dc982c6ab2ddb1148c2398ed69bb82d991b44d2b4",
+        "at": "2026-10-22T12:44:17.372Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.372Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Snapshot the working tree as a git tree and report its changes",
+    "summary": "git-baseline.ts takes its snapshot through a private copy of the index and gains changes and release; WorkspaceBaseline and BaselineHandle in edit-governor.ts gain the new members; extension.ts gives runGit an environment argument and passes tempIndexPath, copyFile and removeFile. read keeps its results. The fakes of the baseline in the existing tests gain the new members. The real-git test also covers a linked worktree and a repository with core.splitIndex.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "snapshot writes a tree with GIT_INDEX_FILE set to a copy of the index and returns the tree id and the copy's path",
+      "changes returns an empty string, the patch, or undefined on failure",
+      "Against real git in a temporary repository the user's index and status are unchanged and the patch holds the expected sections, also in a linked worktree and with core.splitIndex on",
+      "The plugin typechecks and the existing governor and host tests pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path"
+      },
+      {
+        "level": "unit",
+        "name": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails"
+      },
+      {
+        "level": "unit",
+        "name": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree"
+      },
+      {
+        "level": "unit",
+        "name": "git-baseline: release removes the private index, and a failed git add does not fail snapshot"
+      },
+      {
+        "level": "integration",
+        "name": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

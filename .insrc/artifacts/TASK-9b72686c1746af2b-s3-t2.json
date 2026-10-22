@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-779d5026-02d7-4b65-822b-b79b6c32991b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.179Z",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add unit + integration tests for the summary render + in-cycle feedback capture",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b72686c1746af2b-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b72686c1746af2b-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad31da251b50d73a15bbc159d09c6b3b5029a00fe252b5b26b9828da132b2027",
+        "at": "2026-10-22T12:44:04.179Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.179Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add unit + integration tests for the summary render + in-cycle feedback capture",
+    "summary": "Add tests (node:test / tsx --test, assert/strict), e.g. src/workflow/runners/build/__tests__/build-record-enrichment.test.ts. Unit: renderPlanBuildRecordMd over hand-built BuildRecords — summary set -> `## Summary` present; empty summary -> no section; summary XOR feedback -> only the present section; neither -> byte-identical golden. Integration (reuse the build-step.test.ts persist harness): persistBuildRecord with body.summary -> json carries summary + md renders `## Summary` (ac1); appendFeedback against the persisted BUILD json -> body.feedback accretes + md renders `## Feedback` (ac2); a re-validate omitting body.summary -> mergeWithPrior preserves the prior summary; persistBuildRecord with neither -> md byte-identical to today (ac3).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Unit tests cover the `## Summary` omit-slot (present / empty / XOR / byte-identical golden) [ac1, ac3]",
+      "Integration tests prove persistBuildRecord writes+renders a summary [ac1], appendFeedback on the persisted BUILD json captures feedback + renders `## Feedback` [ac2], the upsert preserves a prior summary, and the neither-present record is byte-identical [ac3]",
+      "The full workflow + build-step test sweeps run green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit: renderPlanBuildRecordMd with body.summary set -> `## Summary` present; empty/whitespace or absent -> no section"
+      },
+      {
+        "level": "unit",
+        "name": "unit: renderPlanBuildRecordMd with a summary XOR feedback -> only the present section renders"
+      },
+      {
+        "level": "unit",
+        "name": "unit: renderPlanBuildRecordMd with neither summary nor feedback -> byte-identical to the pre-S003 golden render"
+      },
+      {
+        "level": "integration",
+        "name": "integration: persistBuildRecord with body.summary -> json carries summary + md renders `## Summary` (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: appendFeedback against the persisted BUILD json -> body.feedback accretes + md renders `## Feedback` (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: a re-validate that omits body.summary -> mergeWithPrior preserves the prior summary"
+      },
+      {
+        "level": "integration",
+        "name": "integration: persistBuildRecord with neither summary nor feedback -> md byte-identical to today (ac3)"
+      },
+      {
+        "level": "smoke",
+        "name": "smoke: npx tsx --test 'src/workflow/**/*.test.ts' + the build-step suite run green"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

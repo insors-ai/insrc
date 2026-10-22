@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a7a42dc7-bb33-4901-a8d9-c67538961cd0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.783Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add tests (core golden vectors + scripted-fake seam + editor source-scan) and verify locally",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4adefa1475c8771681b5f0106f17ba67e7eebebda60707dd3d36215e7060106f",
+        "at": "2026-10-22T12:43:34.783Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.784Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add tests (core golden vectors + scripted-fake seam + editor source-scan) and verify locally",
+    "summary": "LogModelTest (golden CLI-parity vectors for parseLogLine + matchesFilter + LogLevels), LogTailSeamTest (ScriptedLogTailFs fake: initial last-maxLines, append-only fresh-only via manual watch trigger, rotation reset, truncation re-tail, throwing-fake never-throws + valid dispose, idempotent close + post-dispose no-emit), and source-scan extensions. Per the s3 critique: put the 'Open in editor' affordance + LightVirtualFile/FileEditorManager source-scan in a NEW LogEditorSection/LogEditorSurface-targeted test file (opens via FileEditorManager into a user-read-only LightVirtualFile, off-EDT invokeLater/write action, dispose-on-close, NO delete/rotate/clear; section resolves a Project + degrades + opens in an editor not inline; default logDir /tmp/.insrc), and EXPLICITLY re-confirm the existing DebugPageTest ac2 (sole-mutating-control = the Kill button) still passes after the sections() append (add only the [status,orphans,mcp,log] append assertion to DebugPageTest). Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after new types).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "LogModelTest proves parseLogLine/matchesFilter/LogLevels CLI parity incl. no-level/no-module drops, non-JSON free-text, unknown-level; LogTailSeamTest proves rotation/append-only/truncation/never-throws/idempotent-dispose over the scripted fake",
+      "A NEW LogEditor-targeted source-scan asserts the read-only LightVirtualFile + FileEditorManager editor-tab surface, the off-EDT invokeLater/write action, dispose-on-close, no delete/rotate/clear, the Project-resolve+degrade, and the /tmp/.insrc default; DebugPageTest gains only the [status,orphans,mcp,log] append assertion and its existing ac2 sole-mutating-control assertion still passes",
+      "Full jetbrains-plugin test + buildPlugin green locally on JDK21"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "LogModelTest (assembled golden CLI-parity vectors)"
+      },
+      {
+        "level": "unit",
+        "name": "LogTailSeamTest (assembled scripted-fake rotation/append/truncation/never-throws/dispose)"
+      },
+      {
+        "level": "unit",
+        "name": "LogEditorSurfaceTest + LogEditorSectionTest + DebugPageTest (assembled source-scans + append assertion + preserved ac2)"
+      },
+      {
+        "level": "smoke",
+        "name": "gradlew test buildPlugin green locally on JDK21 (--no-build-cache after new types)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

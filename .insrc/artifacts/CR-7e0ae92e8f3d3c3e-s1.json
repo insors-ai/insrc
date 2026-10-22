@@ -11,7 +11,27 @@
     "epicHash": "7e0ae92e8f3d3c3e",
     "storyId": "s1",
     "reviewedBy": "daemon",
-    "epicSlug": "di1-open-source-design-corpus-retrieval"
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2aa0805bedc8b9be5688cfedcf57fa71c1949ac51a163d3ba76c71cd7fe24b7c",
+        "at": "2026-10-12T04:31:01.377Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

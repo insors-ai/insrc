@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2cf13041-a07e-4320-8113-8cbb08689c3c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.302Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Format-agnostic marker-delimited replace-only writer (writeBlock/removeBlock core)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5bcfae9d6503d017ca1aa5599135f21d404463557dd1aea362ca9b631face641",
+        "at": "2026-10-22T12:43:39.302Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.302Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Format-agnostic marker-delimited replace-only writer (writeBlock/removeBlock core)",
+    "summary": "Implement the k4 primitive as a STRICTLY format-agnostic read-modify-write over an already-located host file: writeBlock inserts the delimited block once and replaces an existing same-marker block in place, preserving all surrounding content byte-for-byte and idempotent on re-run; removeBlock strips only the delimited block and restores prior content, no-op when absent. Port the proven steering-inject marker mechanic (src/daemon/steering-inject.ts) into Kotlin. Surface HostFileAccessException on IO failure with no partial write. Host-format recognition is NOT here — it lives in t3; this keeps the primitive reusable by S004 for the 'rules' file.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "writeBlock into a file with surrounding user content inserts exactly one block and leaves all other bytes unchanged; second identical write is byte-identical (idempotent)",
+      "writeBlock over an existing same-marker block replaces it in place (no duplicate)",
+      "removeBlock deletes only the delimited block and restores pre-insrc content; no-op when no block present",
+      "an IO failure surfaces HostFileAccessException and leaves the target file exactly as it was (no partial write)",
+      "the writer contains no host-format/shape recognition logic (format-agnostic; recognition belongs to t3) — it operates purely on markers over a given file"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "MarkerWriterTest#writeBlock_insertsOnce_preservesSurrounding_idempotentOnRerun (temp file with surrounding user content)"
+      },
+      {
+        "level": "unit",
+        "name": "MarkerWriterTest#writeBlock_replacesExistingSameMarkerBlockInPlace_noDuplicate"
+      },
+      {
+        "level": "unit",
+        "name": "MarkerWriterTest#removeBlock_stripsOnlyTheBlock_restoresPriorContent_noopWhenAbsent"
+      },
+      {
+        "level": "unit",
+        "name": "MarkerWriterTest#ioFailure_surfacesHostFileAccessException_noPartialWrite"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

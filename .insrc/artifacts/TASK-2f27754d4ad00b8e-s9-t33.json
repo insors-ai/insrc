@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-483d5a3a-0a47-4941-b57f-c5e24c77362e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.806Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Range base keeps meta.rangeBase",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8757ed992f093bd536af02bcde71f7204d05cc2c99ef4416a54cccf5ae54c363",
+        "at": "2026-10-22T12:43:22.806Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.807Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Range base keeps meta.rangeBase",
+    "summary": "Move src/workflow/runners/build/range-base.ts off the legacy approval stamps while it keeps reading meta.rangeBase. Update src/workflow/runners/build/__tests__/range-base.test.ts and changed-files.test.ts.",
+    "size": "S",
+    "order": 33,
+    "acceptanceChecks": [
+      "A Story's build range still resolves from meta.rangeBase",
+      "range-base.ts names none of the removed stamps"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "range-base.test.ts: a Story's build range still resolves from meta.rangeBase"
+      }
+    ],
+    "planTaskId": "t33"
+  },
+  "citations": []
+}

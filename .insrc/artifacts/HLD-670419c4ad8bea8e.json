@@ -21,168 +21,6 @@
     "epicHash": "670419c4ad8bea8e",
     "epicSlug": "understand-changes-before-committing",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "warn",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The impact, completion, retry and Unknown policies preserve the upstream decisions.",
-          "evidence": "Read the DEF's resolved questions and specification §§3–6. The recorded decisions require 'two retries per question', independently verified criteria, Medium completion with gaps, default Medium/High requirements, and an explicit override for Unknown. The HLD incorporates these and keeps disabled-requirement behavior explicitly proposed. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, docs/pre-commit-understanding-spec.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Identity and association decisions are preserved without adopting rejected defaults or expanding non-goals.",
-          "evidence": "The DEF records provider IDs, Git precedence and OS fallback, explicitly leaving retention/privacy undecided. Its association decision requires many-to-many inferred links and permits explaining why no item applies. The HLD preserves these decisions and excludes delivery-state changes, new agent adapters and a separate Grokcheck runtime. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, docs/pre-commit-understanding-spec.md]",
-          "action": "Resolve the explicitly deferred normalization and privacy details in s1 LLD.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing diff grounding mixes staged and unstaged changes and can fall back to committed changes.",
-          "evidence": "Read assembleDiffCodeReviewGrounding and realDiffGroundingDeps. workingTreeDiff invokes runDiff with both staged:false and staged:true and joins their bodies. An empty working diff selects rangeDiff or lastCommitDiff. This is unsuitable as unchanged authorization scope. [files: src/workflow/code-review/grounding.ts]",
-          "action": "Preserve the proposed separate effective-index capture.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing webview host supplies status/config lifecycle patterns, not an assessment or Source Control readiness implementation.",
-          "evidence": "Read createWebviewPanelHost, message handlers and HTML shell. Its panels are insrc.detailedStatus and insrc.repoConfiguration; detail tabs are daemon/workflows/debug. It implements singleton reveal/disposal, validated messages and nonce-based CSP, matching the HLD's limited reuse claim. [files: vscode-plugin/src/panels/webview-host.ts, vscode-plugin/src/panels/types.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing provider and role-routing facilities can be reused, but the five understanding roles require registration.",
-          "evidence": "CliProvider.complete accepts LLMMessage[] and invokes Claude or Codex CLI paths. RoleRouter resolves descriptors, applies applyCoreFloor and materializes providers. The full taxonomy contains none of the proposed understanding roles; unknown roles currently default to mid without floor protection. The HLD correctly requires new descriptors and an initialization guard. [files: src/shared/types.ts, src/agent/providers/cli-provider.ts, src/config/role-taxonomy.ts, src/config/core-floor-guard.ts, src/analyze/context/role-router.ts]",
-          "action": "Keep the missing-descriptor guard local to the understanding domain; preserve existing unknown-role behavior for other consumers.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed shared contracts fully specify transport of revision conflicts and assessment state updates.",
-          "evidence": "Read the IPC response types, server dispatch and HLD contracts. IpcResponse.error is a string, and thrown handler errors are reduced through failureMessage. The HLD requires stale revisions to return fresh state and readiness to refresh on state/revision events, but supplies neither a conflict-result envelope nor a subscription/reconnect contract. A compatible implementation is possible through result/stream payloads, but its shape and change sites remain unspecified. [files: src/shared/types.ts, src/daemon/server.ts, src/daemon/index.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
-          "action": "In s1/s5 LLD, define typed conflict results, projection retrieval and event/reconnect contracts, including daemon registration and client decoding sites.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Daemon-owned LMDB transactions support the proposed atomic current/history writes without holding a transaction over reasoning.",
-          "evidence": "Read store initialization and withWriteTxn. The store opens named databases under one root; withWriteTxn uses root.childTransaction and rejects thenable callbacks with 'withWriteTxn callbacks must be synchronous'. The HLD's short atomic mutations and separately persisted reasoning jobs fit this constraint. [files: src/db/graph/store.ts]",
-          "action": "Use synchronous transactional callbacks and acknowledge only after the transaction promise resolves.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Assessment versioning is correctly treated as a new contract rather than an existing graph migration guarantee.",
-          "evidence": "The graph store dispatches on meta.schema_version and treats a missing version as first boot. Its opened namespaces contain no assessment store. The HLD explicitly introduces a separate assessmentSchemaVersion and stricter missing/corrupt-record handling, without claiming graph migrations already implement assessment/history/receipt consistency. [files: src/db/graph/store.ts, docs/pre-commit-understanding-spec.md]",
-          "action": "Implement and test the separate version boundary in s1.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Story ownership and ordering preserve the DEF dependencies and daemon/client authority boundary.",
-          "evidence": "Compared all seven DEF stories and their dependencies with the HLD contract owners. Required edges are preserved, including s3→s4, s2/s3/s4→s5, s2/s3/s5→s6 and s6→s7. Foundational override envelopes avoid an s5→s7 dependency; enforcement remains s6/s7. Specification §2 explicitly assigns canonical state and grading to the daemon and presentation to the plugin. [files: .insrc/artifacts/DEF-670419c4ad8bea8e.json, docs/pre-commit-understanding-spec.md, vscode-plugin/src/panels/types.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Provider and storage failures are detectable and the design states non-authorizing handling.",
-          "evidence": "CliProvider.withTransientRetry retries transient failures sequentially and rethrows deterministic or exhausted failures. withWriteTxn rejects failed transactions and detected lock loss; IPC sends handler failures as errors. The HLD maps unavailable reasoning to Unknown, interrupted jobs to recoverable state, and corrupt storage to recovery errors rather than passes. [files: src/agent/providers/cli-provider.ts, src/db/graph/store.ts, src/daemon/server.ts]",
-          "action": "Retain these distinctions when defining domain error codes.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Exact support and recovery behavior for Git invocation variants is sufficiently established to verify authorization correctness.",
-          "evidence": "Read the existing grounding implementation and specification's commit-coordination requirements. Existing grounding does not implement the proposed hook/receipt protocol. The HLD deliberately defers the supported command set, hook ordering and race boundary to s6 LLD; its planned tests cannot yet establish those guarantees. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema, so inspection continued through direct reads. [files: src/workflow/code-review/grounding.ts, docs/pre-commit-understanding-spec.md, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
-          "action": "Before enforcement, define supported invocations and demonstrate partial-index, amend, cancellation, hook composition and mismatch handling in real Git repositories.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every DEF acceptance criterion has a planned test mapping.",
-          "evidence": "Compared all 22 DEF criteria—three each for s1–s6 and four for s7—with the HLD matrix. Each has an owner, test level and observable assertion. Additional rows cover the five association checks, upstream fixture parity, Git edge cases, role routing and schema recovery. These are planned tests, not verified implementation results. [files: .insrc/artifacts/DEF-670419c4ad8bea8e.json, docs/pre-commit-understanding-spec.md, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
-          "action": "Carry these mappings into story test plans and executable tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12,
-        "unverified": 2
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-17T12:19:08.755Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-17T12:22:58.641Z",
     "questionResolutions": {
       "qf33e3f27": {
         "question": "Before s1 implementation, settle preferred Git identity semantics, normalization and multi-provider/no-Git ambiguity; preserve user-approved provider/Git/OS precedence.",
@@ -212,6 +50,56 @@
         "rationale": "User approved the revised approach after inspecting available framework tools and their gaps. Preserve existing Git capabilities and build only missing assessment coordination.",
         "resolvedAt": "2026-10-17T12:36:42.369Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c0403617511d9dfb76a4d7b562fe3a99bad4e489a764838de6979d7c9105c27a",
+        "at": "2026-10-17T12:15:49.620Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T12:22:58.641Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-10-17T12:19:08.755Z",
+        "report": {
+          "entityId": "HLD-670419c4ad8bea8e",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-670419c4ad8bea8e-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

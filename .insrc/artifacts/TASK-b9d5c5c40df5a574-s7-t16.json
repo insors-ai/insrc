@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e0ab309-3815-427a-b786-72c74ef10851",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.484Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The HLD's wording on run records is brought in line",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc01232ff46d93ed8ac5c54d53d893de466e2fb030712f78d36045e6309e6641",
+        "at": "2026-10-22T12:44:25.484Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.485Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The HLD's wording on run records is brought in line",
+    "summary": "Edit the HLD's text on run records to say what this Story builds: the process keeps a count of the runs it is executing per id, and two readers apply the abandoned rule (the status request and the purge), while a new run replaces a record left in progress. The typed amendment kinds do not cover a wording change, so this is an edit in place that clears the HLD's approval; the amended HLD is put to the stakeholder for approval, and the Epic's existing designs are acknowledged against it once it is approved.",
+    "size": "S",
+    "order": 16,
+    "acceptanceChecks": [
+      "The HLD's text on run records says a count of runs per id and two rewriting readers, in the framework text and in this Story's boundary, and no longer says a set of ids or three readers",
+      "The rendered HLD matches its stored data",
+      "The amended HLD is approved by the stakeholder before this Story's last Task is submitted, and the designs of the Epic's Stories pass the approved-and-fresh gate afterwards"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the rendered HLD equals what its renderer gives for the stored data, and the Epic's designs pass the approved-and-fresh gate once the HLD is approved"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

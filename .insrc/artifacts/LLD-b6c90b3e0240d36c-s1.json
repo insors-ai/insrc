@@ -24,111 +24,61 @@
     "hldBaseRunId": "wf-1790185288043-yyq6gx",
     "hldEffectiveHash": "0a15cb12814dcb165a774cb5a0897725fd968a36cc022f7ae7ecfdfbb00ad01f",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contract/daemon.update",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon IPC handler map in src/daemon/index.ts is an object literal of '<method>': async (params?) => {...} entries where a new 'daemon.update' handler can be added (daemon.status at :922 is such an entry).",
-          "evidence": "read src/daemon/index.ts:922 = `'daemon.status': async () => {` — confirms the handler map is an object literal of '<method>': async entries where a new 'daemon.update' entry slots in.",
-          "action": "No change. Citation resolves; the new handler placement is grounded.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "hldContext/self-respawn",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/maintenance.ts defines restart() which does an in-process stopDaemon()+startDaemon() (not self-restart-safe when the caller is the daemon).",
-          "evidence": "read src/cli/services/maintenance.ts:276 = `export async function restart(onLog: LogFn): Promise<MaintenanceResult> {` — confirms restart() exists; its body (verified earlier) does an in-process stopDaemon()+startDaemon(), so it is not self-restart-safe when the caller is the daemon, exactly as the LLD's self-respawn rationale states.",
-          "action": "No change. The crux — don't call maintenance.restart() in-process — is correctly grounded.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "alternatives/a1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/daemon.ts spawns the daemon detached with { detached: true, stdio: ['ignore', logFd, logFd] } — the detached-spawn idiom the sc1 helper follows.",
-          "evidence": "read src/cli/services/daemon.ts:66 = `{ detached: true, stdio: ['ignore', logFd, logFd], env: { ...process.env } },` and startDaemon at :58 — confirms the detached-spawn idiom the sc1 helper follows.",
-          "action": "No change. Citation resolves verbatim.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "hldContext/daemon-ctl",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "scripts/daemon-ctl.sh defines cmd_start / cmd_stop / cmd_restart (restart = stop + start) and cmd_update, the single proven update+restart sequence the detached helper wraps.",
-          "evidence": "grep resolves scripts/daemon-ctl.sh:207 cmd_start(), :238 cmd_restart(), :243 cmd_update() — the proven update+restart sequence the detached helper wraps exists as cited.",
-          "action": "No change. The reused daemon-ctl.sh subcommands exist.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "dataModel/DaemonUpdateResult",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DaemonUpdateResult and DaemonUpdateOutcome are NEW types (they do not exist in the codebase yet) to be defined near DaemonStatus in src/shared/types.ts.",
-          "evidence": "grep for `interface DaemonUpdateResult` / `interface DaemonUpdateOutcome` returns hits ONLY in the HLD/LLD docs — no src/ definition exists yet, confirming they are genuinely NEW types to be added. read src/shared/types.ts:882 = `export interface DaemonStatus {` confirms the sibling type they will be defined near.",
-          "action": "No change. The types are correctly stated as new; the definition anchor (types.ts:882) resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "dataModel/PATHS",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/shared/paths.ts defines the ~/.insrc PATHS layout (pidFile via INSRC_DIR) where the two new S001-internal path entries (updateOutcome, updateLock) are added.",
-          "evidence": "read src/shared/paths.ts:18 = `pidFile: join(INSRC_DIR, 'daemon.pid'),` — confirms the PATHS/INSRC_DIR layout where the two new S001-internal entries (updateOutcome, updateLock) are added.",
-          "action": "No change. The PATHS field-add lands on a real, cited layout.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "interactionWithShared/sc1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD (b6c90b3e0240d36c) assigns sc1 (DaemonUpdateRestart IPC) ownership to Story s1/S001, which this LLD implements; daemon.status/installedCommit (sc2) is owned by s2 and not touched here.",
-          "evidence": "read docs/epics/work-framed-approved-spec-proceed-from-E20260923b6c90b3e/HLD.md:1 resolves the approved HLD that assigns sc1 to s1 and sc2 to s2. The LLD implements sc1 only and explicitly does not touch daemon.status (sc2), consistent with the HLD boundary.",
-          "action": "No change. The cross-artifact ownership trace holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "testStrategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/__tests__/server-registry.test.ts drives a handler end-to-end via internals(server).handleMessage(reqLine('daemon.status'), sock) — the pattern the new handlers' integration tests extend; node:test (tsx --test) is the framework.",
-          "evidence": "read src/daemon/__tests__/server-registry.test.ts:65 = `await internals(server).handleMessage(reqLine('daemon.status'), sock);` — confirms the integration-test driving pattern the new handlers' tests extend; node:test is the framework.",
-          "action": "No change. The test pattern the strategy leans on exists verbatim.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "errorPaths/helper-fail",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The JetBrains DaemonProvisioner spawns daemon-ctl.sh update and captures the exit code (failures captured, not thrown) — the precedent the detached helper's exit-code handling mirrors.",
-          "evidence": "grep for the DaemonProvisioner spawn precedent is noisy (doc-heavy), but the s1 test.locate bundle already located the real Kotlin test methods DaemonProvisionerTest.INSTALL_spawnsInstallScript_UPDATE_spawnsDaemonCtlUpdate_withNodeOnPath and exitCodeMapping_andFailuresCapturedNotThrown — confirming the 'spawns daemon-ctl.sh, captures exit code, failures not thrown' precedent the LLD mirrors. Caveat: this is a Kotlin test used as a design precedent, not a src/ TS anchor.",
-          "action": "No change. The precedent is real; it informs the helper's exit-code handling, it is not a load-bearing TS citation.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-23T18:13:27.018Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-23T18:33:57.636Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8f7874c8b2e1b4c1af96e5ef25eca46437fc40b84d6fe41b67c8f17501f27308",
+        "at": "2026-09-23T18:11:56.413Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T18:33:57.636Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-23T18:13:27.018Z",
+        "report": {
+          "entityId": "LLD-b6c90b3e0240d36c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-b6c90b3e0240d36c-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

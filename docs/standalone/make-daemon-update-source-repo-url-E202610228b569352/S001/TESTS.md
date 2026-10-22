@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-8b5693528b025a55-S001 -->
+<!-- insrc:artifact TESTS-8b5693528b025a55-s1 -->
 
 # Tests: 8b5693528b025a55 S001
 

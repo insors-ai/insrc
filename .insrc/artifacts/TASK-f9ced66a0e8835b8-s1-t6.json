@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-41a56fc6-5de3-4103-9ba2-0161e7eb70c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.548Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The review's range diff carries only the Story's hunks",
+      "parent": {
+        "entityId": "STORY-f9ced66a0e8835b8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9ced66a0e8835b8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9ced66a0e8835b8-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f9ced66a0e8835b8-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aca2c1be928bfe80cf8e24a5ab8d5844a618f3c2aa0dab8ebd45309761986ee7",
+        "at": "2026-10-22T12:45:03.548Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.549Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The review's range diff carries only the Story's hunks",
+    "summary": "Add DiffResult.hunksByFile; buildDiffSymbols prefers it. realDiffGroundingDeps.rangeDiff computes storyChangeSet: one net git_diff {from: base, paths, exclude} for paths no merge touched, per-unit git_diff {from, to, paths, exclude} for shared paths, sections appended per file in unit order, folded paths prefixed '[edited inside merge commit <short sha>]', empty change set returns an empty DiffResult without calling git_diff.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Story files carry full hunks and merged-in files are absent.",
+      "A file changed by both a Story commit and the merge carries only the Story's own hunks.",
+      "A shared path touched by two Story commits keeps both sections; a folded marker stays on its own file.",
+      "Every git_diff call carries the exclusions.",
+      "An empty change set gives an empty grounding without calling git_diff.",
+      "Without hunksByFile buildDiffSymbols splits the body as before.",
+      "A truncated call still marks the grounding as truncated, and a storyChangeSet failure surfaces as DiffUnavailableError so the assembler steps down as before."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'the range diff carries full hunks for the Story files and none for merged-in files'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'a file changed by both a Story commit and the merge carries only the Story's own hunks'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'edits folded into a merge commit are reviewed and marked'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'a range with no Story change gives an empty grounding without calling git_diff'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'without hunksByFile buildDiffSymbols splits the body as before'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'the range diff applies the exclusions to every per-unit call'"
+      },
+      {
+        "level": "unit",
+        "name": "diff-grounding.test.ts: 'a truncated per-unit call marks the grounding truncated and a storyChangeSet failure steps down'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

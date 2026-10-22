@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-36396e19-2af3-46b6-8935-ead24acbee33",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.948Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Insert the freshness gate + block-and-poll + re-prompt/abort into the start phase",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s9-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s9-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "023fafdd3c903a75b3c58306fd40d8cc98fb3a60d3688d41e826bbf96d2c4570",
+        "at": "2026-10-22T12:43:48.948Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.949Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Insert the freshness gate + block-and-poll + re-prompt/abort into the start phase",
+    "summary": "In src/mcp/code-review-step/handler.ts, before fetchCodeReviewGrounding: call fetchCodeReviewFreshness(subject.changedFiles). If stale (isProcessing OR staleFiles non-empty) and no proceed → saveState + return CodeReviewStepConfirmWait. On proceed:true → block-and-poll fetchCodeReviewFreshness at a fixed internal interval until fresh or codeReview.freshnessTimeoutMs, re-prompting (confirm_wait) on timeout; on abort → fail closed (no runReview, no write). On fresh → continue to fetchCodeReviewGrounding + emit_judgements unchanged, and thread groundingMode:'full' into the record path. Wire the fetchFreshness + sleep/now seams into DEFAULT_DEPS (handler.ts:62). Map freshness IPC errors + StateTokenNotFound to CodeReviewStepError.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "stale + no proceed returns confirm_wait with the stale-file list and NEVER calls fetchGrounding; fresh proceeds to emit_judgements as today",
+      "proceed:true block-and-polls until fresh (never repo.reindex) then continues; timeout returns confirm_wait again (re-prompt); abort fails closed with no judges + no record",
+      "the fresh path stamps groundingMode:'full'; freshness IPC error → next:'error' (freshness-unavailable); missing/released state token → next:'error' state-not-found"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "start: stale (staleFiles non-empty) and no proceed -> returns next:'confirm_wait' carrying the stale-file list + state, and fetchGrounding is NEVER called"
+      },
+      {
+        "level": "unit",
+        "name": "start: isProcessing true (empty staleFiles) and no proceed -> also returns confirm_wait"
+      },
+      {
+        "level": "unit",
+        "name": "start: fresh (empty staleFiles AND not processing) -> no confirm_wait; calls fetchGrounding then returns emit_judgements"
+      },
+      {
+        "level": "unit",
+        "name": "proceed:true resume: fetchFreshness reports stale for 2 ticks then fresh -> the poll loops (asserts ≥N fetchFreshness calls via the fake), never calls a reindex seam, then continues to grounding"
+      },
+      {
+        "level": "unit",
+        "name": "proceed:true resume: freshness never becomes fresh before codeReview.freshnessTimeoutMs (fake clock) -> returns confirm_wait again (the re-prompt), not a unilateral proceed/abort"
+      },
+      {
+        "level": "unit",
+        "name": "abort resume (proceed:false + state) -> terminal fail-closed result: runReview is NEVER invoked and the write seam is NEVER called"
+      },
+      {
+        "level": "unit",
+        "name": "the fresh path stamps groundingMode:'full' on the persisted record (assert the write payload / runReview input carries groundingMode:'full')"
+      },
+      {
+        "level": "unit",
+        "name": "freshness IPC error on the initial check -> next:'error' (freshness-unavailable), no confirm_wait, no write"
+      },
+      {
+        "level": "unit",
+        "name": "proceed resume with a released/missing state token -> next:'error' state-not-found (retryable:false), nothing written"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

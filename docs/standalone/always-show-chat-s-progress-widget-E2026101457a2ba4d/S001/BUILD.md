@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-57a2ba4d5f18c356-S001 -->
+<!-- insrc:artifact BUILD-57a2ba4d5f18c356-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -22,13 +22,13 @@ The chat's progress widget (#insrc-progress) is never hidden. It is rendered wit
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
-- `.insrc/artifacts/CR-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
-- `.insrc/artifacts/CR-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/BUILD-160fa1bb7a8604ad-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/CR-160fa1bb7a8604ad-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/CR-57a2ba4d5f18c356-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
 - `.insrc/artifacts/ISSUE-160fa1bb7a8604ad.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
-- `.insrc/artifacts/LLD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
-- `.insrc/artifacts/LLD-d27fe8996fc3a2db-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
-- `.insrc/artifacts/TESTS-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/LLD-57a2ba4d5f18c356-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/LLD-d27fe8996fc3a2db-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/TESTS-160fa1bb7a8604ad-s1.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
 - `.insrc/build-start/160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
 - `docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/CR.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
 - `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/ISSUE.md` — **insrc-build** (2026-10-15T04:52:05.060Z)

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-b2e8109f42afc0dd-S001 -->
+<!-- insrc:artifact BUILD-b2e8109f42afc0dd-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -25,7 +25,7 @@ Whole plugin suite run (1206 tests, 1196 pass, 8 skipped, 2 fail: the two manife
 
 ## Changes
 
-- `.insrc/artifacts/CR-b2e8109f42afc0dd-S001.json` — **insrc-build** (2026-10-13T10:05:57.236Z)
+- `.insrc/artifacts/CR-b2e8109f42afc0dd-s1.json` — **insrc-build** (2026-10-13T10:05:57.236Z)
 - `docs/standalone/show-each-changed-section-turn-s-E20261013b2e8109f/S001/CR.md` — **insrc-build** (2026-10-13T10:05:57.236Z)
 - `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-13T10:05:57.236Z)
 - `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-13T10:05:57.236Z)

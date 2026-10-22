@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-557b253c-1cff-4672-a7a1-bbc85aa892d0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.983Z",
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dced43851723554f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "fullIndex: mark unfinished before the delete, carry, write back",
+      "parent": {
+        "entityId": "STORY-dced43851723554f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dced43851723554f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "02917afe819f3722e4ada063fce4b47d1297aed6d292ac50ba45a9554f88bd90",
+        "at": "2026-10-22T12:44:44.983Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.983Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "fullIndex: mark unfinished before the delete, carry, write back",
+    "summary": "Add markFullIndexUnfinished(repoPath) to src/db/index-state.ts (sets only fullIndexFinished = false via updateState). In fullIndex (src/indexer/index.ts:612-617) call it before deleteEntitiesForRepo, pass carryDocSummaries: true, add a test seam on IndexerService called right after the delete (like _settlePassesDoneForTest), call restoreCarriedDocSummaries(repoPath) after reconcileRepo and before finishFullIndexState (src/indexer/index.ts:724), log its counts, and correct the comment that says summaries are regenerated.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document.",
+      "After a reindex no doc_summary row is keyed by an entity number that is not stored, and doc_summary_by_repo has exactly one entry per stored summary.",
+      "A full index of a previously complete repository made to throw immediately after the delete leaves fullIndexFinished false; start-up queues a full index, and that index writes the carried summaries back.",
+      "A full index made to throw late (reconcileRepo) keeps the carry, and the next full index writes it back.",
+      "After a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document'"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex no doc_summary row is keyed by an entity number that is not stored'"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back'"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back'"
+      },
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

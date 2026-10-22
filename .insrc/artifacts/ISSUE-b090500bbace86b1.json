@@ -20,7 +20,27 @@
     "issueHash": "b090500bbace86b1",
     "epicSlug": "applymigration-stages-link-rewrite-git-add",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "epicCreatedAt": "2026-10-03T13:20:15.950Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "7b6c70021741a0f229fb5392b059179d80e2dfd5212793bd5507efe556434c04",
+        "at": "2026-10-03T13:20:15.950Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Commit the link rewrites that fall outside every moved work item's chunk",

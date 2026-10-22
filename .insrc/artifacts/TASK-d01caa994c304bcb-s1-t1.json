@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-17fdbee3-2f5f-43d1-ae7d-24bf938364b2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.975Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Back-flow acceptance criteria ac1..ac9 into the Story",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebe71fcad91ecafe384ee518c9355e2286e06a1b986a1e69976e2b1fe8ae5d0a",
+        "at": "2026-10-22T12:44:40.980Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.981Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Back-flow acceptance criteria ac1..ac9 into the Story",
+    "summary": "The Story ships with acceptanceCriteria: [], so the nine criterionId values ac1..ac9 that the LLD test-strategy acceptanceMapping is organized around are unanchored forward-declarations — the mapping cannot be audited at review or approve time. Write the nine criteria into the Story with explicit text, using the set the LLD already makes inferable: ac1 catalog keys absent from the on-disk config are filled with catalog defaults; ac2 present-and-type-valid keys are carried through untouched; ac3 present-but-type-invalid keys are repaired to the catalog default; ac4 catalog-unenumerable namespaces (models.analyze.roleTiers, models.analyze.byRepo, models.agents) survive blindly; ac5 reconcile is idempotent and writes at most once, only when changed; ac6 maintenance.update runs the reconcile after the build step and reports it additively via MaintenanceResult; ac7 daemon boot runs the reconcile unconditionally and never aborts boot on failure; ac8 the catalog is relocated into src/config with no daemon→cli import edge; ac9 read/parse/write failures abort without writing and are surfaced as structured non-fatal outcomes. Cross-reference each criterion to the tasks that discharge it. No production code is touched.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The Story's acceptanceCriteria array contains nine entries with ids ac1..ac9, each carrying non-empty criterion text",
+      "Every criterionId referenced in the LLD test-strategy acceptanceMapping resolves to a criterion with text — no unanchored id remains",
+      "Each of ac1..ac9 is cross-referenced to at least one task id in this plan, and every task in this plan is referenced by at least one criterion",
+      "No source file outside the Story/LLD artifacts is modified by this task"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "story acceptance criteria — ac1..ac9 each resolve to an entry carrying non-empty criterion text"
+      },
+      {
+        "level": "unit",
+        "name": "acceptanceMapping audit — every criterionId in the LLD test strategy resolves to a Story criterion, and every plan task is referenced by at least one criterion"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

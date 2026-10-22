@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56ca4669-f645-46bf-8ec3-b3324f6f08f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.823Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Time a real daemon DEF review and confirm the route end to end",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a6b2a6e082c2ad8f01a1a522741be65ead24c4afeed0419f7bac994b7f295ca3",
+        "at": "2026-10-22T12:43:14.823Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.824Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Time a real daemon DEF review and confirm the route end to end",
+    "summary": "Run last, on the finished build. Run the daemon review request on a real controller-authored DEF in this repo and record how long it took against the 10 minute wait limit. Run the two review tools once each on real controller-authored work, then approve one really-reviewed artifact without an override. No code change unless the limit is shown to be wrong.",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "The build record states the time a daemon DEF review took and whether the 10 minute default fits",
+      "The build record states the verdict each review tool returned on real controller-authored work and that the review was stamped by the daemon",
+      "One artifact reviewed this way is approved with no override reason"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "a real daemon review of a controller-authored DEF, timed against the 10 minute limit"
+      },
+      {
+        "level": "live",
+        "name": "both review tools on real controller-authored work return the daemon's verdict, and one such artifact is approved with no override"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

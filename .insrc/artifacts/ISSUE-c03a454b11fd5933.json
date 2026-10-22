@@ -21,7 +21,27 @@
     "epicSlug": "bug-test-vscode-plugin-src-tests",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-12T10:00:51.699Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "979cc8dd08e8b109e3343437df02f691c4bc353f00ab0343b745ebd45ac96156",
+        "at": "2026-10-12T10:00:51.699Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Make the activation tests run to completion",

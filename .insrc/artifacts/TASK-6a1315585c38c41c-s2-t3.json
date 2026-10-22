@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-487765cf-885f-43fa-bbfb-a8dd3d33f701",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.271Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Card badges, titles and accessible labels",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d3927c04133a109a8a79cd3d93551ee55a232ed58f30f9844acef3b4f24b43ca",
+        "at": "2026-10-22T12:43:41.271Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.272Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Card badges, titles and accessible labels",
+    "summary": "Build each card's title (id when null), epic title (from t2's epic resolution), standalone flag and badges in the fixed order (approval, review, validation with storyLevelResult, conflict, attention, notice) with labels from DISPLAY_LABELS and de-duplication by label, plus the accessible label.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "An approved build with failed tasks is a Complete card with a Validation conflict badge.",
+      "A blocking review gives a Review blocked badge with tone danger; an overridden one gives tone neutral.",
+      "Tasks that all passed with a failed storyLevelResult give Validation failed, never Passed.",
+      "No two badges on a card share a label, and accessibleLabel names kind, title, stage, standalone or epic, Needs attention and every badge in order."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'an approved build with failed tasks stays in Complete and carries a text-labelled validation-conflict badge'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'a review-blocked design shows a Review blocked badge, matches Needs attention and keeps its column'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'a failed story-level result shows Validation failed, badges never repeat a label, and the accessible label names every badge'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

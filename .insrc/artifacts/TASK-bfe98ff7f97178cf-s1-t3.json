@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e62d3ea0-a25c-4553-b217-6e90ccecda31",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.613Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the section-anchor model and the pure index deriver",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c304deab81be5c8e3c60c6c2db355806590fe8a1d6132927aa61df00b9dc8b20",
+        "at": "2026-10-22T12:44:30.613Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.614Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the section-anchor model and the pure index deriver",
+    "summary": "Add the sc3 declarations — SectionAnchor, SectionIndex, SectionResolver — plus the pure host-side deriveSectionIndex that backs them, with full unit coverage. All four names return zero source matches today, so this is net-new code that shadows nothing. Pure by construction: no DOM, no vscode import, no IO, so it is unit-testable headlessly and importable by s3 and s4. Deliberately INERT — nothing consumes it until t4 — which is why it lands before the render change rather than alongside it. REVISED per critique: dependsOn is now empty, because this module touches no file t1 or t2 touches; only its order (before t4) is a real constraint, so the build is free to take it first.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "deriveSectionIndex returns anchors in document order with level set to the ATX depth",
+      "two identically-titled headings receive DISTINCT slugs via an appended ordinal and neither entry is dropped",
+      "a `#`-prefixed line inside a fenced code block is NOT treated as a heading — the phantom-section guard",
+      "markdown with no headings, and an empty-string body, both yield an empty anchors array",
+      "a heading whose text is entirely punctuation still yields a stable NON-EMPTY slug",
+      "deriveSectionIndex is deterministic — the same markdown yields identical slugs across repeated calls",
+      "a SectionResolver resolves a known ofSectionId to that section's slug and returns undefined (never throws) for an unknown one",
+      "the slug deriveSectionIndex emits for a heading is the SAME string the resolver returns for it — asserted directly",
+      "the module declaring these remains vscode-free and imports no DOM type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "deriveSectionIndex returns anchors in document order with level set to the ATX depth"
+      },
+      {
+        "level": "unit",
+        "name": "two identically-titled headings get distinct slugs via an appended ordinal and neither is dropped"
+      },
+      {
+        "level": "unit",
+        "name": "a `#` line inside a fenced code block is not treated as a heading — the phantom-section guard"
+      },
+      {
+        "level": "unit",
+        "name": "markdown with no headings yields an empty anchors array"
+      },
+      {
+        "level": "unit",
+        "name": "an empty-string body yields an empty anchors array"
+      },
+      {
+        "level": "unit",
+        "name": "a punctuation-only heading still yields a stable non-empty slug"
+      },
+      {
+        "level": "unit",
+        "name": "deriveSectionIndex is deterministic across repeated calls on the same markdown"
+      },
+      {
+        "level": "unit",
+        "name": "a SectionResolver resolves a known ofSectionId to that section's slug"
+      },
+      {
+        "level": "unit",
+        "name": "a SectionResolver returns undefined rather than throwing for an unknown ofSectionId"
+      },
+      {
+        "level": "unit",
+        "name": "ONE IDENTITY: the slug deriveSectionIndex emits equals the string the resolver returns for the same section"
+      },
+      {
+        "level": "unit",
+        "name": "module-purity: the sc3 module is vscode-free and imports no DOM type"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

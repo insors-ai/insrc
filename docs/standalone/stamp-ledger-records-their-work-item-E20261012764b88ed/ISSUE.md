@@ -5,7 +5,7 @@
 ## Reproduction
 
 1. Run a code review on any Story (insrc_code_review_step), or build a Task (insrc_build_step validate), so a CR, BUILD or TESTS record is written.
-2. Open the record's JSON in .insrc/artifacts (e.g. CR-7d42920dbef28b51-S001.json, written after the docs migration realigned every record on 2026-10-12).
+2. Open the record's JSON in .insrc/artifacts (e.g. CR-7d42920dbef28b51-s1.json, written after the docs migration realigned every record on 2026-10-12).
 3. Observed: its meta has no epicSlug and no epicCreatedAt, and standalone is missing or false for a standalone work item, even though the record's markdown was written into the work item's real folder (docs/standalone/docs-migrator-leaves-stale-labels-json-E202610117d42920d/S001/CR.md). Path derivation from the stored meta (deriveMdPath) therefore resolves a different, non-existent folder: hash-named, on the record's own day, or under docs/epics. The docs migration dry run immediately lists the new record for realignment again.
 Expected: every ledger record's stored meta carries the same label, anchor and kind that were used to place its markdown, so meta-derived paths find the md and the migration plans nothing for freshly written records.
 
@@ -24,4 +24,4 @@ When a CR, BUILD or TESTS record is written, store in its meta the label, anchor
 - **[[c3]]** `code` `src/workflow/runners/build/standalone-record.ts:258-270 pathsForMerged (buildRecordFolderArgs -> buildArtifactPaths)`
 - **[[c4]]** `code` `src/workflow/runners/build/test-record.ts:198-211 (testsArtifactPaths from resolved folder args; meta { workflow, epicHash, storyId, createdAt, updatedAt, standalone? })`
 - **[[c5]]** `code` `src/workflow/pending.ts:188 deriveMdPath (reads meta epicSlug ?? hash, epicCreatedAt ?? createdAt, standalone)`
-- **[[c6]]** `prior-artifact` `ISSUE-7d42920dbef28b51 / commits a41f693d..eb5c84c9: 453 realigned records, 309 of them CR/BUILD; CR-7d42920dbef28b51-S001 flagged again by the dry run after being written`
+- **[[c6]]** `prior-artifact` `ISSUE-7d42920dbef28b51 / commits a41f693d..eb5c84c9: 453 realigned records, 309 of them CR/BUILD; CR-7d42920dbef28b51-s1 flagged again by the dry run after being written`

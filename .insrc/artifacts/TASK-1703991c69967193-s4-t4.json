@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-66fccc48-9aa9-4368-91e5-6c538c2c3b74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.374Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement locateAndStampParent (locate + meta-only parentRef patch)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "16f2c50d5e5af0ea717dca4841efd012c3dd0a6100ad9c59e7d4afcaedfb1801",
+        "at": "2026-10-22T12:43:14.374Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.374Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement locateAndStampParent (locate + meta-only parentRef patch)",
+    "summary": "Implement locateAndStampParent(input: { repoPath; issueHash }, deps: StampDeps): Promise<ParentLocation>. Via injected deps: readIssue (throw issue-not-found on null; throw not-approved when no meta.approvedAt), derive defectDescription from the issue body (title+reproduction+rootCause+fixIntent) with empty touchedPaths, call deps.locateParent (the consumed sc3 entry point; let an infra rejection propagate WITHOUT writing), then deps.writeParentRef(repoPath, issueHash, location.parentRef) as a single-field meta patch. Return the ParentLocation. Never rewrites the body (k4). Provide a default StampDeps wiring readIssue/writeParentRef to the existing storage round-trip (read ISSUE-<hash>.json -> set meta.parentRef -> writeAtomic) and locateParent to src/workflow/locate.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "locateParent returns a WorkItemRef -> writeParentRef called with it; returns null -> writeParentRef(null); both leave the issue body byte-unchanged (k4).",
+      "readIssue null -> throws issue-not-found (no write); no approvedAt -> throws not-approved (no write); locateParent rejects -> propagates, no write.",
+      "The default StampDeps round-trips via the existing storage helpers (single-field meta patch, not a re-finalize). tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: locateParent returns a WorkItemRef -> writeParentRef called with that ref; returns the ParentLocation"
+      },
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: locateParent returns standalone (null) -> writeParentRef called with null"
+      },
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: readIssue null -> throws issue-not-found, writeParentRef NOT called"
+      },
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: issue present but no approvedAt -> throws not-approved, writeParentRef NOT called"
+      },
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: locateParent rejects (infra failure) -> propagates, writeParentRef NOT called (no partial stamp)"
+      },
+      {
+        "level": "unit",
+        "name": "locateAndStampParent: defectDescription passed to locateParent is derived from reproduction+rootCause+fixIntent; touchedPaths empty at issue-approval"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

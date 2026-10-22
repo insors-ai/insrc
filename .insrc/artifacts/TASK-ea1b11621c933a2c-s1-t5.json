@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a460ae3f-0758-46c5-a661-ed40ef626e09",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:49.485Z",
+    "epicCreatedAt": "2026-08-01T09:12:18.048Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire runUpdateSteeringRefresh into maintenance.update() post-build flow",
+      "parent": {
+        "entityId": "STORY-ea1b11621c933a2c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ea1b11621c933a2c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ea1b11621c933a2c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ea1b11621c933a2c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8267b68cf21fb2cf929f3d0a2f9174458e1173c1972d7c8978e4d145a31bd4b2",
+        "at": "2026-10-22T12:44:49.489Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:49.490Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire runUpdateSteeringRefresh into maintenance.update() post-build flow",
+    "summary": "In src/cli/services/maintenance.ts update(), call runUpdateSteeringRefresh(root, onLog) strictly after npm run build, beside the existing runUpdateReconcile call, in its own try/catch that never flips ok:false. Push 'steering-refresh' onto steps and, on success, set result.steeringRefresh (from the MaintenanceResult.steeringRefresh field) to the returned report. Leave the git-sync/install/build arms and the 'daemon NOT restarted' behavior unchanged.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "update() calls runUpdateSteeringRefresh(root, onLog) after the existing post-build runUpdateReconcile step, inside its own try/catch",
+      "A steering-refresh failure (thrown error or undefined result) never sets MaintenanceResult.ok to false — only a real git-sync/install/build failure does",
+      "steps.push('steering-refresh') is added to the returned steps array on every update() run that reaches the post-build phase",
+      "On a successful refresh, MaintenanceResult.steeringRefresh carries the report returned by runUpdateSteeringRefresh",
+      "update() issues no daemon-restart call — the 'daemon NOT restarted' contract is preserved",
+      "The git-sync, npm install, and npm run build arms of update() are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "maintenance.update: forced steering-refresh failure does not flip ok:false; steps includes 'steering-refresh'"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update: successful run sets MaintenanceResult.steeringRefresh with per-repo report"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance.update: steering-refresh runs strictly after build step and issues no daemon-restart call"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

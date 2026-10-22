@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b9ff7c8c-4bff-4ca2-ac2a-70a3efc4294b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.418Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "registerWorkspaceCommands + the shared one-time offerWorkspaceRegistration flow",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b34650e7436dc3286def3da71fe47ba2161f1e2e1f5c39cb9e4cc47af33522c",
+        "at": "2026-10-22T12:44:13.418Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.418Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "registerWorkspaceCommands + the shared one-time offerWorkspaceRegistration flow",
+    "summary": "Add registerWorkspaceCommands({ commands, consent, status, registrar, folders }): registers the durable insrc.workspace.register command (sc3) whose body resolves the primary root (folders()[0]), and runs the shared offerWorkspaceRegistration. Add offerWorkspaceRegistration({ consent, status, registrar, folders, prompts }): no root → no-op; already registered (state()) → no prompt; previously dismissed (prompts.wasDismissed) → no prompt; else ask a single sc4 ConsentGate prompt — on 'accepted' call registrar.register(root) once + push the outcome to sc2, on 'declined'/'dismissed' markDismissed(root) + write nothing (k4/lc1); on an accepted-but-register-fails path do NOT markDismissed (retryable) + push an errored status. Mirrors S002 registerDaemonCommands/offerDaemonInstall + S003 registerHostCommands/offerHostWiring.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "registerWorkspaceCommands registers the insrc.workspace.register command into the CommandRegistry",
+      "offerWorkspaceRegistration shows NO prompt (no-op) when no root is open, when already registered, or when previously dismissed (lc1)",
+      "on 'accepted' registrar.register(root) runs exactly once and the outcome is pushed to StatusSurface.set; on 'declined'/'dismissed' markDismissed(root) runs and nothing is registered (k4)",
+      "on an accepted-but-register-throws path it does NOT markDismissed and reflects an errored status (retryable)",
+      "source-scan: vscode-plugin/src/workspace/ imports only node builtins + the shared ipc-client + the s1 surfaces — no daemon internals/indexer/storage, no cloud/HTTP (k5)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "offerWorkspaceRegistration shows NO prompt and does nothing when folders() is empty (no open root)"
+      },
+      {
+        "level": "unit",
+        "name": "offerWorkspaceRegistration shows NO prompt when state(root).registered is already true"
+      },
+      {
+        "level": "unit",
+        "name": "offerWorkspaceRegistration shows NO prompt when PromptStore.wasDismissed(root) is true (lc1)"
+      },
+      {
+        "level": "unit",
+        "name": "on 'accepted' offerWorkspaceRegistration calls registrar.register(root) exactly once and pushes the outcome to StatusSurface.set"
+      },
+      {
+        "level": "unit",
+        "name": "on 'declined'/'dismissed' it calls PromptStore.markDismissed(root), calls registrar.register NEVER, and writes nothing (k4)"
+      },
+      {
+        "level": "unit",
+        "name": "on an accepted-but-register-fails path it does NOT markDismissed (retryable) and reflects an errored status"
+      },
+      {
+        "level": "unit",
+        "name": "registerWorkspaceCommands registers the insrc.workspace.register command into the fake CommandRegistry"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

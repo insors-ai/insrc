@@ -24,8 +24,35 @@
     "lldRunId": "wf-1791362817440-s4i7om",
     "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-07T09:30:03.627Z",
-    "rangeBase": "59b3f5cec484fe2c39bf4661b849ce913f0a46bb"
+    "rangeBase": "59b3f5cec484fe2c39bf4661b849ce913f0a46bb",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "882a40df6242c8c699a54a3b0b56e54a254d5edd94c0ca4ee101814d00bcb501",
+        "at": "2026-10-07T09:26:32.429Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-07T09:30:03.627Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -94,7 +121,7 @@
       {
         "id": "t3",
         "title": "Test fixtures: record builders and real-shape records",
-        "summary": "Create src/workflow/delivery/__tests__/fixtures.ts with builders that fabricate ArtifactRecords and record sets per kind (in the style of pending.test.ts's pendingLld) and with real-shape fixtures copied by value from the 2026-10-07 store: the S001/s001 pair in epic dfc0371b, ISSUE-0855311b6b32eb72, ISSUE-2d9e9e694a94116b, ISSUE-57446545909fe95c, ISSUE-095906bac5bbacaf, LLD-d88062a6e63aa312-S001 with its BUILD, BUILD-d5a433047dc3439f-S001 with its CR, BUILD-0855311b6b32eb72-S001, one flat AMD and one EXT.",
+        "summary": "Create src/workflow/delivery/__tests__/fixtures.ts with builders that fabricate ArtifactRecords and record sets per kind (in the style of pending.test.ts's pendingLld) and with real-shape fixtures copied by value from the 2026-10-07 store: the S001/s001 pair in epic dfc0371b, ISSUE-0855311b6b32eb72, ISSUE-2d9e9e694a94116b, ISSUE-57446545909fe95c, ISSUE-095906bac5bbacaf, LLD-d88062a6e63aa312-s1 with its BUILD, BUILD-d5a433047dc3439f-s1 with its CR, BUILD-0855311b6b32eb72-s1, one flat AMD and one EXT.",
         "size": "S",
         "order": 3,
         "dependsOn": [

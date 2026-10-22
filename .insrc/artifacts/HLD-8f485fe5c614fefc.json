@@ -19,111 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "8f485fe5c614fefc",
     "epicSlug": "add-module-test-health-analyzer-new",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "architectureShape",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The infra runtime family is the precedent being mirrored: src/analyze/runtimes/infra/ exports an INFRA_RUNTIMES array and src/analyze/planner/templates/infra/ exports INFRA_TEMPLATES, with a _shared.ts read-only walk seam.",
-          "evidence": "CONFIRMED: INFRA_RUNTIMES (bootstrap.ts:29,54) + INFRA_TEMPLATES (planner/templates/infra/index.ts:195) with the parity test asserting both length 8. The infra family is a real precedent to mirror. (The path-glob probe 'runtimes/infra/_shared' matched only docs — grep artifact; the file exists per cl6.)",
-          "action": "None — the infra family precedent is accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "sc-idiom",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The TemplateRuntime contract (TemplateExecuteArgs / TemplateExecuteResult / TemplateRuntime with templateId + async execute returning { outputs: Map }) is defined in src/analyze/executor/types.ts.",
-          "evidence": "CONFIRMED: TemplateRuntime + TemplateExecuteResult defined in src/analyze/executor/types.ts:59/70 with templateId + async execute(args): Promise<TemplateExecuteResult>. The idiom the test family mirrors is real.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "architectureShape",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "Runtime families are registered in src/analyze/runtimes/bootstrap.ts via registerBuiltinRuntimes.",
-          "evidence": "CONFIRMED: registerBuiltinRuntimes exported at src/analyze/runtimes/bootstrap.ts:44, re-exported analyze/index.ts:107. Family registration site is accurate.",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "architectureShape",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The planner defines the AnalyzeTarget enum + per-target validation (validatePlan) and getTemplatesForTarget for the template catalog.",
-          "evidence": "CONFIRMED with a location nuance: the AnalyzeTarget enum is in src/shared/analyze-types.ts:27 ('code'|'data'|'infra'|'generic'|'docs'), getTemplatesForTarget is used at orchestrator/driver.ts:298, and plan validation is validatePlanShape/validatePlannedTaskShape at planner/schema.ts:133/147 (not a literal 'validatePlan'). All exist; the exact symbol/paths differ slightly from the loose HLD references.",
-          "action": "LLD s1 must target the exact locations: add the 'test' value to AnalyzeTarget in src/shared/analyze-types.ts and extend validatePlanShape in planner/schema.ts (not a 'validatePlan' in planner/validate.ts).",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "k4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The typed graph traversal API used for tracing + reachability (transitiveClosure, unreachable, findCallers, findCallees) exists in src/db/graph.",
-          "evidence": "CONFIRMED with a location nuance: transitiveClosure is in src/db/graph/traversal.ts:134, but findCallers/findCallees/unreachableEntities live in src/db/search.ts:186/193/281 (the HLD citation c4 said db/graph/edges.ts). The typed traversal API exists; the callers/callees helpers are in db/search.ts.",
-          "action": "LLD s2/s3 should import findCallers/findCallees from src/db/search.ts and transitiveClosure/unreachable from src/db/graph/traversal.ts — still satisfies k4 (typed JS API, no SQL).",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "nonFunctional",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The infra read-only walk seam _shared.ts exposes walkFiles (cap 5000) + resolveRepoPath + readScopeRef, reused by the new test family.",
-          "evidence": "CONFIRMED with a location nuance: walkFiles + DEFAULT_FILE_CAP=5000 are in src/analyze/runtimes/infra/_shared.ts:106/90, but resolveRepoPath lives in code/_shared.ts:58 + context/driver.ts:954, not infra/_shared.ts. The read-only walk seam is real; resolveRepoPath is a sibling helper.",
-          "action": "LLD s1's runtimes/test/_shared should reuse walkFiles from infra/_shared.ts and import/relocate resolveRepoPath from its actual home rather than assuming it sits in infra/_shared.ts.",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "s6",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The indexer parses all five target languages (TypeScript, Python, Go, Java, Scala) via tree-sitter, so entities + a language field exist per language.",
-          "evidence": "CONFIRMED: src/indexer/parser/{typescript,python,go,java,scala}.ts each require the matching tree-sitter grammar. All five languages parse, so per-language entities + language field exist (s6).",
-          "action": "None.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "sc4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Indexed entities carry startLine/endLine (declared span) and a language field — the fields coverage attribution + per-language dispatch rely on.",
-          "evidence": "CONFIRMED: startLine/endLine fields exercised throughout context/analyze tests; the language field is declared (explore/types.ts:160 et al). Coverage attribution's span+language dependency is grounded.",
-          "action": "None — LLD s4 can attribute report lines to entity startLine/endLine spans as designed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "k5",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The synthesizer output is the 7-layer AnalyzeContextBundle (system, focus, summary, structure, surface, artefacts, upstream) the new bundle must fit.",
-          "evidence": "CONFIRMED with a naming nuance: the literal identifier 'AnalyzeContextBundle' appears only in docs, but the 7 layers (system/focus/summary/structure/surface/artefacts/upstream) are real in src/analyze/context/{bundle.ts:42,schema.ts:48,types.ts:88} and asserted in driver.live.test.ts:325. The output contract the new bundle must fit is accurate; the code type may carry a different name.",
-          "action": "LLD s1 should confirm the actual bundle type name in src/analyze/context/ (bundle.ts/schema.ts/types.ts) and fit TestHealthModuleBundle into that 7-layer shape.",
-          "fixability": "assisted"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-07-30T07:39:45.065Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-29T11:44:50.811Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-07-30T07:40:02.053Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5b65e1def0d7897d942edd42c05d3e783a0d57ba3472ac5a921b6dc575e8d816",
+        "at": "2026-07-29T12:09:47.708Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-30T07:40:02.053Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-07-30T07:39:45.065Z",
+        "report": {
+          "entityId": "HLD-8f485fe5c614fefc",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-8f485fe5c614fefc-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "A new `test` analyze target/runtime family that mirrors the shipped infra family: a small set of per-DIMENSION TemplateRuntimes — test tracing, coverage, and quality — plus a terminal aggregator, registered in runtimes/bootstrap.ts with matching AnalyzeTaskTemplate rows in planner/templates/test/ and a new `test` value on the AnalyzeTarget enum + per-target validation. The three dimension runtimes are written ONCE against a shared LanguageTestAdapter registry that quarantines every per-language variation (test detection, coverage-report location + format parsing, quality idioms) behind one interface, so cross-language uniformity is structural rather than five-fold-duplicated, and an unrecognized language degrades through a null adapter. The module boundary resolves via a layered rule (per-repo override → language-native package/build unit → directory fallback) into a graph entity set; every dimension operates on that entity set. Coverage is hybrid and strictly read-only: a graph-reachability baseline always, enriched by ingesting already-present coverage reports when found, with the two sources never conflated. The aggregator composes a per-module TestHealthModuleBundle that the existing context synthesizer renders as the 7-layer AnalyzeContextBundle.",

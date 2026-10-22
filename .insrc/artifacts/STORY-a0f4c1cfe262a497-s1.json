@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c19395ec-cdcf-4498-a322-80fc900c90ba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.014Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture attributed audience feedback on generated documents",
+      "parent": {
+        "entityId": "EPIC-a0f4c1cfe262a497",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "9394251e1b184e1ecf210e60cecd04aad38e0633d15172601e389a20a0016081",
+        "at": "2026-10-22T12:43:07.014Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

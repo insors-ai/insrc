@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-65814b07-70c2-4aac-b7c0-c3b7f8ee3ed7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.823Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Click a diff line or its path to open the file at the line",
+      "parent": {
+        "entityId": "STORY-00d80121c593053c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-00d80121c593053c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-00d80121c593053c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4bbbbee5ddd2a7346683b2182cbf38bc53cb9ea5a3e3e0063c364862220963e8",
+        "at": "2026-10-22T12:43:10.825Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.826Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Click a diff line or its path to open the file at the line",
+    "summary": "Write each diff line's path and new-side line as data attributes when the row is built, add the delegated click handler that posts the existing open-code-ref message through the registry's link-open sink (a removed line uses the new-side line it sat before, a non-empty text selection is left alone), and make the header's path open the file at the section's first new-side line while the rest of the header still toggles the widget.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "a click on an added or context line posts open-code-ref with its path and its new-side line",
+      "a click on a removed line posts the new-side line it sat before, never an old-side number",
+      "a click on the header's path posts the section's first new-side line and a click on the rest of the header still toggles the widget",
+      "a click during a text selection posts nothing",
+      "the host opens a clicked line in the editor group the review pane uses and refuses a deleted file"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a click on an added or context line posts open-code-ref with its path and new-side line"
+      },
+      {
+        "level": "unit",
+        "name": "a click on a removed line posts the new-side line it sat before"
+      },
+      {
+        "level": "unit",
+        "name": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget"
+      },
+      {
+        "level": "integration",
+        "name": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

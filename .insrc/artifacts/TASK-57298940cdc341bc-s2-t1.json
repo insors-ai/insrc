@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-65b41fb1-0fe4-4c07-8966-a7e877e7ba6a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.053Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add DaemonActionResult + LifecycleCommand types",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd45d0ea13ce471effe5a5977e37dd25566c2c050fabbf0c41a5e97bdcf7e7d3",
+        "at": "2026-10-22T12:43:33.054Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.054Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add DaemonActionResult + LifecycleCommand types",
+    "summary": "Add the sealed interface DaemonActionResult { data class Ok(message: String? = null) | data class Failed(reason: String) } and the enum class LifecycleCommand { START, RESTART, UPDATE } (S002-internal, in the daemon/ package next to the other sealed *Result types). Additive new types only; distinct from the sc2 DaemonStatusResult and the S003 ProvisionKind.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonActionResult is a sealed interface with exactly Ok(message: String?) and Failed(reason: String)",
+      "LifecycleCommand is an enum with exactly START, RESTART, UPDATE",
+      "no existing type is modified; ProvisionKind is untouched"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DaemonActionResult two-state shape: a when() over Ok/Failed is exhaustive (compile-checked sealed interface); LifecycleCommand has exactly START/RESTART/UPDATE"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

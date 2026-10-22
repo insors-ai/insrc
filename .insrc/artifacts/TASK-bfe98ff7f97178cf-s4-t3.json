@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3619a2ae-8ab3-46d8-9a39-3e20584a662d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.981Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Read the renderer VISUALLY in isolation, in BOTH themes, and write down the depth measurement",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7a5c23c411f925d2f904249469a20ec61bbd4f36100ff56130bf8ae80c17e4b",
+        "at": "2026-10-22T12:44:32.981Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.982Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Read the renderer VISUALLY in isolation, in BOTH themes, and write down the depth measurement",
+    "summary": "Render each of the FOUR real ledger uxDefinitions with the renderer alone, screenshot headless, and READ the images. Deliberately its own task and deliberately early — before the slot factory and before the mount: the Story's central risk is a card with every element present and every assertion green that does not look like an interface, precisely the defect this Epic already shipped and corrected, which no assertion caught then either. Catching a layout failure here costs one task instead of three. Two additions from the critique: read in a LIGHT theme as well as dark, because t2's colour scan proves only that variables were used and not that the result is legible; and write the nesting measurement to a NAMED FILE, because t4 must cite evidence that exists rather than my recollection of an image.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Each of the four real records is rendered, screenshotted and the image READ: does it look like a user interface a reviewer would recognise — text hierarchy legible, columns side by side, inputs and buttons reading as affordances, nothing overlapping or clipped",
+      "The two records belonging to THIS Epic read correctly — the surface rendering its own design is the most direct test of whether the mock is believable",
+      "BOTH THEMES (critique): every state is read in a dark AND a light theme. A mechanical no-literal-colours scan cannot tell whether a `--it-*` choice was the RIGHT variable, and a card is almost entirely background, border and subtle-text colour",
+      "DEPTH IS MEASURED UNDER A NAMED METRIC. The metric is ELEMENT NESTING — what the renderer's recursive walk actually counts. Measured across the four real records it is 4 (per record 3, 4, 4, 2); the daemon's own renderer produces 7 levels of rendered DOM inside the slot. NO real record reaches element depth 9: that figure counts the daemon standalone document's `<html>`/`<body>` chrome, which the webview slot does not have. So this check renders the DEEPEST REAL record at NARROW pane width AND an explicitly SYNTHETIC deep card beside it for the squeeze read — the synthetic one is labelled synthetic in the evidence, never filed as real",
+      "THE MEASUREMENT IS WRITTEN DOWN (critique): per-level indentation cost in px and the observed total content width at the deepest REAL record and at the synthetic deep card go to `S004/evidence/t3-depth-measurement.md` as numbers read off the render. t4 cites this file. A measurement nobody wrote down is not evidence",
+      "Any layout defect found is FIXED here, before anything is wired, and the corrected render is the one carried forward",
+      "The images are kept for the evidence commit rather than discarded"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "each of the four real ledger uxDefinitions rendered in isolation, screenshotted and READ: does it look like an interface a reviewer would recognise"
+      },
+      {
+        "level": "smoke",
+        "name": "the two records belonging to THIS Epic read correctly — the surface renders its own design"
+      },
+      {
+        "level": "smoke",
+        "name": "every isolated state read in BOTH a dark and a light theme"
+      },
+      {
+        "level": "smoke",
+        "name": "the deepest REAL record (element depth 4) plus an explicitly SYNTHETIC deep card, both rendered at NARROW pane width and read for the column-in-column squeeze"
+      },
+      {
+        "level": "smoke",
+        "name": "per-level indentation cost and total width at the deepest real record and the synthetic deep card written to S004/evidence/t3-depth-measurement.md as read-off numbers, with the metric named"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-78f42640-c691-4bc1-a5fb-751f3186c5ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.087Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Rewrite the S001 contract test that asserted StructuredRenderer is implemented nowhere",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "33c8da983d9f084ec6f48ea2b023f3c63332e9d9300951942b2f1346b67c5dfc",
+        "at": "2026-10-22T12:44:31.087Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.088Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewrite the S001 contract test that asserted StructuredRenderer is implemented nowhere",
+    "summary": "S001 exported `StructuredRenderer<T>` and pinned, by test, that no file among docs-review-panel.ts / docs-review-client.ts / docs-sections.ts / markdown-style.ts annotates a value with it. That assertion was written to hold only until the first implementer arrived, and this Story is that implementer. REWRITE it, do not delete it: the type is still exported, it is implemented in exactly ONE place — the functional-requirements renderer — and the other listed files still declare none. The replacement must still fail if a renderer appears somewhere unsanctioned. Record it in the commit as a deliberate, scoped narrowing, the same kind S001 made to the no-innerHTML assertion, never an incidental relaxation.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "The rewritten test still asserts `export type StructuredRenderer<` is present in docs-review-panel.ts.",
+      "It asserts exactly one implementation site and names it; introducing a second annotation in an unlisted file must turn it red — proved by actually adding one, not by reading the assertion.",
+      "docs-review-client.ts, docs-sections.ts and markdown-style.ts are still asserted to declare none.",
+      "The test's name and its comment state that this is a deliberate narrowing at the first implementer, so a later reader cannot mistake it for an eroded invariant."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place, with the other three files still declaring none"
+      },
+      {
+        "level": "unit",
+        "name": "t6 (mutation): add a second StructuredRenderer annotation in an unlisted file -> the rewritten contract test fails"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

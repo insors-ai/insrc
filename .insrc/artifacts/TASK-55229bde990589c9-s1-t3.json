@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-17013df2-5e1c-4914-8b53-ec6d17479128",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.533Z",
+    "epicCreatedAt": "2026-09-15T12:14:06.342Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "55229bde990589c9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "sbdry5 checklist gate + deterministic findAdjacentScopeViolations guard + orchestrator wiring",
+      "parent": {
+        "entityId": "STORY-55229bde990589c9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-55229bde990589c9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-55229bde990589c9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5ce304148966baf4093ce330def1e4beb1976120de808995370839f090a4ad8e",
+        "at": "2026-10-22T12:43:32.535Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.536Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sbdry5 checklist gate + deterministic findAdjacentScopeViolations guard + orchestrator wiring",
+    "summary": "Two independent enforcement mechanisms sharing the same boundaryHardFailure sink, landed as one task (same orchestrator file). (a) LLM-judged: add checklist item sbdry5 to the design.story checklist.verify prompt ('[HARD] No scope belonging to an adjacent boundary is designed/implemented here — consume its contract or raise an openQuestion/back-flow instead'), add 'sbdry5' to the design.story s8 boundaryIds set (orchestrator.ts:1479), and change the synthesize prose 'sbdry1-4' → 'sbdry1-5' (:1394); LEAVE the design.epic s6 boundaryIds set (:1215) untouched. (b) Deterministic: add a new pure export findAdjacentScopeViolations(body, slice): BoundaryFinding[] in lld.ts (flags an interactionWithShared role:'implements' on a contract in some adjacentBoundaries[i].owns; ignores consumes; [] when adjacentBoundaries empty) and invoke it in the orchestrator LLD synthesize/validate path, routing non-empty findings through the existing boundaryHardFailure(retryable:false).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "(a) LLM-judged gate: the design.story checklist.verify prompt lists sbdry5; the design.story boundaryIds set (:1479) includes 'sbdry5' so a missed sbdry5 verdict triggers boundaryHardFailure (retryable:false); the :1394 prose reads sbdry1-5; the design.epic :1215 set is NOT touched (still sbdry1-4)",
+      "(b) deterministic guard: findAdjacentScopeViolations flags an implements-on-adjacent-owned collision (BoundaryFinding), ignores a consumes on an adjacent-owned contract, and returns [] for empty/absent adjacentBoundaries (standalone no-op)",
+      "the guard is wired into the LLD synthesize/validate path so an adjacent-owned implements-collision LLD is refused via boundaryHardFailure; the existing sbdry1-4 behaviour is unchanged",
+      "tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "findAdjacentScopeViolations flags an interactionWithShared role:'implements' whose contractId is in an adjacentBoundaries[i].owns (returns a BoundaryFinding of the existing shape)"
+      },
+      {
+        "level": "unit",
+        "name": "findAdjacentScopeViolations ignores a role:'consumes' on an adjacent-owned contract (zero findings)"
+      },
+      {
+        "level": "unit",
+        "name": "findAdjacentScopeViolations returns [] for empty/absent adjacentBoundaries (standalone no-op)"
+      },
+      {
+        "level": "integration",
+        "name": "the design.story checklist.verify step prompt includes sbdry5"
+      },
+      {
+        "level": "integration",
+        "name": "orchestrator design.story boundaryIds includes 'sbdry5' so a missed sbdry5 verdict hard-fails (retryable:false), mirroring the sbdry1-4 hard-fail tests"
+      },
+      {
+        "level": "integration",
+        "name": "an LLD body implementing an adjacent-owned contract is rejected via boundaryHardFailure through the synthesize/validate path"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

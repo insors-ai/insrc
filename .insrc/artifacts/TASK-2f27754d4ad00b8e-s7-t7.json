@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-68f76d5b-bf08-438f-910b-9ed8ff873fd8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.256Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Move the remaining Plan Task-record readers",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e77a8224b488c14ee80fdb799fc2f55ec19cf79b87ab371ea3c295dee4d713e4",
+        "at": "2026-10-22T12:43:22.256Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.257Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the remaining Plan Task-record readers",
+    "summary": "Make the Task branch of buildRef and resolveByIssue in src/workflow/tracker/resolve.ts, the prior-taskRefs dedup read in src/workflow/runners/tracker/context.ts and the taskRefs write in src/workflow/orchestrator.ts read the TASK head's binding, keeping the Plan fallback only for a Task with no head.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "#N resolves to a new Task through its head's binding and buildRef carries its issueRef",
+      "The tracker runner's dedup read and the orchestrator's push result use the TASK head's binding for a Task that has a head",
+      "A Task with no head still resolves through the Plan fallback"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-readers.test.ts: an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head resolves through the Plan"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

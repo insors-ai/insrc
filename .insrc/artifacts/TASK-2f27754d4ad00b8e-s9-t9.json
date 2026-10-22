@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-99ac2d98-130b-4183-aca9-9bf26242a3dc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.770Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Feedback rule and its order",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "99c64564ab2cee2670323e0540f8b19e2652113b0cd0e47bf063b292e4bfc9f0",
+        "at": "2026-10-22T12:43:22.770Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.771Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Feedback rule and its order",
+    "summary": "Add src/workflow/convert/feedback-rule.ts: for each head append the Feedback lines from body.feedback through convertLegacyFeedback (ids kept, deterministic) and the batch outcomes BEFORE the head's migration write, so the migration write is the only step that strips body.feedback; count unmapped values in the report. Test src/workflow/convert/__tests__/convert-feedback-rule.test.ts: a crash after each step and a rerun lose no feedback.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Feedback lines are appended before the head is replaced",
+      "A crash between the append and the head write loses no feedback on the rerun",
+      "A repeated run appends no line twice"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-feedback-rule.test.ts: feedback lines are appended before the head is replaced and a crash loses no feedback"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

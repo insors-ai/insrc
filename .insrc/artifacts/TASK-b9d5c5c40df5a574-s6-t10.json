@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d3940ae-fec0-4c01-be53-aab50ca32baf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.173Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Serve a request with no focus",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "169ba6bcc1e46cfd81618378f1c5e5290266379dbfa2a7138e16cd46776aff4c",
+        "at": "2026-10-22T12:44:25.174Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.174Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Serve a request with no focus",
+    "summary": "Add the section for an intent with no focus to the planning prompt, one recipe per kind of source, after the other recipes and before the output format, and name it from the user turn. Add the rule for an intent with no focus to the six answer-writing prompts. Change the free-form replacement's purpose for such an intent to a stated broad survey. Then remove the pipeline's gate on an unfocused intent.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "The pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace, and the planning stand-in received the unfocused intent; restoring the gate makes this test fail",
+      "The planning prompt has a recipe for each of the five kinds of source, naming only lookups that exist and no limit parameter; removing the section makes this test fail",
+      "Every prompt that prints the intent's focus states what to write when there is none; the test finds those prompts by search",
+      "An unfocused intent replaced by the free-form lookup gets the broad-survey purpose, not the classifier's reasoning text",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace"
+      },
+      {
+        "level": "unit",
+        "name": "planning prompt has a no-focus recipe per kind of source, with existing lookups and no limit parameter"
+      },
+      {
+        "level": "unit",
+        "name": "planning user turn for an unfocused intent names the no-focus section"
+      },
+      {
+        "level": "unit",
+        "name": "every prompt that prints the intent's focus states the no-focus rule"
+      },
+      {
+        "level": "unit",
+        "name": "free-form replacement's purpose for an unfocused intent is the broad survey"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6e96a5f-d925-481a-8edc-ca9f3a9f328b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.245Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Details view-model types and the item mirror's tasks",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ed5004cb99ee8c5d80ce3266df99683ba620e3602eda06141d223d26cf7424a",
+        "at": "2026-10-22T12:43:42.245Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.246Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Details view-model types and the item mirror's tasks",
+    "summary": "Declare TaskRowView, EvidenceRowView and ItemDetailsViewModel in board-protocol.ts in place of unknown, and add 'tasks' to DeliveryItemView.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ItemDetailsViewModel, TaskRowView and EvidenceRowView match the sc6 sketch and the 'details' down-message carries ItemDetailsViewModel | null.",
+      "DeliveryItemView picks 'tasks' and E1's contract test still compiles the mirror."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "contract.test.ts: 'the VS Code plugin type-checks against the published delivery types'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

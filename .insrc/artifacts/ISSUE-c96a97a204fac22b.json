@@ -22,17 +22,45 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T08:36:53.415Z",
     "parentRef": {
       "slug": "work-framed-approved-spec-proceed-from",
       "storyId": "s3"
+    },
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "23a2b675a03f04da67d6d1dc6ec84417e44f67927616b3475493dc2e89961384",
+        "at": "2026-10-12T07:26:48.214Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T08:36:53.415Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
     "title": "Every save of a chat session rewrites its whole transcript",
     "reproduction": "Use a dev chat session with a long history and run a turn. Observed (from the code; not yet timed): each save writes the whole session record, every transcript row included, to VS Code global state. During a turn this happens up to every 500 ms while output is handled (the live-turn cursor save), again on each permission or selection outcome, and at the turn's end. The amount written per save grows with the session's whole history, not with what changed. Expected: a save writes an amount that depends on what changed since the last save. Not yet established: how much time a save of a large session actually takes; measure it on a real long session before choosing the fix.",
     "rootCause": "The store keeps one record per session with the transcript inline: createMementoChatSessionStore's save() calls `memento.update(SESSION_PREFIX + session.id, session)` with the whole ChatSession (c1). The turn lifecycle's cursorTracker saves the session at most every CURSOR_SAVE_MS (500 ms) while a turn's lines are handled (c2), and the panel host saves on each outcome and at the terminal event (c3). list() also reads every stored session in full to build the history summaries (c1). None of these can write or read less than the whole record.",
-    "fixIntent": "Make the cost of a save depend on what changed, not on the length of the history, for example by keeping the transcript in separate pages from the session's head record. Existing sessions must keep working and must not be lost or corrupted by the change, including when several windows share the same global state and when a session is evicted. Building the history list should not need every transcript. The view-side paging from the earlier design (LLD-ddc4ede1dbf84626-S001) is separate and does not depend on this."
+    "fixIntent": "Make the cost of a save depend on what changed, not on the length of the history, for example by keeping the transcript in separate pages from the session's head record. Existing sessions must keep working and must not be lost or corrupted by the change, including when several windows share the same global state and when a session is evicted. Building the history list should not need every transcript. The view-side paging from the earlier design (LLD-ddc4ede1dbf84626-s1) is separate and does not depend on this."
   },
   "citations": [
     {

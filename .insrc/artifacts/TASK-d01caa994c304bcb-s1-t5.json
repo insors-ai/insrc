@@ -1,0 +1,155 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd3fba52-047c-4865-821d-34b8bc857023",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.001Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Unit-test the reconcileConfig contract",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "45eb0d15f8d7e9276237510e3a7a94e24868356707774c9be07d45188dd414ec",
+        "at": "2026-10-22T12:44:41.006Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.007Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit-test the reconcileConfig contract",
+    "summary": "Add src/config/__tests__/config-reconcile.test.ts (node:test + node:assert/strict, kebab-case sibling naming) covering the full pure contract with in-memory fixtures driven through the injectable `catalog` parameter — no on-disk fixture is needed at this level because the reconciler is pure. Cover: carried/filled/repaired classification; falsy-but-valid values (false, 0, \"\", [], {}) carried and never filled; null at a non-nullable declared type repaired; a type-matching object with extra un-enumerated sub-keys carried whole without recursion; the t2 captured document surviving a gained-and-lost-keys catalog with all three dynamic namespaces deep-equal; a catalog key reconciled beside a dynamic sibling at the same level with independent outcomes; the changed-derivation invariant; idempotence across the whole fixture corpus; non-object roots; empty and non-matching catalogs; partially-present ancestor chains (intermediates synthesized, only the leaf recorded in filled); scalar/array ancestor collision recording the CATALOG path in repaired together with the discarded scalar value; a value already equal to the catalog default recorded as carried not filled; both ConfigCatalogError throw cases asserted by class and by the path they name; and non-mutation via a deep-freeze helper.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "src/config/__tests__/config-reconcile.test.ts exists and all 18 named subjects from the test strategy have a corresponding assertion",
+      "The captured t2 fixture reconciles with models.analyze.roleTiers, models.analyze.byRepo and models.agents deep-equal to the baseline, against a catalog that both gained and lost rows relative to the fixture",
+      "The two catalog-integrity failures are asserted to be instances of ConfigCatalogError and to carry the offending catalog path, and no user-config input in the corpus produces that class",
+      "The ancestor-collision test asserts the discarded scalar value is present in the repair record, not just the path",
+      "A deep-freeze helper is used to prove `existing` is never mutated",
+      "`npx tsx --test 'src/config/__tests__/*.test.ts'` passes with no new dependency added to package.json"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "catalog key absent from existing → default written, path in filled"
+      },
+      {
+        "level": "unit",
+        "name": "catalog key present and type-valid → value carried unchanged and referentially preserved for objects/arrays"
+      },
+      {
+        "level": "unit",
+        "name": "catalog key present but type-invalid → catalog default substituted, path in repaired"
+      },
+      {
+        "level": "unit",
+        "name": "falsy-but-valid values (false, 0, \"\", [], {}) carried, never filled — existence via hasOwnProperty, not truthiness"
+      },
+      {
+        "level": "unit",
+        "name": "null at a non-nullable declared type is repaired, not carried"
+      },
+      {
+        "level": "unit",
+        "name": "type-matching object with extra un-enumerated sub-keys carried whole, no recursion to prune"
+      },
+      {
+        "level": "unit",
+        "name": "dynamic namespaces roleTiers / byRepo / agents deep-equal across a gained-and-lost-keys catalog on the t2 captured fixture"
+      },
+      {
+        "level": "unit",
+        "name": "catalog key reconciled beside a dynamic sibling at the same level — outcomes independent"
+      },
+      {
+        "level": "unit",
+        "name": "changed === (filled.length + repaired.length > 0) and changed === false implies config deep-equals existing"
+      },
+      {
+        "level": "unit",
+        "name": "idempotence — reconcileConfig(reconcileConfig(x).config).changed === false across the whole fixture corpus"
+      },
+      {
+        "level": "unit",
+        "name": "non-object roots (undefined / null / array / string / number / true) treated as {} — all keys filled, nothing thrown"
+      },
+      {
+        "level": "unit",
+        "name": "empty catalog and catalog matching nothing → changed === false, config deep-equals existing"
+      },
+      {
+        "level": "unit",
+        "name": "partially-present ancestor chain — intermediates synthesized, only the leaf recorded in filled, sibling keys untouched"
+      },
+      {
+        "level": "unit",
+        "name": "ancestor segment collides with a scalar/array — subtree replaced, CATALOG path recorded in repaired with the discarded scalar value"
+      },
+      {
+        "level": "unit",
+        "name": "value already exactly equal to the catalog default → carried, not filled"
+      },
+      {
+        "level": "unit",
+        "name": "catalog row with an out-of-domain type throws ConfigCatalogError naming the offending path, never degrading to fill-default"
+      },
+      {
+        "level": "unit",
+        "name": "catalog row whose own default fails its own declared type throws ConfigCatalogError naming the path"
+      },
+      {
+        "level": "unit",
+        "name": "existing document is never mutated — deep-freeze helper input reconciles and deep-equals itself afterwards"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

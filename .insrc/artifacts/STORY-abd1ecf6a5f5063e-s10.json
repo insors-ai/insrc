@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-383ebed3-5076-441a-ab5a-4f586b9a5a86",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.024Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Rebuild the elicit convergence as an adaptive, daemon-drafted, decision-at-a-time loop",
+      "parent": {
+        "entityId": "EPIC-abd1ecf6a5f5063e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e7b1d6df054e3cb4d15ec934f7f953d4598aba0727c46de886034da887dbfc46",
+        "at": "2026-10-22T12:43:07.024Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

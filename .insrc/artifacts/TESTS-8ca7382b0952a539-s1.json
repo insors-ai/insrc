@@ -7,7 +7,26 @@
     "updatedAt": "2026-10-11T05:43:27.275Z",
     "standalone": true,
     "epicSlug": "defect-vscode-plugin-src-chat-chat",
-    "epicCreatedAt": "2026-10-10T16:38:40.063Z"
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "e915b0dce2cc2245872343e0a50f075e63196136e5f0eb693c8b8393912ad485",
+        "at": "2026-10-11T05:30:46.538Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

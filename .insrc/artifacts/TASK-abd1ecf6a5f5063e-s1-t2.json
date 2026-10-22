@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c82f411-77f0-4c25-80f1-338660ef51f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.715Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Brainstorm step schemas placeholder",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "40c06d324eafccddf932ddc87588443450f27783799501798a31ee7b91e2048b",
+        "at": "2026-10-22T12:44:06.715Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.716Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Brainstorm step schemas placeholder",
+    "summary": "Create src/workflow/runners/brainstorm/schemas.ts with minimal placeholder JSON schemas for the stage's step runner(s), sized as stubs since elicitation-turn validation is owned by s2-s5, not this scaffold story.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "schemas.ts exports one or more named JSON Schema objects, each a minimal/empty object shape (e.g. { type: 'object' }) with no field-level validation logic, one per planned brainstorm step runner",
+      "each exported schema is valid JSON Schema and compiles with no errors under the project's ajv-based schema validator"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schemas.ts exports valid ajv-compilable JSON Schema stub(s), one per planned brainstorm step runner"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

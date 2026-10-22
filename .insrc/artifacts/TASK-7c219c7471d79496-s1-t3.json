@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bfd0caab-b603-4e57-a373-0787afaeb00f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.508Z",
+    "epicCreatedAt": "2026-09-30T04:45:09.517Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c219c7471d79496",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extend the renderShell *WebviewSource tests (ac1-ac4) and run the suite",
+      "parent": {
+        "entityId": "STORY-7c219c7471d79496-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7c219c7471d79496-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7c219c7471d79496-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7c219c7471d79496-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "924f5840a69217f07bff6aa3a30596ce6f5ef19681240722032137df2ddd3748",
+        "at": "2026-10-22T12:43:49.511Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.512Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the renderShell *WebviewSource tests (ac1-ac4) and run the suite",
+    "summary": "Add additive assertions to vscode-plugin/src/chat/__tests__/chat-panel.test.ts over the renderShell source string: the flush-prompt CSS + top-line ❯ (ac1), the interrupt-hint placeholder (ac2), the read-only status bar + header-relocated selects + mode→label mapping (ac3), and re-run the S002 send/stop + provider/mode switching behaviour as a regression (ac4). Run `npm test` (tsx --test) and confirm green.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "new unit assertions cover ac1 (flush prompt CSS + flex-start ❯), ac2 (placeholder), ac3 (read-only bar + relocated selects + label map)",
+      "the S002 send/stop + provider/mode switching regression tests pass unchanged (ac4)",
+      "the full vscode-plugin test suite (tsx --test) passes green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "regression: S002 send/stop — ❯ click posts one {type:'submit-turn'}, Cmd/Ctrl+Enter sends, empty no-ops, setRunning toggles ❯↔■"
+      },
+      {
+        "level": "unit",
+        "name": "regression: relocated #insrc-mode change posts {type:'set-permission-mode'} + updatePermSeg auto-pill; #insrc-provider change starts a new chat"
+      },
+      {
+        "level": "smoke",
+        "name": "the full vscode-plugin suite runs green under tsx --test"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

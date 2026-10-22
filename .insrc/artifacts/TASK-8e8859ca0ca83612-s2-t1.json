@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-96e375f4-6f5c-4559-8f4d-b0a2018c017d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:57.158Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add leading '>' terminal-prompt control + CSS before the textarea",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "90c0f5419b4d39502e53c71b4a9a923a0372463f548f7327c6044decfbdc53f9",
+        "at": "2026-10-22T12:43:57.158Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:57.159Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add leading '>' terminal-prompt control + CSS before the textarea",
+    "summary": "In the eval'd webview source in chat-panel.ts, add a leading '>' prompt control element (e.g. id 'insrc-prompt') before #insrc-input and add its terminal-prompt CSS (green shell-prompt look, a comfortably clickable target). Keep #insrc-input's id/placeholder/CSS unchanged.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The input-row HTML renders a leading '>' prompt control positioned before #insrc-input.",
+      "The '>' control is styled as a terminal-green shell prompt and is a comfortably clickable target.",
+      "#insrc-input's id, placeholder, and existing CSS are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "panel HTML renders a leading '>' prompt control before #insrc-input"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

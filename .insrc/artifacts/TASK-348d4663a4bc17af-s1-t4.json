@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f184dd89-2b7d-4948-8ea8-439d5713232d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.772Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Screen shell and list screens in the webview",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fc802da893785fcf7cea2e3582f8d071db19840fccdd2f252bd040936d82dcd9",
+        "at": "2026-10-22T12:43:26.772Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.773Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Screen shell and list screens in the webview",
+    "summary": "renderBoardDocument becomes the app bar (breadcrumb nav, status, Read-only, Refresh, density), #announce, #banner and <main id='main'>. The webview script renders each screen message by clearing #main: breadcrumb buttons posting go-to-crumb (last one aria-current), Back, the filter bar (four-view group only on root lists, Needs attention toggle with ×, search), the totals line with Show all, stage sections as <details> with remembered toggles per entry and stage, card grids, Epics rows posting open-epic and the Standalone link, the Issues list posting open-item, and the state panels by placement. Focus and scroll: a new screen focuses its h1 and scrolls to the top; a restored one restores the saved scroll and focuses the opener. Escape on an epic or item screen posts back. Narrow (<= 480 px): short breadcrumb and the empty-stage fold, re-rendered on resize. The fake-DOM harness gains clientWidth, scroll, resize and <details> open/toggle. board-host.test.ts is rewritten for the shell, list screens and navigation.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each screen message replaces #main entirely: after opening an epic and then a story, no card or row from an earlier screen remains in the DOM.",
+      "The filter bar has exactly the four views and Needs attention, no epic button, and no view control on an epic screen.",
+      "Stage sections render as six <details> in workflow order with their default open state; a section the reader toggled keeps its state across a refresh of the same entry.",
+      "Under Needs attention or below 480 px the empty stages fold into one section; widening past 480 px re-renders the wide form.",
+      "Back restores the saved scroll and focuses the card or row that opened the screen; Escape posts back.",
+      "Empty and snapshot-less failures replace #main; a stale failure and partial evidence sit in #banner above the screen; no matches replaces the list area with Clear filters.",
+      "Text is set only through textContent and only BoardUpMessage envelopes are posted; #announce is the only live region; the CSP string is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'opening an epic and then a story replaces #main each time, and nothing from an earlier screen remains'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'the filter bar has exactly the four views and Needs attention, and no epic is a chip'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'Back restores the saved scroll and focuses the card that opened the story; Escape goes back'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fbc106db-851e-4599-b7e7-32a8b0bb2db0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.550Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Swap the DebugPane 'daemon' placeholder for DaemonSection",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "18372d8e865414c2d29e16030742893b0f7d5415b68082e99ce59cf076c00ea9",
+        "at": "2026-10-22T12:44:58.550Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.551Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Swap the DebugPane 'daemon' placeholder for DaemonSection",
+    "summary": "In src/cli/panes/DebugPane.tsx, replace the SECTION_VIEWS['daemon'] placeholder entry with `() => <DaemonSection services={{ debug: props.services.debug }} />` (the DebugPane already holds the debug facade via DebugPaneProps). The 'mcp'/'logs' placeholders + the section-hosting shape/navigation stay unchanged.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "selecting the Daemon section renders DaemonSection (not the s1 placeholder) fed the debug facade",
+      "the 'mcp'/'logs' placeholders and DebugPane navigation/hosting are unchanged",
+      "tsc compiles + existing s1 DebugPane tests still pass (aside from the daemon-section body change)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "DebugPane: selecting the Daemon section renders DaemonSection's running card (not the s1 placeholder) from the injected debug facade"
+      },
+      {
+        "level": "integration",
+        "name": "DebugPane: with an unreachable daemonStatus() the Daemon section shows the stopped/unreachable line"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f9d79a9-1b9d-4e64-99c0-79f23d9565c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.791Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement daemonStatus() on the DaemonGateway interface + DaemonGatewayImpl (sc2)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f90e9513fc87fbd48cfb4a9d175007cdab8469a4511f2d238d55e2922cb9c78a",
+        "at": "2026-10-22T12:43:32.791Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.792Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement daemonStatus() on the DaemonGateway interface + DaemonGatewayImpl (sc2)",
+    "summary": "Add fun daemonStatus(): DaemonStatusResult to the DaemonGateway interface and implement it in DaemonGatewayImpl: rpc.call(METHOD_STATUS, emptyMap()); if(!r.ok||r.error!=null) Unavailable(reason) else Loaded(parseDaemonStatus(r.data)); catch DaemonUnavailableException → Stopped; catch RuntimeException → Unavailable. Add a private parseDaemonStatus that reuses the numberMap/str/(v as? Number)?.toInt()/toLong() coercion (repoCount = size of the repos[] list; modelPullStatus default 'ready'; absent modelPullPct/lmdbFileSizeMb → null). Leave probe() and METHOD_STATUS untouched (reuse the constant).",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "DaemonGateway interface declares fun daemonStatus(): DaemonStatusResult",
+      "DaemonGatewayImpl.daemonStatus() reuses METHOD_STATUS with emptyMap(), classifies Stopped on DaemonUnavailableException and Unavailable on !ok/error/RuntimeException, else Loaded(parseDaemonStatus)",
+      "parseDaemonStatus coerces Gson Doubles, derives repoCount from repos.size, defaults modelPullStatus to 'ready', and never throws",
+      "the existing probe() read is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "daemonStatus() Loaded: a well-formed Gson-Double reply coerces to a DaemonStatusDto (uptimeSec/queueDepth Ints, repoCount=repos.size, optionals null, modelPullStatus default 'ready') and the request uses METHOD_STATUS with empty params"
+      },
+      {
+        "level": "unit",
+        "name": "daemonStatus() Stopped: a fake DaemonRpc that throws DaemonUnavailableException yields DaemonStatusResult.Stopped"
+      },
+      {
+        "level": "unit",
+        "name": "daemonStatus() Unavailable: a !ok/error reply and a malformed (non-numeric/non-map) reply both yield DaemonStatusResult.Unavailable without throwing; probe() classification is unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

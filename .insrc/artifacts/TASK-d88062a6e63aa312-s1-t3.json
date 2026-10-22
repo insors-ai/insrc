@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-868fa272-d3de-411d-9d91-087c7ffa4a4f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:43.406Z",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Branch buildAdherencePrompt on contract presence + short-circuit judgeAdherence in mode C",
+      "parent": {
+        "entityId": "STORY-d88062a6e63aa312-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d88062a6e63aa312-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d88062a6e63aa312-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5c240ca73205543963b25973b96b7d69a4bcee71b47823947aad5442df03abba",
+        "at": "2026-10-22T12:44:43.410Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:43.410Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Branch buildAdherencePrompt on contract presence + short-circuit judgeAdherence in mode C",
+    "summary": "In src/workflow/code-review/dimensions/adherence.ts: (a) make buildAdherencePrompt's user payload conditional — emit the '## Approved design (LLD body)' section only when approvedLld!=null and the '## Approved plan (PLAN body...)' section only when approvedPlan!=null, with implementation-correctness framing when both present and LLD-contract framing when LLD-only; never deref a null. (b) short-circuit judgeAdherence to return an empty DimensionResult (dimension DIMENSION, findings:[]) BEFORE the withStructuredRetry call when approvedLld===null && approvedPlan===null — no provider call. The trailing structural-payload order is preserved.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "buildAdherencePrompt never dereferences a null approvedLld or approvedPlan",
+      "Mode A (both present): payload includes both the LLD body and the plan body with implementation-correctness framing",
+      "Mode B (LLD only): payload includes the LLD body, OMITS the plan section, frames as an LLD-contract review",
+      "judgeAdherence returns an empty adherence DimensionResult with ZERO provider calls when both contracts are null (mode C)",
+      "When a contract IS present, judgeAdherence issues exactly one completeStructured call as today"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "judgeAdherence: both contracts null -> returns empty DimensionResult with NO provider call (spy provider asserts zero calls)"
+      },
+      {
+        "level": "unit",
+        "name": "judgeAdherence: a contract present -> issues exactly one completeStructured call (unchanged)"
+      },
+      {
+        "level": "unit",
+        "name": "buildAdherencePrompt: mode A includes LLD body + '## Approved plan' section + implementation-correctness framing"
+      },
+      {
+        "level": "unit",
+        "name": "buildAdherencePrompt: mode B (LLD only) includes LLD body, OMITS plan section, no null deref"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

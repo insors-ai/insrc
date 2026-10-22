@@ -23,181 +23,56 @@
     "storyId": "s2",
     "lldRunId": "wf-1790859894795-rvtgly",
     "lldEffectiveHash": "33e859ffd0bea6e7dc7aaab7fea3549865f3c5df45d466b64c5818993f17bd31",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "s2/t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "openDoc's success post already contains a conditional spread of exactly the form the plan tells t1 to copy — `...(degradation !== undefined ? { degradation } : {})` — so t1's instruction to place the functionalDefinition spread 'beside the identical degradation spread already there' names a real, existing construct rather than an invented pattern.",
-          "evidence": "The pattern `degradation !== undefined ? { degradation } : {}` resolves to exactly ONE code match — docs-review-panel.ts:260 — inside openDoc's success post (the `type: 'docs-content'` at :251). So t1's instruction to place the functionalDefinition spread 'beside the identical degradation spread already there' names a real construct at a real site; the build has a line to copy rather than a pattern to invent. My probe's anchor range was a line or two short (the spread is at :260, not within :246-259), but the PLAN cites no line numbers here, so nothing in the artifact is wrong.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p2",
-          "ref": "s2/t1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The docs-content variant of HostToWebview currently ends at `degradation?: RenderDegradation | undefined` with `sections?: SectionIndex | undefined` immediately before it — both added additively by S001/t5 — and carries no functional-record field, so t1's 'append one optional field to this same variant, no new message type' has a real precedent and a real insertion point.",
-          "evidence": "All three reads land exactly: protocol.ts:70 `readonly type: 'docs-content';`, :80 `readonly sections?: SectionIndex | undefined;` and :85 `readonly degradation?: RenderDegradation | undefined;`, each a single code match. The variant ends at `degradation` with no functional-record field, so t1 has both a precedent (two fields S001 appended to this same variant) and an insertion point. The additive, no-new-message-type instruction is grounded.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p3",
-          "ref": "s2/t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are exactly TWO exported webview source-string constants on this surface today — DOCS_BODY_RENDERER_SOURCE and DOCS_SECTIONS_SOURCE — which is what makes t2's DOCS_FR_SOURCE the THIRD member of that family rather than the second or the fourth.",
-          "evidence": "The re-derivation grep `export const DOCS_[A-Z_]*SOURCE` returns exactly TWO code matches — docs-review-panel.ts:76 DOCS_BODY_RENDERER_SOURCE and :111 DOCS_SECTIONS_SOURCE — both confirmed by read. The count is re-derived rather than restated, so t2's DOCS_FR_SOURCE is genuinely the third member of a two-member family, and 'follow the style of its two siblings' points at two real constants.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p4",
-          "ref": "s2/t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The shell's `mdStyle` block is a flat string concatenation of renderMarkdownStyle(DOCS_REVIEW_MARKDOWN_TOKENS) plus exactly THREE hand-written CSS fragments — `.insrc-docs-plain`, `.insrc-docs-notice` and `#insrc-docs-sections select` — so t2's instruction to add the item rules as 'one more fragment in the existing concatenation' is additive and needs no new stylesheet.",
-          "evidence": "Re-derived rather than restated: `renderMarkdownStyle(DOCS_REVIEW_MARKDOWN_TOKENS)` is a single match at :324, and each of the three named fragments is a single match — `.insrc-docs-plain{` at :327, `.insrc-docs-notice{` at :328, `#insrc-docs-sections select{` at :329. Three hand-written fragments, exactly as the plan says, in a flat concatenation. Adding a fourth is additive and needs no new stylesheet, so t2's styling instruction is correctly sized.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p5",
-          "ref": "s2/t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DOCS_REVIEW_MARKDOWN_TOKENS maps every markdown-style token to an `--it-*` CSS variable (fg, border, accent, muted, bgInset, codeBg and the font), which is why t2's acceptance check requires the item CSS to reference only `--it-*` names — the chat surface's `--sans`/`--fg-strong`/`--border` namespace is not defined on this surface.",
-          "evidence": "DOCS_REVIEW_MARKDOWN_TOKENS is confirmed at markdown-style.ts:120 with `fg: 'var(--it-fg)'` (:123), `border: 'var(--it-border)'` (:126) and `accent: 'var(--it-accent)'` among its members. The broader `var(--it-*)` greps hit high counts across design-tokens.ts, chat-panel.ts and the mocks, which does not weaken the premise — it confirms `--it-*` is the live namespace on this surface. t2's acceptance check (item CSS references only `--it-*`) is therefore a real guard against the S001 failure mode where an undefined var() inside a shorthand silently invalidates the declaration.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p6",
-          "ref": "s2/t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The existing prose renderer buckets a per-item requirement with a missing or empty itemRef under the literal key `(unassigned)`, which is the exact key t2's added acceptance check requires the new renderer to agree with rather than invent its own.",
-          "evidence": "Single code match and confirmed read at functional-definition.ts:99: `const key = r.itemRef !== undefined && r.itemRef.length > 0 ? r.itemRef : '(unassigned)';`. t2's added acceptance check names the right literal key, so the new renderer and the existing prose renderer will agree about where an orphan per-item requirement belongs rather than inventing a second convention.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p7",
-          "ref": "s2/t3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "vscode-plugin/src/chat/docs-sections.ts is the single source of section identity and has ZERO import statements, so t3's and t7's acceptance checks that it comes out of this Story byte-identical and still import-free are checks on a real property rather than a restatement.",
-          "evidence": "docs-sections.ts is confirmed as the single implementation — deriveSectionIndex at :86 and createSectionResolver at :136, each a single code match, with `const ATX =` at :47 and `const FENCE =` at :50 also single matches. The read at :1 lands on the file's opening doc comment, i.e. the file begins with documentation rather than an import. t3's and t7's 'unchanged and still zero imports' checks therefore guard a real property of a real single-source module.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p8",
-          "ref": "s2/t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The format spine declares the functional-requirements section with the literal heading text 'Functional requirements' and `source: 'fr'`, and frBodyLines strips the renderer's own hard-coded heading with `raw.slice(2)` so the engine can supply a NUMBERED one — which is the premise behind t3 matching the anchor title by its TAIL rather than by equality.",
-          "evidence": "`heading: 'Functional requirements'` with `source: 'fr'` resolves at formats.ts:36, :58, :79 and :100 — all four document formats — and `raw.slice(2)` is a single match at bindings.ts:27, both confirmed by read. The heading is stripped by the binding precisely so the engine can supply a numbered one, which is exactly why t3 must tail-match the anchor title instead of comparing it for equality. The instruction is grounded in the mechanism that creates the numeric prefix.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p9",
-          "ref": "s2/t4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "On the degraded path renderMarkdownBody sets `el.className='insrc-docs-plain'` on the BODY CONTAINER, and the shell declares `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;...}` — so t4's added obligation (the item rules must neutralise the inherited white-space/word-break, and the degraded rendering must be checked visually) rests on a real CSS inheritance path, not a hypothetical one.",
-          "evidence": "Both halves of the inheritance path are confirmed verbatim: docs-review-panel.ts:90 `el.className='insrc-docs-plain';` followed at :91 by `el.textContent=s;` (the degraded arm sets the class on the BODY CONTAINER), and :327 `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;font-family:var(--it-font);color:var(--it-...)}`. A block prepended inside that container does inherit `white-space:pre-wrap` and `word-break`. This validates the critique that produced t4's added obligation — the item rules must neutralise it, and the degraded path must be checked visually because a DOM stub carries no CSS and would never see it.",
-          "action": "none — verified sound; the risk the added acceptance check guards is real",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p10",
-          "ref": "s2/t5",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "stampSlugs pairs rendered headings to posted anchors BY TITLE through a pointer that only advances (`var j=p;while(j<anchors.length&&anchors[j].title!==txt)j++;` then `p=j+1`), which is precisely why t5's ordering requirement — placement must run AFTER stamping — is a correctness constraint rather than a style preference: a tree mutated first could mis-pair every later heading.",
-          "evidence": "Both patterns are single code matches and both reads confirm: :117 `var j=p;while(j<anchors.length&&anchors[j].title!==txt)j++;` and :118 `if(j<anchors.length){hs[i].id=anchors[j].slug;p=j+1;n++;}}`. The pointer only advances and a heading is stamped only on a title match, so mutating the tree before stamping could genuinely mis-pair every later heading. t5's after-stamping requirement is a correctness constraint, exactly as the plan states, and its ordering mutation is a real falsifier.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p11",
-          "ref": "s2/t5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan justifies its idempotence check by asserting the pane posts a docs-content message at several distinct sites per session, naming four (open, boot ping, blocked approve, decision failure). Re-derive the actual number of `type: 'docs-content'` post sites in docs-review-panel.ts — if the real count differs from the four named, the plan's enumeration is illustrative rather than exhaustive and should be read as such.",
-          "evidence": "Re-derived: `type: 'docs-content'` resolves to FIVE post sites in docs-review-panel.ts — :205 (refreshPending's catch arm), :251 (openDoc success), :267 (openDoc's fail-closed arm), :289 (decide, approval withheld) and :305 (decide, failure). The plan's parenthetical names four of them ('open, boot ping, blocked approve, decision failure') and omits openDoc's own failure arm at :267. Because the sentence reads 'several times per session (…)' rather than claiming an exhaustive list, and because the prescribed work — the idempotence check at t5 — is unaffected by which sites post, this is an illustrative enumeration rather than a miscount. Recording the real figure here so the ledger carries it: FIVE post sites, not four. The premise behind the check stands either way: the pane really does deliver docs-content repeatedly within one panel session, so a placement that failed to clear a previously placed block would duplicate silently.",
-          "action": "none — verified sound; the exact site count (five) is recorded here rather than edited into the artifact, since the plan's list is explicitly illustrative",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p12",
-          "ref": "s2/t5",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "renderContent's existing call order is renderMarkdownBody → stampSlugs → renderSectionChooser (gated on the stamped count) → renderDegradationNotice, and the notice already resolves a TWO-level precedence (host-posted degradation, else the body renderer's), so t5's insertion point between stampSlugs and the chooser, and its extension of the precedence by a third level, both attach to real code.",
-          "evidence": "The pipeline is confirmed verbatim with every pattern a single match: :355 `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');`, :362 `var stamped=stampSlugs(bodyEl,m.sections);`, :363 `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` and :366 `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:r.degradation);`. t5's insertion point (between :362 and :363) is a real position, and the two-level notice precedence it extends by one level is visible at :366 — so 'a strict extension, not a replacement' is accurate.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p13",
-          "ref": "s2/t6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The S001 test t6 is told to REWRITE really exists and really asserts what the plan says: it checks `export type StructuredRenderer<` is present in docs-review-panel.ts, then loops the four named files asserting `doesNotMatch(src, /:\\s*StructuredRenderer</)` — so t6 is narrowing a live assertion, not deleting a dead one.",
-          "evidence": "The test t6 rewrites is live and asserts exactly what the plan says: test:433 `assert.match(panel, /export type StructuredRenderer</, ...)`, :436 the loop over `['docs-review-panel.ts', 'docs-review-client.ts', 'docs-sections.ts', 'markdown-style.ts']`, and :438 `assert.doesNotMatch(src, /:\\s*StructuredRenderer</, ...)`. t6 is narrowing a live assertion at its first implementer, not deleting a dead one, and the four file names in the plan match the four in the loop.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p14",
-          "ref": "s2/t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The single markup-injection site the plan promises to leave at one is enforced by a test that counts matches of /\\.innerHTML\\s*=/ in the emitted html and asserts the count is 1, requires it to be `el.innerHTML=marked.parse`, and separately forbids insertAdjacentHTML / outerHTML / document.write — so t2's and t7's injection-count checks re-run a real existing assertion against a shell that will carry a third source string.",
-          "evidence": "Confirmed verbatim: test:699 `const injections = html.match(/\\.innerHTML\\s*=/g) ?? [];`, :700 `assert.equal(injections.length, 1, 'exactly one markup-injection site — the markdown body');` and :705 `assert.doesNotMatch(html, /insertAdjacentHTML|outerHTML|document\\.write/, 'no other markup path');`, with the one site itself at docs-review-panel.ts:85. t2's and t7's injection-count checks re-run a real, existing assertion against a shell that will carry a third source string — the invariant this Story is most likely to erode is the one actually guarded.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p15",
-          "ref": "s2/t7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan's scope claim for t7 is that the whole Story touches exactly three files — vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/docs-review-panel.ts and vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts — with NO file under src/ (hence no daemon rebuild). All three exist today and the daemon-side projection they consume is already shipped, so the scope check is a real post-build assertion rather than an aspiration; it is forward-looking and cannot be fully re-derived before the build runs.",
-          "evidence": "All three named files exist and are the right ones: docs-review-panel.ts:167 `export function createDocsReviewHost(...)`, protocol.ts:134 `export const HOST_TO_WEBVIEW_TYPES` with `'docs-content'` at :140, and the daemon-side projection the Story consumes is already shipped at artifact-content.ts:184 `...structuredRecords(body),`. Since that projection is done, nothing under src/ needs to change, which is what makes the 'no daemon rebuild' instruction correct — a genuinely smaller deployment than S001's. As the premise itself states, the three-files-only scope is a POST-build assertion and cannot be fully re-derived now; t7 carries it as an explicit check, which is the right place for it.",
-          "action": "none — verified sound; the scope claim is forward-looking by nature and is correctly assigned to t7 as a check rather than asserted here",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p16",
-          "ref": "s2/t7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan commits t7 to re-running a mutation set of SEVEN falsifiers, and the per-task closing conditions distribute exactly those seven across t2 (textContent, grouping), t3 (equality match), t4 (absent-safe gate, removal bound) and t5 (placement ordering, stacked notice) — so the sweep at t7 covers the same seven the LLD named, with none added and none dropped.",
-          "evidence": "The `(mutation):` grep is inconclusive as handed — it returned matches only under docs/ and none in code, which is expected for a premise about the plan's own text rather than the source tree. Counting the artifact directly: the LLD's SEVEN falsifiers are distributed t2:2 (textContent, grouping), t3:1 (equality match), t4:2 (absent-safe gate, removal bound), t5:2 (ordering, stacked notice) = seven exactly, with none dropped and none duplicated, and t7 re-runs that set as a sweep. t6 additionally carries a falsifier of its OWN (add a second StructuredRenderer annotation → the rewritten contract test fails) which is not part of the LLD's seven, so the plan contains EIGHT mutation tests in total while t7's 'seven-mutation set' correctly names the LLD's set. Recording the arithmetic here so a later reader does not mistake 8-in-the-plan versus 7-at-t7 for a discrepancy.",
-          "action": "none — verified sound; the seven/eight distinction is explained rather than left for a reader to trip over",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 16
-      },
-      "reviewedAt": "2026-10-01T14:13:28.104Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-10-01T14:35:45.370Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a7b962dcfffc414d1be9d39f0445849ebb670e823db2ad1c56f0d44b3279fec7",
+        "at": "2026-10-01T14:10:05.757Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T14:35:45.370Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 16
+        },
+        "at": "2026-10-01T14:13:28.104Z",
+        "report": {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-bfe98ff7f97178cf-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

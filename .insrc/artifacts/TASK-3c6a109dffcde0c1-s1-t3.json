@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6893a7be-adae-409d-b519-34b9640df2c3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.541Z",
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the path check and the 'paths' failure kind",
+      "parent": {
+        "entityId": "STORY-3c6a109dffcde0c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c6a109dffcde0c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3c6a109dffcde0c1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "be93b646d9c24cd4a6341b363df226cefaab7cfbe8e370119afb8425cf703e9b",
+        "at": "2026-10-22T12:43:28.544Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.544Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the path check and the 'paths' failure kind",
+    "summary": "Add the 'paths' kind to ValidationFailure in src/workflow/synthesizer.ts and add checkPathForms(citations, callSites), which checks the ref of code and doc citations and an LLD's call sites by their strings only (accepting the line forms and #anchor, absolute paths and http(s) URLs, refusing prose, whitespace, a leading ./ and .. segments, and naming every offending entry). Call it from validateBodyAndCitations after the boundary and citation checks, reading dataModelChanges[].callSites from the body when present. Added last, after the prompts carry the rule. Leave the daemon correction loop in src/daemon/workflow-rpc.ts and the in-session phase in src/daemon/steps/workflow-step/phases/synthesize.ts unchanged and confirm they handle the new kind.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "checkPathForms accepts a relative path with :N, :N-M, :N:C and #anchor, an absolute path and an http(s) URL, and refuses prose, whitespace, a leading ./ and a .. segment, naming each offending entry",
+      "Only citations of kind code and doc are checked, and an artifact with no dataModelChanges reads no call sites",
+      "validateBodyAndCitations returns the existing boundary and citation results unchanged for a well-formed artifact and a 'paths' failure otherwise",
+      "The daemon correction loop still tests only 'boundary', and the in-session phase returns a retryable synthesize-paths error with the entries in its message"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

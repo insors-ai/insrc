@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8d48c83d-14e4-4ad5-af61-26ef62689877",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.691Z",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1d04e56057b3daba",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record and clear the turn cursor in the panel",
+      "parent": {
+        "entityId": "STORY-1d04e56057b3daba-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1d04e56057b3daba-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1d04e56057b3daba-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1d04e56057b3daba-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8f554cefcbde9b39dac6253a9f1621b3bd080042e2917c20a13d7ffc70e8949",
+        "at": "2026-10-22T12:43:16.691Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.692Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record and clear the turn cursor in the panel",
+    "summary": "chat-panel.ts: runTurn passes sessionId and onProgress to adapter.run (inside runLeased), saves liveTurn { cursor, ownerHostPid: this host, pid, startedAt } as lines are handled, and clears it at the terminal event.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "A turn records its cursor on the session as lines are handled, with this host as owner.",
+      "The cursor is cleared at the terminal event; a pipe turn records none."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel.test.ts: a turn records its cursor on the session as lines are handled and clears it at the terminal event"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

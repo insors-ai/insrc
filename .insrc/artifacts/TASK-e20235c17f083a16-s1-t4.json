@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0a32887d-f9ff-496e-a9c1-dd6549f814d1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.169Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp the placement flag on the PLAN and BUILD records",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "23f55411ebe294dffef7313e7ce3eec0c51c9838fceb47b64bb34ae59d45c8ca",
+        "at": "2026-10-22T12:44:47.169Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.170Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp the placement flag on the PLAN and BUILD records",
+    "summary": "Have the writers that currently omit the standalone flag carry the inherited value, so neither stage is the point at which placement flips. Critically this must NOT reinstate an asserted false: a prior fix deliberately removed that assertion so a prior true value could be carried forward by the merge, and reinstating it would re-break what that fix repaired. The flag is supplied truthfully from the definition artifact rather than inferred from the record's own absence.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "A standalone work item's PLAN meta carries the placement flag true",
+      "The same for its BUILD meta",
+      "NO writer asserts the flag false — asserted explicitly, because the prior fix that removed that assertion must not be undone",
+      "CRITIQUE APPLIED — the carry-forward is now tested, not just the prohibition: a record written with the flag true, then re-written by a path that OMITS it, still resolves as standalone and its markdown does NOT move. That relocation-and-orphaning is the exact regression the prior fix prevented, and forbidding the assertion without testing the carry-forward left the plan one refactor away from reintroducing it",
+      "An epic-parented work item is unaffected: absent and false both still mean epic",
+      "MUTATION PROOF, run and recorded: dropping the stamp puts both records back under the wrong top-level"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "PLAN and BUILD metas both carry standalone true, so neither stage is the point at which placement flips"
+      },
+      {
+        "level": "integration",
+        "name": "a record written with the flag true, then re-written by a path omitting it, still resolves standalone and its markdown does not move"
+      },
+      {
+        "level": "unit",
+        "name": "workItemKindOf: only an explicit true is standalone; absent and false both remain 'epic'"
+      },
+      {
+        "level": "unit",
+        "name": "no writer asserts the flag false — asserted over the written meta, not by reading the source"
+      },
+      {
+        "level": "integration",
+        "name": "MUTATION PROOF: dropping the stamp returns both records to the wrong top-level"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

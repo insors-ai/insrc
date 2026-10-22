@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0f46511-3e53-46eb-b063-798bfdad502a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.863Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Change the adapter's process lifecycle",
+      "parent": {
+        "entityId": "STORY-d6a4bc79bece9d1f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d6a4bc79bece9d1f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a4c0ade9dfe707ba01289b52cfa9e5def8007e4084065f4b30fa22c8ab7e869",
+        "at": "2026-10-22T12:44:42.863Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.864Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Change the adapter's process lifecycle",
+    "summary": "cli-adapter.ts: SpawnedProcess gains pid and kill(signal); the real spawner starts the CLI detached in its own process group and kill() signals the group (-pid, falling back to the child). run(req, { onSpawn }) hands over { pid, exit, stop } once spawned; returns right after its first done or error event without awaiting the next line or proc.exit and without killing; the live entry and pending permission requests are dropped when proc.exit settles; a consumer that abandons run() before any terminal event still stops the group. cancel() returns a promise that stops the group (SIGTERM, then SIGKILL after a grace) and resolves after the exit. Update the title generator's stop() for the async cancel, and update the adapter tests that assumed kill-after-done.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "run() completes right after a done event while the fake process stays alive; no kill is recorded; onSpawn received pid, exit and stop.",
+      "decide() after run() has returned still writes to the live process; the live entry is gone after the exit settles.",
+      "cancel() sends SIGTERM to the group, escalates to SIGKILL after the grace when the process does not exit, and resolves only after the exit.",
+      "collect()-based adapter tests still yield the same events; tests that asserted a kill after done now assert no kill plus cleanup on exit; the real spawner passes detached: true and kill() targets the negative pid."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

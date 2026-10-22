@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95f1d7c6-003b-4520-9d33-67fc45e5aff8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.723Z",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Approval queue module",
+      "parent": {
+        "entityId": "STORY-6a811b8acca60ac5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a811b8acca60ac5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "419cddb923476e6aefa28dc57c85cbf3560480e31c764a38802ba301570cabe8",
+        "at": "2026-10-22T12:43:42.723Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.724Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Approval queue module",
+    "summary": "A pure, vscode-free module (vscode-plugin/src/chat/approval-queue.ts) holding the ordered undecided requests {requestId, turnId, toolName?, command?, blockKind, resolution}, the current batch per originating turn {ended, decisions[]}, and the grant chain. Operations: enqueue, head (with position/total), decide(requestId, decision) refusing any id that is not the head, endTurn(turnId), batch completion check, clear() returning the undecided requests, grantChain (approved tool names, once each). No posting, no turns: the panel drives it.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Requests keep arrival order; head() is the oldest undecided; decide() on any other id returns a refusal and changes nothing",
+      "A batch reports complete only after endTurn for its turn AND every request it raised is decided",
+      "The grant chain holds each approved tool-gate toolName once; dir-block approvals add nothing; clear() resets it and returns the undecided requests"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "approval queue: requests are kept in arrival order and only the head is actionable; a decision for any other id is refused"
+      },
+      {
+        "level": "unit",
+        "name": "approval queue: a batch is complete only when its turn has ended and every request is decided"
+      },
+      {
+        "level": "unit",
+        "name": "approval queue: the grant chain accumulates approved tool names once each and resets on clear()"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

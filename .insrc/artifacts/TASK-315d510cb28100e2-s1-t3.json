@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-86bccef0-d9e3-4b94-8605-f8104c5898ee",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.785Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the port types, capability check and strict target resolver",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9e591031dedc226c808aad7557c68f4b8d01c758a6210b5fb5e6fa972169b0b6",
+        "at": "2026-10-22T12:43:24.786Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.786Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the port types, capability check and strict target resolver",
+    "summary": "Create src/workflow/tracker/port.ts with the sc1 types (TrackerPort, PortResult, Capability, IssueSpec, minimal SignoffRequestSpec and SignoffRequestRef, CreatedIssue) and the issueOps field with its IssueOps interface exactly as approved amendment AMD-8 names it, plus missingCapabilities, and add the strict target resolver used only by loadTracker, following the resolveGithubConfig precedence and leaving the lenient resolver untouched.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The exported TrackerPort has a readonly issueOps: IssueOps field and IssueOps has create, linkSubIssue(parent, childId: number), close, comment, readBody, writeBody, ensureLabel, ensureMilestone and attachMilestone with the signatures in AMD-8",
+      "missingCapabilities names every capability the tracker does not declare",
+      "The strict resolver refuses malformed JSON, a non-object file or entry, an unsupported type, a bad owner or repo and type none",
+      "The strict resolver accepts an own entry without a type, falls back to the origin remote for type github, and never takes a target from the default entry",
+      "resolveGithubConfig and loadGithubConfigFile are unchanged and no lenient caller (tracker-auto, the bugfix deps, questions.ts) imports the strict resolver"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: missingCapabilities names every missing capability"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver refuses malformed or unsupported configuration"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver accepts an own entry without a type and falls back to the origin remote for type github"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver never takes a target from the default entry"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: TrackerPort type exposes issueOps with the AMD-8 signatures"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github.test.ts: lenient resolver behaviour is unchanged"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

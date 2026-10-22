@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792132930866-7smfzp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T06:42:10.920Z",
+    "model": "claude:opus",
+    "elapsedMs": 45267,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0e1265ed8581e188",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T05:57:42.283Z",
+    "epicSlug": "start-daemon-when-extension-activates-finds",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "68907dc8dd73848b846c5c22950469648c27af8843b5d89f7da52459b1b5ed5d",
+        "at": "2026-10-16T06:42:10.920Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "0e1265ed8581e188",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md:1",
+            "message": "The only changed symbol is a deleted Markdown guide. The working tree shows it was moved to docs/Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md. A deleted documentation file has no executable behaviour, so its empty testsReaching is not a coverage gap, and no HIGH finding is raised. However, this file has nothing to do with the Story (starting the daemon when the extension activates). The Story's code changes, in commits 6f330297 and cb91914f, are not in the changed set given to this review. So the coverage of the Story's real behaviour has not been judged here. Rerun the review against those commits rather than the uncommitted working-tree diff.",
+            "expectationRef": "Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md (documentation only; the Story's code symbols are missing from the changed set)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md:1",
+            "message": "This deletion is one half of moving the guide to docs/Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md. The guide links to its companion module with relative paths such as ./camon/, ./camon/README.md, ./camon/mitmproxy-macos-bootstrap/ and ./camon/mitmproxy-linux-bootstrap/README.md#lifecycle. camon/ is at the repo root and docs/camon/ does not exist, so every one of those links is broken from the new location. Change them to ../camon/... in the moved copy. The move also has nothing to do with this Story (starting the daemon when the extension activates). Consider committing it separately so it stays out of this Story's build record. Docs only, so it carries no runtime risk.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

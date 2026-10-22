@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-703de272-d0c3-4117-8522-24e14ec99a65",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.159Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s3",
+    "envelope": {
+      "description": "TS/JS HTTP-client recognizer + shared client-shape helper",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cb494c916154aeee9b537feb5fcba624510661470e05664db18fe38f5908ddd1",
+        "at": "2026-10-22T12:43:59.159Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.159Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "TS/JS HTTP-client recognizer + shared client-shape helper",
+    "summary": "Introduce a small shared helper (per-language HTTP-client shape tables + a common `emit CALLS_HTTP` utility with a stable signature that t4/t5 reuse without reshaping) and wire the TypeScript/JS recognizer into typescript.ts's existing call_expression visitor (walkForCalls): on a call-site matching a known client shape (fetch / axios.{get,post,request,…} / got / node-fetch / http(s).request), extract the URL argument node (childForFieldName('arguments') → URL arg → .text) and push { kind:'CALLS_HTTP', from: callerId, to: rawUrlExpr, resolved:false, meta:{file,repo} }. Key on the client shape (receiver/import + call pattern), not a bare method name, so a local get()/post() stays a plain CALLS edge. Skip emission when the URL arg can't be extracted (no empty-`to`). Non-HTTP call-sites are unaffected.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A TS/JS fixture with fetch(url) / axios.get(url) / got(url) / http.request(url) each yields exactly one CALLS_HTTP relation {from: caller, to: raw URL expr, resolved:false}; the raw `to` matches the source URL expression.",
+      "A local function named get()/post() (not an HTTP client) emits NO CALLS_HTTP — it stays a plain CALLS edge (precision).",
+      "A call-site whose URL argument can't be extracted emits no CALLS_HTTP relation (no empty-`to` node); a file with no HTTP calls yields a ParseResult byte-identical to before.",
+      "The shared helper exposes a per-language client-shape table + a common emit utility with a stable signature (asserted directly) so t4/t5 wire in without reshaping it — the helper contract is explicit, not incidental to the TS recognizer."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "typescript recognizer: fetch/axios.get/got/http.request each emit one CALLS_HTTP with the raw URL expr"
+      },
+      {
+        "level": "unit",
+        "name": "typescript recognizer: a local get()/post() emits no CALLS_HTTP (stays a plain CALLS edge)"
+      },
+      {
+        "level": "unit",
+        "name": "typescript recognizer: an unextractable URL emits no CALLS_HTTP; a no-HTTP file yields a byte-identical ParseResult"
+      },
+      {
+        "level": "unit",
+        "name": "http-client-shapes helper: exposes a per-language shape table + emit utility with a stable signature"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

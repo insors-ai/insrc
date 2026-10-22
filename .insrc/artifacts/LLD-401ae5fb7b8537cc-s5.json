@@ -24,120 +24,61 @@
     "hldBaseRunId": "wf-1790073320669-iy7sqb",
     "hldEffectiveHash": "790f3d6f5efd1ec7853ed7547c7c5ad8b56ec8f6ada70b53c07be4e73716ab6b",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The S004 sc9 host (webview-host.ts) has a PRIVATE renderDetail with a fixed DETAIL_TABS triad, decorative (non-interactive) tab spans, and is the shell S005's amendment extends.",
-          "evidence": "CONFIRMED: webview-host.ts:71 `const renderDetail = async (panel, tab)` is private; :30 `DETAIL_TABS = ['daemon','workflows','debug']`; :90 the 'coming soon' placeholder. The amendment correctly extends this exact shell.",
-          "action": "No change — the base the amendment builds on is accurately described.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The Detailed Status panel is currently created with enableScripts:false and has NO webview->host message bridge (no onDidReceiveMessage/postMessage wiring) — the amendment flips enableScripts to true + adds the bridge.",
-          "evidence": "CONFIRMED: extension.ts:204 createWebviewPanel currently passes enableScripts:false (S004); onDidReceiveMessage/postMessage appear only in the vscode.d.ts shim, NOT wired in extension.ts — so the message bridge is genuinely net-new. The amendment's enableScripts:true + bridge wiring is real work, not already present.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The injected sc9 boundaries PanelHandle + WebviewPanelHostDeps exist in types.ts and are the additive surface the amendment extends (detailRenderers, onMessage/postMessage, TabRenderer).",
-          "evidence": "CONFIRMED: types.ts:106 `interface PanelHandle`, :144 WebviewPanelHostDeps, :116 PanelFactory, :129 MenuPicker — the injected boundaries the amendment additively extends.",
-          "action": "No change.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc9 DaemonDataGateway already exposes status(): Promise<DaemonStatusView> and workflowChain(): Promise<WorkflowChainView>, both consumed UNCHANGED by S005 (no gateway signature change).",
-          "evidence": "CONFIRMED: daemon-gateway.ts:52 status(), :90 workflowChain(); types.ts:48-49 the gateway interface. Both consumed unchanged — no gateway signature change.",
-          "action": "No change — the consume-unchanged claim holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "WorkflowChainView.rows are WorkflowChainRow { slug, stage, status } — the shape the workflows renderer groups by slug (ac2).",
-          "evidence": "CONFIRMED: types.ts:66-69 WorkflowChainRow { slug, stage, status } (readonly). The workflows renderer's group-by-slug + stage/status lines map to the real shape.",
-          "action": "No change.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DaemonStatusView is { state: string; detail?: string } — the daemon renderer reads state + optional detail (ac1).",
-          "evidence": "CONFIRMED: types.ts:56-58 DaemonStatusView { state: string; detail?: string }. The daemon renderer reads exactly this.",
-          "action": "No change.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The vscode.d.ts shim ALREADY declares Webview { html, postMessage, onDidReceiveMessage } + createWebviewPanel options { enableScripts? } (added S004), so S005 needs NO shim change to enable scripts + wire the bridge.",
-          "evidence": "CONFIRMED: vscode.d.ts:49 postMessage, :50 onDidReceiveMessage, :72 enableScripts? — all already declared (S004 t2). S005 needs NO shim change to enable scripts + wire the bridge, as claimed.",
-          "action": "No change — accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The host is VS-Code-free and extension.ts is the SOLE 'vscode' importer; S005's renderers + host message handling stay VS-Code-free (only extension.ts binds enableScripts/CSP/onDidReceiveMessage/postMessage).",
-          "evidence": "CONFIRMED: the only `import ... from 'vscode'` in vscode-plugin/src is extension.ts:12. The sole-vscode-importer invariant holds; the renderers + host stay VS-Code-free.",
-          "action": "No change.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The S004 host already guards its render body incl. setHtml in a try/catch (never-throw), which S005's switch/refresh re-render path reuses rather than adding a new unguarded path.",
-          "evidence": "CONFIRMED: webview-host.ts:73 comment 'the outer catch covers a setHtml throw' + the try/catch around renderDetail's body + logger.warn (:85 etc.). S005's switch/refresh re-render reuses this existing guard rather than a new unguarded path.",
-          "action": "No change — the never-throw reuse is real.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "DetailTab is the closed union 'daemon'|'workflows'|'debug' — the detailRenderers map keys + the switchTab tab validation rely on this exhaustive set.",
-          "evidence": "CONFIRMED: types.ts:25 `type DetailTab = 'daemon' | 'workflows' | 'debug'` — the closed union the detailRenderers keys + switchTab validation rely on.",
-          "action": "No change.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "sc9 is owned by S004 (not S005); S005 consumes it and extends it only via an additive HLD amendment (sharedContract.fieldAdd, breaking:false) that removes/renames no existing member.",
-          "evidence": "CONFIRMED: the HLD boundary assigns sc9 to S004; the LLD marks role=consumes and raises the extension as an additive sharedContract.fieldAdd (breaking:false) that removes/renames nothing — ownership stays with S004.",
-          "action": "No change — the amendment framing is correct.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 11
-      },
-      "reviewedAt": "2026-09-23T07:18:16.276Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-23T07:23:16.301Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f2cd52d0ad547b31e2edb2bb9b46049427798a6e7e9c2dc9d9888bc0dba1dc0e",
+        "at": "2026-09-23T07:16:33.487Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T07:23:16.301Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-09-23T07:18:16.276Z",
+        "report": {
+          "entityId": "LLD-401ae5fb7b8537cc-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-401ae5fb7b8537cc-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

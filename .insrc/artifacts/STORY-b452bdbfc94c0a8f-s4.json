@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c2cad4eb-09d2-47f6-b178-71af7cbf85dd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.033Z",
+    "epicCreatedAt": "2026-10-11T14:50:53.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b452bdbfc94c0a8f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add platforms and revise guidelines without changing other sets",
+      "parent": {
+        "entityId": "EPIC-b452bdbfc94c0a8f",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "7e633645ce2e0c60b5fe74473a942578b60e954493f47128cd3332ec0cb2e617",
+        "at": "2026-10-22T12:43:07.033Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

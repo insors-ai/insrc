@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-596b2c9b-c90e-4680-9510-a68e7bded388",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:20.641Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Pure PerRepoOverridesModel + PerRepoRow + TierField (leaf-granular collectWrites)",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b3e947c231dad3e42ddfc79febc97d9c1e07c9e20d5d2f965085ee6997f714c2",
+        "at": "2026-10-22T12:44:20.641Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:20.642Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure PerRepoOverridesModel + PerRepoRow + TierField (leaf-granular collectWrites)",
+    "summary": "Add the headless PerRepoOverridesModel(registeredRepos, roles, tierNames, current) with internal RepoState (saved+pending for coreFloor + tasks map + tiers map, added/removed flag), plus PerRepoRow {repoPath, coreFloor?, tasks, tiers, hasOverride} and enum TierField{Runner,Model}, reusing PendingWrite/WriteOp from S003. Implement rows()/addableRepos()/addOverride/removeOverride/setCoreFloor/setTaskTier/setTierField/revert/isModified/collectWrites/onSaved. collectWrites emits ONE PendingWrite per changed LEAF at its literal nested segment array (coreFloor at [models,byRepo,repoPath,coreFloor]; a task at [...,tasks,roleId]; a tier field at [...,tiers,tierName,runner|model]) and a whole-override removal as ONE Clear at [models,byRepo,repoPath]; repoPath + dotted roleId each ONE literal segment; same-value not dirty; clear-of-unset / add-then-revert a no-op. Mirror-references the S004 PerRoleOverridesModel shape (not re-implementing s4).",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "rows() lists overridden/just-added repos with coreFloor + tasks + tiers + hasOverride; addableRepos() = registered minus overridden",
+      "collectWrites emits leaf-granular Set/Clear PendingWrites at the exact nested [models,byRepo,repoPath,...] arrays with repoPath + dotted roleId each ONE segment; per-key isolation (one changed leaf -> one write)",
+      "whole-override removal -> ONE Clear at [models,byRepo,repoPath]; same-value not dirty; add-then-revert / clear-of-unset no-op; onSaved advances only the saved leaf/repo"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesModelTest: rows() shows coreFloor + task map + tiers map + hasOverride; addableRepos() = registered minus overridden; a repo in current but not registered is a row not addable"
+      },
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesModelTest: collectWrites coreFloor/tasks/tiers emit leaf-granular Set/Clear at the exact nested arrays with a DOTTED/SLASHED repoPath + dotted roleId each ONE segment; a tier's runner/model are two independent leaves"
+      },
+      {
+        "level": "unit",
+        "name": "PerRepoOverridesModelTest: per-key isolation (one changed leaf -> one PendingWrite); whole-override removal -> ONE Clear at [models,byRepo,repoPath]; same-value not dirty; clear-of-unset / add-then-revert no-op; onSaved advances only the saved leaf/repo"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

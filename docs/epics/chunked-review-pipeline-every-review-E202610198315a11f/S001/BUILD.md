@@ -8,7 +8,7 @@
 
 ## Summary
 
-t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt. The installed daemon runs the new build: checkout 973fc8bd, built 18:26:28 IST; the daemon process (pid 43853, from ~/.insrc/daemon.pid) started 18:26:30 IST running ~/.insrc/daemon/out/daemon/index.js and has not restarted. On that process: an under-limit code review (CR-f431a4420d03374f-S001: 2 changed files, one chunk, verdict pass, daemon, full grounding; daemon log 12:57:11 UTC 'code-review record written') and an under-limit template design review (36,594-character LLD copy against the 384,000-character limit; one session, 169 s, verdict block H1 M1 L10, design-spec; daemon log 13:04:26 UTC 'workflow.review: reviewed'), both in today's result shape. Earlier premise and template smokes on the previous build 99ae70fc are kept as well.
+t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt. The installed daemon runs the new build: checkout 973fc8bd, built 18:26:28 IST; the daemon process (pid 43853, from ~/.insrc/daemon.pid) started 18:26:30 IST running ~/.insrc/daemon/out/daemon/index.js and has not restarted. On that process: an under-limit code review (CR-f431a4420d03374f-s1: 2 changed files, one chunk, verdict pass, daemon, full grounding; daemon log 12:57:11 UTC 'code-review record written') and an under-limit template design review (36,594-character LLD copy against the 384,000-character limit; one session, 169 s, verdict block H1 M1 L10, design-spec; daemon log 13:04:26 UTC 'workflow.review: reviewed'), both in today's result shape. Earlier premise and template smokes on the previous build 99ae70fc are kept as well.
 
 ## Tasks validated
 
@@ -30,10 +30,10 @@ t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-ev
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-f431a4420d03374f-S001.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
-- `.insrc/artifacts/CR-f431a4420d03374f-S001.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
+- `.insrc/artifacts/BUILD-f431a4420d03374f-s1.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
+- `.insrc/artifacts/CR-f431a4420d03374f-s1.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
 - `.insrc/artifacts/ISSUE-f431a4420d03374f.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
-- `.insrc/artifacts/TESTS-f431a4420d03374f-S001.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
+- `.insrc/artifacts/TESTS-f431a4420d03374f-s1.json` — **insrc-build** (2026-10-20T13:05:18.377Z)
 - `README.md` — **insrc-build** (2026-10-20T13:05:18.377Z)
 - `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/envelope-cli-20261020T171730.txt` — **insrc-build** (2026-10-20T13:05:18.377Z)
 - `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/ollama-20261020T172812.txt` — **insrc-build** (2026-10-20T13:05:18.377Z)

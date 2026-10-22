@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "238917216d8fd532",
     "storyId": "s1",
-    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin"
+    "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "cd3c733c78ca75f2bb8bd48a5fbb7ec0ab2af791f4cb193ec56c261c9c43f514",
+        "at": "2026-09-19T07:55:47.998Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

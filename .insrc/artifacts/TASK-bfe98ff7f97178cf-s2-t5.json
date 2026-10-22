@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6186f92e-aa74-4c71-825e-dae66eff2a7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.084Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire placement into the render pipeline — the single line that changes what a reviewer sees",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4cdaeca7b1b4dc689d2109d8ab86545bf552192ff6384534381abcf816714d23",
+        "at": "2026-10-22T12:44:31.084Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.085Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire placement into the render pipeline — the single line that changes what a reviewer sees",
+    "summary": "Call `placeFunctionalRequirements` from `renderContent`, positioned AFTER `stampSlugs` and BEFORE `renderSectionChooser` / `renderDegradationNotice`, wrapped in a backstop try/catch. The ordering is a correctness constraint, not a style one: `stampSlugs` pairs headings to anchors by title through a pointer that only advances, so mutating the tree first could mis-pair every later heading. Extend the notice precedence by one level — host-posted degradation, else the body renderer's, else placement's — so the reviewer is never shown two notices and never shown none when something went wrong. Concatenate `DOCS_FR_SOURCE` into the single nonce'd script after its two siblings. This is the only task that alters the rendered surface, and reverting this one call restores the shipped behaviour while leaving the data path, the types and the renderer in place.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The placement call sits after `stampSlugs` and before the chooser and the notice in the emitted bootstrap.",
+      "The chooser's stamped-count gate behaves exactly as in S001 — placement adds and removes no heading element, so `stamped` means what it meant before.",
+      "Notice precedence: a host-posted degradation wins over a body degradation wins over a placement degradation, and exactly ONE notice is ever rendered.",
+      "A forced throw inside placement still renders the chooser, the notice, the open questions and the approve / request-changes controls — the backstop never costs the reviewer the rest of the surface.",
+      "Opening a document with no record produces a body byte-identical to the S001 rendering of the same markdown — the dominant path, proved as the main case.",
+      "The approve / request-changes path, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story.",
+      "ADDED (s3/t5): IDEMPOTENCE across messages — delivering two consecutive docs-content messages carrying the same record leaves exactly ONE constructed container with the same item count as a single delivery, and a third message carrying NO record leaves none; this proves the per-message rebuild CLEARS a previously placed block rather than merely not re-adding one. The pane really does post docs-content several times per session (open, boot ping, blocked approve, decision failure), so silent duplication here would reintroduce exactly what this Story removes.",
+      "CLOSING CONDITION (s3/t7): this task's mutations are run here — moving the placement call before `stampSlugs` must turn the ordering check red, and returning a degradation from the prepended-after-degraded path must turn the no-stacked-notice check red."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "t5: DOCS_FR_SOURCE is inlined into the single nonce'd script and the placement call sits after stampSlugs and before the chooser / notice"
+      },
+      {
+        "level": "integration",
+        "name": "t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered"
+      },
+      {
+        "level": "unit",
+        "name": "t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed"
+      },
+      {
+        "level": "unit",
+        "name": "t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls"
+      },
+      {
+        "level": "integration",
+        "name": "t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown"
+      },
+      {
+        "level": "integration",
+        "name": "t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none"
+      },
+      {
+        "level": "integration",
+        "name": "t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story"
+      },
+      {
+        "level": "unit",
+        "name": "t5 (mutation): move the placement call before stampSlugs -> the ordering test fails"
+      },
+      {
+        "level": "unit",
+        "name": "t5 (mutation): return a degradation from the prepended-after-body-degraded path -> the no-stacked-notice test fails"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

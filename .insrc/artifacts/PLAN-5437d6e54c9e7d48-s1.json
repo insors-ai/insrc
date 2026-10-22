@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792153049335-ym3etc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-16T12:18:01.826Z",
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 32480,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5437d6e54c9e7d48",
+    "epicSlug": "graph-store-write-transaction-whose-callback",
+    "storyId": "s1",
+    "lldRunId": "wf-1792152664803-w0wldi",
+    "lldEffectiveHash": "5e1b1ad5a79d5a8971edfbc8fb284aaa30b60f42eee27fb409c78092e9552a03",
+    "authoredBy": "controller",
+    "rangeBase": "a3137f3bf382868978056f31b7a345d2358f6111",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7c28708c3ba7f4ee795df1dbe156533d70e628c50f73c2c37f5467bcabf6e00c",
+        "at": "2026-10-16T12:18:01.826Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T12:24:11.084Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Three small changes make the graph store's write transactions all-or-nothing: the write helper, then the migration runner and first boot, switch to lmdb's child transaction, and a pin test guards the library behaviour the fix rests on.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "withWriteTxn runs its synchronous callback as an lmdb child transaction",
+        "summary": "In src/db/graph/store.ts:882-910, withWriteTxn calls `store.root.childTransaction(() => fn(store))` in place of `store.root.transaction(...)` at :886, wrapped in Promise.resolve (a nested child returns a plain value); its callback type no longer allows a Promise result, and a thenable result is refused by throwing 'withWriteTxn callbacks must be synchronous' inside the child (aborting it). The race against the probe timer, confirmLockLoss and recordLocksLost stay as they are. src/db/graph/__tests__/store-health.test.ts: the locks-lost test (:84-107) also counts childTransaction; the slow-healthy-write test (:145-165) uses a synchronous callback with store.root.childTransaction wrapped to resolve after a delay past the bound.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen",
+          "Of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept",
+          "An async callback is refused with 'withWriteTxn callbacks must be synchronous' and keeps nothing; the type rejects it (@ts-expect-error)",
+          "store-health.test.ts passes with childTransaction counted and the slow write probed at each bound",
+          "All existing db and graph suites pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/db/graph/__tests__/write-txn-atomic.test.ts: a throwing callback leaves nothing (in-process and after a reopen); a throwing and a succeeding caller queued together; an async callback refused and keeping nothing"
+          },
+          {
+            "level": "unit",
+            "name": "src/db/graph/__tests__/store-health.test.ts: no library transaction (childTransaction counted) after locks-lost; the slow healthy write probed at each bound with a synchronous callback"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "The migration runner and the first-boot write run as child transactions",
+        "summary": "src/db/graph/migrations.ts:442-448 runs each step and its version write in `store.root.childTransaction(async () => { ... })` (steps may stay async: they run inside the store's open before any caller can reach the store) and the comment at :444-446 says what holds; the first-boot write at src/db/graph/store.ts:607-610 uses `root.childTransaction`. src/db/graph/__tests__/migrations.test.ts gains row assertions: a step that writes rows and throws leaves neither its rows nor its version write, earlier steps stay committed.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "A throwing migration step leaves neither its rows nor its version write; earlier steps stay committed",
+          "A fresh store still boots at the current version with the shared-modules rows",
+          "Existing migration suites pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/db/graph/__tests__/migrations.test.ts: a throwing step leaves neither its rows nor its version write; earlier steps stay committed"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Pin lmdb's transaction behaviour and the store's open options",
+        "summary": "New src/db/graph/__tests__/lmdb-txn-semantics.test.ts: in a fresh process after a reopen (the store-child.ts harness or a direct child), root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it. A test that the store opens without useWritemap (child transactions available). lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The pin test fails if lmdb starts discarding root.transaction writes or keeping childTransaction ones",
+          "The lock-loss suites pass unchanged"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts: in a fresh process after a reopen, root.transaction keeps a throwing callback's write, childTransaction and transactionSync discard it; the store opens without useWritemap"
+          },
+          {
+            "level": "integration",
+            "name": "src/db/graph/__tests__/lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "withWriteTxn: a callback that writes rows in two sub-DBs and throws rejects with its own error and leaves nothing behind (read back in-process and after closeGraphStore/reopen); a callback that returns commits as before (src/db/graph/__tests__/write-txn-atomic.test.ts)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "withWriteTxn: two callers queued together, one throwing and one succeeding: only the successful caller's writes are kept",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "withWriteTxn: a callback that returns a Promise is refused with 'withWriteTxn callbacks must be synchronous' and leaves nothing behind (the type also rejects it at compile time, checked with // @ts-expect-error)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runMigrations: a step that writes rows and throws leaves neither its rows nor the version write; earlier steps stay committed (extends src/db/graph/__tests__/migrations.test.ts with row assertions)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-health: after locks-lost no library transaction is called, counting childTransaction as well as transaction and transactionSync (src/db/graph/__tests__/store-health.test.ts)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the store opens without useWritemap, so child transactions are available",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-health 'slow healthy write' keeps its intent with a synchronous callback: the test wraps store.root.childTransaction so its promise resolves only after a delay past the bound (a test seam, restored afterwards; no library transaction is held open, which would nest the write instead), and asserts that the probe ran at each bound, returned every time, and the write completed",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "lmdb behaviour pin, in a fresh process after a reopen: root.transaction keeps a throwing callback's write; root.childTransaction and root.transactionSync discard it (src/db/graph/__tests__/lmdb-txn-semantics.test.ts)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db/graph/__tests__/lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged (withWriteTxn still reports 'write-timeout-probe' within the bound)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD ISSUE-5437d6e5 S001 api: withWriteTxn (childTransaction, synchronous callbacks only, Promise.resolve)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD ISSUE-5437d6e5 S001 api: runMigrations and getGraphStore's first-boot write (childTransaction)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD ISSUE-5437d6e5 S001 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD ISSUE-5437d6e5 S001 testStrategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD ISSUE-5437d6e5 S001 migration and backwardCompat"
+    }
+  ]
+}

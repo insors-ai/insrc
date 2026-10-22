@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-b4b6b835f29fab99-S001 -->
+<!-- insrc:artifact BUILD-b4b6b835f29fab99-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,5 +26,5 @@ The validate session now gives each check plan the TypeScript projects, other th
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:55:02.035Z)
+- `.insrc/artifacts/BUILD-c96a97a204fac22b-s1.json` — **insrc-build** (2026-10-12T09:55:02.035Z)
 - `docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/BUILD.md` — **insrc-build** (2026-10-12T09:55:02.035Z)

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c9773eb6-5158-44bb-8a4f-d697a1b31d00",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:19.180Z",
+    "epicCreatedAt": "2026-10-10T14:46:43.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2764c29d7ccb66a5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the clean-up job kind to the job union and the queue",
+      "parent": {
+        "entityId": "STORY-2764c29d7ccb66a5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2764c29d7ccb66a5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "290256171327b3da9437a8243a3b2e4458910e7808d1f71c22b2c055e82b9fff",
+        "at": "2026-10-22T12:43:19.180Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:19.180Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the clean-up job kind to the job union and the queue",
+    "summary": "Add `{ kind: 'reconcile'; repoPath: string }` to IndexJob in src/shared/types.ts. In src/daemon/queue.ts count a queued `reconcile` job for its repository in depthForRepo and keep at most one queued per repository in enqueue. Add the `case 'reconcile'` to processJob in src/indexer/index.ts, calling a reconcileRepo method that this task leaves as a stub returning zero counts, so the tree compiles.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "A queued clean-up job is counted as pending for its repository and not for another.",
+      "A second clean-up job for the same repository is not queued; one for another repository is.",
+      "processJob accepts a `reconcile` job and returns without error for a registered repository with nothing stored."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a queued clean-up job is counted as pending for its repository, and a second one for the same repository is not queued"
+      },
+      {
+        "level": "integration",
+        "name": "a clean-up job for a registered repository with nothing stored is processed without error"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

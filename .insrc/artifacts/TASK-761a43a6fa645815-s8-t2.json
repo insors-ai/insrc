@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9f78633-ad4f-4c8b-a6ae-addc9977d7d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.684Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s8",
+    "envelope": {
+      "description": "s8 envelope types + opaque-token state-store (mirror review-step)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "351172cfe1febc4d314e9da9d655a98183324325de59bcafbe6386ce83399d0d",
+        "at": "2026-10-22T12:43:48.684Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.685Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "s8 envelope types + opaque-token state-store (mirror review-step)",
+    "summary": "Add src/mcp/code-review-step/types.ts (mirroring src/mcp/review-step/types.ts): CodeReviewStepPhase = 'start' | 'judgements'; inputs CodeReviewStepInputStart { phase:'start', epicHash, storyId, repo? } + CodeReviewStepInputJudgements { phase:'judgements', judgements:{ judgements?: readonly DimensionResult[] }, state }; outputs CodeReviewStepEmitJudgements { next:'emit_judgements', guidance, prompts: LLMMessage[][], schema, grounding, state } + CodeReviewStepDone { next:'done', verdict: ReviewVerdict, counts, path, jsonPath } + CodeReviewStepError { next:'error', error:{code,message,retryable} } + the CodeReviewStepMcpEnvelope + CodeReviewStepStatePayload { runId, startedAtMs, repo, epicHash, storyId, subject: CodeReviewSubject, grounding: CodeReviewGrounding }. Add src/mcp/code-review-step/state-store.ts mirroring review-step/state-store.ts (saveState/loadState/updateState + StateTokenNotFound; 22-char token; LRU MAX_ENTRIES + TTL sweep). Type-only + an isolated store module; DimensionResult/ReviewVerdict/CodeReviewSubject/CodeReviewGrounding imported via import type.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/mcp/code-review-step/types.ts exports the CodeReviewStepPhase union ('start'|'judgements') + the typed inputs/outputs (emit_judgements/done/error) + CodeReviewStepMcpEnvelope + CodeReviewStepStatePayload (holding subject+grounding)",
+      "src/mcp/code-review-step/state-store.ts exports saveState/loadState (+ StateTokenNotFound) mirroring review-step/state-store.ts (opaque token; LRU+TTL); the state is server-side only — not round-tripped through the outer LLM",
+      "tsc --noEmit clean; .js imports + import type; reuses ReviewVerdict/DimensionResult/CodeReviewSubject/CodeReviewGrounding (no redefinition)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "state-store round-trip: saveState mints an opaque token, loadState returns the saved CodeReviewStepStatePayload (subject+grounding) unchanged, and an unknown token throws StateTokenNotFound (exercised via the handler resume + unknown-token tests in t4)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

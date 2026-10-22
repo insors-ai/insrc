@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-764f89d2-8711-4b9c-bf7e-41b8fd25098c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:20.645Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Test suite + JDK21 local gate",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c588278f3578620da8d148b61a2fc7ca904576096f3707f00795d34c3c70a88",
+        "at": "2026-10-22T12:44:20.645Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:20.645Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Test suite + JDK21 local gate",
+    "summary": "Add PerRepoOverridesModelTest (rows/addableRepos, leaf-granular collectWrites for coreFloor/tasks/tiers incl. a DOTTED/SLASHED repoPath + dotted roleId as ONE segment, per-key isolation, whole-override single-Clear, same-value-not-dirty, add-then-revert, onSaved, unregistered-overridden-repo); a gateway test (FakeDaemonRpc + WireRpc over the real UnixSocketDaemonRpc.parse) proving perRepoOverrides parses the full nested byRepo shape and registeredRepos parses repo.list, with Unavailable paths; and extend the Configurable source-scan test to assert the PerRepoSection render + gateway-segment-list apply + host registration. Run ./gradlew test on JDK21 and confirm green.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "PerRepoOverridesModelTest covers ac1/ac2/ac3 (rows/addableRepos, nested-key writes + isolation, edit/clear/whole-override + onSaved + same-value-not-dirty)",
+      "gateway test proves the full-shape config.show parse + repo.list parse over Fake + real WireRpc parse, incl. Unavailable",
+      "source-scan asserts PerRepoSection's three nested editors + segment-list apply + host registration; ./gradlew test green on JDK21 with no backtick-';' compile break"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Full jetbrains-plugin suite green on JDK21 via ./gradlew test (PerRepoOverridesModelTest + PerRepoOverridesGatewayTest + InsrcSettingsConfigurableTest additions), no backtick-';' compile break"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

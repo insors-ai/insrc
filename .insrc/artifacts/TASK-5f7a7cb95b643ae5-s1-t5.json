@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8f635f67-0ecc-4641-b4e2-ab53e82c3ff2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.949Z",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f7a7cb95b643ae5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp at build start and keep the build-start file out of change logs",
+      "parent": {
+        "entityId": "STORY-5f7a7cb95b643ae5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f7a7cb95b643ae5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f7a7cb95b643ae5-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7a2af9f5294149f6bac8ac712bd3eb368320bd2bbc57534e1f94e092ffec9d52",
+        "at": "2026-10-22T12:43:36.949Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.949Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp at build start and keep the build-start file out of change logs",
+    "summary": "Call stampBuildStart, fail-open, from the implement phase on each admitted route (plan-driven, Small, and Trivial before its record write). Add buildStartRelPath to the exact-path exclusion list in the validate phase and in the completion writer.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Two Stories approved in one batch and built in turn each get a change log of exactly their own files",
+      "The build-start file never appears in a change log, whether committed with the work, left uncommitted, or untracked, and never stands in for the Story's work; the same holds for the completion writer",
+      "A Story approved mid-build keeps both tasks' files in its change log, with the stamp present and with the stamp deleted before the second task",
+      "A rebuild of a finished, approved Story lists exactly the rebuild's files",
+      "After implement on the plan-driven and Small routes no BUILD record exists, and a batch approval then approves none for the Story",
+      "On the Trivial route the stamp exists before the task-less record is written and a second implement call keeps it",
+      "On each route a stampBuildStart that reports not-written leaves the implement call's result unchanged",
+      "A Story with no resolvable base and a clean tree gets an empty change log",
+      "Each new test was seen to fail with the production change reverted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T30 two Stories approved together each get exactly their own change log"
+      },
+      {
+        "level": "integration",
+        "name": "T31 a committed build-start file is absent from the change log"
+      },
+      {
+        "level": "integration",
+        "name": "T32 an uncommitted build-start file does not stand in for the Story's work"
+      },
+      {
+        "level": "integration",
+        "name": "T33 mid-build approval keeps both tasks' files"
+      },
+      {
+        "level": "integration",
+        "name": "T34 mid-build approval with the stamp deleted writes no file and matches the pre-change resolver"
+      },
+      {
+        "level": "integration",
+        "name": "T35 a rebuild lists exactly the rebuild's files"
+      },
+      {
+        "level": "integration",
+        "name": "T36 implement writes no BUILD record on the plan-driven and Small routes"
+      },
+      {
+        "level": "integration",
+        "name": "T37 the completion writer excludes a committed build-start file"
+      },
+      {
+        "level": "integration",
+        "name": "T38 no resolvable base and a clean tree gives an empty change log"
+      },
+      {
+        "level": "integration",
+        "name": "Trivial route stamps before its record write and keeps the stamp on a second call"
+      },
+      {
+        "level": "integration",
+        "name": "a not-written stamp leaves each route's implement result unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

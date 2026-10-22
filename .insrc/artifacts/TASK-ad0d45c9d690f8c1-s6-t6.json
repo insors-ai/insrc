@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b57640e6-dbed-4911-a906-af8a130e7686",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.891Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Packaging tests — manifest + boundary + workflow + bundle smoke",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f64a03acc0a3070c0110f94606349702137b822aa498b856ec5e4904759bfc8a",
+        "at": "2026-10-22T12:44:14.891Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.892Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Packaging tests — manifest + boundary + workflow + bundle smoke",
+    "summary": "Add node:test (tsx --test) tests under vscode-plugin/src/__tests__/: a manifest unit test (fields present + not private + scripts incl. vscode:prepublish chain), a .vscodeignore + workflow source-scan unit test (excludes src/tests, keeps assets/out; workflow_dispatch-only, Marketplace-only, VSCE_PAT), and an esbuild bundle smoke (run bundle into a tmp out/, require out/extension.js with a fake vscode exposing activate/deactivate, run out/uninstall.js under a temp HOME pinned via mkdtemp + restored in finally, assert no daemon-internal import in out/*.js). The uninstall smoke never touches the developer's real $HOME (mirrors the existing uninstall.test.ts HOME-pinning pattern).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "a manifest unit test asserts publisher/repository/license/icon/keywords/categories present + private removed + bundle/package/prepublish/uninstall scripts",
+      "a source-scan unit test asserts .vscodeignore boundary + workflow_dispatch-only + Marketplace-only + secrets.VSCE_PAT",
+      "a bundle smoke test proves out/extension.js requires with a fake vscode + exposes activate/deactivate, out/uninstall.js runs under node with a mkdtemp HOME restored in finally, and no daemon-internal reference leaked into out/*.js (k5)",
+      "the full vscode-plugin/ test sweep (`npm test`) passes locally"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "packaging: the manifest + vscodeignore + workflow-scan unit tests assemble under vscode-plugin/src/__tests__/"
+      },
+      {
+        "level": "smoke",
+        "name": "packaging: the esbuild bundle smoke (require out/extension.js w/ fake vscode + run out/uninstall.js under mkdtemp HOME) is authored + green"
+      },
+      {
+        "level": "unit",
+        "name": "packaging: the full vscode-plugin/ `npm test` sweep passes locally"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

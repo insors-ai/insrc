@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-78a4f1d2-e552-44b6-9913-185c66817f97",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.573Z",
+    "epicCreatedAt": "2026-10-10T05:39:29.105Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The guide, and the suite before and after",
+      "parent": {
+        "entityId": "STORY-008e146ad1475ef9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-008e146ad1475ef9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-008e146ad1475ef9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-008e146ad1475ef9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-008e146ad1475ef9-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8d86641882b25a4c76c9f39ec6db51e94ed3a767ba671cf660dfd0b72def4d11",
+        "at": "2026-10-22T12:43:10.573Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.574Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The guide, and the suite before and after",
+    "summary": "Update docs/daemon.md where it describes how a request is measured and the settings: the time limit and its setting, the two new reasons for a size that is not determined, that an abandoned listing goes on in the background, what a symbol and a file scope save (and that the rest is ISSUE-61045de91faef1a0), and that a run measures once. Run the whole analyze suite and the config suite at the commit before the Story and at this task's commit, compare by test name, and keep the comparison and the raw outputs in the Story's measurements folder.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "docs/daemon.md states the time limit, the setting's name and default, the two new reasons, that the limit is per source, and that one run takes one measure.",
+      "docs/daemon.md states what the narrower reads save and names ISSUE-61045de91faef1a0 for the rest.",
+      "The comparison of the suites before and after, by test name, is in the Story's measurements folder with the raw outputs; no test that passed before fails after, and every test that is gone or new is accounted for.",
+      "`npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the whole analyze suite and the config suite at the commit before the Story and at this task's commit, compared by test name: no test that passed before fails after"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-34133d3e-95d1-46a5-96f2-c3f5ba3f98c3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.078Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extract resolveWithin from companion-reader",
+      "parent": {
+        "entityId": "STORY-babd84c6e2fb480a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-babd84c6e2fb480a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cef268b677709177a84a3a6925f7c9c2f67f5e9004d0716ecd124c5a07414b19",
+        "at": "2026-10-22T12:44:28.081Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.081Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extract resolveWithin from companion-reader",
+    "summary": "Move the realpath, containment and regular-file check out of companion-reader.ts into an exported resolveWithin(root, relPath, fs) helper, and rewire createCompanionReader onto it with its docs/ root, .html rule and size cap unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the existing companion reader tests pass unchanged",
+      "resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "companion-reader behaves as before after the containment helper is extracted"
+      },
+      {
+        "level": "unit",
+        "name": "resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

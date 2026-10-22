@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-bf5eceda-0c57-4679-bfb2-9ff1eb5ec666",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.097Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Open a Debug pane and move between its Daemon, MCP, and Logs views",
+      "parent": {
+        "entityId": "EPIC-f900cf34c0342d4f",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "86656f761b1d8d9d9734d30929ada323cdc6d0a1be9e0c06f9b4e5b2da589e1a",
+        "at": "2026-10-22T12:43:07.097Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

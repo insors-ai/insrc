@@ -24,111 +24,6 @@
     "hldBaseRunId": "wf-1790676258005-32feqt",
     "hldEffectiveHash": "f5c70630aa7159b74711b2f59e6c8ebbfa766cf29715dd8c400bedcdce6a1b10",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "c-turnevent-kinds",
-          "ref": "2.1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "stream-events.ts declares the TurnEvent union + a TURN_EVENT_KINDS list where the additive 'selection-request' member is added.",
-          "evidence": "stream-events.ts:30 export type TurnEvent + :118 TURN_EVENT_KINDS both found; approval-request confirms the additive member pattern.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-protocol-webview-types",
-          "ref": "2.4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "protocol.ts declares the WebviewToHost union + WEBVIEW_TO_HOST_TYPES list, with an existing permission-decision member (~:89-94) as the template for the additive selection-decision message.",
-          "evidence": "protocol.ts:89-90 = the permission-decision WebviewToHost member; WEBVIEW_TO_HOST_TYPES @ :117. The selection-decision member + list entry follow this exact template.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-render-rowkind-toviewmodel",
-          "ref": "2.3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "render-registry.ts declares RowKind + toViewModel (dual-input) + register(...) + onApprovalDecision, and the approval card renderer around :315-330.",
-          "evidence": "render-registry.ts:37 RowKind, :102 toViewModel, register('approval') @ :339, onApprovalDecision present. NOTE: the approval card is now at :339 (LLD cited :315-330) — line-drift from S003's commit; the symbol resolves.",
-          "action": "Confirmed; citation line-drift is cosmetic (build re-anchors).",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-markerfor",
-          "ref": "3.2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "markers.ts markerFor is an exhaustive switch (never-default) over TurnEvent kinds around :43-85; the new selection-request/selection-outcome cases map to null and the never-default is preserved.",
-          "evidence": "markers.ts:43 markerFor(event: TurnEvent): MarkerLine | null; :58 const _never: never — the exhaustive never-default is intact.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-transcript-union",
-          "ref": "3.1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "session-store.ts TranscriptEntry is a role-discriminated union already carrying plain-serialisable S001 tool-result + S003 permission-outcome variants that round-trip createInMemoryChatSessionStore + createMementoChatSessionStore; S004 adds a role:'selection-outcome' variant in the same shape.",
-          "evidence": "session-store.ts:29 export type TranscriptEntry; role:'tool-result' + role:'permission-outcome' variants present (chat-panel push sites); createMementoChatSessionStore @ :136. The role-discriminant selection-outcome variant is consistent (LLD cited :26, actual :29 — minor drift).",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-chatpanel-relay-anchors",
-          "ref": "2.5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts registers the decision sink at ~:361, appends the live interactive card on ev.kind at ~:412, holds pendingPerms (~:138), and has the permission-decision handler (~:745) that the selection-decision handler mirrors.",
-          "evidence": "chat-panel.ts:138 pendingPerms, :374 onApprovalDecision sink, :425 approval-request live append, :763 permission-decision handler — all resolve. Line numbers drifted ~+18 from the LLD's pre-S003 citations (S003 commit); symbols correct.",
-          "action": "Confirmed; line-drift cosmetic (build uses current lines).",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-approval-request-origin",
-          "ref": "2.2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The approval-request event's ORIGIN is claudeMapper.mapLine parsing system/permission_denied (cli-adapter.ts ~:216/316) — the pattern the selection-request marker-parse mirrors.",
-          "evidence": "cli-adapter.ts:316 = kind:'approval-request' (from permission_denied); mapLine @ :162 — the origin pattern the marker-parse mirrors.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-no-native-selection",
-          "ref": "openQuestions",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "There is NO provider-native selection signal today: cli-adapter.ts mapLine emits no selection-* event and neither claude nor codex --json carries a selection kind, so the selection-request has no origin except an added marker parse (the load-bearing gap justifying the openQuestion).",
-          "evidence": "greps for selection-request/selection-decision/selection-outcome return ZERO source matches — confirms there is no selection surface today, so the origin gap (openQuestion) is real and load-bearing.",
-          "action": "Confirmed — validates the openQuestion.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c-fallback-renderer",
-          "ref": "2.3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "render-registry.ts routes any RowKind with no registered renderer to a 'fallback' renderer, so an unmatched selection kind degrades to plain text rather than throwing.",
-          "evidence": "render-registry.ts has a 'fallback' renderer (19 matches) so an unmatched RowKind degrades to plain text; the defensive path holds.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-29T13:57:35.254Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-29T14:13:52.048Z",
     "questionResolutions": {
       "q6b92849a": {
         "question": "Marker syntax: the exact typed-marker format the model writes to trigger a selection-request (e.g. a fenced ```insrc:select {prompt,options:[{id,label}],multi?} ``` JSON block) is a product+protocol decision — the LLD assumes a fenced typed-JSON block but the concrete grammar should be confirmed before build.",
@@ -151,6 +46,61 @@
         "rationale": "Index keying already renders + selects duplicates correctly, so no chip is lost and no marker is rejected; uniqueness belongs in the authoring guideline, keeping s4 scoped (Options 2-4 trade a real behaviour change for an author-only malformed-marker concern).",
         "resolvedAt": "2026-09-29T14:17:07.523Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b89114e33be507e5c6e63357516f50fa663e0216067500b29b4196cd3d4ba27e",
+        "at": "2026-09-29T13:55:40.481Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T14:13:52.048Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-29T13:57:35.254Z",
+        "report": {
+          "entityId": "LLD-8e8859ca0ca83612-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-8e8859ca0ca83612-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

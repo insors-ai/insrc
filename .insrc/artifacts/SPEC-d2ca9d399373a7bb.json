@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "d2ca9d399373a7bb",
     "epicSlug": "add-new-read-only-mcp-tool",
-    "approvedAt": "2026-09-24T10:25:09.172Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-09-24T10:23:49.719Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b7bd7342ade4b0aa9a304f44eaf2277b7d53eb684740114008ad5e7f20379af3",
+        "at": "2026-09-24T10:23:49.719Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T10:25:09.172Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

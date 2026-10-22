@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-faa13305-7c42-4ca1-844a-3df38347e790",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.867Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Regression + round-trip tests",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9377b4ff8ae9359abd18713669b1c462039172e47b7397f41f5c6c5d0e8cf439",
+        "at": "2026-10-22T12:43:56.867Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.867Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Regression + round-trip tests",
+    "summary": "Add colocated node:test tests: adapter emission (with/without command, empty output, codex), toViewModel dual-input, renderer collapse (output-only, command visible), markerFor null, appendEvent structured persist, both-store round-trip + replay, parity, assistant-never-default-collapsed, and no-tool-output byte-identity.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Tests cover ac1-ac4 across adapter/render/persist/replay via the eval'd *WebviewSource pattern",
+      "The full chat suite passes locally"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "replay: restoring a transcript with a tool-result entry re-renders the same command/separator/output row with default-collapsed output"
+      },
+      {
+        "level": "unit",
+        "name": "ac2 interaction: the output can be expanded and re-collapsed via the chevron (collapse-primitive state toggle)"
+      },
+      {
+        "level": "unit",
+        "name": "The full chat suite passes locally (no-tool-output turns byte-identical; existing approval/marker tests green)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

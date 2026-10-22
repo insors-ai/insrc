@@ -24,121 +24,61 @@
     "hldBaseRunId": "wf-1789970136758-lvyg6v",
     "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "OrphanProcessSeam",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/debug.ts defines scanOrphansWith + killOrphansWith — the orphan scan/kill heuristic (daemonEntry match, managedPid exclude, SIGTERM→wait→SIGKILL) the plugin OrphanProcessSeam mirrors.",
-          "evidence": "Confirmed: scanOrphansWith resolves at src/cli/services/debug.ts:148. killOrphansWith is declared `export async function killOrphansWith` (debug.ts:180), so the exact 'export function' pattern missed it, but it exists — the seam mirrors both.",
-          "action": "None — both CLI functions resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "DebugStatusCardReader",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/debug.ts buildDaemonCard derives the status card's socket/pid/version locally (socket, readPid from pidfile, readVersion from DAEMON_ROOT/package.json) — the local-derive the plugin DebugStatusCardReader mirrors.",
-          "evidence": "Confirmed: buildDaemonCard at debug.ts:82 with readVersion (debug.ts:66, DAEMON_ROOT/package.json) and readPid (debug.ts:55, pidfile) — the exact local-derive the plugin DebugStatusCardReader mirrors.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "daemonEntry",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DAEMON_ENTRY (the daemon index.js path a candidate command must contain) is defined in src/cli/services/daemon.ts, and DAEMON_ROOT (~/.insrc/daemon) in src/cli/services/maintenance.ts.",
-          "evidence": "Confirmed: src/cli/services/daemon.ts:26 DAEMON_ENTRY = join(__dirname,'../../daemon/index.js') and maintenance.ts:34 DAEMON_ROOT = $INSRC_DAEMON_ROOT ?? ~/.insrc/daemon — the daemonEntry the plugin match uses.",
-          "action": "None — both constants resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "managedPid",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon writes its pid to PID_FILE=$HOME/.insrc/daemon.pid (scripts/daemon-ctl.sh), the pidfile the plugin reads for managedPid + the status card pid.",
-          "evidence": "Confirmed: scripts/daemon-ctl.sh:48 PID_FILE=$HOME/.insrc/daemon.pid — the pidfile the plugin reads for managedPid + the status-card pid.",
-          "action": "None — pidfile path resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The shipped sc2 DaemonStatusDto (running/uptimeSec/queueDepth/embeddingsPending/modelPullStatus/modelPullPct/lmdbFileSizeMb/repoCount) + sealed DaemonStatusResult{Loaded|Stopped|Unavailable} exist in the plugin DaemonGateway.kt and carry NO socket/pid/version.",
-          "evidence": "Confirmed: DaemonGateway.kt:363 data class DaemonStatusDto, :383 sealed interface DaemonStatusResult, :596 interface daemonStatus() + :975 impl — the shipped sc2 consumed unchanged; carries no socket/pid/version (as the LLD states).",
-          "action": "None — sc2 surface resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "socket",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonSocket.defaultPath() = ~/.insrc/daemon.sock is an existing plugin constant the status card uses for the socket field.",
-          "evidence": "Supported: DaemonSocket/daemon.sock grep is capped at 50 matches so the src hit wasn't isolated, but DaemonSocket.defaultPath() = ~/.insrc/daemon.sock is confirmed to exist at UnixSocketDaemonRpc.kt:20 (an existing plugin constant). Correct source for the socket field.",
-          "action": "None — the socket constant exists; verifiable at build.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "sc1/sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc1 base InsrcOpsConfigurable (abstract buildBody) and the placeholder DebugConfigurable both exist in the plugin; S004 fills DebugConfigurable and implements the new DebugPageHost.",
-          "evidence": "Confirmed: InsrcOpsConfigurable.kt:33 (abstract base) and DebugConfigurable.kt:13 (the placeholder S004 fills). The sc3 DebugPageHost is new (only named in DebugConfigurable's forward-looking KDoc today), correctly introduced by this Story.",
-          "action": "None — base + fill target resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "ProcessHandle seam",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "java.lang.ProcessHandle (allProcesses(), info().commandLine(), pid(), destroy()/destroyForcibly(), isAlive) is a stable JDK API providing the process enumeration + signal the OS-process seam uses.",
-          "evidence": "External JDK contract: java.lang.ProcessHandle (allProcesses/info().commandLine()/pid()/destroy()/destroyForcibly()/isAlive) is a stable public API (JDK9+); not yet referenced in plugin src, which is expected pre-build. Correct seam for local process enumeration + signalling.",
-          "action": "None — platform API is valid; build introduces the reference.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "interactionWithShared",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD assigns sc3 (DebugPageHost) ownedByStory s4 and lists s5/s6 as its consumers; sc1/sc2 are consumed (owned by s1). S004 implements sc3 and consumes sc1/sc2.",
-          "evidence": "Supported: ownedByStory is the HLD ownership field; sc3 (DebugPageHost) ownedByStory s4 with s5/s6 consumers is grounded in the HLD context slice, and S004 correctly role=implements sc3 while consuming sc1/sc2 (owned by s1).",
-          "action": "None — cross-artifact ownership holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "kill contract",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The kill escalation + outcome union mirrors debug.ts killOrphansWith exactly: SIGTERM(destroy)→wait→SIGKILL(destroyForcibly) survivors, managed pid re-excluded (SKIPPED), outcomes in input order (terminated/forced/not-found/error).",
-          "evidence": "Confirmed: debug.ts:109 KILL_GRACE_MS=3000 + :198 wait + :182 isManaged (managed re-excluded) + SIGTERM→SIGKILL escalation with outcomes in input pid order (:222) — the exact kill contract the plugin KillOutcome/KillResult union mirrors, plus the added explicit SKIPPED for the managed case.",
-          "action": "None — kill escalation + union mirror the CLI.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-21T10:19:00.822Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-21T10:50:34.094Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2670a4b24d37802cf42e1adc3dfe5730c3aefc9701cf2a85fbb3f8726119e6cc",
+        "at": "2026-09-21T10:17:21.485Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T10:50:34.094Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-21T10:19:00.822Z",
+        "report": {
+          "entityId": "LLD-57298940cdc341bc-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-57298940cdc341bc-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

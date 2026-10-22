@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b66b567c-f6ed-4db6-8478-2ffb58cf7255",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.147Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the `rootUnionKey` predicate",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4e71aefe927fa532f8be7d2d3cd68bd9b4787ab433e0e18f13aa7dcb1e672fee",
+        "at": "2026-10-22T12:43:17.147Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.148Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the `rootUnionKey` predicate",
+    "summary": "Add a new exported pure predicate to structured-output.ts returning `'oneOf' | 'anyOf' | 'allOf' | undefined`, placed immediately after the existing module-private `isObject` helper (:310) and before the stub-error section (:317). Reuse `isObject` for the totality guard rather than hand-writing an object check that could drift from the module's own notion of an object. Reads ONLY the schema's own root keys — no tree walk, no `$ref` resolution. Purely additive: nothing calls it yet, so the tree's behaviour is unchanged after this task.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Returns the keyword for a root `oneOf`, `anyOf`, or `allOf` carried as a non-empty array — all three, since both vendors refuse all three at the top level.",
+      "Returns the keyword even when a root `type: 'object'` is also present: a root `type` grants NO exemption (probe-confirmed verbatim on both binaries).",
+      "Returns `undefined` for a union nested below the root, for an empty-branch root union, for a root `$ref` into `$defs`, and for null/undefined/number/string/array input — without throwing on any of them.",
+      "Does not mutate or clone the input schema, unlike `processSchemaForOpenAIStrict` which mutates in place via `processInPlace`.",
+      "`tsc --noEmit` is clean and the existing suite is unaffected, since nothing calls it yet."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "`tsc --noEmit` clean and the pre-existing suite unchanged — the predicate is additive and uncalled at this point"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

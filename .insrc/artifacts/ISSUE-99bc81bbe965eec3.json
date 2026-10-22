@@ -21,10 +21,38 @@
     "epicSlug": "bug-insrc-build-step-returns-unresolved",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-09-29T06:55:56.350Z",
     "parentRef": {
       "slug": "ide-artifact-review-panel-jetbrains-plugin",
       "storyId": "s1"
+    },
+    "epicCreatedAt": "2026-09-29T06:43:38.282Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1e3a8eb1783216f3bad09cc1be97f5370711a73225ef667d5d4f06c1c7040dab",
+        "at": "2026-09-29T06:43:38.282Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T06:55:56.350Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

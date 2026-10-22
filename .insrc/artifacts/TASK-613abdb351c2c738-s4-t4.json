@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b1b4a5ad-5ed8-4e84-a361-42e0c05c2c79",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.486Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Runner: acted tracking, classification, logging",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "42758e919eaa988a0fcdf5a923a947f71c13bc12d02d24e1d7d8121fd2874cf5",
+        "at": "2026-10-22T12:43:38.486Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.487Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Runner: acted tracking, classification, logging",
+    "summary": "In chat-panel.ts the queued-turn runner tracks acted: set when the queued turn emits a tool-call, file-edit or tool-result event and never cleared, including across an approval re-run. settleQueued resolves a failed turn as {kind:'failed', error, acted, cause: classifyFailure(error)} and logs every failed turn's cause and error text through the chat logger. The 'the chat no longer exists' failure stays acted:false with no cause.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true",
+      "a turn that failed with none of them reports acted false and the classified cause",
+      "acted stays true across an approval re-run of the same queued message",
+      "every failed turn's cause and error text are logged",
+      "the 'chat no longer exists' failure has acted false and no cause"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-runner.test.ts: every failed turn's cause and error text are logged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

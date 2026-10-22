@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1789799576767-kl7v1b",
     "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-19T11:11:24.448Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-19T11:18:05.394Z",
     "questionResolutions": {
       "q0faa8535": {
         "question": "Inline annotation is a JCEF-only affordance: on a JBR-without-JCEF the S002 native-editor fallback stays readable but cannot anchor comments. Whether the native fallback should offer a coarser whole-artifact (un-anchored) comment affordance, or annotation stays JCEF-only, is deferred — either keeps lc1/k6; flagged for the plan/build.",
@@ -46,6 +32,61 @@
         "rationale": "User's decision (took the recommended default). Inline comments ship only in the JCEF view; the S002 native-editor fallback stays read-only and shows a one-line notice that annotation needs a JCEF-capable JBR. Smallest s3 surface (one authoring path, one anchor model). The sc3 CommentAnchor already has all fields optional, so a future coarse un-anchored native affordance remains a purely additive follow-up with no contract change.",
         "resolvedAt": "2026-09-19T11:19:00.184Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1f97aa488830a3682a4f701edb33ce86b2f20ee1aa4a28d5931c7fa6ac5e7cdd",
+        "at": "2026-09-19T11:10:02.560Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T11:18:05.394Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-19T11:11:24.448Z",
+        "report": {
+          "entityId": "LLD-238917216d8fd532-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-238917216d8fd532-s3-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

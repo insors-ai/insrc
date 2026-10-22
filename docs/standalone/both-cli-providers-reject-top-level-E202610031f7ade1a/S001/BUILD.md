@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-1f7ade1a889013da-S001 -->
+<!-- insrc:artifact BUILD-1f7ade1a889013da-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -37,8 +37,8 @@ The line number moved 341 -> 397 between the two runs because t2 inserted the ne
 
 ## Changes
 
-- `.insrc/artifacts/CR-1f7ade1a889013da-S001.json` — **insrc-build** (2026-10-04T04:29:34.742Z)
-- `.insrc/artifacts/PLAN-1f7ade1a889013da-S001.json` — **insrc-build** (2026-10-04T04:29:34.742Z)
+- `.insrc/artifacts/CR-1f7ade1a889013da-s1.json` — **insrc-build** (2026-10-04T04:29:34.742Z)
+- `.insrc/artifacts/PLAN-1f7ade1a889013da-s1.json` — **insrc-build** (2026-10-04T04:29:34.742Z)
 - `docs/standalone/both-cli-providers-reject-top-level-E202610031f7ade1a/S001/CR.md` — **insrc-build** (2026-10-04T04:29:34.742Z)
 - `src/agent/providers/__tests__/structured-output-root-union.test.ts` — **insrc-build** (2026-10-04T04:29:34.742Z)
 - `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-10-04T04:29:34.742Z)

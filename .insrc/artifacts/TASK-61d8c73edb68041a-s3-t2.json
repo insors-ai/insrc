@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-39552e41-3358-407c-982a-0ae9f4fd2a7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.998Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s3",
+    "envelope": {
+      "description": "DaemonSetupPolicy.decide — pure probe×consent mapping",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e373edaeca4beab0625b0717d60766b1b324827d8637fddfae0d7523e0915d88",
+        "at": "2026-10-22T12:43:39.998Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.998Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "DaemonSetupPolicy.decide — pure probe×consent mapping",
+    "summary": "Implement decide(state: DaemonState, consented: Boolean): DaemonSetupAction as a pure total function over the closed union: CURRENT -> NoOp (either consent); ABSENT/!consented -> OfferSetup(INSTALL); ABSENT/consented -> RunSilently(INSTALL); STALE/!consented -> OfferSetup(UPDATE); STALE/consented -> RunSilently(UPDATE). Consumes sc2's DaemonState (never re-implements the probe). No IO.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the full (DaemonState × consented) truth table maps exactly as specified (ac1/ac2)",
+      "CURRENT always -> NoOp regardless of consent",
+      "pure/total: no IO, every (state,consented) pair returns a defined action"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DecidePolicyTest#truthTable_allSixCells (CURRENT->NoOp x2; ABSENT/STALE x !consented->OfferSetup, consented->RunSilently)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

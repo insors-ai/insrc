@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28772b7c-dacc-4d9f-b050-a84797565e6c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.779Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add LogEditorSurface (user-read-only LightVirtualFile + FileEditorManager off-EDT stream)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4ead5d9c031e7d2425f1040def79f67f6cb3d0ce1e748239f03c50e244288960",
+        "at": "2026-10-22T12:43:34.779Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.780Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add LogEditorSurface (user-read-only LightVirtualFile + FileEditorManager off-EDT stream)",
+    "summary": "New debug/LogEditorSurface.kt: class LogEditorSurface(seam=LogTailSeam()){ fun openLog(project, category) }. Create a user-read-only LightVirtualFile('insrc-<stem>.log', PlainTextFileType, '') (isWritable=false), open via FileEditorManager.getInstance(project).openFile(file, true), hold a bounded (MAX_BUFFER=1000) ring buffer + the current LogFilter, subscribe LogTailSeam.tail OFF the EDT, and on each batch append to the buffer then rebuild the FILTERED document text on a disposed-guarded invokeLater under a write action (never re-reads disk on a filter change). A minimal level/module/text filter toolbar re-renders from the buffer. Dispose the tail on editor close (FileEditorManagerListener.fileClosed for this file) / project close; the on-disk log is never modified (k5). Never throws (guarded). Re-opening a category re-focuses the existing tab rather than duplicating. Per the s3 critique, RESOLVE the streamed-rebuild write-action mechanism AT BUILD by a real IntelliJ-API spike BEFORE writing the loop: obtain the Document via FileDocumentManager.getInstance().getDocument(file) and rebuild it under ApplicationManager.getApplication().runWriteAction { CommandProcessor ... doc.setText(...) }, keeping the file user-read-only (isWritable=false) while allowing the plugin's own setText — verified by the source-scan test + the local build, not assumed. Keep the filter toolbar minimal (a small editor top-component or in-file header).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "openLog opens a user-read-only LightVirtualFile via FileEditorManager (k5: an editor tab, not inline) and streams the filtered bounded buffer into its Document off the EDT under a guarded invokeLater + write action (k2); the write-action rebuild mechanism is resolved against the real IntelliJ API and compiles",
+      "The on-disk log is never written/deleted/rotated/cleared; a filter change re-renders from the 1000-line buffer with no disk re-read; the buffer is bounded",
+      "The tail is disposed on editor/project close; a late post-close emit is dropped (disposed guard), never an exception; re-opening a category re-focuses the existing tab"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "LogEditorSurfaceTest.sourceScanReadOnlyLightVirtualFileFileEditorManagerOffEdtWriteActionDisposeNoDeleteRotateClear"
+      },
+      {
+        "level": "smoke",
+        "name": "gradlew buildPlugin compiles the resolved FileDocumentManager/runWriteAction rebuild mechanism (JDK21)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

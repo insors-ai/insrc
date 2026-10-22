@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ae6dcb68-51e2-4594-b4ea-30fbf3ae154d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.498Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the artifact write inventory and the bypass test",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc22e3c787508807643a774994f3c69e775ea3e16057b4680709c77162275aa0",
+        "at": "2026-10-22T12:43:25.499Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.499Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the artifact write inventory and the bypass test",
+    "summary": "Add ARTIFACT_WRITE_INVENTORY (class and via per file; mixed entries name each site and its kind) and the artifact-write-inventory test with a detector that follows direct calls, aliases and injected writers (default parameters and object properties such as write: writeAtomic), with negative and positive controls. Classify every current write site as the LLD states: content, meta-only, mixed, render, record (amendments/store.ts only), migration.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Every production file that calls or passes writeArtifact, writeAtomic, writeFileSync or renameSync has an entry, and a fully migrated file keeps a valid entry.",
+      "The detector flags raw writeFileSync, an unannotated raw writeAtomic, 'write: writeAtomic', an alias and a passed writer when none has an entry, and accepts the positive controls.",
+      "The classification matches the LLD, including the two code-review files and test-record.ts as content and amendments/store.ts as record."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: every writer file is inventoried, annotated and classified as the design says"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the detector flags raw, aliased and injected writers and accepts the positive controls"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

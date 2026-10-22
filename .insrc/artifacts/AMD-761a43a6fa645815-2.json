@@ -1,14 +1,57 @@
 {
-  "id": "AMD-761a43a6fa645815-2",
-  "epicHash": "761a43a6fa645815",
-  "epicSlug": "add-daemon-driven-code-review-stage",
-  "hldBaseRunId": "wf-1785741597494-lbzdo7",
-  "amendment": {
-    "type": "storyBoundary.addStory",
-    "storyId": "s10",
-    "internal": "Private implementation of s10: Fall back to a diff-only degraded review when the index cannot be made fresh"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "761a43a6fa645815",
+    "epicSlug": "add-daemon-driven-code-review-stage",
+    "createdAt": "2026-08-05T06:38:27.555Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "93ff6fb8c6ef78505df71eaaa10e6699b87c0a46a060ae7ddfcf343f7150cd2e",
+        "at": "2026-08-05T06:38:27.555Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T06:43:12.729Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — Story B of the Fix-C pair (sibling of s9). Builds the diff-only degraded-review fallback on the s9 gate (src/mcp/code-review-step/handler.ts, src/workflow/code-review/{runner,grounding,types,subject}.ts) and folds in the working-tree-diff changedFiles fix surfaced by the s9 dogfood.",
+  "body": {
+    "id": "AMD-761a43a6fa645815-2",
+    "hldBaseRunId": "wf-1785741597494-lbzdo7",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s10",
+      "internal": "Private implementation of s10: Fall back to a diff-only degraded review when the index cannot be made fresh"
+    },
+    "rationale": "Extends Epic `add-daemon-driven-code-review-stage` (761a43a6) — Story B of the Fix-C pair (sibling of s9). Builds the diff-only degraded-review fallback on the s9 gate (src/mcp/code-review-step/handler.ts, src/workflow/code-review/{runner,grounding,types,subject}.ts) and folds in the working-tree-diff changedFiles fix surfaced by the s9 dogfood.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1785911818211-7k0t2x",
+      "storyId": "s10",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-08-05T06:38:27.555Z",
+    "approvedBy": "user:in-chat-approval"
+  },
   "citations": [
     {
       "id": "c1",
@@ -28,15 +71,5 @@
       "ref": "src/workflow/code-review/subject.ts",
       "quotedText": "resolveCodeReviewSubject derives changedFiles from the working-tree git_diff — empty after commit (the dogfood finding s10 folds in)."
     }
-  ],
-  "proposedBy": {
-    "workflow": "define",
-    "runId": "wf-1785911818211-7k0t2x",
-    "storyId": "s10",
-    "stepId": "scope.assess"
-  },
-  "proposedAt": "2026-08-05T06:38:27.555Z",
-  "status": "approved",
-  "approvedAt": "2026-08-05T06:43:12.729Z",
-  "approvedBy": "user:in-chat-approval"
+  ]
 }

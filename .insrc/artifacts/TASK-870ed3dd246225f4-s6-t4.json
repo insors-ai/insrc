@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-96648dd5-47a0-4248-bd81-76af03f4c3ce",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.954Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Forward whole params through the docgen.generate IPC handler",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "840e30616255ef596a4d21c540bd654a82bba4c85b0388b3dd28aaeca35e8bb8",
+        "at": "2026-10-22T12:43:54.954Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.954Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Forward whole params through the docgen.generate IPC handler",
+    "summary": "In src/daemon/index.ts, change the docgen.generate handler to forward the whole params object (minus docType) to generateDocument instead of destructuring only {docType, repo, path}, bringing the IPC surface to parity with the tool. docgen.list stays unchanged (already returns listDocTypes()). No IPC method rename.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "the docgen.generate handler passes every field of params (other than docType) through to generateDocument's input argument",
+      "docgen.list continues to return listDocTypes() unchanged",
+      "IPC method names docgen.generate / docgen.list are unchanged so the IDE fork's mirrored types remain valid"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "docgen.generate IPC handler forwards every field of params (minus docType) through to generateDocument's input, with docgen.list unchanged"
+      },
+      {
+        "level": "live",
+        "name": "docgen.generate IPC returns an ok self-contained shell against a registered+indexed repo, matching the insrc_docgen MCP tool's result for the same request"
+      },
+      {
+        "level": "live",
+        "name": "an unregistered repo path returns source-not-ready over the live IPC"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cb443ef1-d359-459e-9e5f-40937ffbc16c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.422Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Extend the write-inventory detector and enter the files it newly flags",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "71d03bac1a3794ab21bd0b2f5e2d2d0f6935234b5f0b0e56d89d1908bf8363e7",
+        "at": "2026-10-22T12:43:20.422Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.423Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the write-inventory detector and enter the files it newly flags",
+    "summary": "In src/workflow/artifact-write-inventory.ts add appendFileSync, appendSidecarLine and an import-based store-write rule to the detector, with negative controls, and add inventory entries for every existing file the detector newly flags (src/daemon/fatal.ts, src/daemon/shutdown.ts, the analyze-step, build-step, workflow-step and review-step handlers, src/config/feedback.ts and the appendRunLog call in src/workflow/storage.ts). It names the new writers by name only, so it does not need the new files to exist.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "the detector reports a raw, aliased, renamed, namespace and injected appendFileSync, an unlisted appendSidecarLine and a store write in a file with no entry",
+      "the five existing writers are still detected exactly as before",
+      "every file under src that the detector now flags has an inventory entry and the inventory test passes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

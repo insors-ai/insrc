@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-583b55e9-3acd-4988-85f2-92e18770c846",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.515Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add + wire stripGuideSections (pure) into the inject/refresh block source",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c7a296f6640e5db58c5e9d584a169f12471fcfa085b824b99d12538697f96a10",
+        "at": "2026-10-22T12:43:27.515Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.516Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add + wire stripGuideSections (pure) into the inject/refresh block source",
+    "summary": "Add export function stripGuideSections(steeringText: string): string to src/daemon/steering-inject.ts: for each key in listWorkflowGuides(steeringText) (sc2 public), remove the region from guideMarkerStart(key) to guideMarkerEnd(key) inclusive; collapse >2 consecutive blank lines; trim. Pure, no I/O; idempotent; empty-safe (no sections -> unchanged); malformed/half pairs left intact (listWorkflowGuides returns complete pairs only). Import listWorkflowGuides/guideMarkerStart/guideMarkerEnd from ./guide-sections.js. Wire it at the TWO block-source callsites: injectSteeringBlock line ~198 `const block = stripGuideSections(readSteeringBlock())`; refreshSteeringAcrossRepos default readBlock (~line 247) `readBlock: () => stripGuideSections(readSteeringBlock())`. readSteeringBlock stays unchanged (guide.get path).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/daemon/steering-inject.ts exports stripGuideSections; it removes every complete guide-marker section, collapses ragged blank runs, is idempotent, and returns text with no guide sections unchanged.",
+      "The two block-source callsites (injectSteeringBlock + refreshSteeringAcrossRepos default readBlock) wrap readSteeringBlock() with stripGuideSections; readSteeringBlock itself is unchanged.",
+      "stripGuideSections is pure (no node:fs) and reuses sc2's public listWorkflowGuides + guideMarkerStart/End — no new marker convention.",
+      "tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "guide-strip.test.ts: stripGuideSections over a self-contained fixture — removes every complete guide section (no guide-start marker remains, skeleton retained); malformed/half pair left intact; ragged blank runs collapsed (no >2 newlines); idempotent; empty-safe (no sections -> unchanged)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

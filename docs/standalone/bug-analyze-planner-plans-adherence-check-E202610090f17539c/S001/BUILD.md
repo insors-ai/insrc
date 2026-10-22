@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-0f17539c98aa78ee-S001 -->
+<!-- insrc:artifact BUILD-0f17539c98aa78ee-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -21,8 +21,8 @@ Task 4: a test that runs the real infra adherence check through the plan walk, a
 
 ## Changes
 
-- `.insrc/artifacts/CR-0f17539c98aa78ee-S001.json` — **insrc-build** (2026-10-10T10:20:30.601Z)
-- `.insrc/artifacts/PLAN-0f17539c98aa78ee-S001.json` — **insrc-build** (2026-10-10T10:20:30.601Z)
+- `.insrc/artifacts/CR-0f17539c98aa78ee-s1.json` — **insrc-build** (2026-10-10T10:20:30.601Z)
+- `.insrc/artifacts/PLAN-0f17539c98aa78ee-s1.json` — **insrc-build** (2026-10-10T10:20:30.601Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-10T10:20:30.601Z)
 - `docs/plans/docs-module.md` — **insrc-build** (2026-10-10T10:20:30.601Z)
 - `docs/standalone/bug-analyze-planner-plans-adherence-check-E202610090f17539c/S001/CR.md` — **insrc-build** (2026-10-10T10:20:30.601Z)

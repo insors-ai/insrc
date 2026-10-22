@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dd4afb03-4172-45b7-976f-14878106100e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:23.079Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delivery types: record set, work-item graph, notice and filesystem port",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "57328b6a8935bafbf58bae317cc68c4b66007c64782a614f8252dc44eb35331e",
+        "at": "2026-10-22T12:43:23.079Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:23.080Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delivery types: record set, work-item graph, notice and filesystem port",
+    "summary": "Create src/workflow/delivery/types.ts with the sc1 types (DeliveryArtifactKind, ApprovalState, ArtifactRecord, RecordLoadFailure, ArtifactRecordSet), the sc2 types (DeliveryItemKind, WorkItemNode, WorkItemGraph), the sc3 types (NoticeCode, DeliveryNotice), the ReadonlyStoreFs port (exists, listDir, readFile) and the DeliveryStoreUnreadableError class. Type-only except the error class, so the VS Code plugin can import the types later.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The types match HLD sc1, sc2 and sc3 field for field, including correctsRef.slug, seededFromSpecId and epicCreatedAt.",
+      "ReadonlyStoreFs has exactly three read operations and no write method.",
+      "The module compiles under the repo's strict tsconfig (exactOptionalPropertyTypes, noUncheckedIndexedAccess)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types.test.ts: 'DeliveryStoreUnreadableError carries the store path and the underlying message'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

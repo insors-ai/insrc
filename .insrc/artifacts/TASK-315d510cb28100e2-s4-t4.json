@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-22e6b8ae-c75c-452c-b0d7-818fc05ed988",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.497Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Mint revisions on the code-review and TESTS records, with a stated rollback",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "62cb55bfe6635afaa8d4978594a653562da8ba639a034a1f6e9bea0ee6d21f40",
+        "at": "2026-10-22T12:43:25.497Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.498Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Mint revisions on the code-review and TESTS records, with a stated rollback",
+    "summary": "Route the code-review json (code-review/runner.ts and the injected writer in code-review-step/handler.ts) and the TESTS json (runners/build/test-record.ts persistTestRecordTask) through writeArtifact as content; their markdown stays an annotated render. Keep the TESTS rollback: restore the prior json bytes (and with them the prior revision) if the document write fails, and when the restore itself also fails, report the possibly inconsistent record state to the caller instead of promising restoration.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A second code review of the same Story and a second persisted test mapping each bump the record's revision, through the runner default writer and the handler's injected writer.",
+      "A rolled-back test record (document write fails, restore succeeds) leaves the json bytes and the revision as before.",
+      "When both the document write and the json restore fail, the caller is told the record may be inconsistent and a test covers it.",
+      "The existing code-review and test-record tests pass without edits."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/record-revision.test.ts: a second code review bumps the record revision through the default and the injected writer"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/runners/build/__tests__/test-record-revision.test.ts: a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

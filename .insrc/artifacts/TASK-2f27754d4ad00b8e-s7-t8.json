@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-380a67b3-a77c-4139-aea1-cc3f63e75b44",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.257Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Run the Task sync from the approve flow and the daemon seam",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2d21cc5b6aefdfc4509b399e948bbc8f8c287267e3ce5f6da806677105423817",
+        "at": "2026-10-22T12:43:22.257Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.258Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the Task sync from the approve flow and the daemon seam",
+    "summary": "Make approve() in src/cli/services/workflow.ts async and call syncTasksOnPlanApproval before the Task push, update its type in src/cli/services/index.ts and its callers in src/cli/panes/WorkflowsPane.tsx and src/cli/command.ts, add a 'tasks-sync' kind to FollowOnOutcome in src/workflow/gates.ts, and add src/daemon/tasks-sync.ts called at both follow-on sites in src/daemon/index.ts, running the sync and then the Task push.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Approving a plan through the cli flow and through the daemon seam creates the Task set and binds each Task's issue on its TASK head under the Story's issue",
+      "approve() is async and its callers await it",
+      "A failed sync is reported beside the approval and never fails it, and shows as ok:false in the daemon follow-on"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-set-approve.test.ts: approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

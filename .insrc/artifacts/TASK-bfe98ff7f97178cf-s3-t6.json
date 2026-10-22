@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-047b886d-bc29-402c-b09a-5b0cb4ad3bf4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.580Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Mount the slot from renderContent — the one call that changes what a reviewer sees",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "19c232e8b3b224fe5904de913a0f5510b7da5e5aeaf23255d8cec822178fd2c1",
+        "at": "2026-10-22T12:44:32.581Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.582Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Mount the slot from renderContent — the one call that changes what a reviewer sees",
+    "summary": "Call the factory from renderContent AFTER stampSlugs (the pointer-advance constraint the shipped code states at :586) and before the chooser and the notice, wrapped in the backstop catch S002 established, then mount the slot: anchored beside the heading whose slug the ref's ofSectionId resolved to via sc3's shipped createSectionResolver (docs-sections.ts:136-149), at the defined default position otherwise. Deliberately a single call and deliberately last, so reverting it restores the shipped surface while leaving the types, the data path and both derivations in place. The gate's own mutations run here.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "THE FOUR-COMBINATION GATE asserted as a TABLE, one row per (ref × record): absent+absent → 'absent'; present+present → 'rendered'; present+absent → 'unshowable'; absent+present → 'rendered' (the resolved contested row, q7f574776 — record gates content)",
+      "ac2's dominant path proved as ZERO DOM ACTIVITY: for a document with no ref and no record the slot path makes NO createElement call at all, and the rendered BODY REGION plus the slot host are unchanged relative to the IMMEDIATELY PRECEDING commit — pinned against the CURRENT post-renderer baseline, not against S002's, which the source-string tasks have already moved",
+      "`classes: {}` and an empty sequence record are treated as ABSENT, matching the undefined-or-empty convention the repo states twice",
+      "A diagram-mermaid ref with no projected record routes to 'unshowable' with a reason that NAMES what was referenced, and `diagram-html` routes there too per lc1 — never a silent nothing",
+      "A forced throw inside the slot build leaves the body, the chooser, the notice, the open questions and BOTH approval controls intact — all five surfaces asserted",
+      "IDEMPOTENCE: two consecutive docs-content messages with the same record leave exactly ONE slot with the same content; a third carrying neither leaves none — against a stub whose innerHTML/textContent assignment REPLACES children, or the test is meaningless",
+      "An ofSectionId that resolves mounts the slot beside that heading; one that does not resolve mounts it at the DEFAULT position rather than dropping the visual (the live path — 0 of 8 real refs carry the field)",
+      "docs-sections.ts comes out BYTE-IDENTICAL — this Story mints no section identity",
+      "The approval path, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before the Story",
+      "MUTATIONS RUN AND REVERTED, each turning its named test RED: delete the absent gate (zero-DOM-activity); dispatch on the ref's kind instead of the record present (sequence-diagram unshowable); drop the diagram-html branch (lc1); drop linkOut from 'unshowable' (link-in-failure-state)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "mounted gate: the four-combination table driven through the SHIPPED bootstrap, including the contested absent-ref/present-record row rendering"
+      },
+      {
+        "level": "integration",
+        "name": "ac2 dominant path: no ref and no record → zero createElement calls from the slot path and the body region unchanged vs the immediately preceding commit"
+      },
+      {
+        "level": "integration",
+        "name": "mounted: `classes: {}` and an empty sequence record are treated as ABSENT"
+      },
+      {
+        "level": "integration",
+        "name": "mounted: the slot build runs AFTER stampSlugs (pointer-advance constraint), proved by re-reading every heading id"
+      },
+      {
+        "level": "integration",
+        "name": "mounted: DOCS_DIAGRAM_SOURCE is inlined into the single nonce'd script and evaluated by the real bootstrap"
+      },
+      {
+        "level": "integration",
+        "name": "IDEMPOTENCE: two identical docs-content messages leave exactly ONE slot; a third carrying neither leaves none (stub models innerHTML REPLACING children)"
+      },
+      {
+        "level": "integration",
+        "name": "resilience: a forced throw in the slot build leaves body, chooser, notice, open questions and BOTH approval controls intact — all five surfaces"
+      },
+      {
+        "level": "integration",
+        "name": "placement: a resolving ofSectionId anchors beside that heading; a stale one falls back to the default position rather than dropping the visual"
+      },
+      {
+        "level": "unit",
+        "name": "docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity"
+      },
+      {
+        "level": "integration",
+        "name": "regression: the approval path, COMMENTABLE_KINDS gate and blocked banner behave identically to before the Story"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: delete the absent gate → the ac2 zero-DOM-activity test goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: dispatch on the ref's kind instead of the record present → the sequence-diagram unshowable test goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: drop the diagram-html branch → the lc1 test goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: drop linkOut from the 'unshowable' state → the link-in-failure-state test goes RED"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

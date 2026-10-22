@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7a020566-efea-4939-8ebc-20cc4367b367",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.787Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the GitHub adapter core and loadTracker",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "452c56fce4d9a2397bdd1988680766e6747a6db12bfdd102b865755ed214558b",
+        "at": "2026-10-22T12:43:24.787Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.787Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the GitHub adapter core and loadTracker",
+    "summary": "Implement the GitHub adapter factory bound to one owner and repo: kind, capabilities {claim, issue-create}, whoAmI (converting the thrown 'no login' error to missing-signin), findIssue with first-result selection and failure kept distinct from not found, createIssue wrapping the detailed create, and the signoff methods returning rejected without running gh. Add loadTracker that applies the strict resolver, the gh and sign-in checks and the capability check.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "loadTracker succeeds when every needed capability is declared and names a missing capability, a missing gh tool and a missing sign-in distinctly when it refuses",
+      "whoAmI returns the login and converts the empty-login throw to missing-signin",
+      "findIssue returns the first of several matches, ok with null for none and ok:false for a failed lookup",
+      "signoff-request and completion are undeclared and the signoff methods run no gh command"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker succeeds when every needed capability is declared"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker with an empty needed set validates configuration and sign-in"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker refuses a needed signoff-request capability naming it"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker names gh as the missing tool"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker names the missing sign-in"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: findIssue returns the first of several matches and separates failure from not found"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: signoff methods return rejected without running gh"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

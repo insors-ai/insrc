@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7abae1e1-fe10-4f4c-8269-682ac49834b4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.230Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Claude reviewer-session size refusal",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "155f0d4edccabf326adcfad720819740a69f449d47e9fd7b79c51a5cb86fdfa0",
+        "at": "2026-10-22T12:43:51.230Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.230Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Claude reviewer-session size refusal",
+    "summary": "Classify a size refusal in the claude reviewer session's is_error envelope as InputTooLargeError with the classifier completeStructured uses; keep the codex session's existing classification and cover it with a regression test.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "A claude session is_error size refusal throws InputTooLargeError.",
+      "A codex session size refusal still throws InputTooLargeError."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

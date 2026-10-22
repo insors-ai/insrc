@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-ff4e7b53-ee10-4db8-8e04-3a37e65ab155",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.005Z",
+    "epicCreatedAt": "2026-07-29T11:44:50.811Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8f485fe5c614fefc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Get consistent test-health reporting across every language insrc indexes",
+      "parent": {
+        "entityId": "EPIC-8f485fe5c614fefc",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "0237b6ca843e217d6ea6d4ab55dd13e49d072e1bb8982be1a45d89fc49a45394",
+        "at": "2026-10-22T12:43:07.005Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

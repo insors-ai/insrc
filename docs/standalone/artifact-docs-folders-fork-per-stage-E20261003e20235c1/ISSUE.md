@@ -25,7 +25,7 @@ Make a work item keep exactly one docs folder for its whole lifetime. The label 
 - **[[c7]]** `code` `src/workflow/runners/build/standalone-record.ts:149` — "export function renderBuildRecordMd(rec: BuildRecord): string"
 - **[[c8]]** `code` `src/workflow/tracker/resolve.ts:337` — "const m = DEF_RE.exec(f);"
 - **[[c9]]** `prior-artifact` `.insrc/artifacts/ISSUE-792f9324fc43d95c.json` — "epicSlug='regression-hierarchical-label-resolver-listepichashes-src', standalone=true"
-- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-S001.json` — "epicSlug absent, standalone absent, sizeClass absent"
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-s1.json` — "epicSlug absent, standalone absent, sizeClass absent"
 
 <!-- insrc:review -->
 

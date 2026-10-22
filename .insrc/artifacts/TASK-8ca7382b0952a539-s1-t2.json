@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b9569945-7844-4b3e-9d2e-2a2ab1190458",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.271Z",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ca7382b0952a539",
+    "storyId": "s1",
+    "envelope": {
+      "description": "turn-lifecycle.ts: stop and detach",
+      "parent": {
+        "entityId": "STORY-8ca7382b0952a539-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ca7382b0952a539-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4ce66bc44a7912c29a4b52110830d6b42ae56d723441c3733d6f597536e1b8cc",
+        "at": "2026-10-22T12:43:56.271Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.272Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "turn-lifecycle.ts: stop and detach",
+    "summary": "Move stopLive, stopActive and detachActive into the module as stop() and detach(): abort the lease wait, return the iterator, cancel the provider turn and stop the live process (stop), or for a session-file turn stop reading and keep the process, lease and saved cursor (detach). A pipe turn is stopped either way. Add unit tests.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "stop cancels the provider turn, stops the live process, resolves once it has exited, and is idempotent with nothing running",
+      "stop or detach while a turn waits for its lease drops that turn silently",
+      "detach keeps a session-file turn running with its lease, saves its cursor and removes it from runningTurns; detach stops a pipe turn",
+      "failures from cancel or proc.stop are swallowed and the remaining steps still run",
+      "live is undefined after stop and after detach"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stop cancels the provider turn and stops the live process; idempotent with nothing running"
+      },
+      {
+        "level": "unit",
+        "name": "stop and detach drop a turn waiting for its lease"
+      },
+      {
+        "level": "unit",
+        "name": "detach leaves a session-file turn running with its cursor saved and stops a pipe turn"
+      },
+      {
+        "level": "unit",
+        "name": "stop continues past a failing cancel or process stop"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

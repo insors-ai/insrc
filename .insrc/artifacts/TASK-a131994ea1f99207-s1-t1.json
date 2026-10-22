@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d107b0d1-5109-41ca-85ee-7918a4720a2f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:05.299Z",
+    "epicCreatedAt": "2026-08-04T12:31:41.584Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a131994ea1f99207",
+    "storyId": "s1",
+    "envelope": {
+      "description": "gates.ts: widen the batch sweep to BUILD + the BUILD-under-enforce completion withhold",
+      "parent": {
+        "entityId": "STORY-a131994ea1f99207-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a131994ea1f99207-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "58bea0c9bb6fb53c93b040a22c91f02212905373ab80f454aece517ba88a88c4",
+        "at": "2026-10-22T12:44:05.304Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:05.305Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "gates.ts: widen the batch sweep to BUILD + the BUILD-under-enforce completion withhold",
+    "summary": "In src/workflow/gates.ts: (a) widen pendingArtifactJsonPaths's filename regex prefix alternation from ^(DEF|HLD|LLD|PLAN)-<hash>(-.*)?\\.json$ to include BUILD; already-approved BUILDs stay excluded by the existing approvedAt check. (b) Export a tiny resolver from src/workflow/code-review/gate.ts — resolveEnforce(explicit?: boolean): boolean = explicit ?? readEnforceFlag() — so approveOne can compute the SAME effective-enforcement value the gate uses (readEnforceFlag stays private). (c) In approveWorkflowTarget, resolve effectiveEnforce = resolveEnforce(opts?.enforce) ONCE, and pass { ...(opts?.enforce!==undefined?{enforce:opts.enforce}:{}) } to enforceCodeReviewGate as today. (d) In approveOne, AFTER the existing codeReview.push(projectGateOutcome(...)) and the gate.status==='blocked' handling, add the BUILD-scoped completion layer: compute isBuild from the artifact JSON BASENAME starting with 'BUILD-' (the buildArtifactId prefix) — NOT meta.workflow, so it cannot mis-fire on a non-BUILD artifact whose meta happens to differ; when isBuild && effectiveEnforce && gate.status==='no-review' && req.overrideReview===undefined => push { path: jsonPath, reason: 'completion requires a code review; none was run' } to skipped[] and RETURN without approveArtifactByJsonPath (no approvedAt). Every other status (pass/warn/overridden) and non-BUILD / enforce-off / override path falls through to the UNCHANGED approve. Import resolveEnforce from './code-review/gate.js'. .js imports, import type, getLogger not console.log, strict optional handling; no change to enforceCodeReviewGate's own fail-open contract.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "pendingArtifactJsonPaths regex includes BUILD in the prefix alternation; a pending BUILD-<hash>-<story>.json (no approvedAt) is swept by an epicHash batch and an already-approved BUILD is excluded",
+      "src/workflow/code-review/gate.ts exports resolveEnforce(explicit?: boolean): boolean = explicit ?? readEnforceFlag() (readEnforceFlag remains private); approveOne resolves effectiveEnforce ONCE via it and reuses it for the withhold so gate + withhold never disagree",
+      "isBuild is derived from the artifact JSON basename starting with 'BUILD-' (the buildArtifactId prefix), NOT from meta.workflow — so the withhold can never mis-fire on a DEF/HLD/LLD/PLAN/CR artifact",
+      "approveOne, after the existing gate push, withholds a BUILD when effectiveEnforce && gate.status==='no-review' && no overrideReview: routes { path, reason } to skipped[] and returns WITHOUT stamping approvedAt",
+      "gate.status 'blocked' still withholds (unchanged); 'pass'/'warn'/'overridden' still complete; a supplied overrideReview bypasses the no-review withhold (BUILD completes)",
+      "a non-BUILD artifact, or effectiveEnforce===false, is byte-identical to today (the withhold is BUILD+enforce scoped); the withhold reads only the gate result + never touches meta.review (k8)",
+      "tsc --noEmit clean; .js imports + import type; getLogger not console.log; no new persisted field (BUILD.meta.approvedAt reused as the completion marker)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pendingArtifactJsonPaths includes a pending BUILD in the epic-batch sweep; excludes an already-approved BUILD"
+      },
+      {
+        "level": "unit",
+        "name": "single BUILD approve, enforce ON + CR pass => completes, codeReview[] pass (existing single-path gate firing not regressed)"
+      },
+      {
+        "level": "unit",
+        "name": "BUILD + enforce ON + absent CR => withheld into skipped[], no approvedAt, codeReview[] no-review"
+      },
+      {
+        "level": "unit",
+        "name": "BUILD + enforce ON + absent CR + overrideReview => completes, override recorded on codeReview[]"
+      },
+      {
+        "level": "unit",
+        "name": "BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked"
+      },
+      {
+        "level": "unit",
+        "name": "BUILD + enforce OFF + absent CR => completes byte-identical (approved + isApproved + codeReview no-review + skipped empty)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

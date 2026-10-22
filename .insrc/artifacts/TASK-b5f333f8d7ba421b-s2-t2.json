@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69237ac6-05ca-408c-9d36-41462765dca6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:19.001Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Fix the gateway-extension compile break (delegate + 4 test doubles)",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4ceddfcce721e38c0aa9f44fd0160d4cc8942b5366e23e340ec58eafb223a4cf",
+        "at": "2026-10-22T12:44:19.001Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.002Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fix the gateway-extension compile break (delegate + 4 test doubles)",
+    "summary": "Add the settingsCatalog() delegate to DaemonGatewayService (forwarding to the impl) and a trivial `override fun settingsCatalog()` stub returning a canned Unavailable/Loaded to the four DaemonGateway test doubles (DaemonLifecycleServiceTest, OnboardingCleanupIntegrationTest, OnboardingWiringTest, OnboardingLifecycleTest), all in this change so the module compiles.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "DaemonGatewayService exposes settingsCatalog() delegating to the impl.",
+      "All four test doubles override settingsCatalog(); `./gradlew test` compiles the test source set green (no other double left unimplemented)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the full ./gradlew test suite compiles + passes green (the delegate + 4 test-double overrides are proven by the test source set building)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -20,82 +20,57 @@
     "epicHash": "761a43a6fa645815",
     "epicSlug": "add-daemon-driven-code-review-stage",
     "storyId": "s10",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "s10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "s9's fail-closed decline exit ('review-declined') that s10 replaces exists in the code-review-step start handler.",
-          "evidence": "'review-declined' resolves (6 hits incl. the s9 fail-closed exit in handler.ts + its tests) and the `proceed !== true` guard resolves — the exit s10 replaces exists as cited.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "s10/ac2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "resolveCodeReviewSubject derives changedFiles from the working-tree git_diff (the empty-after-commit source s10 folds a last-commit fallback into).",
-          "evidence": "resolveCodeReviewSubject + git_diff/changedFiles resolve in subject.ts — the working-tree-diff changedFiles source s10 folds a last-commit fallback into exists as cited.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "s10/ac3-ac4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "CodeReviewBody.groundingMode exists (s9 added it as 'full') and is the field s10 widens to 'full' | 'degraded'; runCodeReview folds the verdict s10 caps at warn.",
-          "evidence": "groundingMode + runCodeReview + ReviewVerdict all resolve — the s9-added field s10 widens ('full'→'full'|'degraded') and the verdict fold s10 caps at warn exist as cited.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "s10/ac1",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The graph grounding assembler + the four-dimension judges the diff-only path peers exist (assembleCodeReviewGrounding + the fixed four dimensions).",
-          "evidence": "assembleCodeReviewGrounding (43) + the four-dimension literal set (7) resolve — the graph grounding + fixed four judges the diff-only path peers exist.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "s10/ac5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The codeReview.enforce completion gate that a degraded/warn record must not satisfy exists.",
-          "evidence": "codeReview.enforce + resolveEnforce/enforce resolve in gate.ts — the completion gate a degraded/warn record must not satisfy exists as cited.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "extends",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "s10 extends epic 761a43a6, whose approved SpecArtifact SPEC-8b4be30d648eaeb8 (d5/d6) + s9 LLD are the prior artifacts it builds on.",
-          "evidence": ".insrc/artifacts/LLD-761a43a6fa645815-s9.json exists (the s9 LLD prior artifact) and the approved SpecArtifact SPEC-8b4be30d648eaeb8 is on disk — the cross-artifact trace s10 builds on holds.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-05T06:39:23.464Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-05T06:42:56.650Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1db1842cc3e783138a3e678c95574dd8b9c23457dc628656370cef9b8e5cdf16",
+        "at": "2026-08-05T06:38:27.559Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T06:42:56.650Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-05T06:39:23.464Z",
+        "report": {
+          "entityId": "EXT-761a43a6fa645815-s10",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-EXT-761a43a6fa645815-s10-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "L",

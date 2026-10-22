@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cd923240-28f5-453c-8670-c9aabbd343e6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:08.813Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Extend the brainstorm test suite with decisions/nonGoals schema + fork-integrity cases",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "552f5f3306bc2e05f87d5e1344a014dc18e5ab2b8cf816a4ced3a1af8d33d1b9",
+        "at": "2026-10-22T12:44:08.814Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:08.815Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend the brainstorm test suite with decisions/nonGoals schema + fork-integrity cases",
+    "summary": "In src/workflow/runners/brainstorm/__tests__/elicit.test.ts, add the schema + finalize + buildPrompt unit cases (from t1/t2) plus the integration round-trip cases, all node:test + assert/strict + ajv driven through the real executor via startRun/resumeRun. Also name the gated (INSRC_LIVE_TESTS=1) live subjects for ac1-ac4. Run the full brainstorm + workflow-step sweep and tsc.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "new schema tests cover accept (valid + fork-free), reject (malformed decisions entry, empty chosen/reason, non-array nonGoals, additionalProperties), and s3-fields-unchanged",
+      "new runner tests via startRun/resumeRun cover ac3 both ways: 'ruled-out-not-recorded' retryable rejection AND clean confirmed:true acceptance when every ruled-out direction is recorded as a nonGoal",
+      "runner tests also cover the s3 'convergence-incomplete' gate still firing and a confirmed:false pass-through",
+      "a buildPrompt test asserts the fork rule + decisions/nonGoals capture instructions are present",
+      "the full brainstorm + workflow-step sweep passes and tsc is clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "insrc_workflow_step start (workflow:'brainstorm') -> plan -> emit_step for elicit carrying the extended schema (decisions/nonGoals present)"
+      },
+      {
+        "level": "integration",
+        "name": "a 'ruled-out-not-recorded' finalize error surfaces as {next:'error',retryable} and the opaque state token is unchanged so the controller re-sends"
+      },
+      {
+        "level": "integration",
+        "name": "BrainstormElicitState shape is unchanged — no new field/store introduced by s4"
+      },
+      {
+        "level": "live",
+        "name": "gated ac1-ac4: fork presented with tradeoffs, decisions[] carries chosen/ruledOut/reason, ruled-out -> nonGoal, deferral -> openItems"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

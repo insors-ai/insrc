@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-36fa1ab2-7cbf-476b-93d0-d814c814af19",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.145Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Re-verify the deletion precondition",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1e43c79ea5841cab594e0cc009936205a108c6561e3a09b2766bb874f704bcf",
+        "at": "2026-10-22T12:43:17.145Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.146Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-verify the deletion precondition",
+    "summary": "Run a repo-wide reference search for `normaliseSchemaForAnthropic` and confirm it is still zero-caller. A read-only go/no-go gate for the whole Story, not an edit. If any reference now exists, STOP and re-decide: a live caller turns 'delete dead code' into 'fix a live bug', which is a different judgement than this ISSUE authorises. Re-verified at plan time (1 hit, the declaration itself), but the build must re-run it rather than inherit that result. Per the s3 critique this check is ALSO re-run inside t8, because a gate eight tasks upstream of the action it protects is itself inherited rather than current.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A repo-wide search over src/ for `normaliseSchemaForAnthropic` returns exactly one line: its own declaration at structured-output.ts:341.",
+      "The actual search output is recorded in the BUILD record, so the precondition is evidenced rather than asserted.",
+      "If the count is anything other than one, the task halts and raises rather than proceeding."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "reference-search gate: `normaliseSchemaForAnthropic` resolves to exactly one src/ line (its declaration) — a recorded command output, not a code test"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

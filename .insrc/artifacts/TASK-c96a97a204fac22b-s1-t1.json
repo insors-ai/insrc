@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5665244b-761d-476e-a1ac-343c62277665",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.577Z",
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Export the store's keys and checks, and correct its comments",
+      "parent": {
+        "entityId": "STORY-c96a97a204fac22b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c96a97a204fac22b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0e3214b3d9d6d0df70ceff5cc287dc34e774e7d97f35836bdca55c764dda9b13",
+        "at": "2026-10-22T12:44:40.577Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.578Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export the store's keys and checks, and correct its comments",
+    "summary": "In session-store.ts export INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf so the file store and the migration use the same keys and checks (review finding accepted by override). Correct the file header ('no local-JSON file') and the ChatSession.liveTurn comment ('Sessions live in globalState') to say sessions are kept in files under ~/.insrc/chat-sessions. No behaviour changes.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts with their values and behaviour unchanged",
+      "The header and the liveTurn comment name the files, not globalState",
+      "Every existing session-store test still passes unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "INDEX_KEY, SESSION_PREFIX, isSession and updatedAtOf are exported from session-store.ts and are the keys and checks the memento store itself uses"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-b5a62f289cbcdaee-S001 -->
+<!-- insrc:artifact BUILD-b5a62f289cbcdaee-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -22,5 +22,5 @@ restoreCarriedDocSummaries now writes back with keepGoodSummary, so a good summa
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T16:59:40.908Z)
+- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-s1.json` — **insrc-build** (2026-10-18T16:59:40.908Z)
 - `docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md` — **insrc-build** (2026-10-18T16:59:40.908Z)

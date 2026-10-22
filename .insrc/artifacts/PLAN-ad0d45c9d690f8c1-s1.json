@@ -23,71 +23,56 @@
     "storyId": "s1",
     "lldRunId": "wf-1790010529619-xyb76l",
     "lldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly four non-test files import `rpc` from '../client.js' (src/cli/services/{debug,repo,config,daemon}.ts) — the importers t1's re-export must keep byte-compatible.",
-          "evidence": "Confirmed exactly four src importers of `rpc` from '../client.js': src/cli/services/config.ts:12, daemon.ts:17, debug.ts:25, repo.ts:15 (the 5th grep hit is the LLD doc itself, not a source import). t1's re-export must preserve exactly these.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts:15 holds the `rpc` fn body that t1 moves into src/shared/ipc-client.",
-          "evidence": "Read src/cli/client.ts:15 = `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {` — the exact fn t1 moves. Confirmed verbatim.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts imports only node:net + src/shared/types + src/shared/paths, so t1's extraction keeps the k5 thin boundary (no daemon internals to leak).",
-          "evidence": "src/cli/client.ts:1 imports { createConnection, Socket } from 'node:net'; :2 IpcRequest/IpcResponse from ../shared/types.js; :3 PATHS from ../shared/paths.js — no daemon internals/indexer/storage on the graph, so t1's extraction keeps the k5 thin boundary.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The plan task DAG is acyclic and topologically ordered: t1/t2 have no deps; t3/t4/t5 depend on t2; t6 depends on t1/t3/t4/t5 — every dependency precedes its dependant by `order`.",
-          "evidence": "Self-contained artifact-internal claim (no source probe needed): the plan's own task table shows t1/t2 with no deps, t3/t4/t5 dependsOn t2, t6 dependsOn t1/t3/t4/t5, with orders 1-6 — a valid acyclic topological order (every dependency's order < its dependant's). Verified in the s6 checklist (t3 passed).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "coverage",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Every LLD testStrategy subject (11 items) maps to ≥1 covering task in testStrategyCoverage, and every derivedFrom citation c1-c5 traces to an approved-LLD sc/handoff item.",
-          "evidence": "Self-contained artifact-internal claim: the plan's testStrategyCoverage table maps all 11 LLD subjects each to ≥1 task (t1×5/t2×1/t3/t4/t5/t6×3), and citations c1-c5 each carry a prior-artifact ref to an approved-LLD sc/handoff item, each referenced by ≥1 task. Verified in the s6 checklist (cov1/cov2/gr1 passed).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-21T17:48:55.983Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T17:53:18.458Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "69f3bfbb4c9a97cd84aa6a268d7dfb2c3fe6ca73c79c072e655933566ad7adcc",
+        "at": "2026-09-21T17:48:01.940Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T17:53:18.458Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-21T17:48:55.983Z",
+        "report": {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-ad0d45c9d690f8c1-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

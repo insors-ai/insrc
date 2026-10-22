@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b69c566-ee9e-470b-8c83-b952e91e7ceb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.546Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "changedFiles reports only the Story's own files",
+      "parent": {
+        "entityId": "STORY-f9ced66a0e8835b8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9ced66a0e8835b8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9ced66a0e8835b8-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59382dfe8b1c2da43c0fca4ddeb78d9273a58b9fc60e9cedee799da6c22d8402",
+        "at": "2026-10-22T12:45:03.546Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.547Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "changedFiles reports only the Story's own files",
+    "summary": "In changedFiles' committed-range branch, keep the existing git_diff {from: base, exclude} call and intersect its paths with storyChangeSet(repoPath, base).paths before the keep filter. The BUILD changeLog narrows through collectBuildChangeLog as an intended effect.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A clean tree with a base after a mid-build merge reports only the Story's own files.",
+      "A committed ledger file stays out of the range result after a mid-build merge.",
+      "collectBuildChangeLog with a base lists only the Story's own files.",
+      "Without a base the derivation is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "changed-files.test.ts: 'a clean tree with a base reports only the Story's own files, not files a merge brought in'"
+      },
+      {
+        "level": "unit",
+        "name": "changed-files.test.ts: 'without a base the derivation is unchanged'"
+      },
+      {
+        "level": "unit",
+        "name": "changed-files.test.ts: 'collectBuildChangeLog with a base lists only the Story's own files after a mid-build merge'"
+      },
+      {
+        "level": "unit",
+        "name": "changed-files.test.ts: 'a committed ledger file stays out of the range result after a mid-build merge'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

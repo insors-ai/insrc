@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "67260700545c57e7",
     "epicSlug": "complete-editor-development-chat-interface-insrc",
-    "approvedAt": "2026-09-25T13:08:32.579Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-09-25T13:00:23.249Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "218f467cb417e111d4f8a305db5df0ceb6aad251252571421daae8ec57bd552e",
+        "at": "2026-09-25T13:00:23.249Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-25T13:08:32.579Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

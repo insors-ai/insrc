@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e0394f5-eb79-4653-9e5e-c03c3e034727",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.963Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Generate complete deterministic notices and evidence inventory",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0ae92e8f3d3c3e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c7c3f9a4deb82e83fd2ebe581d6f7218131cd1c079deb16fb36043c6b76e95e5",
+        "at": "2026-10-22T12:43:50.963Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.963Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Generate complete deterministic notices and evidence inventory",
+    "summary": "Add proposed sources/notices.ts producing source manifest, NOTICE and unchanged license/notice evidence bytes from eligible closure and lineage.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Preserve exact repository/revision/path/digest, license IDs, all attributions and modifications; license/notice refs resolve to immutable packaged evidence, never remote or absolute paths.",
+      "Stable code-unit ordering by sourceId/path; deduplicate identical evidence by raw SHA256 while retaining every association; strict bounded evidence text decode, never decode binary assets as text.",
+      "Include only admitted source/evidence entries in SourceManifest; keep rejected ImportReport outside distributed bytes; deterministic output independent of locale, input order, machine path and current time; expected fixture bytes authored independently."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "notice-closure preserves exact evidence bytes and all source obligations"
+      },
+      {
+        "level": "unit",
+        "name": "notice-closure deduplicates shared evidence without losing attribution"
+      },
+      {
+        "level": "unit",
+        "name": "notice-closure produces stable expected bytes and rejects invalid evidence text"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

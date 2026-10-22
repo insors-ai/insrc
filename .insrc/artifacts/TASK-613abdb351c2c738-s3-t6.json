@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b2c4a3c-54ff-4c16-a08c-b6467ddeb335",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.209Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Worker: closed-window head rule",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0fe7e5c6dea1bab94f2f0f6818a169c1bd655698f551d125288b057eb77fd521",
+        "at": "2026-10-22T12:43:38.210Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.214Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Worker: closed-window head rule",
+    "summary": "In the worker's tick, when the head message belongs to another window and the lease is free, decide whether that window is closed: presenceOf(head.windowKey) exists with heartbeatAt older than PRESENCE_GRACE_MS and isAlive(presence.pid, presence.pidStartedAt) false, or it has no presence row and head.createdAt is older than PRESENCE_GRACE_MS. When closed, call markNotDeliveredIfHead(head.seq) so the queue moves on; a false return is ignored. Log the marking with the message key and window key.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "a head whose window stopped refreshing presence for more than PRESENCE_GRACE_MS with a dead pid is marked not-delivered and the next message runs",
+      "a window whose presence row is fresh, or whose pid is alive, is never marked",
+      "a head with no presence row younger than PRESENCE_GRACE_MS is not marked; an older one is",
+      "dispose-and-recreate of a worker with the same windowKey while a second window ticks does not get the head marked",
+      "a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost",
+      "a retrying head of a closed window is marked too",
+      "mixed versions: a previous-plugin window's dispose deleting its presence row does not get a head younger than PRESENCE_GRACE_MS marked, and an older one is marked once"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

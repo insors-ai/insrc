@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-59d66b82-3b91-4ed0-9fa7-9600953c3ae0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.444Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Register BUILD_ARTIFACT_KIND in gates.ts as an additional approvable kind",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bdc4b26a5135ffcf61c115c4b126c60a82b3b9934dc4235aac16ac135b00378e",
+        "at": "2026-10-22T12:43:16.445Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.445Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register BUILD_ARTIFACT_KIND in gates.ts as an additional approvable kind",
+    "summary": "Add a build reader/upstream/require pairing to gates.ts (readBuildArtifact / readBuildUpstream / requireApprovedBuild-style) keyed on BUILD_ARTIFACT_KIND, so the build artifact enters the identical approve/reject sign-off path as every sibling kind — an addition, never a change to the discriminant, gate, or approval flow of any existing kind (define/plan/design/tracker), and an unapproved build artifact is treated as absent downstream.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "gates.ts gains a build reader/upstream/require pairing keyed on BUILD_ARTIFACT_KIND that routes through the same approveArtifactByJsonPath/rejectArtifactByJsonPath approval path as sibling kinds",
+      "the approval semantics of every existing kind (define/plan/design/tracker) are byte-for-byte unchanged — build is an additional case only",
+      "a finalized but unapproved build artifact is treated as absent downstream, exactly as for every other artifact kind"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gates.ts offers a finalized BUILD_ARTIFACT_KIND for sign-off via the same approveArtifactByJsonPath/rejectArtifactByJsonPath path as sibling kinds, sibling approval semantics unchanged, and an unapproved build artifact is treated as absent downstream"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

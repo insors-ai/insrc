@@ -23,94 +23,62 @@
     "hldBaseRunId": "wf-1785587820064-46kctq",
     "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "gates.ts exports approveArtifactByJsonPath (enforces review block-verdict + stamps meta.approvedAt), jsonPathForMd, and listPendingApprovals — the workflow-agnostic approve seam requireApprovedSpec + the SPEC review/approve flow lean on.",
-          "evidence": "Confirmed by direct read this session: gates.ts defines approveArtifactByJsonPath (~L391, enforces review block-verdict + stamps/preserves meta.approvedAt), jsonPathForMd (~L562), and listPendingApprovals (~L468). The grep preview surfaced docs matches first but the symbols exist in src/workflow/gates.ts.",
-          "action": "No change needed — the workflow-agnostic approve seam exists as cited.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "gates.ts already has the requireApproved* reader family (requireApprovedEpic/Hld/Lld/Plan) that requireApprovedSpec mirrors.",
-          "evidence": "CONFIRMED by grep: src/workflow/gates.ts:146 requireApprovedEpic, :185 requireApprovedHld, :227 requireApprovedLld, :326 requireApprovedPlan — the reader family requireApprovedSpec mirrors.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "review/run-artifact.ts derives the review stage from meta.workflow (artifact-type-agnostic), so a SPEC md reviews through the same pipeline unchanged (ac1).",
-          "evidence": "Confirmed by direct read this session: run-artifact.ts:70-71 sets `const stage = typeof artifact.meta.workflow === 'string' ? artifact.meta.workflow : 'unknown'` — artifact-type-agnostic, so a SPEC md reviews unchanged (ac1). Grep over-matched the LLD doc but the source is as cited.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/spec.ts (shipped by s6) exports the SpecArtifact record + isSpecBody guard that requireApprovedSpec reads and binds to.",
-          "evidence": "CONFIRMED by grep: src/workflow/artifacts/spec.ts:66 export type SpecArtifact = WorkflowArtifact<SpecArtifactBody>; :156 export function isSpecBody. The record requireApprovedSpec binds to exists (shipped s6).",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "storage.ts exports specArtifactPaths(repoPath, specHash) -> {md,json}, the hash-addressed identity the resolver reads (shipped s6).",
-          "evidence": "CONFIRMED by grep: src/workflow/storage.ts:214 export function specArtifactPaths(repoPath, specHash, slug?) — the hash-addressed identity the resolver reads.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "daemon/index.ts registers a 'workflow.approve' IPC handler (via approveWorkflowTarget) whose shape the new 'spec.resolveApproved' read handler mirrors.",
-          "evidence": "Confirmed by direct read this session: daemon/index.ts:551 registers 'workflow.approve' delegating to approveWorkflowTarget (gates.ts) — the IPC shape 'spec.resolveApproved' mirrors. Grep over-matched the LLD doc but the handler exists in src/daemon/index.ts.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "meta.approvedAt already exists on ArtifactMetaBase (types.ts), so the read-side approval gate needs no new stored field.",
-          "evidence": "Confirmed by direct read this session: ArtifactMetaBase in src/workflow/types.ts declares `readonly approvedAt?: string` (set by the approve gate). No new stored field needed — the read-side gate is additive.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD assigns ownership of sc4 to s7 and sc1 to s6, so this LLD implementing sc4 + consuming sc1 matches the HLD story-boundary.",
-          "evidence": "Confirmed by direct read this session of .insrc/artifacts/HLD-abd1ecf6a5f5063e.json: sc4 ownedByStory='s7' (consumedByStories s8,s9), sc1 ownedByStory='s6'. The probe's regex (\\s* on JSON) and src/-scoped read returned no match, but the ownership is as the LLD states — this LLD implements sc4 + consumes sc1 per the HLD boundary.",
-          "action": "No change needed — cross-artifact ownership matches the HLD.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-02T11:40:26.686Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-02T11:41:06.319Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c4432de9da49a790e577117e58c207975cad886d3ca8d57d1fd9a68aa2409bb9",
+        "at": "2026-08-02T11:38:46.341Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T11:41:06.319Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-02T11:40:26.686Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s7",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s7-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

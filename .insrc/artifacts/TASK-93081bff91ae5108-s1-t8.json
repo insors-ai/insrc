@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2aa611f0-2d45-4193-beb3-f3dee09731fe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.722Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Converge the two renderers into one, define the absent-sizeClass case, rename, and keep the standalone shim",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9aee1b3cc63144f614ad676a267a0cdc4efcafff671e25703534d1f730f09509",
+        "at": "2026-10-22T12:44:00.722Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.723Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Converge the two renderers into one, define the absent-sizeClass case, rename, and keep the standalone shim",
+    "summary": "Collapse the dispatch ternary at standalone-record.ts:198-200 into ONE renderer emitting each section keyed on its OWN content — the union of what both renderers emit today, nothing dropped — with the title derived from meta.sizeClass rather than meta.standalone. sizeClass is the right discriminator and is immune to the validate flip: optional on BuildRecord.meta (:49), required on StandaloneBuildRecord.meta (:94), written on the standalone route (implement.ts:135), never written by validate. BUT s1 surfaced a committed counterexample the design's premise missed: review claim p1 established sizeClass appears ONLY on standalone records and never established the CONVERSE, and BUILD-be8708a9cd20e286-s1 is standalone true with NO sizeClass — so :116's `${rec.meta.sizeClass}` renders a title containing the literal 'undefined' TODAY. The converged renderer must DEFINE the absent case rather than inherit that defect. Also rename renderPlanBuildRecordMd to renderBuildRecordMd — 1 production site plus ~17 references across two committed suites, mechanical but spanning suites that must be RUN — and retain renderStandaloneBuildRecordMd as a delegating shim, since build-record.test.ts imports and calls it. SECTION COUNT: of the nine sections §2.4 enumerates, TWO always render (title, created/updated line) and SEVEN are conditional omit-slots (Commit, Scope, Triage rationale, Summary, Tasks validated, Changes, Feedback). The LLD's test strategy says 'eight omit-slots', matching neither — assert against the seven actually counted rather than inheriting an unverified number. CRITIQUE APPLIED: c4 added to derivedFrom, since §2.4's renderPlanBuildRecordMd is the very function being converged and renamed and was the citation graph's weakest link.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "One renderer: the ternary at standalone-record.ts:198-200 is gone and no code path selects a renderer on meta.standalone",
+      "ABSENT sizeClass has a DEFINED title: a standalone record with no sizeClass renders a well-formed heading containing no 'undefined' substring — asserted against the real BUILD-be8708a9cd20e286-s1 fixture, not a constructed approximation",
+      "That same record's body.tasks RENDER under the converged renderer, where today they are invisible in the markdown while sitting in the json",
+      "Each of the SEVEN conditional sections is asserted present-when-populated and absent-when-not, one assertion per section, and the two unconditional ones are asserted always present — counted, not inherited",
+      "The title derives from meta.sizeClass, asserted against a record whose standalone is false but whose sizeClass is set: the flipped state, which must still render the standalone title",
+      "A record carrying both body.focus and body.tasks renders BOTH '## Scope' and '## Tasks validated'",
+      "STANDALONE-ROUTE rendering of body.summary and body.commit now works — the half deliberately deferred from t7",
+      "t2's goldens 1 and 2 are BYTE-IDENTICAL after the convergence; golden 3 changes, and its diff is reviewed as the intended repair of the 'undefined' title and the invisible tasks",
+      "t1's TEST A (the lost '## Scope') is INVERTED in this same change — rewritten to assert the correct behaviour, not deleted and not skipped",
+      "renderPlanBuildRecordMd is renamed to renderBuildRecordMd; both affected suites (build-record-enrichment.test.ts, provenance-build.test.ts) are RUN GREEN, not merely compiled",
+      "renderStandaloneBuildRecordMd still exports and returns identical output, delegating rather than duplicating"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the single renderer emits each of the SEVEN conditional sections only when its content is present — one assertion per section, with the two unconditional sections asserted always present"
+      },
+      {
+        "level": "unit",
+        "name": "the title derives from meta.sizeClass and NOT meta.standalone — asserted against a record whose standalone is false but whose sizeClass is set (the flipped state)"
+      },
+      {
+        "level": "unit",
+        "name": "ABSENT sizeClass renders a well-formed title containing no 'undefined' — asserted against the real BUILD-be8708a9cd20e286-s1 fixture"
+      },
+      {
+        "level": "unit",
+        "name": "that same pathological record's body.tasks now RENDER, where today they sit in the json visible nowhere"
+      },
+      {
+        "level": "unit",
+        "name": "a record with both `focus` and `tasks` renders both '## Scope' and '## Tasks validated'"
+      },
+      {
+        "level": "unit",
+        "name": "STANDALONE-ROUTE rendering of body.summary and body.commit now works — the half deferred from t7"
+      },
+      {
+        "level": "unit",
+        "name": "an empty or absent changeLog still renders NO '## Changes' section"
+      },
+      {
+        "level": "unit",
+        "name": "BYTE-IDENTITY HELD: goldens 1 and 2 are unchanged by the convergence; golden 3's diff is the single reviewed, intended change"
+      },
+      {
+        "level": "integration",
+        "name": "INVERTED characterisation A: a standalone build driven through implement-then-validate now DOES render '## Scope'"
+      },
+      {
+        "level": "unit",
+        "name": "the rename is complete and GREEN: build-record-enrichment.test.ts and provenance-build.test.ts are RUN, not merely compiled, against renderBuildRecordMd"
+      },
+      {
+        "level": "unit",
+        "name": "renderStandaloneBuildRecordMd still exports and returns output identical to the converged renderer, delegating rather than duplicating"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

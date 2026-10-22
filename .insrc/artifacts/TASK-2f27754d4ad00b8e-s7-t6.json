@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-895a83c0-764b-49a4-a496-f53d1cde6753",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.255Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Move the Task unit's issue record onto the TASK head",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba1b94c18c5f335b9bad98cc03cd18a7426150f1df0525db240a1a79391cbe3c",
+        "at": "2026-10-22T12:43:22.255Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.255Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the Task unit's issue record onto the TASK head",
+    "summary": "Point bindingHome and readRecord in src/workflow/tracker/unit-issue.ts at the TASK head for a task unit (the Plan only for a Task with no head), stop recordUnit writing the Plan's units and taskRefs for a Task, make src/workflow/tracker-auto.ts pushTasks map a plan row to its TASK id through the TASKS head, and stop src/workflow/draft-issues.ts claiming Task units.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "A Task's issue is created under the Story's issue and bound on its TASK head, with no Task record written on the Plan",
+      "The draft hook claims the Epic and the Story only",
+      "pushTasks maps each plan row to its TASK id and a Task with no head still resolves through the Plan fallback",
+      "Existing Epic and Story unit-issue behaviour is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-unit-issue.test.ts: a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head resolves through the Plan"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

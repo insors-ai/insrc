@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-7b464e5e-f281-402c-9482-5f2dd87a9b2f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.004Z",
+    "epicCreatedAt": "2026-07-29T11:44:50.811Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8f485fe5c614fefc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Get accurate coverage when the repo already has coverage reports",
+      "parent": {
+        "entityId": "EPIC-8f485fe5c614fefc",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e10cecae6bc761f94183c29dca069b28306bc8bd23d7b05aeb537b53ee29dc9b",
+        "at": "2026-10-22T12:43:07.004Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

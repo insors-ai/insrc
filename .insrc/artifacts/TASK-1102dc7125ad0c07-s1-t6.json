@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e63522bb-9c93-4085-8d0a-a3546800530f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.932Z",
+    "epicCreatedAt": "2026-10-17T06:04:27.059Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1102dc7125ad0c07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The daemon-reviewed path carries the fallback reason to the record",
+      "parent": {
+        "entityId": "STORY-1102dc7125ad0c07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1102dc7125ad0c07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1102dc7125ad0c07-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b5259cf38a233337cdfb7c490d0b74bdbd07d1ffc1befce5835917332f81c517",
+        "at": "2026-10-22T12:43:12.932Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.933Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The daemon-reviewed path carries the fallback reason to the record",
+    "summary": "CodeReviewStreamParams gains fallbackReason and codeReviewRequestParams forwards it; codeReview.run's CodeReviewRunParams and parseParams accept and validate it and pass it to runCodeReview, so the daemon-written record's body.fallbackReason equals the step's done-frame reason.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent.",
+      "codeReview.run stores params.fallbackReason as body.fallbackReason, refuses a malformed one, and writes none without it.",
+      "A step-to-daemon run through the real serializer and codeReview.run writes body.fallbackReason identical to the done frame's."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/shared/__tests__/review-stream.test.ts: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/code-review-rpc-fallback.test.ts: a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

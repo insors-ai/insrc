@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a19ff23b-97a0-4252-b930-92620ac3c584",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.555Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The full index rebuilds a repository from scratch and records its state",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec27bb788fb1be1474038b146365147cbde96a5ae0a53cfea52b4568c2817c46",
+        "at": "2026-10-22T12:44:34.555Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.555Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The full index rebuilds a repository from scratch and records its state",
+    "summary": "fullIndex (src/indexer/index.ts:606-768): return incoming relationships to pending, delete the repository's rows in both stores (deleteEntitiesForRepo with the option, deleteUnresolvedForRepo; document summaries and exploration cache go too and doc-summarise-repo regenerates the summaries), reset IndexState (generation advanced, fullIndexFinished false), index every selected file with cleanFirst semantics, so indexFile's unchanged-hash skip (src/indexer/index.ts:1031-1036) does not apply, record uncommittedFiles for a thrown error or a false return, store the repository entity before indexManifest, run the cross-file pass in 'full' mode, set endpointPassFailed and fullIndexFinished. Daemon start-up queues a full index for every repository whose fullIndexFinished is false (beside today's rule in src/indexer/index.ts:286-300). Anchors: fullIndex is the private method at src/indexer/index.ts:606-768; it calls indexFile(filePath, repoPath, false) (:655), and indexFile skips a file whose stored hash is unchanged unless cleanFirst (:1031-1036) and returns false on a read failure (:1027-1029), which the loop counts as skipped (:656); the start-up rule that queues full indexes is in src/indexer/index.ts:286-300 (enqueue at :300). Depends on t2 (state), t8 and t9 (the 'full' pass), t10 (the delete with return to pending and export_names cleanup). It changes fullIndex's call at src/indexer/index.ts:707 to pass mode 'full'.",
+    "size": "L",
+    "order": 11,
+    "acceptanceChecks": [
+      "ac2 integration: a store with a hand-deleted cross-file edge and unchanged hashes gets the edge back from repo.reindex",
+      "A file whose read fails during a full index is in uncommittedFiles and the repository reads not complete",
+      "DEPENDS_ON edges from the repository entity are stored for a manifest fixture",
+      "A full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository",
+      "Repository B's reindex restores repository A's hand-written edge into B through Pass 0 without reindexing A",
+      "After a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/indexer/__tests__/full-index-rebuild.test.ts: hand-deleted edge restored by repo.reindex (mutation: unchanged-hash skip kept), unreadable file in uncommittedFiles, repository entity and DEPENDS_ON stored, interruption leaves fullIndexFinished false and start-up queues it, cross-repository restore without reindexing A, no export_names under old u64s after reindex"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

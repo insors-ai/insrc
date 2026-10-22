@@ -24,91 +24,61 @@
     "hldBaseRunId": "wf-1790398081061-o81y85",
     "hldEffectiveHash": "e2745c4bac48a6e87b322daf9e2231b2f375790d6b3411568c9129535c418f61",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contract/handleMessage",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts handleMessage has a default/else branch that currently drops (leaves unimplemented) the sc3 set-edit-mode and edit-decision messages, which S006 will fill.",
-          "evidence": "handleMessage at chat-panel.ts:267; its switch default (chat-panel.ts:312-315) is an accepted-but-ignored seam whose comment literally reads 'set-edit-mode (S006), edit-decision (S006), docs-decision (S007) ... never an error'. S006 filling those cases is exactly the reserved extension point. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "interaction/sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc3 protocol (protocol.ts) already declares HostToWebview edit-prompt and WebviewToHost set-edit-mode + edit-decision, so S006 needs no sc3 shape change.",
-          "evidence": "protocol.ts declares edit-prompt (line 37), set-edit-mode (46), edit-decision (47) plus their type-name arrays (55/64/65). All three sc3 messages S006 rides already exist; no sc3 shape change needed. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "interaction/sc4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ChatSession.editMode ('auto'|'review') already exists on the sc4 store shape and defaults to 'auto' at create(), so S006 only reads/writes it (no store shape change).",
-          "evidence": "session-store.ts:29 declares editMode: 'auto' | 'review' on ChatSession; create() defaults it to 'auto' (confirmed earlier at :151, and the test fixture session-store.test.ts:154 uses editMode:'auto'). S006 only reads/writes it — no store shape change. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "interaction/sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc2 adapter maps codex file_change/patch to a file-edit with EMPTY hunks and claude Edit/Write via diffFromClaudeEdit, so S006 cannot rely on the sc2 diff payload and computes its own diff.",
-          "evidence": "cli-adapter.ts:217 maps codex file_change/patch and cli-adapter.ts:219 emits file-edit with hunks:[] (EMPTY); claude Edit/Write go via diffFromClaudeEdit (cli-adapter.ts:114/168). So the sc2 diff payload is unreliable for render, exactly as the LLD premises — S006 computing its own diff is justified. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "boundary/host",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "createChatPanelHost is a vscode-free deps-injected factory (all vscode via the injected ChatPanelChannel seam), so S006 adds its governance seams as new injected deps.",
-          "evidence": "createChatPanelHost at chat-panel.ts:61 with the doc 'All vscode calls are injected via ChatPanelChannel' (chat-panel.ts:11) and ChatPanelHostDeps as the deps type; vscode-free deps-injection confirmed. S006 adding governance seams as new injected deps fits. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "interaction/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc1 SurfaceKind union already includes 'inline-diff', the surface S006's chat-view diff renders under; S006 does not modify design-tokens.ts.",
-          "evidence": "design-tokens.ts:29 SurfaceKind union includes 'inline-diff'; SURFACE_KINDS (:36) + TERMINAL_SURFACE_CLASS['inline-diff']='insrc-term-diff' (:45) already provide the surface class. S006 consumes it and does not modify design-tokens.ts. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "setting/diffView",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "insrc.chat.diffView is a NEW plugin-local setting (not yet present); it follows the insrc.chat.enabled precedent of a package.json contributes.configuration key read via getConfiguration().get with the full dotted key.",
-          "evidence": "grep -c insrc.chat.diffView in vscode-plugin/package.json = 0 (only appears in DEF/LLD docs), confirming it is genuinely NEW. The precedent insrc.chat.enabled is read at extension.ts:416 via getConfiguration().get<boolean>('insrc.chat.enabled') with the full dotted key (matching :184). S006 following that idiom for diffView is accurate. Sound.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-26T06:09:31.615Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-26T06:11:29.574Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5bcedc01019d683b7592e4453ff0302450e50e81c5e2c60f136441ae8083f08a",
+        "at": "2026-09-26T06:07:57.452Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T06:11:29.574Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-26T06:09:31.615Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

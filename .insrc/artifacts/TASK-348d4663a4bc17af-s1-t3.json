@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dc1f33cd-e52b-4828-90ee-293ec3646056",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.770Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Navigation trail in the board state and the host",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f7a707049c4520b32cab8d6f5aa0cf5c99a7bef7d3a8fadbe7a9dab72526a985",
+        "at": "2026-10-22T12:43:26.770Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.771Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Navigation trail in the board state and the host",
+    "summary": "BoardSelection becomes {trail, density}; BoardState gains entrySeq and restored; reduceBoardState handles 'navigate' intents (set-view reset keeping the attention flag, open-epic and open-item push recording openedId, set-item-tab, back, go-to-crumb, filter intents and show-more on list or epic screens only, cap at 20) and 'set-density'; applySnapshot truncates the trail at the first entry whose epic or item is gone and sets selectionNotice. boardDownMessages(state, labels, now, detailsOf) posts status then one screen message (crumbs, back label, filters, title, restored, focusItemId, body). The host maps up-messages to intents after id checks (an epic id in open-item routes to open-epic), keeps paging in the trail entry, tells the details memory the current item screen's id, posts no details message, and announces screen changes and the selection notice. Kept as one task because the host reads the BoardSelection fields the trail replaces. Validation: board-state.test.ts, details-memory.test.ts and the typecheck.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "set-view from a story screen leaves one root entry for the chosen view with the previous attention flag and an empty search; set-view to the current single root returns the same state.",
+      "open-epic and open-item push an entry with a new, never reused id and record openedId on the entry left; opening the current item again is a no-op; the trail is capped at 20 entries keeping the root.",
+      "back and go-to-crumb restore the earlier entry with its own search, attention flag, paging and openedId, and set restored; out-of-range indexes and back on a root return the same state.",
+      "set-search, set-attention, clear-filters and show-more are ignored on an item screen.",
+      "A refresh that removes the current item truncates the trail to the nearest valid entry and sets selectionNotice to 'What you were viewing is no longer on the board.'",
+      "boardDownMessages posts status then exactly one screen message, or status only when no snapshot is shown or the status is empty; crumbs and back labels follow the LLD rules (Delivery / Epics / <epic> / S001; '← Epics', '← Back to epic', '← Back to <id>').",
+      "The details memory is told the current item screen's id on every kept state and null once the item screen is left (details-memory.test.ts).",
+      "The host ignores and logs open-epic or open-item naming an id that is not on the board, and announces 'Opened: …', 'Epic: …', 'Showing …' and 'Back to …' once each.",
+      "The plugin typechecks."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'set-view from a story screen resets the trail to one root and keeps only the attention flag'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'open-epic and open-item push entries with new ids and record the opener, and the trail is capped at 20 keeping the root'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'back and go-to-crumb restore the earlier entry with its own search, attention and paging'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'filter intents are ignored on an item screen, and a refresh that removes the item truncates the trail with a notice'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'every screen message carries a breadcrumb that follows the trail and a back label naming where Back goes'"
+      },
+      {
+        "level": "integration",
+        "name": "details-memory.test.ts: 'the memory is told null once the item screen is left'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

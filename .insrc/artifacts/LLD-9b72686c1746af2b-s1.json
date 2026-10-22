@@ -24,111 +24,61 @@
     "hldBaseRunId": "wf-1790749192360-iyxm4i",
     "hldEffectiveHash": "a96cc61752b7ac1c4b4fd1ec14ff1f64a9c21321cefb86c6d68feaabd3ea02b3",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "FinalizeResult is a discriminated union at orchestrator.ts:379-381 whose failure arm is {ok:false, failure: ValidationResult}.",
-          "evidence": "Confirmed: orchestrator.ts:379 `export type FinalizeResult =` and (per HLD probe) :381 `| { readonly ok: false; readonly failure: ValidationResult }` — the two-arm union with the failure channel S001 reuses resolves verbatim.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "There are exactly four authored companion validators (validateErDefinition, validateUxDefinition, validateSequenceDefinition, validateComponentDependencyDefinition), one per companion kind.",
-          "evidence": "Confirmed: the grep re-derived exactly the four validators — validateComponentDependencyDefinition (component.ts:81), validateErDefinition (er.ts:102), plus validateUxDefinition (ux.ts:150) and validateSequenceDefinition (sequence.ts:93) — one per authored companion kind (closed union holds).",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderErCompanionForBody currently swallows a HIGH validation finding (log.warn + return undefined) at orchestrator.ts:1521-1525.",
-          "evidence": "Confirmed: the read anchor orchestrator.ts:1521 resolves (found:true) and the `f.severity === 'HIGH'` pattern is the exact threshold the swallow branch uses; renderErCompanionForBody's HIGH -> log.warn -> return undefined block sits at :1521-1525 as claimed.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The companion render helper renderErCompanionForBody is invoked from three finalize call sites (orchestrator.ts:1744, :2095, :2246) plus its single definition.",
-          "evidence": "Confirmed: all three read anchors orchestrator.ts:1744, :2095, :2246 resolve (found:true) as renderErCompanionForBody call sites — the three finalize render blocks the gate must guard.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "synthesize.ts maps a FinalizeResult failure to a retryable error (code=`synthesize-${failure.kind}`, retryable=failure.retryable??true) at synthesize.ts:54-59.",
-          "evidence": "Confirmed verbatim: synthesize.ts:55 `const code = failure.ok ? 'synthesize-unknown' : `synthesize-${failure.kind}`` and :58 `const retryable = failure.ok ? true : (failure.retryable ?? true)` — the FinalizeResult-failure -> retryable-error mapping S001 reuses.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "schemaFailure(message) at orchestrator.ts:482 returns a ValidationResult of {ok:false, kind:'schema', message} (retryable defaults true).",
-          "evidence": "Confirmed verbatim: orchestrator.ts:482 `function schemaFailure(message: string): ValidationResult {` — the schema-kind failure constructor the gate mints from.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The underlying companion renderer throws DiagramGenerationError (message built at render.ts:42), which the *ForBody helpers catch and swallow.",
-          "evidence": "Confirmed: the read anchor companion/render.ts:42 resolves (found:true) — the DiagramGenerationError message construction; the *ForBody helpers catch it as the distinct infra-swallow path.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "An existing test harness drives the private renderDiagramCompanionsForBody seam through a finalizer at diagram-companion-finalize.test.ts.",
-          "evidence": "Confirmed: the read anchor __tests__/diagram-companion-finalize.test.ts:15 resolves (found:true) — the existing harness that drives renderDiagramCompanionsForBody through a finalizer, which the S001 tests extend.",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The companion validators return readonly DimensionFinding[]; DimensionFinding carries a severity field (defined at code-review/types.ts:42).",
-          "evidence": "Confirmed: interface DimensionFinding is declared in src/workflow/code-review/types.ts (carrying the severity field), the type the four validators return as readonly DimensionFinding[].",
-          "action": "accept",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ValidationFailure (synthesizer.ts:49) carries an optional details:string[] and an optional retryable:boolean, so a schema-kind failure can carry the HIGH findings' messages and be retryable.",
-          "evidence": "Confirmed verbatim: synthesizer.ts:49 `export interface ValidationFailure {`, :56 `readonly details?: ReadonlyArray<string>` and :62 `readonly retryable?: boolean` — a schema-kind failure can carry the HIGH messages in details[] and be retryable, exactly as the design relies on.",
-          "action": "accept",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-30T07:29:52.440Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-30T07:30:04.138Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "62f4d0107f76d84e91aaf6f8e95fffbe0838b04eba924e9454a4e6805602e953",
+        "at": "2026-09-30T07:27:33.004Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T07:30:04.138Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-30T07:29:52.440Z",
+        "report": {
+          "entityId": "LLD-9b72686c1746af2b-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-9b72686c1746af2b-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

@@ -22,85 +22,57 @@
     "storyId": "s2",
     "lldRunId": "wf-1785473021567-2ki0qv",
     "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/docgen/extract/__tests__/component-dependency.test.ts contains 9 top-level test() cases (the t5 '9 cases' count).",
-          "evidence": "grep -c '^test(' on component-dependency.test.ts returns exactly 9 — matches the plan's t5 '9 cases' count.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t1's target file src/docgen/extract/component-dependency.ts exists and exports componentKey, buildComponentDependencyIR, makeExtract, componentDependencyRegistration.",
-          "evidence": "component-dependency.ts exports componentKey, buildComponentDependencyIR, makeExtract, componentDependencyRegistration (each 1 match; makeExtract's 2nd match is the parallel type-structure.ts). t1's target file + surface exist as planned.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t2's target file src/docgen/extract/component-graph-reader.ts exists and implements the reader via listEntitiesByKinds + outNeighbors IMPORTS + entityIdsByU64s + listRepos.",
-          "evidence": "component-graph-reader.ts binds componentGraphReader with kindFilter:['IMPORTS'] and listRepos for revision — t2 target exists as planned.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t3's target src/docgen/render/shell.ts documentIRToMermaid dispatches to a flowchart for component-dependency and classDiagram otherwise.",
-          "evidence": "shell.ts contains 'flowchart LR', 'classDiagram', and the 'component-dependency' dispatch — t3's docType dispatch is present.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "t4's claim of 'no new tool/IPC surface' holds: the docgen tool + IPC exist from s1 (docgen_generate tool id and a docgen.generate IPC handler) and enumerate the registry.",
-          "evidence": "DOCGEN_TOOL_ID='docgen_generate' (tool.ts:25) and the docgen.generate (daemon/index.ts:1157) + docgen.list (1165) IPC handlers exist from s1 and use listDocTypes — t4's 'no new tool/IPC surface' premise holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t4 registers component-dependency as the 2nd doc type in src/docgen/index.ts alongside the s1 type-structure registration.",
-          "evidence": "index.ts registers componentDependencyRegistration(componentGraphReader) alongside typeStructureRegistration(graphTypeReader) — component-dependency is the 2nd registered doc type as t4 states.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl7",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency graph (t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4}) is acyclic with order 1..5 a valid topological sort, respecting storyDependsOn=[s1].",
-          "evidence": "Task graph t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4} is acyclic; order 1..5 is a valid topological sort and every task sits after s1 (storyDependsOn respected).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-07-31T05:10:46.673Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-07-31T05:12:32.514Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0ef44f77ecc9f2c52a1c9b1dca5965000ce4a910e3cd9a1b5b1605e19648f5f3",
+        "at": "2026-07-31T05:04:11.454Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T05:12:32.514Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-07-31T05:10:46.673Z",
+        "report": {
+          "entityId": "PLAN-870ed3dd246225f4-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-870ed3dd246225f4-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

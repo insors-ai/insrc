@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-60e20489-55e8-45f2-b668-4a9aeec20d89",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.226Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Wire the halt/progress path live through the build runner registration",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d8f57e73b5fed867ab4a477eea2ae4b1c2a6410fe617489007186ab89a805bcf",
+        "at": "2026-10-22T12:43:16.226Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.227Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the halt/progress path live through the build runner registration",
+    "summary": "Wire s4's halt, finalize-on-halt, and progress handlers into the build runner registered through registerBuildRunners() via the existing registerWorkflowRunners seam in src/workflow/index.ts, mirroring the registerDesignEpicRunners/llmPauseRunner idiom. This is the flip that makes the halt-and-report seam live; rolling back = unregister, which fully reverts to the prior no-build-stage behavior. No new registry mechanism. Author the halt-and-report end-to-end integration suite.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The halt/progress path is reachable only via the build runner registered through registerBuildRunners()/registerWorkflowRunners — no new registry mechanism or parallel runner-registration path (invariants c1/c3).",
+      "With the runner registered, an end-to-end run that gives up on an unrepairable Task halts, starts no dependent Task, finalizes into a ChainReport record, and surfaces the halt frame via WorkflowStepOutputBuild; unregistering fully reverts to prior no-build-stage behavior.",
+      "The testStrategy halt-and-report integration suite is authored, driving the registered build runner + orchestrator drive loop + gates.ts with a stub sc5 TaskImplementerAdapter set to a chosen 'failed' verdict and a temp storage dir, asserting: no dependent Task is started, the incremental per-boundary checkpoint is readable back, and the halted run finalizes into a ChainReport via storage.ts/hash.ts/slug.ts."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "integration (halt-and-report end-to-end, extends executor.test.ts registration/drive path): with the build runner registered via registerBuildRunners()/registerWorkflowRunners, a run that gives up on an unrepairable Task halts, starts no dependent, checkpoints per boundary (read back from temp storage dir), finalizes into a ChainReport via storage.ts/hash.ts/slug.ts, and surfaces the halt frame via WorkflowStepOutputBuild — no new registry mechanism; unregistering reverts to prior behavior (invariants c1/c3)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2889610c-1b1b-4a36-885d-02b660662157",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.240Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Extend offline self-contained smoke test",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b6aa6d93a7b51f1bd2311f5d220110e015aced726fbb015c823286549e3f3a8",
+        "at": "2026-10-22T12:43:55.240Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.240Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend offline self-contained smoke test",
+    "summary": "Extend src/docgen/render/__tests__/shell.test.ts's existing offline assertion to confirm a built-tree sc3 shell inlines the runtime (>1MB), has no `<script src=` / `<link href=`, and carries supportsZoomPan, for both the primary inline backend and the s5 subprocess-fallback backend.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "Smoke test confirms a generated shell from the built tree has no external <script src=/<link href= references and inlines a >1MB runtime with supportsZoomPan true",
+      "The same offline/self-contained assertion passes for both the primary inline renderer path and the s5 subprocess-fallback renderer path"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "built-tree sc3 shell inlines a >1MB runtime with no <script src=/<link href= and carries supportsZoomPan"
+      },
+      {
+        "level": "smoke",
+        "name": "offline self-contained assertion holds for both the primary inline backend and the s5 subprocess-fallback backend"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

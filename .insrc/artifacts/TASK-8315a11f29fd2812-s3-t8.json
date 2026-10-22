@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-39c56fc1-6aea-4ea9-aca3-0df4be594a5b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.464Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Divided-versus-single equivalence and failure through runCodeReview",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3c12964982469fd6bb93d2ce1e5b87931fea47bfa963dda692b432908b0bb90",
+        "at": "2026-10-22T12:43:52.464Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.465Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Divided-versus-single equivalence and failure through runCodeReview",
+    "summary": "Integration tests drive a divided review end to end through runCodeReview with a small limit and scripted answers keyed by stage and callId, and compare it with the same material in one call under a raised limit, on fixtures that fit both ways.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension.",
+      "A caller and callee in different chunks whose contract disagrees are reported at the caller through runCodeReview.",
+      "Two duplicate symbols in different chunks are reported with counterpartRef through runCodeReview.",
+      "A degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence.",
+      "A gather call failing twice fails the review and records nothing (runCodeReview returns ok: false).",
+      "Every call the divided review sends measures within the limit."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a gather call failing twice fails the review and records nothing'"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

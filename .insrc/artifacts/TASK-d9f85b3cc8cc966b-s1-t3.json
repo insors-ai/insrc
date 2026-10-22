@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-434addd3-b65d-4918-9ad8-f98aa97c8e99",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.522Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Companion page shell and runtime loader",
+      "parent": {
+        "entityId": "STORY-d9f85b3cc8cc966b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d9f85b3cc8cc966b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d9f85b3cc8cc966b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d10028146eeeff21d24d3b407378bfff997ae09810eba8eabff14442054ad2f4",
+        "at": "2026-10-22T12:44:44.526Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.526Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Companion page shell and runtime loader",
+    "summary": "Add src/workflow/artifacts/companion/shell.ts with CompanionPageContent / DescriptionBlock / DescriptionCell types and renderCompanionPage(header, page, runtime): Header (project, title, kind badge, table Work item / Source doc link / Date / User), Narrative (context line + optional narrative), View panel (mermaid or html visual + toolbar + pan/zoom init + fit on load; Mermaid inlined only for mermaid visuals), Description tables (all cells escaped; null -> em dash). A runtime loader reads mermaid.min.js and panzoom.js and throws DiagramGenerationError when either is missing.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Output has Header, Narrative, View, Description in order with the four header-table rows.",
+      "Toolbar controls, pan/zoom init and fit-on-load are present for mermaid and html visuals; an html page inlines no Mermaid; no http(s) URL appears.",
+      "All table text is escaped and null cells render as an em dash.",
+      "A missing runtime asset raises DiagramGenerationError."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "shell: section order + header table rows + no external URL"
+      },
+      {
+        "level": "unit",
+        "name": "shell view panel: toolbar controls, pan/zoom init, fit-on-load for mermaid and html visuals; html page has no Mermaid"
+      },
+      {
+        "level": "unit",
+        "name": "shell: escaping of all table text; null cell -> em dash; missing narrative renders only the context line"
+      },
+      {
+        "level": "unit",
+        "name": "shell runtime loader: missing asset -> DiagramGenerationError"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

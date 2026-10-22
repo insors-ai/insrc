@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-331c0eee-20d0-4602-928f-c743aa51e4e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.001Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "The shared match step and the two view-model types",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d75ceff5846a58420f29075b8244660b4975609569435c082ea50d6cafded10",
+        "at": "2026-10-22T12:43:42.001Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.002Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The shared match step and the two view-model types",
+    "summary": "Export the matching inside buildBoardViewModel as selectMatches (MatchedCard: item, epic, stage, card) with buildBoardViewModel built from it and unchanged in output, and declare StageGroupView, EpicGroupView, EpicRollupViewModel, LinkView, IssueEntryView and IssueViewModel in board-protocol.ts in place of unknown.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "selectMatches returns every matching story and issue with a known stage, in snapshot order, with its epic and CardView.",
+      "buildBoardViewModel builds from selectMatches and s2's seven board-model tests pass unchanged.",
+      "EpicRollupViewModel and IssueViewModel match the LLD's interfaces, and the 'epics' and 'issues' down-messages carry them."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'selectMatches returns the board's matches in snapshot order, each with its epic and card'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

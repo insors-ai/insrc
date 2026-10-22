@@ -23,66 +23,62 @@
     "hldBaseRunId": "wf-1789491140629-zj0bd2",
     "hldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts:101-105 storyIdToOrdinal uses /^s(\\d+)$/ (lowercase-only) and throws \"invalid storyId ... (expected s<n>)\" — the exact fix site S001 widens.",
-          "evidence": "id.ts:101 storyIdToOrdinal; :102 `const m = /^s(\\d+)$/.exec(storyId)`; :103 throws \"invalid storyId '${storyId}' (expected s<n>)\" — the exact fix site + message the LLD widens/preserves.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts's storyWorkflowId (:129) calls storyIdToOrdinal, so widening it makes the mint path case-total; toCanonical (:152) pads via padOrdinal (:93); parseWorkflowId (:177) reverses it.",
-          "evidence": "id.ts exports storyWorkflowId, toCanonical, parseWorkflowId (3/3); storyWorkflowId funnels through storyIdToOrdinal so the widening is case-total by construction.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts:107 ordinalToStoryId returns lowercase `s${ordinal}` and is consumed by tracker/resolve.ts to reconstruct a storyId — which is why S001 must NOT change its output.",
-          "evidence": "id.ts:107 ordinalToStoryId returns lowercase s${ordinal}; tracker/resolve.ts:260 `ordinalToStoryId(wfid.story)` reconstructs the storyId — confirming the LLD's decision to leave ordinalToStoryId unchanged (fix on the input side only).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Neither WorkItemIdentity nor deriveWorkItemIdentity exists in src/ yet — S001 introduces them as new surface.",
-          "evidence": "grep for WorkItemIdentity / deriveWorkItemIdentity in id.ts returns 0 — both are genuinely new surface S001 introduces, as the contract states.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/__tests__/id-resolve.test.ts exists and exercises the id converters (the file S001's tests extend).",
-          "evidence": "src/workflow/__tests__/id-resolve.test.ts exists with 19 references to the id converters — the real file S001's case-equivalence/no-regression/round-trip assertions extend.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-15T17:55:43.837Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-15T18:44:11.462Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "00d106a21c0a75ba77ea817891350fcb43cd22cd751c40b36e6502da4fe0e042",
+        "at": "2026-09-15T17:54:46.190Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-15T18:44:11.462Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-15T17:55:43.837Z",
+        "report": {
+          "entityId": "LLD-599a9b506f22b896-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-599a9b506f22b896-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

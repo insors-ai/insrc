@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-1102dc7125ad0c07-S001 -->
+<!-- insrc:artifact TESTS-1102dc7125ad0c07-s1 -->
 
 # Tests: 1102dc7125ad0c07 S001
 

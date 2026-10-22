@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-75052345-9a91-4192-9909-6c876b78fbde",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.013Z",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Enrich the BUILD record with a change summary and build-cycle feedback",
+      "parent": {
+        "entityId": "EPIC-9b72686c1746af2b",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "779687ddea9f4597782a17c1c73030665d42050faf5531d794a748f7c9cc4d25",
+        "at": "2026-10-22T12:43:07.013Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

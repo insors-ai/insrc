@@ -22,75 +22,57 @@
     "storyId": "s4",
     "lldRunId": "wf-1785754381044-msgah1",
     "lldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pv1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The template conventions.ts (and adherence.ts) exist with the schema/prompt/judge seams t1 mirrors: CONVENTIONS_FINDINGS_SCHEMA, buildConventionsPrompt, judgeConventions.",
-          "evidence": "conventions.ts:53 CONVENTIONS_FINDINGS_SCHEMA, :105 buildConventionsPrompt, :148 judgeConventions all exist — the template t1 mirrors is real.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pv2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "coverage's two inputs exist on the consumed contracts: sc2 ChangedSymbolSummary.testsReaching (types.ts) and sc1 approvedPlan whose PlanTask carries tests (plan.ts); sc1 buildRecord is nullable (StandaloneBuildRecord|null).",
-          "evidence": "types.ts has testsReaching: readonly string[] and buildRecord on CodeReviewSubject; plan.ts declares `readonly tests: readonly TaskTestRef[]` on PlanTask. coverage's two inputs (testsReaching + approvedPlan.body.tasks[].tests) plus the nullable buildRecord exist on the consumed contracts.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pv3",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "src/agent/providers/structured-output.ts exports validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) which throws after the cap — the helpers t1 reuses with the positional maxAttempts.",
-          "evidence": "structured-output.ts:80 validateAgainstSchema and :182 withStructuredRetry (throws after the cap) — the helpers t1 reuses with positional maxAttempts.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pv4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "No src/workflow/code-review/dimensions/coverage.ts exists yet — t1 creates it (purely additive; no judgeCoverage in src/).",
-          "evidence": "judgeCoverage / COVERAGE_FINDINGS_SCHEMA appear only in the design docs, not in any src/ file — coverage.ts does not exist yet, so t1 is purely additive.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pv5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The fake-provider test harness t2 mirrors exists in conventions.test.ts (`as unknown as LLMProvider`, node:test + node:assert/strict).",
-          "evidence": "conventions.test.ts (src/) uses `as unknown as LLMProvider` and node:test is the repo-wide convention — the fake-provider harness t2 mirrors exists.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pv6",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Task ordering is acyclic and topological (t1 order 1 no deps → t2 order 2 dependsOn t1); storyDependsOn s1 is satisfied on disk (ReviewDimension incl. 'coverage' + PlanTask.tests shipped).",
-          "evidence": "types.ts:33 ReviewDimension includes 'coverage' and PlanTask exists (plan.ts) — storyDependsOn s1 is satisfied; t1 (order 1, no deps) → t2 (order 2, dependsOn t1) is acyclic and topological.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-03T11:41:25.013Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-04T06:11:09.915Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9b2544331928cbfe7ce31572da16454826a736bc3138b7d048f7d81008a0bd14",
+        "at": "2026-08-03T11:40:32.371Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T06:11:09.915Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-03T11:41:25.013Z",
+        "report": {
+          "entityId": "PLAN-761a43a6fa645815-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-761a43a6fa645815-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

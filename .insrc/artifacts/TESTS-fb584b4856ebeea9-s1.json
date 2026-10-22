@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "fb584b4856ebeea9",
+    "storyId": "s1",
+    "createdAt": "2026-10-14T05:16:50.783Z",
+    "updatedAt": "2026-10-14T05:34:22.640Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-14T04:21:03.437Z",
+    "epicSlug": "label-failed-last-index-rejected-ollama",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "3bc0f7fca4890ad330121e9d33fa3a98e870dcbbb8b279b3e0da6e03d693d26c",
+        "at": "2026-10-14T05:16:50.783Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "c9bc3b37",
+        "ranAt": "2026-10-14T05:34:22.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/ollama-model-call-failure.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5545,
+            "titles": [
+              {
+                "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider: a cancelled call (AbortError) reaches the caller as it was raised, on the call and during iteration, and is not taken for a failed model call",
+                "result": "pass"
+              },
+              {
+                "title": "retry helper: a cancelled attempt (AbortError) ends the helper at once and is re-thrown as it was raised, not retried and not reported as a failure of shape",
+                "result": "pass"
+              },
+              {
+                "title": "OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found), a 408 or 429 (not reached in time) and a 5xx stay failed model calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

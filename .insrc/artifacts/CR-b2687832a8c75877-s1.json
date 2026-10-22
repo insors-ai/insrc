@@ -12,7 +12,27 @@
     "storyId": "s1",
     "reviewedBy": "daemon",
     "epicSlug": "defect-against-epic-e2-6a131558-vs",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "0948daf3563a894b03d0194d7723fa07c5b624640f7a380a899e3b131f87b83e",
+        "at": "2026-10-09T17:34:46.431Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

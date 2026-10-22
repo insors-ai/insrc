@@ -6,8 +6,36 @@
     "createdAt": "2026-10-07T09:45:04.271Z",
     "updatedAt": "2026-10-08T10:09:35.990Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T10:09:36.640Z",
-    "epicSlug": "e1-delivery-read-model-daemon-from"
+    "epicSlug": "e1-delivery-read-model-daemon-from",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0c6257d7a13f37915672603be20796c4322580be80cc5ba9b2ce25d3c626e966",
+        "at": "2026-10-07T09:45:04.271Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T10:09:36.640Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

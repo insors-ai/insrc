@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fd14113-12ac-4c84-9522-00ad8ccd8124",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.525Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Add the degraded state marker + assembleDiffGrounding dep seam",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b1d2019f9296c60fe24675f1aefe261a18dfcc9caa9434cda79b1539b37eae8",
+        "at": "2026-10-22T12:43:45.525Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.526Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the degraded state marker + assembleDiffGrounding dep seam",
+    "summary": "Add optional groundingMode?: 'degraded' to CodeReviewStepStatePayload (src/mcp/code-review-step/types.ts) so the judgements turn knows to drive runCodeReview with the degraded+cap options, and add assembleDiffGrounding: typeof assembleDiffCodeReviewGrounding to CodeReviewStepDeps (src/mcp/code-review-step/handler.ts) with a real default wired into DEFAULT_DEPS. Both additive; the existing subject + optional grounding fields + s9 seams unchanged.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "CodeReviewStepStatePayload carries optional groundingMode?: 'degraded'",
+      "CodeReviewStepDeps carries assembleDiffGrounding wired to the real assembleDiffCodeReviewGrounding in DEFAULT_DEPS",
+      "the s9 seams (resolveSubject/fetchGrounding/fetchFreshness/runReview/write/sleep/now/freshnessTimeoutMs) are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "state/deps: a saved CodeReviewStepStatePayload with groundingMode:'degraded' round-trips through saveState/loadState, and DEFAULT_DEPS.assembleDiffGrounding is the real assembler"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

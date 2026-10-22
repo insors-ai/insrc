@@ -28,224 +28,61 @@
       "AMD-6a1315585c38c41c-2"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The LLD designs all five S005 acceptance criteria (narrow-pane stage-grouped list, keyboard reach with focus return, single announcements of selection and refresh, density without hiding, the 1,000-record/500-item timing) and builds no non-goal.",
-          "evidence": "DEF.md:184-188 lists ac1–ac5 for S005, and HLD.md:368 scopes s5 to 'narrow-pane layout…, keyboard navigation and focus return, live-region announcements…, density styles, and the 500-item performance fixture'. LLD §2.1–2.3 covers each one, and the acceptance mapping in §6 names a test per ac. The LLD writes nothing to disk or workspace state (§3.1), which matches k3/FR-09. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today the document has no stylesheet, #status carries role=status with aria-live, cards have no tabindex, and nothing in the plugin calls getState/setState or sets retainContextWhenHidden.",
-          "evidence": "board-host.ts:195 `<p id=\"status\" role=\"status\" aria-live=\"polite\">`. There is no <style> in renderBoardDocument (188-213). renderCard (97-102) sets only data-item-id, aria-label and a click listener. A grep for getState|setState|retainContextWhenHidden in vscode-plugin/src finds only comments. extension.ts:615 creates the panel with `{ enableScripts: true }` only. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/extension.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The CSP is already `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-…'`, so an inline <style> needs no widening.",
-          "evidence": "board-host.ts:189 `const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`` [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "close-details already posts a null details model, and select-item already rejects ids that are not on the board (onBoard), so the script can key focus return on a null details message.",
-          "evidence": "board-host.ts:371-381: select-item checks `!onBoard(msg.itemId)` and warns; close-details runs `select({...sel, selectedItemId: null}); channel?.postMessage({ ... type: 'details', model: null })`. apply() posts a details message only while an item is selected (detailsMessage 235-240). [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The 'announce' down-message and 'set-density' up-message are already declared in sc3 and parsed, and 'announce' is unsent today.",
-          "evidence": "board-protocol.ts:191 `| { readonly type: 'announce'; readonly text: string }`; 208 is the set-density variant; parseBoardUpMessage 245-246 parses set-density. board-host.ts:382 handles set-density by mirroring into selection.density. There is no 'announce' post anywhere in board-host.ts. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The refresh announcement reuses placeableCount and attentionCount from board-model.ts as 'N = the snapshot's placeable count and M = the attention count'.",
-          "evidence": "board-model.ts:199 `placeableCount(snapshot: DeliverySnapshot)` counts the whole snapshot whatever the selection. board-model.ts:228 `attentionCount(matches: readonly MatchedCard[])` takes the selection's matches, not a snapshot. So M depends on the selection's filters while N does not. 'Board refreshed: N items, M needing attention' then mixes an unfiltered total with a filtered count, and it disagrees with the totals line the board renders (`totals: { items, needsAttention }` from the filtered matches, 248-251). [files: vscode-plugin/src/delivery/board-model.ts]",
-          "action": "State one basis for both numbers. Either use the shown view model's totals (filtered, as on screen) or compute M as snapshot.items.filter(isPlaceable).filter(i=>i.needsAttention). Name the function used.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Restoring focus to 'the card whose data-item-id is the remembered item' identifies a card unambiguously.",
-          "evidence": "data-item-id is also set on non-card elements: the issue <section> (board-host.ts:123 `sec.setAttribute('data-item-id',e.card.itemId)`), link buttons (111), the details <aside> itself (149) and task rows (157). A lookup by attribute alone can therefore match the issue section or the details aside before the li.card. The LLD's postconditions do not restrict the lookup to elements with class 'card'. [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "Specify the lookup as the li.card element (class 'card') with that data-item-id, inside #board.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The test harness extension named in §6 (focus(), document.activeElement, getState/setState) is enough to drive the new script.",
-          "evidence": "The fake DOM (board-host.test.ts:224-252) has no document.body, no querySelector/querySelectorAll, no keydown event object (listeners are `() => void` with no event), and acquireVsCodeApi returns only postMessage. The script as designed needs body[data-density] (2.1/2.2), key handlers that read e.key and preventDefault, and a way to find the next or previous card and the card by data-item-id. The harness inventory in §6 leaves these out. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts]",
-          "action": "Add to the fixture list: document.body, listener events carrying key, and either a tree query or querySelector over the fake tree.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The density lives only in webview state, with a missing or invalid value (including a getState throw) falling back to 'comfortable', and BoardSelection.density already exists with default 'comfortable'.",
-          "evidence": "board-state.ts:49 `readonly density: Density;` and :73 `density: 'comfortable'` in INITIAL_SELECTION. LLD §5 handles absent, invalid and throwing getState. Nothing is persisted to disk, so there are no older records to migrate. [files: vscode-plugin/src/delivery/board-state.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s5 changes no sc3 variant or field and does not amend an s1-owned contract. Its edits to renderBoardDocument and the script are within the HLD's s5 scope.",
-          "evidence": "HLD.md:152 and :165 already declare 'announce' and 'set-density'. HLD.md:368 gives s5 the layout, keyboard, live region, density and fixture. The LLD rejects a2 precisely because it would amend StatusView (s1). Removing aria-live from #status is the only s1-authored markup change, and it serves s5's ac3 without changing the protocol. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md, vscode-plugin/src/delivery/board-protocol.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "If posting the announce throws, 'a throw is caught by the existing handle catch or by the refresh catch and logged through error(), and the board state stays as it was kept'.",
-          "evidence": "The refresh catch (board-host.ts:306-320) does not just log. When anything inside `dispatch({type:'snapshot-arrived',...})` throws, it dispatches a second 'snapshot-arrived' with `{ ok:false, failure:{kind:'read-failed', message} }`, which turns a board that rendered into a failed refresh. If the announce is posted inside that try (for example inside apply/dispatch), a post throw yields a 'The refresh failed' status rather than 'board stays as kept'. Also, webviewChannel.postMessage (chat/webview-channel.ts:31-35) already swallows rejections, so the throw path is mostly hypothetical, and the stated handling does not match the code. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/chat/webview-channel.ts]",
-          "action": "Post the refresh announce after the `applied` try block (as logUnknownStages is), in its own try that only logs. Restate the error path accordingly.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An announcement is skipped when the selected item is missing from the shown snapshot, and superseded or closed-panel answers post nothing.",
-          "evidence": "board-host.ts:294 returns when `gen !== generation || channel === undefined`, and 296-300 returns on `seq !== state.latestSeq` before dispatching. onBoard (347-350) rejects unknown ids before select, so the 'missing item' case is reachable only defensively, as the LLD says. [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "ac5 is proven by board-perf.test.ts, which measures the first render within 1 s and each filter change within 150 ms 'through the real host and script'.",
-          "evidence": "The only script harness is the fake DOM in board-host.test.ts:224-252 (makeEl records children; it has no layout or paint). A timing through it measures view-model building plus fake-node creation, not a webview render 'on the reference environment' (DEF.md:188, HLD.md:372). The vscode-plugin test script `tsx --test 'src/**/__tests__/*.test.ts'` (package.json:775) will also pick up board-perf.test.ts, so a hard wall-clock assertion runs in every suite run and can be flaky on a loaded machine. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/package.json, docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
-          "action": "State what the test measures (host derive plus fake-DOM build) and record that the real-webview render on the reference environment is a manual measurement. Alternatively, gate the timing assertion behind an env var and only report timings in the default run.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every other acceptance criterion maps to a named test, and the fixture helpers it extends exist.",
-          "evidence": "§6 maps ac1–ac4 to named board-host.test.ts tests. board-fixtures.ts exports item (13), snapshot (24, which sets recordCount from the item count, so the large fixture must override recordCount to 1000 as §3.3 says) and evidence (33). [files: vscode-plugin/src/delivery/__tests__/board-fixtures.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 5,
-        "low": 9,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-09T12:11:49.075Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "new-versus-reuse.2": {
-        "findingId": "new-versus-reuse.2",
-        "status": "resolved",
-        "note": "Applied. Both refresh-announcement counts now use one basis, the whole applied snapshot: N = placeableCount(snapshot) and M = the placeable items with needsAttention. They are deliberately independent of the filters that the on-screen totals reflect (createDeliveryBoardHost postcondition 2).",
-        "resolvedAt": "2026-10-09T12:14:17.448Z"
-      },
-      "change-sites.1": {
-        "findingId": "change-sites.1",
-        "status": "resolved",
-        "note": "Applied. Focus return now looks up the li.card inside #board with that data-item-id. The postcondition names the other data-item-id carriers it must skip (issue sections, link buttons, the details pane, task rows). Arrow navigation uses #board.querySelectorAll('li.card').",
-        "resolvedAt": "2026-10-09T12:14:17.449Z"
-      },
-      "change-sites.2": {
-        "findingId": "change-sites.2",
-        "status": "resolved",
-        "note": "Applied. The harness fixtures now list document.body, document.activeElement, focus(), listener events carrying key and preventDefault, querySelectorAll over the fake tree for 'li.card', and getState/setState on acquireVsCodeApi.",
-        "resolvedAt": "2026-10-09T12:14:17.450Z"
-      },
-      "error-paths.1": {
-        "findingId": "error-paths.1",
-        "status": "resolved",
-        "note": "Applied. The refresh announce is posted after the refresh's apply try block, in its own try that only logs, as logUnknownStages is, so a post failure cannot turn a rendered board into a failed refresh. The selection announce is posted after apply() keeps the state, so the onMessage catch only logs. The error case notes that webviewChannel.postMessage already swallows rejections.",
-        "resolvedAt": "2026-10-09T12:14:17.451Z"
-      },
-      "tests.1": {
-        "findingId": "tests.1",
-        "status": "resolved",
-        "note": "Applied. The timing test is now stated to measure the host's derive and post plus the script's DOM build on the fake DOM, best of three, with timings always reported. The default run asserts a 5x regression tripwire, and INSRC_PERF=1 asserts the exact 1 s / 150 ms targets. The real-webview render on the reference environment is mapped to ac5 as a separate manual measurement, recorded in the BUILD record.",
-        "resolvedAt": "2026-10-09T12:14:17.451Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
       }
     },
-    "approvedAt": "2026-10-09T12:19:40.389Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1e4920d5a6805867811efc3a4bc7bbc9a6aedb50b8eecca51e45dc1b79ae63f6",
+        "at": "2026-10-09T12:11:36.310Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T12:19:40.389Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 5,
+          "low": 9
+        },
+        "at": "2026-10-09T12:11:49.075Z",
+        "report": {
+          "entityId": "LLD-6a1315585c38c41c-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-6a1315585c38c41c-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

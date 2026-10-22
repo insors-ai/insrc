@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-7703d6c9-78a1-42f8-ac24-1a6298368da1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.861Z",
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1cd9a4c34f403a80",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Drive the breakdown through the standard multi-turn workflow interface",
+      "parent": {
+        "entityId": "EPIC-1cd9a4c34f403a80",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cad418444377f667ec516e2053b1da82482d3fd04cefcdeeda8ba9e87f8ad8d",
+        "at": "2026-10-22T12:43:06.861Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

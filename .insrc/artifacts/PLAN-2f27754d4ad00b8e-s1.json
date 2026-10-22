@@ -24,8 +24,35 @@
     "lldRunId": "wf-1792484795172-0f6wsn",
     "lldEffectiveHash": "f394b8a52456c76bea10d9abdb2c66904a290aaa31eb9596dac1fd6f110cec06",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-20T09:03:33.114Z",
-    "rangeBase": "b56b39e949957906b135e8b288405c5fbb6edd01"
+    "rangeBase": "b56b39e949957906b135e8b288405c5fbb6edd01",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d60b2dbc0a13c1b6222ddb2d7038f0ba09f7c6d817b366760b13da0454776f02",
+        "at": "2026-10-20T08:59:12.739Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T09:03:33.114Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -643,7 +670,7 @@
         ]
       },
       {
-        "lldStrategyItem": "storage.ts id functions and the gates.ts lookups over a temporary repository with lowercase-story artifacts and over a copy of .insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json to assert the documented failure",
+        "lldStrategyItem": "storage.ts id functions and the gates.ts lookups over a temporary repository with lowercase-story artifacts and over a copy of .insrc/artifacts/LLD-b94cf2c9058fd82a-s1.json to assert the documented failure",
         "coveredByTaskIds": [
           "t2"
         ]

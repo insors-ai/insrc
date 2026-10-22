@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bcce251a-a8a1-4dbb-83cf-4f6e64a1af04",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.056Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Item gates: task validation, conflict, attention and notices",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ae9082378db5c79f26187f44887fcaa38fb42ea68b6b2928575ab5517774cd1d",
+        "at": "2026-10-22T12:43:24.056Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.056Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Item gates: task validation, conflict, attention and notices",
+    "summary": "Layer 2 of deriveGates: one ItemGates per epic, story and issue. Task validation per task child (planned by ordinal against plannedTaskIds, result failed > passed > unrecorded over the story's BUILD body.tasks, through private null-returning ordinal wrappers, ignoring malformed or unparseable entries); the story-level result; the conflict when a BUILD is approved and any result failed; attentionReasons over the evidence minus superseded pending records (chains SPEC<DEF<HLD on an epic, SPEC<LLD<PLAN<BUILD on a story; ISSUE, EXT and AMD never superseded; a CR never raises pending-decision); attentionRule naming the excluded records; unplanned-task and validation-conflict notices sorted with sortNotices. gate.ts never imports stage.ts; the ac2/ac5 tests import deriveStages test-only to assert the stage is unchanged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "An approved BUILD with a failed task carries the conflict, validation-failed and validation-conflict, and a validation-conflict notice; its approval stays approved and deriveStages (test-only) still reads complete.",
+      "The BUILD-0855311b6b32eb72-s1 shape gives storyLevelResult failed, no task items and a story-level conflict.",
+      "A planned task with no result is unrecorded; a build task with no planned task keeps its result, is unplanned and raises an unplanned-task notice.",
+      "A pending LLD under an approved PLAN, a pending DEF under an approved HLD and a pending SPEC on a story with an approved LLD raise no attention reason, even with a blocked review, and attentionRule names them; pending ISSUE, EXT and AMD still raise pending-decision.",
+      "Every epic, story and issue gets exactly one ItemGates, deterministically, and the pass never throws.",
+      "gate.ts has no import of stage.ts."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a planned task with no recorded result is unrecorded and counted as neither passed nor failed'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a build task with no planned task keeps its result and is marked unplanned'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'every epic, story and issue in the real-shape fixtures gets item gates, deterministically'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

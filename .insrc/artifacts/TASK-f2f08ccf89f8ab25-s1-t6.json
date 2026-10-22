@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-68dd3643-1334-428e-a0f1-145fd1a71bae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:55.489Z",
+    "epicCreatedAt": "2026-10-05T06:10:31.833Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f2f08ccf89f8ab25",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Template review in the controller review tool",
+      "parent": {
+        "entityId": "STORY-f2f08ccf89f8ab25-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f2f08ccf89f8ab25-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f2f08ccf89f8ab25-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f2f08ccf89f8ab25-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f4ff8c6ee1af76c79c44ea5b9aa9d153184cd9d659282da11fe475dccb93cfc6",
+        "at": "2026-10-22T12:44:55.493Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:55.494Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Template review in the controller review tool",
+    "summary": "For a design stage, insrc_review_step's start returns the template prompt with next emit_findings, and a new findings phase validates the answer with the same code as the session path and stamps the review. Add the phase to every place the phase list is declared: the tool registration and input validation, the phase type, the dispatch, and the test that pins the list. Other stages keep start, claims, verdicts.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "On a design, start returns emit_findings and the findings phase stamps the review",
+      "An answer the session path's validation rejects is rejected by the findings phase with the same errors, and nothing is stamped",
+      "On a DEF, start still returns the extract prompt and the claims and verdicts phases work as before",
+      "The registered tool accepts phase `findings` and its phase list names it"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T13 start and findings on a design; start, claims and verdicts on a DEF; the registered tool accepts phase findings"
+      },
+      {
+        "level": "unit",
+        "name": "the schema-registry test lists findings among the review tool's phases"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

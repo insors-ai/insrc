@@ -10,7 +10,6 @@
     "schemaVersion": 1,
     "epicHash": "185807ba9a6b35d3",
     "epicSlug": "add-build-workflow-insrc-5th-stage",
-    "approvedAt": "2026-07-17T12:28:30.471Z",
     "tracker": {
       "adapter": "github",
       "epicRef": "insors-ai/insrc#1",
@@ -22,6 +21,35 @@
         "insrc:in-progress",
         "insrc:blocked"
       ]
+    },
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0d32ddd95b6c6474519e35caf206673b4c731258bc0121a244964acb3d2b2d69",
+        "at": "2026-07-17T12:13:38.442Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-17T12:28:30.471Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

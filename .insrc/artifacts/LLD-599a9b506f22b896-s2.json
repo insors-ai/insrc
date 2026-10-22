@@ -23,138 +23,65 @@
     "hldBaseRunId": "wf-1789491140629-zj0bd2",
     "hldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "storage.ts defines exactly 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend), each returning { md, json }.",
-          "evidence": "grep over src/ (excl. tests) finds exactly 9 helper definitions in storage.ts:201-345 — stub/define/spec/hld/lld/plan/build/codeReview/extend — matching the LLD's inventory of 9 *ArtifactPaths.",
-          "action": "None — inventory is accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "storage.ts declares the six flat per-type docs dirs (DEFINES_DIR/DESIGNS_DIR/PLANS_DIR/BUILDS_DIR/SPECS_DIR/REVIEWS_DIR) plus STUB_DIR and ARTIFACTS_DIR, and a DOCS_ARTIFACT_DIRS list.",
-          "evidence": "storage.ts:50-69 declares ARTIFACTS_DIR, the six flat docs dirs (DEFINES/DESIGNS/PLANS/BUILDS/REVIEWS/SPECS_DIR), STUB_DIR, and DOCS_ARTIFACT_DIRS = [DEFINES,DESIGNS,PLANS,BUILDS,SPECS,REVIEWS] — exactly as the LLD states.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "storage.ts defines the *MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel) and plan/buildFilenamePrefix used by md-side finders.",
-          "evidence": "storage.ts:365-370 defines the six *MdRel builders (define/hld/lld/plan/build/spec); planFilenamePrefix:292 + buildFilenamePrefix:317 confirmed. (amendmentFilenamePrefix:389 + lldFilenamePrefix:394 also exist but serve the JSON store, correctly excluded from the md-side retirement.)",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "gates.ts contains the docs-md finders cited: readdirSync scans (~:133 and ~:593), a basename.startsWith('BUILD-') match (~:650), and two DOCS_ARTIFACT_DIRS sweeps (~:789/:810).",
-          "evidence": "gates.ts confirmed verbatim: readdirSync at :133 and :593, basename(jsonPath).startsWith('BUILD-') at :650, [...DOCS_ARTIFACT_DIRS, STUB_DIR] sweep at :789, DOCS_ARTIFACT_DIRS sweep at :810. Every cited line resolves exactly.",
-          "action": "None — citations exact.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The JSON-store scanners that must NOT be re-pointed exist: amendments/store.ts + amendments/staleness.ts (amendmentFilenamePrefix over the .insrc/artifacts amendments root), questions.ts (~:523 lldFilenamePrefix over ARTIFACTS_DIR), tracker/resolve.ts (~:114 reads the .insrc/artifacts JSON dir).",
-          "evidence": "JSON-store scanners confirmed: amendmentFilenamePrefix used at amendments/store.ts:66/197; questions.ts:523 iterates readdirSync(artifactsDir); tracker/resolve.ts:114 returns readdirSync(dir) over the .insrc/artifacts dir. All are the out-of-scope hash-flat scanners the LLD says to leave untouched.",
-          "action": "None — accurate; correctly excluded.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc1 shipped in id.ts: deriveWorkItemIdentity(epicHash, createdAtISO, storyId?) is exported and storyIdToOrdinal accepts both s<n> and S<n> (regex /^[sS](\\d+)$/).",
-          "evidence": "id.ts:202 exports deriveWorkItemIdentity; storyIdToOrdinal:119 uses /^[sS](\\d+)$/ (read confirmed in id.ts). sc1 is available as consumed.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The cli/daemon docs-md finder sites cited exist: cli/services/workflow.ts (~:122), cli/services/debug.ts (~:481), and daemon/backup.ts (~:103) recursive whole-tree walk.",
-          "evidence": "The LLD's 'docs-md finders (read side) in gates.ts + cli' entry (and migration step 4) lists cli/services/workflow.ts:122 and cli/services/debug.ts:481 as docs-md finders to replace with sc2.listWorkItems/listArtifactMdPaths. Direct verification refutes both: workflow.ts has exactly ONE readdirSync (:122) and it scans join(repoPath, ARTIFACTS_DIR) — the hash-flat .insrc/artifacts JSON store (listEpics over DEF_RE), which the LLD's OWN c2 invariant says must stay byte-unchanged; debug.ts has exactly ONE readdirSync (:481) and it lists rotated *.log segment files, unrelated to artifacts entirely. Only gates.ts is a genuine docs-md finder. Following the LLD literally would re-point an out-of-scope JSON-store scanner (a correctness regression contradicting its own invariant) and touch an unrelated log lister.",
-          "action": "Scope the read-side (listWorkItems/listArtifactMdPaths) cutover to gates.ts ONLY. Drop cli/services/workflow.ts:122 and cli/services/debug.ts:481 from the docs-md finder set; confirm workflow.ts:122 (listEpics over ARTIFACTS_DIR) stays in the untouched JSON-store scanner set, and remove debug.ts entirely from this story's read-side scope. (workflow.ts remains a legitimate WRITE-side *ArtifactPaths caller per cl8 — that classification is unaffected.)",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The two cli sites are misclassified: :122 is a JSON-store scanner (out of scope, must stay unchanged) and :481 is a log-segment lister (unrelated). Restrict the read-side finder cutover to gates.ts so the build does not touch the hash-flat store or an unrelated log path.",
-            "artifactEdits": [
-              {
-                "find": "gates.ts readdir loops (:133, :593), the basename.startsWith('BUILD-') match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789, :810) are replaced by sc2.listWorkItems/listArtifactMdPaths; cli/services/workflow.ts:122 + cli/services/debug.ts:481 docs listings likewise.",
-                "replace": "gates.ts readdir loops (:133, :593), the basename.startsWith('BUILD-') match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789, :810) are replaced by sc2.listWorkItems/listArtifactMdPaths. gates.ts is the ONLY genuine docs-md finder: cli/services/workflow.ts:122 scans ARTIFACTS_DIR (the hash-flat JSON store — an out-of-scope scanner that stays unchanged), and cli/services/debug.ts:481 lists rotated log segments (unrelated), so neither is re-pointed."
-              },
-              {
-                "find": "Replace the docs-md finders with the resolver's listing API: gates.ts readdir loops (:133/:593), the BUILD- prefix match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789/:810) call listWorkItems/listArtifactMdPaths; cli/services/workflow.ts:122 + debug.ts:481 likewise.",
-                "replace": "Replace the docs-md finders with the resolver's listing API: gates.ts readdir loops (:133/:593), the BUILD- prefix match (:650), and the two DOCS_ARTIFACT_DIRS sweeps (:789/:810) call listWorkItems/listArtifactMdPaths. gates.ts is the only docs-md finder; cli/services/workflow.ts:122 (scans ARTIFACTS_DIR, the JSON store) and debug.ts:481 (log-segment lister) are NOT re-pointed."
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "cl8",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are 14 non-test modules calling the *ArtifactPaths helpers (the write-side caller inventory to re-point): orchestrator, tracker/link, code-review/runner, code-review/gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow.",
-          "evidence": "grep for *ArtifactPaths( callers in src/ (excl. tests + storage.ts) returns exactly 14 distinct modules, matching the LLD's list one-for-one (orchestrator, tracker/link, code-review/runner, code-review/gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow).",
-          "action": "None — count and members exact.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The { json } side of the *ArtifactPaths helpers keys off ARTIFACTS_DIR by hash artifactId (join(repoPath, ARTIFACTS_DIR, `${...ArtifactId(...)}.json`)) — the hash-flat store that stays untouched.",
-          "evidence": "storage.ts helpers build the json side as join(repoPath, ARTIFACTS_DIR, `${...ArtifactId(...)}.json`) keyed by hash id; ARTIFACTS_DIR='.insrc/artifacts' (:50). The md/json split the LLD preserves is real.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "fileSeg is a real helper in storage.ts used to sanitize the slug/hash into the folder/filename segment.",
-          "evidence": "storage.ts:152 defines function fileSeg(s: string): string — the sanitizer the LLD's returns-clause references for the folder/filename segment.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl11",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The story-scoped artifact kinds are exactly {LLD,PLAN,BUILD,CR,EXT} and the item-root kinds exactly {SPEC,DEF,HLD}; together these 8 are the complete ArtifactKind set the storage helpers cover.",
-          "evidence": "The 9 helpers map to the 8 ArtifactKinds {SPEC,DEF,HLD,LLD,PLAN,BUILD,CR,EXT} (define/spec/hld/lld/plan/build/codeReview/extend) plus stub; the story-scoped {LLD,PLAN,BUILD,CR,EXT} vs item-root {SPEC,DEF,HLD} partition is consistent with the per-story vs per-epic filename shapes in storage.ts (storyId param present on lld/plan/build/codeReview/extend, absent on define/hld/spec).",
-          "action": "None — the closed-union partition is consistent with the helper signatures.",
-          "fixability": "auto"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "31d84c7f6838656018b291379243233f09c908e76d1b01652ffa01d4a73bd2a9",
+        "at": "2026-09-16T05:16:18.745Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
         }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 10
       },
-      "reviewedAt": "2026-09-16T05:19:27.557Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-16T05:52:50.103Z",
-    "reviewOverride": {
-      "reason": "true",
-      "at": "2026-09-16T05:52:50.103Z"
-    },
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-16T05:52:50.103Z",
+        "override": {
+          "reason": "true"
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 10
+        },
+        "at": "2026-09-16T05:19:27.557Z",
+        "report": {
+          "entityId": "LLD-599a9b506f22b896-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-599a9b506f22b896-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

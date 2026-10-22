@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-43762cd2-1a7a-43aa-acce-e220f5acf574",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.765Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the VS-Code-free ConfigSyncEngine core (createConfigSyncEngine)",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "88f71339e1c087f4070c340d4a6ffb5b169e0cf94c10740105a837c2c2f35c27",
+        "at": "2026-10-22T12:43:28.765Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.766Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the VS-Code-free ConfigSyncEngine core (createConfigSyncEngine)",
+    "summary": "Add createConfigSyncEngine(deps) mirroring the S002 createDaemonLifecycleController pattern, over injected ConfigGateway + SettingsStore + Notifier + the t3 ConfigKeyMap. pullFromDaemon: read ConfigGateway.catalog() values -> write each into SettingsStore under its native key (ConfigOption.default for omitted paths), capture lastSyncedSnapshot, never throw (catch + Notifier on catalog reject). applyChanges: for each ChangedKey map native key->catalog path, pre-flight-validate against the ConfigOption (type + enumValues), writeKey on success; on validation failure or {ok:false}/reject report a rejected write via Notifier without advancing the snapshot; idempotent no-op when the value equals the snapshot. Implements only pull+validate+write (no revert-loop/Refresh UX — that is s3).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "createConfigSyncEngine returns { pullFromDaemon, applyChanges } and imports no 'vscode'",
+      "pullFromDaemon maps catalog values (default for omitted) into the SettingsStore and captures the last-synced snapshot; a catalog() rejection writes nothing and surfaces via Notifier without throwing",
+      "applyChanges writes exactly once per valid change, rejects an invalid value (type/enum) without calling writeKey, reports {ok:false}/reject without advancing the snapshot, and is a no-op when the value equals the snapshot"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pullFromDaemon writes each catalog value (ConfigOption.default for omitted) into the fake SettingsStore under its native key"
+      },
+      {
+        "level": "unit",
+        "name": "pullFromDaemon captures the last-synced snapshot and on a catalog() rejection writes nothing + notifies without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "applyChanges on a valid change maps native key->path and calls writeKey exactly once"
+      },
+      {
+        "level": "unit",
+        "name": "applyChanges rejects an invalid value (type/enum) without calling writeKey and reports a client-authored reason via Notifier"
+      },
+      {
+        "level": "unit",
+        "name": "applyChanges on writeKey {ok:false}/reject reports a rejected write and does not advance the snapshot"
+      },
+      {
+        "level": "unit",
+        "name": "applyChanges is an idempotent no-op when the value equals the lastSyncedSnapshot"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the ConfigSyncEngine core module imports no 'vscode'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

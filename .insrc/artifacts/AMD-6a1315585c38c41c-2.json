@@ -1,29 +1,62 @@
 {
-  "id": "AMD-6a1315585c38c41c-2",
-  "epicHash": "6a1315585c38c41c",
-  "epicSlug": "e2-delivery-board-vs-code-goal",
-  "hldBaseRunId": "wf-1791485029499-gnjvqz",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc3",
-    "breaking": false,
-    "field": {
-      "name": "BoardUpMessage 'show-more' variant",
-      "optional": false,
-      "type": "{ readonly type: 'show-more'; readonly stage: DeliveryStage }",
-      "purpose": "Lets the reader reveal the next page of one board column; the host validates the stage id and raises that column's visible limit (sc5 hiddenCount)."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "6a1315585c38c41c",
+    "epicSlug": "e2-delivery-board-vs-code-goal",
+    "createdAt": "2026-10-09T06:26:04.985Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "07bd64dd39b5476ca08d961b237e51bc6e08e11f8dfa8bc8b887cd923f6e2e1b",
+        "at": "2026-10-09T06:26:04.985Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T06:36:48.214Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "sc5 gives each column cards (the shown page) and hiddenCount (the rest behind show-more), and s2's boundary pages each column, but sc3's up-messages have no intent that asks for the next page. One additive variant naming only a stage id keeps up-messages id-only and lets the host keep paging state; nothing existing changes.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1791526663756-5pux7j",
-    "storyId": "s2",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-6a1315585c38c41c-2",
+    "hldBaseRunId": "wf-1791485029499-gnjvqz",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc3",
+      "breaking": false,
+      "field": {
+        "name": "BoardUpMessage 'show-more' variant",
+        "optional": false,
+        "type": "{ readonly type: 'show-more'; readonly stage: DeliveryStage }",
+        "purpose": "Lets the reader reveal the next page of one board column; the host validates the stage id and raises that column's visible limit (sc5 hiddenCount)."
+      }
+    },
+    "rationale": "sc5 gives each column cards (the shown page) and hiddenCount (the rest behind show-more), and s2's boundary pages each column, but sc3's up-messages have no intent that asks for the next page. One additive variant naming only a stage id keeps up-messages id-only and lets the host keep paging state; nothing existing changes.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1791526663756-5pux7j",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-09T06:26:04.985Z",
+    "approvedBy": "subho@insors.io"
   },
-  "proposedAt": "2026-10-09T06:26:04.985Z",
-  "status": "approved",
-  "approvedAt": "2026-10-09T06:36:48.214Z",
-  "approvedBy": "subho@insors.io"
+  "citations": []
 }

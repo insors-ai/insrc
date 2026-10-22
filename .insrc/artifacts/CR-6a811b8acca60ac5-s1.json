@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791787688342-p8fp17",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T06:48:08.351Z",
+    "model": "claude:opus",
+    "elapsedMs": 85949,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "epicSlug": "bug-vs-code-dev-chat-approvals",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "e25803ae828aab966326014bc7c361117c910614ca2654145fecbef76404ab2f",
+        "at": "2026-10-12T06:48:08.351Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/validation-checks.test.ts",
+        "src/mcp/build-step/validation-checks.ts",
+        "vscode-plugin/src/chat/__tests__/approval-queue.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+        "vscode-plugin/src/chat/approval-queue.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:1584",
+            "message": "The `turn` helper's `opts` parameter declares optional properties without the explicit `| undefined` (`result?: 'pass' | 'fail'`, `judge?: () => unknown`, `runner?: (...) => Promise<ValidationCheckResults>`). The same file's `runImplementThenValidate` follows the rule (`summary?: string | undefined`), as do `runTurn` and `action` in chat-panel.ts. Test-helper scope only; whether this line was introduced by this Story was not confirmed.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/build-step.test.ts:1600",
+            "message": "The `readTests` return type declares optional properties without the explicit `| undefined` (`commit?: string`, `reported?: unknown`). Test-helper scope only; whether this line was introduced by this Story was not confirmed.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:817",
+            "message": "The `editPrompts` return type declares `review?: boolean` without the explicit `| undefined`. Test-helper scope only; whether this line was introduced by this Story was not confirmed.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:388",
+            "message": "The `toolCall` return type declares optional properties without the explicit `| undefined` (`command?: string`, `mcp?: unknown`); `toolResult` at line 449 does the same (`command?: string`, `exitCode?: number`). Test-helper scope only; whether these lines were introduced by this Story was not confirmed.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "Grounding caveat, not a coverage gap: the graph's testsReaching edges are empty for every production symbol in the changed set (approval-queue.ts, chat-panel.ts, cli-adapter.ts, render-registry.ts, validation-checks.ts) because the tests are anonymous top-level test() callbacks the graph does not link. No HIGH was raised from that hollow grounding; coverage was judged by running the suites instead. The four changed plugin test files ran 269 tests, 269 pass, 0 fail, 0 skipped; the two changed build-step test files ran 87 tests, 87 pass, 0 fail, 0 skipped. 20 of the 21 promised tests are present under their exact titles (3 in approval-queue.test.ts, 1 in cli-adapter.test.ts, 1 in render-registry.test.ts, 15 in chat-panel.test.ts) and pass. The 21st, 'single request: the existing approve/deny/exact-command/tool-name/dir-block/suppressEcho tests keep passing unchanged', is not a test of its own; the existing single-request tests in chat-panel.test.ts (dir-block approve, deny, in-turn relay, suppressEcho, outcome row) are present and pass, but whether they are textually unchanged was not checked. No build record was supplied, so the pass-state rests on this local run only.",
+            "expectationRef": "testsReaching (hollow graph grounding)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "sequenceDefinition:description",
+            "confidence": "observation",
+            "message": "2 elements of sequenceDefinition have no description and show an em dash on its companion page: message 6 (chip + card 3 of 3), message 7 (approve #3)."
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 6
+    }
+  }
+}

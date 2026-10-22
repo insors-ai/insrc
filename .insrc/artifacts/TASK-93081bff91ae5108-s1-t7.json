@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab4f7813-5883-4eb5-9293-f830c19b379d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.718Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give body.commit and body.summary real producers, with render assertions scoped to the plan-driven route",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "680a959fd27ea4b4e70d479a7c7ac8e4970382288b636512cec99b8157331a97",
+        "at": "2026-10-22T12:44:00.718Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.718Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give body.commit and body.summary real producers, with render assertions scoped to the plan-driven route",
+    "summary": "Both fields are declared and already rendered (c4) but set by none of the three body writers (c2, c8, c10) — two dead branches. Read HEAD at persist time for body.commit; accept an optional summary on the validate input for body.summary. The WRITE side is route-agnostic and genuinely this task's job, but the RENDER assertions must be scoped to the PLAN-DRIVEN route only, because the standalone renderer emits neither section until t8 (c5) — an unscoped check would fail t7 for a reason t7 cannot fix, and t7 is ordered before t8. Standalone-route rendering of these fields is t8's responsibility. Motivating evidence from s1 worth recording: a grep finds ZERO non-test commit producers, yet three tracked records carry body.commit (972bf31d, c90f3fe6, be8708a9) — back-filled BY HAND, showing the missing producer was felt and worked around rather than merely theoretical. Note the contrast with t5: here the SHORT sha from revParse is the right choice, because body.commit is a displayed reference rather than a range boundary.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "WRITE SIDE, both routes: a supplied summary reaches body.summary and body.commit is populated from HEAD, identically on the standalone and plan-driven routes",
+      "RENDER SIDE, PLAN-DRIVEN ONLY: body.summary renders as '## Summary' and body.commit as '**Commit:**'. Standalone-route rendering of both is asserted in t8, not here",
+      "An empty, whitespace-only or absent summary OMITS the key entirely rather than storing an empty string, and renders no section",
+      "body.commit is OMITTED — not empty-stringed — when HEAD cannot be read; revParse returns '' on failure, so the caller must treat '' as absent",
+      "A build that supplies no summary produces a record with no summary key — never synthesised, never invented from the task list",
+      "The dead-branch premise is pinned from the other direction: body.commit is now populated AUTOMATICALLY where previously it required hand-editing, with the three hand-filled records cited as the motivating evidence",
+      "The validate input's new field is OPTIONAL: a controller that never supplies it sees no behavioural difference"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WRITE SIDE, both routes: a supplied summary reaches body.summary and body.commit is populated from HEAD identically on standalone and plan-driven"
+      },
+      {
+        "level": "unit",
+        "name": "RENDER SIDE, PLAN-DRIVEN ONLY: a supplied summary renders as '## Summary' and body.commit as '**Commit:**' (standalone rendering is t8's)"
+      },
+      {
+        "level": "unit",
+        "name": "an empty, whitespace-only or absent summary OMITS the field rather than storing an empty string, and renders no section"
+      },
+      {
+        "level": "unit",
+        "name": "body.commit is OMITTED — not empty-stringed — when HEAD cannot be read, treating revParse's '' return as absent"
+      },
+      {
+        "level": "unit",
+        "name": "a build with NO supplied summary produces a record with no summary key — never synthesised from the task list"
+      },
+      {
+        "level": "integration",
+        "name": "body.commit is now populated AUTOMATICALLY where the three tracked records had it hand-filled — the dead-branch premise pinned from the other direction"
+      },
+      {
+        "level": "unit",
+        "name": "the validate input's new summary field is OPTIONAL: a controller that never supplies it sees no behavioural difference"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bbe495ad-ede5-4748-94d0-ce6d7e4b6d0e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:54.972Z",
+    "epicCreatedAt": "2026-10-07T12:59:03.938Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f1bf0fb3085c629c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Daemon-side check runner and test-file resolution",
+      "parent": {
+        "entityId": "STORY-f1bf0fb3085c629c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f1bf0fb3085c629c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f1bf0fb3085c629c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4553be9f8c47da98d1eec1c8eb5e2b21870bb2f734d14700a4b287f90f1e29b1",
+        "at": "2026-10-22T12:44:54.972Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:54.973Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon-side check runner and test-file resolution",
+    "summary": "Add src/mcp/build-step/validation-checks.ts with ValidationCheckPlan, CheckResult and ValidationCheckResults; resolveTaskTestFiles (leading '<base>.test.ts:' prefix only, every tracked __tests__ file with that base name, unresolved names listed); the per-route plan builders (plan task tests, a small standalone LLD's test-strategy names, a trivial build's HEAD-commit test files); and runValidationChecks, which runs the typecheck then the test runner with --test-force-exit over the resolved files, serially, each through the t1 process-group helper with its own limit, and never throws.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "resolveTaskTestFiles maps only leading '<base>.test.ts:' prefixes to tracked __tests__ files, returns every file sharing a base name, and lists other names as unresolved.",
+      "runValidationChecks reports ok/exitCode/timedOut/outputTail for a passing, a failing and an over-limit command, runs each through the shared process-group helper, and leaves no process of a timed-out command's group alive.",
+      "A test file whose process stays alive after its tests pass finishes under --test-force-exit within its limit.",
+      "An unresolved test name makes tests.ok false with a note naming it; a trivial build with no test files gives tests.ok true with a note."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validation-checks.test.ts: 'resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved'"
+      },
+      {
+        "level": "unit",
+        "name": "validation-checks.test.ts: 'a base name under two __tests__ directories resolves to both files'"
+      },
+      {
+        "level": "unit",
+        "name": "validation-checks.test.ts: 'the plan-driven, small and trivial routes each build the expected check plan'"
+      },
+      {
+        "level": "unit",
+        "name": "validation-checks.test.ts: 'a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run'"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: 'a passing and a failing command give ok true and ok false with their exit codes and output tails'"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: 'a command past its limit is reported timedOut and its whole process group, grandchild included, is gone'"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: 'a test file that keeps its process alive after its tests pass still finishes under --test-force-exit'"
+      },
+      {
+        "level": "integration",
+        "name": "validation-checks.test.ts: 'an unresolved test name makes tests fail with a note naming it'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

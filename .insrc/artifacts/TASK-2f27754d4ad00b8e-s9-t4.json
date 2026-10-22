@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-067297b0-d0c2-4e2f-8d5c-9df121318386",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.763Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Lifecycle back-fill and the migrated log entries",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "33ad0bc87a9b09750adce1bb707858a2040e214d8fc0717851b76e57633853d9",
+        "at": "2026-10-22T12:43:22.763Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.764Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Lifecycle back-fill and the migrated log entries",
+    "summary": "Add src/workflow/convert/backfill.ts: from a raw legacy head compute meta.envelope and meta.lifecycle (status, approval, review bound to the head's current revision, stale), the contentHash of the converted content, the stamp entries (-approve, -reject, -mark-stale), the review entry from t2 and the revision-bearing migrated-<artifact id> entry (operation create when the artifact has no log, update otherwise; actor insrc:migration; the stamps' original times). Test src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Status follows the later of the approval and rejection stamps and both stamp entries keep their original times",
+      "A review older than the head's revision is not bound to it and the review entry still records the report",
+      "The revision-bearing entry carries the head's meta.revision and the contentHash of the converted content",
+      "meta.rangeBase is not stripped"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -61,81 +61,6 @@
     "schemaVersion": 1,
     "epicHash": "870ed3dd246225f4",
     "epicSlug": "documentation-generation-framework-docgen-produces-self",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "hl1",
-          "ref": "c20/sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The two primitives sc3 (RenderedDocumentShell) extends in place exist: loadMermaidCdnMeta in src/daemon/artifacts-rpc.ts and the RenderedArtifactHtml type in src/shared/artifacts.ts.",
-          "evidence": "Confirmed: src/daemon/artifacts-rpc.ts:308 `async function loadMermaidCdnMeta()` + src/shared/artifacts.ts:67 `export interface RenderedArtifactHtml`. The two primitives sc3 extends in place (k10) exist.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "hl2",
-          "ref": "c21/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The graph-codec substrate the extractors read (sc1 DocumentIR is derived-only from it) exists: EntityRow + the edge-property codecs (CallsEdgeProps for CALLS, ImportsEdgeProps for module deps) in src/db/graph/codec.ts.",
-          "evidence": "Confirmed: src/db/graph/codec.ts:132 `EntityRow`; :177 `CallsEdgeProps`; :180 `ImportsEdgeProps`. The derived-only graph-codec substrate sc1 reads exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "hl3",
-          "ref": "c22/sc2/s6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A registration-surface pattern S006 mirrors for tool/IPC/MCP parity exists: a register(...)/list(...) registry at src/analyze/executor/registry.ts, plus the daemon tool registry registerTool.",
-          "evidence": "Confirmed: src/analyze/executor/registry.ts exists (:1 read); registerTool heavily imported (e.g. cloud/aws/index.ts:5 from ../../../registry.js). The register/list registry pattern sc2/S006 mirror is real. (registerTool grep truncated at 50 hits but the symbol clearly resolves.)",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "hl4",
-          "ref": "c23/s7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The asset-shipping path S007 delivers the inlined renderer runtime through exists: copy-assets.mjs copies src/assets (including the artifacts/templates subtree).",
-          "evidence": "Confirmed: copy-assets.mjs:28 `const DIRS = ['prompts', 'assets']` (:1 read confirms); src/assets/artifacts/templates/_renderer.html present. The S007 asset-shipping path is real.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "hl5",
-          "ref": "s4/k1",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The local LLM providers S004's narrative annotator uses through the existing LLMProvider interface (honoring k1, no cloud REST) exist: CliProvider and OllamaProvider.",
-          "evidence": "Confirmed: src/agent/providers/cli-provider.ts:88 `class CliProvider implements LLMProvider`; src/agent/providers/ollama.ts:136 `class OllamaProvider implements LLMProvider`; src/shared/types.ts:177 `interface LLMProvider`. The k1-honoring local providers S004 uses exist.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "hl6",
-          "ref": "rollout",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The rollout ordering is internally consistent with the DEF's story dependencies: S001 owns all four shared contracts and is the root, S005 depends on S002 (not directly on S001 alone), and every other story resolves to S001 — so the walking-skeleton-first sequence holds.",
-          "evidence": "No probe (ordering) but verified by inspection of the artifacts: the HLD rollout states S001 owns sc1-sc4 and S005 dependsOn S002, matching the approved DEF (S005 'Depends on: s2', S006/S007 'Depends on: s1'). The walking-skeleton-first sequence rooted at S001 is internally consistent.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-07-30T14:58:36.782Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-07-30T14:59:59.517Z",
     "questionResolutions": {
       "q0a7bb99f": {
         "question": "s6/f2 (partial): architectureShape's references to existing modules — loadMermaidCdnMeta, RenderedArtifactHtml, the graph codec, CliProvider/OllamaProvider, copy-assets.mjs — carry no explicit inline citation markers in the prose itself; grounding is traceable back to s1's analyze bundles but is inferable rather than cited in the artifact text. Worth deciding whether HLD prose should carry inline bundle references going forward.",
@@ -151,6 +76,57 @@
         "rationale": "Accuracy-first: settle the S005 legibility cutoffs with evidence rather than guesswork — run the size/fan-out/label-length predicate over a corpus of real DocumentIRs from this repo's own indexed graph, pick the values where the primary render stops being readable, freeze them as named constants inside S005 with the calibration recorded in the LLD, and keep the corpus as a regression guard. No config-surface widening (promote to a config knob only if per-repo retuning proves needed); the decision stays inside the story that owns the dispatch.",
         "resolvedAt": "2026-07-30T15:04:22.447Z"
       }
+    },
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d9597f601ebf31cdd2cbaecbb433309a7d81733474d9c935e0fec4b0e600a6d5",
+        "at": "2026-07-30T14:53:26.943Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-30T14:59:59.517Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-07-30T14:58:36.782Z",
+        "report": {
+          "entityId": "HLD-870ed3dd246225f4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-870ed3dd246225f4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

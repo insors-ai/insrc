@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-11de56fd-0dba-4293-aef1-4068e16c162e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.201Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement mcpProgressSink: the gate, the ProgressEvent mapping, and the non-blocking emit",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f25745165e3a7b42ad9720104c7ee503009ff3f435b702004cba0d2c59183574",
+        "at": "2026-10-22T12:43:43.201Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.202Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement mcpProgressSink: the gate, the ProgressEvent mapping, and the non-blocking emit",
+    "summary": "Implement the factory and the token-bearing sink behind the t2 declarations. The gate is a typeof check evaluated EXACTLY ONCE at construction: a string or number token yields a token-bearing sink closing over the live MCP server (following the makeSamplerFromMcpServer reach-back precedent — re-resolve src/mcp/sampling-bridge.ts first, it did not surface in the s1 discovery pass and its listing as a ProgressSink call site is a known LLD labelling error); anything else, including undefined, null, boolean, object, and array, yields NOOP_PROGRESS_SINK. Never truthiness: the number 0 and the empty string are PRESENT. report() is the single branch point on event.kind — 'stage' derives params.progress from index, params.total from total when non-null (OMITTED, never null or 0, when null) and params.message from stageLabel; 'token' derives params.progress from tokensTotal and params.message from tokensDelta, with params.progress populated on this variant too. params.progress is clamped non-decreasing across an invocation, including a regressing stage index. An unrecognised kind falls through to a default arm that emits nothing, logs once at debug, and does not advance the counter. report() is fire-and-forget: the notification call is NOT awaited, so a 30–40 minute run never inherits notification transport latency and a high-frequency token burst applies no backpressure to the daemon operation. Emission faults are caught on both paths (synchronous throw and promise rejection, the latter via a rejection handler attached to the un-awaited promise), logged once at warn via getLogger, and swallowed — report() returns void and never throws, and the sink is not torn down. Still no call sites.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "mcpProgressSink returns a non-NOOP sink for a string token, a number token, the number 0, and the empty string; and returns NOOP_PROGRESS_SINK for undefined, null, booleans, arrays, and objects.",
+      "Every notification a token-bearing sink emits carries params.progressToken strictly equal to the supplied token, echoed verbatim with no synthesis and no daemon-internal identifier mixed in.",
+      "The stage branch omits params.total entirely when the sc1 total is null, and always populates params.progress.",
+      "The token branch populates params.progress from tokensTotal and params.message from tokensDelta — params.progress is never omitted on the token variant.",
+      "params.progress is non-decreasing across a mixed stage/token sequence that includes a regressing stage index.",
+      "An event with an unrecognised kind produces no notification, logs at debug, leaves the progress counter unchanged, and does not throw.",
+      "No `await` sits on the server notification call anywhere in the emission path; rejection is handled by an attached handler rather than by awaiting.",
+      "A server notification call that throws or rejects is swallowed, logged once at warn, and does not prevent subsequent frames from being attempted; report() returns void in every case.",
+      "The McpProgressNotification object literal is constructed inside mcpProgressSink's closure and the type is not exported from the module.",
+      "The makeSamplerFromMcpServer precedent in src/mcp/sampling-bridge.ts is re-resolved and the closure shape matches it, or the deviation is recorded."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "mcpProgressSink gate: returns a token-bearing sink for a string token, a number token, 0 and '' — and NOOP_PROGRESS_SINK for undefined, null, boolean, array and object — asserted on WHICH sink is returned"
+      },
+      {
+        "level": "unit",
+        "name": "ProgressSink.report stage branch: params.message from stageLabel, params.progress from index, params.total present for total: number and omitted entirely for total: null"
+      },
+      {
+        "level": "unit",
+        "name": "ProgressSink.report token branch: params.progress derived from tokensTotal and params.message from tokensDelta against a synthetic TokenProgressEvent"
+      },
+      {
+        "level": "unit",
+        "name": "monotonic-progress derivation reached through report(): params.progress is non-decreasing across an interleaved stage/token sequence containing a regressing stage index"
+      },
+      {
+        "level": "unit",
+        "name": "unknown-kind default arm: no notification, one debug log, progress counter unchanged, no throw"
+      },
+      {
+        "level": "unit",
+        "name": "fire-and-forget emit: report() returns before a never-resolving notification promise settles, and a throwing/rejecting server double is swallowed with one warn log while subsequent frames are still attempted"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

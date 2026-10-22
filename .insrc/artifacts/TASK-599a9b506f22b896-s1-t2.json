@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-270ccd51-4d8a-4e9a-9bca-c448c872c583",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.035Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extend id-resolve.test.ts with case-equivalence + no-regression + round-trip tests",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b164dc0594b8f6800a0f8c64c9775bdee8f18b9127cd3dd5dfc0884b965d1ec2",
+        "at": "2026-10-22T12:43:35.035Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.036Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend id-resolve.test.ts with case-equivalence + no-regression + round-trip tests",
+    "summary": "Extend src/workflow/__tests__/id-resolve.test.ts (node:test + node:assert/strict) with: case-equivalence (s1/S1/S001 same ordinal + same canonical), no-regression (lowercase 's10' byte-stable ordinal/canonical/slug; ordinalToStoryId output unchanged; bad-id throw unchanged), the deriveWorkItemIdentity story-level equivalence + epic-level shape, and the both-way round-trip parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) === ordinal 1. Reuse a fixed epicHash+createdAt fixture pair.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "new + existing id-resolve.test.ts tests pass under node:test",
+      "every LLD testStrategy subject is covered (case-equivalence, ac1 canonical-match, bad-id throw, ac2 no-regression, ordinalToStoryId unchanged, deriveWorkItemIdentity equivalence + epic-level, both-way round-trip)",
+      "the full workflow test sweep stays green (no regression to id-resolve.test.ts or id-converter consumers)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "no-regression: lowercase 's10' byte-identical ordinal/canonical/slug before+after; ordinalToStoryId output unchanged (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "both-way round-trip: parseWorkflowId(toCanonical(storyWorkflowId(...,'S001'))) yields story ordinal 1 (lc1)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

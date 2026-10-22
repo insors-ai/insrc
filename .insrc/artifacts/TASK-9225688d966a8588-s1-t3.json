@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f7321d92-a7f9-4a30-b54a-93a647dce6be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.415Z",
+    "epicCreatedAt": "2026-09-20T11:24:43.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9225688d966a8588",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Replace the master-detail render shell with collapsible section panels",
+      "parent": {
+        "entityId": "STORY-9225688d966a8588-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9225688d966a8588-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9225688d966a8588-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9225688d966a8588-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad7a678c84f99bf5ff8eac1895cb78739c5f85ba03447bf7919084b21cc85a1f",
+        "at": "2026-10-22T12:44:00.417Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.418Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace the master-detail render shell with collapsible section panels",
+    "summary": "Replace InsrcSettingsConfigurable.buildMasterDetail (JTree + JBSplitter + CardLayout + tree selection wiring) with a BoxLayout content panel in ONE AS_NEEDED JScrollPane: per Category node a toggle-header (▾/▸) panel over the content-sized SettingsTableModel JTable (own scroll off so the outer scroll governs), then per Section node a toggle-header panel over section.component(); expand the settingsTree.defaultIndex category, collapse the rest. Keep the off-EDT read + invokeLater root===panel guard, the sections list, SettingsEditModel wiring, off-EDT apply (validation-first, runProcessWithProgressSynchronously, ConfigurationException, onSaved + refreshTables), isModified fan-out, reset fan-out, refreshTables (fireTableDataChanged), and the Unavailable placeholder. No maximumSize caps / vertical glue.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "createComponent renders, on Loaded, a BoxLayout page of collapsible toggle-header panels (one per category over its JTable body, then one per SettingsSection over section.component()) inside ONE JScrollPane with VERTICAL_SCROLLBAR_AS_NEEDED; no JTree/JBSplitter/CardLayout remain and each table is content-sized (preferredScrollableViewportSize) with no maximumSize caps / Box.createVerticalGlue",
+      "General (settingsTree.defaultIndex) is expanded on first render and the other panels collapsed; the override PerRoleSection/PerRepoSection are rendered as collapsible panels and still registered in the sections list; apply still goes through gateway.writeSetting/clearSetting and throws ConfigurationException on validation/rejection; the Unavailable read keeps the existing placeholder",
+      "The off-EDT discipline is preserved: reads render via invokeLater guarded on root===panel and apply runs off the EDT with model mutation + refreshTables back on the EDT"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "InsrcSettingsConfigurableTest source-scan: collapsible toggle-header category panels, no JTree/JBSplitter/CardLayout"
+      },
+      {
+        "level": "unit",
+        "name": "InsrcSettingsConfigurableTest source-scan: ONE JScrollPane AS_NEEDED + content-sized tables (preferredScrollableViewportSize), no maximumSize caps / Box.createVerticalGlue"
+      },
+      {
+        "level": "unit",
+        "name": "InsrcSettingsConfigurableTest source-scan: General expanded on first render via settingsTree.defaultIndex; sections as collapsible panels registered in the sections list; apply via gateway.writeSetting/clearSetting + ConfigurationException"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

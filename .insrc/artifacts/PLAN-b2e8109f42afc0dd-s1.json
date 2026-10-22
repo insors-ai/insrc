@@ -1,0 +1,773 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791880483653-rvwn45",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T08:39:05.676Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 262017,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "epicSlug": "show-each-changed-section-turn-s",
+    "storyId": "s1",
+    "lldRunId": "wf-1791879583690-xuty4f",
+    "lldEffectiveHash": "e608c958c16e2a3758ebac93618d1574f06394597fb32db48756cfcc42b20575",
+    "authoredBy": "controller",
+    "rangeBase": "4eab1f5e785abea1dc9367123081d04be4a6afe2",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8894d34d74d9c9d7798ca80e37f96919996a1f98c622c10cf38a51bcdf8a3274",
+        "at": "2026-10-13T08:39:05.676Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-13T08:46:41.899Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build goes bottom-up in eight tasks so the plugin typechecks and its tests pass after each one. First the parts with no users yet: the patch parser and section matching, the git tree snapshot, the adapter's new event fields, and the saved diff row with its window cut. Then the webview widget, then the governor and the host that connect them, then the rules that hold back and settle the path line and end the turn's diff state on every exit. The last task runs the whole suite, installs the plugin and checks it by hand with claude and codex."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the patch parser and the section reconciliation",
+        "summary": "New pure module vscode-plugin/src/chat/diff-sections.ts: DiffSection, SectionOp, KnownSection, the three limits, parsePatch and reconcileSections, with its test file. Nothing uses it yet.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "parsePatch gives one entry per section with path, ranges, counts and lines, and handles a new, a deleted and a binary file, a name with a space and a quoted name",
+          "A section over 400 lines is cut with the rest counted in omitted",
+          "reconcileSections adds, updates under the same id, withdraws, joins, and hides sections beyond the limit",
+          "The plugin typechecks"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file"
+          },
+          {
+            "level": "unit",
+            "name": "parsePatch: a new file, a deleted file, a binary file, a name with a space and a quoted name"
+          },
+          {
+            "level": "unit",
+            "name": "parsePatch: a section over 400 lines is cut, the rest counted in omitted, and added and removed count the whole section"
+          },
+          {
+            "level": "unit",
+            "name": "parsePatch: an empty patch gives no sections and an unreadable file part is skipped without a throw"
+          },
+          {
+            "level": "unit",
+            "name": "reconcileSections: a new section is added, an unchanged one gives no operation and a changed one is updated under the same id"
+          },
+          {
+            "level": "unit",
+            "name": "reconcileSections: sections that join update the lower id and withdraw the other, and a section that is gone is withdrawn"
+          },
+          {
+            "level": "unit",
+            "name": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Snapshot the working tree as a git tree and report its changes",
+        "summary": "git-baseline.ts takes its snapshot through a private copy of the index and gains changes and release; WorkspaceBaseline and BaselineHandle in edit-governor.ts gain the new members; extension.ts gives runGit an environment argument and passes tempIndexPath, copyFile and removeFile. read keeps its results. The fakes of the baseline in the existing tests gain the new members. The real-git test also covers a linked worktree and a repository with core.splitIndex.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "snapshot writes a tree with GIT_INDEX_FILE set to a copy of the index and returns the tree id and the copy's path",
+          "changes returns an empty string, the patch, or undefined on failure",
+          "Against real git in a temporary repository the user's index and status are unchanged and the patch holds the expected sections, also in a linked worktree and with core.splitIndex on",
+          "The plugin typechecks and the existing governor and host tests pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path"
+          },
+          {
+            "level": "unit",
+            "name": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails"
+          },
+          {
+            "level": "unit",
+            "name": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree"
+          },
+          {
+            "level": "unit",
+            "name": "git-baseline: release removes the private index, and a failed git add does not fail snapshot"
+          },
+          {
+            "level": "integration",
+            "name": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Report which edit a result answers, and each file a codex patch changed",
+        "summary": "stream-events.ts gains editPath and isError on 'tool-result' and applied on 'file-edit'. The claude mapper remembers Edit and Write tool_use ids and sets editPath and isError on their results. The codex mapper emits one 'file-edit' event per entry of a file_change item's changes list, one for a bare path, and '(unknown)' when the item names none; the events carry applied unless the item's status is 'failed', in which case the host holds the path and writes its path line when the turn's diff state ends. A recorded real codex item is added as a unit fixture, and the two live tests are added behind the live flag.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A claude Edit or Write result carries editPath, and isError when the block reports an error; a command's result carries neither",
+          "A codex file_change item with two changes gives two applied file-edit events with those paths, and a failed item gives them without applied",
+          "Existing adapter tests pass"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither"
+          },
+          {
+            "level": "unit",
+            "name": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied"
+          },
+          {
+            "level": "live",
+            "name": "live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section"
+          },
+          {
+            "level": "live",
+            "name": "live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the saved diff row and give its latest version at the first row's place",
+        "summary": "session-store.ts gains the role:'diff' variant with sid, replaces and withdrawn. pageBefore in transcript-window.ts substitutes by sid. The host toViewModel and its webview mirror map a diff row to the 'diff' kind. Tests of the window cut, of the view-model parity and of the file store round trip with another writer's rows in between.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "pageBefore gives a diff row with the content of the last later row that replaces its sid, and leaves firstIndex and the row count as they are",
+          "A diff row, a replacing row and a withdrawing row saved through the file store by separate saves are read back by a new store",
+          "The host and webview toViewModel agree on a diff row"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change"
+          },
+          {
+            "level": "unit",
+            "name": "toViewModel: a diff row maps to the diff kind in the host and in the webview mirror"
+          },
+          {
+            "level": "integration",
+            "name": "session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Draw the diff widget and the row message in the webview",
+        "summary": "render-registry.ts registers the 'diff' renderer (built through line(), remembered by sid) and redrawDiff, and folds a tool result only when its output is long. protocol.ts gains 'transcript-row'. The shell in chat-panel.ts handles 'transcript-row', carries the widget's rules and the no-shrink rule, and loses renderDiff, its 'edit-prompt' handler and the seven .insrc-diff-* rules. chat-theme.test.ts and chat-theme-before.json follow, and the renderDiff source assertions in chat-panel.test.ts are replaced. Until t6 the host still posts 'edit-prompt' and the shell ignores it; the old box was already invisible, so nothing the reader sees is lost.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A diff row draws the widget of the mock: header, line numbers, signs, 8 lines until opened, labels for new, deleted and binary files and for omitted lines",
+          "A transcript-row with a replacing row redraws the widget of that sid and keeps it open; a withdrawing one hides it",
+          "A diff row in a restored window and in an older page is appended as a widget",
+          "A short tool output has no chevron",
+          "The transcript's children do not shrink and the widget's rules name only the shell's theme names"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used"
+          },
+          {
+            "level": "unit",
+            "name": "diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing"
+          },
+          {
+            "level": "unit",
+            "name": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing"
+          },
+          {
+            "level": "unit",
+            "name": "transcript-row: a marker row appends the same line a restored marker row draws"
+          },
+          {
+            "level": "unit",
+            "name": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget"
+          },
+          {
+            "level": "unit",
+            "name": "tool result: a short output is drawn with no chevron and a long one folds"
+          },
+          {
+            "level": "unit",
+            "name": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet (__tests__/chat-theme.test.ts; replaces the three has() lines on .insrc-diff-add, .insrc-diff-del and .insrc-diff-actions button, and the seven .insrc-diff-* selectors leave chat-theme-before.json while the widget's selectors join the test's list of added selectors)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Check for changes after each tool call and push the sections as rows",
+        "summary": "edit-governor.ts gains sectionsActive, check, sectionPaths and abandonTurn, limits observe to the editor view, swaps showChat for showSections and sectionsUnreadable, and loses computeDiff and defaultComputeDiff. The host opens a diff state in a turn's beforeRun, asks for a check after every 'file-edit' and 'tool-result' event of that turn's sink, pushes diff rows with sid and replaces and the overflow and unreadable marker rows, posts them as 'transcript-row', and ends the diff state in onTerminal after resolveTurn. 'edit-prompt' leaves protocol.ts. extension.ts passes relPath and no computeDiff. The S006 edit-prompt host tests, the governor tests and the wiring and protocol tests follow. One Task because the seam does not typecheck until the host stops using showChat and computeDiff.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A check passes add, update and withdraw operations to the host, which pushes rows and never changes an earlier row",
+          "Checks run one at a time and a call made during a check causes exactly one more",
+          "With no snapshot or with the editor view no diff state is made and the rows are those of today",
+          "The restored window carries each section's latest version",
+          "The plugin typechecks with 'edit-prompt', showChat, computeDiff and defaultComputeDiff gone"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "governor: check passes the reconciled operations to showSections and calls nothing when nothing changed"
+          },
+          {
+            "level": "unit",
+            "name": "governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one"
+          },
+          {
+            "level": "unit",
+            "name": "governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections"
+          },
+          {
+            "level": "unit",
+            "name": "governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn"
+          },
+          {
+            "level": "unit",
+            "name": "governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing"
+          },
+          {
+            "level": "unit",
+            "name": "governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot"
+          },
+          {
+            "level": "unit",
+            "name": "governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing"
+          },
+          {
+            "level": "unit",
+            "name": "protocol: transcript-row is a host message and edit-prompt is not"
+          },
+          {
+            "level": "unit",
+            "name": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment (__tests__/extension-chat-wiring.test.ts; replaces the assertion on `computeDiff: defaultComputeDiff` at line 89)"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: the restored window and an older page carry each section's latest version at its first row's place"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Hold back the path line, settle it, and end the diff state on every exit",
+        "summary": "While a turn's diff state is open the host writes no marker row for 'file-edit' and no row for a successful edit result, writes the path marker before a failed edit's error, and settles a held path after the check that follows its edit. The diff state is also ended, with its held paths settled at once and governor.abandonTurn called, before every turns.detach() and turns.stop(), in the sink's onError and at the top of the next turn's beforeRun. A followed turn is untouched.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A successful edit shows widgets and no path or result line; a failed edit shows its path and error",
+          "An edit whose path has no section gets its path line after its check, for claude, for codex and at the end of the turn",
+          "A chat switch, the Stop control, a newer turn, a sink error and closing the panel each settle the held paths and abandon the governor's turn",
+          "A followed turn writes and posts its rows as today while the governor still holds a snapshot"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths"
+          },
+          {
+            "level": "integration",
+            "name": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Run the whole suite, install the plugin and check by hand",
+        "summary": "Run the plugin's typecheck and whole test suite, build, package and install the plugin, and check a claude turn and a codex turn in VS Code, including a window reload.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change",
+          "In VS Code a claude turn and a codex turn show one widget per section, folded to 8 lines, updated in place, and still there after a reload"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload"
+          },
+          {
+            "level": "smoke",
+            "name": "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "protocol: transcript-row is a host message and edit-prompt is not",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "parsePatch: a new file, a deleted file, a binary file, a name with a space and a quoted name",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "parsePatch: a section over 400 lines is cut, the rest counted in omitted, and added and removed count the whole section",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "parsePatch: an empty patch gives no sections and an unreadable file part is skipped without a throw",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileSections: a new section is added, an unchanged one gives no operation and a changed one is updated under the same id",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileSections: sections that join update the lower id and withdraw the other, and a section that is gone is withdrawn",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "reconcileSections: beyond the limit new sections are kept hidden, counted in overflow, and never produce an operation later",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-baseline: changes returns an empty string for an unchanged tree, the patch for a changed one and undefined when write-tree or diff fails",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-baseline: read resolves a path with show <tree>:./<rel> and gives undefined for a path not in the tree",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-baseline: release removes the private index, and a failed git add does not fail snapshot",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: check passes the reconciled operations to showSections and calls nothing when nothing changed",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: checks run one at a time, a call made during a check causes exactly one more, and its promise resolves after that one",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: an unreadable check calls sectionsUnreadable once per turn and a later check still shows sections",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: sectionPaths holds the path of every known section, shown or hidden, and is empty after beginTurn",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: no snapshot or the editor view means sectionsActive is false and check does nothing; in the chat view observe does nothing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: a check that ends after a newer turn began shows nothing, and resolveTurn runs a last check then releases the snapshot",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "governor: abandonTurn makes sectionsActive false at once, releases the snapshot without a last check, and a check in flight shows nothing",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "toViewModel: a diff row maps to the diff kind in the host and in the webview mirror",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment (__tests__/extension-chat-wiring.test.ts; replaces the assertion on `computeDiff: defaultComputeDiff` at line 89)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet (__tests__/chat-theme.test.ts; replaces the three has() lines on .insrc-diff-add, .insrc-diff-del and .insrc-diff-actions button, and the seven .insrc-diff-* selectors leave chat-theme-before.json while the widget's selectors join the test's list of added selectors)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "transcript-row: a marker row appends the same line a restored marker row draws",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "tool result: a short output is drawn with no chevron and a long one folds",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "diff sections: the restored window and an older page carry each section's latest version at its first row's place",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "live claude: an Edit of a file in a temporary repository yields a tool-result with editPath and the baseline's changes hold the edited section",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "live codex: a patch of two files in a temporary repository yields two applied file-edit events with those files' paths",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api createGitBaseline"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api createEditGovernor"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api createChatPanelHost"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api pageBefore"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api toViewModel"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges DiffSection"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges TranscriptEntry"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges TurnEvent 'tool-result' and 'file-edit', and the adapter's mappers"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges HostToWebview message set"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

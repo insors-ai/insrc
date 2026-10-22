@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b07c0757-136c-4832-8d7a-ba17f4332f62",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:00.448Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Implement the tailLogWith core + LogFilter predicate + logCategories/tailLog facade wrappers",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb5a571c56b3d2276a3c5d478171de0c8e5b7a6d4fe79e19a6b8e83274a2ebf3",
+        "at": "2026-10-22T12:45:00.448Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:00.449Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the tailLogWith core + LogFilter predicate + logCategories/tailLog facade wrappers",
+    "summary": "In src/cli/services/debug.ts add: (a) logCategories() returning the two static categories (daemon->stem 'daemon', agent->stem 'agent'); (b) tailLogWith(deps) over an injectable fs seam { listSegments(stem), readTail(file,maxLines), watch(file,cb)->unwatch } — resolves the active `<stem>.<N>.<ext>` segment (highest-N/newest-mtime), emits its last-N lines, fs.watch-follows appends, re-resolves+follows across a rotation (lc2), parses each line best-effort into a LogLine (pino JSON → level/module/msg; non-JSON → raw only), a `disposed` guard suppresses post-dispose emits, never throws (empty/missing dir → empty emit); (c) a pure matchesFilter(line, filter) predicate (minLevel>=, module ci-match, text ci-substring over raw; unset=no constraint; ANDed; non-JSON dropped by an active level/module filter); (d) zero-arg facade wrappers logCategories()/tailLog() over realDeps bound to node:fs (readdirSync/readFileSync/watch); bind both onto the makeServices() debug entry. Build note: land WITH t3 (the fakes) in one increment.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "logCategories() returns exactly [daemon, agent] and opens no stream",
+      "tailLogWith resolves the active segment + emits its last-N lines on start; a watch 'change' emits appended lines; a newer higher-N segment appearing re-resolves+follows it (lc2)",
+      "tailLogWith parses pino JSON into level/module/msg and a non-JSON line into raw-only; an empty/missing dir emits [] and never throws; a readTail/watch throw is swallowed (subscription survives)",
+      "dispose() removes the watcher and suppresses any post-dispose onLines emit (idempotent)",
+      "matchesFilter honours minLevel/module/text (ANDed, unset=no constraint; non-JSON dropped under an active level/module filter, still matched by text via raw)",
+      "makeServices().debug.logCategories + .tailLog are bound to the real impls; no real fs.watch/disk in unit tests (deps injected); tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tailLogWith: resolves the active segment (highest-N/newest-mtime) and emits its last-N lines on start"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: a watch 'change' event emits the newly-appended lines (live follow)"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: a newer higher-N segment appearing re-resolves+follows it and emits its lines (rotation follow, lc2)"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: non-JSON/partial line -> LogLine raw-only; valid pino JSON -> time/level/module/msg"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: empty/missing dir or no segment emits [] and never throws (k4)"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: a readTail/watch throw is swallowed and the subscription survives"
+      },
+      {
+        "level": "unit",
+        "name": "tailLogWith: dispose() removes the watcher and suppresses any post-dispose onLines emit (idempotent)"
+      },
+      {
+        "level": "unit",
+        "name": "matchesFilter: minLevel keeps level>=; a non-JSON (no level) line is dropped under an active minLevel"
+      },
+      {
+        "level": "unit",
+        "name": "matchesFilter: module ci-match on LogLine.module; text ci-substring over LogLine.raw"
+      },
+      {
+        "level": "unit",
+        "name": "matchesFilter: unset fields impose no constraint; level+module+text are ANDed"
+      },
+      {
+        "level": "unit",
+        "name": "matchesFilter: free-text still matches a non-JSON line via raw (level/module cannot)"
+      },
+      {
+        "level": "unit",
+        "name": "logCategories() returns exactly [daemon, agent] and opens no stream"
+      },
+      {
+        "level": "integration",
+        "name": "makeServices().debug exposes logCategories + tailLog bound to the real impls"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

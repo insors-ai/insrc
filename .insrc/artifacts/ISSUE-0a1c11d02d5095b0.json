@@ -21,7 +21,27 @@
     "epicSlug": "daemon-s-review-artifact-reviewartifactfile-must",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-06T06:31:28.548Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "c86a202b4225fd21a9fcd0b152576fa6ab8881cabf754fff487cdf085f9d40a0",
+        "at": "2026-10-06T06:31:28.548Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Stop the daemon review from automatically re-reviewing after it applies a fix",

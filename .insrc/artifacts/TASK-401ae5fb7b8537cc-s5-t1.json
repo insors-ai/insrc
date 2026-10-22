@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-559da3bc-3cfb-4b35-a8a5-aa907ed49fb5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.476Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s5",
+    "envelope": {
+      "description": "sc9 amendment types (types.ts): TabRenderer + detailRenderers + PanelHandle bridge",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c0a6b233ca4309d25504652426fcebce12cd8b8cb97bea4d589fb66d70a9098",
+        "at": "2026-10-22T12:43:30.476Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.477Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc9 amendment types (types.ts): TabRenderer + detailRenderers + PanelHandle bridge",
+    "summary": "Additively extend vscode-plugin/src/panels/types.ts: export `type TabRenderer = (gateway: DaemonDataGateway) => Promise<string>`; add optional `detailRenderers?: Partial<Record<DetailTab, TabRenderer>>` to WebviewPanelHostDeps; add `onMessage(listener: (message: unknown) => void): void` + `postMessage(message: unknown): void` to PanelHandle. No existing member removed or changed (breaking:false).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "types.ts exports TabRenderer + adds the optional detailRenderers field + the two PanelHandle bridge methods",
+      "No existing sc9 type member is removed/renamed (S004's shipped types still compile)",
+      "Compiles under strict/exactOptionalPropertyTypes with .js imports; no 'vscode' import"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types.ts structurally exposes TabRenderer + detailRenderers + PanelHandle.onMessage/postMessage (compile-time; exercised transitively by the renderer + host suites constructing against them)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

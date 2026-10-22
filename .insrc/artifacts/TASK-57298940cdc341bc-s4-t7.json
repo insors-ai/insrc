@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c6e0317-718d-41d9-abd1-4e9c6badf21e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.292Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add seam + reader + page tests and clear the NestedOpsPagesTest placeholder guard",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ec7b5140a992886708cf0c03c409d49744f7901679f046740d74d7f17121a09",
+        "at": "2026-10-22T12:43:34.292Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.293Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add seam + reader + page tests and clear the NestedOpsPagesTest placeholder guard",
+    "summary": "Add OrphanProcessSeamTest.kt (JUnit5 injected-fake providers: scan match/exclude/unsupported/enumeration-swallow; kill selection-only/SKIPPED/SIGTERM->wait->SIGKILL/input-order/empty-no-op) + DebugStatusCardReaderTest.kt (Loaded/Stopped/Unavailable folds + pid/version null-degrade) + DebugPageTest.kt (source-scan: extends base, implements DebugPageHost, uses the seam+reader, showYesNoDialog + runProcessWithProgressSynchronously = only mutation, k4 parent-untouched). Edit NestedOpsPagesTest: after S004 ALL THREE child pages are filled, so the placeholder-only branch has no remaining page — drop the now-empty placeholder-only assertion while KEEPING the extends-base + pageTitle + overrides-buildBody assertions for all three. Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after the new types).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "OrphanProcessSeamTest covers scan match/exclude/unsupported/enumeration-swallow + kill selection-only/SKIPPED/escalation/input-order/empty",
+      "DebugStatusCardReaderTest covers Loaded/Stopped/Unavailable + pid/version null-degrade",
+      "DebugPageTest source-scan asserts sc1+sc3, the confirm-gated single mutation, and parent-untouched; NestedOpsPagesTest placeholder guard cleanly cleared (no false failures)",
+      "Full jetbrains-plugin test + buildPlugin green locally on JDK21"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DebugPageTest source-scan (k4): InsrcSettingsConfigurable is not repointed at DebugConfigurable; parent page + plugin.xml untouched"
+      },
+      {
+        "level": "unit",
+        "name": "NestedOpsPagesTest: the placeholder-only assertion is cleared (all three pages filled) while the extends-base/pageTitle/overrides-buildBody assertions still pass for Daemon/Workflows/Debug"
+      },
+      {
+        "level": "smoke",
+        "name": "Local gate: gradlew test buildPlugin green on JDK21 (--no-build-cache after the new types)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

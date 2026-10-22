@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-323f6bff-aecb-45d5-ab2d-06f794c18428",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.489Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Worker: bound a busy outcome write at 60 s",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2dfbd76cc72262fcffdc77846a15bb07379b26961ae4f8e4e0ffa2377df966b4",
+        "at": "2026-10-22T12:43:38.489Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.490Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Worker: bound a busy outcome write at 60 s",
+    "summary": "In chat-queue-worker.ts bound the retry of a busy outcome write: finishNow keeps the outcome in pendingFinish and retries each tick for at most BUSY_GIVE_UP_MS (60000 ms); then the worker stops retrying, logs an error and posts one chat note that the queue could not record the message's result and that reloading the window recovers it. The reload is recovered by S003's same-windowKey lease rule (the lease is freed at once, the message fails with a resend, the queue moves on).",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "a busy outcome write is retried each tick for 60 s and the outcome is written when the store frees up inside the bound",
+      "after 60 s the worker stops retrying and one chat note is shown",
+      "a new worker for the same window frees the lease and fails the message with a resend, and the next message runs",
+      "enqueue's own busy refusal with its note is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

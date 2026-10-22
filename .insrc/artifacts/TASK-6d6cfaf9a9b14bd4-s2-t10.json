@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bcbab6b5-9928-4167-87da-d5a539297a7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.211Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Smoke guard for the unverified analyze.run binding",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "08c40fae81000e664d4ed68016c7d0f37dfca2b82084abe7cdea7518cc3369b3",
+        "at": "2026-10-22T12:43:43.211Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.211Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Smoke guard for the unverified analyze.run binding",
+    "summary": "One guard test for the single assumption that survives t1 as a risk: sc1 declares ProgressOperation as 'workflow.run' | 'analyze.run', but whether src/daemon/analyze-rpc.ts frames reach the wire through the same stream:'progress' binding was unverified going in. Drive the insrc_analyze_step tool surface with a progressToken over an analyze.run operation using a stubbed frame source mirroring the workflow.run stub, and assert the outcome is one of exactly two acceptable states: identical forwarding, or zero notifications with a normal tool result. It must never misbehave — no partial, malformed, or mis-keyed notification, and no failed tool call. If t1 found the binding absent or different, this test documents the degradation explicitly rather than silently passing.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "A test drives the analyze-step surface with a progressToken and asserts the outcome is either identical forwarding or zero notifications with an unchanged tool result.",
+      "The test fails if the analyze.run path emits a malformed, partial, or mis-keyed notification, or if it causes the tool call to fail.",
+      "The t1 verdict on the analyze-rpc.ts binding is recorded in the test as a comment, so the intended branch is unambiguous to a later reader.",
+      "The test runs green in the standard sweep regardless of which of the two acceptable states holds."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "insrc_analyze_step driven with a progressToken over an analyze.run operation against a stubbed analyze.run frame source: the outcome is one of identical forwarding or zero notifications with a normal tool result, and never a partial, malformed, mis-keyed notification or a failed tool call"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

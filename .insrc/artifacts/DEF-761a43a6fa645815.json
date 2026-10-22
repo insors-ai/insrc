@@ -49,131 +49,6 @@
     "schemaVersion": 1,
     "epicHash": "761a43a6fa645815",
     "epicSlug": "add-daemon-driven-code-review-stage",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult> is defined in src/workflow/review/run-artifact.ts around lines 66-104 and is the existing artifact-review entry point.",
-          "evidence": "grep + read confirm `export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<ReviewArtifactResult>` at src/workflow/review/run-artifact.ts:66 — exact anchor match.",
-          "action": "None; citation c1 is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ReviewArtifactOpts and ReviewArtifactResult — the input/verdict shapes the code-review record is asked to mirror — are declared in src/workflow/review/run-artifact.ts around lines 30-51.",
-          "evidence": "`export interface ReviewArtifactOpts` at run-artifact.ts:30 and `export interface ReviewArtifactResult` at :46 — both within the cited 30-51 range.",
-          "action": "None; citation c2 is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope> is the controller-drivable MCP entry point for insrc_review_step, in src/mcp/review-step/handler.ts around lines 32-43.",
-          "evidence": "`export async function handleReviewStep(input: unknown): Promise<ReviewStepMcpEnvelope>` at src/mcp/review-step/handler.ts:32 — exact anchor match.",
-          "action": "None; citation c3 is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The review-step multi-turn phase envelope types (ReviewStepInputStart, InputClaims, InputVerdicts, EmitClaims, EmitVerdicts, Done, Error, StatePayload, McpEnvelope) are declared in src/mcp/review-step/types.ts within lines 30-146.",
-          "evidence": "ReviewStepInputStart at types.ts:30 and ReviewStepEmitClaims at :71 confirmed; the phase-envelope types (EmitClaims/EmitVerdicts/StatePayload) all resolve within src/mcp/review-step/types.ts as cited (30-146).",
-          "action": "None; citation c4 is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "reviewArtifact(repoPath: string, artifactPath: string): Promise<ReviewArtifactResult> is the CLI-service call site driving reviewArtifactFile, in src/cli/services/workflow.ts around lines 234-250.",
-          "evidence": "`export async function reviewArtifact(repoPath, artifactPath): Promise<ReviewArtifactResult>` at src/cli/services/workflow.ts:234, also wired in cli/command.ts:188 and services/index.ts:54 — the CLI surface c5 names really exists.",
-          "action": "None; citation c5 is sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A daemon-side LLMProvider-driven review/workflow driver exists at src/daemon/workflow-rpc.ts (the low-confidence assumption a5 leans on this path existing).",
-          "evidence": "src/daemon/workflow-rpc.ts exists (read at :1 found=true); runWorkflowServerSide/runStart are the documented server-side entrypoints (referenced by prior LLD-add-build-workflow s3). The path claim c6 is confirmed. The DEF itself correctly flags the INTERNAL SHAPE as unverified (assumption a5 = low, self-noted open question), which is honest, not a citation defect.",
-          "action": "None required for citation soundness; the fit-of-shape question is already tracked as the DEF's own open item and should be resolved during the HLD when workflow-rpc.ts is profiled.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The src/workflow/review/ module comprises 12 files, and includes probe.ts, verify.ts, calibration.ts, extract.ts, resolve.ts, apply.ts, report.ts, run-artifact.ts and index.ts as its sole declared entrypoint.",
-          "evidence": "Direct re-derivation: `ls src/workflow/review/*.ts` (excluding __tests__) = 12 files, including probe.ts, verify.ts, calibration.ts, extract.ts, resolve.ts, apply.ts, report.ts, run-artifact.ts and index.ts — exactly matching module.profile c7 (12 files, sole entrypoint index.ts).",
-          "action": "None; the sizing inventory c7 is accurate.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c9",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The build workflow Epic (185807ba9a6b35d3) exists and its final story finalizes the build run into a reviewable record of what was built — an input this stage consumes and must not re-derive.",
-          "evidence": "DEF-185807ba9a6b35d3.md exists (docs/defines/DEF-add-build-workflow-insrc-5th-stage.md:1) — the build Epic c9 names is real, and this DEF correctly treats its build-run record as an input.",
-          "action": "None; cross-artifact trace c9 holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c10",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The plan workflow Epic (1cd9a4c34f403a80) has a story that states the tests each unit of work should produce — the approved expectation the coverage dimension checks against.",
-          "evidence": "DEF-1cd9a4c34f403a80.md exists (docs/defines/DEF-add-plan-workflow-insrc-framework-4th.md:1) — the plan Epic c10 names is real; its 'state the tests each unit should produce' story is the coverage dimension's approved expectation.",
-          "action": "None; cross-artifact trace c10 holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "c11",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "A separate module-test-health analyzer Epic (8f485fe5c614fefc) already frames a module-scoped read-only view of test health, distinct from this Story-diff-scoped gate — the non-goal that avoids duplicate scopes.",
-          "evidence": "DEF-8f485fe5c614fefc.md and HLD-8f485fe5c614fefc.md both exist — the module-test-health analyzer Epic c11 names is real, correctly cited as the separately-owned module-scoped view this Epic must not duplicate.",
-          "action": "None; the non-goal boundary against 8f485fe5c614fefc is well-grounded.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "non-goal/capability",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "No existing capability in the repo already performs a post-build code review of a Story's changed files against its approved design/plan; the existing review subsystem audits DESIGN artifacts (DEF/HLD/LLD/PLAN) only, so this Epic is genuinely new rather than an amendment.",
-          "evidence": "grep code[_-]?review / reviewCode|codeReview surface matches ONLY inside this new DEF (k1, ac2, S007 headers) — no pre-existing post-build code-review capability in src/. The existing src/workflow/review + src/mcp/review-step subsystems audit DESIGN artifacts (reviewArtifactFile premise-audits DEF/HLD/LLD/PLAN), confirming this Epic is genuinely new rather than an amendment.",
-          "action": "None; the 'genuinely new' basis for a fresh Define (c13) holds.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 11
-      },
-      "reviewedAt": "2026-08-03T06:54:46.433Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-08-03T06:57:39.730Z",
     "questionResolutions": {
       "q9f2f4374": {
         "question": "Item a2: HONEST FAIL. Exactly one assumption is low-confidence — \"A daemon-side, LLMProvider-driven review driver already exists at the cited path and is the pattern to follow; only its path and resolver ranking are grounded — its internal shape was never profiled, so the fit is unverified.\" The Epic object has no openQuestions field at all (keys are problem, nonGoals, assumptions, constraints, citations), so this assumption maps to nothing. It is precisely the case the rule exists for: c6/c15 ground only the path and a 0.314 resolver rank for src/daemon/workflow-rpc.ts, and s1 explicitly records that no module.profile or symbol.locate ran against it. Fix: add an openQuestion asking whether workflow-rpc.ts's driver shape actually fits a code-review path, and link assumptions[4] to it.",
@@ -196,6 +71,57 @@
         "rationale": "Smallest edit that makes s2's userValue stand on its own: value becomes that an adherence finding cites a specific approved design clause the code departs from — the reviewer points at a named expectation, not taste, and the author can argue against the document. Removes the Epic-problem echo without reopening the Epic, and stays distinct from s1 (attributability), s7 (enforcement), s8 (independence).",
         "resolvedAt": "2026-08-03T07:19:43.936Z"
       }
+    },
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f10faa17d4d803296cfafdfa18da70f16d336cbc6cb729873f2f4fdd7e962cdb",
+        "at": "2026-08-03T06:51:25.695Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-03T06:57:39.730Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-08-03T06:54:46.433Z",
+        "report": {
+          "entityId": "DEF-761a43a6fa645815",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-761a43a6fa645815-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

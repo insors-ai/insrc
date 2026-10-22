@@ -1,33 +1,66 @@
 {
-  "id": "AMD-613abdb351c2c738-4",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "resendFrom",
-      "signature": "resendFrom(seq: number, newTurnId: string, windowKey: string): EnqueueResult",
-      "purpose": "resend, with the message handed to the window that resends it: a not-delivered message is one whose window closed, so resending it under its old window key would leave it undeliverable again"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T12:34:59.243Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5f2962dc1eea14e8aed9274e5396825efd4fa1ab31937484a574498aa61f8697",
+        "at": "2026-10-14T12:34:59.243Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T12:49:01.729Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "store.resend (chat-queue-store.ts:415-432) re-inserts the row with old.windowKey. A not-delivered message (s3) is by definition one whose window is closed; the user resends it from another window showing the same chat, and under the old key no live window would ever take it, so s3 would mark it not-delivered again. resendFrom does the same single transaction with the resending window's key. Additive: resend stays.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-4",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "resendFrom",
+        "signature": "resendFrom(seq: number, newTurnId: string, windowKey: string): EnqueueResult",
+        "purpose": "resend, with the message handed to the window that resends it: a not-delivered message is one whose window closed, so resending it under its old window key would leave it undeliverable again"
+      }
+    },
+    "rationale": "store.resend (chat-queue-store.ts:415-432) re-inserts the row with old.windowKey. A not-delivered message (s3) is by definition one whose window is closed; the user resends it from another window showing the same chat, and under the old key no live window would ever take it, so s3 would mark it not-delivered again. resendFrom does the same single transaction with the resending window's key. Additive: resend stays.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1791981295513-kg3r1m",
+      "storyId": "s2",
+      "stepId": "s5"
+    },
+    "proposedAt": "2026-10-14T12:34:59.243Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1791981295513-kg3r1m",
-    "storyId": "s2",
-    "stepId": "s5"
-  },
-  "proposedAt": "2026-10-14T12:34:59.243Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T12:49:01.729Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

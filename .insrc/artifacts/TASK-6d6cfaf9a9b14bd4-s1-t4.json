@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b1fc8ed0-07ad-4642-815d-a01887136016",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.969Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rewire the analyze.run emission closure at analyze-rpc.ts:521",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c68355e2a020cc22f4952ab59d90a90230f9a37790dbf761e1d0ac76d9772376",
+        "at": "2026-10-22T12:43:42.969Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.969Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rewire the analyze.run emission closure at analyze-rpc.ts:521",
+    "summary": "Update the onEvent closure (src/daemon/analyze-rpc.ts:521, currently `send({ id: 0, stream: 'progress', data: eventToProgressData(event) })`) to own the two counters t3's mapper deliberately does not: a running cumulative token count and a monotonic stageIndex incremented on each stage-transition event (repeated stageIds are legal and still advance the index). Emit NO frame when the mapper returns null — the deliberate behaviour change from today's unconditional one-frame-per-event, making the analyze stream strictly quieter and never noisier. Route TokenProgressEvent payloads onto `stream: 'delta'` frames while StageProgressEvent payloads stay on `stream: 'progress'`, preserving the `id: 0` field discipline the server overrides. Apply the same numeric guard as the workflow side (`Number.isFinite(delta) && delta >= 0 && total >= lastEmittedTotal`) before constructing any TokenProgressEvent. Wrap the mapper-plus-send call in a try/catch that logs at warn and returns normally, so neither a mapping fault nor a destroyed-socket write (EPIPE / ERR_STREAM_DESTROYED out of the sendStream closure at server.ts:154) can abort the run. Update the doc comment at analyze-rpc.ts:462, which documents the current progress-frame shape, alongside the call-site change.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A scripted analyze run emitting stage, token, and non-progress events produces `{id:0, stream:'progress', data:StageProgressEvent}` for stage events, `{id:0, stream:'delta', data:TokenProgressEvent}` for token events, and zero frames for events mapping to null.",
+      "stageIndex increments monotonically across the run including across repeated stage values, and total is null on every emitted stage frame.",
+      "tokensTotal is monotonically non-decreasing across the run and tokensDelta is non-negative and finite on every emitted delta frame; a NaN/negative/regressing value suppresses the frame and retains the last known-good cumulative.",
+      "A send stub that throws EPIPE on the Nth call does not abort the run: the operation completes and its persisted result is byte-identical to a run with no listener attached.",
+      "A mapper that throws is caught, warn-logged, emits no frame, and the run continues.",
+      "The doc comment at analyze-rpc.ts:462 describes the ProgressEvent payload pairing, not the superseded shape."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "analyze-progress-stream: scripted analyze run with stage, token, and non-progress events yields progress/StageProgressEvent frames, delta/TokenProgressEvent frames, and zero frames for null-mapping events, collected via the `sent: IpcStreamMessage[]` + `send` idiom"
+      },
+      {
+        "level": "integration",
+        "name": "analyze-progress-stream: stageIndex increments monotonically across repeated stage values, total is null on every stage frame, and tokensTotal is monotonically non-decreasing across the run"
+      },
+      {
+        "level": "integration",
+        "name": "analyze-progress-stream: a send stub throwing EPIPE/ERR_STREAM_DESTROYED on the Nth call does not abort the run — the persisted result is byte-identical to a run with no listener attached"
+      },
+      {
+        "level": "unit",
+        "name": "analyze-emission-backstop: a throwing mapper is caught, warn-logged against the stub logger, emits no frame, and the closure returns normally"
+      },
+      {
+        "level": "unit",
+        "name": "analyze-emission-guard: NaN, negative delta, or a regressing total suppresses the delta frame and retains the last known-good cumulative"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

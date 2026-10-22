@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e16d99dd-14e3-4f73-8d3d-a57cbffcb107",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:55.465Z",
+    "epicCreatedAt": "2026-10-05T06:10:31.833Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f2f08ccf89f8ab25",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Templates, settings, intent and answer validation",
+      "parent": {
+        "entityId": "STORY-f2f08ccf89f8ab25-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f2f08ccf89f8ab25-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f2f08ccf89f8ab25-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e70e53bd168402377a432f0b0e18987b1e34d7239066e92564ef5498398135e1",
+        "at": "2026-10-22T12:44:55.470Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:55.470Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Templates, settings, intent and answer validation",
+    "summary": "Add the two review templates as data (ISSUE: 5 items, 8 premises; SPEC: 8 items, 16 premises) with the thresholds and the 4 / 6 / 8 minute limits exposed as settings whose defaults are those values. Add the resolution of a design's intent and complexity from the artifact store, the 10 minute hard cap that no setting can raise, the template prompt (template, then instructions including the use of insrc analyze, then the design last), and the validation of a reviewer's answer against the template.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A design with an ISSUE artifact for its epicHash resolves to the ISSUE template; any other design resolves to the SPEC template",
+      "With no setting present the defaults are used: 8 and 16 premises, and 4, 6 and 8 minutes",
+      "A changed setting changes the threshold or limit used; a limit above 10 minutes is reduced to 10",
+      "Validation rejects an unanswered item, too many premises, an invalid outcome and a does-not-hold finding naming no file, and accepts `not applicable` with a reason"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T1 each template has an id, a threshold and its items; ISSUE threshold below SPEC"
+      },
+      {
+        "level": "unit",
+        "name": "T2 intent resolution from the artifact store"
+      },
+      {
+        "level": "unit",
+        "name": "T3 answer validation, each rejection and each acceptance"
+      },
+      {
+        "level": "unit",
+        "name": "T15 deadline by complexity, defaults, a changed setting, and the 10 minute cap"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

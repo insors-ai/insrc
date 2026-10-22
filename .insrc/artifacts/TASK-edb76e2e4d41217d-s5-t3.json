@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90021fd6-eab8-4892-8ba9-c2a8f88600e4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.009Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Host wiring: post history-list, title-from-first-prompt, provider validation",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f254bf6ab77a68e26f493445d8842bf4cf67aeac57345587970f3a83b510e71b",
+        "at": "2026-10-22T12:44:53.009Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.010Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host wiring: post history-list, title-from-first-prompt, provider validation",
+    "summary": "In chat-panel.ts host: open() posts history-list (from deps.store.list()) after theme + session-restored; handleMessage re-posts history-list after new-chat/open-chat, and new-chat validates provider is a member of deps.providers.available before store.create (else no-op+warn); runTurn sets session.title from the first user prompt (trimmed/clipped; whitespace falls back to 'new chat') on the first turn via save(), and re-posts history-list after the terminal done. Preserve the cancelActive()+ ++generation single-in-flight guard and the existing native-resume wiring unchanged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "open() posts theme + session-restored + history-list; history-list re-posted after new-chat/open-chat and after a turn's done",
+      "new-chat with a provider NOT in providers.available is a no-op (active session unchanged); valid provider creates a fixed-provider session",
+      "runTurn sets title from the first user prompt (empty->'new chat'); native resume path + single-in-flight guard unchanged; no workflow/daemon call (k8/k3)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "open() posts history-list (with theme + session-restored); history-list re-posted after new-chat/open-chat and after a turn's done"
+      },
+      {
+        "level": "integration",
+        "name": "new-chat{provider:'codex'} creates a fixed-provider session; a non-available provider is a no-op (active session unchanged)"
+      },
+      {
+        "level": "integration",
+        "name": "after a turn, session.title is set from the first user prompt and reflected in a re-posted history-list"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

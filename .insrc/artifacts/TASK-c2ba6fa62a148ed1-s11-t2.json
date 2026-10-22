@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-10d45741-b458-4bb5-97c4-9c5b8465e1b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.960Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Give the vector store the owner rule",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "667297e612f92f3b64922d3940fea1c9b3c341e67a8ad903b34099126b63bff0",
+        "at": "2026-10-22T12:44:34.961Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.961Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the vector store the owner rule",
+    "summary": "getLanceConn refuses the live ~/.insrc/lance (resolved through links, relative paths included) with LanceStoreNotOwnerError to a process that has not called declareLiveStoreOwner, before creating or connecting; add isLiveStoreOwnerDeclared to the store module; audit every test file in a temporary home for opens of the live vector store and give each a temporary path. Independent of the move, so it lands early and every later sweep runs with it.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "no declaration: the live path is refused and nothing is created",
+      "after the declaration it opens; a temporary path opens without one; a relative path and a symbolic link to the live path are refused",
+      "the audit finds no test file that leaves ~/.insrc/lance in its temporary home"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused"
+      },
+      {
+        "level": "integration",
+        "name": "no test opens the live vector store: each repaired test file run in a temporary home leaves no lance directory"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

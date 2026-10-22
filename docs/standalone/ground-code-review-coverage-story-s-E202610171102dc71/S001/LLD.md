@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-1102dc7125ad0c07-S001 -->
+<!-- insrc:artifact LLD-1102dc7125ad0c07-s1 -->
 
 # LLD: E202610171102dc71:S001
 
@@ -363,9 +363,9 @@ Same subject and coverage change as a1. The freshness answer is unchanged; codeR
 - **[[c6]]** `step-output` `s1 context.assemble bundle 6: existing tests for subject, freshness, runner and step handler`
 - **[[c7]]** `step-output` `s1 context.assemble bundle 7: freshnessFromReply, codeReview.run params, buildArtifact and the step state (src/shared/review-stream.ts:81, src/daemon/code-review-rpc.ts:189-208, src/workflow/code-review/runner.ts:275-292)`
 - **[[c8]]** `prior-artifact` `ISSUE-1102dc7125ad0c07 fix intent`
-- **[[c11]]** `prior-artifact` `Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version`
-- **[[c10]]** `prior-artifact` `Review round 2 of LLD-1102dc7125ad0c07-S001 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version`
-- **[[c9]]** `prior-artifact` `Review round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version`
+- **[[c11]]** `prior-artifact` `Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-s1 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version`
+- **[[c10]]** `prior-artifact` `Review round 2 of LLD-1102dc7125ad0c07-s1 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version`
+- **[[c9]]** `prior-artifact` `Review round 1 of LLD-1102dc7125ad0c07-s1 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version`
 
 ## 9. Open questions
 
@@ -389,6 +389,6 @@ Same subject and coverage change as a1. The freshness answer is unchanged; codeR
 - **[[c6]]** `step-output` `s1 context.assemble bundle 6: existing tests for subject, freshness, runner and step handler`
 - **[[c7]]** `step-output` `s1 context.assemble bundle 7: freshnessFromReply, codeReview.run params, buildArtifact and the step state (src/shared/review-stream.ts:81, src/daemon/code-review-rpc.ts:189-208, src/workflow/code-review/runner.ts:275-292)`
 - **[[c8]]** `prior-artifact` `ISSUE-1102dc7125ad0c07 fix intent`
-- **[[c11]]** `prior-artifact` `Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version`
-- **[[c10]]** `prior-artifact` `Review round 2 of LLD-1102dc7125ad0c07-S001 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version`
-- **[[c9]]** `prior-artifact` `Review round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version`
+- **[[c11]]** `prior-artifact` `Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-s1 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version`
+- **[[c10]]** `prior-artifact` `Review round 2 of LLD-1102dc7125ad0c07-s1 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version`
+- **[[c9]]** `prior-artifact` `Review round 1 of LLD-1102dc7125ad0c07-s1 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version`

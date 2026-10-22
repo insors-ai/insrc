@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "0e1265ed8581e188",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T06:40:42.435Z",
+    "updatedAt": "2026-10-16T06:49:29.234Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicCreatedAt": "2026-10-16T05:57:42.283Z",
+    "epicSlug": "start-daemon-when-extension-activates-finds",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5c454711f3f0805d3ec39bf3809c93f4eeee7dbdbbba220ffc5b5dd7a5e0fcb4",
+        "at": "2026-10-16T06:40:42.435Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T06:49:29.318Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "When the activation probe finds an installed daemon stopped, the extension re-checks reachability and then starts it once as a plain start (the controller's run gains a plain option adding --skip-sync --skip-install --skip-build, so nothing is pulled, installed or built); a failed start, or a success that leaves the daemon unreachable, shows as errored with the reason. ActivationDeps gains an optional controller and an onSettled callback; the settings pull from the daemon, the update check and the first-run onboarding now wait for activation to settle, so they find the daemon the start brought up. The live checks were run by the user after installing the rebuilt vsix.",
+    "testRecord": {
+      "md": "docs/standalone/start-daemon-when-extension-activates-finds-E202610160e1265ed/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "Auditing_AI_Coding_Agents_with_HTTPS_Inspection_Proxy.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T06:49:29.234Z"
+      }
+    ],
+    "commit": "cb91914f"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4082cd6c-426d-47c5-bd6f-a40fd8324177",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.570Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A partly read item is named with how much of it was read",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b0e1af4ebafca960812a994339e8ede67390978b75d6e95016d5362b2005435",
+        "at": "2026-10-22T12:44:24.570Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.571Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A partly read item is named with how much of it was read",
+    "summary": "Wherever a lookup cuts an item's content, report it in partlyRead with the item, the characters kept and the full length from measureItem: the two document lookups (2,000), module.profile (4,096), and any lookup that passes on a stored body the indexer cut. The two document lookups and capability.reuse-check gather their facts in prepare and carry them to finalize in a new `completenessFacts` field of the prepared value; a prepared value without it gives a record that is not established.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A document lookup that cuts a 100,000-character section to 2,000 reports 2,000 of the section's real length; measuring the stored body instead makes the test fail",
+      "module.profile reports each file it cut with both lengths",
+      "A lookup that passes on a stored body the indexer cut reports the item as partly read",
+      "Each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried",
+      "A prepared value minted without the facts gives a record that is not established, with the reason",
+      "The limits and cuts keep their values"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a document lookup that cuts a 100,000-character section to 2,000 reports it against the section's real length (mutation: measure the stored body)"
+      },
+      {
+        "level": "unit",
+        "name": "module.profile reports each file it cut with the kept and full lengths"
+      },
+      {
+        "level": "unit",
+        "name": "a lookup that passes on a stored body uncut reports the item as partly read when the indexer cut it"
+      },
+      {
+        "level": "unit",
+        "name": "each of the three lookups that pause for a model call builds its record in finalize from the facts prepare carried, and a prepared value without them is not established"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

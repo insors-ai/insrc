@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-88e121f2-0db1-4641-98cf-274cfc14fbcb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.229Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add FeedbackService.add with retry comparison and per-artifact atomicity",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f4fad85d3816cecbb7403cc041bb844ac76a7f56bb81382b60873043514731d",
+        "at": "2026-10-22T12:43:21.229Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.230Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add FeedbackService.add with retry comparison and per-artifact atomicity",
+    "summary": "Add FeedbackService.add(artifactId, input, actor): read the head for existence and the current revision, check the actor is a namespaced lower-case id, default the kind to comment, mint a 32-hex id and the time unless the caller gave an id, check a reply's parent is a root of this artifact, compare a repeated caller id on the caller-supplied fields (text, kind, anchor, inReplyTo, batchId, actor id) and return the stored entry unchanged on a match or refuse on a difference, and run the lookup and the append under the store's per-artifact queue (expose an exclusive-run method on ArtifactStore) so two concurrent adds cannot both append.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "one root entry is stored with the author, a minted id, the time and the head's revision, and the kind defaults to comment",
+      "blank text, a non-namespaced actor and a malformed anchor are refused and nothing is appended",
+      "a reply is stored as its own line; a missing parent, a parent on another artifact and a reply to a reply are refused",
+      "a retry with the same id and the same caller fields returns the stored entry with its original timestamp and revision and appends nothing; a different text under that id is refused",
+      "two concurrent adds with one id and different content leave exactly one line",
+      "feedback on a design, a plan and a Task lands in the right file, a Task's line in its Story's Tasks file, and survives a restart",
+      "a missing artifact is refused with ArtifactNotFoundError and nothing is written"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "feedback-service.test.ts: FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor"
+      },
+      {
+        "level": "unit",
+        "name": "feedback-service.test.ts: FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs"
+      },
+      {
+        "level": "integration",
+        "name": "feedback-storage.test.ts: feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only"
+      },
+      {
+        "level": "integration",
+        "name": "feedback-storage.test.ts: a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last"
+      },
+      {
+        "level": "integration",
+        "name": "feedback-merge.test.ts: two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

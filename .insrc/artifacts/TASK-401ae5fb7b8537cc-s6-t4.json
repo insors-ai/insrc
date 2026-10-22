@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa564248-ca42-42ec-9ea1-40fa9c52c4b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.756Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Debug renderer + controller (new debug-renderer.ts)",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bbbdf270fb1ec41f0bc14516b62b84d631335c3afb5b7ba63609489e000286d5",
+        "at": "2026-10-22T12:43:30.756Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.756Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Debug renderer + controller (new debug-renderer.ts)",
+    "summary": "Create vscode-plugin/src/panels/debug-renderer.ts: renderDebugTab(deps { managedPid }): TabRenderer — awaits gateway.mcpClients() (host/wired list, empty-state when none; ac1) + gateway.scanOrphans() (filter out managedPid()), renders the escaped mcp + orphan lists, an empty <pre id=\"insrc-log\">, and a 'Clean up orphaned processes' <button> posting {type:'action',action:'cleanupOrphans'} ONLY when >=1 non-managed orphan; a gateway rejection propagates so the host degrades. createDebugTabController(deps { logTail, logger }): TabController — onActivate(ctx) starts logTail.follow(lines => ctx.postMessage({type:'appendLog', lines})) and returns the tail's dispose. VS-Code-free; reuse panels/html.ts escapeHtml.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "renderDebugTab lists mcpClients (host/wired, empty-state) + the managed-pid-excluded orphans + #insrc-log; the Clean-up button (posting {type:'action','cleanupOrphans'}) shows ONLY with >=1 non-managed orphan; every value escaped; a gateway reject propagates",
+      "createDebugTabController.onActivate arms exactly one logTail.follow -> ctx.postMessage appendLog and returns the tail dispose (idempotent)",
+      "imports no 'vscode', no cloud"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderDebugTab: lists gateway.mcpClients() host/wired rows; empty client list renders an explicit empty-state (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "renderDebugTab: orphan list EXCLUDES the managed pid; managed-only scan -> empty orphan list, no Clean-up button"
+      },
+      {
+        "level": "unit",
+        "name": "renderDebugTab: the Clean-up button shows ONLY with >=1 non-managed orphan and posts {type:'action',action:'cleanupOrphans'}"
+      },
+      {
+        "level": "unit",
+        "name": "renderDebugTab: body includes an empty <pre id=\"insrc-log\">; every mcp/orphan value escaped; a gateway rejection propagates"
+      },
+      {
+        "level": "unit",
+        "name": "createDebugTabController: onActivate arms exactly ONE logTail.follow -> postMessage appendLog per emit; returned dispose is idempotent"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -24,40 +24,61 @@
     "hldBaseRunId": "wf-1789726188697-irhvw2",
     "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl10",
-          "ref": "c4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ArtifactMetaBase already carries an optional meta.parentRef?: WorkItemRef | null (added in S002) which nothing currently populates; s3 does not populate it (s4 does).",
-          "evidence": "Probe confirms the optional field `readonly parentRef?: WorkItemRef | null;` exists at src/workflow/types.ts:412 (not 417-421). The Migration section attributes meta.parentRef to `src/workflow/types.ts:417-421`, but 417-421 is the WorkItemRef INTERFACE (confirmed by cl9). The parentRef field itself sits at line 412. A cosmetic line-reference imprecision in the LLD prose; the underlying fact (parentRef is an existing optional field added in S002, reused unchanged) is correct and confirmed.",
-          "action": "Optionally correct the Migration citation to read `src/workflow/types.ts:412 (parentRef field), :417-421 (WorkItemRef interface)`. Non-blocking; does not affect any contract or the design.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "Distinguish the parentRef field line (412) from the WorkItemRef interface lines (417-421) in the migration citation.",
-            "artifactEdits": [
-              {
-                "find": "meta.parentRef?: WorkItemRef | null (added in S002, src/workflow/types.ts:417-421)",
-                "replace": "meta.parentRef?: WorkItemRef | null (added in S002, src/workflow/types.ts:412; WorkItemRef interface at :417-421)"
-              }
-            ]
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 1
-      },
-      "reviewedAt": "2026-09-18T13:35:13.207Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-18T13:36:26.041Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "af33fbf983901dcb23ca354ef6ce866d208649b20f7cd8b07b6d24331b008f59",
+        "at": "2026-09-18T13:33:10.659Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T13:36:26.041Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 1
+        },
+        "at": "2026-09-18T13:35:13.207Z",
+        "report": {
+          "entityId": "LLD-1703991c69967193-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1703991c69967193-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

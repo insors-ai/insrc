@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7136c9d-7166-4b15-be5c-251b84e66cc1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.521Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Update the guarded entry-point inventory and prove the two-clone handoff end to end",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a4d2c8f3ff614eb906dfa742043592f0ba81d229d463b72a358ece3e00ba5bc4",
+        "at": "2026-10-22T12:43:26.521Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.521Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the guarded entry-point inventory and prove the two-clone handoff end to end",
+    "summary": "Add the park and resume entry points to src/workflow/__tests__/gate-guarded-entry-points.test.ts (resumeStage asks the author gate, parkDraft reads the holder through the gate) and add an end-to-end test with a bare origin and two clones at different absolute paths: refusal with an offer, park, resume at the right turn, and the lost-machine restart.",
+    "size": "S",
+    "order": 13,
+    "acceptanceChecks": [
+      "Removing the gate call from resumeStage or parkDraft fails the inventory test",
+      "The end-to-end test goes from a reassignment refusal with an offer through park to resume on the second clone",
+      "The lost-machine case restarts only the stage that has no artifact"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/gate-guarded-entry-points.test.ts: the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/handoff-e2e.test.ts: from a reassignment refusal with an offer through park to resume on a second clone, and after a lost machine with no parked branch only the stage that has no artifact restarts, a committed LLD leaving the plan to do"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

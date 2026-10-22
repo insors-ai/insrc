@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e2766b0-2b0e-410d-863c-f15c442a8a7d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.412Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Conventions and quality strategies",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b096875bdbee2534d003a7ea65829e48c78e41fa71c880e68dc873bfbcffd152",
+        "at": "2026-10-22T12:44:15.412Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.413Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Conventions and quality strategies",
+    "summary": "DimensionStrategy for conventions (per-module idiom notes and module adjudication with today's too-few-examples rule) and quality (within-part MAP, one-line descriptions, COMPARE, pair judgement through the joint-fit chain).",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A module idiom spread over parts is judged on all its examples.",
+      "Duplicated logic in symbols in different parts, including two near-budget summaries, is reported with counterpartRef."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'conventions judges a module idiom on examples from every part'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'quality reports duplication between symbols in different parts with counterpartRef'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries fit only one at a time are judged in two directions against digests'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries each nearly fill the budget are judged digest against digest, and every pair prompt fits when serialised'"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

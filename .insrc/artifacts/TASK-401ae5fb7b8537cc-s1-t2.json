@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f1ad08ce-4572-410b-8f78-51aa1ff559bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.763Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Declare the 31 machine-scoped global keys in package.json contributes.configuration",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d97a4e89c795ac0f111933d6704d7e02c0ea712bd1dd3049879c323ff8aa6f9",
+        "at": "2026-10-22T12:43:28.763Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.763Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the 31 machine-scoped global keys in package.json contributes.configuration",
+    "summary": "Author one native setting per global CONFIG_CATALOG option (31 keys, 7 group sections): id `insrc.` + ConfigOption.path, JSON-schema type from ConfigOption.type (enum -> enumValues array for the 6 enum options), default from ConfigOption.default, markdownDescription from desc, scope:'machine' on every key. Net-new contributes.configuration block (the manifest had contributes.commands only).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "vscode-plugin/package.json contributes.configuration declares exactly the 31 global CONFIG_CATALOG paths as `insrc.<path>` keys, each scope:'machine'",
+      "each key's type/enum/default matches its ConfigOption.type/enumValues/default",
+      "package.json remains valid JSON and the manifest still lists the existing 7 commands"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "manifest-catalog contract: declared insrc.* keys exactly cover the 31 global CONFIG_CATALOG paths with matching type/enum/default and scope:'machine'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

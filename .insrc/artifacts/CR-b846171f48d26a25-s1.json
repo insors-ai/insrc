@@ -12,7 +12,26 @@
     "storyId": "s1",
     "epicSlug": "bug-vs-code-insrc-chat-webview",
     "epicCreatedAt": "2026-09-26T19:14:26.923Z",
-    "standalone": true
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "ff7aeb6f6203a217f6d11ab0787403eb2abb0bc91c067c859ba20bc39a2f00f4",
+        "at": "2026-09-27T04:44:10.314Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

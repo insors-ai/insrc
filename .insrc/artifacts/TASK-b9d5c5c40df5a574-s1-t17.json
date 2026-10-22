@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a82ce803-a0f4-4377-8146-744db8b46c3c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.585Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The daemon guide, the live checks and the baseline comparison",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b8877b21dfd61a3b9b727ae4894e00b2f21529875fa082f46354366cddad3110",
+        "at": "2026-10-22T12:44:24.585Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.585Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The daemon guide, the live checks and the baseline comparison",
+    "summary": "Update docs/daemon.md: the error-code table for 'answer-step-failed' and the data it carries, the description of the bundle for the report and the completeness line, and a note for the IDE repository that its mirrored bundle type needs the optional `report` (not built here). Add the live suite, gated by INSRC_LIVE_TESTS, and run it once. Compare the analyze, mcp and daemon suites against a baseline taken on the commit before this Story's first task.",
+    "size": "S",
+    "order": 17,
+    "acceptanceChecks": [
+      "docs/daemon.md describes 'answer-step-failed', its data, the report on the bundle and the completeness line, and carries the note for the IDE repository",
+      "Live, on this repository: a focused request whose text search reaches its limit returns a bundle whose first line says it is incomplete and names that lookup",
+      "Live: a request with a lookup made to fail lists it as failed, not as empty",
+      "The live run's date and result are written in the build record",
+      "The baseline result of the three suites, taken before the Story's first task, is recorded, and no test that passed in the baseline fails after the last task"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "a focused request whose text search reaches its limit returns a bundle whose first line says it is incomplete and names that lookup"
+      },
+      {
+        "level": "live",
+        "name": "a request with a lookup made to fail returns a bundle that lists it as failed, not as empty"
+      },
+      {
+        "level": "smoke",
+        "name": "no test of the analyze, mcp and daemon suites that passed in the baseline fails after the last task"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

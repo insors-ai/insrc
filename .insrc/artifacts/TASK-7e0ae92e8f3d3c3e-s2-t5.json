@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c778117f-473d-4a7f-bc29-5ef9a28f6638",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.961Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Bind every distributed output to reviewed provenance",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0ae92e8f3d3c3e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ebb62abcb839194eeed1d674a4c7bb09b6af687057bb0eb62d6193963471f9a7",
+        "at": "2026-10-22T12:43:50.961Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.962Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bind every distributed output to reviewed provenance",
+    "summary": "Add proposed sources/lineage.ts, fixed sources/lineage.json schema v1 and source-to-output closure validation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Each output path+digest binds full contributing source ID union and reviewer/transformation/modification records; imported copies equal upstream digest, derived bytes use independently checked output digests.",
+      "Record sourceRefs/modificationNotes agree with bindings; original/inferred content requires explicit author/rationale declarations; metadata/evidence explicitly categorized; an original record label cannot hide unbound third-party specimens.",
+      "Missing contributors, unbound outputs, stale bytes, unresolved references, conflicting declarations and path collisions fail; deterministic lineage bytes are in manifest.files with no candidate/final digest embedded."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lineage-closure retains every source and transformation for derived outputs"
+      },
+      {
+        "level": "unit",
+        "name": "lineage-closure rejects unbound specimens inconsistent provenance and stale outputs"
+      },
+      {
+        "level": "unit",
+        "name": "lineage-closure requires explicit original and inferred output declarations"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

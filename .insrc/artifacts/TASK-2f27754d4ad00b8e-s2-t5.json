@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-632ae7bc-6f4a-4139-9fd0-ac74a77bb0f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.425Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the kind codecs, the creation context and the shared decoder",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e0feeeee8c3a5e99d8a31265c121769563849e47b11f363c83b688dc1b247839",
+        "at": "2026-10-22T12:43:20.425Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.425Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the kind codecs, the creation context and the shared decoder",
+    "summary": "Add the codec registry with a codec per existing kind except AMD, each owning encode(payload, ctx) and the kind's identity meta; define the codec creation context type and its provider so a create with no prior head obtains workflow, runId, repoPath, createdAt, epicCreatedAt, elapsedMs, repoIndexedAt and schemaVersion; add the pure synchronous decodeArtifactHead; make the AMD codec refuse a flat amendment with a pointer to the s9 conversion.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "decodeArtifactHead fills every envelope part for a head with envelope parts and returns empty parts for a head without them",
+      "a create without a prior head builds a head whose workItemAnchorCreatedAt and Define renderer results are the ones an existing writer would produce",
+      "a flat amendment, a malformed head and an unknown kind are refused with the documented errors"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/decode.test.ts: decodeArtifactHead fills every envelope part, returns empty parts for a head without them, and refuses a malformed head, an unknown kind and a flat amendment"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/codec-create.test.ts: a create without a prior head builds identity meta that workItemAnchorCreatedAt and the Define renderer accept"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

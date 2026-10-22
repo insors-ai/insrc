@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-df9b85a5-abcb-4599-ad0a-9e17667e89f2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.474Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement TaskImplementerAdapter over one serial CliProvider subprocess (with the UNPROVEN-host finding resolved)",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "54197306c162a1c3a8d36c1a95d57d8c82ce8515dabc3fa3c68a5e62233a4481",
+        "at": "2026-10-22T12:43:15.474Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.474Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement TaskImplementerAdapter over one serial CliProvider subprocess (with the UNPROVEN-host finding resolved)",
+    "summary": "Implement the sc5 quarantine seam. FIRST resolve the LLD's single load-bearing UNPROVEN question by reading src/agent/providers/cli-provider.ts directly: can its one-document-per-call complete()/completeStructured() surface actually supervise a long free-form editing session, or is provider-level work required? The boundary explicitly reserves that provider-level work as in-scope for s3, so this Task must land an explicit finding and either do the required provider change or scope it before building on top — never assume the happy path. Then implement(): exactly one CliProvider subprocess per Task through the shared LLMProvider abstraction, cloud reached only via the claude/codex CLI binaries (no direct REST), serial by construction and never Promise.all'd. A subprocess/structured-output rejection propagates out of implement() so the sequencer can treat it as an implementer failure; the returned report is advisory only and never advances the run (migration step 4; sc5; invariants c2).",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "The direct read of src/agent/providers/cli-provider.ts produces an explicit written finding on whether its structured-output/complete path can host the multi-turn free-form editing loop; if it cannot, the required provider-level change is either implemented in this Task or scoped as a named follow-up — the L does not silently absorb an open-ended provider change.",
+      "implement() runs exactly one CliProvider subprocess per call through the injected LLMProvider abstraction with no direct REST client constructed, and callers await one call before the next — provider calls are never Promise.all'd.",
+      "A subprocess spawn/mid-session error or a completeStructured retry-budget exhaustion surfaces from implement() as a rejected Promise, and the returned TaskImplementerReport is treated purely as advisory (never consulted to advance a Task)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "adapter: TaskImplementerAdapter.implement() drives exactly one CliProvider subprocess per Task through the injected LLMProvider abstraction (no direct REST client), and a subprocess-spawn / completeStructured retry-budget rejection surfaces from implement() as a rejected Promise"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

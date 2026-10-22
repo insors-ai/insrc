@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c81c5bb7-0cdf-48f7-9f68-63f37f823081",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.726Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Full sweep, forward-compatibility of stored records, and the end-to-end provenance proof",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ea3e4b773fff9c9801468114b87af6a3215278e9775a0de6f48899300df199d5",
+        "at": "2026-10-22T12:44:00.726Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.727Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full sweep, forward-compatibility of stored records, and the end-to-end provenance proof",
+    "summary": "Run the build-step and workflow suites, confirm t2's goldens behaved as predicted, and verify that a record written entirely BEFORE any of this still parses, merges and renders — forward compatibility of the stored shape is the one thing no test of new behaviour would catch, and 63 BUILD records plus 648 artifacts are already committed. Then prove the Story's actual purpose end to end: a completed Story's BUILD record carries its real change set, a summary and the landing commit, on the trivial route as well as the plan-driven one. CRITIQUE APPLIED: dependsOn now names EVERY task rather than relying on transitivity. The earlier list omitted t2 while asserting twice on t2's goldens, which contradicted this task's own stated rule; and since the task re-runs mutation proofs resting on t1's characterisations and the derivation t3 widened, depending on all nine is the honest description of a final full-sweep verification and costs nothing in ordering.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "The build-step and workflow suites run GREEN, with the command and the pass/fail counts recorded from REAL output — not asserted from reading the diff",
+      "t2's goldens 1 and 2 are unchanged; golden 3's change is the reviewed, intended one and nothing else moved",
+      "A pre-existing record drawn from the tracked artifact tree, written before this Story, still parses, merges via mergeWithPrior, and renders without error",
+      "END-TO-END: a trivial-routed build produces a record rendering '## Changes' with the Story's real files, plus '## Summary' and '**Commit:**' — none of which it can do today",
+      "An empty or absent changeLog still renders NO '## Changes' section, so a record with nothing to report stays byte-identical to one written before the change-log feature existed",
+      "All three mutation proofs (t2's golden, t9's standalone flag, and t8's absent-sizeClass title) are re-run after the full sweep and still invert, confirming none was neutralised by a later task",
+      "All three of t1's characterisations are accounted for: each was INVERTED by its named task (TEST C at t6, TEST A at t8, TEST B at t9) and none was deleted or skipped"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the build-step and workflow suites run GREEN, with the command and real pass/fail counts recorded from actual output"
+      },
+      {
+        "level": "integration",
+        "name": "END-TO-END: a TRIVIAL-routed build produces a record rendering '## Changes' with the Story's real files, plus '## Summary' and '**Commit:**' — none of which it can do today"
+      },
+      {
+        "level": "unit",
+        "name": "FORWARD COMPAT: a record written entirely before this change still parses, merges and renders"
+      },
+      {
+        "level": "unit",
+        "name": "an empty or absent changeLog renders no '## Changes' section, keeping such a record byte-identical to a pre-feature one"
+      },
+      {
+        "level": "unit",
+        "name": "ALL THREE mutation proofs re-run after the full sweep and still invert, confirming no later task neutralised an earlier guard"
+      },
+      {
+        "level": "smoke",
+        "name": "all three of t1's characterisations are accounted for — each INVERTED by its named task, none deleted or skipped"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

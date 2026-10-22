@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35eedc0f-b36f-4c57-a3bc-3d4f1f446ae9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.207Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Worker: lease rules replace recoverDeadLease",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b05870e5de335b378cb875c5999ceebaa4c67bddc9550b740e36fd77bbef5663",
+        "at": "2026-10-22T12:43:38.207Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.207Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Worker: lease rules replace recoverDeadLease",
+    "summary": "Remove recoverDeadLease from the worker's tick and add the lease rules: for a lease that is not this claim's whose holder pid is gone, a same-windowKey lease whose CLI is alive is reclaim()ed and one whose CLI is gone is takeOver()n at once; another window's lease is takeOver()n only after LEASE_TAKEOVER_MS, passing a holderGone predicate built from deps.isAlive over the holder pid and the lease's CLI. Move the 97df9bf7 'worker recovery' test onto the new calls.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a reloaded window (same key, new pid) with the old CLI alive reclaims the lease and the message is not failed",
+      "a reloaded window with the old CLI gone frees the lease at once and fails the message with a resend",
+      "another window's dead lease is freed only after LEASE_TAKEOVER_MS, and a heartbeating holder past LEASE_TAKEOVER_MS is never taken",
+      "a tick in a window running its own message does not touch the lease",
+      "the 97df9bf7 worker recovery test passes on the new calls"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

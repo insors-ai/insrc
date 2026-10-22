@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d99d55c2-d730-4c2e-a0ed-eb50f3ada4ea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.774Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Story and issue screens in the webview",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b1c145d95e50b2dfd623d19f6f335a00ac4a3a6745932c46ca32fbf08f1b1a3f",
+        "at": "2026-10-22T12:43:26.774Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.774Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Story and issue screens in the webview",
+    "summary": "The story screen: kicker, title, chips, the conflict box first, tab buttons (role=tab, roving tabindex, set-item-tab) for Overview & tasks (tasks as <details> rows with checks and dependencies, the why box and the artifact chain), Workflow evidence (a records table with record, approval and date, review, override and the open button, then notices and the opened record) and Linked work (the epic with its completion, children, issues correcting the story, each posting open-item or open-epic). The issue screen: the trail's back, 'Open what it corrects →' or the parent notice, fix stories, why, chain, records and notices. Short tab labels in a narrow pane. board-host.test.ts gains the item-screen tests.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Opening a story shows only the story screen with its breadcrumb and Back; the three tabs post set-item-tab and render their own content; the conflict box comes before the tasks.",
+      "Workflow evidence lists every record in a table inside a scroll wrapper, each with its open button posting open-evidence; an opened record renders as preformatted text.",
+      "Linked work lists the parent epic, the children and the correcting issues, and each row posts open-item or open-epic; a standalone story has no Epic section.",
+      "The issue screen shows 'Open what it corrects →' posting open-item (open-epic for an epic parent), or the parent notice when the parent is unresolved, and lists each fix story with its stage.",
+      "Narrow panes use 'Overview', 'Evidence' and 'Linked'."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'opening a story replaces the screen: #main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'linked work lists the epic, children and correcting issues, each opening its own screen'"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: 'the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

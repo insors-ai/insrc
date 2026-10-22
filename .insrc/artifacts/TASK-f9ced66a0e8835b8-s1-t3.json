@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dc161ee6-e2c6-4f16-bee7-2ffe10acf5a0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.543Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "git_diff accepts a list of paths",
+      "parent": {
+        "entityId": "STORY-f9ced66a0e8835b8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9ced66a0e8835b8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "908f5fab0c6b8f94b0affe533a289e04a6d49954affa14fe48287f7516be2a4f",
+        "at": "2026-10-22T12:45:03.543Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.543Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_diff accepts a list of paths",
+    "summary": "Add the optional paths input to gitDiffTool: validated as a non-empty array of non-empty strings, rejected together with path, emitted as ':(top,literal)<p>' pathspecs after '--' alongside the exclude pathspecs, for both the body and the numstat command.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "With paths, the diff body and file list cover only those paths, matched literally.",
+      "paths together with path, an empty paths array, or a non-string entry returns ok:false with '[git:diff] invalid-input'.",
+      "Without paths the git command line is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "git-diff-paths.test.ts: 'git_diff limits the body and file list to the given paths, literally'"
+      },
+      {
+        "level": "unit",
+        "name": "git-diff-paths.test.ts: 'git_diff rejects paths together with path and an empty paths array'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-14T05:11:46.224Z",
     "parentRef": {
       "slug": "label-failed-last-index-rejected-ollama"
+    },
+    "epicCreatedAt": "2026-10-14T04:21:03.437Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9135aed6005ffec016e95fb0b51214582d9adb2f21ce733babb2e8d690457c9c",
+        "at": "2026-10-14T04:21:03.437Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T05:11:46.224Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

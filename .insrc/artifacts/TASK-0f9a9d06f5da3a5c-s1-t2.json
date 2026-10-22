@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9c7de7e2-3374-49ef-838a-3cacdbb979b8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.712Z",
+    "epicCreatedAt": "2026-08-04T11:46:40.232Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f9a9d06f5da3a5c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Fake-file unit tests: gates-approve gate integration + the MCP relay passthrough",
+      "parent": {
+        "entityId": "STORY-0f9a9d06f5da3a5c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0f9a9d06f5da3a5c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0f9a9d06f5da3a5c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "deea078db6c8f164d227eded41c37fe6a57653ccdd28ab2c515512b3f74a750c",
+        "at": "2026-10-22T12:43:12.714Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-file unit tests: gates-approve gate integration + the MCP relay passthrough",
+    "summary": "Add a test file under src/workflow/__tests__ (node:test + node:assert/strict via npx tsx --test): write a story-scoped artifact json (meta.epicHash+storyId, optionally meta.review) + a CR-<epic>-<story>.json (verdict block/warn/pass, or omit for absent) under a tmp repo via codeReviewArtifactPaths, then call approveWorkflowTarget(req, { enforce }) and assert the branch table: (ac1) enforce true + block + no override => the artifact in skipped[] with the gate message + its json has NO meta.approvedAt + codeReview[] records 'blocked'; (ac2) enforce true + block + req.overrideReview => approved (approvedAt stamped) + codeReview[] 'overridden' + the entry carries overrideReason; (ac3) warn/pass => approved + codeReview[] records the status + counts; (ac5) absent CR / DEF-HLD (no storyId) / enforce false + block => approvedAt stamped exactly as WITHOUT the wiring (byte-identical) + codeReview[] 'no-review' (or the demoted advisory); batch (epicHash) A=block/B=pass => A skipped + B approved; (ac6) distinct-from-meta.review (clean meta.review + code-review block => withheld only by the code-review gate) + corrupt-CR-json => 'no-review' fail-open (approved). PLUS a handleWorkflowApprove relay test (ac4): an injected UnaryRpcDeps stub returns a canned WorkflowApproveResult with a codeReview[] entry; assert it appears verbatim in the dispatch's JSON response.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "a new src/workflow/__tests__ file runs under `npx tsx --test` with temp artifact json + temp CR json under a tmp repo + approveWorkflowTarget(req,{enforce}) — no live daemon/graph/config write",
+      "tests cover the branch table: block=>skipped (no approvedAt), override=>approved+overridden with overrideReason surfaced on the codeReview[] entry, warn/pass=>approved+surfaced, absent/DEF-HLD/enforce-off=>byte-identical-to-today, batch mixed, distinct-from-meta.review, corrupt-CR=>no-review",
+      "a handleWorkflowApprove relay test asserts a stubbed approveWorkflow's codeReview[] is forwarded verbatim in the dispatch JSON (ac4)",
+      "the full `npx tsx --test 'src/workflow/**/*.test.ts'` + `'src/mcp/**/*.test.ts'` sweeps pass (existing suites stay green)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handleWorkflowApprove relay: stubbed approveWorkflow's codeReview[] forwarded verbatim in the dispatch JSON"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

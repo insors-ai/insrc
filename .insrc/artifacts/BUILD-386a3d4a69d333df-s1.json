@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "386a3d4a69d333df",
+    "storyId": "s1",
+    "createdAt": "2026-08-07T10:40:52.428Z",
+    "updatedAt": "2026-08-07T10:40:52.428Z",
+    "epicSlug": "pin-ollama-embedding-model-so-stops",
+    "epicCreatedAt": "2026-08-07T10:19:45.573Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "11f471ad3a29f0963f40c249bb52bd49af6a9ee1f9415475af3bbec54e3cd632",
+        "at": "2026-08-07T10:40:52.428Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-07T10:41:35.541Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Pin the Ollama embedding model keep-alive: models.local.embeddingKeepAlive config knob (default 24h) wired into BOTH the indexer embedder (embedEntities/embedQuery/embedText — the index-burst hot path) and OllamaProvider.embed() (delegation fallback), so the embed model stays resident instead of Ollama 5-min eviction.",
+    "producesLld": true,
+    "commit": "d113f45",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ]
+  }
+}

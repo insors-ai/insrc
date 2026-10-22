@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dce2dfe7-e6ed-4181-becf-7e242e3a2a82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.776Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Apply: the rules in order",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9cf6adb69823e3d043df663aa9033d8872ed7f63bdcac61fc744b3c6d8d54e61",
+        "at": "2026-10-22T12:43:22.776Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.776Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply: the rules in order",
+    "summary": "Add src/workflow/convert/apply.ts: run the rules in the LLD's order (rename, stamps, amendments, feedback, migrate every head, EPIC and STORY heads, Task heads, bindings, story history), recompute the plan first and refuse on a difference, and refuse while the delivery reader's approval source is not the lifecycle. Test src/workflow/convert/__tests__/convert-apply.test.ts.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "Apply on a legacy fixture converts every artifact and creates EPIC, STORY and Task heads in the stated order",
+      "A tree that changed since the preview is refused",
+      "Apply refuses while the delivery reader still reads the legacy stamps"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

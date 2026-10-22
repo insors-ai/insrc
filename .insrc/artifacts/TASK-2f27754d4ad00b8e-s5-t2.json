@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b1c60af9-9389-421a-b55e-7be9b7f926b2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.225Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Apply the addresses rule in ArtifactStore.write",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc4bcd1d13a6dc8c43dbd544e9581c3303e4001e4370bc915b907bd553488468",
+        "at": "2026-10-22T12:43:21.225Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.226Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply the addresses rule in ArtifactStore.write",
+    "summary": "In ArtifactStore.writeUnlocked (src/workflow/artifact-core/store.ts), when the operation is update and the revision number moves and the writer gave no addresses, stamp addresses 'all' on the staged entry; when the writer gave a list, check before staging that every id is a root feedback entry of this artifact (no inReplyTo) that no earlier update entry addressed, and refuse with HistoryEntryError naming the bad ids; an update that moves no revision and a lifecycle operation address nothing. ContentWriteOptions and LifecycleService.updateContent pass addresses through.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "a revision that moves the revision number logs addresses 'all' when none is given and openFeedback then returns nothing",
+      "a list addresses only those roots and the other roots stay open",
+      "a list naming an unknown id, a reply id, or an id an earlier revision addressed is refused and nothing is staged",
+      "an identical rewrite and a lifecycle operation such as approve or review log no addresses",
+      "an empty list is valid and addresses nothing",
+      "the s2, s3 and s4 store, lifecycle and recovery tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "addresses-rule.test.ts: ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

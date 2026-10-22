@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d8fae0df-1110-4353-8308-ee5e6ee2ccb8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.670Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add rollUp, unit membership and the completion evidence",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6fcd568df9e60e0e5bb0e02526fc96acc9b35cf141db6001eeb31ff1936dd428",
+        "at": "2026-10-22T12:43:20.670Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.671Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add rollUp, unit membership and the completion evidence",
+    "summary": "Add rollUp and the unit membership helper to lifecycle.ts over ChildStatusReader (childrenOfStrict plus a status read) and CompletionEvidence, and the default evidence in src/workflow/artifact-core/completion-evidence.ts: the Task side from the BUILD record's per-task results and the Story code review as structured CodeReviewEvidence mapped from enforceCodeReviewGate, where an advisory warn is blocked unless override evidence makes it overridden: an explicit override reason carried by the approval wins, otherwise the stored meta.reviewOverride of the CR or BUILD record. A unit is never its own member. Binding requirements 1 and 5.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "rollUp follows the Task, Story and Epic rules, ignores TASKS and DIAG children and withdrawn and superseded Tasks, and throws UnreadableChildError for an unreadable child",
+      "storyCodeReview maps pass and a non-advisory warn to clean, an advisory warn to blocked, overridden and an explicit override over an advisory warn to overridden with the reason, blocked to blocked and no-review to missing, and a stored reviewOverride is used when the approval carries none",
+      "a Story's members are its fixed-id heads plus its STORY, TASKS and DIAG heads with each DIAG sequence kept, never the unit itself, and an Epic's are EPIC, DEF and HLD"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts: the Task, Story and Epic roll-up rules, the evidence mapping and the unreadable child"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/completion-evidence.test.ts: storyCodeReview maps the gate, an explicit override wins over a stored one and an advisory warn is blocked without an override"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-members.test.ts: a Story's members keep each DIAG sequence and never include the unit itself"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

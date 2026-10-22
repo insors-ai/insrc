@@ -25,168 +25,61 @@
     "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The LLD covers S002 FR001–FR003 and ac1–ac7 from the DEF, placing stories and issues (not epics/tasks) in one of six stages, with the route deciding the ready gate.",
-          "evidence": "DEF.md:43-45 lists S002 FR001-FR003, and DEF.md:135-141 lists ac1-ac7. All of them appear in §2.3/§2.4/§2.5 and the edge-case table. DEF S002:FR001 says 'every work item', but HLD.md:206 narrows sc4 to 'keyed by itemId; stories and issues only', and HLD sc7 (line 342) has 'null for epics and tasks'. The LLD follows that HLD narrowing. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md, docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No non-goal is built: the stages project recorded evidence and do not redefine gates, imply running activity, or write to the store.",
-          "evidence": "DEF.md:72-73 rules out a new state machine and running-activity reporting. The LLD's ready gates match the triage taxonomy in src/workflow/triage/types.ts:21-37: small/trivial have needsPlan false, a small bugfix skips design, a sized bugfix takes the full path. §2.4 states that ready text never mentions running activity. deriveStages is pure, with no I/O. [files: src/workflow/triage/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Route fields exist in the store with the shapes the LLD reads: ISSUE meta.magnitude is 'small'|'sized'; standalone LLD meta.sizeClass is feature/small/bugfix; standalone BUILDs carry sizeClass 'trivial'/'small'; a non-standalone BUILD can carry 'M'.",
-          "evidence": "51 ISSUE files have \"magnitude\": \"small\"|\"sized\". LLD sizeClass values are only feature/small/bugfix. Examples: BUILD-0855311b6b32eb72-S001 has standalone:true, sizeClass:'trivial', and ISSUE-0855311b6b32eb72 magnitude 'small', so the ISSUE magnitude correctly wins over the stamp. BUILD-914cbf5ea9026b92-s4 has standalone:false, sizeClass:'M', with DEF-914cbf5ea9026b92 present. LLD-7c219c7471d79496-S001 has sizeClass 'bugfix' and no ISSUE record, which is the LLD's 'bugfix with no ISSUE → unknown' case. [files: src/workflow/types.ts, .insrc/artifacts/BUILD-0855311b6b32eb72-S001.json, .insrc/artifacts/BUILD-914cbf5ea9026b92-s4.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Fix stories share the issue's workItemHash and are the issue item's children; the ISSUE record is in the issue item's evidence, not the story's.",
-          "evidence": "graph.ts:224-245: the head is a DEF ?? ISSUE, and the head's evidenceArtifactIds come from the epic-level records (the ISSUE). graph.ts:331: a story's parentId is headDraft.id. graph.ts:294: a fix story's standalone flag comes from head.meta.standalone. So the small-bugfix gate ('the ISSUE for its hash is approved') has to reach the ISSUE through parentId or a scan by hash, not through the story's own evidenceArtifactIds. Both are available to deriveStages(graph, recordSet). [files: src/workflow/delivery/graph.ts]",
-          "action": "Say explicitly in the implementation that a fix story's ISSUE is found through its parent issue item's evidence (or a workItemHash scan), because §2.1 mentions only lookup by artifactId.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Approval state is available as ArtifactRecord.approval.state derived from meta.approvedAt/rejectedAt.",
-          "evidence": "types.ts:33-37 has approval { state: ApprovalState; approvedAt; rejectedAt }. load.ts:66-72 derives the state from approvedAt/rejectedAt/status. [files: src/workflow/delivery/types.ts, src/workflow/delivery/load.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Reused helpers makeNotice(code, message, refs) and sortNotices exist with the stated signatures, and NOTICE_ATTENTION gives attention false for 'unknown-route' and 'review-without-build'; deriveStages/stage.ts and the sc4 types do not yet exist.",
-          "evidence": "notice.ts:44 has `export function makeNotice(code: NoticeCode, message: string, refs: NoticeRefs)` and notice.ts:73 has sortNotices. notice.ts:24-25 has 'unknown-route': false and 'review-without-build': false. types.ts:118-119 already includes both codes in NoticeCode. src/workflow/delivery/ has no stage.ts, and types.ts has no DeliveryStage/DeliveryRoute. [files: src/workflow/delivery/notice.ts, src/workflow/delivery/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The only change sites are adding the sc4 types to types.ts and a new stage.ts; it has no callers until s5, and the WorkItemNode fields it consumes (evidenceArtifactIds, parentId, childIds, workItemHash, standalone, kind) exist.",
-          "evidence": "types.ts:77-98 WorkItemNode has id, kind, workItemHash, standalone, parentId, childIds, evidenceArtifactIds. WorkItemGraph (types.ts:100-106) exposes items as a ReadonlyMap. The type sketch matches the HLD.md:188-208 sc4 sketch field for field. [files: src/workflow/delivery/types.ts, docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Older records without route stamps (pre-stamp standalone LLDs, an ISSUE with no magnitude), non-SizeClass values ('M'), and conflicting stamps resolve to 'unknown' with a notice instead of a guessed route; full-chain epic LLDs carry no sizeClass and fall to the 'non-standalone epic → full-chain' rule.",
-          "evidence": "DEF.md:81 records that full-chain epic LLDs carry no sizeClass and that seven standalone LLDs and one ISSUE predate the stamps. The LLD's §2.2 and §5 edge table map each of these to 'unknown' plus an unknown-route notice, or to full-chain for a DEF-parented, non-standalone story. graph.ts:294 sets standalone from DEF head.meta.standalone, so a DEF without that field gives standalone false, as rule (4) needs. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md, src/workflow/delivery/graph.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An ISSUE with no magnitude makes its fix stories 'unknown' rather than falling through to the LLD sizeClass.",
-          "evidence": "The edge table says 'An ISSUE with no magnitude → the issue and its fix stories have route unknown'. §2.2 rule (1) reads 'when an ISSUE record has the story's workItemHash, that ISSUE's magnitude' and does not say whether a missing magnitude falls through. The two agree only if rule (1) is read as terminal once an ISSUE exists. The intent is clear, but the rule text is loose.",
-          "action": "State in §2.2 that rule (1) is terminal whenever an ISSUE exists for the hash: a missing or invalid magnitude gives 'unknown' and does not fall through to the LLD's 'bugfix' stamp.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s2 does not read task results, review verdicts/overrides (s3), currency (s4) or raise incomplete-evidence (s5), and does not re-derive identity (s1).",
-          "evidence": "The LLD says it reads only meta.magnitude, meta.sizeClass, meta.standalone and approval.state, and that the approved-BUILD-with-failed-tasks case is 'not read here (s3 reports the conflict)'. HLD.md:413 limits s2 to route mapping, the precedence, the ready gates and the reason wording, which matches. Item identity comes from the s1 graph unchanged. [files: docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Missing evidence records and wrongly typed route fields are detected (lookup undefined / typeof) and degrade to skipped records or an 'unknown' route without throwing, consistent with the s1 graph's never-throw convention.",
-          "evidence": "graph.ts:83-93 already uses str/obj/arr type guards and documents 'never throws' (graph.ts:205). ArtifactRecord.meta is Record<string, unknown> (types.ts:43), so typeof checks are the natural detection. The LLD names both cases with their detection, response and user impact, and has a test for them ('missing evidence records and wrongly typed fields never throw'). [files: src/workflow/delivery/graph.ts, src/workflow/delivery/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of ac1–ac7 maps to a named stage.test.ts test built from the existing fixture builders (defRecord, lldRecord, planRecord, buildRecord, crRecord, issueRecord).",
-          "evidence": "The §6 acceptance mapping covers ac1-ac7, and ac6 has two tests. fixtures.ts:385-410 exports defRecord, lldRecord, planRecord, buildRecord(hash, storyId, tasks, meta), crRecord(hash, storyId, verdict, meta) and issueRecord(hash, parentRef, meta), each taking a meta override for approvedAt/sizeClass/magnitude/standalone. fixtures.ts:43 also has REAL_STORE for the 'real-shape fixtures' determinism test. [files: src/workflow/delivery/__tests__/fixtures.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-08T10:27:28.372Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-08T10:41:58.945Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2fd6486aff2b9784d4ad1da7c573fbd98e8dc82a092946b4651ab6e4af8233c9",
+        "at": "2026-10-08T10:25:10.918Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T10:41:58.945Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-10-08T10:27:28.372Z",
+        "report": {
+          "entityId": "LLD-2ff0dfdadb1c8d1c-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2ff0dfdadb1c8d1c-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -293,7 +186,7 @@
             "sc2",
             "sc3"
           ],
-          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-s1."
         },
         {
           "storyId": "s4",

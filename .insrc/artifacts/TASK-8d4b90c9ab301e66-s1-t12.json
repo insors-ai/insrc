@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1d0f87ab-78dd-44f6-b2aa-70a6beef991b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.585Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Show the saved comments of a document",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "83b7aa622c23b23439faa8907d76ebf35a283d472959ae0c962c665df985f688",
+        "at": "2026-10-22T12:43:56.588Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.589Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show the saved comments of a document",
+    "summary": "Saved entries with an anchor are placed on their quotes with a mark and a margin marker that shows the count; clicking either opens the thread, oldest first, with author, time and decision. Entries with no place, and entries without an anchor, are listed in the whole-document strip in time order, tagged when they are from an earlier revision. A document not awaiting review shows its history and offers send feedback only.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "Saved inline entries appear on their passages with a count and open oldest first",
+      "An entry whose quote is gone is listed as on an earlier revision with its quote; entries without an anchor are listed in time order",
+      "An entry the shell cannot read is skipped and counted",
+      "A document not awaiting review shows its history and offers send feedback only",
+      "Author, comment and quote text are set as text"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: a document that is not awaiting review shows its history and offers send feedback only"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: author, comment and quote text are set as text, never as markup"
+      },
+      {
+        "level": "integration",
+        "name": "docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-14T19:16:55.124Z",
     "parentRef": {
       "slug": "vs-code-editor-dev-chat-ui",
       "storyId": "s2"
+    },
+    "epicCreatedAt": "2026-10-14T19:16:10.679Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7c187df706434945a40c9eb3b8ce77a68f70e5010e559a0752df918f49c08731",
+        "at": "2026-10-14T19:16:10.679Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:16:55.124Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

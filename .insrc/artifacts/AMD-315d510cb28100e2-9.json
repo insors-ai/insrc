@@ -1,27 +1,50 @@
 {
-  "id": "AMD-315d510cb28100e2-9",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "findIssues",
-      "signature": "findIssues(labels: string[]): PortResult<IssueRef[]>",
-      "purpose": "Lists every issue, open or closed, that carries all the given labels, in ascending issue-number order, so a creator can tell whether another issue for the same unit exists and keep the lowest."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-17T20:14:22.504Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "rejected",
+      "revision": {
+        "number": 0,
+        "contentHash": "a3dfcad9c9c2a4fdf7e0afa2ea94f532f9945a59c96ca829aef20b0c603c2327",
+        "at": "2026-10-17T20:14:22.504Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
     }
   },
-  "rationale": "findIssue returns only the first match and gh lists newest first, so two daemons that each created an issue for a unit cannot both reach the same answer. A listing lets every daemon keep the lowest-numbered issue and close its own, which converges concurrent creators without coordination. The method is additive and the sc1 sketch is otherwise unchanged.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792267728001-sw5v7h",
-    "storyId": "s4",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-9",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "findIssues",
+        "signature": "findIssues(labels: string[]): PortResult<IssueRef[]>",
+        "purpose": "Lists every issue, open or closed, that carries all the given labels, in ascending issue-number order, so a creator can tell whether another issue for the same unit exists and keep the lowest."
+      }
+    },
+    "rationale": "findIssue returns only the first match and gh lists newest first, so two daemons that each created an issue for a unit cannot both reach the same answer. A listing lets every daemon keep the lowest-numbered issue and close its own, which converges concurrent creators without coordination. The method is additive and the sc1 sketch is otherwise unchanged.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792267728001-sw5v7h",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-17T20:14:22.504Z"
   },
-  "proposedAt": "2026-10-17T20:14:22.504Z",
-  "status": "rejected",
-  "rejectedAt": "2026-10-18T12:40:03.459Z",
-  "rejectedReason": "Superseded duplicate of AMD-315d510cb28100e2-10"
+  "citations": []
 }

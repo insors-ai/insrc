@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09c0bfd8-ebc9-40a7-a290-ca0f5c4429cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.664Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s2",
+    "envelope": {
+      "description": "registerDaemonCommands wiring (5 commands, install sc4-gated, state→sc2)",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf24ff468a844ba4b9057b6baae95ca5f4cb7ab157f430b03206a0191cb49fdc",
+        "at": "2026-10-22T12:44:12.665Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.665Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "registerDaemonCommands wiring (5 commands, install sc4-gated, state→sc2)",
+    "summary": "Add registerDaemonCommands({ commands, consent, status, controller }): registers the five insrc.daemon.{install,start,stop,restart,update} commands into sc3. The install command asks sc4 and calls controller.install() ONLY on 'accepted' (k4); the four lifecycle commands call controller.run(action) (no gate). Every command pushes the returned LifecycleResult.state into sc2 (StatusSurface.set), including 'errored' with the mapped message on failure.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "registers exactly the five insrc.daemon.* commands into the CommandRegistry",
+      "the install command calls ConsentGate.ask and invokes controller.install() only on 'accepted'; on 'declined'/'dismissed' it calls nothing (k4)",
+      "each lifecycle command calls controller.run(action) and pushes the resulting LifecycleResult.state into StatusSurface.set; a failing action pushes 'errored' with the mapped message"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerDaemonCommands registers exactly the five insrc.daemon.{install,start,stop,restart,update} commands into the fake CommandRegistry"
+      },
+      {
+        "level": "unit",
+        "name": "the install command asks sc4 and calls controller.install() ONLY on 'accepted'; nothing on declined/dismissed (k4)"
+      },
+      {
+        "level": "unit",
+        "name": "each lifecycle command calls controller.run(action) and pushes the resulting LifecycleResult.state (incl. a failing action→'errored'+message) into StatusSurface.set"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-7fefc3fc5c51793e-S001 -->
+<!-- insrc:artifact BUILD-7fefc3fc5c51793e-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -22,11 +22,11 @@ The dev chat's named colours hold VS Code theme variables, and every fixed colou
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
-- `.insrc/artifacts/CR-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
-- `.insrc/artifacts/CR-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
-- `.insrc/artifacts/LLD-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
-- `.insrc/artifacts/TESTS-5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/BUILD-5ff61e5fdca3875d-s1.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/CR-5ff61e5fdca3875d-s1.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/CR-7fefc3fc5c51793e-s1.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/LLD-7fefc3fc5c51793e-s1.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
+- `.insrc/artifacts/TESTS-5ff61e5fdca3875d-s1.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
 - `.insrc/build-start/5ff61e5fdca3875d-S001.json` — **insrc-build** (2026-10-13T07:18:26.361Z)
 - `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/BUILD.md` — **insrc-build** (2026-10-13T07:18:26.361Z)
 - `docs/standalone/5ff61e5fdca3875d-E202610135ff61e5f/S001/CR.md` — **insrc-build** (2026-10-13T07:18:26.361Z)

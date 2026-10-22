@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62e41e6b-92dd-4daf-bbff-ca9cb8af0954",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.115Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s4",
+    "envelope": {
+      "description": "protocol: permission-decision + set-permission-mode WebviewToHost messages",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "70519d8dd0b14d1d08de6371f18b88136e496954ccfc627778a008f108d766e7",
+        "at": "2026-10-22T12:45:03.115Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.116Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "protocol: permission-decision + set-permission-mode WebviewToHost messages",
+    "summary": "In protocol.ts add PermissionDecisionMsg {type:'permission-decision',requestId,decision:'approve'|'deny',scope?:'once'|'session'} and SetPermissionModeMsg {type:'set-permission-mode',mode:PermissionMode} to the WebviewToHost union and append both to WEBVIEW_TO_HOST_TYPES. Reuse the PermissionMode type declared in protocol.ts by t1. Additive; existing message roundtrips unchanged (k2).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "permission-decision + set-permission-mode are members of WebviewToHost and present in WEBVIEW_TO_HOST_TYPES.",
+      "scope is an optional 'once'|'session' field (accepted-but-inert 'once' per q2); existing protocol tests stay green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "protocol.test.ts: permission-decision + set-permission-mode in WEBVIEW_TO_HOST_TYPES; existing roundtrips unchanged."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

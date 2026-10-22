@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e786d397-c45a-4dc2-977f-eaf6671b635e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.474Z",
+    "epicCreatedAt": "2026-10-17T08:20:53.100Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd1c6c9005ff6390",
+    "storyId": "s1",
+    "envelope": {
+      "description": "TypeScript calls outside any function are credited to the file",
+      "parent": {
+        "entityId": "STORY-bd1c6c9005ff6390-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bd1c6c9005ff6390-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d154386296438764ae8a74c7d5fbe04b8fca28539ec7aaa0ed3231a007256e3d",
+        "at": "2026-10-22T12:44:28.474Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.475Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "TypeScript calls outside any function are credited to the file",
+    "summary": "walkNode extracts calls with the file entity as caller from program-level statements that are not declarations it handles, from each non-function declarator value of a program-level or exported lexical/variable declaration, and from an export_statement's value (export default <expr>); exported function and class declarations are walked as today and never scanned with the file as caller.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Calls in a program-level expression statement, including nested describe/test callbacks, are CALLS from the file entity, in .ts and .js sources.",
+      "Non-function program-level and exported initializers, and export default, are CALLS from the file entity.",
+      "Calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file.",
+      "Built-ins are skipped; a module-level HTTP call is a CALLS_HTTP from the file entity."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default, in both TypeScript (.ts) and JavaScript (.js) sources, are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

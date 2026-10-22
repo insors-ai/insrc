@@ -4,7 +4,7 @@
 
 ## Reproduction
 
-1. Build a Story so its BUILD record carries a change log (on 2026-10-05, BUILD-1716f77ba9ba017b-S001 listed 75 files). 2. Commit the work. 3. Leave any unrelated file uncommitted (that day: CLAUDE.md and AGENTS.md, re-stamped by a daemon restart, plus the Story's code-review json and md). 4. Approve the BUILD record through approveWorkflowTarget. Observed: the record's change log now lists only the 4 uncommitted files; the 75 entries are gone. Expected: approval leaves the Story's change log as the build recorded it, or adds to it; it never drops entries.
+1. Build a Story so its BUILD record carries a change log (on 2026-10-05, BUILD-1716f77ba9ba017b-s1 listed 75 files). 2. Commit the work. 3. Leave any unrelated file uncommitted (that day: CLAUDE.md and AGENTS.md, re-stamped by a daemon restart, plus the Story's code-review json and md). 4. Approve the BUILD record through approveWorkflowTarget. Observed: the record's change log now lists only the 4 uncommitted files; the 75 entries are gone. Expected: approval leaves the Story's change log as the build recorded it, or adds to it; it never drops entries.
 
 ## Root cause
 
@@ -19,4 +19,4 @@ Approval must not lose a change log the build already recorded. The completion w
 - **[[c1]]** `code` `src/workflow/runners/build/completion-record.ts` — "body: { ...base.body, ...(changeLog.length > 0 ? { changeLog } : {}) },"
 - **[[c2]]** `code` `src/workflow/runners/build/changed-files.ts` — "if (kept.length > 0) return kept;"
 - **[[c3]]** `code` `src/workflow/runners/build/standalone-record.ts` — "...prior.body,"
-- **[[c4]]** `prior-artifact` `BUILD-1716f77ba9ba017b-S001`
+- **[[c4]]** `prior-artifact` `BUILD-1716f77ba9ba017b-s1`

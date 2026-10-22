@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-732d9658-8ba2-4289-8586-4d72c338391b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:07.084Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s10",
+    "envelope": {
+      "description": "role-taxonomy: add the peripheral/mid 'brainstorm.decision.draft' role",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c2540d8267c18331a73c665c6e566e5c5e1c5f0aef610f04aac24785be98fb2",
+        "at": "2026-10-22T12:44:07.084Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:07.084Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "role-taxonomy: add the peripheral/mid 'brainstorm.decision.draft' role",
+    "summary": "In src/config/role-taxonomy.ts add { id: 'brainstorm.decision.draft', criticality: 'peripheral', defaultTier: 'mid' } to the closed ROLES registry. Peripheral => NOT core-floor-clamped => resolveRole yields tier 'mid'. No RoleRouter/CoreFloorGuard code change (they key on RoleId). Independent file.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/config/role-taxonomy.ts ROLES contains { id:'brainstorm.decision.draft', criticality:'peripheral', defaultTier:'mid' }",
+      "resolveRole('brainstorm.decision.draft', cfg) resolves to tier 'mid' with clampedByFloor=false (peripheral, not core-floor-clamped)",
+      "tsc --noEmit clean; no change needed in role-router.ts / core-floor-guard.ts"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveRole('brainstorm.decision.draft') => tier 'mid', clampedByFloor=false (peripheral, not floor-clamped)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

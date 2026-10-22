@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da6bd33a-786e-4a03-8ce4-612e3d921525",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.465Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The chat host posts the outbox and handles its actions",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "74bf42d89b8ca8c648a1ac19d716d21f547277ff25928414cb3be76b67883cd3",
+        "at": "2026-10-22T12:43:37.465Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.465Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The chat host posts the outbox and handles its actions",
+    "summary": "In chat-panel.ts createChatPanelHost: subscribe to worker.onChange and keep the last rows; post the projected view for the shown chat after every change, in showSession, on 'ready' and after an action. Route outbox-cancel / -dismiss / -resend to worker.act (ignoring a seq that is not the shown chat's; outbox-retry-now ignored until s4) and re-post with the note on refusal.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Messages sent while a turn runs appear in the posted outbox with their places, and leave it when they are taken",
+      "Cancel, dismiss and resend from the webview change the queue; a refused action is re-posted with its note; a seq of another chat is ignored",
+      "After the host is rebuilt over the same file and its webview is ready, the same outbox is posted",
+      "Without the queue no 'outbox' message is posted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead"
+      },
+      {
+        "level": "integration",
+        "name": "chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs"
+      },
+      {
+        "level": "integration",
+        "name": "chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs"
+      },
+      {
+        "level": "integration",
+        "name": "chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox"
+      },
+      {
+        "level": "integration",
+        "name": "chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e9dbeeba-f02c-41d5-b80d-64dfdead63d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:46.940Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Fake-provider unit tests for the coverage judge",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec4beb9971f95a8562391338da5054a4bb18d75b218654f4f323a96c97d6db30",
+        "at": "2026-10-22T12:43:46.940Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:46.941Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-provider unit tests for the coverage judge",
+    "summary": "Add src/workflow/code-review/dimensions/__tests__/coverage.test.ts mirroring conventions.test.ts: a fakeProvider(scripted) returning {provider, calls} cast `as unknown as LLMProvider` (only completeStructured present, so any stray method throws), a subject(changedFiles, promisedTests?) factory stubbing approvedPlan.body.tasks[].tests (for ac1) and a buildRecord summary (for ac3) cast via unknown, and a grounding(symbols) factory letting testsReaching be empty vs populated per symbol (for ac2), spanning ≥2 changed files. Cover: (ac1) a promised test absent from the grounding is a HIGH missing-promised-test finding naming it in expectationRef + confidence:'breach', and buildCoveragePrompt embeds the promised test names in the trailing payload; (ac2) a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (symbol in expectationRef), and a symbol WITH testsReaching yields no gap finding; (ac3) a present-but-failing/unverified test is confidence:'observation' and distinct from a wholly-missing test (confidence:'breach'), and the system charge carries the present-failing-vs-no-test + no-unsupported-pass-state discipline; (ac4) an out-of-changedFiles finding is dropped and the system charge instructs excluding pre-existing neighbour gaps; plus exactly-one-call, retry-exhaustion-propagation (invalid output → assert.rejects), the two empty-result edge cases (empty grounding+no promised tests → findings:[]; all-covered fake {findings:[]} → no manufactured finding), a null-buildRecord tolerance test (judgeCoverage runs and returns a valid result with subject.buildRecord===null), and a prompt-trailing assertion. No live model.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/workflow/code-review/dimensions/__tests__/coverage.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and a fake LLMProvider (no live model)",
+      "tests cover ac1-ac4 plus exactly-one-call, retry-exhaustion propagation (assert.rejects), the two empty-result edge cases, a null-buildRecord tolerance (judgeCoverage runs with buildRecord===null), and the prompt-trailing placement",
+      "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S004 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ac1: promised test absent from grounding → HIGH missing-promised-test finding, expectationRef=test name, confidence:'breach'; prompt embeds promised test names"
+      },
+      {
+        "level": "unit",
+        "name": "ac2: changed symbol with testsReaching.length===0 → HIGH not-exercised (symbol in expectationRef); symbol WITH testsReaching → no gap finding"
+      },
+      {
+        "level": "unit",
+        "name": "ac3: present-but-failing/unverified test → confidence:'observation' distinct from wholly-missing (confidence:'breach'); charge carries the discipline"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: out-of-changedFiles finding dropped; charge instructs excluding pre-existing neighbour gaps"
+      },
+      {
+        "level": "unit",
+        "name": "judgeCoverage issues exactly ONE completeStructured call (no other provider method touched)"
+      },
+      {
+        "level": "unit",
+        "name": "retry-exhaustion: invalid model output on all 3 attempts → assert.rejects (no fabricated clean pass)"
+      },
+      {
+        "level": "unit",
+        "name": "edge: empty grounding + no promised tests → {dimension:'coverage', findings:[]} with no error"
+      },
+      {
+        "level": "unit",
+        "name": "edge: all-covered fake {findings:[]} → empty result, no manufactured finding"
+      },
+      {
+        "level": "unit",
+        "name": "null-buildRecord: judgeCoverage runs and returns a valid DimensionResult with subject.buildRecord===null"
+      },
+      {
+        "level": "live",
+        "name": "judgeCoverage against a real buildShaperProvider provider on a fixture with a KNOWN zero-testsReaching symbol + a missing promised test (INSRC_LIVE_TESTS-gated, skips when unset)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

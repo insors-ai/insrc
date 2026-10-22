@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-53bc0534-676d-4d37-a1ff-bb0b079c67e8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.956Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Plugin tests (gateway approve boundary + ApproveDecision)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ac59f7300979e3ba522394cfa8c9890a1136b567033fcecbc3f15824d8d35e5",
+        "at": "2026-10-22T12:43:18.956Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.956Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin tests (gateway approve boundary + ApproveDecision)",
+    "summary": "Add plugin JUnit tests mirroring ArtifactContentTest/ResolveCommentTest: DaemonGatewayImpl.approve over a fake DaemonRpc (approved->Approved incl. idempotent re-approve; skipped->Withheld(reason); ok=false/DaemonUnavailable/both-empty->Unavailable; asserts method 'workflow.approve' + composed absolute artifactPath + overrideReview presence/absence) AND the real UnixSocketDaemonRpc.parse across the framing boundary ({result:{approved}}->Approved; {result:{skipped:[{reason}]}}->Withheld; {result:{error}}->Unavailable); plus the pure ApproveDecision (enabled, normalizeOverride blank->null, shouldRefresh=Approved). Verify via ./gradlew test JDK21.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Gateway tests classify approved/skipped/error/both-empty correctly INCLUDING across the real parse boundary, and assert the composed artifactPath + overrideReview presence",
+      "ApproveDecision is unit-tested (enabled-iff-approvable, normalizeOverride blank->null, shouldRefresh only on Approved)",
+      "./gradlew test green on JDK21"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the REAL UnixSocketDaemonRpc.parse boundary: {result:{approved}}->Approved; {result:{skipped:[{reason}]}}->Withheld(reason); {result:{error}}->Unavailable"
+      },
+      {
+        "level": "unit",
+        "name": "ApproveDecision full coverage (enabled/normalizeOverride/shouldRefresh)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

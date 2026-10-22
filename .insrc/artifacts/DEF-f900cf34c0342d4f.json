@@ -19,75 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "f900cf34c0342d4f",
     "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon exposes a daemon.status IPC handler (src/daemon/index.ts) consumed by the CLI daemon service (src/cli/services/daemon.ts), backing the status card.",
-          "evidence": "daemon.status handler at src/daemon/index.ts:849, consumed by src/cli/services/daemon.ts:50 (rpc<DaemonStatus>('daemon.status')) + getStatus at daemon.ts:49 / useDaemonStatus.ts:32 / command.ts:103. The status card's IPC source is real. Confirmed.",
-          "action": "None — anchors resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The managed daemon entry is defined as DAEMON_ENTRY = join(__dirname, '../../daemon/index.js') in src/cli/services/daemon.ts — the cmdline anchor for the orphan ps scan.",
-          "evidence": "DAEMON_ENTRY = join(__dirname, '../../daemon/index.js') at src/cli/services/daemon.ts:24, used to spawn the daemon at :63. The orphan ps-scan cmdline anchor is exactly this resolved entry. Confirmed.",
-          "action": "None — anchor resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No debug-status IPC that enumerates the daemon's connected socket clients (label/pid/connected-at) exists today — the Epic introduces it as a new daemon surface + the socket server is src/daemon/server.ts.",
-          "evidence": "Zero matches for debug-status/debugStatus/debug.status or any connected-clients/clientList/socketClients enumeration in src/ — confirming the connected-socket-client debug-status IPC is genuinely a NEW daemon surface the Epic introduces (the socket server src/daemon/server.ts exists as the place it is added). Confirmed.",
-          "action": "None — the 'new surface' premise holds; design must add the tracking + method.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly two log files exist under PATHS.logDir — daemon.log and a shared agent.log (cli + mcp modes) — written by the pino-roll logger.",
-          "evidence": "PATHS.daemonLog/agentLog (paths.ts:104-105 per direct read; PATHS.daemonLog used at daemon.ts:59/70/71), pino-roll transports at src/shared/logger.ts:66/101/130 (daemon/cli/mcp modes, cli+mcp -> agentLog). Exactly two physical files, rotated. Confirmed — the two-log-category premise holds.",
-          "action": "None — the disk-tailed two-file premise resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "MCP per-client registration/connection status is obtained via `mcp list` through src/daemon/mcp-register.ts (registerMcpClients).",
-          "evidence": "registerMcpClients defined in src/daemon/mcp-register.ts and invoked at src/daemon/index.ts:499; it drives the `mcp list`/`mcp add` argv flow (the `mcp list` literal lives as an argv array, so the plain-string grep under-hit but the mechanism is confirmed). The MCP registration/status source is real. Confirmed.",
-          "action": "None — anchor resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The existing TUI panes (DaemonPane/ReposPane/WorkflowsPane/SetupPane/ModelTiersPane) are *Pane.tsx components under src/cli/panes backed by the services layer (makeServices), the convention the new Debug pane follows.",
-          "evidence": "makeServices at src/cli/services/index.ts:7 + wired in src/cli/index.tsx:32/34; the existing *Pane.tsx files resolve as real paths (e.g. src/cli/panes/ReposPane.tsx surfaced in the cl1 probe) and the earlier module.profile enumerated DaemonPane/ReposPane/WorkflowsPane/SetupPane/ModelTiersPane under src/cli/panes. The literal-filename grep under-hit only because ripgrep scans contents, not names. Confirmed.",
-          "action": "None — the pane/service convention the Debug pane follows is real.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-05T11:02:19.945Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-05T11:07:47.910Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7e26e2e21d9edd6a3950e6c52d2aa55ee8f5015b2180e5612c86a62002676158",
+        "at": "2026-08-05T11:01:04.586Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T11:07:47.910Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-05T11:02:19.945Z",
+        "report": {
+          "entityId": "DEF-f900cf34c0342d4f",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-f900cf34c0342d4f-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

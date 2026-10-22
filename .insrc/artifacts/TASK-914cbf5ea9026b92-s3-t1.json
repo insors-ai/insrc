@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d146b70f-834b-4164-a4eb-6d75aee53bf1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.155Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s3",
+    "envelope": {
+      "description": "External-endpoint resolution pass + fullIndex wiring",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d3f69de1607d53be8b56c57c20ba253d6e18587e9f26d644464a6cfb0b736c45",
+        "at": "2026-10-22T12:43:59.155Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.156Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "External-endpoint resolution pass + fullIndex wiring",
+    "summary": "New async per-repo module `resolveExternalEndpoints({ db, repo })` under src/indexer: read the repo's UNRESOLVED CALLS_HTTP relations via listUnresolvedRelations (filter kind==='CALLS_HTTP'); for each distinct rawTo await sc2.resolve(repo,'http', rawTo) (once per unique expr; sc2 memoizes the ConfigSourceMap per repo); derive the endpoint id via makeExternalEndpointId(repo,'http', identity||'' , rawExpression); collect one externalEndpoint Entity per distinct id (kind='externalEndpoint', repo, file='', protocol='http', resolved, target=identity||'', rawExpression when unresolved) and upsert via upsertEntities (dedup by id); upsert the now-RESOLVED CALLS_HTTP edge (from callerId -> endpointId, resolved:true) via upsertRelations. Skip a call-site whose `from` entity no longer exists (mid-reindex race) and never mint an empty-target/empty-rawExpression node. Wire `await resolveExternalEndpoints({ db: this.db, repo: repoPath })` into fullIndex right after runCrossFileResolver (index.ts:435). Per the s3 critique, this stays one cohesive task but its integration test must exercise each behavior below as a separate, independently-failing case (dedup / per-repo split / cross-language / unresolved / idempotency / dangling-from).",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "A repo with HTTP call-sites yields exactly one externalEndpoint node (kind='externalEndpoint', protocol='http', resolved:true, target=identity) per distinct resolved target, each with a CALLS_HTTP edge from every calling entity (ac1).",
+      "Dedup + per-repo split (each an independently-failing case): three call-sites to the same resolved target in one repo collapse to a single node with three CALLS_HTTP edges; two repos calling the same target get two distinct nodes because repo is in the id (ac2).",
+      "Cross-language dedup: a TS CALLS_HTTP and a Python CALLS_HTTP to the SAME resolved identity in one repo share ONE language-agnostic node (id = repo+protocol+identity) with two edges — language does not fragment the endpoint.",
+      "An un-pinnable URL mints an unresolved node (id derived from rawExpression) carrying rawExpression + a CALLS_HTTP edge — never dropped (k5).",
+      "A CALLS_HTTP relation whose `from` entity no longer exists (mid-reindex race) is skipped rather than writing a dangling edge; no empty-target/empty-rawExpression node is ever minted.",
+      "Re-running the pass on identical sources produces a byte-identical node/edge set (deterministic ids, idempotent); sc2.resolve is invoked once per repo, not per call-site.",
+      "The pass is wired into fullIndex after runCrossFileResolver and awaited; a repo with no CALLS_HTTP relations produces no externalEndpoint nodes and leaves the graph unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: one node per distinct resolved target with a CALLS_HTTP edge from each caller (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: three call-sites to one target => one node + three edges (ac2 dedup)"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: two repos to the same target => two distinct nodes (ac2 per-repo)"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: a TS and a Python edge to the same resolved identity share one language-agnostic node"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: interpolated URL resolving to the same host/path as a literal collapses to one node"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: an un-pinnable URL mints an unresolved node carrying rawExpression + edge, never dropped (k5)"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: a CALLS_HTTP with a missing `from` entity is skipped (no dangling edge, no empty node)"
+      },
+      {
+        "level": "integration",
+        "name": "resolveExternalEndpoints: re-run over identical sources is idempotent (byte-identical node/edge set) and sc2.resolve is invoked once per repo"
+      },
+      {
+        "level": "integration",
+        "name": "fullIndex wires resolveExternalEndpoints after runCrossFileResolver; a no-HTTP repo leaves the graph unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

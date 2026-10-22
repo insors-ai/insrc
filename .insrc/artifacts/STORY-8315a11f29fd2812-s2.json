@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-bfb32c5e-d635-4715-a3f4-a579fc89cddf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.984Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "envelope": {
+      "description": "A large code review is divided into chunks of related code",
+      "parent": {
+        "entityId": "EPIC-8315a11f29fd2812",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "274543759f132badd241b615be33be1bcf71a1b8d9d354b7d109751d2bc5788c",
+        "at": "2026-10-22T12:43:06.984Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

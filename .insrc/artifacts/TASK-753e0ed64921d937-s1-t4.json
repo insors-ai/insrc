@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09e2cd90-9c8e-4d99-9446-156b1ddc79a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.062Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement handleDeployStep dispatcher with full error-path handling",
+      "parent": {
+        "entityId": "STORY-753e0ed64921d937-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-753e0ed64921d937-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f4070bf64d58a892ffce9a3503d3d771b7fadb49b943e18749f5dbeb8dc1cd8c",
+        "at": "2026-10-22T12:43:45.062Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.063Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement handleDeployStep dispatcher with full error-path handling",
+    "summary": "Create src/mcp/deploy-step/handler.ts exporting handleDeployStep(req): Promise<DeployStepResponse> — the deploy-step analogue of handleWorkflowStep. It resolves repo, looks up/advances the state-store record, dispatches req.phase to the registered DeployStageRegistrar, and covers every errorPaths case: unregistered repo, unknown/unregistered phase, unknown/expired state token, out-of-order phase, ajv schema-validation failure, mid-loop stage/provider failure, and the completed-run replay edge case. All provider/narrow calls run serial for...of — never Promise.all.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "handleDeployStep dispatches each DeployPhase to its registered DeployStageRegistrar and returns a DeployStepResponse whose next/guidance/prompt/schema/state advance or terminate the loop, echoing state verbatim.",
+      "A phase with no registered stage (out-of-union string or un-register()'d valid phase) returns a terminal error listing dispatchable DeployPhase values without advancing next.",
+      "Unknown/expired state tokens are rejected with restart-from-start guidance (never minting a fresh run under a stale token); out-of-order phase is rejected reporting the expected next stage and leaves the run record unmutated.",
+      "Emitted payloads are validated with ajv against the issued schema; on failure the same prompt+schema are re-issued with field errors and the record is not advanced.",
+      "A stage/provider failure returns a stage-scoped error preserving the state token for retry (no partial bundle); all narrow/LLM invocation is serial for...of with no Promise.all over a provider, and the repo path raises UnregisteredRepoError when unregistered.",
+      "A follow-up call carrying a still-live state token for a run whose prior response was next==='done' idempotently re-returns that run's already-rendered markdown (or an explicit already-complete signal) without re-dispatching any stage, and only degrades to the unknown/expired-token error once the record has been discarded."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-handler.test.ts › handleDeployStep dispatches each DeployPhase over its registered DeployStageRegistrar, advances/echoes next+guidance+prompt+schema+state verbatim, and drives all narrow invocation serially with no Promise.all over a provider"
+      },
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-handler.test.ts › error paths — unregistered-phase returns a terminal error listing dispatchable DeployPhase values, unregistered repo raises UnregisteredRepoError pointing at repo.add, out-of-order phase reports the expected next stage and leaves the record unmutated, ajv failure re-issues the same prompt+schema, and a completed-run replay idempotently re-returns markdown"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

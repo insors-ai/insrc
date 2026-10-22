@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2697b1cb-0bbe-410c-95c5-04c08d69c893",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.161Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the identity module",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2668be2e954615890b501340f3f5a2ec55bc7eda4f72448f57a3f7a1d04867d8",
+        "at": "2026-10-22T12:43:20.161Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.162Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the identity module",
+    "summary": "Add one module with ArtifactIds (make, parse, parentOf over every kind with the per-kind required and forbidden fields including AMD, TASKS and DIAG), RequirementIds (mint, parse returning { date, hash8, story?: number, fr } or undefined, isRequirementId, canonical and slug forms), InvalidArtifactKeyError, MissingAnchorError (a subclass) and the PathIntent type. id.ts is untouched. Unit tests pin its output to the text storage.ts and nextAmendmentId build today and to the stored requirement ids.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "make produces the stored text for every existing kind and parse returns an equal key",
+      "an uppercase story or task, a missing required field and a forbidden field (seq on TASKS, story on AMD) each throw InvalidArtifactKeyError",
+      "parse returns undefined for a folder name, a work-item id, an uppercase id and an old marker",
+      "stored requirement ids in the canonical and slug forms parse to date, hash8, story as a number and fr, and mint rejects an uppercase story",
+      "the new unit tests pass and the repository type-checks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-ids.test.ts: make produces the stored text for every existing kind and parse returns the same key"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-ids.test.ts: the per-kind required and forbidden fields and the uppercase story and task form throw InvalidArtifactKeyError"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-ids.test.ts: stored requirement ids in the canonical and slug forms parse to date, hash8, story as a number and fr"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-ids.test.ts: a folder name is not parsed as an artifact id"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

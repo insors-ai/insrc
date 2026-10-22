@@ -24,8 +24,35 @@
     "lldRunId": "wf-1791458944705-ro00q5",
     "lldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T12:10:11.011Z",
-    "rangeBase": "1fe805dcb03552a2937450061de653f8cd842370"
+    "rangeBase": "1fe805dcb03552a2937450061de653f8cd842370",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d6bdc162bd90b064e09572636139d1c1f73ce12a5933ed24073edda4b012d1e5",
+        "at": "2026-10-08T12:08:04.309Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T12:10:11.011Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -110,7 +137,7 @@
         ],
         "acceptanceChecks": [
           "An approved BUILD with a failed task carries the conflict, validation-failed and validation-conflict, and a validation-conflict notice; its approval stays approved and deriveStages (test-only) still reads complete.",
-          "The BUILD-0855311b6b32eb72-S001 shape gives storyLevelResult failed, no task items and a story-level conflict.",
+          "The BUILD-0855311b6b32eb72-s1 shape gives storyLevelResult failed, no task items and a story-level conflict.",
           "A planned task with no result is unrecorded; a build task with no planned task keeps its result, is unplanned and raises an unplanned-task notice.",
           "A pending LLD under an approved PLAN, a pending DEF under an approved HLD and a pending SPEC on a story with an approved LLD raise no attention reason, even with a blocked review, and attentionRule names them; pending ISSUE, EXT and AMD still raise pending-decision.",
           "Every epic, story and issue gets exactly one ItemGates, deterministically, and the pass never throws.",
@@ -137,7 +164,7 @@
           },
           {
             "level": "unit",
-            "name": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'"
+            "name": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)'"
           },
           {
             "level": "unit",
@@ -210,7 +237,7 @@
         ]
       },
       {
-        "lldStrategyItem": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)'",
+        "lldStrategyItem": "gate.test.ts: 'a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)'",
         "coveredByTaskIds": [
           "t3"
         ]

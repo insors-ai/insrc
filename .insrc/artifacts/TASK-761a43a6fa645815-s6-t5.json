@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ca93b9e-27b6-4f86-8c38-828c8776aa64",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.505Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Thin daemon 'codeReview.run' StreamHandler",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c21a2d50c18065a49b848b833dce7961ccf79f45252efb9a0e28d974da993ae3",
+        "at": "2026-10-22T12:43:47.505Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.506Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Thin daemon 'codeReview.run' StreamHandler",
+    "summary": "Add the daemon-driven entrypoint completing sc5: a new src/daemon/code-review-rpc.ts exporting codeReviewRunStart(params, send, signal) that resolves the high-tier provider via buildShaperProvider (shaper-provider.ts:277), resolves the subject via resolveCodeReviewSubject from S001 and DECLINES (sends an error/decline frame, no run) when it returns {ok:false, reason}, otherwise builds RunCodeReviewOpts {runId, modelLabel, signal, onProgress: frame=>send(...)} streaming CodeReviewProgress, calls runCodeReview, and sends the terminal outcome + 'done'/'error' — mirroring workflow-rpc.ts's runStart + WorkflowProgress (:106). Register 'codeReview.run' in daemon/index.ts's stream-handlers map next to the existing 'codeReview.grounding' handler (index.ts:594). Thin wiring only; the load-bearing logic is t3's runCodeReview. Verified by tsc (+ optional live-gated smoke).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "src/daemon/code-review-rpc.ts exports codeReviewRunStart (a StreamHandler peer of workflow-rpc's runStart) that resolves provider via buildShaperProvider, resolves the subject, streams CodeReviewProgress via send, calls runCodeReview, and returns the outcome",
+      "when resolveCodeReviewSubject returns {ok:false, reason} the handler DECLINES (sends an error/decline frame; runCodeReview is NOT called)",
+      "'codeReview.run' is registered in daemon/index.ts's stream-handlers map (a NEW key beside 'codeReview.grounding'; no existing handler changed)",
+      "tsc --noEmit is clean; the handler is thin wiring — no verdict/fold/persist logic duplicated from the runner; review remains read-only at the high tier (k10)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tsc typecheck: codeReviewRunStart wires buildShaperProvider + resolveCodeReviewSubject + runCodeReview and is registered under 'codeReview.run' (compile-verified; runtime IPC is live-gated)"
+      },
+      {
+        "level": "live",
+        "name": "over-the-socket 'codeReview.run' against a fixture repo streams CodeReviewProgress and writes a CR- record; declines with an error frame when no approved contract/build (INSRC_LIVE_TESTS-gated)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

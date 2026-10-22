@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2bd19b57-1891-4273-891c-6d05b19f5f82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.934Z",
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build, install and check by hand",
+      "parent": {
+        "entityId": "STORY-1f74c81f507dbe78-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f74c81f507dbe78-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f74c81f507dbe78-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "90c6a917c7c03e1d09a97c42a3f6848a8a0b952e680aa7a1d0d13edcf5c679a1",
+        "at": "2026-10-22T12:43:16.936Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.936Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build, install and check by hand",
+    "summary": "Run the plugin's suite and typecheck, render the real list view with 240 rows in headless Chrome, build, package and install the plugin, and have the user check it in VS Code.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "The plugin's suite passes apart from failures that exist before this Story",
+      "In headless Chrome the toolbar and pager stay in view while the table scrolls",
+      "In VS Code the icon shows in light and dark themes, the table pages, searches with suggestions and filters, and a document edited on disk is reloaded in place"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code: the tab shows the review icon in a light and a dark theme; the table pages, searches with suggestions and filters by type over the real pending list; and a document edited on disk while open is reloaded in place with the scroll position kept"
+      },
+      {
+        "level": "smoke",
+        "name": "Headless Chrome render of the real shell's list view with 240 rows: the toolbar and pager stay in view and the table scrolls"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

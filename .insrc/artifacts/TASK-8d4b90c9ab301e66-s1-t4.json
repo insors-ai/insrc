@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d86497b7-c775-4ab4-83b4-8269c4edc135",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.545Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the review decision call to the daemon",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44ca456899b4b529fe2d02706be18c09404961233663f1e212e15e5a5e9ec3f3",
+        "at": "2026-10-22T12:43:56.548Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the review decision call to the daemon",
+    "summary": "Add handleReviewDecision in a new src/workflow/review-decision.ts and register 'workflow.reviewDecision'. It validates the request, resolves the author, records the decision first (approve or reject through the existing functions; feedback changes no state) and then appends the comments in one batch with the decision that took effect.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Approve, reject and feedback each give the outcome and saved entries the design states, including a withheld approval",
+      "An invalid request answers an error and writes nothing",
+      "A failed comment write after the decision reports the outcome with commentsError",
+      "The existing review handlers are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: a decision with no comments writes no feedback entry"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError"
+      },
+      {
+        "level": "unit",
+        "name": "review decision: the author is the one resolveReviewer gives and is never taken from the request"
+      },
+      {
+        "level": "unit",
+        "name": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

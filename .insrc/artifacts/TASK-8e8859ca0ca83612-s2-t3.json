@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87fe2e66-d849-490c-9fad-61d005e4ec3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:57.161Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Remove the trailing #insrc-send button and its now-unused CSS",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4252ae1e303bb45e668e5222000a567321485d1154e87ca214d133a662dc18fc",
+        "at": "2026-10-22T12:43:57.161Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:57.162Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the trailing #insrc-send button and its now-unused CSS",
+    "summary": "Remove the trailing #insrc-send button element and its now-unused CSS from the input row so there is exactly one send/stop control (the leading '>'); the Cmd/Ctrl+Enter keydown path is unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The trailing #insrc-send button element no longer renders in the panel HTML.",
+      "The #insrc-send CSS is removed (no dead rule).",
+      "Exactly one send/stop control exists after removal (the leading '>'), with no send/stop state drift between two controls."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "panel HTML no longer renders the separate trailing #insrc-send button"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

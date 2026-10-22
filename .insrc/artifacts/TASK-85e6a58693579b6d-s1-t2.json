@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ac0d4603-a3f4-4f42-b7c5-87f95bdfd02b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.760Z",
+    "epicCreatedAt": "2026-10-01T11:57:40.327Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the UX layout emitter, covering all eight element variants",
+      "parent": {
+        "entityId": "STORY-85e6a58693579b6d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-85e6a58693579b6d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "131af3d4846855c24a9c9c54df9ecf53c3ad96fcdd1c8ad5e7e84b52e595e4b8",
+        "at": "2026-10-22T12:43:52.760Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.761Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the UX layout emitter, covering all eight element variants",
+    "summary": "Add renderUxMockDocument to src/workflow/artifacts/companion/ux.ts — a pure function from UxDefinition to a complete self-contained HTML document string. One arm per UxElement variant, each emitting the markup that DENOTES the element rather than a label naming it. Recursion uses the SAME nesting rule childrenOf already encodes (items for Container and Column, columns for ColumnSet) so order and nesting are preserved by construction. All authored content is escaped on the way in; all styling is inlined; nothing is fetched. ADDITIVE ONLY — nothing calls it yet, which makes this step reversible by deletion rather than by revert. SIZE NOTE per critique: this is the task where an M quietly becomes an L, because the stylesheet has no natural stopping condition and is also what decides whether the artifact reads as an interface. It stays ONE task because markup and styling are one deliverable — split them and neither half is verifiable alone. But if it overruns, the split line is named: element→markup mapping plus escaping first, the stylesheet second, with the visual check moving to the second half.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Each of the eight variants renders as the thing it denotes: TextBlock as laid-out text, Input.Text as a labelled text control, Input.ChoiceSet as a labelled control listing every choice title, ActionSet as a row of buttons, Image as a labelled placeholder, Container as a visibly grouped region, ColumnSet as side-by-side columns, Column as a region inside its ColumnSet",
+      "Action.Submit and Action.OpenUrl render DISTINGUISHABLY — a reviewer can tell a submit from a navigation, which labelFor's current ActionSet arm cannot express",
+      "The element switch is EXHAUSTIVE over UxElement, so a ninth variant added to the schema fails the TypeScript build until it is given a rendering",
+      "An element whose type is outside the union emits a VISIBLE placeholder naming that type, in document flow, and its siblings still render — never skipped, never thrown, never substituted",
+      "A container whose child list is absent or not an array renders an empty grouped region and the rest of the card survives",
+      "Authored text containing <script>, & or quotes renders as LITERAL TEXT — a card cannot inject structure into its own mock; the same escaping applies to choice titles, action titles, image alt text and the document title",
+      "The emitted document references no external stylesheet, no script, and no remote origin — an Image's url is shown, never fetched",
+      "The function is PURE: no IO, no subprocess, no runtime load, so the same definition yields a byte-identical string",
+      "renderUxCompanion is NOT yet changed — this task adds the emitter and wires nothing"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a TextBlock renders its text as content, not as a 'TextBlock: \"…\"' caption"
+      },
+      {
+        "level": "unit",
+        "name": "an Input.Text renders a labelled text control carrying its label and placeholder"
+      },
+      {
+        "level": "unit",
+        "name": "an Input.ChoiceSet renders a labelled control listing every choice title"
+      },
+      {
+        "level": "unit",
+        "name": "an ActionSet renders one button per action, with Action.Submit and Action.OpenUrl DISTINGUISHABLE"
+      },
+      {
+        "level": "unit",
+        "name": "an Image renders a labelled placeholder carrying url and altText, with no fetch of that url"
+      },
+      {
+        "level": "unit",
+        "name": "a Container renders a visibly grouped region containing its children"
+      },
+      {
+        "level": "unit",
+        "name": "a ColumnSet renders its Columns side by side rather than stacked"
+      },
+      {
+        "level": "unit",
+        "name": "a Column renders as a region inside its ColumnSet, preserving its width hint"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the element switch is EXHAUSTIVE over UxElement — a ninth variant would fail the build"
+      },
+      {
+        "level": "unit",
+        "name": "an element outside the union emits a VISIBLE placeholder naming that type, with surrounding elements still rendered"
+      },
+      {
+        "level": "unit",
+        "name": "an unrecognised element never throws and never silently disappears"
+      },
+      {
+        "level": "unit",
+        "name": "a Container whose items is malformed renders an empty group and the rest of the card survives"
+      },
+      {
+        "level": "unit",
+        "name": "text containing <script>, & and quotes renders as LITERAL TEXT"
+      },
+      {
+        "level": "unit",
+        "name": "the emitter is pure — the same definition yields a byte-identical string across repeated calls"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

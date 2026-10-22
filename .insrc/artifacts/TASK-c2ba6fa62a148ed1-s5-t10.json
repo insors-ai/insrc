@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3dcd884e-7527-4580-b2ed-666a8bae9d83",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.734Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "analyze.classify refuses a scope before returning a size",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c167a1482013702d7ebbb512211483e54f6d87d098187125fec9c975c013247a",
+        "at": "2026-10-22T12:44:36.734Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.735Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "analyze.classify refuses a scope before returning a size",
+    "summary": "src/daemon/analyze-rpc.ts: after the classifier names the scope and before measureRequestScope, the request runs resolveTaskScope for a non-generic target and ensureRepoQueryable for every non-generic source; a refused scope is answered with its code and message through scopeErrorMapping and no size. Grounding: src/daemon/analyze-rpc.ts:347-348 calls the classifier and then measureRequestScope with no scope check between them.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "analyze.classify on an unindexed scope answers 'scope-not-indexed' with today's message and returns no measured size.",
+      "On a repository under index it answers 'repo-indexing'."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "analyze.classify on an unindexed scope answers 'scope-not-indexed' and returns no measured size; on a repository under index, 'repo-indexing'"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

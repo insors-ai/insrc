@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T10:23:47.688Z",
     "parentRef": {
       "slug": "bug-plan-tree-analyze-run-when"
+    },
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "955008b8760d3f1ef6ade998e82447f138aacf35b37804953d5277c442d60678",
+        "at": "2026-10-09T14:36:42.809Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T10:23:47.688Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

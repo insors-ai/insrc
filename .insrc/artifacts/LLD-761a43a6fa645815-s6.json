@@ -23,94 +23,62 @@
     "hldBaseRunId": "wf-1785741597494-lbzdo7",
     "hldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "sx1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The four dimension judges the runner sequences exist and export judge<Dim>: judgeAdherence, judgeConventions, judgeCoverage, judgeQuality.",
-          "evidence": "adherence.ts:119, conventions.ts:148, coverage.ts:150, quality.ts:124 all export their judge<Dim> — the four uniform judges the runner sequences exist as cited.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "storage.ts provides the persistence pattern the runner reuses: ARTIFACTS_DIR, writeAtomic, buildArtifactId, and buildArtifactPaths (the *ArtifactId/*ArtifactPaths peers the CR- id joins).",
-          "evidence": "storage.ts:50 ARTIFACTS_DIR, :73 writeAtomic, :161 buildArtifactId, :285 buildArtifactPaths — the exact persistence pattern the CR- id/paths peers join, at the cited lines.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "review/types.ts declares ReviewVerdict = 'pass'|'warn'|'block' and Severity = 'HIGH'|'MED'|'LOW' and interface ReviewReport (verdict + counts) — the vocabulary sc4 mirrors.",
-          "evidence": "review/types.ts:43 ReviewVerdict='pass'|'warn'|'block', :41 Severity='HIGH'|'MED'|'LOW', :134 interface ReviewReport — the verdict/report vocabulary sc4 mirrors, verbatim.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Persisted artifacts extend ArtifactMetaBase and are WorkflowArtifact-shaped {meta, body} — the shape the sc4 CodeReviewArtifact mirrors (LldMeta/PlanMeta extend ArtifactMetaBase).",
-          "evidence": "lld.ts:141 LldMeta extends ArtifactMetaBase (and ExtendMeta at extend.ts:40); ArtifactMetaBase is the widely-used artifact meta base the sc4 CodeReviewMeta mirrors.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx5",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "workflow-rpc.ts exposes the runStart StreamHandler + WorkflowProgress/onProgress shape the daemon 'codeReview.run' handler + CodeReviewProgress mirror.",
-          "evidence": "workflow-rpc.ts:106 exports interface WorkflowProgress (the runStart StreamHandler's progress shape) — the peer the daemon 'codeReview.run' handler + CodeReviewProgress mirror. onProgress is a field of the run opts in the same module (corroborated).",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "S001's grounding assembler (assembleCodeReviewGrounding) and the 'codeReview.grounding' daemon handler exist — the assembler the runner's DEFAULT_DEPS wires and the IPC peer the new 'codeReview.run' handler sits beside.",
-          "evidence": "grounding.ts:61 exports assembleCodeReviewGrounding (the S001 assembler DEFAULT_DEPS wires) and daemon/index.ts:594 registers the 'codeReview.grounding' handler — the IPC peer the new 'codeReview.run' handler sits beside.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx7",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "buildShaperProvider exists (the daemon handler resolves the high-tier provider through it, k10).",
-          "evidence": "shaper-provider.ts:277 exports buildShaperProvider — the high-tier provider resolver the daemon handler uses (k10).",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "sx8",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "No runner / sc4 record / CR- storage id exists yet: runCodeReview, codeReviewArtifactId, and CodeReviewBody are new (purely additive; not in src/ before this Story).",
-          "evidence": "runCodeReview / codeReviewArtifactId / interface CodeReviewBody have zero src/ matches (only the LLD doc) — the runner, sc4 record, and CR- storage id do not exist yet, so the Story is purely additive.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-04T06:54:43.076Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-04T07:00:00.231Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "227e3f7eeeba1a81494807a31cc298944b8da22e00c13e433f45061a804824a0",
+        "at": "2026-08-04T06:53:26.229Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T07:00:00.231Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-04T06:54:43.076Z",
+        "report": {
+          "entityId": "LLD-761a43a6fa645815-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-761a43a6fa645815-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

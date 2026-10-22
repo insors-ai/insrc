@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cb761f80-97cf-40e1-b60e-eff537dd2f4b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:54.974Z",
+    "epicCreatedAt": "2026-10-07T12:59:03.938Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f1bf0fb3085c629c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Judge-only validate prompts with a named evidence slot",
+      "parent": {
+        "entityId": "STORY-f1bf0fb3085c629c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f1bf0fb3085c629c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "158841883fd1c1b44da305974a78a69b004bed1b528fcbefe14e20cfb6fbc4d6",
+        "at": "2026-10-22T12:44:54.974Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:54.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Judge-only validate prompts with a named evidence slot",
+    "summary": "Rewrite src/prompts/build/validate-task.md and renderStandaloneValidatePrompt (src/mcp/build-step/render.ts) as judge prompts: inspect the change and judge each acceptance check and scope against the repository and the daemon's check evidence, emit { taskId, passed, checks[], scopeRespected, reason }, never run commands. The template carries an {{evidence}} placeholder and the standalone renderer an evidence argument; renderValidatePrompt takes the evidence text. The implement prompts keep citing TEST_CMD and TYPECHECK_CMD.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Neither validate prompt instructs running the repo-wide sweep, the typecheck or any shell command.",
+      "renderValidatePrompt and renderStandaloneValidatePrompt place the evidence text they are given in an evidence section and ask for the judge verdict shape.",
+      "renderImplementPrompt and renderStandaloneImplementPrompt still cite the repo-wide sweep and the typecheck."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "render.test.ts: 'the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it'"
+      },
+      {
+        "level": "unit",
+        "name": "render.test.ts: 'both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

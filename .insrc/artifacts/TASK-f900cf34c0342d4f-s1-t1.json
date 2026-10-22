@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8aee0abf-f24d-4418-b822-bd508d731248",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.559Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Declare the sc1 types",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5adc92ee3fea7f68f6b37a668c31f7630b6b3d4e43d64a587ae90678096a5b6a",
+        "at": "2026-10-22T12:44:57.559Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.560Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the sc1 types",
+    "summary": "Add the sc1 type declarations in src/cli (type-level only): DebugSectionId = 'daemon'|'mcp'|'logs', DebugSection { readonly id: DebugSectionId; readonly title: string }, DebugService { readonly sections: readonly DebugSection[] }, and DebugPaneProps { readonly services: { readonly debug: DebugService } }. Colocate with the debug facade module (e.g. a debug-types.ts sibling or the head of services/debug.ts). No runtime code, referenced by nothing yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DebugSectionId is the exact three-member union in daemon, mcp, logs order",
+      "DebugSection has only id+title (no React/component field)",
+      "DebugService exposes readonly sections: readonly DebugSection[]",
+      "DebugPaneProps narrows Services to just { readonly debug: DebugService }",
+      "tsc compiles the new types with no errors"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types compile-guard: a fixture asserting DebugSectionId is exactly 'daemon'|'mcp'|'logs' (exhaustiveness never-check) and DebugSection/DebugService shape, verified by the suite compiling"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

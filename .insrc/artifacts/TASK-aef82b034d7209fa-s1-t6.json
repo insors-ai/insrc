@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8f37cd59-13ca-4245-9826-4ce74c075c23",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.407Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ReviewJob COMPARE and the joint-fit chain",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0e9512979733c64fa555fdd4ac6a913b6e31d3b7466c2e4858df7df29edc6136",
+        "at": "2026-10-22T12:44:15.407Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.407Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ReviewJob COMPARE and the joint-fit chain",
+    "summary": "COMPARE over pairs of description batches (each at most half the budget); the joint-fit chain (all full, one full with the others as digests, all digests) for every combining call, with digests capped at DIGEST_CHARS and written by calls that read their atom whole.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Every pair of atoms in different description batches is compared by some call.",
+      "Two atoms that each fit alone but not together, including two near-budget atoms, are combined through the chain and every call fits when serialised."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a merge or digest answer over its cap or naming unknown note ids is rejected'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every pair of atoms in different description batches is compared, and atoms too large together go full, full+digest, then digest+digest with every call fitting'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

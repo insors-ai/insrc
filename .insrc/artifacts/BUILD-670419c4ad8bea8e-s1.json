@@ -7,7 +7,26 @@
     "updatedAt": "2026-10-17T13:46:11.657Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
-    "epicSlug": "understand-changes-before-committing"
+    "epicSlug": "understand-changes-before-committing",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b5b1d16954e289d7f48d7da896a1853aebedd7ada236a76d2f0880d07e355cf6",
+        "at": "2026-10-17T13:09:28.300Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

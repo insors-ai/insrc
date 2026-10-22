@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87ba879d-1700-425c-a1dd-708348225e4d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.550Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build turns refuse on an uncommitted merge; prompts state the merge rule",
+      "parent": {
+        "entityId": "STORY-f9ced66a0e8835b8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9ced66a0e8835b8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9ced66a0e8835b8-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bd6f30d8a1c2df12a130570947ad0872c515f7d4f2127799d65359e0d5ff7bd9",
+        "at": "2026-10-22T12:45:03.550Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.550Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build turns refuse on an uncommitted merge; prompts state the merge rule",
+    "summary": "handleImplement and handleValidate return { next: 'error', error: { code: 'merge-in-progress', retryable: true } } right after resolving repoPath when mergeInProgress(repoPath). implement-task.md and renderStandaloneImplementPrompt gain the rule: merge upstream with `git merge --no-ff` (or `git pull --no-rebase --no-ff`), commit the merge on its own before further Story changes, never squash-merge or fast-forward upstream into the Story.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "implement and validate return merge-in-progress while a merge is uncommitted, before any other work.",
+      "Both implement prompts state the --no-ff merge rule and that the merge is committed on its own."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "build-step.test.ts: 'implement and validate return merge-in-progress while a merge is uncommitted'"
+      },
+      {
+        "level": "unit",
+        "name": "render.test.ts: 'the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own'"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

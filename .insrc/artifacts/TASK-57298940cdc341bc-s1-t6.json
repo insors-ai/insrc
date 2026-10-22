@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7a3c79ca-b7e3-4af6-a4ee-592623c61e06",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.793Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the daemonStatus() override to the other DaemonGateway implementations (sc2 fanout)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3175eae4af6daef332770d7050d4f2ced1366836917eec5d407db208ff0ea909",
+        "at": "2026-10-22T12:43:32.793Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.794Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the daemonStatus() override to the other DaemonGateway implementations (sc2 fanout)",
+    "summary": "Add the daemonStatus() override to the 5 other DaemonGateway implementations so the interface addition compiles: a delegating/thin impl in DaemonGatewayService (daemon/DaemonGatewayService.kt), and a trivial stub (e.g. DaemonStatusResult.Unavailable(\"not used\") or Stopped) in each of the 4 test fakes (DaemonLifecycleServiceTest, OnboardingLifecycleTest, OnboardingWiringTest, OnboardingCleanupIntegrationTest) — exactly the fanout the repoStats()/registerProject() additions required.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "DaemonGatewayService and all 4 onboarding/lifecycle test fakes compile with a daemonStatus() override",
+      "the fakes' overrides are trivial stubs (no real socket use)",
+      "the full suite compiles (no NoSuchMethodError / missing-override error)"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "gradlew test compiles + runs the full suite green after the daemonStatus() fanout (no missing-override / NoSuchMethodError)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-54d351f0-9ac0-4975-ac26-662d4e16f44d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:56.600Z",
+    "epicCreatedAt": "2026-10-16T09:01:43.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f52996c2709dba81",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the pane's rule for a reference posted by its companion frame",
+      "parent": {
+        "entityId": "STORY-f52996c2709dba81-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f52996c2709dba81-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0eafb2eeb0da7ea0c0c1e3b41dfe76c1eb13586ceac27a0037f02a4e76947bf4",
+        "at": "2026-10-22T12:44:56.604Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:56.605Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pane's rule for a reference posted by its companion frame",
+    "summary": "In vscode-plugin/src/chat/docs-review-panel.ts, add rvFrameMessage and register it as a window message handler: it acts only when the message's source is the current companion frame's contentWindow, the type is 'insrc-open-code-ref', the path is a non-empty string of bounded length and the line, when present, is a positive integer. It then posts the existing open-code-ref payload to the host. The frame keeps sandbox allow-scripts only; the host's check is untouched. The pane rule stands on its own: it is exercised by posting the frame message straight to the window handler, not through a page.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A test that posts the frame message directly to the pane's window handler, from the companion frame's window, with a valid path and line sees the same path and line posted to the host as an open-code-ref message",
+      "A message from any other window, or with a missing, non-string or oversized path, or a line that is not a positive integer, is ignored",
+      "The frame is still created with sandbox 'allow-scripts' only, and the existing docs-companion, docs-content and decision messages are handled as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from the companion frame is posted to the host as an open-code-ref message"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from any other window is ignored"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a message with a missing, non-string or oversized path, or a line that is not a positive integer, is ignored"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: the frame keeps sandbox allow-scripts only"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

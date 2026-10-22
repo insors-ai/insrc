@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69e65ad6-7dd2-43fe-8e95-e649bc92f6fa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.204Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Unit and contract tests for the sink, against synthetic sc1 events",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cb90337ceaa4bd5ffe075dafcd6ac239fbdf9a2a942f5a01b25d765828bb696a",
+        "at": "2026-10-22T12:43:43.204Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.204Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit and contract tests for the sink, against synthetic sc1 events",
+    "summary": "Add the new test file at the location fixed by t1 (src/mcp/__tests__/ per the LLD), following the analyze-step-handler.test.ts pattern: node:test with node:assert/strict, hand-written doubles, no external assertion or mocking library. Fixtures are all hand-built because there is no producer to record from: a fake McpServer recording method + params and switchable to throw, to reject, or to return a deliberately never-resolving promise; StageProgressEvent variants with total: number, total: null, and a regressing index; synthetic TokenProgressEvents (all eight daemon emission sites are stage-shaped, so this variant has no producer today); a malformed-kind event; and a log spy. Cover the whole t3 surface — gate resolution including the 0 / '' falsy-but-present cases and the non-conforming-type degradation, both mapping branches, monotonic clamping, total omission, verbatim token echo, the unknown-kind default arm, the swallow-and-log emission fault, and the fire-and-forget property that no other test can catch: an implementation that awaits the emit would satisfy every other check in this plan while coupling a 30–40 minute run to transport latency. Add the contract-level type assertions: LongRunningToolMeta reproduced unchanged, McpProgressNotification with progress required, ProgressSink.report accepting both sc1 variants verbatim. These tests pass against the not-yet-wired implementation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A new test file exists at the t1-fixed location, uses node:test + node:assert/strict, and runs green under `npx tsx --test 'src/mcp/**/*.test.ts'`.",
+      "Gate tests cover string, number, 0, '', undefined, null, boolean, array, and object tokens and assert WHICH sink was returned, not merely emission counts.",
+      "NOOP_PROGRESS_SINK emits zero notifications across a full synthetic frame sequence.",
+      "Stage-branch, token-branch, interleaved-sequence, total-null-omission, and regressing-index clamping cases each have an assertion.",
+      "With a notification double that returns a never-resolving promise, report() returns before that promise settles and a subsequent report() call is still accepted — an awaiting implementation fails this test.",
+      "The unknown-kind default arm and the emission-fault swallow path are asserted, including that the logged level is debug and warn respectively and that neither throws.",
+      "Type-level contract assertions compile under the project's strict settings and would fail if params.progress were made optional or if ProgressSink.report narrowed the sc1 union.",
+      "No external mocking or assertion library is added to package.json."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "mcpProgressSink gate matrix over string / number / 0 / '' / undefined / null / boolean / array / object, asserting the identity of the returned sink"
+      },
+      {
+        "level": "unit",
+        "name": "NOOP_PROGRESS_SINK emits nothing for the invocation lifetime across a full synthetic frame sequence on the fake McpServer"
+      },
+      {
+        "level": "unit",
+        "name": "verbatim token echo: every notification from a token-bearing sink carries params.progressToken strictly equal to the supplied string and number token"
+      },
+      {
+        "level": "unit",
+        "name": "ProgressSink.report branch coverage on event.kind: stage-branch construction, token-branch construction against synthetic TokenProgressEvents, and the unknown-kind default arm"
+      },
+      {
+        "level": "unit",
+        "name": "monotonic-progress derivation through report(): clamping across an interleaved sequence with a regressing stage index, plus total omission when sc1 total is null"
+      },
+      {
+        "level": "unit",
+        "name": "fire-and-forget property: with a never-resolving notification double, report() returns and a subsequent report() is still accepted — an awaiting implementation fails"
+      },
+      {
+        "level": "unit",
+        "name": "emission-fault swallow path asserted via the log spy: warn on throw/reject, debug on unknown kind, no throw out of report()"
+      },
+      {
+        "level": "unit",
+        "name": "contract type assertions: LongRunningToolMeta unchanged, McpProgressNotification with params.progress required, ProgressSink.report accepting both sc1 variants verbatim"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

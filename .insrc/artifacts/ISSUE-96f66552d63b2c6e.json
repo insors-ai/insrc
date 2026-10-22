@@ -21,7 +21,27 @@
     "epicSlug": "bug-test-vs-code-chat-cli",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-12T09:59:43.165Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "e4037db31ace6e34c234f1b1f317038cf3efb11e4157ce9fecfeb6ede95c9a7d",
+        "at": "2026-10-12T09:59:43.165Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Make the cli-adapter process-group test portable to macOS",

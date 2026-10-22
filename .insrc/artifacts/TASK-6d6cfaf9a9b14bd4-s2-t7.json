@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5332d47-fc3d-449a-8720-2e62279781fc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.206Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Reader lifecycle helper, proven end to end on workflow-step",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7dbd277af5951b57cab517110bbe5596803a2ff47a5f631d84c40ae796a9dde6",
+        "at": "2026-10-22T12:43:43.206Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.207Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reader lifecycle helper, proven end to end on workflow-step",
+    "summary": "The subtle half of the wiring, done once on the one operation whose stream:'progress' binding t1 confirms. Build the per-invocation reader lifecycle mechanism — attach a frame reader to the daemon operation's stream:'progress' frames for the duration of the invocation, tear it down when the invocation settles on BOTH the success and the error path via a finally-equivalent so the absence of teardown is structurally unreachable rather than reactively detected, and set a settled flag that causes any late frame to be discarded without calling report(). Stream end / socket close mid-operation runs the same teardown and contributes no error of its own. Correlation is by per-invocation lexical closure, not from the wire: every frame carries a literal id: 0 and cannot be correlated from its contents, so the reader must close over its own request's sink. Then apply the helper to workflow-step only: read the token off request _meta and construct EXACTLY ONE sink via mcpProgressSink before the daemon operation starts. Per module.profile the wiring spans two files — the request entry (handleWorkflowStep in handler.ts) where _meta first becomes observable, and the per-phase dispatch point (handleStep in phases/step.ts). No daemon-side file is modified: the id: 0 framing and the line-238 binding stay exactly as they are. GATED ON s1: until the daemon's `data` payload is a sc1 ProgressEvent rather than WorkflowProgress, the reader has nothing conforming to consume.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The workflow-step handler constructs exactly one ProgressSink per request, before the daemon operation is invoked, from the token read off request _meta.",
+      "The frame reader closes over its own invocation's sink; no shared or module-level sink, registry, or map is introduced.",
+      "Subscription teardown runs on both the success and the error path via a structurally unavoidable finally-equivalent, and the daemon operation's own error propagates to the caller unmodified.",
+      "A frame arriving after the invocation has settled is discarded without calling report() and without re-attaching the subscription.",
+      "Stream end or socket close mid-operation runs the same teardown path and emits no error of its own.",
+      "The reader is attached on the token-less path too — the NOOP sink receives the frames rather than the attachment being skipped.",
+      "No file under src/daemon/ is modified; the send({ id: 0, stream: 'progress', data: f }) binding is byte-identical to before, and no new IpcStreamKind is added.",
+      "This Task is not merged before s1's sc1 ProgressEvent reshape is merged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "workflow-step handler registered by buildInsrcMcpServer constructs exactly one sink per request from _meta.progressToken before the stubbed daemon operation starts — asserted via a spy on the sink factory"
+      },
+      {
+        "level": "integration",
+        "name": "per-invocation frame reader lifecycle on workflow-step: attach, in-order dispatch of the scripted sc1 sequence, settled-flag discard of a late frame, and teardown on both the success path and the throw-mid-stream path with the daemon error propagating unmodified"
+      },
+      {
+        "level": "integration",
+        "name": "stream-end / socket-close mid-operation runs the same teardown and emits no error of its own"
+      },
+      {
+        "level": "integration",
+        "name": "token-less workflow-step request still attaches the reader — the NOOP sink consumes the scripted frames to completion rather than the attachment being skipped"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

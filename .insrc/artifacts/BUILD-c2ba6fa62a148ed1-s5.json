@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one",
-    "approvedAt": "2026-10-14T04:19:19.343Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "af96c7426ae45f47e18ed95cad12ae05e4daa1b16dfa9973971c818f8b892323",
+        "at": "2026-10-13T11:53:21.419Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T04:19:19.343Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -90,18 +117,6 @@
         "timestamp": "2026-10-14T04:19:19.274Z"
       }
     ],
-    "commit": "ad942c86",
-    "feedback": [
-      {
-        "id": "8db27a30",
-        "author": "subho@insors.io (decision, recorded by the controller)",
-        "timestamp": "2026-10-14T04:19:17.181Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S005/CR.md"
-        },
-        "comment": "Story s5 BUILD approved with the code review's warn verdict (stakeholder decision 2026-10-14, after 3 daemon review rounds). Round 1 (0/3/16): cache hit vs miss rule, duplicated under-index rule and five real LOWs fixed in 96d4c105. Round 2 (0/5/8): cancellation wrapped as a failed model call (plus complete() retrying an abort and the retry helper rewriting it) and a cache hit skipping the not-indexed check fixed in e0edb0bb; the executePlan catch and two 'smoke not visible' MEDs judged not defects. Round 3 (0/3/11) accepted: MED driver.ts:373 (docs not refused at runShaper) is ISSUE-0c845762; MED handler.ts:123 (a 'repo-indexing' refusal for a FAILED last index is marked retryable) and MED ollama.ts:774 (Ollama request errors such as a 400 now read as an outage) are filed together as one bugfix. All LOWs accepted as they stand, and the plan's wording that a generic run under index is refused is accepted as superseded by the LLD's edge case (generic is not checked), which the code follows. Smoke results: S005/smoke.md.",
-        "kind": "comment"
-      }
-    ]
+    "commit": "ad942c86"
   }
 }

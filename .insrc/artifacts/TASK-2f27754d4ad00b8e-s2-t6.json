@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a347cd6b-de73-4abc-9016-2be66d003f28",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.426Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Delegate the four gates readers to the shared decoder",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e35078d6d31299359b1241511fd5ec2b0e181ba60a14e28321e02ac44ae939e5",
+        "at": "2026-10-22T12:43:20.426Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.426Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delegate the four gates readers to the shared decoder",
+    "summary": "Make readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact in src/workflow/gates.ts call decodeArtifactHead, staying synchronous with unchanged return shapes and missing-file errors.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "each reader returns the same artifact and the same ArtifactMissingError as before for a head with no envelope parts",
+      "no caller of the four readers changed or became asynchronous",
+      "the gates, orchestrator and build-step tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/gates-delegation.test.ts: the four gates readers return the same artifact and the same missing-file error as before, synchronously"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

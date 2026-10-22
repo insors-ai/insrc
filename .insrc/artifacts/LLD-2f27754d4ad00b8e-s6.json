@@ -31,213 +31,21 @@
       "AMD-2f27754d4ad00b8e-9"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ac17–ac19 are each designed and mapped to tests, and narrowing ac18 to GitHub only (no GitLab link, no Jira attachment) follows a recorded owner ruling rather than being a silent gap.",
-          "evidence": "DEF.md:205-207 states ac17–ac19. ac18 names GitHub/GitLab links and a Jira attachment. docs/plans/core-data-model.md:221 says: 'Tracker scope: GitHub only. ... GitLab and Jira adapters do not exist today and are a later epic ... (This narrows ac18 and the GitLab / Jira wording of the Define.)' The HLD at line 145 declares TrackerPortAdditions { listComments, attach } with the same signatures as LLD §2.1–2.2. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/plans/core-data-model.md, docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today the unit-issue record lives under meta.tracker.units as a UnitIssue with pendingLink and extrasDone. runUnitExtras marks a step after the post, so a failed mark repeats the post.",
-          "evidence": "src/workflow/tracker/refs.ts:26-47 defines UnitIssue { unit, unitId, issue, createdAtRevision, pendingLink?, extrasDone? }. In src/workflow/tracker/unit-issue.ts:553-576, runUnitExtras reads units[key].extrasDone, calls step.run() and then mark(). Its doc comment says: 'The one residual repeat: the mark write fails after a successful post, so the next run posts that step again.' [files: src/workflow/tracker/refs.ts, src/workflow/tracker/unit-issue.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Individual mode currently uses separate legacyPushEpic, legacyPushStory and legacyPushTasks functions, picked by a policy check, and legacyPushTasks honours pushTasks. Team mode forces Task issues.",
-          "evidence": "src/workflow/tracker-auto.ts:135, 216 and 311 define the legacy functions. Lines 323-324 check cfg.pushTasks. Lines 421-449 dispatch with mode === 'team' ? guardedPush(teamPush…) : legacyPush…. Line 592 has the comment 'Team mode makes a Task issue for every Task whatever pushTasks says'. [files: src/workflow/tracker-auto.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The envelope's TrackerBinding and Attachment types already exist with the sc6 shape, and the tracker port has no listComments or attach.",
-          "evidence": "src/workflow/artifact-core/types.ts:158-178 declares TrackerBinding { reference, createdAtRevision, posted[{kind: 'milestone'|'task-list'|'design'|'review'|'plan', at, externalId?}], pendingLink?{parent, child?, childId?} } and Attachment { target, revision, at, externalId? }. TrackerPort in src/workflow/tracker/port.ts:69-87 has no listComments or attach. [files: src/workflow/artifact-core/types.ts, src/workflow/tracker/port.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "carryBinding is new and mirrors the existing carryTracker, which prepareArtifactWrite calls only in its content branch.",
-          "evidence": "src/workflow/storage.ts:127-136 defines carryTracker(prior, next). In prepareArtifactWrite (storage.ts:216-267), the content branch at lines 227-229 does `const tracker = carryTracker(priorMeta?.['tracker'], meta['tracker'])`. Nothing carries meta.envelope.binding or attachments today. [files: src/workflow/storage.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The reused findIssuesByTitleToken, the runGh seam and the durable journal file .insrc/journal/<id>.json exist with the shapes the design relies on.",
-          "evidence": "port.ts:84 has findIssuesByTitleToken(token): PortResult<IssueRef[]>. github.ts:85 exports runGh(args, opts). journal.ts:23 has JOURNAL_DIR = '.insrc/journal', and line 71 says it keeps 'one file per artifact, `.insrc/journal/<id>.json`'. [files: src/workflow/tracker/port.ts, src/workflow/tracker/github.ts, src/workflow/artifact-core/journal.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The follow-on outcome union is at gates.ts:827-832, and the daemon wires follow-ons at workflow.approve (:652) and workflow.reviewDecision (:744).",
-          "evidence": "gates.ts:827-832 has `interface FollowOnOutcome { kind: 'bugfix-advance' | 'bugfix-complete'; artifactPath; ok; note? }`. daemon/index.ts:652 and :744 each pass `followOn: async (approved, repoPath) => advanceApprovedBugfixes(...)`. The new 'tracker-attach' kind also needs a payload field (AttachOutcome), which the LLD states. [files: src/workflow/gates.ts, src/daemon/index.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The listed readers of the unit record are the complete set of production callers: the gate's teamContext, the draft-issue hook and the handoff check (through teamContext). No other production code reads meta.tracker.units or extrasDone.",
-          "evidence": "Grep for resolveUnitIssueLocal|teamContext in non-test src finds only team/gate.ts:215, handoff.ts:395 (teamContext with createIssue:false), draft-issues.ts:113 and :118, and unit-issue.ts itself. Grep for extrasDone / ?.units outside tests finds only unit-issue.ts, refs.ts and draft-issues.ts; story-commits.ts, changed-files.ts and grounding.ts use an unrelated `units` field. autoPush* is called only from src/cli/services/workflow.ts:167-169. [files: src/workflow/team/gate.ts, src/workflow/team/handoff.ts, src/workflow/draft-issues.ts, src/cli/services/workflow.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The posted kinds map onto the existing ExtraName steps, including the plan comment, which runs on the Story unit.",
-          "evidence": "unit-issue.ts:518 defines ExtraName = 'milestone'|'taskList'|'designComment'|'reviewComment'|'planComment'. tracker-auto.ts:614-616 runs planComment through runUnitExtras(storyUnit, …), so the 'plan' kind lands on the Story's binding (the LLD), as §3.4 and §2.8 state. The LLD does not spell out the camelCase-to-kind mapping (taskList→task-list, designComment→design), but that is an implementation detail. [files: src/workflow/tracker/unit-issue.ts, src/workflow/tracker-auto.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A pre-s6 Epic or Story head always carries epicRef, storyRef or storyRefs alongside units, so the one-way rebind from the older refs re-finds every issue recorded before s6 without a tracker lookup.",
-          "evidence": "recordUnit (unit-issue.ts:146-152) writes `{ epicRef: issue, units, pushedAt }` on the Define and epicRef on the HLD for an Epic, and `{ storyRef: issue, units, pushedAt }` on the LLD plus storyRefs on the Define for a Story. The older refs are therefore present wherever a units record is. resolveUnitIssueLocal (176-197) already falls back to these refs. [files: src/workflow/tracker/unit-issue.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A content write by the store keeps a binding written by a sync meta-only patch, because carryBinding is placed in the content branch of prepareArtifactWrite.",
-          "evidence": "prepareArtifactWrite reads prior from disk (storage.ts:223) and, in the content branch, merges prior meta.tracker into next (228-229). The same place can carry meta.envelope.binding and meta.envelope.attachments. The meta-only branch (251-264) writes the caller's meta as given, which suits the binding module's own meta-only patches. The LLD states the remaining cross-process window in §5. [files: src/workflow/storage.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Task-unit records stay on the Plan until s7, and the binding stays on the Define and LLD until s9. s6 does not take over s7's Task artifacts or s9's conversion.",
-          "evidence": "LLD §3.4, §7 step 4 and the open questions keep the Task record on Plan meta.tracker.units and defer the move to s7 and the conversion to s9. The current code keeps the Task record on the Plan (unit-issue.ts:153-155, own = Plan json, taskRefs + units). s6 changes only the Epic and Story branches. The carryBinding change to storage.ts (s2/s4 territory) is raised as an open question rather than taken silently. [files: src/workflow/tracker/unit-issue.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A bind that fails after the create leaves the unit unsettled, and the draft hook reports 'exists but could not be recorded'. Today this is detectable through isUnitSettled, and the ensure already returns ok with duplicateCheck 'not-run' when the record fails.",
-          "evidence": "unit-issue.ts:334-336: `const recorded = recordUnit(...); return { ok: true, value: recorded ? tieBreak(...) : { issue, created: true, duplicateCheck: 'not-run' } }`. draft-issues.ts:133-135: `if (!isUnitSettled(unit)) return notReady(..., 'the issue ... exists but could not be recorded in the artifact' ...)`. The LLD changes the order to tie-break first, then bind once. The detection path is unchanged, provided isUnitSettled is switched to read the binding, which §7 step 4 lists. [files: src/workflow/tracker/unit-issue.ts, src/workflow/draft-issues.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The daemon's approval path (insrc_workflow_approve → workflow.approve) runs no tracker push and no commit, so attachment from that path must be stated as skipped or deferred, and the LLD says so.",
-          "evidence": "daemon/index.ts:647-661: workflow.approve calls handleWorkflowApprove with only an advanceApprovedBugfixes followOn. The only callers of autoPush* are in src/cli/services/workflow.ts:167-169 (the TUI approve). The LLD's error path 'An approval path that does not commit calls for attachment' and the tracker.attach method cover this, and only the BUILD follow-on attaches from the daemon. [files: src/daemon/index.ts, src/cli/services/workflow.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of ac17, ac18 and ac19 maps to named tests that exercise its behaviour, and the fixtures named (the fake gh runner and the gate.test.ts fakePort style) exist.",
-          "evidence": "The LLD §6 acceptance mapping lists 9 tests for ac17, 6 for ac18 and 5 for ac19, covering bind/adopt/no-tracker, the permalink per revision, and the pending-link and marker reconciliation. The runGh seam exists at src/workflow/tracker/github.ts:85. The LLD's §7 step 7 inventory of tests to update covers the unit-issue, extras, tracker-auto, draft-issues and write-inventory suites, and the write-inventory module exists (src/workflow/artifact-write-inventory.ts:51). [files: src/workflow/tracker/github.ts, src/workflow/artifact-write-inventory.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 15,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-21T15:26:27.062Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
     "envelope": {
-      "description": "",
       "references": [],
-      "attachments": []
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 6,
-        "contentHash": "1c6f7c35dbc9e8e37627e81b12c20c47a3b1d9193d250986f46a718fa80431d9",
+        "contentHash": "aedae072aa2a212550a2efdefec076320a6b828ebb0dd5bb6d21f34326d91448",
         "at": "2026-10-21T15:26:26.820Z",
         "by": {
           "id": "github:claude",
@@ -245,10 +53,40 @@
           "properties": {}
         }
       },
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T15:30:48.174Z"
+      },
+      "review": {
+        "revision": 6,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 15
+        },
+        "at": "2026-10-21T15:26:27.062Z",
+        "report": {
+          "entityId": "LLD-2f27754d4ad00b8e-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2f27754d4ad00b8e-s6-review"
+        }
+      },
       "signoffs": []
     },
     "revision": 6,
-    "approvedAt": "2026-10-21T15:30:48.174Z",
     "questionResolutions": {
       "q0430b408": {
         "question": "The binding and attachments are written by sync meta-only patches, not through ArtifactStore.update, because the team gate and the draft-issue hook that record a unit's issue are synchronous and the store is async; making them async would rewrite every teamGate caller. To keep a store write from undoing a patch, prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments from the head on disk into every content write of an existing artifact (carryBinding, as carryTracker does for meta.tracker). That touches the store's write path owned by s2 and s4. Resolve: accept it as an s6-owned change to src/workflow/storage.ts (recommended), or move the two sync recording points to the async store and make the gate async (a large change outside s6).",
@@ -1435,8 +1273,7 @@
       "A permalink names the last commit that touched the file but the commit may not be pushed, so the link is dead on GitHub until it is. Resolve: accept; the sha link becomes valid when the commit is pushed (recommended), or refuse to attach until the commit is on a remote branch.",
       "No step commits the build, review and test records: the TUI approve() commits only the Define for a BUILD, and the daemon workflow.approve commits nothing. s6 adds no commit. The BUILD approval's followOn calls attachDocuments for those records and the new tracker.attach method attaches them on demand, in each case only for files git reports clean (the build flow's controller commits the records before approval, as it does for the s4 and s5 BUILD and TESTS records). Resolve: accept (recommended), or add a commit of the Story's records to the BUILD completion path (a change to the build gate outside s6).",
       "Individual mode currently has its own push functions (named legacy in src/workflow/tracker-auto.ts) with their own issue creation and unmarked best-effort comments. This LLD removes them and runs both modes through one path so both get the binding, once-only posts and attachments. Resolve: accept (recommended; the owner asked for both modes to be complete), or keep two paths and bind and mark in each."
-    ],
-    "feedback": []
+    ]
   },
   "citations": [
     {

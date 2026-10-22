@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-71eb271d-c4a5-4948-9fd3-83a0d056ef6e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.422Z",
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Attachment chips on the user row",
+      "parent": {
+        "entityId": "STORY-59da3204a44afd1b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-59da3204a44afd1b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7988742045e30f887ff75c405ab8d2878c8960737511b73dc06c660aa9d334ad",
+        "at": "2026-10-22T12:43:36.424Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.425Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Attachment chips on the user row",
+    "summary": "render-registry.ts: toViewModel, in its host and webview copies, carries attachments on a user row; the user row renders a chip per attachment under the text (kind glyph, name, size; textContent only, no image loaded); the registry gains the setter onAttachmentOpen(cb), returned on the registry object beside onApprovalDecision and onSelectionDecision; a chip click calls it with the attachment's id.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "A user row with attachments renders one chip per attachment, built with textContent only",
+      "A chip click calls the open sink with that attachment's id; with no sink set it does nothing",
+      "A user row without attachments renders exactly as today, and the host and webview copies of toViewModel agree"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

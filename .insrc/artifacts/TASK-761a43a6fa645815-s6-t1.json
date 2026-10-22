@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-29c9d893-caac-487a-bcbe-23a7721aa5d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.498Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s6",
+    "envelope": {
+      "description": "sc4 record types (CodeReviewBody / CodeReviewArtifact / CodeReviewOutcome)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "da6057aec8acf61d41e3ae6f54c572ee5d5d18bbc421b0c9c98dfcaf691c2096",
+        "at": "2026-10-22T12:43:47.498Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.499Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc4 record types (CodeReviewBody / CodeReviewArtifact / CodeReviewOutcome)",
+    "summary": "Add the sc4 record types to src/workflow/code-review/types.ts (beside sc1/sc2/sc3): CodeReviewBody { readonly kind: 'code-review'; readonly epicHash: string; readonly storyId: string; readonly subject: { readonly changedFiles: readonly string[] }; readonly dimensions: readonly DimensionResult[]; readonly verdict: ReviewVerdict; readonly counts: { readonly high: number; readonly med: number; readonly low: number } }; CodeReviewMeta extends ArtifactMetaBase; CodeReviewArtifact = { readonly meta: CodeReviewMeta; readonly body: CodeReviewBody }; CodeReviewOutcome = { readonly ok: true; readonly artifact: CodeReviewArtifact } | { readonly ok: false; readonly error: string }. Reuse ReviewVerdict/Severity from ../review/types.js and ArtifactMetaBase from the artifacts meta base via import type. Type-only — no runtime behaviour. .js import extensions; import type for type-only.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/code-review/types.ts exports CodeReviewBody, CodeReviewArtifact, CodeReviewOutcome (+ CodeReviewMeta)",
+      "CodeReviewBody carries kind:'code-review', epicHash, storyId, subject.changedFiles, dimensions: DimensionResult[], verdict: ReviewVerdict (imported from ../review/types.js), counts:{high,med,low}",
+      "CodeReviewArtifact = {meta: CodeReviewMeta extends ArtifactMetaBase, body: CodeReviewBody}; CodeReviewOutcome is the {ok:true,artifact}|{ok:false,error} discriminated union",
+      "tsc --noEmit is clean; imports carry .js extensions and type-only imports use import type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc4 types compile + shape assertion: a constructed CodeReviewArtifact literal type-checks (meta extends ArtifactMetaBase, body carries kind/verdict/counts/dimensions) — exercised indirectly by the runner tests that build the record"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

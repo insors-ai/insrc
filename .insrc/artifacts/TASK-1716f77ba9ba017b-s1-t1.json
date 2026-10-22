@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0c41cece-9027-49bb-9961-7ff8f4b801f8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.808Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Party fields and their readers",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a83a3756ee1e3641243bd06d24dde64b0538b4fa5882a23869304b90807097a7",
+        "at": "2026-10-22T12:43:14.808Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.809Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Party fields and their readers",
+    "summary": "Add the optional authoredBy field to artifact meta and BUILD record meta and the optional reviewedBy field to the design review stamp and the code-review record. Add the two shared readers that return a party: the explicit field first, then the stored model label for older design artifacts and reviews, otherwise unknown. Nothing writes the fields yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "An explicit field wins over a contradicting model label",
+      "For an artifact's author: every attribution entry 'client' reads as controller, none as daemon, a mixture or no entries as unknown",
+      "For a review: model 'client' reads as controller, any other label as daemon, none as unknown; a BUILD record with no field reads as unknown"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T1 the author reader and the reviewer reader: explicit field wins, model label fallback, unknown when nothing is stored"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

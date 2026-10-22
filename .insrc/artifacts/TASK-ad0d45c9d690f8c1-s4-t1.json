@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5aa06913-f1ab-4a77-be03-d48fde540bd4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.416Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "sc7 types + createWorkspaceRegistrar over the shared ipc-client + the injectable seam interfaces",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "812cbd52e45ee8b82e30f2a7a13e08211b192a4003ccdbf9ceda13463c1f646b",
+        "at": "2026-10-22T12:44:13.416Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.417Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc7 types + createWorkspaceRegistrar over the shared ipc-client + the injectable seam interfaces",
+    "summary": "Create vscode-plugin/src/workspace/ with: RegistrationState { root; registered } + WorkspaceRegistrar types; createWorkspaceRegistrar({ client }) whose state(root)=rpc<RegisteredRepo[]>('repo.list') then registered = normalized-absolute path equality against a row's `path` (Array.isArray guard; catches rpc rejection → registered:false, never throws), and register(root)=rpc('repo.add', { path }) WITH NO steering key → { root, registered:true } on { ok:true } (surfaces the error on reject). Export ONLY the TYPE/interface for the WorkspaceFolders seam (type () => readonly string[]) + the PromptStore seam (interface wasDismissed/markDismissed) — plus an optional in-memory PromptStore for tests; the REAL vscode.workspace.workspaceFolders + vscode.ExtensionContext.workspaceState bindings are constructed in extension.ts (t3), so workspace/ carries NO 'vscode' import (k5). Mirrors the S002 createDaemonLifecycleController factory. Path normalization via node:path resolve.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise; never throws (rpc reject / non-array → registered:false)",
+      "register(root) calls rpc('repo.add', { path: root }) with NO steering key, returns { root, registered:true } on { ok:true }, and surfaces the error (does not mark registered) on reject",
+      "RegistrationState + WorkspaceRegistrar types + the WorkspaceFolders/PromptStore seam interfaces are exported from workspace/; the registrar is pure over the injected IpcClient and workspace/ carries no 'vscode' import (k5)",
+      "path comparison normalizes both sides (resolve) so a trailing-slash / '.' difference still matches"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "state(root) returns registered:true iff a repo.list row's normalized-absolute path equals the normalized root; false otherwise"
+      },
+      {
+        "level": "unit",
+        "name": "state(root) returns registered:false (never throws) when rpc('repo.list') rejects (daemon unreachable) or returns a non-array"
+      },
+      {
+        "level": "unit",
+        "name": "state(root) normalizes both sides (trailing slash / '.' segments) so a cosmetically-different root still matches a registered row"
+      },
+      {
+        "level": "unit",
+        "name": "register(root) calls rpc('repo.add', { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }"
+      },
+      {
+        "level": "unit",
+        "name": "register(root) surfaces the error (does not mark registered) when rpc('repo.add') rejects"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

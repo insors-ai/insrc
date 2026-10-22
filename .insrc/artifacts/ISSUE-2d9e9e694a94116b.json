@@ -21,9 +21,37 @@
     "epicSlug": "bug-insrc-vs-code-dev-chat",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-09-29T07:51:55.487Z",
     "parentRef": {
       "slug": "vs-code-editor-dev-chat-ui"
+    },
+    "epicCreatedAt": "2026-09-29T07:46:38.613Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b168d599a3da24c962f229a860e17593369edea70387251f844815a59ce36e00",
+        "at": "2026-09-29T07:46:38.613Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T07:51:55.487Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

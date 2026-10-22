@@ -27,160 +27,6 @@
       "AMD-315d510cb28100e2-1"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Returning 'none' before any policy has been fetched satisfies the upstream offline rule.",
-          "evidence": "DEF ac9 requires that a previously fetched policy be used and 'otherwise the action is refused with the reason'. The LLD explicitly permits a repository with no sighting or fetched policy to return 'none', even when its remote actually carries a policy. Its final open question accepts this exception, but the checked upstream documents do not. This permits unguarded actions in the specified offline case. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/plans/team-workflow.md]",
-          "action": "Obtain an upstream amendment explicitly accepting this bootstrap limitation, or design an initialization requirement that distinguishes verified absence from an unknown policy.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing writeAtomic helper uses a fixed temporary filename and cannot supply the proposed create-only publication semantics.",
-          "evidence": "The complete writeAtomic body constructs `const tmp = `${absPath}.tmp``, calls writeFileSync, then renameSync. It neither generates unique temporary names nor uses a no-clobber hard link. [files: src/workflow/storage.ts]",
-          "action": "Keep the proposed unique-temp and create-only publication implementation separate from this helper.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Policy reading, sightings, refresh and team commands are new capabilities.",
-          "evidence": "Source searches for TeamPolicy, PolicyReader, PolicyResult, sightings and team command names found no implementations. Reading the workflow gates, tracker helpers, Services composition and command dispatcher confirmed that existing approval and CLI paths do not provide these capabilities. TeamPolicy and PolicyReader currently appear as HLD interface sketches. [files: src/workflow/gates.ts, src/workflow/tracker/github.ts, src/cli/services/index.ts, src/cli/command.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Introduce the policy module and exported contracts explicitly.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The listed gates.ts locations are existing TeamPolicy field-add call sites.",
-          "evidence": "The cited region implements headFullSha and approveArtifactByJsonPath; it contains `execFileSync('git', ['rev-parse', 'HEAD'], ...)` and approval metadata handling. There is no TeamPolicy declaration or consumer anywhere in the searched source. These locations cannot describe a source.anchorKnown field addition to an existing code type. [files: src/workflow/gates.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Distinguish the HLD contract amendment from the new TypeScript declaration, name its destination, and identify gates.ts as a future s5 consumer rather than an s2 field-add call site.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Services, makeServices, command dispatch and the two handwritten Services test facades are the relevant CLI integration sites.",
-          "evidence": "Services declares the facade and makeServices binds implementations. runCommand tokenizes commands and switches on the first token. command.test.ts constructs `const base: Services`; tui.test.ts defines `fakeServices(): Services`. The existing services.test.ts uses makeServices rather than constructing another facade. [files: src/cli/services/index.ts, src/cli/command.ts, src/cli/__tests__/command.test.ts, src/cli/__tests__/tui.test.ts, src/cli/__tests__/services.test.ts]",
-          "action": "Add the team facade and dispatch as specified, and verify the real makeServices binding alongside fake-service command tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "An artifact approved between initial policy adoption and policy reintroduction is grandfathered under the HLD.",
-          "evidence": "The HLD states: 'an artifact whose approvedAt is earlier than that time is treated as signed off', where that time belongs to the first default-branch commit carrying the policy. An approval between adoption and reintroduction is later than that anchor. The LLD edge-case table nevertheless says such an artifact 'is grandfathered exactly as the HLD states'. Implementing that expectation would bypass required signoff. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md]",
-          "action": "Correct the edge case and its test expectation: only approvals before the original adoption timestamp are grandfathered; approvals between adoption and reintroduction are not.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Policy loading, caching, anchor discovery and starter setup belong to s2; enforcement and signoff remain other Stories' responsibilities.",
-          "evidence": "HLD §5.2 assigns s2 'Reading the policy file from the remote default branch ref, the cached last-fetched copy and the offline rule, finding the first default-branch commit ... the starter policy and the team setup command.' sc4 belongs to s5 and sc5 to s7. The proposed implementation stays within that division and retains the sc2 PolicyResult envelope. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/amendments/types.ts, src/workflow/amendments/applier.ts]",
-          "action": "Keep gate installation and grandfathering decisions in their owning Stories; record anchorKnown through the proposed shared-contract amendment.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Throwing from either asynchronous team service can produce the specified cross-prefixed command-bar error.",
-          "evidence": "runCommand wraps dispatch in try/catch and returns `✗ ${err instanceof Error ? err.message : String(err)}`. Its asynchronous branches use `return await`, which catches promise rejection within this boundary. [files: src/cli/command.ts, src/cli/services/index.ts]",
-          "action": "Use `return await runTeam(...)` in the new dispatch case and convert PolicyResult failures into Errors in the service wrappers.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The policy remote can be resolved unambiguously from the specified contract.",
-          "evidence": "The LLD repeatedly uses 'the remote' and stores a remote in PolicySighting, but supplies no initial selection rule for multiple remotes or a repository without origin. Existing tracker target resolution explicitly uses gitOriginOwnerRepo and origin; that resolves a GitHub target, not a policy remote contract. No policy implementation exists to resolve the omission. Analyzer tools were unavailable, so this was checked through source searches and file reads. [files: src/workflow/config/github.ts, src/workflow/tracker/github.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md]",
-          "action": "Specify initial remote selection, behavior when it is ambiguous or missing, and whether a sighting's remote remains authoritative after configuration changes.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The proposed ac9 tests cover the complete upstream acceptance criterion.",
-          "evidence": "DEF ac9 requires refusal when the remote is unreachable and no previously fetched policy exists. The LLD maps this to a 'known team repo' test and an explicit refresh failure test, omitting a workflow action in a never-fetched repository with no sighting. Its open question instead specifies 'none' for that case. The proposed tests therefore cannot establish the full criterion. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md]",
-          "action": "Add the no-sighting/no-fetched-policy offline action case, with its expected result determined by the resolved upstream requirement.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed node:test/tsx approach and the statement that normal compilation excludes test sources match the repository.",
-          "evidence": "The existing command and TUI suites import test from node:test and document tsx execution. tsconfig.json excludes `**/__tests__/**` and `**/*.test.ts`. Thus a production build alone will not validate the handwritten test facades. [files: tsconfig.json, src/cli/__tests__/command.test.ts, src/cli/__tests__/tui.test.ts, src/cli/__tests__/services.test.ts]",
-          "action": "Run the proposed tests through tsx and include a runtime assertion for the actual team service composition.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 2,
-        "med": 2,
-        "low": 7,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-17T05:55:47.586Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-17T06:02:58.378Z",
-    "reviewOverride": {
-      "reason": "User decision (option a): accept the bootstrap limitation that a repo with no sighting and nothing fetched reads as solo until team refresh runs, consistent with k4; DEF ac9 and HLD to be amended to state it. Three review rounds this cycle (nine across cycles) ended blocked; remaining findings are text fixes (grandfathering edge-case wording, gates.ts cited as s5 consumer not s2 change site, never-fetched ac9 test, policy remote selection rule).",
-      "at": "2026-10-17T06:02:58.378Z"
-    },
     "questionResolutions": {
       "q90c58cff": {
         "question": "cd1 (partial): PolicyRefresh, AnchorFinder, StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand are new functions inside s2's boundary that sc2 does not name; decide whether sc2 should list them or they stay internal to s2.",
@@ -225,8 +71,65 @@
         "resolvedAt": "2026-10-17T06:13:58.002Z"
       }
     },
-    "staleAckedAt": "2026-10-17T06:14:20.100Z",
-    "staleAckedReason": "HLD effective state changed only by approving AMD-315d510cb28100e2-4 (sc2 source.anchorKnown), the additive field this LLD itself proposes and already contains; no other HLD change since approval."
+    "staleAckedReason": "HLD effective state changed only by approving AMD-315d510cb28100e2-4 (sc2 source.anchorKnown), the additive field this LLD itself proposes and already contains; no other HLD change since approval.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0924fdfc1c0187f6571ead90a85bd3d45e69f74b38536557aa919413856680dd",
+        "at": "2026-10-17T05:55:41.716Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T06:02:58.378Z",
+        "override": {
+          "reason": "User decision (option a): accept the bootstrap limitation that a repo with no sighting and nothing fetched reads as solo until team refresh runs, consistent with k4; DEF ac9 and HLD to be amended to state it. Three review rounds this cycle (nine across cycles) ended blocked; remaining findings are text fixes (grandfathering edge-case wording, gates.ts cited as s5 consumer not s2 change site, never-fetched ac9 test, policy remote selection rule)."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 2,
+          "med": 2,
+          "low": 7
+        },
+        "at": "2026-10-17T05:55:47.586Z",
+        "report": {
+          "entityId": "LLD-315d510cb28100e2-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-315d510cb28100e2-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -234,7 +137,7 @@
       "audience": "product"
     },
     "hldContextSlice": {
-      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
       "ownedContracts": [
         {
           "id": "sc2",
@@ -267,7 +170,7 @@
             "sc1"
           ],
           "depends": [],
-          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-s1 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
         },
         {
           "storyId": "s3",

@@ -22,92 +22,57 @@
     "storyId": "s8",
     "lldRunId": "wf-1785671718263-sylld9",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "requireApprovedSpec exists in gates.ts (the s7 sc4 reader t1's resolveStageFocus imports + consumes).",
-          "evidence": "CONFIRMED: src/workflow/gates.ts:404 export function requireApprovedSpec(repoPath, specHash): SpecArtifact.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "SpecArtifact + isSpecBody exist in artifacts/spec.ts (composeSpecFocus reads the spec body).",
-          "evidence": "CONFIRMED: src/workflow/artifacts/spec.ts:66 SpecArtifact + :156 isSpecBody — the record composeSpecFocus reads.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "finalizeDefine is at orchestrator.ts:817 (t2 stamps meta.seededFromSpec there); finalizeDefineExtend is the separate extend branch.",
-          "evidence": "CONFIRMED: src/workflow/orchestrator.ts:817 finalizeDefine + :911 finalizeDefineExtend (separate extend branch) — t2 stamps meta at :817.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderDefineMarkdown is in artifacts/define.ts (t2 adds the Seeded-from header line).",
-          "evidence": "CONFIRMED: src/workflow/artifacts/define.ts:86 export function renderDefineMarkdown — t2 adds the Seeded-from header line here.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "Both define entry points build the WorkflowIntent (start.ts:62 + workflow-rpc.ts:414) — the two sites t3 wires to call resolveStageFocus.",
-          "evidence": "CONFIRMED: src/daemon/workflow-rpc.ts:414 + src/mcp/workflow-step/phases/start.ts:62 both build `const intent: WorkflowIntent =` — the two sites t3 wires.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "t1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ArtifactMetaBase is in types.ts (t1 adds the optional seededFromSpec field, peer to specHash).",
-          "evidence": "CONFIRMED: src/workflow/types.ts:288 interface ArtifactMetaBase; the specHash? optional field peer confirmed at types.ts:340 earlier this session — seededFromSpec is added as its peer.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p7",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The s6/s7 tmp-repo fixture pattern (specArtifactPaths + writeAtomic + approveArtifactByJsonPath) exists in src/workflow/__tests__/ for t4 to reuse.",
-          "evidence": "CONFIRMED: src/workflow/__tests__/spec-resolver.test.ts exists (authored in s7) and uses the specArtifactPaths + writeAtomic + approveArtifactByJsonPath tmp-repo fixture pattern t4 reuses. The grep returned 50 docs+src matches; the file + helpers are present.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-08-02T12:07:34.543Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-02T12:40:38.144Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d9e982719a845eb84dcdbb155a19412e5c532d91407698f86369f533f003b1d9",
+        "at": "2026-08-02T12:06:37.617Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T12:40:38.144Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-08-02T12:07:34.543Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s8",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s8-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

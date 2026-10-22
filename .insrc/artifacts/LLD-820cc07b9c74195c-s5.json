@@ -14,104 +14,64 @@
     "hldBaseRunId": "wf-1784970656550-ihypng",
     "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "c-sites",
-          "ref": "migration/state-before",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The analyze-pipeline sites that call buildShaperProvider directly are the ~11 named (scope.pick, classify, plan, decompose, synthesize, adherence, aggregate, 3 narrow probes, questions) plus prepareWorkflowRun.",
-          "evidence": "Re-derivation confirms EXACTLY 11 analyze-pipeline buildShaperProvider sites to convert: scope-picker.ts:125, questions.ts:172, classifier/driver.ts:128, capability-reuse-check.ts:128, doc-decision-trace.ts:119, doc-constraint-enumerate.ts:112, adherence.ts:213, planner/driver.ts:166, aggregator.ts:75, decomposer.ts:159, synthesizer.ts:116. Plus workflow-rpc.ts:424 (prepareWorkflowRun, already S003-routed) and role-router.ts:168 (the sanctioned materialize — the ONE caller the bypass audit must allowlist). The ~11 inventory is accurate.",
-          "action": "none — verified sound (11 analyze sites confirmed; the sanctioned survivor is role-router.ts:168 materialize)",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-validate45",
-          "ref": "dm1/step6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "There is a hardcoded top-tier provider-construction site at a validate.ts:45 that S005 must reroute.",
-          "evidence": "src/mcp/build-step/phases/validate.ts:45 reads `const provider: ValidateProvider = providerOverride ?? new CliProvider({ kind: 'claude' })` — a real hardcoded top-tier CliProvider construction site, exactly as the HLD assumed. A legitimate reroute target (validation → a critical/core role).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-cliworkflow231",
-          "ref": "dm1/step6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "There is a hardcoded top-tier provider-construction site at src/cli/services/workflow.ts:231 that S005 must reroute.",
-          "evidence": "src/cli/services/workflow.ts:231 reads `const provider = new CliProvider({ kind: 'claude' })` — a real hardcoded CliProvider site. NOTE for build: this is a CLI-side service; rerouting it requires that a RoutingSeamContext is established on that path (or it falls through unchanged), so treat with care.",
-          "action": "none — verified sound (site exists; confirm establishment path at build)",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-seam-pair",
-          "ref": "c1/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "shaper-provider.ts already exports an AsyncLocalStorage ambient establisher runWithClientProviderContext and reader currentSamplerContext that S005 mirrors.",
-          "evidence": "shaper-provider.ts exports runWithClientProviderContext (1) + currentSamplerContext (1) over AsyncLocalStorage (4 refs) — the proven ambient establisher/reader pair S005 mirrors for RoutingSeamContext.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-shaper-lines",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider is at shaper-provider.ts:207-271 and buildSummariserProvider at 256-269.",
-          "evidence": "read at shaper-provider.ts:207 = `export function buildShaperProvider(`; buildSummariserProvider export also present. The cited 207-271/256-269 are correct against the current (post-S003) tree.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-prepare-lines",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "prepareWorkflowRun (the sole run-wide establisher) is at workflow-rpc.ts:402-431.",
-          "evidence": "read at workflow-rpc.ts:402 = `export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {` — the cited 402-431 is correct post-S003/S004.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-livetest",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "runCodeShaper is anchored at code-shaper.live.test.ts:119 as the live test for the shaper factory path.",
-          "evidence": "code-shaper.live.test.ts:119 = `async function runCodeShaper(` — the live anchor exists as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-tracker-render",
-          "ref": "dm1",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The peripheral render sites (tracker render.issueBody / render.summary) call buildShaperProvider so S005 can convert them to the cheap tier.",
-          "evidence": "rg over src/workflow/tracker finds NO buildShaperProvider / new CliProvider / new OllamaProvider — tracker rendering constructs no provider directly. The render.issueBody / render.summary roles are served (if at all) through the workflow driver (S003), not a buildShaperProvider site. Separately, driver.ts:899 constructs `new OllamaProvider` for the tool-loop path, which is DELIBERATELY Ollama-only (CliProvider.supportsTools===false) and must NOT be converted.",
-          "action": "Drop render.issueBody/render.summary from the S005 conversion list — they are not buildShaperProvider sites. The real conversion set is the 11 analyze sites + validate.ts:45 + cli/services/workflow.ts:231. The bypass audit must ALLOWLIST role-router.ts:168 (sanctioned materialize) AND driver.ts:899 (tool-loop OllamaProvider, intentionally unrouted), not assert 'exactly one provider construction'.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 7
-      },
-      "reviewedAt": "2026-07-25T16:56:35.909Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-820cc07b9c74195c-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-25T17:26:29.285Z",
-    "reviewOverride": {
-      "reason": "Sole finding was MED (tracker render.* over-scope + tool-loop OllamaProvider caveat) — a scope correction applied at build: drop render.issueBody/summary (not provider sites), allowlist role-router.ts:168 materialize + driver.ts:899 tool-loop. LLD otherwise well-grounded: 2 hardcoded CliProvider sites real, line numbers correct, seam pair + 11-site inventory verified. 0 HIGH.",
-      "at": "2026-07-25T17:26:29.285Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "707805835358dc780de87d1ed4322fbd2107867e70018f92056c4491e28e9a85",
+        "at": "2026-07-25T16:53:26.409Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-25T17:26:29.285Z",
+        "override": {
+          "reason": "Sole finding was MED (tracker render.* over-scope + tool-loop OllamaProvider caveat) — a scope correction applied at build: drop render.issueBody/summary (not provider sites), allowlist role-router.ts:168 materialize + driver.ts:899 tool-loop. LLD otherwise well-grounded: 2 hardcoded CliProvider sites real, line numbers correct, seam pair + 11-site inventory verified. 0 HIGH."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 7
+        },
+        "at": "2026-07-25T16:56:35.909Z",
+        "report": {
+          "entityId": "LLD-820cc07b9c74195c-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-820cc07b9c74195c-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

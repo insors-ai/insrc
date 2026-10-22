@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4c298cfb-8ef2-46a7-86a0-a6b48d293f8d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.208Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Worker: reclaimed-lease rule",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2cc0e1c46a8ff68b693b0e5d054adc1ba3dd0622e04b3e963db6b48c02e14205",
+        "at": "2026-10-22T12:43:38.208Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.209Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Worker: reclaimed-lease rule",
+    "summary": "After a reclaim the window holds a lease for a turn it did not start. While current is undefined and the worker holds a reclaimed lease, heartbeat it on each tick and check isAlive(cliPid, cliStartedAt); when the CLI has exited, finish(seq, detached-ended) and release the lease so the next message runs. Keep a small 'reclaimed seq' marker in the worker, cleared when the lease is finished or lost.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "a reclaimed lease is heartbeated while the CLI lives, so no other window takes it over",
+      "when the surviving CLI exits the message is finished as detached-ended, the lease released and the next message runs",
+      "if the lease is lost to another window the worker clears its marker and stops heartbeating",
+      "the display of the reloaded turn is not changed (S001's followLiveTurn)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs"
+      },
+      {
+        "level": "unit",
+        "name": "chat-queue-worker.test.ts: a reclaimed lease lost to another window clears the marker and stops heartbeating"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-13192586-c33f-421e-a504-183bd7453522",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.280Z",
+    "epicCreatedAt": "2026-09-18T06:53:41.492Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d565a953288f511",
+    "storyId": "s1",
+    "envelope": {
+      "description": "App-init migration: run-once registration + delete InsrcAppLifecycle",
+      "parent": {
+        "entityId": "STORY-0d565a953288f511-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0d565a953288f511-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "91c62cc3062c0f73112a93db7b9ff2eb40496668971c480713564bd7ba49929e",
+        "at": "2026-10-22T12:43:12.282Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.287Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "App-init migration: run-once registration + delete InsrcAppLifecycle",
+    "summary": "Move the five app-scoped consumer registrations off the internal AppLifecycleListener.appStarted() to a run-once path (LLD a2). Extract the registration body (PluginInstaller.addStateListener(InsrcPluginStateListener()) + the four LifecycleBroadcaster.register calls for McpWiringLifecycle/DaemonLifecycleService.production/SteeringInjectionLifecycle/OnboardingLifecycle.production) into a once-only helper guarded by a process-wide AtomicBoolean compareAndSet, wrapped in try/catch that logs a factory throwable (getLogger().warn) without aborting. Invoke that helper at the TOP of InsrcProjectOpenActivity.execute, before the existing project-open broadcast. Delete the InsrcAppLifecycle class and its <applicationListeners> <listener topic=AppLifecycleListener> entry in plugin.xml. InsrcPluginStateListener itself is unchanged. Structure the helper so it is unit-testable off-platform (a registrar seam). This is one atomic change — splitting the helper/invoke/delete risks a double- or zero-registration window.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "The five consumers are registered exactly once per process via an AtomicBoolean.compareAndSet-guarded helper; a second/concurrent invocation registers nothing further.",
+      "InsrcProjectOpenActivity.execute invokes the once-only registration BEFORE broadcasting the project-open, so the first opened project is wired.",
+      "InsrcAppLifecycle is deleted and its <applicationListeners> entry is removed from plugin.xml; no override of AppLifecycleListener.appStarted() remains; no other Kotlin references InsrcAppLifecycle.",
+      "A throwable from a consumer factory is caught + logged and does not abort the project-open broadcast."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the run-once registration helper: repeated invocation registers the app-scoped consumers exactly once (a counting/fake registrar sees N registrations on the first call and 0 on subsequent calls)"
+      },
+      {
+        "level": "unit",
+        "name": "concurrent invocation: only one caller's CAS wins; total registrations == the consumer count"
+      },
+      {
+        "level": "integration",
+        "name": "InsrcProjectOpenActivity: opening a project runs the once-only registration then broadcasts the project-open (consumers wired)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

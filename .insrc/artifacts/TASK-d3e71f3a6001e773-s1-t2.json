@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5e7ebe9e-73f4-4bed-833a-89a0d5fad826",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.377Z",
+    "epicCreatedAt": "2026-08-04T16:50:43.835Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3e71f3a6001e773",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add persistBuildRecord (upsert read-merge-write) + make persistStandaloneBuildRecord a thin wrapper",
+      "parent": {
+        "entityId": "STORY-d3e71f3a6001e773-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d3e71f3a6001e773-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d3e71f3a6001e773-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "37444b5843b0ca6912f3794618c87e33a54600581992aca56623d075c851428d",
+        "at": "2026-10-22T12:44:42.380Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.381Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add persistBuildRecord (upsert read-merge-write) + make persistStandaloneBuildRecord a thin wrapper",
+    "summary": "Add persistBuildRecord(repoPath, rec: BuildRecord): { md; json } that READS any existing BUILD-<epicHash>-<storyId>.json (via buildArtifactPaths), MERGES on top (union body.tasks[] by id with passed refreshed, preserve createdAt + meta.approvedAt/rejectedAt/reviewOverride, refresh meta.updatedAt), and writeAtomic-writes json+md; a malformed/absent prior file fails open to a fresh write (try/catch, getLogger warn). Re-point persistStandaloneBuildRecord to delegate to persistBuildRecord with standalone:true so the Trivial output is byte-identical. Reuse buildArtifactPaths + the existing md renderer (extend it to render the plan-driven tasks/commit when present).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "persistBuildRecord writes json+md at buildArtifactPaths; a prior record is read + merged (tasks unioned, createdAt + approvedAt/rejectedAt/reviewOverride preserved, updatedAt refreshed); a malformed prior file fails open to a fresh write",
+      "persistStandaloneBuildRecord delegates to persistBuildRecord (standalone:true) with byte-identical Trivial json+md output",
+      "tsc --noEmit clean; getLogger used (no console.log)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "persistBuildRecord writes a fresh BUILD-<epicHash>-<storyId>.json (standalone:false) at buildArtifactPaths when none exists"
+      },
+      {
+        "level": "unit",
+        "name": "a second call UNIONS tasks[] by id, preserves createdAt, refreshes updatedAt (one record, not N)"
+      },
+      {
+        "level": "unit",
+        "name": "an existing meta.approvedAt (+ rejectedAt/reviewOverride) is PRESERVED across an upsert"
+      },
+      {
+        "level": "unit",
+        "name": "a malformed prior record is treated as absent (fail-open fresh write), not a throw"
+      },
+      {
+        "level": "unit",
+        "name": "persistStandaloneBuildRecord still writes standalone:true json + the same md via the thin wrapper"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

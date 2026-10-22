@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-5437d6e54c9e7d48-S001 -->
+<!-- insrc:artifact BUILD-5437d6e54c9e7d48-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -20,7 +20,7 @@ New src/db/graph/__tests__/lmdb-txn-semantics.test.ts pins lmdb's behaviour (rea
 
 ## Changes
 
-- `.insrc/artifacts/CR-5437d6e54c9e7d48-S001.json` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `.insrc/artifacts/CR-5437d6e54c9e7d48-s1.json` — **insrc-build** (2026-10-16T12:57:13.595Z)
 - `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/CR.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
 - `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/cr-fixes-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
 - `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t1-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)

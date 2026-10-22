@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c496f105-3679-4fcf-84fa-871a628be72c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.710Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture byte-identity goldens from real pre-fix records and convert the vacuous self-comparison",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9934d1255943a75eaa31e2727c20bdf01cb7e1dff9efdd0633f4b2b4df5e46ab",
+        "at": "2026-10-22T12:44:00.710Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.710Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Capture byte-identity goldens from real pre-fix records and convert the vacuous self-comparison",
+    "summary": "Freeze the current rendered markdown of REAL pre-fix records as committed golden strings; a fixture constructed from the new understanding would agree with the fix by construction rather than by evidence. s1 confirmed the source exists: 63 BUILD records tracked, five with standalone true, and BUILD-1d3bd81c5560de0d-s1 and BUILD-dcbb529e465417af-s1 carrying exactly the pre-fix {focus, producesLld} body. Capture THREE goldens — a well-formed standalone, a plan-driven record, and the PATHOLOGICAL BUILD-be8708a9cd20e286-s1 (standalone true, sizeClass ABSENT, plan-driven {commit, tasks} body), without which the suite cannot catch the defect t8 must fix. In the SAME task, convert build-record.test.ts:142 from comparing the written md against renderStandaloneBuildRecordMd to comparing it against a frozen golden: once t8 makes that function a delegating shim, both sides of the current equality are the SAME function and it passes for any output. MUST precede t8 — a golden captured after records post-fix bytes.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "THREE real tracked BUILD record jsons are committed as fixtures with their CURRENT rendered markdown captured verbatim: a well-formed Trivial standalone, a plan-driven record, and BUILD-be8708a9cd20e286-s1 as the pathological case",
+      "The pathological golden's fixture comment states PLAINLY that it records a DEFECT rather than desired behaviour — its title contains the literal 'undefined' and its body.tasks render nowhere — so when t8 deliberately changes it the diff reads as a reviewed improvement, not an unexplained byte movement",
+      "The expectation is recorded explicitly: goldens 1 and 2 MUST NOT change at t8; golden 3 is the only one expected to change",
+      "build-record.test.ts:142 no longer calls renderStandaloneBuildRecordMd on the right-hand side; it compares the written md against the frozen golden",
+      "MUTATION PROOF, run and recorded: altering one heading in the renderer turns the converted test RED, while the same mutation against the pre-conversion assertion leaves it GREEN — demonstrating the conversion closed a real hole rather than restating a passing check",
+      "provenance-build.test.ts:105 is left untouched — it compares the renderer against itself on two DIFFERENT inputs (legacy vs base record), a legitimate equivalence check and not the vacuous pattern",
+      "All three goldens are captured on unmodified HEAD, before any renderer change lands"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "BYTE-IDENTITY golden 1: a real pre-fix well-formed Trivial standalone record renders exactly its captured markdown"
+      },
+      {
+        "level": "unit",
+        "name": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown"
+      },
+      {
+        "level": "unit",
+        "name": "BYTE-IDENTITY golden 3 (PATHOLOGICAL, expected to change at t8): BUILD-be8708a9cd20e286-s1 renders its captured markdown, 'undefined' title and absent tasks included — a recorded defect, not desired behaviour"
+      },
+      {
+        "level": "unit",
+        "name": "CONVERTED from the vacuous self-comparison: persistBuildRecord's written md for a standalone record equals the FROZEN GOLDEN, not the renderer's own return value"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF of the conversion: a one-heading change in the renderer turns the converted assertion RED, where the pre-conversion form stayed GREEN"
+      },
+      {
+        "level": "unit",
+        "name": "a record written entirely before this change still parses, merges via mergeWithPrior and renders without error"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

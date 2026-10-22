@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
     "epicSlug": "one-common-model-every-artifact",
-    "approvedAt": "2026-10-22T11:49:31.306Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "25884869d5da9439d039abdbb76543761e26d6473887ebe97326e98c2f5f2f02",
+        "at": "2026-10-22T06:35:52.447Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-22T11:49:31.306Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

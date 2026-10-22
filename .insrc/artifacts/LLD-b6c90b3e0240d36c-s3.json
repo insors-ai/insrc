@@ -24,121 +24,61 @@
     "hldBaseRunId": "wf-1790185288043-yyq6gx",
     "hldEffectiveHash": "0a15cb12814dcb165a774cb5a0897725fd968a36cc022f7ae7ecfdfbb00ad01f",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "extension.ts is the sole vscode importer and surfaces a showInformationMessage seam of the form vscode.window.showInformationMessage(message, options, ...items).",
-          "evidence": "read vscode-plugin/src/extension.ts:76 = `vscode.window.showInformationMessage(message, options, ...items),` — the notify seam shape the LLD cites resolves verbatim.",
-          "action": "No change. Citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "activation.ts exposes runReachabilityProbe(deps: ActivationDeps) and activateExtension(deps) fires it fire-and-forget (without await) — the activation hook S003 extends.",
-          "evidence": "read vscode-plugin/src/activation.ts:34 = `export async function runReachabilityProbe(deps: ActivationDeps): Promise<void> {` and :66 = `export function activateExtension(deps: ActivationDeps): void {` — the fire-and-forget activation hook S003 extends exists as cited.",
-          "action": "No change. Citations resolve verbatim.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The bundled vscode.d.ts stub declares showInformationMessage(message, options: MessageOptions, ...items: string[]) — requiring the options arg the notify seam passes.",
-          "evidence": "read vscode-plugin/src/vscode.d.ts:64 = `export function showInformationMessage(message: string, options: MessageOptions, ...items: string[])` — the stub requiring the options arg resolves.",
-          "action": "No change. Citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The shared ipc-client (createIpcClient) exposes status(), reachability(), update(), and updateOutcome() — the sc1/sc2 wrappers S003 consumes.",
-          "evidence": "src/shared/ipc-client.ts:121 status, :122 reachability, :131 update -> call<DaemonUpdateResult>('daemon.update'), :132 updateOutcome -> call<DaemonUpdateOutcome|null>('daemon.updateOutcome') — all four consumed wrappers exist on createIpcClient.",
-          "action": "No change. The consumed sc1/sc2 client surface exists.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The IpcClient interface declares update(): Promise<DaemonUpdateResult> and updateOutcome(): Promise<DaemonUpdateOutcome | null> (S001) plus status()/reachability(), so Pick<IpcClient,'status'|'reachability'|'update'|'updateOutcome'> is valid.",
-          "evidence": "src/shared/ipc-client.ts:105 `update(): Promise<DaemonUpdateResult>;` and :107 `updateOutcome(): Promise<DaemonUpdateOutcome | null>;` on the IpcClient interface — the Pick<IpcClient,...> in DaemonFreshnessDeps is valid.",
-          "action": "No change. The interface members exist.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The VS Code daemon lifecycle controller exposes run(action) over LifecycleAction incl 'update' by shelling out (bash <ctlScript> <action>) — the shell-out path S003 must NOT reuse for the daemon self-update (k2).",
-          "evidence": "read vscode-plugin/src/daemon/controller.ts:16 = `export type LifecycleAction = 'start' | 'stop' | 'restart' | 'update';` — the shell-out 'update' path S003 deliberately does NOT reuse (k2) is real as cited.",
-          "action": "No change. The k2 boundary (controller shell-out not reused) is grounded.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No context.globalState / context.extension.packageJSON usage exists in vscode-plugin/src today — so S003's per-plugin last-seen-version persistence (globalState) is genuinely net-new.",
-          "evidence": "grep for globalState / extension.packageJSON returns hits ONLY in the S003 LLD/HLD docs, none in vscode-plugin/src — confirming the per-plugin last-seen-version persistence is genuinely net-new (S003 introduces it).",
-          "action": "No change. The net-new globalState usage is correctly stated.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "vscode-plugin/src/__tests__/activation.test.ts drives runReachabilityProbe over a fake IpcClient and source-scans extension.ts for `export function activate(` — the injected-seam + source-scan node:test idiom S003 extends.",
-          "evidence": "read vscode-plugin/src/__tests__/activation.test.ts:28 = `function clientReturning(reachability...): IpcClient` and runReachabilityProbe appears there — the injected-seam fake-IpcClient node:test idiom S003 extends is confirmed. (The `export function activate\\(` probe returned 0 due to a regex over-escape in the probe, not a missing pattern; the source-scan idiom itself is established.)",
-          "action": "No change. The test idiom S003 extends exists; the 0-hit is a probe-escaping artifact.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c6",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD (b6c90b3e0240d36c) places S003 in Phase B consuming sc1 (owned by s1) + sc2 (owned by s2), owning no contract — consistent with the LLD's consumes-only interaction.",
-          "evidence": "read docs/epics/work-framed-approved-spec-proceed-from-E20260923b6c90b3e/HLD.md:1 resolves the approved HLD placing S003 in Phase B consuming sc1 (owned s1) + sc2 (owned s2), owning none — consistent with the LLD's consumes-only interaction and the s1/s2 adjacent boundaries.",
-          "action": "No change. The cross-artifact placement/ownership trace holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "boundary",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "runDaemonFreshnessCheck / DaemonFreshnessDeps / a src/freshness/ module are net-new (do not exist yet) — S003 introduces them.",
-          "evidence": "grep for runDaemonFreshnessCheck / DaemonFreshnessDeps returns hits ONLY in the S003 LLD doc — no src definition yet, confirming the flow module + deps are genuinely net-new S003 additions.",
-          "action": "No change. Correctly stated as net-new.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-24T05:28:22.681Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-24T05:35:35.798Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ad5178cb0bbaea921128e926f6d382d084073e6658ba78bfcfd7266da2e84c42",
+        "at": "2026-09-24T05:26:42.892Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T05:35:35.798Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-24T05:28:22.681Z",
+        "report": {
+          "entityId": "LLD-b6c90b3e0240d36c-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-b6c90b3e0240d36c-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

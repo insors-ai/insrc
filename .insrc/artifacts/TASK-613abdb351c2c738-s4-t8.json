@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d27a63d1-2202-4c7c-8827-277f5f13b901",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.492Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Closing: k1-k5, crosswalk, deferred amendments and the live hand check",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "466042ad8ea24e3c65170d386d7074a2f9856c8010d8e6e62e398bc0d02e7d15",
+        "at": "2026-10-22T12:43:38.492Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.493Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Closing: k1-k5, crosswalk, deferred amendments and the live hand check",
+    "summary": "Score the Epic constraints k1-k5 against the finished change in the BUILD summary; carry the c-id crosswalk (c11 and c12 to read:store-retry-surface, c13 and c3 to read:worker-and-outbox); list the deferred HLD additions for the Epic-end batch (sc1 retryNow, sc4 retry-now action, sc5 outbox-retry-now completion, and S003's markNotDeliveredIfHead, presenceOf, holderGone and the same-windowKey takeOver rule). Run the live hand check with a real provider failure: a passing provider failure before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed; check the classifier against the logged texts. If no real failure can be produced, record the check as not run with the reason, and record a fault-injection run (a fake CLI that prints an overload result) as evidence of the wiring, clearly labelled as such.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "the BUILD summary scores k1-k5 and lists the deferred HLD additions and the crosswalk",
+      "the classifier's patterns are compared with the failure texts the logs captured, and any miss is recorded",
+      "the hand check is recorded as a reported live test with its evidence, or recorded as not run with the reason and the fault-injection evidence labelled as such"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

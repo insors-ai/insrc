@@ -10,82 +10,59 @@
     "schemaVersion": 1,
     "epicHash": "820cc07b9c74195c",
     "epicSlug": "frame-epic-per-role-per-step",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "c1",
-          "ref": "sc3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "resolveProviderForRole / a RoleRouter does NOT exist in the codebase today — the Epic introduces it (greenfield).",
-          "evidence": "grep resolveProviderForRole → 0, RoleRouter → 0. The router is genuinely greenfield; the Epic introduces it. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c2",
-          "ref": "sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider (shaper-provider.ts:183) and buildSummariserProvider (shaper-provider.ts:256) are the split the router generalizes.",
-          "evidence": "shaper-provider.ts:183 `export function buildShaperProvider(` and :256 `export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider` — the split the router generalizes, at the cited lines. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c3",
-          "ref": "sc6",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "workflow-rpc.ts builds ONE buildShaperProvider(cfg) for the run — the single construction site the router injection replaces.",
-          "evidence": "The premise (and the HLD's c4 citation + sc6 assumption + a1 pro) claim `buildShaperProvider` has 'exactly ONE non-test caller: prepareWorkflowRun'. The grep re-derives ~11 PRODUCTION callers: workflow-rpc.ts:341 PLUS the analyze pipeline — classifier/driver.ts:128, scope-picker.ts:125, decomposer.ts:159, synthesizer.ts:116, capability-reuse-check.ts:128, doc-constraint-enumerate.ts:112, doc-decision-trace.ts:119, planner/driver.ts:166, runtimes/shared/adherence.ts:213, aggregator.ts:75. workflow-rpc IS the single WORKFLOW construction site, but 'exactly one non-test caller of buildShaperProvider' is false.",
-          "action": "S005 (apply routing at every site) and S003 (generalize buildShaperProvider) must account for ALL ~11 buildShaperProvider production callers — the analyze pipeline reasoning sites (decomposer/synthesizer/planner/explore/runtimes), not just prepareWorkflowRun + the 2 hardcoded sites. The router-generalization (a2) handles this cleanly (the router supersedes buildShaperProvider so every caller gets routed), but the HLD/LLD scope + role taxonomy (sc4) must enumerate these analyze roles. Not a build-break (buildShaperProvider stays functional via the legacy path); a completeness/scope correction for the S005/S003 LLDs.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Grounding count error propagated from the s1 usage.example pass; correct the scope at LLD time. The chosen router architecture already subsumes all callers, so no design change — only the enumerated site list + role taxonomy grow.",
-            "options": [
-              "S003 makes buildShaperProvider a thin shim over the router's default role, so the ~11 analyze callers keep working unchanged and inherit routing transparently.",
-              "S005 explicitly reroutes each analyze-pipeline caller to name its role (decompose/synthesize/narrow/etc.) so they get tiered per the Epic intent.",
-              "Both: shim for back-compat now, reroute the analyze roles for tiering in S005."
-            ]
-          }
-        },
-        {
-          "claimId": "c4",
-          "ref": "sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The LLMProvider type sc3 imports from shared/types.js exists.",
-          "evidence": "src/shared/types.ts:177 `export interface LLMProvider {` — the type sc3's interface sketch imports. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c5",
-          "ref": "sc6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The two hardcoded top-tier sites are `new CliProvider({ kind: 'claude' })` at src/mcp/build-step/phases/validate.ts:45 and src/cli/services/workflow.ts:231 (the HLD abbreviates the first as validate.ts:45).",
-          "evidence": "The two hardcoded top-tier sites are real: src/mcp/build-step/phases/validate.ts:45 `providerOverride ?? new CliProvider({ kind: 'claude' })` and src/cli/services/workflow.ts:231 `new CliProvider({ kind: 'claude' })` (the other 3 matches are live tests). Confirmed; S005's targets exist.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 4
-      },
-      "reviewedAt": "2026-07-25T09:29:43.252Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-07-25T11:55:43.221Z",
-    "reviewOverride": {
-      "reason": "MED is a scope finding, not a defect: buildShaperProvider has ~11 production callers (analyze pipeline) not 1; the RoleRouter architecture already subsumes them, and the scope note is carried into the S005/S003 LLDs. Architecture sound (0 HIGH, 4 LOW verified).",
-      "at": "2026-07-25T11:55:43.221Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6beb87ca9c3eb26edf526cdaeb8e6f6e4fc62156f5b93e5248b303b147ca7462",
+        "at": "2026-07-25T09:26:21.495Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-25T11:55:43.221Z",
+        "override": {
+          "reason": "MED is a scope finding, not a defect: buildShaperProvider has ~11 production callers (analyze pipeline) not 1; the RoleRouter architecture already subsumes them, and the scope note is carried into the S005/S003 LLDs. Architecture sound (0 HIGH, 4 LOW verified)."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 4
+        },
+        "at": "2026-07-25T09:29:43.252Z",
+        "report": {
+          "entityId": "HLD-820cc07b9c74195c",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-820cc07b9c74195c-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

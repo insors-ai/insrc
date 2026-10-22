@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-689a28f9-a238-4aa0-9858-64ad3355bf71",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.481Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "A record with no live run is abandoned when it is read",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f1e6afb0dfe53cb4d85f0cff8676d203c2553156ff61d06291658c4223922ce",
+        "at": "2026-10-22T12:44:25.481Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.482Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A record with no live run is abandoned when it is read",
+    "summary": "The daemon's status request rewrites a record that is 'in-progress' with no live run as failed with 'run-abandoned' at its stage and returns it. purgeRun takes an optional isLive; given it and finding the run not live it rewrites and purges without force, and without it refuses as today; the daemon's purge request passes isRunLive. Both rewrites are guarded and best effort. The daemon's run handler, for an error that escapes runAnalyze, writes the record as failed if it is still 'in-progress' and sends the record's stage; it sends the result frame and the 'done' frame whether or not that write succeeds.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "A record left 'in-progress' with no live run: the status request returns it as failed with 'run-abandoned' at its stage, and the file on disk is rewritten",
+      "The daemon's purge request, driven through its handler, purges such a record without force; purgeRun called with no liveness refuses it with 'run-in-progress'",
+      "A record 'in-progress' for a run that is live is returned unchanged by the status request and refused by the purge request",
+      "With a record that cannot be written, the status request still returns the record as abandoned and the purge still removes the directory",
+      "The daemon's handler, given a runAnalyze that throws, writes the record as failed and sends the record's stage, not 'classify'; with a record that cannot be written it still sends both frames",
+      "No reader changes a record that is 'ok' or 'failed'"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a record in progress with no live run is rewritten as 'run-abandoned' by the status request, on disk too (mutation: return the record as read)"
+      },
+      {
+        "level": "integration",
+        "name": "the daemon's purge request purges such a record without force; purgeRun with no liveness refuses it; a live run's record is returned unchanged and refused"
+      },
+      {
+        "level": "integration",
+        "name": "the daemon's handler writes the record and sends its stage, not 'classify', for a runAnalyze that throws, and sends both frames when the record cannot be written"
+      },
+      {
+        "level": "integration",
+        "name": "with a record that cannot be written the status request still says 'run-abandoned' and the purge still removes the directory (mutation: let the rewrite's error escape)"
+      },
+      {
+        "level": "integration",
+        "name": "no reader changes a record that is 'ok' or 'failed'"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

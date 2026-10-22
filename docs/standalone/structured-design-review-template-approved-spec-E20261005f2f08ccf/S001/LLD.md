@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-f2f08ccf89f8ab25-S001 -->
+<!-- insrc:artifact LLD-f2f08ccf89f8ab25-s1 -->
 
 # LLD: E20261005f2f08ccf:S001
 
@@ -281,7 +281,7 @@ The template is the same as in a1. Each check item starts a separate reviewer se
 - **[[c7]]** `stakeholder` `user, 2026-10-05` — "cap at rational values for ISSUES vs EPICS, should be dependent on the complexity. Hard cap at 10 mins"
 - **[[c8]]** `stakeholder` `user, 2026-10-05` — "should not touch the DEF/ISSUE reviews"
 - **[[c9]]** `stakeholder` `user, 2026-10-05` — "yes, go with recommended"
-- **[[c10]]** `prior-artifact` `BUILD-f2f08ccf89f8ab25-S001`
+- **[[c10]]** `prior-artifact` `BUILD-f2f08ccf89f8ab25-s1`
 - **[[c11]]** `stakeholder` `user, 2026-10-05` — "document corrected <- yes"
 
 <!-- insrc:review -->

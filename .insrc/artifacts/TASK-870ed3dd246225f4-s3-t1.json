@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-271304db-57f4-49a8-894f-e7b2a17ddeb5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.098Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Call-sequence pure core + bounded DFS + read-seam + registration factory",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c7f5e3f8cc787d2336d7b7a4b6bde629290584e067f2725755ac2fe10ce78541",
+        "at": "2026-10-22T12:43:54.098Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.099Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Call-sequence pure core + bounded DFS + read-seam + registration factory",
+    "summary": "Create src/docgen/extract/call-sequence.ts: CALL_SEQUENCE_DOCTYPE='call-sequence'; the read-seam interface CallGraphReader + types CallSequenceScope, CallFrameRef {entityId,name,file,startLine}, CallWalk {entry,frames,steps:{from,to,repeat}[],truncatedFrameIds,depthUsed}; the pure buildCallSequenceIR(walk,revision,scopeDescription) (frames->'call-frame' nodes with 'name (file:line)' label + entityId citation, ordered 'calls' edges, cycle-repeat steps kept as marked edges to the existing frame, 'truncation' marker nodes stating depthUsed; narrated.sections=[]); parseScope + CALL_SEQUENCE_INPUT_SCHEMA (repo + symbol + optional maxDepth); makeExtract (the bounded depth-limited DFS over reader.calleesOf with an on-path visited set for cycle termination + a maxDepth cap, materializing the CallWalk, routing to notFound/sourceNotReady/emptyScope/ok); callSequenceRegistration. The DFS + pure builder are tightly coupled (the DFS materializes the exact CallWalk the builder consumes) so they stay in one file, mirroring s2's single-file t1; DFS risk is contained by t5's cyclic/deep fake-reader tests. Consumes sc1/sc2/sc4 unchanged.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "buildCallSequenceIR yields 'call-frame' nodes (entityId-cited) + ordered 'calls' edges; narrated.sections=[]",
+      "a repeat=true step is kept as a marked 'calls' edge to the existing frame, never re-expanded (ac2)",
+      "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)",
+      "repeated calls to the same callee preserve BOTH ordered steps (sequence multiplicity, no dedupe)",
+      "makeExtract's DFS terminates on a cyclic adjacency (ac2) and stops at maxDepth (ac3); routes not-found (ac4)/source-not-ready/empty-scope",
+      "same walk -> deep-equal IR (determinism); npx tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildCallSequenceIR: frames -> 'call-frame' nodes + ordered 'calls' edges with entityId citations (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "a repeat=true step kept as a marked 'calls' edge to the existing frame (ac2), never re-expanded"
+      },
+      {
+        "level": "unit",
+        "name": "a truncatedFrameId yields a derived 'truncation' marker node stating depthUsed (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "repeated calls to the same callee preserve BOTH ordered steps (no dedupe)"
+      },
+      {
+        "level": "unit",
+        "name": "same walk -> deep-equal IR (determinism); narrated.sections=[]"
+      },
+      {
+        "level": "unit",
+        "name": "makeExtract -> 'not-found' when resolveEntryPoint returns undefined (ac4)"
+      },
+      {
+        "level": "unit",
+        "name": "makeExtract -> 'source-not-ready' / 'empty-scope'"
+      },
+      {
+        "level": "unit",
+        "name": "makeExtract over a CYCLIC fake reader terminates and marks the repeat step (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "makeExtract over a deeper-than-maxDepth fake reader stops at the cap, records truncatedFrameIds + depthUsed, returns ok (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "makeExtract drops a dangling callee but keeps the calling frame (k11)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

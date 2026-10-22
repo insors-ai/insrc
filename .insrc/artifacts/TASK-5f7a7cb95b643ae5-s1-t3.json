@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-94f58af1-951d-4311-b8fc-73d921becb41",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.945Z",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f7a7cb95b643ae5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the build-start file and read it first in the resolver",
+      "parent": {
+        "entityId": "STORY-5f7a7cb95b643ae5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f7a7cb95b643ae5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "346c5427ef45c97746104c5682c86214e8652a0292a1cdc64f9a806dde51815d",
+        "at": "2026-10-22T12:43:36.945Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.946Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the build-start file and read it first in the resolver",
+    "summary": "In range-base.ts add buildStartRelPath and one private reader for the build-start file that accepts it only when it has the four fields, names this Story, and its commit exists in the repo. Make resolveStoryRangeBase consult a valid build-start file first and leave its existing steps untouched.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A valid build-start file wins over a different approval-time stamp, and a hand-written file with the four fields is accepted",
+      "Malformed, wrong-Story and missing-commit files are ignored with a warning and the approval-time stamp is returned",
+      "With no build-start file every existing range-base test passes unchanged, including the one asserting undefined when nothing resolves",
+      "Each new test was seen to fail with the production change reverted"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T18 a valid build-start file wins in the resolver, including a hand-written one"
+      },
+      {
+        "level": "unit",
+        "name": "T19 invalid build-start files are ignored by the resolver"
+      },
+      {
+        "level": "unit",
+        "name": "T20 existing range-base tests pass unchanged with no build-start file"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

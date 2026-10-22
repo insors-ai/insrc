@@ -5,8 +5,36 @@
     "epicHash": "599a9b506f22b896",
     "storyId": "s1",
     "createdAt": "2026-09-15T18:52:26.614Z",
-    "approvedAt": "2026-09-15T18:53:10.868Z",
-    "epicSlug": "restructure-docs-artifact-markdown-from-flat"
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "af8847ef02a1719f24a939bf1d5f9591a5ef978308d5ad08ba973cfb862f7913",
+        "at": "2026-09-15T18:52:26.614Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-15T18:53:10.868Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "S001 — uniform work-item identity (widen story-id minter + WorkItemIdentity/deriveWorkItemIdentity)",

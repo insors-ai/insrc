@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8228105b-6c24-4001-9606-16ec78d2b461",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.405Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "ReviewJob REDUCE: obligation keys, capped merge levels, context-only calls",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3b404e8208588bee8e9e263b5f77ecad394b29804a8725575deedd93216db6ba",
+        "at": "2026-10-22T12:44:15.405Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.406Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "ReviewJob REDUCE: obligation keys, capped merge levels, context-only calls",
+    "summary": "REDUCE keys initialised from every obligation before MAP; keys adjudicated in packed calls (a key with no notes too); a key whose notes do not fit is merged level by level into capped notes under short ids with provenance kept in the job; context-only calls when there are no symbols; merge answers over their cap or naming unknown note ids rejected.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Every obligation reaches adjudication, including one with no notes and every one when there are no symbols.",
+      "A key whose symbolIds alone exceed the budget is merged under note ids, adjudicated in one call and its findings expanded to the real symbols; the job terminates.",
+      "A merge answer over its cap or naming unknown note ids is rejected."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a key whose notes do not fit is merged level by level under capped notes and the job terminates'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a merge or digest answer over its cap or naming unknown note ids is rejected'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a requirement whose symbolIds alone exceed the budget is merged under note ids, adjudicated in one call and its findings expanded to the real symbols'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

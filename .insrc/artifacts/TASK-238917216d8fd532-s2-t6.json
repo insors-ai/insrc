@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-51c37323-98c2-4521-ace5-1e20277acf77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.250Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Tests: daemon (handleArtifactContent + handler) and plugin (gateway, real parse framing, view mappers)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44b25c5ce2efd4ef353a471be2f48582571ff20abfdfd4a0f03fe2391b15a4e4",
+        "at": "2026-10-22T12:43:18.250Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.251Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: daemon (handleArtifactContent + handler) and plugin (gateway, real parse framing, view mappers)",
+    "summary": "Add daemon node:test units for handleArtifactContent (happy path byte-equal, block-verdict, empty openQuestions, path-escape, missing .md, missing/malformed .json, repo/mdPath unresolved, read-only) + an integration test for the workflow.artifactContent handler over a temp docs/ + .insrc/artifacts fixture; plugin JUnit for artifactReviewView (Loaded/Unavailable mapping via fake DaemonRpc), the REAL UnixSocketDaemonRpc.parse framing ({result:{view}}->Loaded, {result:{error}}->Unavailable), and the pure ArtifactContentViews/renderModeFor mappers. Verify locally (npx tsx --test; ./gradlew test JDK21) — no live socket, no GitHub CI.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Every LLD test-strategy subject for ac1/ac2/ac3 has a passing test across the daemon + plugin layers.",
+      "Daemon subset green via npx tsx --test; plugin tests green via ./gradlew test on JDK21.",
+      "A real-parse test crosses the framing boundary (the S001 hollow-test lesson); no test hits a live socket or GitHub Actions."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Aggregate: the daemon handleArtifactContent + plugin gateway/mapper unit subjects run green (npx tsx --test; ./gradlew test JDK21)"
+      },
+      {
+        "level": "integration",
+        "name": "Aggregate: the workflow.artifactContent handler integration subjects run green over the temp docs/ + .insrc/artifacts fixture"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

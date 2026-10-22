@@ -24,101 +24,61 @@
     "hldBaseRunId": "wf-1790398081061-o81y85",
     "hldEffectiveHash": "e2745c4bac48a6e87b322daf9e2231b2f375790d6b3411568c9129535c418f61",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "data-model/TranscriptEntry",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc4 TranscriptEntry type in session-store.ts is currently {readonly role; readonly text; readonly at} with no style field, so S008 adds an optional readonly cssClass?: string to it.",
-          "evidence": "grep resolves `interface TranscriptEntry` at vscode-plugin/src/chat/session-store.ts:15; the HLD copy (HLD.md:124) shows the current shape {readonly role; readonly text; readonly at} with no style field. The additive optional cssClass?: string is therefore correctly premised.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "invariants/store-roundtrip",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "session-store.ts isSession() validates a session by checking only that transcript is an Array, so an added optional row field needs no migration and old rows still validate.",
-          "evidence": "isSession at session-store.ts:67 checks typeof object + id/provider/createdAt/title/editMode strings and Array.isArray(s['transcript']) — it does NO per-ROW validation of transcript entries. So an added optional row field validates on both old and new sessions with no migration, exactly as the premise's load-bearing point requires. (Minor imprecision: it also checks session-level fields, not 'only' the transcript array, but that does not affect the additive-no-migration conclusion.)",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "contract/appendEvent",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts appendEvent computes marker = markerFor(ev) for a durable marker kind and pushes a {role:'marker', text: marker.label} row, currently dropping marker.cssClass.",
-          "evidence": "grep resolves `function appendEvent(s: ChatSession, ev: TurnEvent)` at chat-panel.ts:246 (LLD's ~209 is an approximate anchor that resolves to the intended writer). S004 LLD confirms it derives the marker row from markerFor(ev).label; the cssClass-drop premise is sound.",
-          "action": "none — verified sound (actual line is chat-panel.ts:246)",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "contract/line",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "chat-panel.ts webview bootstrap defines a writer line(text, markerClass?) that sets className only when a marker class is passed and sets textContent (no innerHTML).",
-          "evidence": "grep resolves the webview writer at chat-panel.ts:103: `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;...}` — confirms the S004-widened signature line(text, markerClass?), className set only when truthy, textContent only (no innerHTML). Premise sound (LLD's ~90 is an approximate anchor to the same writer).",
-          "action": "none — verified sound (actual line is chat-panel.ts:103)",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "migration/restore",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The chat-panel.ts webview session-restored branch replays each transcript row via line(x.text) with no class, which S008 changes to line(x.text, x.cssClass).",
-          "evidence": "grep resolves the session-restored replay at chat-panel.ts:115: `else if(m.type==='session-restored'){...t.textContent='';(m.transcript||[]).forEach(x=>line(x.text));...}` — currently replays with line(x.text) and no class, exactly as premised; S008 changes it to line(x.text, x.cssClass). (LLD's ~94 is an approximate anchor to this branch, actual :115.)",
-          "action": "none — verified sound (actual line is chat-panel.ts:115)",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "interaction/sc2-markerFor",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "markers.ts markerFor(ev) returns a {cssClass,label} object (MarkerLine) so the cssClass to persist is already computed at write time.",
-          "evidence": "grep resolves `export function markerFor(event: TurnEvent): MarkerLine | null` at markers.ts:43; S004 LLD:36 confirms MarkerLine = {cssClass, label} with cssClass one of the sc1 marker classes. So the cssClass to persist is already computed at write time.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "interaction/sc1-classes",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are exactly five sc1 marker classes (insrc-term__marker--pending|tool|edit|done|error) defined for glyph+tone, and S008 does not modify design-tokens.ts.",
-          "evidence": "S004 LLD:36 enumerates exactly five sc1 marker classes: insrc-term__marker--pending|tool|edit|done|error; markerFor returns one of them. S008 modifies neither markers.ts nor design-tokens.ts. Inventory (5) confirmed.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "interaction/sc3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc3 session-restored message carries the transcript[] payload, so a new optional field on TranscriptEntry rides the existing message with no protocol change.",
-          "evidence": "session-restored is typed `{ type: 'session-restored'; sessionId: string; transcript: TranscriptEntry[] }` (HLD.md:98) and posted with session.transcript at chat-panel.ts:287/304/338. The added optional field on TranscriptEntry rides this existing payload with no protocol change.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-26T05:09:16.359Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-26T05:10:57.554Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9ac384fb15ac254cbb87b6280abd1197366dcb594b4f501db199c9bbe6762e05",
+        "at": "2026-09-26T05:04:21.974Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T05:10:57.554Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-26T05:09:16.359Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s8",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s8-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

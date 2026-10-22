@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2a30335e-2a60-4171-afe6-368c76f975be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.973Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Audit and update all five existing IpcStreamMessage-collector test files",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a1c61c4ca6755ad4a3a1a0d9b0cb871304524738d45a933143b045c3685dcfe9",
+        "at": "2026-10-22T12:43:42.973Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.974Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Audit and update all five existing IpcStreamMessage-collector test files",
+    "summary": "Update assertion content only — the `sent: IpcStreamMessage[]` + `send` collector fixtures and every send signature stay unchanged, since only `data` changes and never the frame type. The audit covers ALL FIVE files named in the LLD's invariantsToPreserve, not a subset: (1) src/daemon/__tests__/prefs-slash.test.ts:57 (the Fx interface declaring the exact idiom), (2) src/daemon/__tests__/prefs-confirm.test.ts:303/325/342, (3) src/daemon/__tests__/handoff-stream.test.ts:59 — which uses a differently-named `collect()` returning `{ recorded: IpcStreamMessage[]; send }`, a variant easily missed by a name-based search, (4) src/daemon/__tests__/workflow-rpc.test.ts:42, and (5) src/bin/__tests__/permission-hook-integration.test.ts:11,44, whose fake server replies with hand-scripted IpcStreamMessages — these must be inspected for hand-built progress/delta payloads and updated if any exist, not merely presumed unaffected, since a scripted frame can keep compiling while asserting a superseded payload.\n\nGuard the single most likely regression: `deltaText(sent)` at prefs-slash.test.ts:75 must keep returning text for prefs slash-command deltas, which are NOT a ProgressOperation and are untouched, while ProgressOperation deltas now carry a TokenProgressEvent object — the two delta populations must never be conflated. Leave `endsWithDone(sent)` at :85 alone; it must keep passing unmodified including for progress-free streams. Keep the numeric-id assertion at handoff-stream.test.ts:224 passing. Also update any analyze test asserting one-frame-per-event, which is no longer true after t4.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "All five LLD-named files are explicitly inspected and the audit result recorded per file (changed, or unaffected with the reason); none is skipped.",
+      "permission-hook-integration.test.ts's scripted IpcStreamMessages are inspected for hand-built progress or delta payloads and updated where found; the file still compiles and passes.",
+      "`npx tsx --test 'src/**/__tests__/*.test.ts'` passes with no changes to any collector fixture declaration or `send` signature in any of the five files.",
+      "deltaText(sent) at prefs-slash.test.ts:75 is unchanged and still returns text; no test applies it to a ProgressOperation delta frame.",
+      "endsWithDone(sent) at prefs-slash.test.ts:85 and the numeric-id assertion at handoff-stream.test.ts:224 pass unmodified.",
+      "handoff-stream.test.ts's `recorded`-variant collector still compiles and passes.",
+      "No remaining test asserts a one-progress-frame-per-AnalyzeRunEvent count."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "prefs-slash regression re-run: deltaText(sent) at :75 keeps returning text for prefs slash-command deltas (not a ProgressOperation) and is never applied to a ProgressOperation delta frame"
+      },
+      {
+        "level": "integration",
+        "name": "invariant re-runs unmodified: endsWithDone(sent) at prefs-slash.test.ts:85 and the server-overrides-numeric-id assertion at handoff-stream.test.ts:224 both pass with no edit"
+      },
+      {
+        "level": "integration",
+        "name": "five-file collector audit: prefs-slash, prefs-confirm, handoff-stream (`recorded` variant), workflow-rpc, and permission-hook-integration all compile and pass with every `sent: IpcStreamMessage[]` fixture and `send` signature diff-clean"
+      },
+      {
+        "level": "integration",
+        "name": "analyze suite: no remaining test asserts one progress frame per AnalyzeRunEvent"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

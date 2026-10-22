@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0f56a9c1-ff45-4d64-bff9-68e4856e645e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.242Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Code-review single-chunk adapters and runCodeReview",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6aa23a66625c2bf9e8120bf0cafce0ebaf089d75b52f152bb239a8b9aae0e90d",
+        "at": "2026-10-22T12:43:51.242Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.242Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Code-review single-chunk adapters and runCodeReview",
+    "summary": "One adapter per code-review dimension, each wrapping today's prompt builder unchanged, with daemon and controller stage plans. ux is a deterministic stage reading the snapshot's companion-mock fileFacts. Diagram keeps its handlers (deterministic ones as deterministic stages, a failing handler a LOW observation). Adherence makes no call without an approved LLD or plan. runCodeReview builds one job per expected dimension in today's order and drives it with runReviewJob, so the withStructuredRetry wrappers leave the review path. A dimension failing both attempts returns { ok: false, error } as today.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "An under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included.",
+      "Coverage is still normalised once over the dimension's result.",
+      "A mock added or removed after prepare does not change the ux result."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

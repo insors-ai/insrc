@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1626d8e8-69a6-4a2b-8c3e-c2fad5d2dd5b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.517Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Run team mode and individual mode through one push path",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s6-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "125b164b5ca1dca8e628e39099e80a36a0ce5ffa61add0d8504ac1d69319a132",
+        "at": "2026-10-22T12:43:21.517Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.517Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run team mode and individual mode through one push path",
+    "summary": "Remove legacyPushEpic, legacyPushStory, legacyPushTasks, pickMode's legacy branch and the createTracker test seam from src/workflow/tracker-auto.ts: autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan call the shared ensure, extras and binding path in both modes, individual mode keeping the pushTasks policy for Task issues and making no claim, and extrasFailed reported in both modes. Move the individual-mode cases of the tracker-auto, tracker-tasks and approve-fallback tests onto the shared path.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "the three pushes bind the Epic or Story, post each comment once, retry a pending link and report extrasFailed the same way in team mode and in individual mode",
+      "individual mode keeps its pushTasks policy (no Task issues when it is off) and makes no claim",
+      "a repository with no tracker is skipped before anything is looked up and has no binding",
+      "no production file or test references legacyPushEpic, legacyPushStory, legacyPushTasks or the createTracker seam, and the tracker-auto, tracker-tasks and approve-fallback tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "tracker-push-modes.test.ts: the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

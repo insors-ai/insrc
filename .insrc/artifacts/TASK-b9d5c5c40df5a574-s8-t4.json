@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-810a73e6-a5fa-4273-9be2-fce99fb9e708",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.252Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s8",
+    "envelope": {
+      "description": "The functional-surface task accepts a directory path",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d5ee1c19284f523680adb84b0a9c1b1d07f42280157a9648d93a0d8a197d242c",
+        "at": "2026-10-22T12:44:26.252Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.252Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The functional-surface task accepts a directory path",
+    "summary": "Move code.surface.functional to the two reading functions: an entity id is read exactly as today, with no scope resolved and the entity's own repo read whole; any other value is a directory path under the run's resolved scope, read from the repo of that scope narrowed to its area. The output's module gains `directory` and its `entityId` becomes optional; the record's rule says the surface includes sub-directories. Describe the `module` parameter in the planner's catalog and correct the runtime's header comment. Add the source scan's assertion for this runtime and rewrite the gated test of an unknown id.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Given an absolute or a relative directory path the task returns the exports and internal helpers of every stored source file under it, at any depth, and names the directory in its output",
+      "Given a directory that holds source only in its sub-directories it returns their surface",
+      "Given a directory under which no stored source file lies it fails with a reason that says so and names the repo that was read; the plan walk records the task as failed, not as an empty module",
+      "Given a directory outside the area of the run's scope, or a directory path under a file or symbol scope, it is refused with its own message",
+      "Given a stored module entity's id it returns what it returned before this Story under every kind of scope, and resolves no scope: with the scope function's test readers set to throw, the id still returns its surface, and a directory path fails with the reader's error",
+      "A source directory in which no function, method or class is stored returns an empty surface with a complete record",
+      "The planner's catalog describes the three forms of the `module` value and the runtime's header comment no longer says it is an entity id only",
+      "The source scan asserts that surface-functional.ts resolves `args.intent.scopeRef` through resolveTaskScope for the code family, and passes",
+      "The gated test 'surface.functional: unknown module entity id -> throws' is rewritten to the new message and passes with INSRC_LIVE_TESTS=1",
+      "The table test over every registered runtime still finds a completeness record on each result, with the functional-surface task also given a directory path"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the functional-surface task given a directory path returns the exports and helpers of every source file under it, including sub-directories, and names the directory in its output (mutation: require a stored module entity, as before)"
+      },
+      {
+        "level": "integration",
+        "name": "the functional-surface task given a directory that holds source only in its sub-directories returns their surface"
+      },
+      {
+        "level": "integration",
+        "name": "the functional-surface task given a value that names nothing fails with a reason that says no stored source file lies under it, and the plan walk records the task as failed, not as an empty module"
+      },
+      {
+        "level": "integration",
+        "name": "a stored module entity's id returns the surface it returned before under every kind of scope and resolves no scope: with the scope function's readers set to throw the id still answers and a directory path fails (mutation: resolve the scope before the id is looked up)"
+      },
+      {
+        "level": "integration",
+        "name": "a functional-surface task that names a directory outside the area of a module scope is refused, and a directory path under a file scope or a symbol scope is refused (mutation: test a directory against the area with the entity predicate)"
+      },
+      {
+        "level": "integration",
+        "name": "a table test over every registered plan-task runtime still finds a completeness record on each result, with the functional-surface task given a directory path"
+      },
+      {
+        "level": "unit",
+        "name": "the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path"
+      },
+      {
+        "level": "integration",
+        "name": "the gated test of an unknown module value fails with the message that no stored source file lies under it"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

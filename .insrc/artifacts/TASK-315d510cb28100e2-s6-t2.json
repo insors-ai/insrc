@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7ec074a9-c69a-4d78-bad7-667ff760d170",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.503Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Give the workflow state store an entry meta, listStates and a meta-carrying encodeState",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2337ee013dff6ccaf040e6204ff4edc4821cddd0d7bf6d889958f884b08bc1c7",
+        "at": "2026-10-22T12:43:26.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.505Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the workflow state store an entry meta, listStates and a meta-carrying encodeState",
+    "summary": "Extend src/daemon/steps/workflow-step/state-store.ts so each entry can carry meta { owner, upstream } beside payload, createdAt and touchedAt, with saveState taking the meta, replaceState carrying the previous entry's meta, and a listStates that returns entries newest first without touching expiry. encodeState takes the optional meta and reencodeState preserves it; the payload shape and token format do not change.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "encodeState stores meta beside the payload and reencodeState and replaceState carry it onto the replacement",
+      "listStates returns every live entry newest-touch first and does not change any entry's expiry",
+      "An entry saved without meta behaves exactly as before and has no owner"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts: the state store keeps meta beside the payload, carries it through reencodeState and replaceState, lists entries newest first without touching expiry, and an entry saved without meta behaves as before"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

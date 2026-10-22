@@ -1,29 +1,62 @@
 {
-  "id": "AMD-315d510cb28100e2-4",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc2",
-    "field": {
-      "name": "source.anchorKnown",
-      "type": "boolean",
-      "optional": false,
-      "purpose": "States whether firstCommit and firstCommitTime are the true date the policy file first appeared on the default branch; false when history is too shallow to show it, in which case s7 must grandfather no artifact."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-17T05:21:59.151Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c600e79eed80e43f6fb099fd420ecd844f4de8e7fd04ced727564193a11b0289",
+        "at": "2026-10-17T05:21:59.151Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T06:07:25.976Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "A shallow clone cannot show when the policy file first appeared, and the HLD's grandfathering rule (artifacts approved before the file first appeared on the default branch) must not be applied with a substituted later date. The field is additive; no consumer Story has been designed yet, so nothing breaks.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792214314315-eqar4j",
-    "storyId": "s2",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-4",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc2",
+      "field": {
+        "name": "source.anchorKnown",
+        "type": "boolean",
+        "optional": false,
+        "purpose": "States whether firstCommit and firstCommitTime are the true date the policy file first appeared on the default branch; false when history is too shallow to show it, in which case s7 must grandfather no artifact."
+      },
+      "breaking": false
+    },
+    "rationale": "A shallow clone cannot show when the policy file first appeared, and the HLD's grandfathering rule (artifacts approved before the file first appeared on the default branch) must not be applied with a substituted later date. The field is additive; no consumer Story has been designed yet, so nothing breaks.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792214314315-eqar4j",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-17T05:21:59.151Z",
+    "approvedBy": "subhagho@gmail.com"
   },
-  "proposedAt": "2026-10-17T05:21:59.151Z",
-  "status": "approved",
-  "approvedAt": "2026-10-17T06:07:25.976Z",
-  "approvedBy": "subhagho@gmail.com"
+  "citations": []
 }

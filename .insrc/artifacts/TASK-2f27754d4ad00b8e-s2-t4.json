@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f5f16331-cec0-4147-9cd9-bb33f67fc1ae",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.423Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the sidecar primitive and History",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6b060dc04c6302bda98f240502d6e42f199383c7f0d42258f24ed569b07b0bd8",
+        "at": "2026-10-22T12:43:20.424Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.424Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the sidecar primitive and History",
+    "summary": "Add src/workflow/artifact-core/sidecar.ts (appendSidecarLine and the in-memory reader and appender) and src/workflow/artifact-core/history.ts (History with entry validation and the anchor limits), and enter the sidecar file in the inventory in the same task.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "History validates text, kind and the anchor limits and keeps prefix, suffix, section and lines through a round trip",
+      "openFeedback closes entries by addresses all and by listed ids",
+      "appendSidecarLine appends one JSON line per call to the path it is given",
+      "the inventory test passes with the sidecar file entered"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/history.test.ts: History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/sidecar.test.ts: appendSidecarLine appends one JSON line per call to the path it is given"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

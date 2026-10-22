@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e13f4655-cee3-40ac-b4f7-f2a7e3c90fe7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.484Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s4",
+    "envelope": {
+      "description": "resolveMessagingEndpoints pass + protocol-scoped gcOrphanEndpoints refactor + settle-pass wiring",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f0f27b4ce834c79c25c8c2a39feab500e3c7a5a6da5ddca7d738a3dd64da16d",
+        "at": "2026-10-22T12:43:59.484Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.485Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "resolveMessagingEndpoints pass + protocol-scoped gcOrphanEndpoints refactor + settle-pass wiring",
+    "summary": "Create src/indexer/messaging-endpoints.ts resolveMessagingEndpoints({db,repo,resolve?}) mirroring resolveExternalEndpoints: filter unresolved PUBLISHES_TO+SUBSCRIBES_TO, resolve each distinct rawTo via resolve(repo,'messaging',rawTo), mint one protocol:'messaging' externalEndpoint per distinct identity (makeExternalEndpointId, name `messaging:${identity}`, unresolved-not-dropped), promoteResolvedBatch (kind preserved). Refactor gcOrphanEndpoints in external-endpoints.ts: widen to (repo, protocol, kinds), EXPORT it, add the protocol filter on the endpoint list, update resolveExternalEndpoints's two call sites to ('http',['CALLS_HTTP']); call it from the messaging pass with ('messaging',['PUBLISHES_TO','SUBSCRIBES_TO']). Wire resolveMessagingEndpoints into src/indexer/index.ts at both :445 (settle-pass) and :587 (fullIndex) next to resolveExternalEndpoints. NOTE: end-to-end index coverage of messaging is realized only once t2+t3 are both merged; t3's own tests use seeded unresolved rows + an injected sc2, not real parses.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "After the gcOrphanEndpoints signature/export refactor + the two resolveExternalEndpoints call-site updates, the existing external-endpoints.test.ts passes UNCHANGED (regression gate on the shipped code, verified before/independent of the new messaging behaviour)",
+      "resolveMessagingEndpoints promotes unresolved PUBLISHES_TO/SUBSCRIBES_TO to resolved edges of their own kind onto one node per distinct topic; publish+subscribe to one topic share ONE endpoint node with two edges",
+      "An unresolvable topic mints a resolved:false endpoint carrying rawExpression (not dropped); the pass is idempotent (second run a no-op)",
+      "gcOrphanEndpoints is protocol-scoped: the messaging pass never deletes an HTTP endpoint and the HTTP pass never deletes a messaging endpoint; an orphaned messaging endpoint IS deleted",
+      "resolveMessagingEndpoints runs at both index.ts settle-pass and fullIndex sites; tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "messaging-endpoints.test.ts: resolveMessagingEndpoints with injected sc2 -> resolved topic mints one endpoint + promotes edge of the row's own kind; pub+sub to one topic = ONE node, TWO edges"
+      },
+      {
+        "level": "integration",
+        "name": "messaging-endpoints.test.ts: unresolvable topic -> resolved:false endpoint with rawExpression (not dropped); idempotency + distinct-edge counting"
+      },
+      {
+        "level": "integration",
+        "name": "messaging-endpoints.test.ts: protocol-scoped GC (messaging endpoint survives the HTTP pass and vice-versa; orphan messaging endpoint deleted; rows===0 full-clear)"
+      },
+      {
+        "level": "integration",
+        "name": "external-endpoints.test.ts (unchanged): still passes after the gcOrphanEndpoints refactor + call-site updates (shipped-code regression gate)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

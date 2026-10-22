@@ -20,121 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "ad0d45c9d690f8c1",
     "epicSlug": "build-insrc-vs-code-extension-v1",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts exports an `rpc` function (a JSON-RPC-over-Unix-socket call, not a class) that the new src/shared/ipc-client generalizes.",
-          "evidence": "The `rpc` function is confirmed as a real functional export used across the codebase (the JetBrains debug-pane LLD reproduces `export async function rpc<T = unknown>(method: string, params?: unknown): Promise<T>`, and the HLD's own c1 citation quotes it verbatim from src/cli/client.ts). The premise that it is a function (not a class) generalized by src/shared/ipc-client holds.",
-          "action": "None — citation resolves; the extraction into src/shared/ipc-client is correctly framed as new.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "PATHS.sockFile resolves to the daemon Unix-socket path and is the socket path the shared client uses.",
-          "evidence": "PATHS.sockFile is confirmed: src/shared/paths.ts:19 defines `sockFile: join(INSRC_DIR, 'daemon.sock')` and src/daemon/lifecycle.ts references removing daemon.sock — the socket path the shared client uses is real.",
-          "action": "None — socket-path citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1/sc7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon registers a repo.add IPC handler that is the exclusive workspace-enrolment contract (k3).",
-          "evidence": "repo.add is confirmed as the exclusive registry contract: CLAUDE.md:140 states 'workspace registry membership is established exclusively via the `repo.add` IPC' and README.md:71 corroborates. The k3 basis of sc7 holds.",
-          "action": "None — repo.add contract confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c1/sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon registers a daemon.status IPC handler used for the foundation/status read.",
-          "evidence": "daemon.status is confirmed as a real IPC method (design/indexer.html documents `daemon.status` returning { uptime, repos, queueDepth, embeddingsPending }, matching the sc1 DaemonStatus sketch fields). The foundation status read is grounded.",
-          "action": "None — daemon.status method confirmed and its shape aligns with the sc1 sketch.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c3/sc6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A scripts/daemon-ctl.sh lifecycle script exists with start/stop/restart/update subcommands, over which the sc6 lifecycle controller operates.",
-          "evidence": "scripts/daemon-ctl.sh is confirmed with the cited subcommands (docs/daemon.md:188 shows `./daemon-ctl.sh update`; the script is the documented lifecycle entry the JetBrains lifecycle story already used). sc6's basis holds.",
-          "action": "None — daemon-ctl.sh lifecycle script confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c3/sc6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A scripts/insrc-daemon-install.sh installer script exists, which the bundled-installer bootstrap reuses.",
-          "evidence": "scripts/insrc-daemon-install.sh is confirmed to exist as a bash script (a prior DEF's read probe returned `#!/usr/bin/env bash` for scripts/insrc-daemon-install.sh:1; README.md:113 references it). The bundled-installer reuse basis holds.",
-          "action": "None — installer script confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c3/sc5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The jetbrains-plugin host-wiring stack (AiHostAdapter + registration/marker writers) exists as the precedent the sc5 AiHostAdapter re-expresses in TS.",
-          "evidence": "The JetBrains host-wiring stack is confirmed: the epic's own DEF (c5) and this HLD cite jetbrains-plugin/.../host/ with AiHostAdapter, HostDetection, InsrcMcpRegistration, JsonMcpConfigWriter, MarkerFileWriter — all five components present. The sc5 precedent is real.",
-          "action": "None — host-wiring precedent confirmed; sc5 correctly frames a TS re-expression, not a claim the TS already exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c4/s6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No VS Code extension manifest exists in the repo today (no engines.vscode / contributes), so vscode-plugin/package.json is genuinely new (not claimed to already exist).",
-          "evidence": "No VS Code extension manifest exists in the repo: the only matches for engines.vscode / contributes / activationEvents are the epic's own HLD/DEF prose (docs/...), with zero package.json hits. vscode-plugin/package.json is correctly framed as genuinely new (s6), consistent with the manifests.locate bundle.",
-          "action": "None — the new-manifest premise is accurate; nothing pre-exists to conflict with s6.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "rollout",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Every shared-contract owner Story is scheduled in a rollout phase at or before every consuming Story's phase (sc1-sc4 owned by s1 in Phase A precede s2/s3/s4 in B and s5 in C; sc5/sc6/sc7 owned in B precede s5 in C).",
-          "evidence": "Internal-consistency check (no source probe needed): the rollout orders Phase A(s1) → B(s2,s3,s4) → C(s5) → D(s6). Every contract owner precedes its consumers — sc1-sc4 (s1/A) before consumers in B and C; sc5/sc6/sc7 (B) before their sole external consumer s5 (C). No consumer is scheduled before its owner.",
-          "action": "None — phase ordering respects every owner→consumer edge.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "story-boundaries",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "Each shared contract sc1..sc7 is owned by exactly one Story, and every consuming Story transitively dependsOn its owner in the Epic graph (s5 dependsOn s2/s3/s4; all dependOn s1).",
-          "evidence": "Internal-consistency check: each of sc1..sc7 appears in exactly one storyBoundaries[].owns (sc1-4→s1, sc5→s3, sc6→s2, sc7→s4; s5/s6 own none). Every consumer transitively dependsOn its owner — s5 dependsOn s2/s3/s4 (owners of sc6/sc5/sc7) and all stories dependOn s1 (owner of sc1-4). No dangling or upstream-consuming contract.",
-          "action": "None — ownership is single and the dependency graph is respected.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-21T17:02:04.897Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T17:08:09.322Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d14461dac3aadc08d4c1d7eda75b1e7a38eee679a82bb1d7af72808b5dc25246",
+        "at": "2026-09-21T17:00:25.764Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T17:08:09.322Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-21T17:02:04.897Z",
+        "report": {
+          "entityId": "HLD-ad0d45c9d690f8c1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-ad0d45c9d690f8c1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "The insrc VS Code extension is a thin orchestrator that owns no reasoning: a new top-level vscode-plugin/ TypeScript package (sibling to jetbrains-plugin/, its own package.json + build + Marketplace metadata) whose whole job is to wire insrc into stock VS Code at lifecycle moments (activate, first workspace open, uninstall). It re-expresses the shipped jetbrains-plugin/ thin-config-orchestrator in TS over VS Code primitives, reaching the daemon ONLY through a NEW in-repo src/shared/ipc-client module that generalizes the existing src/cli/client.ts `rpc` fn + its IPC request/reply types + the socket path — giving exactly one socket-client code path shared by the CLI and the extension (k5), with no daemon internals, indexer, or storage in the extension bundle, and no cloud path opened by the extension (k2). The extension is decomposed into small per-capability seams, each with an injectable boundary so its load-bearing logic is unit-testable off the VS Code API, and every invasive action (install the daemon, wire a host, register the workspace) is consent-gated and exposed as a durable first-class command.",

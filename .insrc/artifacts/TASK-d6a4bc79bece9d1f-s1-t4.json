@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-abfb2040-cc67-44ed-bd55-7c943ab37d81",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.865Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the 'waiting' status phase and its marker",
+      "parent": {
+        "entityId": "STORY-d6a4bc79bece9d1f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d6a4bc79bece9d1f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1ee5d48d9713c30a73621999782cba9d03a3ccb5a8f662b0de825186fc83b400",
+        "at": "2026-10-22T12:44:42.865Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.866Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the 'waiting' status phase and its marker",
+    "summary": "stream-events.ts: the status phase union gains 'waiting'. markers.ts: markerFor and markerWebviewSource map it to the pending marker labelled 'Waiting for the previous turn to finish'.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "markerFor({ kind: 'status', phase: 'waiting' }) returns the pending marker with the label 'Waiting for the previous turn to finish', and the webview mirror returns the same.",
+      "The typecheck is clean (the exhaustive switch covers the new phase)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "markers.test.ts: phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-38f7c87e-7c1b-4dd4-89ec-22e2ccf18dfa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.920Z",
+    "epicCreatedAt": "2026-10-11T14:49:40.821Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4abafc9dec4c3a5c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Save complete guideline drafts and retain history",
+      "parent": {
+        "entityId": "EPIC-4abafc9dec4c3a5c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "43fd8327c4c98b13674060bb70b159a85b4807600e5bbbfcb0360e8c1d815a3d",
+        "at": "2026-10-22T12:43:06.920Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

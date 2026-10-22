@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-c96a97a204fac22b-S001 -->
+<!-- insrc:artifact BUILD-c96a97a204fac22b-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,8 +23,8 @@ Three integration tests: the file store over a real temporary directory with two
 
 ## Changes
 
-- `.insrc/artifacts/CR-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
-- `.insrc/artifacts/PLAN-c96a97a204fac22b-S001.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `.insrc/artifacts/CR-c96a97a204fac22b-s1.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
+- `.insrc/artifacts/PLAN-c96a97a204fac22b-s1.json` — **insrc-build** (2026-10-12T09:54:58.565Z)
 - `docs/standalone/every-save-chat-session-rewrites-its-E20261012c96a97a2/S001/CR.md` — **insrc-build** (2026-10-12T09:54:58.565Z)
 - `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)
 - `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-12T09:54:58.565Z)

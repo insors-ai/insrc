@@ -7,8 +7,36 @@
     "updatedAt": "2026-10-10T18:11:36.248Z",
     "authoredBy": "controller",
     "standalone": true,
-    "approvedAt": "2026-10-10T18:11:37.465Z",
-    "epicSlug": "vs-code-plugin-chat-cli-turn"
+    "epicSlug": "vs-code-plugin-chat-cli-turn",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a4856232806a1bd9e28e079546f5edaf64c8a7c1e79e0180029f39e736593359",
+        "at": "2026-10-10T17:37:33.094Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T18:11:37.465Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

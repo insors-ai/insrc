@@ -23,94 +23,62 @@
     "hldBaseRunId": "wf-1785741597494-lbzdo7",
     "hldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "qc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The three sibling template judges adherence.ts, conventions.ts, coverage.ts all exist and export their judge<Dim> — the seam judgeQuality clones.",
-          "evidence": "adherence.ts:119 judgeAdherence, conventions.ts:148 judgeConventions, coverage.ts:150 judgeCoverage all exist in src — the three sibling seams judgeQuality clones are real.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "sc3 DimensionFinding in types.ts carries the optional counterpartRef field (reserved 'quality: the existing duplication counterpart') that the quality judge maps through — no new field.",
-          "evidence": "src/workflow/code-review/types.ts declares interface DimensionFinding with the optional counterpartRef?: string field — the sc3 field reserved for quality's duplication counterpart; the judge maps it through with no contract change.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "sc2 ChangedSymbolSummary in types.ts carries signature, callers, and callees — the duplication signal the quality judge reasons over.",
-          "evidence": "types.ts:70 callers and :72 callees (readonly string[]) plus signature on ChangedSymbolSummary — the duplication signal the quality judge reasons over is on the sc2 contract.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc4",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "src/agent/providers/structured-output.ts exports validateAgainstSchema and withStructuredRetry(call, validate, maxAttempts) which throws after the cap — the helpers the judge reuses.",
-          "evidence": "structured-output.ts:80 validateAgainstSchema and :182 withStructuredRetry (throws after the cap) — the helpers the judge reuses, unchanged from S002/S003/S004.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc5",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The ReviewDimension union in types.ts includes 'quality' (so no new union member is introduced) — quality is the fourth branch.",
-          "evidence": "types.ts:33 ReviewDimension = 'adherence' | 'conventions' | 'coverage' | 'quality' — 'quality' is already a union member; no new member introduced.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc6",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "Severity is defined in src/workflow/review/types.ts as 'HIGH'|'MED'|'LOW' — the scale the ac3 taste-cap and the HIGH→block verdict ride on.",
-          "evidence": "Severity ('HIGH'|'MED'|'LOW') is defined in src/workflow/review/types.ts — the scale the ac3 taste-cap and the HIGH→block verdict ride on, reused verbatim as the LLD states.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "No src/workflow/code-review/dimensions/quality.ts exists yet — this Story creates it as the fourth and final sibling module (purely additive; no judgeQuality in src/).",
-          "evidence": "judgeQuality / QUALITY_FINDINGS_SCHEMA appear only in the LLD-s5 doc, not in any src/ file — quality.ts does not exist yet, so the Story creating it is purely additive.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "qc8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The fake-provider unit-test harness the quality tests reuse exists in conventions.test.ts / coverage.test.ts (`as unknown as LLMProvider`, node:test + node:assert/strict).",
-          "evidence": "coverage.test.ts (src/) uses `as unknown as LLMProvider` and node:test is the repo-wide convention — the fake-provider harness the quality tests reuse exists.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-08-04T06:21:51.336Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-04T06:30:31.794Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "98e4275df7335e48883f7fd6cd0020ef7996d48cfc97186659eace7a7e13cf63",
+        "at": "2026-08-04T06:20:44.463Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T06:30:31.794Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-08-04T06:21:51.336Z",
+        "report": {
+          "entityId": "LLD-761a43a6fa645815-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-761a43a6fa645815-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

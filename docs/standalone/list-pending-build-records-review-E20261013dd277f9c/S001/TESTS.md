@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-dd277f9cddd6d879-S001 -->
+<!-- insrc:artifact TESTS-dd277f9cddd6d879-s1 -->
 
 # Tests: dd277f9cddd6d879 S001
 

@@ -31,5 +31,5 @@ Move the already-misfiled LLD of ISSUE-5f7a7cb95b643ae5 into the work item's fol
 - **[[c1]]** `code` `src/workflow/orchestrator.ts` — "const lldMd = lldArtifactPaths(intent.repoPath, epicHash, storyId, workItemAnchorCreatedAt(meta), workItemKindOf(meta), epicSlug).md;"
 - **[[c2]]** `code` `src/workflow/orchestrator.ts` — "epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),"
 - **[[c3]]** `code` `src/workflow/storage.ts` — "export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {"
-- **[[c4]]** `prior-artifact` `LLD-5f7a7cb95b643ae5-S001` — "docs/standalone/batch-approval-stamps-one-shared-meta-E202610045f7a7cb9/S001/LLD.md"
+- **[[c4]]** `prior-artifact` `LLD-5f7a7cb95b643ae5-s1` — "docs/standalone/batch-approval-stamps-one-shared-meta-E202610045f7a7cb9/S001/LLD.md"
 - **[[c5]]** `stakeholder` `user, 2026-10-04` — "ok, fix this as an issue and then move the LLD to the right folder"

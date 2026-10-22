@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7bfb0260-4ce2-4dda-b430-cce9a1892db7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.466Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The running queued message reports its cards, and every window shows blockedBy",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd2944a3e169faa2831b45c24a69141c343ff4e7c5ae19e817af4cef035fdc67",
+        "at": "2026-10-22T12:43:37.467Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.467Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The running queued message reports its cards, and every window shows blockedBy",
+    "summary": "In chat-panel.ts: the queue runner passes onWaiting through for the running queued message: called with 'approval' or 'selection' when its first approval or selection card appears, and with undefined when no card of it is left waiting (answered, Stop, the wait timing out, or the run ending). The worker writes it (t2), and every host's outbox projection shows blockedBy from the processing row.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "While one host's running queued message waits on an approval, a second host on the same queue file posts an outbox whose blockedBy names that chat and 'approval'",
+      "The flag clears once the card is answered, and when the run ends",
+      "A selection card reports 'selection'",
+      "A turn not run from the queue reports nothing"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

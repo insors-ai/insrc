@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-18ec6eaa-cf2f-495c-a454-add14acd497a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.063Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scaffold the deploy-step phase handlers with one representative narrow-emit path",
+      "parent": {
+        "entityId": "STORY-753e0ed64921d937-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-753e0ed64921d937-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-753e0ed64921d937-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9f7a9a2b628ec5a5bab96c3ee32d404addbbac6672ef5f39d2d3619883209646",
+        "at": "2026-10-22T12:43:45.063Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.064Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scaffold the deploy-step phase handlers with one representative narrow-emit path",
+    "summary": "Create src/mcp/deploy-step/phases/ with the phase-handler scaffolding and one fully-wired representative phase path that issues its prompt+schema and registers into the dispatch table via DeployStageRegistrar.register(). Per-stage runner bodies (discover/reuse/topology/security/scale) are deferred to s2–s6; s1 proves the loop skeleton and the emit_bundle → DeploymentContextBundle output contract on the representative path only.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "src/mcp/deploy-step/phases/ contains a representative phase handler that returns prompt + JSON schema for its emit step and, on emit_bundle, produces a well-formed DeploymentContextBundle quartet (never a raw file dump).",
+      "The representative handler registers itself into the dispatch table through a DeployStageRegistrar.register() implementation so handleDeployStep can route its phase.",
+      "An empty deployment surface yields a well-formed bundle with empty entities/relations/citations and an explanatory summary (valid result, not an error); a large entity set stays a structured quartet and is never downgraded to a raw dump.",
+      "Bundle entity/citation paths are graph-sourced DeploymentEntityRef values (SHA256 entityId, non-hallucinated path), not free-text file references."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-narrow.test.ts › the representative phase handler issues its emit prompt + JSON schema and registers itself into the dispatch table via DeployStageRegistrar.register()"
+      },
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-bundle.test.ts › the representative stage emits a graph-grounded DeploymentContextBundle quartet with SHA256 entityId / non-hallucinated paths (never a raw dump), and the empty-surface and very-large-surface fixtures both stay well-formed quartets"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

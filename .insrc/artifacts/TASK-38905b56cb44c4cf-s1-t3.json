@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7eb5dea0-3280-4bcd-aa30-293267712642",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.021Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record the side-registry + register insrc_schema in buildInsrcMcpServer",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c45923e4c3d498554e2893f90959afd7c138efa654750f2d746f0ecea1b4bf0e",
+        "at": "2026-10-22T12:43:27.022Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.022Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the side-registry + register insrc_schema in buildInsrcMcpServer",
+    "summary": "Reshape src/mcp/server.ts buildInsrcMcpServer to populate an InsrcToolSchemaRegistry as it registers tools: add a local registerAndRecord(name, config, handler) helper (or per-callsite push) that calls server.registerTool AND records { name, description: config.description, rawShape: config.inputSchema, phases?, dynamicNote? } for each of the 10 existing tools, storing the SAME inputSchema object (k1). Author the static per-tool phases[] (multi-turn tools) + dynamicNote (run-generated-payload tools) metadata. Register the new insrc_schema tool (readOnlyHint: true) with SCHEMA_INPUT and a handler that calls handleInsrcSchema(args, registry) — recording insrc_schema's own self-entry. Expose the built registry to the handler (closure/return). The phases[] authored per multi-turn tool MUST match that tool's handler phase router (verified by the t3 integration lockstep test).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "buildInsrcMcpServer registers insrc_schema (11 tools total) and the registry key set equals the registered insrc_* tool set incl. insrc_schema.",
+      "Each record's rawShape is the exact object passed to registerTool (object-identity, k1).",
+      "Existing 10 registrations are unchanged in behaviour (additive recording only).",
+      "Each multi-turn record's authored phases[] equals its handler's accepted phase-name set (lockstep guard, deterministically tested)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts: buildInsrcMcpServer() registry key set == registered tool set (all 11 incl. insrc_schema); validTools equals the registry key set (ac4)"
+      },
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts: every recorded rawShape converts to JSON Schema without throwing (guards the conversion error path); the multi-turn record's rawShape is object-identical to the registerTool shape (k1, ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts: each multi-turn record's authored phases[] equals its handler's accepted phase-name set (lockstep guard against phase-metadata drift)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

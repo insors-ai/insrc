@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-af05bae1-28c6-4117-890a-e0c228767fc1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.284Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Re-thread all 14 non-test *ArtifactPaths caller sites with createdAtISO + workItemKind",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "51c78584e2f6291360e9a72c5e57b8a1ba4b20dbed3b37482d515b5243fb383a",
+        "at": "2026-10-22T12:43:35.284Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.285Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-thread all 14 non-test *ArtifactPaths caller sites with createdAtISO + workItemKind",
+    "summary": "Update the 14 caller modules (orchestrator, tracker/link, code-review/runner, code-review/gate, mcp/code-review-step/handler, runners/build/standalone-record, tracker-auto, chain, gates, artifacts/lld-io, tracker/sync, runners/tracker/context, questions, cli/services/workflow) to pass createdAtISO (from the artifact's meta.createdAt) and workItemKind (epic vs standalone, from the workflow/triage context / standalone flag). Driven to completeness by the t2 compile-error set. Strictly scoped to the md write side — the JSON-store scanners (amendments/store+staleness, questions.ts:523, tracker/resolve.ts:114) are NOT touched. Kept as one L Task (splitting it would fragment the tsc-driven exhaustiveness that makes it safe).",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Every one of the 14 caller sites passes createdAtISO + workItemKind derived from the artifact's own meta/context",
+      "workItemKind is correctly 'standalone' for triage-routed items and 'epic' for epic-parented ones at each site (the one place a silent wrong-top-level bug could slip in — must be right per site)",
+      "tsc clean across the whole tree — no caller left on the old helper shape",
+      "No edit touches amendments/store.ts, amendments/staleness.ts, questions.ts:523, or tracker/resolve.ts:114 (JSON-store scanners stay byte-unchanged)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Full workflow+mcp sweep compiles + passes with all 14 callers re-threaded (tsc-proven no caller on the old shape)"
+      },
+      {
+        "level": "unit",
+        "name": "A standalone-routed caller path produces a docs/standalone/... md path (workItemKind correctly derived, guarding the wrong-top-level bug)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

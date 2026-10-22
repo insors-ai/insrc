@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aff29b45-e8d2-4aef-9f12-40890a0a3158",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.697Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The checks on the builder's mapping",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b53e35b48ad2493d095fe720fbc6e5d969b3779434d3ffa0bc49a312d014088b",
+        "at": "2026-10-22T12:44:02.701Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.701Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The checks on the builder's mapping",
+    "summary": "Add the types of a mapping entry and a function that checks a mapping against the named tests of a Task or the subjects of a design, their levels, and the repository's tracked files, and returns every fault it finds. Nothing calls it yet.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Each of these is a fault and all faults are returned together: an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result",
+      "A reported result is a fault for a test whose level is not exactly 'live' or 'smoke': unit, integration, contract, and a test with no level",
+      "A correct mapping with cases, with a reported result on a live test, and with both, has no fault"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "test-mapping.test.ts: a mapping is refused, with every fault listed, for an unknown name, a repeated name, a file that is not a tracked '.test.ts' file in the repository, a path that leaves the repository, an empty title, an entry with neither cases nor a reported result, and a reported result on a unit, an integration and a contract test and on a test with no level"
+      },
+      {
+        "level": "unit",
+        "name": "test-mapping.test.ts: a correct mapping with cases, with a reported result on a live test, and with both, is accepted"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-681e3f5c-65fd-47ea-8ae3-18eae479c675",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.942Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Add the groundingMode field to the code-review record + stamp 'full'",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c83c315824616541a1bd14742bd0315254e633e9045b571a875b13c968fb6bed",
+        "at": "2026-10-22T12:43:48.942Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.946Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the groundingMode field to the code-review record + stamp 'full'",
+    "summary": "Widen the code-review record body type in src/workflow/code-review/types.ts with an additive groundingMode field (this story only ever writes 'full'), and stamp groundingMode:'full' at the record-build/runCodeReview path (src/workflow/code-review/runner.ts) for the graph-grounded run. Existing records without the field remain readable; the completion gate + readers ignore the extra field.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "the code-review record body type carries groundingMode and every record runCodeReview writes on the graph-grounded path is stamped groundingMode:'full'",
+      "existing records without groundingMode still parse; no downstream verdict-reader breaks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runCodeReview stamps groundingMode:'full' on the persisted record body; a record without groundingMode still parses (no verdict-reader breaks)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

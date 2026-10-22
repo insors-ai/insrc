@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1cb474c2-c07d-4dfb-8470-c95aa2bb1db0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.729Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Register workflow.resolveComment in the daemon dispatch",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44eaa9db1dc9129a7dbc735c6478d55d613231520c9504f1aba1e51fdec88694",
+        "at": "2026-10-22T12:43:18.730Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.730Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register workflow.resolveComment in the daemon dispatch",
+    "summary": "Register the 'workflow.resolveComment' method in src/daemon/index.ts delegating to handleResolveComment(params, repoEnv), mirroring the S002 workflow.artifactContent registration. Purely additive.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The daemon routes method 'workflow.resolveComment' to handleResolveComment",
+      "No existing dispatch entry is changed"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the daemon dispatch routes 'workflow.resolveComment' to handleResolveComment"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

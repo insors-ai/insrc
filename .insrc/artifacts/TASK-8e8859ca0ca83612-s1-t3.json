@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8d0c6310-0e6d-4c14-b497-80d4b5cf455a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.861Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the markerFor tool-result null case",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b9a9016f9060299702b5bc093a9aaa7cd46988e15e60f9fabb7cf1436e8f83bf",
+        "at": "2026-10-22T12:43:56.862Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.862Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the markerFor tool-result null case",
+    "summary": "In markers.ts markerFor add `case 'tool-result': return null;` so the exhaustive switch (never default) keeps compiling with the new kind; tool-result is NOT persisted as a flat marker (it persists structurally). No existing case changes.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "markerFor returns null for a tool-result event",
+      "The exhaustive switch compiles with the new kind; existing cases unchanged (k2)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "markerFor: returns null for a 'tool-result' event (exhaustive switch compiles; no flat marker emitted)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

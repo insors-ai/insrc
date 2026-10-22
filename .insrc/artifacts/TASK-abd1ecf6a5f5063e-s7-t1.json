@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f6ca2e7c-c9cc-43e4-8839-47e4c6d665cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.532Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Add readSpecArtifact + requireApprovedSpec + spec error types to gates.ts",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e008a1898000c176bf753f9b71891645ae60d48746c3be118a57197a6bc91f73",
+        "at": "2026-10-22T12:44:10.532Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.533Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add readSpecArtifact + requireApprovedSpec + spec error types to gates.ts",
+    "summary": "In src/workflow/gates.ts, add readSpecArtifact(repoPath, specHash): SpecArtifact (reads specArtifactPaths(repoPath, specHash).json; throws SpecArtifactNotFoundError when the json is absent; JSON.parse then run isSpecBody on body and throw a plain Error naming the SPEC id on a corrupt/incompatible record) and requireApprovedSpec(repoPath, specHash): SpecArtifact (wraps readSpecArtifact; throws SpecNotApprovedError naming the SPEC id + 'approval still outstanding' when meta.approvedAt is unset/empty). Define SpecNotApprovedError + SpecArtifactNotFoundError as subclasses in the existing gates error style (alongside ArtifactMissingError/ArtifactNotApprovedError). Add imports: SpecArtifact + isSpecBody from './artifacts/spec.js', specArtifactId/specArtifactPaths from './storage.js'. Mirror requireApprovedPlan (gates.ts:326) exactly. No schema change (meta.approvedAt already on ArtifactMetaBase).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "gates.ts exports readSpecArtifact + requireApprovedSpec with the LLD signatures",
+      "requireApprovedSpec throws SpecNotApprovedError (message names the SPEC id + outstanding-approval) when meta.approvedAt is absent/empty; returns the SpecArtifact when present",
+      "readSpecArtifact throws SpecArtifactNotFoundError on a missing json and a plain Error on an isSpecBody failure",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "spec-resolver.test.ts: requireApprovedSpec returns an approved spec / throws SpecNotApprovedError unapproved; readSpecArtifact throws SpecArtifactNotFoundError missing + Error on corrupt (covered in t3)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

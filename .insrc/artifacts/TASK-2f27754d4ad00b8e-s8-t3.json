@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1cc0a617-f32f-4f6d-8716-861951f93597",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.501Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Make the integrity check read the last revision-bearing entry",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "01eea276becb2a91ee2a093b37a2261a29c6db944f8dfe3cf81c89fac6e73bbf",
+        "at": "2026-10-22T12:43:22.501Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.502Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the integrity check read the last revision-bearing entry",
+    "summary": "Change checkIntegrity in src/workflow/artifact-core/lifecycle.ts so it compares the head against the last change log entry that carries a revision, not against a revision-less entry such as a build round or a feedback post receipt, and keep its callers working.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A receipt or a build round appended after the last content entry does not make a head that is ahead of or different from that entry pass the check",
+      "A head that matches its last revision-bearing entry still passes, with or without later revision-less entries",
+      "The existing integrity tests still pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "integrity-receipts.test.ts: a revision-less receipt or build round after the last content entry does not make a head that differs from that entry pass the integrity check"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

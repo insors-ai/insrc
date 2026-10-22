@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-04f40e26-b659-4cd4-8b79-0068f2e5ee40",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.149Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Unit-prove the predicate in isolation, before any wiring",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1759f9debadcbcb26ab9dc0c856c45ed136dae312d2a1cdd8ac698d15068d80",
+        "at": "2026-10-22T12:43:17.149Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.149Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit-prove the predicate in isolation, before any wiring",
+    "summary": "Create the new hermetic file src/agent/providers/__tests__/structured-output-root-union.test.ts — deliberately NOT a `.live.test.ts`, since that suffix is this repo's marker for the gated billed suites — and drive the predicate's full truth table as a data-driven table. This must land BEFORE t5 wires the guard, so that any later integration failure is unambiguously about placement rather than about the check itself. Import DOCGEN_OUTCOME_SCHEMA so at least one row is grounded in a schema the repo actually wrote rather than only in hand-made fixtures.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The three positive rows (root oneOf / anyOf / allOf) pass, including the root-`type`-present-with-union row that contradicts the deleted helper's premise.",
+      "The negative rows pass: nested union, empty-branch union, root `$ref`, and the five non-object inputs.",
+      "A purity row deep-equals the input against a pre-call structural clone.",
+      "A row uses the real in-repo DOCGEN_OUTCOME_SCHEMA.",
+      "The file runs with INSRC_LIVE_TESTS UNSET and reports a non-zero test count — no row is skipped."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "rootUnionKey: root oneOf -> 'oneOf', root anyOf -> 'anyOf', root allOf -> 'allOf' (all three refused by both vendors)"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey: a union NESTED under a property returns undefined — the root-only positive control that rules out a tree walk"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey: root `type:'object'` alongside a root union still returns the keyword — the row that proves the deleted helper's premise was not inherited"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey: an empty-branch root union returns undefined — degenerate, deliberately not claimed"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey: a root `$ref` into `$defs` at a union returns undefined — the known gap, pinned as documented behaviour"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey TOTALITY: null, undefined, 42, 'str', [] each return undefined without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey PURITY: the input deep-equals a pre-call structural clone — no mutation, unlike processInPlace"
+      },
+      {
+        "level": "unit",
+        "name": "rootUnionKey against the real in-repo DOCGEN_OUTCOME_SCHEMA returns 'oneOf'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

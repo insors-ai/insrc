@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8284b56-a951-4e55-90ae-fc44e3488b21",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.449Z",
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d42920dbef28b51",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Dry-run the migrator over this repo and review with the user",
+      "parent": {
+        "entityId": "STORY-7d42920dbef28b51-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d42920dbef28b51-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7d42920dbef28b51-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7d42920dbef28b51-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "20fa6d570867cc1a7d9441e7b31c6a68416f8fcc6faa60bee2147950d18ea6a8",
+        "at": "2026-10-22T12:43:50.449Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.450Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Dry-run the migrator over this repo and review with the user",
+    "summary": "Run insrc-migrate-docs (dry run) over this repo and show the user the planned moves and metadata rewrites before any apply; expected: no moves and no anchor rewrites for same-day ledger records. Apply only on the user's explicit go-ahead.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "The dry-run output is shown to the user and every listed rewrite is explained as a real disagreement",
+      "Nothing is applied without the user's yes"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "t6: dry run of insrc-migrate-docs over this repo shown to the user before any apply"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

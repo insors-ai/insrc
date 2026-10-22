@@ -21,9 +21,37 @@
     "epicSlug": "two-sets-eyes-review-rule-only",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-10-04T17:03:49.121Z",
     "parentRef": {
       "slug": "two-sets-eyes-review-rule-only"
+    },
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "afc35f671990706205111e9f4cf515c0ec3854574118c10db24c0935a741c18e",
+        "at": "2026-10-04T14:44:49.128Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T17:03:49.121Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

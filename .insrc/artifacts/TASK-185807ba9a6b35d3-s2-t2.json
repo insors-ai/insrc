@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a574910-fbe8-4515-937b-0c796d030ea6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.261Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the build-private non-throwing approval wrapper over the gates.ts accessor",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "012fa60aaded554d8d2275b372300c7c83d8114ce1579a88c6248ab61f58df86",
+        "at": "2026-10-22T12:43:15.261Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.262Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the build-private non-throwing approval wrapper over the gates.ts accessor",
+    "summary": "Inside src/workflow/runners/build/, add a build-private wrapper that calls the existing requireApprovedLld-family accessor against the plan artifact and catches by error class: `instanceof ArtifactNotApprovedError` yields reason:'plan-unapproved' (ac2), `instanceof ArtifactMissingError` yields reason:'plan-missing' (ac4). Any error matching neither class must fall through the discriminator and re-throw (never swallowed into a modeled reason). Precondition (folded in from the c2 de-risking, no longer a standalone task): confirm from gates.ts:44-56 which error the accessor throws for missing vs unapproved and its real signature, so this wrapper is built against the actual accessor rather than an assumed one. Does NOT modify gates.ts and does NOT change requireApprovedLld's throwing contract for its existing callers — the non-throwing form is contained here only. The wrapper is private to build/ and never re-exported.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The wrapper calls the actual requireApprovedLld-family accessor from gates.ts (matching gates.ts:44-56) rather than an assumed signature",
+      "ArtifactNotApprovedError is caught and mapped to a verdict carrying reason:'plan-unapproved'",
+      "ArtifactMissingError is caught and mapped to a verdict carrying reason:'plan-missing'",
+      "An unrelated store/IO error (neither ArtifactMissingError nor ArtifactNotApprovedError) re-throws rather than being mapped to a modeled refusal reason",
+      "gates.ts is unchanged and requireApprovedLld retains its throwing contract for existing callers",
+      "The wrapper is not part of build/'s public exported surface"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "approval wrapper maps a thrown ArtifactNotApprovedError to a verdict carrying reason:'plan-unapproved'"
+      },
+      {
+        "level": "unit",
+        "name": "approval wrapper maps a thrown ArtifactMissingError to a verdict carrying reason:'plan-missing'"
+      },
+      {
+        "level": "unit",
+        "name": "approval wrapper re-throws an unrelated store/IO Error rather than swallowing it into a modeled refusal reason"
+      },
+      {
+        "level": "unit",
+        "name": "guard: the approval wrapper is not present on build/'s public exported surface"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4eeac414-f040-401c-8d99-6b0cbaa8c6ea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.379Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Thread an approved specHash through triage",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e059efbda46e413500ff0e66b8145494b7fdf2169c76d058af87dd2d322b7414",
+        "at": "2026-10-22T12:44:33.379Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.380Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Thread an approved specHash through triage",
+    "summary": "insrc_triage start input (types.ts, server.ts schema) gains optional specHash; phases/start.ts verifies it with requireApprovedSpec before creating state; state.ts encode/decode carries it; classify's buildNextCall forwards it into the design.story (and define) params.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Missing/unapproved spec -> start error, no state.",
+      "State round-trips specHash.",
+      "The design.story nextCall carries specHash; without one, the nextCall is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "triage start validates specHash and classify forwards it into the nextCall"
+      },
+      {
+        "level": "unit",
+        "name": "triage state round-trips specHash"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

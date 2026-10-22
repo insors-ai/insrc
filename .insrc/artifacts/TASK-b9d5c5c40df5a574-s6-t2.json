@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ca77627a-ca71-47e9-bf38-2ea0e891af24",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.162Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "One shared test for a failed model call, used by the planning and answer-writing calls",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d449c0f4f9f508d2dfd7f750056162424c121ce6b4a5a6f8d71dbf62644978ed",
+        "at": "2026-10-22T12:44:25.163Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One shared test for a failed model call, used by the planning and answer-writing calls",
+    "summary": "Add src/analyze/context/model-failure.ts with isModelCallFailure: the existing Ollama and socket texts, the CLI provider's failures of the call itself, and a typed ModelCallFailedError that the sampling provider raises when the sampling request fails. Use it in the classifiers of the planning call and the answer-writing call. Replace the 'Local Ollama' prefix on their two model-unavailable errors with a provider-neutral one, give each a field holding the underlying message, and give their two prompt-missing errors a path field.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "isModelCallFailure is true for each Ollama text, each CLI call failure and ModelCallFailedError, and false for a shape failure",
+      "With a stand-in provider that throws a CLI call failure, the planning call raises its model-unavailable error and so does the answer-writing call; neither raises a schema error",
+      "A stand-in sampler that rejects makes the sampling provider raise ModelCallFailedError; a response that is not text stays a shape failure",
+      "Neither model-unavailable error's message contains 'Ollama' for a failure that did not come from Ollama",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "isModelCallFailure: Ollama texts, CLI call failures, ModelCallFailedError are failures; shape failures are not"
+      },
+      {
+        "level": "unit",
+        "name": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure"
+      },
+      {
+        "level": "unit",
+        "name": "sampling provider raises ModelCallFailedError when the sampler rejects; non-text content is a shape failure"
+      },
+      {
+        "level": "unit",
+        "name": "model-unavailable messages are provider-neutral and carry the underlying message in a field"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

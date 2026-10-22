@@ -23,81 +23,62 @@
     "hldBaseRunId": "wf-1785741597494-lbzdo7",
     "hldEffectiveHash": "47535369867a9e9c71a300e7ca347a1a6437356df9b3c75b91fec292dcf80f63",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "a1",
-          "ref": "c14",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "LLMProvider.completeStructured exists in src/shared/types.ts (~line 216) — the wire-layer structured call judgeAdherence issues.",
-          "evidence": "LLMProvider at src/shared/types.ts:177 and completeStructured<T> read at :216 (found=true) — the structured call the judge issues exists as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "a2",
-          "ref": "c14",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "withStructuredRetry is exported from src/agent/providers/structured-output.ts (~line 182) — the ≤3-attempt validate+retry loop the judge wraps its call in.",
-          "evidence": "withStructuredRetry<T> at src/agent/providers/structured-output.ts:182 — the retry loop the judge wraps its call in exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "a3",
-          "ref": "c14",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "validateAgainstSchema is exported from src/agent/providers/structured-output.ts (~line 80) — the validator the retry loop applies to the adherence findings.",
-          "evidence": "validateAgainstSchema<T> at src/agent/providers/structured-output.ts:80 — the validator exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "a4",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider is exported from src/analyze/context/shaper-provider.ts (~line 277) — the role-tiering provider resolver the orchestrator uses to pin the high tier (k10) with no cloud REST (k3).",
-          "evidence": "buildShaperProvider at src/analyze/context/shaper-provider.ts:277 — the role-tiering provider resolver exists (also referenced by the provider-bypass-audit test).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "a5",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc1/sc2/sc3 types the judge consumes/emits (CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding with expectationRef, ReviewDimension including 'adherence') exist in src/workflow/code-review/types.ts.",
-          "evidence": "CodeReviewSubject:89, CodeReviewGrounding:78, DimensionResult:52, expectationRef:44 all in src/workflow/code-review/types.ts — the sc1/sc2/sc3 vocabulary the judge consumes/emits exists exactly as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "a6",
-          "ref": "migration",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No dimension judge exists yet — src/workflow/code-review/dimensions/ (adherence.ts) is a new module S002 adds; nothing currently emits a DimensionResult.",
-          "evidence": "grep for judgeAdherence and dimensions/adherence returns 0 src matches — confirming the adherence judge is a genuinely new module (nothing yet emits a DimensionResult), matching the migration's stateBefore.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-03T10:07:44.730Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-03T10:09:11.845Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "fda9d04c08ba39118d1f4b16b0b172b041925383c19deccbaf842a729cf1e824",
+        "at": "2026-08-03T08:46:54.275Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-03T10:09:11.845Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-03T10:07:44.730Z",
+        "report": {
+          "entityId": "LLD-761a43a6fa645815-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-761a43a6fa645815-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

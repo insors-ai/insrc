@@ -20,7 +20,27 @@
     "issueHash": "f20bd1548038128c",
     "epicSlug": "shell-helper-behind-builtin-tools-drops",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "epicCreatedAt": "2026-10-04T16:30:47.780Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "76a9c518d8b800250ed8f193e7e05fecac2a47a838abe9c76c784095857fc441",
+        "at": "2026-10-04T16:30:47.780Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Keep capped tool output up to the cap and report truncation",

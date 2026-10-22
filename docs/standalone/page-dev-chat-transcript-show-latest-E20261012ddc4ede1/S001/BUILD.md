@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-ddc4ede1dbf84626-S001 -->
+<!-- insrc:artifact BUILD-ddc4ede1dbf84626-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -25,8 +25,8 @@ postRestored, the one helper every session-restored goes through (open, adopt, r
 
 ## Changes
 
-- `.insrc/artifacts/CR-ddc4ede1dbf84626-S001.json` — **insrc-build** (2026-10-12T08:19:18.794Z)
-- `.insrc/artifacts/PLAN-ddc4ede1dbf84626-S001.json` — **insrc-build** (2026-10-12T08:19:18.794Z)
+- `.insrc/artifacts/CR-ddc4ede1dbf84626-s1.json` — **insrc-build** (2026-10-12T08:19:18.794Z)
+- `.insrc/artifacts/PLAN-ddc4ede1dbf84626-s1.json` — **insrc-build** (2026-10-12T08:19:18.794Z)
 - `docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/CR.md` — **insrc-build** (2026-10-12T08:19:18.794Z)
 - `docs/standalone/page-dev-chat-transcript-show-latest-E20261012ddc4ede1/S001/PLAN.md` — **insrc-build** (2026-10-12T08:19:18.794Z)
 - `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-12T08:19:18.794Z)

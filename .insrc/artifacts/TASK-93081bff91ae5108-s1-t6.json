@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95d29eea-5399-49e5-9961-7d90ace99154",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.716Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve and pass the range base in the validate and completion writers",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "55cb1176bfab0ed6e9ad29dbb3b09fad4dfaff3bc4631312c7f2cf0f25b8c2d6",
+        "at": "2026-10-22T12:44:00.716Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.717Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve and pass the range base in the validate and completion writers",
+    "summary": "Have both writers resolve the base — stamped meta.rangeBase first, then the PLAN-introducing commit as fallback for the already-written records that predate the stamp — and pass it to the widened collector. If NEITHER resolves: log and return an EMPTY change set. Never throw, never substitute a different range. This is where the approved design explicitly diverges from the shipped code-review chain (c12), which falls back to HEAD^ and then the empty-tree object; a populated wrong answer is worse than an honest absence. s1 established that the trivial route has NO upstream artifact at all, so for a trivial build both sources are legitimately unavailable and empty is the correct, specified outcome rather than a failure — stated explicitly so it is not met as a surprise. CRITIQUE APPLIED, twice: re-sized M->L, because the PLAN-commit fallback requires deriving an artifact path from epicHash plus storyId and running a `git log --diff-filter=A` lookup against it — machinery that exists nowhere today — and the build should budget for it rather than discover it mid-task; and t1 added to dependsOn, since this task INVERTS t1's TEST C and an inversion performed against a test whose authoring task was never declared is how a characterisation gets quietly deleted instead of flipped.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "A CLEAN working tree with a stamped base yields every file changed across base..HEAD — the test that fails before this task and is the point of the Story, INVERTING t1's TEST C, which is rewritten here rather than deleted",
+      "A CLEAN tree with NO base and no resolvable PLAN commit yields an EMPTY set, NOT the last commit's files — pinning the deliberate divergence from the HEAD^ chain so a later 'helpful' fallback cannot slip in unnoticed",
+      "A DIRTY tree yields exactly today's result and never consults the base — asserted via a recording seam, proving independence from the commit/validate ordering",
+      "A multi-task Story's change set GROWS across tasks rather than describing only the latest",
+      "A legacy record with no stamped base resolves via the PLAN-introducing commit, reproducing the method used in the bfe98ff7 s4 repair",
+      "An APPROVED-BUT-UNCOMMITTED PLAN yields empty rather than an error — the state this very Story's LLD was in when the base question was resolved, so the case is real rather than theoretical",
+      "An unresolvable base LOGS and returns empty; the record is still written and the build is NOT blocked",
+      "A trivial-route build, having no plan and no LLD to stamp, yields an empty change set without error",
+      "BOTH writers resolve the base identically — the validate phase and the completion-time writer share one resolver rather than each implementing the chain"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "INVERTED characterisation C — THE POINT OF THE STORY: a CLEAN tree with a stamped base yields every file changed across base..HEAD"
+      },
+      {
+        "level": "integration",
+        "name": "a CLEAN tree with NO base and no resolvable PLAN commit yields an EMPTY set, NOT the last commit's files — pinning the deliberate divergence from the HEAD^ chain"
+      },
+      {
+        "level": "integration",
+        "name": "a DIRTY tree yields exactly today's result and NEVER consults the base — proving independence from the commit/validate ordering"
+      },
+      {
+        "level": "unit",
+        "name": "a base is consulted ONLY when the tree is clean — asserted via the recording seam rather than inferred from the result"
+      },
+      {
+        "level": "integration",
+        "name": "a multi-task Story's change set GROWS across tasks rather than describing only the latest"
+      },
+      {
+        "level": "integration",
+        "name": "a legacy record with no stamped base resolves via the PLAN-INTRODUCING COMMIT, reproducing the bfe98ff7 s4 repair method"
+      },
+      {
+        "level": "integration",
+        "name": "an APPROVED-BUT-UNCOMMITTED PLAN yields empty rather than an error — the state this Story's own LLD was in"
+      },
+      {
+        "level": "integration",
+        "name": "an UNRESOLVABLE base: the record is still written, the build is not blocked, and no substitute range is used"
+      },
+      {
+        "level": "integration",
+        "name": "with git UNAVAILABLE the build still succeeds and the record is still written"
+      },
+      {
+        "level": "integration",
+        "name": "a trivial-route build, having neither plan nor LLD to stamp, yields an empty change set without error"
+      },
+      {
+        "level": "unit",
+        "name": "BOTH writers share ONE resolver — the validate phase and the completion-time writer produce the same base for the same record"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

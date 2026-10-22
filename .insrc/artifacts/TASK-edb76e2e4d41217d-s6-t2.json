@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-293348e7-0e26-4770-9dfe-5ddc4c8f2793",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.461Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Extend ChatPanelHostDeps + reshape the turn loop to drive the governor",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "512d28969c1d907e8a9bd223aceee3858d3d105207aaadfa1bd930b2c8b348fa",
+        "at": "2026-10-22T12:44:53.461Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.461Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend ChatPanelHostDeps + reshape the turn loop to drive the governor",
+    "summary": "In chat-panel.ts, add OPTIONAL editGovernance seams + a diffView accessor to ChatPanelHostDeps and construct the EditGovernor when present. Reshape the turn loop to call governor.beginTurn(mode,cwd) before adapter.run(), governor.observe(path) on each sc2 file-edit event, and governor.resolveTurn() on the terminal (done/error) event. The existing marker-row render (S004/S008) is untouched; when the deps are absent the host behaves exactly as today.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "ChatPanelHostDeps gains optional editGovernance + diffView; existing construction without them compiles + behaves as before (marker-only)",
+      "beginTurn is invoked before adapter.run(); observe(path) fires per file-edit; resolveTurn on the terminal event",
+      "no change to the existing turn-event marker rendering path"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel: beginTurn fires before adapter.run; observe per file-edit; resolveTurn on terminal event"
+      },
+      {
+        "level": "integration",
+        "name": "chat-panel: host constructed WITHOUT editGovernance/diffView behaves as today (marker-only, edit marker still renders)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

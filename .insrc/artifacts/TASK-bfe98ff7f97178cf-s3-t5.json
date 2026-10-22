@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cebc96c5-765e-42c3-9b80-d63345f82e5c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.578Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "The sequence derivation on the same primitives (INERT)",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c19eb424715d4baa50a7797a23275a2629b5e57753e89ddb249faae3964a4e12",
+        "at": "2026-10-22T12:44:32.579Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.579Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The sequence derivation on the same primitives (INERT)",
+    "summary": "Add the call-sequence derivation — participants and ordered messages — on top of t4's SVG primitives and slot factory, as its own task with its own fixtures and its own visual read. This is the half of the Story the amendment bought: 3 ledger bodies carry a sequenceDefinition versus 2 carrying an erDefinition, and this Epic's own S002 LLD is one of them. Still INERT. The shell baseline MOVES AGAIN here and is updated in this commit.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A REAL ledger sequenceDefinition (LLD-bfe98ff7f97178cf-s2.json) renders: every participant appears, and messages are drawn in the record's order with their direction preserved",
+      "Message ORDER is asserted behaviourally — read back off the constructed element tree, not inferred from source position",
+      "The derivation reuses t4's SVG primitives rather than introducing a second element-construction route; createElementNS + textContent still hold, proved by the same recording stub",
+      "An empty or malformed sequence record (no participants, or participants not an array) is treated as ABSENT by the factory and creates no element",
+      "FIRST VISUAL READ for this kind: rendered in isolation, screenshotted and the image READ — participants and message order legible and unambiguous",
+      "MUTATION RUN AND REVERTED: reversing or shuffling the message order turns the ordering test RED",
+      "The shell baseline is updated in this commit with the delta computed",
+      "The surface is still unchanged — nothing calls it yet"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sequence derivation: every participant from the REAL s2 sequenceDefinition appears, with message direction preserved"
+      },
+      {
+        "level": "unit",
+        "name": "sequence derivation: message ORDER read back off the constructed element tree, not inferred from source position"
+      },
+      {
+        "level": "unit",
+        "name": "sequence derivation: reuses t4's createElementNS + textContent primitives — same recording stub, no second construction route"
+      },
+      {
+        "level": "unit",
+        "name": "sequence derivation: an empty or malformed record is treated as ABSENT and creates no element"
+      },
+      {
+        "level": "unit",
+        "name": "sequence derivation: determinism — identical element tree on repeat renders"
+      },
+      {
+        "level": "smoke",
+        "name": "FIRST VISUAL READ: a real sequenceDefinition rendered in isolation, screenshotted and read — participants and message order legible"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: reverse or shuffle the message order → the ordering test goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "shell: baseline updated again in this commit, delta computed"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-9b4a74dcdf47852a-S001 -->
+<!-- insrc:artifact BUILD-9b4a74dcdf47852a-s1 -->
 
 # Build (standalone feature) — Story S001
 
@@ -23,7 +23,7 @@ All twelve tasks of the plan are built. The gate takes a mapping from a Task's n
 ## Changes
 
 - `.insrc/artifacts/BUILD-b9d5c5c40df5a574-s7.json` — **insrc-build** (2026-10-08T19:35:47.039Z)
-- `.insrc/artifacts/CR-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-08T19:35:47.039Z)
+- `.insrc/artifacts/CR-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-08T19:35:47.039Z)
 - `.insrc/artifacts/TESTS-b9d5c5c40df5a574-s7.json` — **insrc-build** (2026-10-08T19:35:47.039Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-08T19:35:47.039Z)
 - `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S007/BUILD.md` — **insrc-build** (2026-10-08T19:35:47.039Z)

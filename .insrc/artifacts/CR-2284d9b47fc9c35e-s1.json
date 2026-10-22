@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791871195606-k2ff65",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T05:59:55.606Z",
+    "model": "claude:opus",
+    "elapsedMs": 33622,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2284d9b47fc9c35e",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-12T12:38:41.569Z",
+    "epicSlug": "codex-chat-turns-hang-because-cli",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "564bfb54a94c7c100412292afe87c0dabfb54f3396d3ab773f017ef7d840f850",
+        "at": "2026-10-13T05:59:55.606Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2284d9b47fc9c35e",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

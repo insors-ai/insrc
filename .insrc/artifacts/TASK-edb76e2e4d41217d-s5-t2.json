@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-36efa812-ceb9-407a-8296-29746111bebd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.007Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Webview shell: sc1 provider-selector + history-dropdown in the one nonce'd script",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3107502c6e4838a5f5f844f887a715282e59ab1b976f296bda4f78c705bccb2f",
+        "at": "2026-10-22T12:44:53.008Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.008Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Webview shell: sc1 provider-selector + history-dropdown in the one nonce'd script",
+    "summary": "In chat-panel.ts renderShell: add an sc1-styled provider-selector whose <option>s are rendered (attribute-escaped) from deps.providers.available, and an (empty) history-dropdown, both inside the SAME nonce'd inline script. Wire provider-select change -> postMessage new-chat{provider}; history-select change -> open-chat{chatId}; add a 'history-list' message handler that (re)populates the history <option>s via textContent, keeping the active id selected. Empty providers.available -> disabled selector. Keep exactly one <script> + strict CSP.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "renderShell output has a provider-selector with options == providers.available (attribute-escaped) + a history-dropdown, both with the sc1 surfaceClass",
+      "the webview handles a history-list message and sets option labels via textContent (no innerHTML); provider/history change -> postMessage new-chat/open-chat",
+      "shell still has EXACTLY ONE <script nonce=...> + strict CSP (script-src 'nonce-...'), no remote origin / asWebviewUri",
+      "providers.available empty -> selector renders disabled/optionless"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderShell renders a provider-selector with options == providers.available (attribute-escaped) + a history-dropdown, both sc1 surfaceClass"
+      },
+      {
+        "level": "unit",
+        "name": "shell keeps EXACTLY ONE <script nonce=...> + strict CSP, no remote origin/asWebviewUri, textContent (no innerHTML); empty available -> disabled selector"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

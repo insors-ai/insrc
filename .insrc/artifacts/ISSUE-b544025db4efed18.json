@@ -21,7 +21,27 @@
     "epicSlug": "test-processes-intermittently-fail-exit-after",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-07T12:55:59.832Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "bf726fd66d0fec142dd60ebece6560650fa5df83b94ccfee8dc1162b647a9f53",
+        "at": "2026-10-07T12:55:59.832Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Test processes sometimes never exit because the logger's worker-thread transport keeps them alive",

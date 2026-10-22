@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2804a982-e9c8-4aee-9617-e9e0a10a9ae3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.981Z",
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dced43851723554f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "deleteEntitiesForRepo carries summaries, or clears the carry",
+      "parent": {
+        "entityId": "STORY-dced43851723554f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dced43851723554f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "14b2e11fd36967b999cfda3c193e6dddc3906b4e364e30d4157e47ed048802f9",
+        "at": "2026-10-22T12:44:44.981Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.982Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "deleteEntitiesForRepo carries summaries, or clears the carry",
+    "summary": "Add opts.carryDocSummaries to deleteEntitiesForRepo (src/db/entities.ts:567-602): when true, copy every doc_summary row of the repository's entities into doc_summary_carry inside the detachDeleteEntities before hook (the delete's own transaction), combined with the existing returnIncomingToPending hook; when absent, delete the repository's carry rows in a write transaction of deleteEntitiesForRepo's own that runs even with no entities. Return { returnedToPending, carriedDocSummaries } and update the two exact-result assertions in src/db/__tests__/entities-return-to-pending.test.ts.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "With the option, every summary the delete removes is in doc_summary_carry under (repoId, entity id) after it commits, and carriedDocSummaries equals their number.",
+      "With a carry row already present for an id that also has a doc_summary row, the delete with carryDocSummaries leaves the doc_summary value in the carry; a carry row with no live summary is kept.",
+      "A failure inside the delete transaction leaves the entities, the summaries and the carry as they were.",
+      "Without the option the repository has no carry rows afterwards, also when it has no entities left.",
+      "entities-return-to-pending.test.ts passes with carriedDocSummaries: 0 in both expectations."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/doc-summary-carry.test.ts: 'the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row'"
+      },
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/doc-summary-carry.test.ts: 'a failure inside the delete transaction rolls back the carry with the delete'"
+      },
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/doc-summary-carry.test.ts: 'without carryDocSummaries the repository's carry rows are deleted'"
+      },
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/doc-summary-carry.test.ts: 'repo removal of a repository with carry rows and no entities deletes the carry rows'"
+      },
+      {
+        "level": "unit",
+        "name": "src/db/__tests__/entities-return-to-pending.test.ts (existing, expectations gain carriedDocSummaries: 0)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

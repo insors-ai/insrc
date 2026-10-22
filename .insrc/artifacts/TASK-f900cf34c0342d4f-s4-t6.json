@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5647e0ab-c97e-4de2-9a15-e553740e33de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:59.399Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the MCPSection component + wire it into DebugPane",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e3a8ab40fbf08343150cef8a33a2dc38f44a58a753ae39567e100bb8a674dbc2",
+        "at": "2026-10-22T12:44:59.399Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:59.399Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the MCPSection component + wire it into DebugPane",
+    "summary": "Add src/cli/panes/MCPSection.tsx: renders (a) the per-client mcp registration/connection rows from mcpStatus() on mount/refresh (ac1) and (b) the attached-socket-client list from attachedClients() with label + pid + connected-at, polled while open with the interval cleared on unmount (ac2); a { reachable:false } shows a 'daemon unreachable' line while the mcp rows still render; strictly read-only — only `r` refresh + the pane's section-nav, NO disconnect/terminate control (ac3/k5). Swap DebugPane's SECTION_VIEWS mcp entry from the placeholder to <MCPSection services={{ debug }} />.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "MCPSection renders per-client registered + connected rows (independently) from mcpStatus() (ac1)",
+      "MCPSection renders the attachedClients() list with label + pid + connected-at and polls while open; the poll interval is cleared on unmount (ac2)",
+      "A { reachable:false } attachedClients() renders a 'daemon unreachable' line while the mcp rows still show; empty non-self set → 'no other sessions attached'",
+      "No keypress disconnects/terminates a client — only `r` refresh + section-nav (ac3/k5); DebugPane's mcp section maps to <MCPSection/> (placeholder gone)",
+      "tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "MCPSection: renders per-client rows from mcpStatus() showing registered + connected independently; registered-but-not-connected case"
+      },
+      {
+        "level": "unit",
+        "name": "MCPSection: renders the attachedClients() list with label + pid + connected-at; empty non-self set -> 'no other sessions attached'"
+      },
+      {
+        "level": "unit",
+        "name": "MCPSection: a {reachable:false} attachedClients() renders 'daemon unreachable' while the mcp rows still show"
+      },
+      {
+        "level": "unit",
+        "name": "MCPSection: no keypress disconnects/terminates a client; only `r` refresh + section-nav honoured (ac3/k5)"
+      },
+      {
+        "level": "unit",
+        "name": "MCPSection: the poll interval is cleared on unmount (no post-unmount setState)"
+      },
+      {
+        "level": "integration",
+        "name": "DebugPane 'mcp' section maps to <MCPSection/> (the s1 placeholder is gone)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

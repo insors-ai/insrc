@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19a3a324-f15c-465c-90d7-2190cfd0a68b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.146Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bugfix-aware classification schema + prompt (declaredBugfix, magnitude, conditional-required)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f037fde9d6d1cdb3347cd16ba14a7ac13d1c2e22565b2c881d0c81fe355003de",
+        "at": "2026-10-22T12:43:13.146Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.147Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bugfix-aware classification schema + prompt (declaredBugfix, magnitude, conditional-required)",
+    "summary": "In src/workflow/triage/classify.ts: add an optional `magnitude` property (enum ['small','sized']) to CLASSIFY_SCHEMA and a conditional 'required magnitude when sizeClass===bugfix' rule. Prefer the allOf[{if/then}] form the validateAgainstSchema walker already handles (it walks anyOf/allOf); if the if/then keyword is not honoured by that walker, the routeForSizeClass runtime guard (t3) is the authoritative enforcement and the schema conditional is best-effort — do NOT block the build on an unsupported keyword. Add `readonly declaredBugfix?: boolean` to ClassifyPromptInput and extend the SYSTEM prompt (buildClassifyPrompt) so that when declaredBugfix is set the turn is told to return sizeClass 'bugfix' + a magnitude; when unset the prompt is byte-for-byte the current four-tier prompt.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "CLASSIFY_SCHEMA.properties.sizeClass.enum includes 'bugfix' (auto-derived from SIZE_CLASSES) and a magnitude enum prop exists.",
+      "validateAgainstSchema accepts { sizeClass:'bugfix', magnitude:'small'|'sized', ... }; rejects an out-of-enum magnitude; and (via the allOf/if-then conditional OR, if unsupported by the walker, via the t3 runtime guard proven in t5) a magnitude-less bugfix is not allowed to route.",
+      "buildClassifyPrompt without declaredBugfix returns a prompt identical to the pre-change four-tier prompt; with declaredBugfix:true the SYSTEM text includes bugfix+magnitude guidance.",
+      "tsc compiles."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "CLASSIFY_SCHEMA.sizeClass.enum includes 'bugfix' (auto-derived from SIZE_CLASSES) + magnitude enum prop exists"
+      },
+      {
+        "level": "unit",
+        "name": "validateAgainstSchema accepts a bugfix+magnitude payload and rejects an out-of-enum magnitude"
+      },
+      {
+        "level": "unit",
+        "name": "buildClassifyPrompt: declaredBugfix:true emits bugfix+magnitude guidance; unset emits the current four-tier prompt unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

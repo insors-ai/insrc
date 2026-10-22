@@ -24,108 +24,61 @@
     "hldBaseRunId": "wf-1790248075351-dbqnsq",
     "hldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contract/buildInsrcMcpServer",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/server.ts exports buildInsrcMcpServer, which is the single assembly site that calls server.registerTool for each insrc_* tool.",
-          "evidence": "Confirmed: src/mcp/server.ts is the assembly site (buildInsrcMcpServer) and server.registerTool is called there (earlier direct grep: 10 registerTool calls in server.ts). The probe's grep hits are dominated by docs/, but the reads on server.ts resolved and the direct source check confirms the symbol.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "dataModel/InsrcToolSchemaRecord",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "server.ts registers exactly 10 insrc_* tools via server.registerTool, one InsrcToolSchemaRecord per call.",
-          "evidence": "Confirmed by direct source grep: exactly 10 `server.registerTool(` calls in src/mcp/server.ts, matching the one-record-per-tool inventory.",
-          "action": "No change — inventory resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "dataModel/InsrcToolSchemaRecord callSites",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The 10 server.registerTool calls in src/mcp/server.ts sit at lines 130, 185, 316, 440, 501, 566, 635, 692, 757, 805.",
-          "evidence": "The probe's reads on src/mcp/server.ts:130/185/316/805 all resolved (found:true); the earlier direct grep listed the registerTool calls at exactly 130/185/316/440/501/566/635/692/757/805.",
-          "action": "No change — line anchors resolve.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "contract/registration",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "server.registerTool accepts a config object with an inputSchema field (a zod raw shape), matching the call shape the LLD reshapes.",
-          "evidence": "Confirmed: src/mcp/server.ts:162 (read found:true) carries `inputSchema: ANALYZE_INPUT`; the registerTool config takes an inputSchema zod raw shape as the LLD describes.",
-          "action": "No change — registration contract resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "testStrategy/convention",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The MCP test convention is node:test under src/mcp/__tests__/, e.g. analyze-step-handler.test.ts, which the new schema-handler test extends.",
-          "evidence": "Confirmed: src/mcp/__tests__/analyze-step-handler.test.ts exists (read found:true); node:test-under-__tests__ is the convention the new schema-handler test extends.",
-          "action": "No change — test convention resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "contract/zod-to-json-schema",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "A zod-to-json-schema conversion path is available in the codebase's dependencies for deriving JSON Schema from a registered zod raw shape.",
-          "evidence": "Confirmed available but with a build refinement: node_modules/zod-to-json-schema is installed, AND the MCP SDK ships its own conversion (dist/esm/server/zod-json-schema-compat.js + getZodSchemaObject/normalizeObjectSchema in mcp.js) which is exactly what the SDK uses to advertise each tool's schema. So the derivation path exists. NOTE for the build: prefer reusing the SDK's own conversion (the schema the SDK actually advertises) over a separately-imported zod-to-json-schema, so insrc_schema returns byte-identical output to the live tool schema (tightening k1) and avoids depending on a possibly-undeclared direct dependency.",
-          "action": "Carry a build-time note: derive the JSON Schema via the SAME path the SDK uses to advertise it (getZodSchemaObject / zod-json-schema-compat), not a separate zod-to-json-schema import, to guarantee the served schema equals the enforced one (k1).",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The converter is present, so the design is buildable; reusing the SDK's own conversion makes the served schema provably identical to what the SDK validates against and sidesteps a possibly-undeclared direct dep. This is a build-stage refinement, not an LLD contract change.",
-            "options": [
-              "In the PLAN/build, derive JSON Schema through the SDK's getZodSchemaObject / zod-json-schema-compat path rather than importing zod-to-json-schema directly.",
-              "If importing zod-to-json-schema directly, add it as an explicit dependency in package.json."
-            ]
-          }
-        },
-        {
-          "claimId": "cl7",
-          "ref": "boundary",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S001 owns sc1 and does not implement sc2 (owned by s2) or the steering content (owned by s3); s3 consumes sc1 downstream.",
-          "evidence": "Boundary is internally consistent with the approved HLD (read of the HLD.md path failed in the probe's sandbox but the LLD's hldContextSlice is copied verbatim from the approved HLD this session authored): s1 owns sc1, s2 owns sc2, s3 depends on [sc1,sc2]. No sc2/steering scope is designed in this LLD.",
-          "action": "No change — boundary trace holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "boundary/no-existing-surface",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "No insrc_schema tool or handleInsrcSchema exists yet in src/mcp — the tool and its src/mcp/schema/ subdir are net-new.",
-          "evidence": "Confirmed net-new: grep for handleInsrcSchema / InsrcToolSchemaRegistry finds matches ONLY in this LLD (no src/ implementation); insrc_schema as a tool implementation does not yet exist. The src/mcp/schema/ subdir is new.",
-          "action": "No change — net-new claim resolves.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-24T11:32:41.459Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-24T11:38:47.816Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "332ac304f8ab1157b888102b59ce9135431bf068cb2d179f072552fe32bded99",
+        "at": "2026-09-24T11:31:08.131Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T11:38:47.816Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-24T11:32:41.459Z",
+        "report": {
+          "entityId": "LLD-38905b56cb44c4cf-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-38905b56cb44c4cf-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b79ace4-3656-431c-86c5-be03fdda9928",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.912Z",
+    "epicCreatedAt": "2026-09-20T15:58:45.676Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add IndexQueue.depthForRepo read accessor (src/daemon/queue.ts)",
+      "parent": {
+        "entityId": "STORY-be438ed37a36f5fc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-be438ed37a36f5fc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f197a78784985b8e0827f515a9ceb8c4b57968071d880475bf39d0e61beff7de",
+        "at": "2026-10-22T12:44:28.916Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.917Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add IndexQueue.depthForRepo read accessor (src/daemon/queue.ts)",
+    "summary": "Add a read-only depthForRepo(repoPath): number method to IndexQueue that counts currently-queued IndexJobs attributable to repoPath — jobs whose repoPath===repoPath (full/reembed/doc-summarise-repo) or whose filePath is under repoPath+sep (file/config-file). The private queue array is NOT exposed and the existing get depth() is unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "depthForRepo counts full/reembed/doc-summarise-repo jobs by repoPath and file/config-file jobs by filePath-under-repo; unrelated/global jobs are not counted; returns 0 for a repo with no jobs",
+      "the private IndexJob[] stays private (no new getter exposing it) and get depth() is byte-unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "IndexQueue.depthForRepo: a full/reembed/doc-summarise-repo job with repoPath===R counts toward R; a file/config-file job whose filePath is under R+sep counts toward R"
+      },
+      {
+        "level": "unit",
+        "name": "IndexQueue.depthForRepo: a job for another repo (or a global config-full) does NOT count toward R; returns 0 for a repo with no queued jobs; get depth() unchanged and the private jobs array not exposed"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

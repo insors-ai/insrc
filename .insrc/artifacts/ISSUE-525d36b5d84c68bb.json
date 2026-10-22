@@ -21,7 +21,27 @@
     "epicSlug": "approve-does-nothing-review-blocked-document",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T06:47:16.542Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "735a89f9beaa372b0e54ec1f598ae85217669374d737e73616a60d5168728a9a",
+        "at": "2026-10-19T06:47:16.542Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Approve does nothing on a review-blocked document in the VS Code review pane",

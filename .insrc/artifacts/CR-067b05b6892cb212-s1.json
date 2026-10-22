@@ -13,7 +13,26 @@
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-15T10:06:05.580Z",
     "epicSlug": "declare-documents-turn-presents-instead-parsing",
-    "standalone": true
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "dc7a63585461680140e58c06e4a914ddd2209207eeaf02e8db6458a96f805463",
+        "at": "2026-10-15T12:25:11.437Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

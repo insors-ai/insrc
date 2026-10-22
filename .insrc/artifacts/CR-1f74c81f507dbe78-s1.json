@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791919806706-r9up1n",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-13T19:30:06.706Z",
+    "model": "claude:opus",
+    "elapsedMs": 128390,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "epicSlug": "review-pane-document-table-search-live",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d9d74eaf47ff7602fc2c30c7c7f4606b1f4b2ab719b973ee6d862459c7752122",
+        "at": "2026-10-13T19:30:06.706Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/artifact-content.test.ts",
+        "src/workflow/__tests__/pending.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts",
+        "src/workflow/pending.ts",
+        "vscode-plugin/media/insrc-review-icon-dark.svg",
+        "vscode-plugin/media/insrc-review-icon.svg",
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/__tests__/review-icon.test.ts",
+        "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+        "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/docs-review-client.ts",
+        "vscode-plugin/src/chat/docs-review-comments.ts",
+        "vscode-plugin/src/chat/docs-review-list.ts",
+        "vscode-plugin/src/chat/docs-review-panel.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "vscode-plugin/src/chat/review-presenter.ts",
+        "vscode-plugin/src/chat/webview-channel.ts",
+        "vscode-plugin/src/delivery/__tests__/epic-records.test.ts",
+        "vscode-plugin/src/delivery/board-host.ts",
+        "vscode-plugin/src/delivery/board-model.ts",
+        "vscode-plugin/src/delivery/board-protocol.ts",
+        "vscode-plugin/src/delivery/board-state.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/vscode.d.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts:1",
+            "message": "Present but unverified: there is no build record, so the promised whole-suite and typecheck smoke has no recorded result. I ran only the five test files that hold this Story's promised tests (review-icon, review-wiring, docs-review-client, docs-review-decision, docs-review-panel): 263 passed, 0 failed, 0 skipped. I did not run the rest of the plugin suite or the typecheck.",
+            "expectationRef": "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/extension.ts:1",
+            "message": "Unverified: the by-hand VS Code smoke (tab icon in light and dark themes, paging/search/type filter over the real pending list, in-place reload of a document edited on disk) is manual and no build record shows it was done. The automated tests for the same behaviour exist and passed when I ran them, but they do not replace the check in a real VS Code window.",
+            "expectationRef": "By hand in VS Code: the tab shows the review icon in a light and a dark theme; the table pages, searches with suggestions and filters by type over the real pending list; and a document edited on disk while open is reloaded in place with the scroll position kept",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:1",
+            "message": "Unverified: no build record shows the headless Chrome render of the list view with 240 rows was run, and I did not look for a test or script that does it. The nearest automated test ('the list view's table is its own scrolling region, the toolbar and pager are outside it…', docs-review-panel.test.ts:7022) is present and passed, but it runs against a stubbed DOM, not a real browser layout.",
+            "expectationRef": "Headless Chrome render of the real shell's list view with 240 rows: the toolbar and pager stay in view and the table scrolls",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:1",
+            "message": "Grounding caveat, not a coverage breach: the graph's testsReaching edges are hollow for this change set. They record only helper-to-helper calls inside test files and miss the anonymous test() callbacks, so nearly every production symbol shows an empty testsReaching even where tests clearly reach it. I therefore raised no HIGH not-exercised findings from empty edges. Instead I checked coverage directly: all 16 promised unit and integration tests are present by exact title in review-icon.test.ts, review-wiring.test.ts, docs-review-client.test.ts, docs-review-decision.test.ts and docs-review-panel.test.ts, and all passed in my run. Per-symbol coverage of the other changed files in the set (src/workflow/pending.ts, vscode-plugin/src/delivery/*, chat-panel.ts, review-presenter.ts) was not checked this way.",
+            "expectationRef": "testsReaching grounding (hollow)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:2491",
+            "message": "`errText(err)` is a third copy of the same one-line error-to-string helper (`err instanceof Error ? err.message : String(err)`). The identical `errorText` already exists in the changed `review-presenter.ts` (line 74) and is the one `board-host.ts` uses. Three copies of the same normalisation can drift; importing the shared one would remove the copy. Low risk: the bodies are identical today.",
+            "counterpartRef": "errorText",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:2429",
+            "message": "A module-local `plural(n, word)` re-implements count pluralisation with a different contract (appends 's') from the `plural(n, one, many)` already used by `chat-panel.ts` (line 342) and by the delivery modules (`board-state.ts`, `board-model.ts`). Two same-named helpers with incompatible signatures in sibling files are easy to mis-call, and the 's'-suffix form is wrong for any irregular noun. Reusing the (n, one, many) form would remove the divergence.",
+            "counterpartRef": "plural",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 5
+    }
+  }
+}

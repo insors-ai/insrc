@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9abb6090-7e00-4ebe-aa4e-1e7919df8831",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.976Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Carry uxDefinition onto the docs-content message and resolve its anchor host-side",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8557ef65567d89954761dfd809cb085272936766185c3806e647781ec5ae6542",
+        "at": "2026-10-22T12:44:32.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.977Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry uxDefinition onto the docs-content message and resolve its anchor host-side",
+    "summary": "Close the one-hop gap. Add two optional fields to the docs-content variant of HostToWebview — `uxDefinition` typed by INDEXING off DocsContent, and `experienceAnchorSlug` — and forward them in openDoc by conditional spread, resolving the ux-mock ref's ofSectionId HOST-side with sc3's shipped createSectionResolver exactly as s3 resolves the diagram's. The record already reaches the host (docs-review-client.ts:37, forwarded :113) and is dropped before posting; this is purely that one hop. No daemon file is touched: uxDefinition is one of sc1's ORIGINAL four projected fields.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "openDoc forwards uxDefinition BY REFERENCE on the existing docs-content message — no new message type, no new IPC method, no second round trip",
+      "An absent record stays an ABSENT KEY, asserted with `'uxDefinition' in payload === false` rather than a loose falsy check",
+      "The ux-mock ref's ofSectionId is resolved with sc3's createSectionResolver over the index derived from THIS markdown, and an unresolvable id posts NO experienceAnchorSlug key rather than an empty string",
+      "Both protocol fields use the INDEXED form (`DocsContent['uxDefinition']`), matching the five siblings, so protocol -> client -> daemon stay one declaration deep",
+      "openDoc's FAIL-CLOSED arm posts blocked:true and carries NO uxDefinition — a reviewer who could not read the body is never shown a mock drawn from it",
+      "The emitted shell is BYTE-IDENTICAL to the current pinned baseline: this task moves data, not pixels, and nothing has joined the script yet",
+      "NO file under src/ is modified — provable by diffing the task's changed set, and the fact that distinguishes this Story from S003"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "openDoc posts uxDefinition by reference on the existing docs-content message (identity-compared, not deep-equalled)"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc omits the uxDefinition KEY entirely when the record is absent ('uxDefinition' in payload === false)"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc resolves a ux-mock ref's ofSectionId to experienceAnchorSlug via createSectionResolver over this markdown's index"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc posts NO experienceAnchorSlug key for an unresolvable ofSectionId (not an empty string)"
+      },
+      {
+        "level": "integration",
+        "name": "openDoc's fail-closed arm posts blocked:true and carries no uxDefinition"
+      },
+      {
+        "level": "unit",
+        "name": "the emitted shell is byte-identical to the pinned baseline after t1 (data moved, no pixels)"
+      },
+      {
+        "level": "unit",
+        "name": "t1's changed-file set contains nothing under src/"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

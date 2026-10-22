@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7570d4d5-9455-4d93-9467-cd6a23f69853",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.185Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delete id.ts and the docs migration tool",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1a307cd59b758f065d85f8ae98e6c4ef48de855e3d02179917f4f021ce2408d",
+        "at": "2026-10-22T12:43:20.185Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.186Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete id.ts and the docs migration tool",
+    "summary": "Delete the docs migration tool (migrate-docs-tree.ts, bin/insrc-migrate-docs.ts and its package.json bin entry, its two tests, its write-inventory row and assertion), then delete src/workflow/id.ts. Add the test that no source file, bin entry or write-inventory row refers to either. Run the workflow, mcp and daemon test subsets.",
+    "size": "M",
+    "order": 17,
+    "acceptanceChecks": [
+      "id-removal test passes",
+      "npm run build succeeds",
+      "the workflow, mcp and daemon test subsets pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/id-removal.test.ts: no source file, bin entry or write-inventory row refers to src/workflow/id.ts or the migration tool"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

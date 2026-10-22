@@ -19,121 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "761a43a6fa645815",
     "epicSlug": "add-daemon-driven-code-review-stage",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "h1",
-          "ref": "sc5/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/workflow-rpc.ts exports runWorkflowServerSide and runStart, the generic daemon driver + StreamHandler the CodeReviewRunner (sc5) reuses.",
-          "evidence": "runWorkflowServerSide at src/daemon/workflow-rpc.ts:164 and runStart at :439 both confirmed — the generic driver + StreamHandler sc5 reuses are real.",
-          "action": "None; the sc5 runner-reuse basis holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h2",
-          "ref": "sc5/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildShaperProvider and writeAtomic (the provider resolution + atomic write the runner reuses) are imported/available in src/daemon/workflow-rpc.ts.",
-          "evidence": "Direct verification: buildShaperProvider imported at workflow-rpc.ts:32 and called at :428; writeAtomic imported at :41 and called at :318-319. (The review engine's plain-word grep surfaced only doc matches, but both symbols are genuinely used in the runner.)",
-          "action": "None; the provider-resolution + atomic-write reuse is real.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h3",
-          "ref": "sc3,sc4/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/review/types.ts declares Severity = 'HIGH'|'MED'|'LOW', ReviewVerdict = 'pass'|'warn'|'block', Finding, and ReviewReport — the verdict/report vocabulary sc3/sc4 reuse verbatim.",
-          "evidence": "src/workflow/review/types.ts: Severity at :41, ReviewVerdict='pass'|'warn'|'block' at :43, ReviewReport at :134 — the verdict/report vocabulary sc3/sc4 reuse verbatim exists exactly as cited.",
-          "action": "None; k1 verdict-vocabulary reuse is grounded.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h4",
-          "ref": "sc4,s7/c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts exports approveArtifactByJsonPath and ReviewBlockedError — the block/override enforcement the completion gate (s7) reuses.",
-          "evidence": "approveArtifactByJsonPath(jsonPath, {overrideReview}) at src/workflow/gates.ts:488 and ReviewBlockedError at :71 — the block/override enforcement s7 reuses is real.",
-          "action": "None; the s7 gate-reuse basis holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h5",
-          "ref": "sc1/c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts exports requireApprovedLld and requireApprovedPlan — the approved-contract resolution CodeReviewSubject (sc1) relies on (throws when absent => no-verdict).",
-          "evidence": "requireApprovedLld at gates.ts:255 and requireApprovedPlan at :354 — the throw-if-absent approved-contract resolution sc1 relies on exists.",
-          "action": "None; the no-approved-contract→no-verdict basis holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h6",
-          "ref": "sc1/c9",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts provides a build-stage upstream reader (readBuildUpstream / BuildUpstream) that yields the Story's build record — the input sc1 consumes without re-deriving.",
-          "evidence": "readBuildUpstream at gates.ts:449 + BuildUpstream interface at :443 — the build-stage upstream reader sc1 consumes (without re-deriving) is real.",
-          "action": "None; the build-record-as-input basis (k9) holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h7",
-          "ref": "sc4/c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/storage.ts declares the build artifact family (buildArtifactId 'BUILD-<epic>-<story>', buildArtifactPaths, buildMdRel) + ARTIFACTS_DIR + writeAtomic + pathsForWorkflow — the per-Story peer + storage helpers the CodeReviewArtifact (sc4, 'CR-<epic>-<story>') mirrors.",
-          "evidence": "buildArtifactId at storage.ts:161, pathsForWorkflow at :373, ARTIFACTS_DIR='.insrc/artifacts' at :50 — the per-Story build peer + storage helpers sc4 mirrors all exist.",
-          "action": "None; the CR-<epic>-<story> placement mirrors a real peer.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h8",
-          "ref": "s8/c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The controller multi-turn envelope insrc_code_review_step (s8) mirrors is real: handleReviewStep in src/mcp/review-step/handler.ts driving the typed envelope in src/mcp/review-step/types.ts.",
-          "evidence": "handleReviewStep at src/mcp/review-step/handler.ts:32 returning ReviewStepMcpEnvelope — the controller multi-turn envelope insrc_code_review_step (s8) mirrors is real and typed.",
-          "action": "None; the k2 envelope-reuse basis holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h9",
-          "ref": "s3/c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/analyze/explore/convention-detect.ts exists — the convention-detection capability the standards dimension (s3) draws on (and whose single-file thinness motivates multi-file sampling).",
-          "evidence": "src/analyze/explore/convention-detect.ts exists and exports runConventionDetect (:86), classifyName (:169) et al — the convention-detection capability s3 draws on is real.",
-          "action": "None; the standards-dimension reuse basis holds.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "h10",
-          "ref": "sc4/semantic",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A generic WorkflowArtifact<Body> envelope type exists that CodeReviewArtifact (sc4) can specialize, mirroring the other per-type artifact records.",
-          "evidence": "WorkflowArtifact<Body> is the shared envelope used across artifacts/ (define.ts:78 DefineArtifact = WorkflowArtifact<DefineBody>, hld.ts, etc.), and ArtifactMetaBase exists — so CodeReviewArtifact = WorkflowArtifact<CodeReviewBody> follows the established pattern.",
-          "action": "None; the sc4 envelope-specialization is consistent with the artifact family.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-08-03T07:36:29.801Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-03T07:38:45.031Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "195509ea74dac4a9d9971aac99fb85c46320d9efe42f79954147ea1bed622206",
+        "at": "2026-08-03T07:34:43.676Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-03T07:38:45.031Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-08-03T07:36:29.801Z",
+        "report": {
+          "entityId": "HLD-761a43a6fa645815",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-761a43a6fa645815-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "A hybrid code-review stage (winner a3): a code-review-specific orchestrator runs the four dimensions (adherence/conventions/coverage/quality) as an explicit SERIAL provider loop, reusing src/daemon/workflow-rpc.ts's proven machinery (buildShaperProvider resolution, synthesize-with-retry, writeAtomic, meta-stamping, optional boundary re-audit, the runStart StreamHandler shape) rather than cloning it, and mirroring the existing review vocabulary (ReviewVerdict / Severity / ReviewReport from src/workflow/review/types.ts) so the persisted CodeReviewArtifact carries a block/warn/pass verdict downstream approval already understands. The daemon-driven path and the controller-driven insrc_code_review_step (which mirrors insrc_review_step's start/emit/done/error/opaque-state envelope) share ONE orchestrator, differing only in who supplies each dimension's judgement. The stage runs after build, consumes the build record + approved LLD/PLAN as its fixed subject without re-deriving them, and never modifies the code it judges.",

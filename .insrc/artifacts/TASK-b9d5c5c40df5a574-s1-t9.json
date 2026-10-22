@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5559b29-10c3-4950-9c07-2f4143fcae70",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.574Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Every plan-task result carries a completeness record",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d304a197ae7a26e538e1ce85e5afe23eddfc46b2913357d87053c0ef2d7e3af",
+        "at": "2026-10-22T12:44:24.574Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.575Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Every plan-task result carries a completeness record",
+    "summary": "Make the record a required part of a runtime's result and fill it in all twenty-six runtime files with the count limits each reaches; the walk copies it to the task record and records a template-kind task whose runtime returned none as failed. Remove the five infra inventories' own `truncated` field in favour of a limit in the record, and report the per-family sample as a per-group limit. The object-listing plan task reads the data driver's cut flag into a limit. An aggregate-report runtime returns a record that says its completeness is that of the tasks it summarises.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "A table test over every registered runtime finds a completeness record on each result",
+      "The walk copies the record to the task record, and a stand-in runtime that returns none is recorded as failed",
+      "No output of the five infra inventories has a `truncated` field; a walk that stops at its cap is a limit in the record, and the existing infra tests are updated to assert it",
+      "discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder",
+      "The object-listing plan task reports the data driver's cut as a limit",
+      "tsc is clean and the analyze suites pass under Node 22"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a table test over every registered plan-task runtime finds a completeness record on each result"
+      },
+      {
+        "level": "unit",
+        "name": "the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed"
+      },
+      {
+        "level": "unit",
+        "name": "no output of the five infra inventories has a `truncated` field; a walk that stops at its cap is a limit in the record"
+      },
+      {
+        "level": "unit",
+        "name": "discovery-families reports its per-family sample as a per-group limit and is not rejected by the builder"
+      },
+      {
+        "level": "unit",
+        "name": "the object-listing plan task reads the data driver's cut flag into a limit"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

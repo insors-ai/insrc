@@ -21,7 +21,27 @@
     "epicSlug": "daemon-stop-must-wait-process-end",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-13T07:20:59.974Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b4c3774053471c12d861be7a28d3364d5b2492a9f07b34b7abe73f7f7d6bc3be",
+        "at": "2026-10-13T07:20:59.974Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "A daemon stop must wait for the process to end, and a shut-down daemon must not stay alive after 'bye'",

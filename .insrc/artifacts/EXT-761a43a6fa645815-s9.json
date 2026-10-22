@@ -20,82 +20,57 @@
     "epicHash": "761a43a6fa645815",
     "epicSlug": "add-daemon-driven-code-review-stage",
     "storyId": "s9",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "s9",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "queue.isProcessing(): boolean exists at src/daemon/queue.ts:154 — the queue-in-flight half of the combined freshness signal the story reads.",
-          "evidence": "src/daemon/queue.ts:154 reads `get isProcessing(): boolean { return this.processing; }` verbatim — the queue-in-flight freshness signal exists exactly as cited.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "s9",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "insrc_code_review_step has a start phase (in src/mcp/code-review-step) whose grounding is built from the repo graph — the phase the freshness gate + confirm_wait turn plug into.",
-          "evidence": "src/mcp/code-review-step resolves (27 hits) with handleStart + assembleCodeReviewGrounding wired — the start phase + graph grounding the gate plugs into is real.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "s9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Code-review grounding is a graph-derived symbols set (grounding.symbols); an empty symbols set is the hollow-PASS the gate prevents, and the story adds a groundingMode marker onto the code-review record types.",
-          "evidence": "assembleCodeReviewGrounding + grounding.symbols + CodeReviewGrounding all resolve — grounding is a graph-derived symbols set (empty symbols = the hollow PASS), and types.ts is where the new groundingMode marker lands.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "s9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The code-review stage runs exactly four dimension judges (adherence/conventions/coverage/quality) that the fresh-path proceeds to; the story does not change their count.",
-          "evidence": "The four judge symbols (judgeAdherence/Conventions/Coverage/Quality) + the dimension literal set resolve — the fresh path proceeds to exactly four judges; the story does not alter the count.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "s9",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "A repo.reindex IPC exists that the story deliberately never triggers (block-and-poll only); reused-as-is, not called.",
-          "evidence": "reindex resolves in the daemon — the repo.reindex IPC the story deliberately never triggers exists and is reused-as-is.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "extends",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The story extends Epic add-daemon-driven-code-review-stage (761a43a6), whose HLD + the approved SpecArtifact SPEC-8b4be30d648eaeb8 exist as prior artifacts it builds on.",
-          "evidence": "docs/designs/HLD-add-daemon-driven-code-review-stage.md:254 reads `**Flag:** `insrc.codeReview.enforce`` — the parent Epic's HLD + the codeReview.enforce completion-gate policy the story interoperates with exist; the approved SpecArtifact is the other prior artifact.",
-          "action": "None — verified.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-05T04:48:48.836Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-05T05:02:06.605Z",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "833cedbc29076ae512e885f9e3a43001cb027503d53c39ccd03ee2063ca15492",
+        "at": "2026-08-05T04:47:34.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T05:02:06.605Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-05T04:48:48.836Z",
+        "report": {
+          "entityId": "EXT-761a43a6fa645815-s9",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-EXT-761a43a6fa645815-s9-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "M",

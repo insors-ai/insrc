@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-2da2b1cc-b2d3-4cfd-b605-cf66132d2094",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.040Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update and restart the daemon from a single request",
+      "parent": {
+        "entityId": "EPIC-b6c90b3e0240d36c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a35174c0b3b7254b620e501d5b2ca151bb2a04f9b30879ee56c98d37e4db8cbf",
+        "at": "2026-10-22T12:43:07.040Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

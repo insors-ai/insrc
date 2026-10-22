@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7b19440b-0582-48cd-8fda-f56ed54da530",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.471Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The code tasks take their scope from the scope function and keep to its area",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c4f3697c203374ee1a147ff1bda11b2e2ea712d94b7dc33a6ddd337601161ce1",
+        "at": "2026-10-22T12:44:25.471Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.471Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The code tasks take their scope from the scope function and keep to its area",
+    "summary": "Move discovery-modules, discovery-entrypoints and structure-module-tree to resolveTaskScope, and the shared adherence check's two readers of the scope's value. For a module scope a task uses only the entities whose file lies under the directory, for a file scope only that file's, for a symbol scope the one entity. Remove resolveRepoPath from the code family's shared file and its test hook, and replace the tests of its old wording. What these tasks treat as a module is not changed (Story s8).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A code task accepts repo, module, file, symbol, manifest-dir and workspace",
+      "With a module scope it uses only entities under that directory; with a file scope only that file's; with a symbol scope the one entity",
+      "With a repo scope each task returns what it returned before the change",
+      "The adherence check resolves its repo through the scope function for the family of the template it runs as; run as a data template and as an infra template with a repo scope it resolves its repo as before, and as a data template on an unregistered directory it is not refused",
+      "The code family's resolveRepoPath and its test hook are gone and no runtime file under the code family uses the scope's value as a repo path"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity"
+      },
+      {
+        "level": "integration",
+        "name": "the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused"
+      },
+      {
+        "level": "unit",
+        "name": "the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

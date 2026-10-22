@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-200f37bf-8292-44bb-9826-d048295e660a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.372Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement admitBugfixAdvance (the pure advance gate)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f2593c0e15fa00d7b2d6b808582bd508abb0a96cbf3e34dfd3686fb703ccc5b1",
+        "at": "2026-10-22T12:43:14.372Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.373Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement admitBugfixAdvance (the pure advance gate)",
+    "summary": "Implement admitBugfixAdvance(issue: IssueArtifact): { admitted: boolean; reason?: string } as a pure predicate over meta (mirroring the admitBuild admission pattern, no IO). admitted=true only when meta.approvedAt is set AND meta.parentRef has been RESOLVED (present, including explicit null for standalone); admitted=false with a descriptive reason otherwise (not approved, or parentRef absent/unresolved).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "approved + parentRef WorkItemRef -> admitted; approved + parentRef===null -> admitted (null is resolved); approved + parentRef absent -> not admitted; not approved -> not admitted.",
+      "Pure predicate, no IO; reason string names the failing condition. tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "admitBugfixAdvance: approved + parentRef resolved (WorkItemRef) -> admitted"
+      },
+      {
+        "level": "unit",
+        "name": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted (null is resolved, not absent)"
+      },
+      {
+        "level": "unit",
+        "name": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted, reason names the missing parent resolution"
+      },
+      {
+        "level": "unit",
+        "name": "admitBugfixAdvance: not approved (no meta.approvedAt) -> not admitted, reason names approval"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

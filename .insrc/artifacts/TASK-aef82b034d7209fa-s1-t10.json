@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd6865d1-da6c-4cd2-b62c-3e8b45377f7e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.414Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The five judges run as jobs; parts recorded",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5602e3a603fbae3e81c04221ec8074fa15b353442805e5de9da086e717e10df1",
+        "at": "2026-10-22T12:44:15.414Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.414Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The five judges run as jobs; parts recorded",
+    "summary": "Route judgeAdherence, judgeConventions, judgeCoverage, judgeFunctionalCoverage and judgeQuality through their job with the provider's budget; add the optional DimensionResult.parts counts and keep them on the record.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "A fitting review makes the same provider calls with byte-identical prompts as before, and the existing judge, runner and handler suites pass unchanged.",
+      "An over-budget review completes through the runner with one verdict and parts counts recorded per dimension."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'the runner folds one verdict and writes one record with parts per dimension; coverage is normalised once'"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

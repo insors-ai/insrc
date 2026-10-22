@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-376b299a-def5-428c-b70f-c23d766ef6d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.019Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "sc1 types module (src/mcp/schema/schema.ts)",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2c8a1317c9317a81fde3a33ee3328c53198953bc8d7fbcea09971f2dbf3b0cef",
+        "at": "2026-10-22T12:43:27.019Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.020Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc1 types module (src/mcp/schema/schema.ts)",
+    "summary": "Add src/mcp/schema/schema.ts defining the sc1 I/O + registry types: InsrcSchemaInput { tool: string; phase?: string }, JsonSchema = Record<string, unknown>, InsrcSchemaOk { schema; description; validPhases? }, InsrcSchemaError { error; validTools?; validPhases? }, InsrcSchemaResult union, InsrcToolSchemaRecord { name; description; rawShape: ZodRawShape; phases?; dynamicNote? }, and InsrcToolSchemaRegistry = ReadonlyMap<string, InsrcToolSchemaRecord>. Also the SCHEMA_INPUT zod raw shape for the insrc_schema tool itself ({ tool: z.string(), phase: z.string().optional() }).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/mcp/schema/schema.ts exports InsrcSchemaInput/Ok/Error/Result, InsrcToolSchemaRecord, InsrcToolSchemaRegistry, and SCHEMA_INPUT, matching the LLD interfaceSketch verbatim.",
+      "tsc passes under strict + exactOptionalPropertyTypes (optionals typed as `| undefined`)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema-handler.test.ts (types) — tsc/type-shape smoke: SCHEMA_INPUT is a valid zod raw shape and the exported types compile (covered implicitly by the handler unit suite importing them)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

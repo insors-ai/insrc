@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-21T04:57:15.277Z",
     "parentRef": {
       "slug": "scope-story-s-code-review-what"
+    },
+    "epicCreatedAt": "2026-10-21T04:56:14.352Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "898e07b5c4dd27580838dd56845f648f034a4c67377301e4a779510289e35a23",
+        "at": "2026-10-21T04:56:14.352Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T04:57:15.277Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

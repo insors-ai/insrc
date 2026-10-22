@@ -21,9 +21,37 @@
     "epicSlug": "build-record-renderer-only-artifact-renderer",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-04T16:58:20.831Z",
     "parentRef": {
       "slug": "build-record-renderer-only-artifact-renderer"
+    },
+    "epicCreatedAt": "2026-10-03T13:22:28.575Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e3356818818131236811aab9de69380adea4d7ffe5be787de4ee297eafca63e9",
+        "at": "2026-10-03T13:22:28.575Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T16:58:20.831Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -72,7 +100,7 @@
     {
       "id": "c7",
       "kind": "prior-artifact",
-      "ref": "BUILD-e20235c17f083a16-S001 — approval by artifactPath was refused this session and had to fall back to the epicHash form"
+      "ref": "BUILD-e20235c17f083a16-s1 — approval by artifactPath was refused this session and had to fall back to the epicHash form"
     }
   ]
 }

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-17147d3b-d3fe-4af8-b37c-fcdf694c2b00",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.341Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Derive nextActionHint from the projected chain facts",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b7f2b114d5abc241d7853d2f60393fbc737858f983da89c96a706cec6b9c12cb",
+        "at": "2026-10-22T12:43:33.341Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.341Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Derive nextActionHint from the projected chain facts",
+    "summary": "Add the private nextActionHint derivation over the projected marks with an ordered precedence (no DEF->run define; DEF unapproved->approve define; pending amendments->review amendments; no HLD->run HLD; HLD unapproved->approve HLD; a stale/unbuilt/unapproved story->its next step named with the storyId; else 'Chain complete'). A plain human String, NOT the CLI's typed 11-case NextAction; no push-tracker/sync-tracker cases (k6).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Every chain state yields exactly one hint string via the documented precedence",
+      "A fully-approved, non-stale, no-pending-amendment chain yields 'Chain complete'",
+      "A stale story yields a 'Refresh stale LLD for <storyId>' hint; no tracker push/sync case exists"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.nextActionHint precedence: each chain state (no-DEF, unapproved-DEF, pending-amendment, no-HLD, unapproved-HLD, stale-story) yields the expected single hint"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.nextActionHint terminal: fully-approved non-stale no-pending chain yields 'Chain complete'; a stale story yields 'Refresh stale LLD for <storyId>'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

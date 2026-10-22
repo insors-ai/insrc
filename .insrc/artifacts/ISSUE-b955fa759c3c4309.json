@@ -20,7 +20,27 @@
     "issueHash": "b955fa759c3c4309",
     "epicSlug": "six-low-severity-defects-found-independent",
     "standalone": true,
-    "magnitude": "small"
+    "magnitude": "small",
+    "epicCreatedAt": "2026-10-02T18:43:15.980Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "69fd54e6a8bca68b9ebb7d0c71ff8ce7f541778322e2db20f2a5cc986b99809c",
+        "at": "2026-10-02T18:43:15.980Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Clear six low-severity defects in the BUILD-record provenance code",

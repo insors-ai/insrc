@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-83b7de06-145e-4912-a3fb-8ab393327f25",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.826Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "RepoSchemaGate guard at the MCP server",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t44",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2a4772ba76647c78fbec604280dc6710912a291f2388ea83e04354b9b2b2b45",
+        "at": "2026-10-22T12:43:22.826Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.826Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "RepoSchemaGate guard at the MCP server",
+    "summary": "Call RepoSchemaGate.require(repo, 2) in src/mcp/server.ts for the tools that read or write artifacts (not insrc_analyze, insrc_docgen, insrc_schema or insrc_guide). Test src/mcp/__tests__/repo-schema-guard.test.ts.",
+    "size": "S",
+    "order": 45,
+    "acceptanceChecks": [
+      "The MCP artifact tools refuse an unconverted repository with a message naming the conversion",
+      "The read-only tools still work on an unconverted repository"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository"
+      }
+    ],
+    "planTaskId": "t45"
+  },
+  "citations": []
+}

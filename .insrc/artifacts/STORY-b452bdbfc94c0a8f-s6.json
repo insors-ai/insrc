@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-482beec2-e705-461f-baf9-28bf1238864c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:07.034Z",
+    "epicCreatedAt": "2026-10-11T14:50:53.399Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b452bdbfc94c0a8f",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Inspect guideline examples and verify cross-platform reuse",
+      "parent": {
+        "entityId": "EPIC-b452bdbfc94c0a8f",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "aa1c36c7be1f1f3d9d7be6091f1f45683ff26994698015f1dff807e3f56662d0",
+        "at": "2026-10-22T12:43:07.034Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

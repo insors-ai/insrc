@@ -1,0 +1,451 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792385862354-qqnuuf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-19T04:57:42.354Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 56048,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "765de3f648ba09ee",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T04:53:15.800Z",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "92d0474a5a01e32a5ef7de70cc61a1d20d7b4d72ca0ed7199cf14944b7215417",
+        "at": "2026-10-19T04:57:42.354Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "765de3f648ba09ee",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/s5-open-issues.md",
+        "docs/plans/team-signoff-issues-inventory.md",
+        "src/workflow/team/__tests__/gate.test.ts",
+        "src/workflow/team/gate.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s5-open-issues.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "s5-open-issues.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s5-open-issues.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "S5 open issues",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "team-signoff-issues-inventory.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "Team signoff epic: issue and gap inventory",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "A. Open issues from the story logs",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "B. Known limitation, accepted",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "C. Design gaps with no story yet",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "D. Approvals made over a `block`",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-signoff-issues-inventory.md:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "E. Loose ends",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "Empty testsReaching for the changed file symbol. Its passing test-file record does not supply a reaching edge.",
+            "expectationRef": "/home/subho/work/dev/insors/insrc/src/workflow/team/__tests__/gate.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "none",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "Fake",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "FAIL_ENSURE",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "down",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed file symbol is not exercised.",
+            "expectationRef": "/home/subho/work/dev/insors/insrc/src/workflow/team/gate.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "GuardedAction",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "GateOutcome",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ClaimState",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "RefusedOutcome",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "TeamGateRefusedError",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "describeOutcome",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "GateDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "_setGateDepsForTests",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "CompletionHook",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "registerCompletionHook",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ParkOfferProvider",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "registerParkOfferProvider",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "heldByOther",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "consultHook",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "sameLogin",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "errorText",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "allowed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "refused",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "logOutcome",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "TeamContext",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "claimsEnforcedFor",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "actingUser",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "authoredArtifactExists",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "teamContext",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "readHolder",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "decideOnHolder",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised under the supplied ground truth. Passing test titles mentioning teamGate cannot substitute for reaching edges.",
+            "expectationRef": "teamGate",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "notEnforced",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised under the supplied ground truth. Passing test titles mentioning claim cannot substitute for reaching edges.",
+            "expectationRef": "claim",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised under the supplied ground truth. Passing test titles mentioning release cannot substitute for reaching edges.",
+            "expectationRef": "release",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "ReviewFixMode",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching: this changed symbol is not exercised.",
+            "expectationRef": "reviewFixDecision",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 47,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

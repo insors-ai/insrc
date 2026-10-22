@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-44411063-8df7-4b5a-89d2-e18e81630555",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:23.207Z",
+    "epicCreatedAt": "2026-09-26T18:18:44.131Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b846171f48d26a25",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add ChatPanelHost.adopt(channel) + refactor open() to one shared wiring internal",
+      "parent": {
+        "entityId": "STORY-b846171f48d26a25-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b846171f48d26a25-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "157c4d22509b5c6ddc6e403ee51071767b4dbc8f4a9560df7ce7deefe1646c76",
+        "at": "2026-10-22T12:44:23.207Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:23.208Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ChatPanelHost.adopt(channel) + refactor open() to one shared wiring internal",
+    "summary": "In chat-panel.ts add adopt(channel: ChatPanelChannel) to the ChatPanelHost interface + createChatPanelHost return; extract open()'s post-channel body (wire onDidDispose/onMessage, setHtml(renderShell()), post theme/session-restored/history-list, empty-providers error) into a shared internal that BOTH open() and adopt() call. adopt() supersedes an already-live channel (cancelActive + dispose prior). open()'s signature + observable behaviour byte-identical.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "ChatPanelHost gains adopt(channel); open()/dispose() unchanged for existing callers.",
+      "adopt(channel) wires the channel + posts theme/session-restored/history-list (same as open()), and supersedes any already-live channel (single active channel).",
+      "open() and adopt() share ONE post-channel wiring internal (no duplicated wiring)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat-panel.test.ts: host.adopt(fakeChannel) posts theme + session-restored + history-list on the ADOPTED channel and wires onMessage so a subsequent submit-turn flows."
+      },
+      {
+        "level": "unit",
+        "name": "chat-panel.test.ts: adopt() when a channel is already live supersedes it (prior channel disposed / cancelActive)."
+      },
+      {
+        "level": "unit",
+        "name": "chat-panel.test.ts: open() behaviour byte-identical (existing open()/submit/history tests stay green after the shared-internal refactor)."
+      },
+      {
+        "level": "unit",
+        "name": "chat-panel.test.ts: adopt() with providers empty posts the same 'no agentic CLI' error turn-event open() does."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

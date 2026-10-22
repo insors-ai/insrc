@@ -22,81 +22,57 @@
     "storyId": "s4",
     "lldRunId": "wf-1785612928635-hd5w32",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly three tasks t1/t2/t3 with the linear DAG t1 -> t2 -> t3.",
-          "evidence": "The plan Tasks table enumerates t1, t2, t3 with DAG t1<-t2<-t3. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t1's target src/workflow/runners/brainstorm/schemas.ts exists and defines the s3 converged brainstormElicitSchema (workingStatement/confirmed) that t1 extends with decisions/nonGoals.",
-          "evidence": "src/workflow/runners/brainstorm/schemas.ts:42 `export const brainstormElicitSchema` — the s3 converged schema t1 extends. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t2's target src/workflow/runners/brainstorm/index.ts defines the elicit runner with finalizeElicit returning the retryable 'convergence-incomplete' error, which t2 extends with the 'ruled-out-not-recorded' set-difference check.",
-          "evidence": "src/workflow/runners/brainstorm/index.ts:88 `const finalizeElicit: StepRunnerFinalize`, :95 `code: 'convergence-incomplete'`, :106 `const elicit` — the runner + finalize gate t2 extends. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The elicit runner's finalize can return a retryable StepRunnerError, and resumeRun surfaces it without advancing state — the mechanism t2's new gate reuses.",
-          "evidence": "src/workflow/executor.ts:154 finalize: StepRunnerFinalize, :156 `if (result.type === 'error')` returns errorTick with retryable — finalize can return a retryable error surfaced without advancing state. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t3's target src/workflow/runners/brainstorm/__tests__/elicit.test.ts exists and drives the runner via startRun/resumeRun with ajv.",
-          "evidence": "src/workflow/runners/brainstorm/__tests__/elicit.test.ts imports startRun/resumeRun + ajv and asserts convergence-incomplete (:146) — the suite t3 extends. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "t2",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The sc2 boundary t2 leaves untouched — registerBrainstormRunners in workflow/index.ts — exists.",
-          "evidence": "src/workflow/index.ts:12 imports and :27 calls registerBrainstormRunners — the sc2 scaffold t2 leaves untouched. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-01T20:15:42.604Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-02T04:31:05.772Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2e1753318c22624ce66b6bbcba1e257bef333e46f8fca6e095bafea8286a3698",
+        "at": "2026-08-01T20:15:01.910Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T04:31:05.772Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-01T20:15:42.604Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

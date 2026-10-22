@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791952832811-h4d461",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-14T04:40:32.860Z",
+    "model": "claude:opus",
+    "elapsedMs": 36532,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0c845762241ba26c",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T17:14:15.800Z",
+    "epicSlug": "refuse-docs-request-scope-index-does",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "70862d693724e49770b5e514da93501f5fe701a142f98e9e7ed286a36e9c48dc",
+        "at": "2026-10-14T04:40:32.860Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "0c845762241ba26c",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+        "src/analyze/context/driver.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/analyze/context/driver.ts:375",
+            "message": "checkScopeState is changed: it now sends docs (and every other checked source) through ensureScopeQueryable instead of ensureNonEmptyClosure/ensureRepoQueryable. Its testsReaching edge list is empty, but that is because the grounding only sees the diff at file level. The new test in this Story's changed set, src/analyze/context/__tests__/run-shaper-wiring.test.ts:598 (\"runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold…\"), calls runShaper with shaperId 'docs'. It covers the cold path, the warm path (servedFromCache → checkScopeState) and the scopeChecked bypass, so this is not a missing test. No build record exists, so the test is present but its pass-state is unverified. Run the file under Node 22 to confirm it is green before completing the Story.",
+            "expectationRef": "checkScopeState (src/analyze/context/driver.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:376",
+            "message": "checkScopeState also changed for the data and infra sources: they used to go through ensureRepoQueryable and now go through ensureScopeQueryable(scope, shaperId). The only test in this Story's changed set covers the docs source. The changed set shows no test that confirms data or infra are still refused only for a repository under index, and not also for an empty closure. The same gap applies to the new early return for classification and generic. Pre-existing tests may cover this, but nothing in the provided evidence shows it, so coverage of this part is unverified.",
+            "expectationRef": "checkScopeState data/infra/generic branches",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:376",
+            "message": "checkScopeState now carries its own `classification`/`generic` early return, which repeats the exclusion checksScopeState already applies before every call site (the doc comment says these requests are 'never checked (checksScopeState)'). Two guards now encode the same rule and can drift apart. One option is to rely on checksScopeState alone. Another is to narrow the shaperId parameter type so the second guard is unnecessary.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/driver.ts:80",
+            "message": "driver.ts (the context layer) now imports ensureScopeQueryable from '../runtimes/shared/task-scope.js', so the context layer depends on the runtimes layer. If the old invariants.js helpers (ensureNonEmptyClosure / ensureRepoQueryable) are no longer called anywhere except through task-scope, check whether they are now dead exports or should be the single home of the per-source rule. This is a layering and tidiness concern, not a behaviour defect.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/analyze/context/__tests__/run-shaper-wiring.test.ts:604",
+            "message": "The new test registers the repository 'empty' through addRepo and never calls removeRepo. If other tests in this file share the sandbox registry, the leftover registration can change their scope resolution depending on run order. Wrapping the test body in try/finally with removeRepo would keep the test isolated.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 4
+    }
+  }
+}

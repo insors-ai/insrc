@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3a0b0609-2890-4cc4-b4c6-d5b9a7f9738d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.259Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Record the s9 hand-offs",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a98ff770a84d36ccf4c63aada9af3973a71e5c79ea068498dcd5ca10f8393680",
+        "at": "2026-10-22T12:43:22.260Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.260Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the s9 hand-offs",
+    "summary": "Add a section to docs/plans/core-data-model.md naming what s7 leaves for s9: creating Task heads for the Stories planned before s7 and then removing the two head-less fallbacks (the Plan's Task record and the BUILD record's per-task result) and the Plan's taskRefs fields, the PLAN document's task table rendered from the Tasks (Gap 11.4), and the revision-less build-round entries.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "The plans document names each s7 hand-off to s9",
+      "No code changes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "s7-handoffs.test.ts: the plans document names each s7 hand-off to s9"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

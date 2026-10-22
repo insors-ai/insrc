@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ae6dd689-ece2-4969-bb83-3e04fff86677",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.419Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Declare the envelope types and rename the build change log types",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2168bbc51c15a83e94d6dcd17a02f173275ea3874b63e0b21087a012fc77c750",
+        "at": "2026-10-22T12:43:20.420Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.420Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the envelope types and rename the build change log types",
+    "summary": "Add src/workflow/artifact-core/types.ts with the envelope, Actor, Reference, ChangeLogEntry, Feedback, SidecarRecord, RepoSchema, the error classes, and the sc4 Lifecycle family and sc6 TrackerBinding and Attachment exactly as the HLD defines them. Rename the provenance ChangeLogEntry and ChangeLog to FileChangeEntry and FileChangeLog and update their three consumers. Stored data does not change.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "the exported types accept the sc2, sc3, sc4 and sc6 sketches (with the stated anchor extension) and nothing else is exported from the new module",
+      "no production file refers to the old ChangeLogEntry or ChangeLog names and the build change log tests pass unchanged apart from the names",
+      "the repository type-checks"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/types-contract.test.ts: the exported types accept the sc2, sc3, sc4 and sc6 sketches and the stated anchor extension"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

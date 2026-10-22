@@ -7,7 +7,26 @@
     "updatedAt": "2026-10-15T12:16:34.103Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-15T10:06:05.580Z",
-    "epicSlug": "declare-documents-turn-presents-instead-parsing"
+    "epicSlug": "declare-documents-turn-presents-instead-parsing",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "7e3c7648b338e601aca4ccaa5d6acf8b15e651a931bb5d777ddbe00d9131b4be",
+        "at": "2026-10-15T11:32:13.593Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

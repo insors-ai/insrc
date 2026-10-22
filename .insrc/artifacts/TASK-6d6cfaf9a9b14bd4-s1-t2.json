@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-df736248-f0be-4e97-a415-19401919fbcd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.966Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Mirror the ProgressEvent declarations into the IDE fork's shared IPC types",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef986886c5ade688e1a8fcf3d4f4b0b7f630a8d849c8aad5d980d6bbd3d24d6b",
+        "at": "2026-10-22T12:43:42.966Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.966Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Mirror the ProgressEvent declarations into the IDE fork's shared IPC types",
+    "summary": "LLD migration step 3, pulled ahead of every behaviour change so the fork is not blocked on the daemon implementation. Copy the four new declarations (ProgressOperation, StageProgressEvent, TokenProgressEvent, ProgressEvent) verbatim into the IDE fork's mirrored copy of the shared IPC types, unreferenced by any fork code. This keeps the mirrored-types lock-step the IPC contract depends on and lets the fork compile against ProgressEvent before the daemon emits it. Strictly additive and independently rollbackable: no fork reader is changed here (that lands in t10), no daemon behaviour depends on it, and reverting the commit restores the fork exactly. Deliberately depends only on t1 — it must not wait on t3-t9.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "The IDE fork's mirrored IPC types contain the four declarations byte-identical to src/shared/types.ts, and the fork's typecheck/build passes with them landed and unreferenced.",
+      "No fork file other than the mirrored types module is modified; no fork code reads a ProgressEvent yet.",
+      "Reverting this single commit leaves the fork compiling exactly as before."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "fork-mirror-parity: the fork's mirrored declaration block is byte-identical to the src/shared/types.ts block and the fork typecheck passes with it landed and unreferenced"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

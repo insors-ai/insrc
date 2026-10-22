@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-13T16:35:51.093Z",
     "parentRef": {
       "slug": "complete-consistent-richer-code-index-one",
       "storyId": "s5"
+    },
+    "epicCreatedAt": "2026-10-13T16:34:09.820Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "17af09fb2b6f0a27e9d5b7a75979ddd3c4892e48589106d46e5ae30602569c4c",
+        "at": "2026-10-13T16:34:09.820Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-13T16:35:51.093Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

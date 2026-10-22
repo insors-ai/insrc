@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7600a7d8-fefe-49d4-8c40-65aff0d4b422",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:03.076Z",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b72686c1746af2b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add unit + integration tests for the companion-validation surface-and-retry",
+      "parent": {
+        "entityId": "STORY-9b72686c1746af2b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b72686c1746af2b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b72686c1746af2b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ada8737ac3f3cb052bcfde56f37eafaf2a8f503dd780696671bc806d7798c93c",
+        "at": "2026-10-22T12:44:03.076Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:03.077Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add unit + integration tests for the companion-validation surface-and-retry",
+    "summary": "Extend src/workflow/__tests__/diagram-companion-finalize.test.ts (node:test / tsx --test, assert/strict). Unit: firstCompanionValidationFailure over a HIGH-invalid er/ux/sequence/component definition each returns a retryable schema failure with non-empty details; over a valid, a MED/LOW-only, and a no-companion body returns undefined. Integration: drive finalizeDesignStory/finalizeDesignEpic (and the standalone-LLD path) with a HIGH-invalid companion -> {ok:false, failure:{kind:'schema', retryable:true}} and NO artifact written; the corrected (valid) body -> {ok:true} with the companion rendered + present in body.companions; an already-valid body -> {ok:true} with no failure/retry; a valid definition whose renderer throws DiagramGenerationError -> {ok:true} with that companion absent (infra-swallow preserved); and the author's definition JSON byte-identical after both a failed and a successful finalize.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Unit tests cover the gate over all four companion kinds (HIGH-invalid -> failure) plus the valid / MED-LOW-only / no-companion cases (-> undefined) [ac1, ac3]",
+      "Integration tests prove surface+retry with no artifact written [ac1], retry-then-render for a corrected definition [ac2], the no-regression valid path [ac3], and the byte-identical author definition [ac4]",
+      "An integration test proves the DiagramGenerationError infra path still resolves {ok:true} with the companion absent (infra-swallow preserved)",
+      "The full workflow test sweep (npx tsx --test 'src/workflow/**/*.test.ts') runs green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit: firstCompanionValidationFailure over a HIGH-invalid er/ux/sequence/component definition -> retryable schema failure with non-empty details"
+      },
+      {
+        "level": "unit",
+        "name": "unit: firstCompanionValidationFailure over a valid / MED-LOW-only / no-companion body -> undefined"
+      },
+      {
+        "level": "integration",
+        "name": "integration: finalizeDesignStory/Epic + standalone-LLD with a HIGH-invalid companion -> {ok:false, kind:'schema', retryable:true} and no artifact written"
+      },
+      {
+        "level": "integration",
+        "name": "integration: corrected (valid) body -> {ok:true}, companion rendered + present in body.companions"
+      },
+      {
+        "level": "integration",
+        "name": "integration: already-valid body -> {ok:true}, rendered, no failure/retry (no regression)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: valid definition whose renderer throws DiagramGenerationError -> {ok:true} with the companion absent (infra-swallow preserved)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: the author's companion definition JSON is byte-identical after a failed and a successful finalize (no machine rewrite)"
+      },
+      {
+        "level": "smoke",
+        "name": "smoke: npx tsx --test 'src/workflow/**/*.test.ts' runs green"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

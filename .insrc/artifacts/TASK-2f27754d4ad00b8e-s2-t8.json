@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8753d1b9-89be-437e-9c27-7947a3570a9d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.428Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the write side with the WriteJournal and recovery",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0de2507399c53ee57b415f78874c843db03070f44dec09465f7c7d4e3526d735",
+        "at": "2026-10-22T12:43:20.428Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.429Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the write side with the WriteJournal and recovery",
+    "summary": "Add ArtifactStore.write and the WriteJournal port (stage, pending, clear) with an in-memory journal and a named non-durable constructor. The journal stages the whole immutable ChangeLogEntry with the prepared head; write completes any pending operation first, then stages, appends the log entry, replaces the head and clears; recovery appends the staged entry idempotently even when the head already matches. Validate the parent and artifact-typed references and merge the prior meta, replacing only meta.envelope, meta.lifecycle and meta.revision.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "only a content change moves the revision, and a description change is content",
+      "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation under the same operation id with the log showing it once",
+      "a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+      "the store merges prior meta and a store write followed by workItemAnchorCreatedAt and the Define renderer returns the same results as before the write",
+      "external references are accepted and a bad parent or artifact-typed reference is refused"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: write then read round trip keeps the revision rule for every registered kind"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: only a content change moves the revision, and a description change is content"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a bad parent or artifact-typed reference is refused and external references are accepted"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/journal.test.ts: a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/artifact-core/__tests__/store-write.test.ts: a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

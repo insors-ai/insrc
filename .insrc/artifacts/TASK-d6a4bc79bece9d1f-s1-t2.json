@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e14e0eb0-f7a4-417a-ac4b-aa085ca38d65",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.862Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the file-backed session lock",
+      "parent": {
+        "entityId": "STORY-d6a4bc79bece9d1f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d6a4bc79bece9d1f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d6a4bc79bece9d1f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "36ccca84fef72a50d1f97090d74d04742b87b6d4e0c824090671242c80b9012a",
+        "at": "2026-10-22T12:44:42.862Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.862Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the file-backed session lock",
+    "summary": "In session-lock.ts, a file-backed registry layered on the in-memory one: on attach it writes ~/.insrc/chat-locks/<sessionId>.lock { sessionId, cliPid, hostPid, startedAt } (create-exclusive, rename on update) and removes it when the process exits. A waiter honours a file whose pid is alive (polling until it disappears or its pid dies), replaces a stale file (dead pid, or a start time that does not match startedAt) at once with a warning, and on timeout signals the recorded pid's process group only when its start time matches. Any fs failure falls back to the in-memory lock with one logged error. Seams: fs, isAlive, killGroup, processStartTime, lockDir, hostPid, pollMs.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A lock file whose pid is alive blocks a waiter in a second registry instance until the file is removed or the pid dies.",
+      "A file with a dead pid or a mismatched start time is replaced at once, and an unrelated process (start time mismatch) is never signalled.",
+      "On timeout a live cross-window holder's process group gets SIGTERM, then SIGKILL, and the lease is granted after its pid is gone.",
+      "An unwritable lock directory falls back to the in-memory lock with one logged error."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced"
+      },
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: on timeout a cross-window holder's group is stopped only when its start time matches"
+      },
+      {
+        "level": "unit",
+        "name": "session-lock.test.ts: an unwritable lock directory falls back to memory"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

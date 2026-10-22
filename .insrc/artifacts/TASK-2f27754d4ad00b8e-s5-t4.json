@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5fc077f2-e63c-4474-8092-1d9c8cbefa2a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.228Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Build the thread view over History",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "24a1acfdccfb57bcaf8e1707fc6107d5acf1b85d4279cf7f38f4362219a43acf",
+        "at": "2026-10-22T12:43:21.228Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.228Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the thread view over History",
+    "summary": "Add the feedback module (src/workflow/feedback/) with FeedbackThread and a pure builder that nests reply lines under their root by inReplyTo in the reader's (timestamp, id) order, returns a reply whose parent is missing as an orphan root, never lists a reply on its own, and marks a thread addressed from the log; add FeedbackService.threads(artifactId, { open }) over History.feedback, History.log and History.openFeedback.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "replies nest under their root in time-then-id order",
+      "an orphan reply is returned as an orphan root and never dropped",
+      "threads with open true returns only threads whose root no later update addressed, and a reply never appears as an open item itself",
+      "a reply added after its root was addressed leaves the thread addressed",
+      "feedback and log entries with one timestamp are ordered by the shared rule whichever file is read first"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "feedback-threads.test.ts: FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

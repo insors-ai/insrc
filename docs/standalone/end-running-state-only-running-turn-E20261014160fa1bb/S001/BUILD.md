@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-160fa1bb7a8604ad-S001 -->
+<!-- insrc:artifact BUILD-160fa1bb7a8604ad-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,5 +26,5 @@ Fix for ISSUE-160fa1bb7a8604ad. The host marks the done that closes an informati
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:06.368Z)
+- `.insrc/artifacts/BUILD-57a2ba4d5f18c356-s1.json` — **insrc-build** (2026-10-15T04:52:06.368Z)
 - `docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/BUILD.md` — **insrc-build** (2026-10-15T04:52:06.368Z)

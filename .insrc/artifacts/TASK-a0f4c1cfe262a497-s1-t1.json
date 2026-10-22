@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-96b4c1c9-876a-426f-8d4a-b67e3728f918",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.505Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Provenance vocabulary module (sc1 types)",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e38cbf60b34dfe5f407d2e9fc56b709f35f3aa1051cabd61013fdf38d4a6a8b",
+        "at": "2026-10-22T12:44:04.505Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.506Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Provenance vocabulary module (sc1 types)",
+    "summary": "Create src/workflow/artifacts/provenance/types.ts declaring ProvenanceTarget, ProvenanceAuthorship, FeedbackEntry, FeedbackRecord (and ChangeLogEntry/ChangeLog for s2 to consume later), verbatim from the sc1 sketch; attribution fields (author/timestamp) named to align with ArtifactModelAttribution without importing it. Purely additive, imported by nothing yet. Co-locate a small type-shape unit test.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "FeedbackEntry has id + author + timestamp + target{file,version?,segment?{startLine,endLine}} + comment + optional kind (k2)",
+      "types compile under strict/exactOptionalPropertyTypes; FeedbackRecord = readonly FeedbackEntry[]"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "provenance/types: a FeedbackEntry carries author+timestamp field-aligned with ArtifactModelAttribution (no review-type import) (ac5)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

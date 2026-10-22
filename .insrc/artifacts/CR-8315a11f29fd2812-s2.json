@@ -12,7 +12,26 @@
     "storyId": "s2",
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
-    "epicSlug": "chunked-review-pipeline-every-review"
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "0a8ad216de544ae4b6e7bfb0789efe927735cdf274656f1f0998827817c21cc7",
+        "at": "2026-10-20T16:10:55.227Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

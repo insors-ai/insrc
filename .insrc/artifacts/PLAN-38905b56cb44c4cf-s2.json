@@ -23,7 +23,34 @@
     "storyId": "s2",
     "lldRunId": "wf-1790251312157-sf22t7",
     "lldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
-    "approvedAt": "2026-09-24T12:31:36.091Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d589049c5faaba81af0411e7ec31f316f69c7a64d12b5dc70c6dcba0a72c2a3f",
+        "at": "2026-09-24T12:31:06.189Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T12:31:36.091Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2b4e166-812d-4a24-973d-c7b43f528e0a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.482Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s5",
+    "envelope": {
+      "description": "extension.ts wiring: enableScripts + detailRenderers + onMessage/postMessage bridge",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "54fbc07bcbfb5e40302ab3fa982a5facdd71bc656ba6337e4f5bd45a4913f1a5",
+        "at": "2026-10-22T12:43:30.482Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.483Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "extension.ts wiring: enableScripts + detailRenderers + onMessage/postMessage bridge",
+    "summary": "Amend vscode-plugin/src/extension.ts (sole vscode importer): pass detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } into createWebviewPanelHost; flip the PanelFactory's createWebviewPanel to enableScripts:true (shared factory — harmless for the script-less repo placeholder, which the shared CSP shell still covers, per s3); extend the returned PanelHandle with onMessage: (cb) => panel.webview.onDidReceiveMessage(cb) and postMessage: (m) => void panel.webview.postMessage(m). Uses the EXISTING vscode.d.ts shim members (no shim change). Remains the sole 'vscode' importer; no cloud path.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "extension.ts constructs the host with { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage",
+      "createWebviewPanel is created with enableScripts:true; extension.ts stays the sole 'vscode' importer and opens no cloud path",
+      "The existing onboarding/status/config-sync wiring + S004 panel behaviour are not regressed; no vscode.d.ts change needed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extension.ts constructs the host with detailRenderers { daemon: renderDaemonTab, workflows: renderWorkflowsTab } and binds the PanelFactory's onMessage->webview.onDidReceiveMessage + postMessage->webview.postMessage"
+      },
+      {
+        "level": "unit",
+        "name": "extension.ts creates the Detailed Status panel with enableScripts:true and the rendered shell carries a strict Content-Security-Policy meta + a per-render nonce on the only inline script (no unsafe-inline for arbitrary script)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

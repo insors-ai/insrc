@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-750326eb-d26a-486a-8c1c-765e6e081125",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.872Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add ResolvedTarget + ConfigSourceLayer shared types (reuse ExternalProtocol)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0faf7ee9fa2d883a15a4691ca90239f60b0250fa6a7027aaedbe01278841041f",
+        "at": "2026-10-22T12:43:58.872Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.873Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ResolvedTarget + ConfigSourceLayer shared types (reuse ExternalProtocol)",
+    "summary": "In src/shared/types.ts add `export type ResolvedTarget = { resolved: true; protocol: ExternalProtocol; identity: string } | { resolved: false; rawExpression: string }` and `export type ConfigSourceLayer = 'k8s' | 'docker' | 'envFile' | 'localConfig'`, reusing the existing ExternalProtocol (added by S001, types.ts:551). These are the sc2 shared vocabulary consumed by s3/s4/s5. Scaffold the new module dir src/indexer/target-resolution/ with an internal `type ConfigSourceMap = Map<string, { value: string; layer: ConfigSourceLayer }>` (not shared).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/shared/types.ts exports ResolvedTarget (discriminated on resolved) and ConfigSourceLayer with exactly the four members; ExternalProtocol is reused, not re-declared",
+      "src/indexer/target-resolution/ exists with the internal ConfigSourceMap type",
+      "tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "type-surface: ResolvedTarget discriminates on `resolved`; ConfigSourceLayer has exactly 'k8s'|'docker'|'envFile'|'localConfig' (frozen-vocabulary fixture); ExternalProtocol reused from S001"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

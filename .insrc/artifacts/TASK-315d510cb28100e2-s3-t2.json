@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b88dc75a-0e81-451c-80a7-9b444c7b5347",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.263Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Strict github.json reader and the serialised, verified writer",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f0cef8f8cf2e837daf8add1f922c03f59678af0bcfa7e31243317cf6f714381",
+        "at": "2026-10-22T12:43:25.263Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.264Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Strict github.json reader and the serialised, verified writer",
+    "summary": "Add readRepoEntry (strict level-by-level object validation, read and parse errors reported, missing file is empty), mergeRepoEntryKeys, and the daemon-side writeRepoEntryKeys: one in-process promise queue, read-validate-merge-temp write, verify size, mtime and content hash immediately before the rename with a bounded retry, write-failed and file-changed results, queue never left rejected. No lock file anywhere.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "readRepoEntry rejects every malformed level and names it, and accepts missing file, default, repos and entry",
+      "Concurrent writes for different keys all land and never overlap; a failing write does not stall the queue",
+      "A hook that changes the file after the temp write makes the writer re-merge from the new content, and after the bounded attempts return file-changed with nothing written",
+      "Temp-write and rename failures return write-failed with the operating-system message and leave the file as it was",
+      "Only the named keys change; default, other repos and unknown keys are preserved; null removes a key and is a no-op for an unset key"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: readRepoEntry rejects each malformed level and accepts missing parts"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: mergeRepoEntryKeys changes only the named keys"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: concurrent writes all land one at a time and a failure does not stall the queue"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: write-failed leaves the file and temp file as they were"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: verify step re-merges after an outside change and returns file-changed after the bounded attempts"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/config/__tests__/github-store.test.ts: an unwritable directory returns write-failed with the operating-system message"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

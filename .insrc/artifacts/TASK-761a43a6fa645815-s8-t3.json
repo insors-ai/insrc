@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f1725673-f4b8-4945-8c92-f6500638db96",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.686Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s8",
+    "envelope": {
+      "description": "handleCodeReviewStep handler + injectable deps + tool registration",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8658e33da4cf1641ea7df67d1f3e4d7b01c21ad36f83058b5eca333af20e038",
+        "at": "2026-10-22T12:43:48.686Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.686Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "handleCodeReviewStep handler + injectable deps + tool registration",
+    "summary": "Add src/mcp/code-review-step/handler.ts exporting handleCodeReviewStep(input: unknown, deps?: CodeReviewStepDeps): Promise<CodeReviewStepMcpEnvelope>, mirroring handleReviewStep (a phase switch inside one try/catch; a non-object/missing/unknown phase => errorResult). CodeReviewStepDeps is an injectable seam { resolveSubject, fetchGrounding, runReview, write } defaulting to the real impls (resolveCodeReviewSubject, fetchCodeReviewGrounding, runCodeReview, writeAtomic) so tests stub without a live daemon. phase='start' { epicHash, storyId, repo? }: resolve repo (param>INSRC_REPO); resolveSubject in-process => a {ok:false,reason} DECLINE returns next:'error' (code:'no-subject'); fetchGrounding over IPC => a reject/{ok:false} returns next:'error' (code:'grounding-unavailable'); saveState({subject,grounding,...}); return next:'emit_judgements' with the four build<Dim>Prompt payloads + a judgements schema PINNED to the per-dimension finding shape the four <DIM>_FINDINGS_SCHEMA define (a DimensionResult[] whose finding items require severity ∈ {HIGH,MED,LOW} + a `file:line` location + message; optional expectationRef/counterpartRef/confidence) + the grounding + the opaque token (critique 1). phase='judgements' { judgements, state }: loadState (unknown/expired => StateTokenNotFound => next:'error' code:'state-not-found'); VALIDATE the DimensionResult[] covers exactly {adherence,conventions,coverage,quality} well-formed — each finding.location a `file:line` string (contains ':'), severity in the enum (missing/empty/duplicate/unknown/malformed-finding/malformed-location => next:'error' code:'bad-judgements', NO write) (critique 1); APPLY the shared scope-drop (reuse the dimension modules' fileOf + subject.changedFiles filter) to the supplied DimensionResults BEFORE building the injected judges, so an out-of-changedFiles finding is dropped exactly as the daemon path does (ac3 parity, critique 2); drive runCodeReview(subject, dummyProvider, { runId, modelLabel:'client', ... }, INJECTED deps: judges return the matching scope-dropped supplied DimensionResult, assembleGrounding => saved grounding, write=writeAtomic); on outcome.ok:false => next:'error' code:'fold-failed' (no record); on ok => next:'done' { verdict, counts, path:paths.md, jsonPath:paths.json }. Register the tool in src/mcp/server.ts: an additive server.registerTool('insrc_code_review_step', { title, description, annotations:{readOnlyHint:false}, inputSchema:{ phase: z.enum(['start','judgements']), epicHash?, storyId?, repo?, judgements?, state? } }, async r=>handleCodeReviewStep(r)), a peer of insrc_review_step; import handleCodeReviewStep. getLogger not console.log; no Promise.all over a provider (the runner loops serially); .js imports + import type.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/mcp/code-review-step/handler.ts exports handleCodeReviewStep(input, deps?) dispatching start/judgements inside one try/catch; a non-object / missing phase / unknown phase => a next:'error' frame (never a throw)",
+      "phase='start' resolves the subject in-process (decline => next:'error' code:'no-subject', no verdict) + fetches grounding over IPC (unavailable => next:'error' code:'grounding-unavailable') + saveState + returns next:'emit_judgements' with the four build<Dim>Prompt payloads + a judgements schema PINNED to the per-dimension finding shape (severity enum + `file:line` location + message; optional refs) + the grounding + the opaque token",
+      "phase='judgements' loadState (unknown/expired => next:'error' code:'state-not-found'), validates the four-dimension DimensionResult[] with each finding.location a `file:line` string (missing/empty/duplicate/unknown/malformed-finding/malformed-location => next:'error' code:'bad-judgements', NO write — never a silent drop), then drives runCodeReview with injected deps; outcome.ok:false => next:'error' (no record); ok => next:'done' { verdict, counts, path, jsonPath }",
+      "the handler applies the SAME scope-drop as the daemon path (reuse the dimension modules' fileOf + subject.changedFiles filter) to the supplied DimensionResults before folding, so an out-of-changedFiles finding is dropped and the persisted record matches the daemon-driven record byte-for-byte (ac3/k2)",
+      "CodeReviewStepDeps is an injectable seam (resolveSubject/fetchGrounding/runReview/write) defaulting to the real impls so tests stub without a live daemon; the record is produced by the SAME runCodeReview (ac3/k2)",
+      "an additive server.registerTool('insrc_code_review_step', { inputSchema: phase/epicHash/storyId/repo/judgements/state }, handleCodeReviewStep) is added to src/mcp/server.ts (peer of insrc_review_step; no existing tool changed)",
+      "tsc --noEmit clean; getLogger not console.log; .js imports + import type; no Promise.all over the provider"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "start => next:'emit_judgements' with the four build<Dim>Prompt payloads + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "judgements turn resumes from the saved token to next:'done' and drives the SAME runCodeReview (injected deps) => { verdict, counts, path, jsonPath } (ac2/ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "the handler applies the shared scope-drop so an out-of-changedFiles finding is dropped (persisted record matches the daemon path, ac3/k2)"
+      },
+      {
+        "level": "unit",
+        "name": "start declines (no-subject) + grounding-unavailable => next:'error' with no state saved; the tool is registered under 'insrc_code_review_step' (compile-verified)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

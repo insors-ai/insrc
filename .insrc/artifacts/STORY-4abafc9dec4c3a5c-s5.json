@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-c392d01e-567b-4ca5-a2f1-d1bf08cbbd92",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.921Z",
+    "epicCreatedAt": "2026-10-11T14:49:40.821Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4abafc9dec4c3a5c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Export traceable guidelines while keeping projects and platforms isolated",
+      "parent": {
+        "entityId": "EPIC-4abafc9dec4c3a5c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "4e6f42c47d7d318891d73ca50620b146852056fc7cc3baec441343176887b10f",
+        "at": "2026-10-22T12:43:06.921Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

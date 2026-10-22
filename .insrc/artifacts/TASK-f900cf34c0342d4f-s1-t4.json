@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-571d3671-66d9-4cb2-b290-29e14e107eb8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.564Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the DebugPane into the app.tsx switcher (5->6 panes)",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b64607bd78276e7b19692cc1cec85bcebd9c9211721aa310a015ccbf352dacaf",
+        "at": "2026-10-22T12:44:57.564Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.565Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the DebugPane into the app.tsx switcher (5->6 panes)",
+    "summary": "In src/cli/app.tsx: import DebugPane; append 'Debug' to the TABS tuple (:33); widen the numeric keybind guard from `input <= '5'` to `input <= '6'` (:126); add `{pane === 5 && <DebugPane services={services} />}` to the render fragment (:142-146); and update the two literal '1-5' key-hint strings (the '?' toast :130 and the KeyHints array :152) to '1-6'. Tab/Shift-Tab cycling already keys off TABS.length so it is unchanged. Build note (s3 critique): land t4 together-with t5 in one increment so the tui.test.ts suite compiles at every committed step.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "TABS is the 6-tuple ending in 'Debug'",
+      "The numeric guard accepts '6' and selects pane index 5",
+      "The render fragment mounts DebugPane at pane === 5 passing the debug facade",
+      "Both '1-5' hint literals now read '1-6'",
+      "Existing panes (indices 0-4), their keybindings, and Tab cycling are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "tui.test.ts: App renders a 6th '6:Debug' peer tab in the tab bar"
+      },
+      {
+        "level": "integration",
+        "name": "tui.test.ts: pressing '6' selects the Debug pane and renders DebugPane; the previously active pane is hidden"
+      },
+      {
+        "level": "integration",
+        "name": "tui.test.ts: Tab-cycling from the last existing pane reaches Debug (TABS.length-driven wrap)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

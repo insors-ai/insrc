@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2ae33699-5951-4bc5-a132-0c2bc05bee10",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.955Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Register the insrc_docgen MCP tool",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "69b5a6d6d137a33abc869f3b4a313831e9f5420bc732aaf2d99618ff219986fc",
+        "at": "2026-10-22T12:43:54.955Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.956Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the insrc_docgen MCP tool",
+    "summary": "Add a new server.registerTool('insrc_docgen', ...) registration + handler in src/mcp/server.ts, following the existing per-tool-family pattern (analyze-step/, build-step/, etc.). The handler resolves the repo via resolveRepoPath, derives its inputSchema from the docgen.list IPC output via the t2 helper, and calls docgen.generate/docgen.list over the daemon socket only — it never imports generateDocument. Outcomes are shaped by DOCGEN_OUTCOME_SCHEMA / RENDERED_DOCUMENT_SHELL_SCHEMA (src/docgen/schema.ts), with non-ok/unreachable results returned as CallToolResult isError carrying an actionable reason. readOnlyHint=true, openWorldHint=false.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "src/mcp/server.ts registers 'insrc_docgen' with an inputSchema derived from the docgen.list IPC output via the t2 helper, not a hand-written list",
+      "the handler resolves the repo with resolveRepoPath and calls docgen.generate/docgen.list exclusively over the daemon IPC seam — no in-process import or invocation of generateDocument",
+      "a non-ok DocGenOutcome (source-not-ready/not-found/empty-scope/fallback-unavailable) is returned as a CallToolResult with isError=true and an actionable reason",
+      "a daemon-unreachable/rejected IPC call is caught and returned as isError rather than a fabricated document",
+      "an ok outcome is shaped by DOCGEN_OUTCOME_SCHEMA / RENDERED_DOCUMENT_SHELL_SCHEMA",
+      "a unit test asserts the MCP handler module imports only the daemon IPC client for docgen.generate/docgen.list and never imports generateDocument or any docgen extractor module directly"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "insrc_docgen handler resolves the repo via resolveRepoPath then calls docgen.generate/docgen.list over the IPC seam, never importing or invoking generateDocument in-process"
+      },
+      {
+        "level": "unit",
+        "name": "an ok DocGenOutcome from the seam is shaped by DOCGEN_OUTCOME_SCHEMA / RENDERED_DOCUMENT_SHELL_SCHEMA"
+      },
+      {
+        "level": "unit",
+        "name": "a non-ok outcome (source-not-ready/not-found/empty-scope) is returned as a CallToolResult isError carrying the reason"
+      },
+      {
+        "level": "unit",
+        "name": "a daemon-unreachable RPC rejection is caught and returned as isError rather than a fabricated document"
+      },
+      {
+        "level": "live",
+        "name": "insrc_docgen MCP tool returns an ok self-contained shell against a registered+indexed repo, matching docgen.generate IPC's result for the same request"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

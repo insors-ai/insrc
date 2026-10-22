@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-456ca8ec-e38b-483a-8f7f-326e0ef34d94",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.924Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Order open feedback, finish a staged write on inspect and refuse a write on a log ahead of its head",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a1ef3d01b08fd7e30df9d18322aa52f74bc1927698dfe12e082317211a6058c4",
+        "at": "2026-10-22T12:43:20.924Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.924Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Order open feedback, finish a staged write on inspect and refuse a write on a log ahead of its head",
+    "summary": "Give History.openFeedback the shared (timestamp, id) order; make LifecycleService.inspect finish a staged write under the artifact's queue before it reads; make ArtifactStore.write refuse an ordinary write when the log tail is ahead of the head's revision unless options.outcome.result is conflict-resolved.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a feedback entry and a log entry with the same timestamp are ordered by the shared rule whichever file is read first",
+      "inspect after a crash between the log append and the head replace reports an agreeing head and log",
+      "an ordinary write on an artifact whose log is ahead of its head is refused with LifecycleConflictError and a conflict-resolved write is accepted",
+      "the s2 and s3 store, lifecycle and recovery tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "history-order.test.ts: openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule"
+      },
+      {
+        "level": "unit",
+        "name": "journal-recovery-durable.test.ts: LifecycleService.inspect finishes a staged write before it reads"
+      },
+      {
+        "level": "unit",
+        "name": "journal-recovery-durable.test.ts: an ordinary write on an artifact whose log is ahead of its head is refused and a conflict-resolved write is accepted"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

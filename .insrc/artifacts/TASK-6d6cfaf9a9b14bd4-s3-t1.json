@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b8b513a4-dc3b-4f50-a8c0-ce2cb42ed00e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.424Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Decide both pending HLD amendments before any surface is designed",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "631eedbb3ba5aed9751b1c27a23a7273c319b92f2a162e4c5c57c02072f01783",
+        "at": "2026-10-22T12:43:43.425Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.425Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Decide both pending HLD amendments before any surface is designed",
+    "summary": "Decision-only gate. Record the HLD decision on the two pending sharedContract.methodAdd amendments against sc3 — `release(): void` and `onError(handler)` plus a named type for the daemon's `{ error: string; recoverable: boolean }` failure payload. This Task exists because the amendments determine the reader's member set and its error semantics: with them approved, DaemonProgressReader has five members and the error branch fires a handler; without, it has three and the error branch detaches silently. Deciding after the surface, decode path and unit suite are written would force rework of all three. No code is written here; the output is a recorded approved/rejected decision for each amendment, with the rationale, carried forward into t5 (member set), t9 (error-branch shape) and t16 (published record).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The release() amendment is recorded as approved or rejected — never left ambiguous or pending.",
+      "The onError() amendment, including the named failure-payload type, is recorded as approved or rejected.",
+      "The recorded decision states the resulting DaemonProgressReader member set explicitly, so t5 declares it once rather than relaxing it later.",
+      "The recorded decision states the resulting error-branch behaviour (silent detach vs onError dispatch), so t9 implements it once.",
+      "No file under src/ is modified by this Task."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "amendment-decision-record: both release() and onError() amendments carry an explicit approved/rejected verdict with the resulting sc3 member set and error-branch shape stated"
+      },
+      {
+        "level": "smoke",
+        "name": "no-src-diff: `git diff --stat src/` is empty for this Task"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

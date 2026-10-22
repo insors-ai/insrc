@@ -25,7 +25,34 @@
     "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "authoredBy": "controller",
     "rangeBase": "9d1bbf1a2f0d01e4bcaa843af7aab66e7c7fd5e4",
-    "approvedAt": "2026-10-21T04:28:40.672Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "548734705726b18ab8b0141151d10b9442e3ef1da02e3b8c4494f603ff86e8a5",
+        "at": "2026-10-20T16:20:42.775Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T04:28:40.672Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -455,28 +482,6 @@
         "coveredByTaskIds": [
           "t9"
         ]
-      }
-    ],
-    "feedback": [
-      {
-        "id": "9d47a246",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-20T18:00:07.782Z",
-        "target": {
-          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md"
-        },
-        "comment": "Amended 2026-10-20 by the stakeholder's decision after t2's third build gate. t2's check required a correction note on every re-issue, which conflicts with s1's approved rule: prepare lets one symbol fill the hard limit, and a correction that does not fit beside such a call is left out and logged, never cut. The check now follows s1: the reasons have a fixed size (a made-up value is located by count and position, never quoted back), so the correction is sent whenever the call has room; a call that already fills the limit is re-issued as planned with the omission logged, and a second invalid answer still fails the review. Also recorded: commit 581e1d76 (a t2 fix) changed quality's description reasons to the same fixed-size form for consistency, since every chunk validator lives in one module; that part belongs to t3's surface.",
-        "kind": "feedback"
-      },
-      {
-        "id": "872179b1",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-21T04:28:16.013Z",
-        "target": {
-          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md"
-        },
-        "comment": "Amended 2026-10-21: t7 follows the approved LLD on note ids (stakeholder option A, 2026-10-20): merge never rewrites a location; a gather finding located at an evidence note id is re-asked, then fails the review. The note-id expansion wording in t7 (check, summary, test name, coverage row) was missed when the LLD was amended; it is corrected here.",
-        "kind": "feedback"
       }
     ]
   },

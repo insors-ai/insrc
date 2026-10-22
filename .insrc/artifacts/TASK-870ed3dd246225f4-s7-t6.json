@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f30c5230-5f2b-4301-95b7-8ec1c041653e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.238Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Regression test: generation-time fallback unchanged",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b67dc13e6d4234f953ea1b314328d3b3cd3ba746891890b5b5b2704ece730744",
+        "at": "2026-10-22T12:43:55.238Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Regression test: generation-time fallback unchanged",
+    "summary": "Add or extend a unit test that, with the runtime cache reset and DOCGEN_ASSET_DIR pointed at an asset-less dir, confirms assembleShell still returns the existing sc4 fallbackUnavailable outcome (naming copy-assets) rather than throwing, and that loadRuntime's output is byte-identical for a given built tree after the ASSET_DIR/DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest extraction.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "With DOCGEN_ASSET_DIR pointed at a dir with no assets, assembleShell() returns the unchanged sc4 fallbackUnavailable outcome naming copy-assets instead of throwing",
+      "loadRuntime()'s resolved output is unchanged (same path, same memoized bytes) after the ASSET_DIR/DOCGEN_ASSET_DIR + resolveDocgenRuntimeManifest extraction"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleShell still returns sc4 fallbackUnavailable naming copy-assets when DOCGEN_ASSET_DIR has no assets, rather than throwing"
+      },
+      {
+        "level": "unit",
+        "name": "loadRuntime output is byte-identical for a given built tree after the ASSET_DIR→DOCGEN_ASSET_DIR extraction"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

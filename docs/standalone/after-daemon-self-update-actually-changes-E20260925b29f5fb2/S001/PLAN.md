@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-b29f5fb26f3bd9fe-S001 -->
+<!-- insrc:artifact PLAN-b29f5fb26f3bd9fe-s1 -->
 
 # Plan: E20260925b29f5fb2:S001
 

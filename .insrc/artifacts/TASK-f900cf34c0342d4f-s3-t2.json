@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-12948d73-3758-42c5-b3da-6e815a4fbcb0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.976Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Export DAEMON_ENTRY + pidFromFile for reuse",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "32451f09925a2435d77ab117a28bf85fd2d6eee7dbaac34817906a748b10c6b3",
+        "at": "2026-10-22T12:44:58.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.976Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export DAEMON_ENTRY + pidFromFile for reuse",
+    "summary": "Add `export` to the module-private DAEMON_ENTRY const (src/cli/services/daemon.ts:24) and pidFromFile function (src/cli/services/lifecycle.ts:20) so the debug service reuses the same resolved daemon-entry path + managed-pid read. Visibility-only; no behaviour change to existing callers.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "DAEMON_ENTRY is exported from daemon.ts (value unchanged)",
+      "pidFromFile is exported from lifecycle.ts (behaviour unchanged)",
+      "tsc compiles; existing daemon.ts/lifecycle.ts callers are unaffected"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "debug.ts imports DAEMON_ENTRY + pidFromFile — verified transitively by the scanOrphansWith/killOrphansWith unit suite compiling and the existing daemon/lifecycle suites staying green"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

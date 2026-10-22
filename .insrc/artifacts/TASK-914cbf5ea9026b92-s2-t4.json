@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b415515d-5df9-4cdf-b524-bdbfae7f5405",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.876Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Daemon-side resolve(repo, protocol, rawExpression) adapter + config-file discovery (incl. .env at-rest scan)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd28fcbee74c551abec4ee5ecfc1297c2cc86237b41ec392ba5a3508086ca60d",
+        "at": "2026-10-22T12:43:58.876Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.877Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon-side resolve(repo, protocol, rawExpression) adapter + config-file discovery (incl. .env at-rest scan)",
+    "summary": "In src/indexer/target-resolution/resolver.ts add the sc2 adapter resolve(repo, protocol, rawExpression): it discovers the repo's config source files by fetching kind==='config' entities via listEntitiesForRepo (src/db/entities.ts) and collecting their .file paths, PLUS scans the repo for .env* files at rest by path (which are NOT indexed — gitignore + IGNORE_SET, the confirmed gotcha), builds+memoizes the repo's ConfigSourceMap via buildConfigSourceMap, and delegates to resolveAgainst. Per-repo memoization keyed by repo so N call-sites share one build. Consumers import only resolve + the shared types.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "resolve(repo,protocol,expr) === resolveAgainst(builtMap,protocol,expr) for the same config sources (a resolved and an unresolved case)",
+      "the adapter discovers config files via listEntitiesForRepo(kind==='config').file AND reads repo-root/.env* at rest by path — proven by a dedicated integration test with a real .env fixture (the .env-not-indexed gotcha handled, never executed)",
+      "the built ConfigSourceMap is memoized per repo (one build shared across calls); an empty-config repo yields an empty map with no throw"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "adapter fetches kind==='config' entities via listEntitiesForRepo and builds a ConfigSourceMap equal to the hand-built one for the same bodies; resolve(repo,protocol,expr) equals resolveAgainst(builtMap,protocol,expr) for a resolved and an unresolved expression"
+      },
+      {
+        "level": "integration",
+        "name": "the .env source is available to resolution via the at-rest path scan (real .env fixture) even though .env is not indexed — read as text, never executed"
+      },
+      {
+        "level": "integration",
+        "name": "an empty-config repo yields an empty map: literals still pin, indirect exprs resolve unresolved, no throw"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

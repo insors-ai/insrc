@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-968d457e-cb1c-447c-83ef-9fa08a954d50",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:21.037Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Register daemon.update + daemon.updateOutcome handlers + ipc-client typing",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b6c90b3e0240d36c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a6a009173af67cf632b7323c377bbc10ff369a8299fe02112914e3dba78880eb",
+        "at": "2026-10-22T12:44:21.037Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:21.038Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register daemon.update + daemon.updateOutcome handlers + ipc-client typing",
+    "summary": "Wire the two thin handlers into the object-literal handler map in src/daemon/index.ts: daemon.update calls update-runner.launchUpdate() (via injected seams), returns { launched:true, message? }, then triggers the daemon's own shutdown() AFTER returning (injected so tests aren't killed); daemon.updateOutcome calls update-runner.readUpdateOutcome() and returns DaemonUpdateOutcome | null. Add the two typed client wrappers to src/shared/ipc-client.ts (as with status()). Handlers throw on the guard/resolve failures so the server frames result.error.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "'daemon.update' and 'daemon.updateOutcome' are entries in the src/daemon/index.ts handler map",
+      "daemon.update returns { launched:true } via the injected launch seam and does not exit the process in-test; a live-marker guard failure surfaces as a result.error envelope",
+      "daemon.updateOutcome returns the last DaemonUpdateOutcome or null",
+      "src/shared/ipc-client.ts exposes typed update() and updateOutcome() wrappers; daemon.status/sc2 is untouched",
+      "tsc clean across daemon + shared"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "daemon.update handler: via internals(server).handleMessage returns { launched:true } through the injected launch seam without exiting the test process"
+      },
+      {
+        "level": "integration",
+        "name": "daemon.update handler: a live-marker guard failure surfaces as a result.error envelope ('update already in progress') per the analyze-rpc.test.ts framing"
+      },
+      {
+        "level": "integration",
+        "name": "daemon.updateOutcome handler: returns the last DaemonUpdateOutcome, and null when no record exists"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -21,10 +21,38 @@
     "epicSlug": "mergewithprior-silently-erases-prior-only-meta",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-02T15:33:58.624Z",
     "parentRef": {
       "slug": "build-ledger-plan-driven-builds-today",
       "storyId": "s1"
+    },
+    "epicCreatedAt": "2026-10-02T15:33:13.725Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e15e369d2f9ec72fca1d459be64cf98a4c89b5814cbe011b1aa62b9afc63cb13",
+        "at": "2026-10-02T15:33:13.725Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-02T15:33:58.624Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -80,13 +108,13 @@
     {
       "id": "c8",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/BUILD-be8708a9cd20e286-S001.json — a committed record that looked anomalous when found during earlier planning and is in fact the ordinary output of two writes under this rule",
+      "ref": ".insrc/artifacts/BUILD-be8708a9cd20e286-s1.json — a committed record that looked anomalous when found during earlier planning and is in fact the ordinary output of two writes under this rule",
       "quotedText": "meta carries standalone:true with NO sizeClass key, alongside a plan-driven {commit, tasks} body — the shape left behind by an implement write followed by a validate write."
     },
     {
       "id": "c9",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/PLAN-93081bff91ae5108-S001.json — the approved plan this defect blocks: its t8 keys a converged renderer's title on meta.sizeClass, and its t9 expects omitting the standalone write to let the prior value survive",
+      "ref": ".insrc/artifacts/PLAN-93081bff91ae5108-s1.json — the approved plan this defect blocks: its t8 keys a converged renderer's title on meta.sizeClass, and its t9 expects omitting the standalone write to let the prior value survive",
       "quotedText": "t8: 'The title derives from meta.sizeClass, asserted against a record whose standalone is false but whose sizeClass is set'. t9: 'The shared validate persist does NOT write standalone at all — asserted on the persisted json'."
     },
     {

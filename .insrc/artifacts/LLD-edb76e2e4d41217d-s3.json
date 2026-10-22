@@ -24,93 +24,61 @@
     "hldBaseRunId": "wf-1790343836936-uhegob",
     "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "extension.ts wires createWebviewPanelHost with the vscode channel injected: it creates the panel and forwards onDidReceiveMessage/postMessage/onDidDispose in the deps literal (~extension.ts:305-328).",
-          "evidence": "read extension.ts:305 found; grep matched createWebviewPanel( at extension.ts:313 and panel.webview.onDidReceiveMessage at extension.ts:323 — the injected channel wiring is exactly where cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The host->webview postMessage is fire-and-forget: extension.ts calls panel.webview.postMessage(message).then(undefined, ()=>{}) so a post to a disposed panel cannot reject inward (~extension.ts:328).",
-          "evidence": "grep matched postMessage(message).then(undefined at vscode-plugin/src/extension.ts:328 (read found) — the fire-and-forget seam is confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The webview security shell (strict CSP script-src limited to a per-render nonce; script nonce == CSP nonce; fresh nonce per render) is asserted in panels/__tests__/webview-host.test.ts around lines 321-338.",
-          "evidence": "grep matched script-src 'nonce- and 'each render uses a fresh nonce' in panels/__tests__/webview-host.test.ts (read :327 found) — the CSP/nonce invariants exist as cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin reads config with vscode.workspace.getConfiguration().get(key) using the full dotted key (extension.ts:181) — the idiom the insrc.chat.enabled gate follows.",
-          "evidence": "grep matched getConfiguration().get( exactly once at extension.ts:181 (read found) — the config-read idiom the flag gate follows.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin persists extension-local state via vscode Memento (globalState/workspaceState) — the idiom sc4's memento-backed ChatSessionStore follows (extension.ts:162-163 lastSeen / :412-419 onboarded).",
-          "evidence": "grep matched globalState.(get|update) at extension.ts:162 and workspaceState.(get|update) at extension.ts:118 (read :162 found) — the Memento persistence idiom sc4 mirrors.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The consumed contracts already exist as shipped exports: sc1 renderTerminalStyle + surfaceClass (design-tokens.ts), sc2 TurnEvent (stream-events.ts), sc5 StreamAdapter/ProviderRegistry (cli-adapter.ts).",
-          "evidence": "renderTerminalStyle is a real export at vscode-plugin/src/chat/design-tokens.ts:174 (sc1 shipped, read found); StreamAdapter/TurnEvent exports resolve in the shipped S002 chat modules (grep counts include the code files beyond the docs). Consumed contracts exist.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc3/sc4/chat-panel modules (protocol.ts, session-store.ts, chat-panel.ts, createChatPanelHost, ChatSessionStore) are net-new — they do not yet exist in vscode-plugin/src/chat and the change is additive.",
-          "evidence": "createChatPanelHost / createMementoChatSessionStore / chat/protocol match ONLY under docs/ (the artifact), with no hit in vscode-plugin/src — confirming the sc3/sc4/chat-panel modules are genuinely net-new and the change is additive.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "An injected store-seam template (an interface with a memento-backed real binding + a volatile in-memory double) already exists as OnboardingStore, the pattern sc4 mirrors.",
-          "evidence": "OnboardingStore resolves (read onboarding/types.ts:1 found; 43 refs) — the injected store-seam template (memento binding + in-memory double) sc4 mirrors exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-25T16:04:30.003Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-25T16:25:02.077Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "379ef4225c48d225b293a5a3e94461bb5f61196b23f8b1dbcde1bb705c0f70e6",
+        "at": "2026-09-25T16:02:43.814Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-25T16:25:02.077Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-25T16:04:30.003Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

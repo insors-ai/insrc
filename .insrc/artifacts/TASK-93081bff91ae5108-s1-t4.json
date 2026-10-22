@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2edeca76-d18d-4325-a7c9-e238b8b62582",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.713Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Exclude the record's own artifact paths from BOTH derivations",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2a073245bf2b80c355f462f01b7ba99db6ebc84f357e2891f90894d531707d45",
+        "at": "2026-10-22T12:44:00.713Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.714Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Exclude the record's own artifact paths from BOTH derivations",
+    "summary": "Apply the exclusion list to the working-tree derivation AND the range derivation, and have the writers pass the record's own json and md paths. Deliberately separate from the range work because it fixes a defect that exists independently of which range is used: today the only dirty paths when the collector runs are the record's own files, so the change set is not merely empty but actively WRONG — it claims the Story changed BUILD.md. Keeping it its own task means a rollback of the range change cannot reintroduce it.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The exclusion is asserted SEPARATELY for the working-tree derivation and for the range derivation — an exclusion applied to only one is the bug half-fixed and must fail the suite",
+      "Only the record's OWN two paths are excluded; other artifacts under .insrc/artifacts and docs/ remain in the change set when the Story genuinely touched them",
+      "A test reproduces the exact observed state — the record's json and md dirty in the working tree — and asserts the derived change set contains neither",
+      "A Story that genuinely changed ONLY artifact files still yields a non-empty change set, proving the exclusion is path-specific rather than a blanket artifact filter"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the exclusion applies to the WORKING-TREE derivation — asserted on its own, because an exclusion on only one derivation is the bug half-fixed"
+      },
+      {
+        "level": "unit",
+        "name": "the exclusion applies to the RANGE derivation — asserted separately from the working-tree case"
+      },
+      {
+        "level": "unit",
+        "name": "ONLY the record's own two paths are excluded; other .insrc/artifacts and docs/ files survive in the change set"
+      },
+      {
+        "level": "integration",
+        "name": "the record's own json and md are DIRTY in a real repo and still excluded — the exact state that produced the observed wrong change set"
+      },
+      {
+        "level": "integration",
+        "name": "a Story whose commits touch ONLY artifact paths still yields a non-empty change set (docs-only edge case), proving the filter is path-specific"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

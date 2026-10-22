@@ -20,7 +20,35 @@
     "epicHash": "38905b56cb44c4cf",
     "epicSlug": "work-framed-approved-spec-proceed-from",
     "seededFromSpec": "d2ca9d399373a7bb",
-    "approvedAt": "2026-09-24T11:07:47.143Z"
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e974743bb119c1e04da1791e4a7d8256fb34b7cfc48d82e8ad7429b0e2e81fa3",
+        "at": "2026-09-24T10:32:18.030Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T11:07:47.143Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "new-capability",

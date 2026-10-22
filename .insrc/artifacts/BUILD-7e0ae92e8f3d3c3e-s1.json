@@ -6,8 +6,36 @@
     "createdAt": "2026-10-11T16:19:17.663Z",
     "updatedAt": "2026-10-12T04:44:26.808Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T04:44:27.101Z",
-    "epicSlug": "di1-open-source-design-corpus-retrieval"
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9e99d19fef1678343c177b181c81711571f48416407aa8f3de873f7152666918",
+        "at": "2026-10-11T16:19:17.663Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T04:44:27.101Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

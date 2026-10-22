@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d5f50ea1-8a62-4020-9ba9-a9b127328165",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.803Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Bugfix, issue and spec writers",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cd1b8c47937682ce33a58cf5ef586fc3346194b318e413c2fb0198d6d475030f",
+        "at": "2026-10-22T12:43:22.803Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.803Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bugfix, issue and spec writers",
+    "summary": "Move src/workflow/bugfix/stamp.ts, src/workflow/bugfix/mount.ts and src/workflow/artifacts/issue.ts to the lifecycle. Update src/workflow/__tests__/bugfix-orchestration.test.ts, bugfix-tracker.test.ts, issue-artifact.test.ts, spec-artifact.test.ts, spec-resolver.test.ts and spec-review-approve.test.ts.",
+    "size": "M",
+    "order": 31,
+    "acceptanceChecks": [
+      "The bugfix chain advances from a lifecycle approval",
+      "Issue and spec artifacts carry no legacy stamp"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval"
+      }
+    ],
+    "planTaskId": "t31"
+  },
+  "citations": []
+}

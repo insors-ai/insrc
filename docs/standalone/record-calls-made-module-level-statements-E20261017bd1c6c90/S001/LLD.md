@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-bd1c6c9005ff6390-S001 -->
+<!-- insrc:artifact LLD-bd1c6c9005ff6390-s1 -->
 
 # LLD: E20261017bd1c6c90:S001
 
@@ -194,7 +194,7 @@ The expression_statement part of a1 only.
 - **[[c3]]** `step-output` `s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)`
 - **[[c4]]** `step-output` `s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)`
 - **[[c5]]** `prior-artifact` `ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)`
-- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
+- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-s1 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
 
 ## 9. Open questions
 
@@ -212,4 +212,4 @@ The expression_statement part of a1 only.
 - **[[c3]]** `step-output` `s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)`
 - **[[c4]]** `step-output` `s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)`
 - **[[c5]]** `prior-artifact` `ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)`
-- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
+- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-s1 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`

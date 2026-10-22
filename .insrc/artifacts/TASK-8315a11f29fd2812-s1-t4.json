@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-050c156c-8d9d-45bb-9d9b-2aae22319328",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.232Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Cancellation reaches the call in flight",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8fd369ea99a395a79255c7b19841a85fb7c0c73e880928eba02f8b1672410a6c",
+        "at": "2026-10-22T12:43:51.232Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.233Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Cancellation reaches the call in flight",
+    "summary": "Add the optional signal to ProcessGroupOpts and aborted to ProcessGroupResult (kill the group on abort; an already-aborted signal spawns nothing). Forward StructuredCompletionOpts.signal and ReviewSessionOpts.signal through runSubprocess in CliProvider, throwing AbortError, never retried. Add the optional signal to CompletionOpts, and abort OllamaProvider.complete and completeStructured through a per-call fetch over the shared undici agent.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Aborting a CLI call or reviewer session kills its process group and throws AbortError at once.",
+      "An aborted Ollama complete or completeStructured throws AbortError.",
+      "Without a signal, behaviour is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

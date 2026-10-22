@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-940a2271-5aa3-49d6-9678-5bee475f000a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.505Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Implement the outbound half of the comment sync",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s8-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s8-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4ca871a198f8ce32e0bb37c6375c6c665a3fcd6cee8ab476fe9e68eca96dd8e9",
+        "at": "2026-10-22T12:43:22.505Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.506Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the outbound half of the comment sync",
+    "summary": "Extend src/workflow/tracker/comment-sync.ts: for each feedback entry of the artifact that has no source and no receipt, check the issue's comments for its marker <!-- insrc:feedback:<artifact id>:<feedback id> -->, post it with postComment when none is found (never when the list cannot be read), and append the revision-less receipt entry (operation update, outcome posted, data kind feedback-post) to the artifact's log.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Feedback entered here is posted once and its receipt is written; a second sync posts nothing",
+      "A post whose receipt was lost is found by its marker and recorded without a second post",
+      "An entry that came from the tracker is never posted back",
+      "A failed post writes no receipt and is retried on the next sync; an unreadable comment list posts nothing",
+      "A reply is posted once as its own comment naming the entry it replies to",
+      "A receipt moves no revision and does not break the integrity check"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "comment-sync-outbound.test.ts: feedback entered here is posted once and its receipt is written, a post whose receipt was lost is found by its marker and not posted again, and failures leave the call repeatable"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

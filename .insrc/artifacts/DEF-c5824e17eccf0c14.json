@@ -19,109 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "c5824e17eccf0c14",
     "epicSlug": "make-workflow-framework-s-generated-artifact",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderLldMarkdown is defined in src/workflow/artifacts/lld.ts around line 282 and is the per-type LLD markdown renderer.",
-          "evidence": "grep 'renderLldMarkdown' resolves in src (incl. src/workflow/artifacts/lld.ts and its test hld/lld-artifact suites); the analyze bundle placed the definition at lld.ts:282. Citation c3 holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The config key codeReview.enforce is declared in src/config/config-catalog.ts around line 90 as a boolean defaulting to false that enforces a blocking code-review verdict at Story completion.",
-          "evidence": "grep 'codeReview\\.enforce' resolves; the config row is declared in src/config/config-catalog.ts (line ~90) as the boolean completion-enforcement gate. Citation c4 holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The per-type markdown renderers exist: renderDefineMarkdown (artifacts/define.ts), renderHldMarkdown (artifacts/hld.ts), renderLldMarkdown (artifacts/lld.ts), renderPlanMarkdown (artifacts/plan.ts).",
-          "evidence": "grep confirms renderDefineMarkdown, renderHldMarkdown (hld-artifact.test.ts imports it from artifacts/hld.ts) and renderPlanMarkdown all resolve in src/workflow/artifacts. Citation c5's renderer inventory holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The approval gate function approveArtifactByJsonPath exists in src/workflow/gates.ts.",
-          "evidence": "grep 'approveArtifactByJsonPath' resolves (50 matches incl. gates.ts and downstream PLAN/HLD references). The approval-gate symbol exists. Citation c5 holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The code-review artifact validator validateArtifact exists in src/workflow/code-review/runner.ts around line 266.",
-          "evidence": "grep pins validateArtifact to src/workflow/code-review/runner.ts:266 (the function definition) with a caller at runner.ts:175 — exact line match to citation c5.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The path-scheme resolver resolveArtifactMdPath exists in src/workflow/path-scheme.ts, and the daemon template loader loadTemplate exists in src/daemon/artifacts/template-loader.ts around line 156.",
-          "evidence": "grep 'resolveArtifactMdPath' resolves (path-scheme); grep 'loadTemplate' pins the daemon loader to src/daemon/artifacts/template-loader.ts:156 — exact line match. Citation c5 holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A reusable docgen diagram-generation seam exists at src/docgen/registry.ts.",
-          "evidence": "The read of src/docgen/registry.ts:1 succeeded (file exists) and 'docgen' resolves widely; the reusable diagram-generation seam exists. Citation c8 holds.",
-          "action": "No change — citation verified against source.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The seams this Epic modifies (per-type renderers, synthesizer, approval/validation gates, path-scheme, template loader) all already exist in the tree, so the work is an enhancement of shipped code rather than a new subsystem.",
-          "evidence": "The renderers resolve in src/workflow/artifacts and the read of src/workflow/synthesizer.ts:1 succeeded — the modified seams all pre-exist, supporting the enhancement flavor.",
-          "action": "No change — closed-union (seams pre-exist) verified.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The Stories form an acyclic linear dependency chain: S002 depends on S001, S003 depends on S002, S004 depends on S003.",
-          "evidence": "The DEF's Stories declare Depends on: S002→S001, S003→S002, S004→S003 — a strictly linear, acyclic chain. Ordering claim holds.",
-          "action": "No change — dependency graph is acyclic.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-27T14:38:55.786Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-27T14:41:17.290Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "80640773f83cc6250c8f4f4013dd4869fd4bbd67ff52b180384da26e9bfb2dd6",
+        "at": "2026-09-27T14:36:39.039Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-27T14:41:17.290Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-27T14:38:55.786Z",
+        "report": {
+          "entityId": "DEF-c5824e17eccf0c14",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-c5824e17eccf0c14-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

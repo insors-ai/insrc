@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791794641825-dcwpsw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-12T08:44:01.826Z",
+    "model": "claude:opus",
+    "elapsedMs": 40488,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b4b6b835f29fab99",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-12T08:20:37.247Z",
+    "epicSlug": "type-check-plugin-project-build-gate",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "43a603269fe6aa8d1526b7e709f7b4fbea56f585d80f99a2e32c7ccd1b207b26",
+        "at": "2026-10-12T08:44:01.826Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b4b6b835f29fab99",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/build-step/__tests__/build-step.test.ts",
+        "src/mcp/build-step/__tests__/validation-checks.test.ts",
+        "src/mcp/build-step/phases/validate.ts",
+        "src/mcp/build-step/validation-checks.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/mcp/build-step/__tests__/validation-checks.test.ts:157",
+            "message": "Tests are present but failing/unverified: no build record was supplied, so their pass-state cannot be confirmed. The empty testsReaching edges on the Story's changed symbols (withTypecheckProjects, owningTypecheckProjects, changedFiles, runTypechecks, runOne, runValidateSession) are a graph artefact, not a gap: the graph does not record calls made from anonymous it() bodies. A text search of the test files shows the tests exist: owningTypecheckProjects is asserted at validation-checks.test.ts:157; withTypecheckProjects (and through it changedFiles) at :169-197; runTypechecks/runOne through runValidationChecks with typecheckProjects at :206-229; and the runValidateSession wiring through handleBuildStep at build-step.test.ts:1664-1671. No not-exercised gap is reported; run the suite to confirm these pass.",
+            "expectationRef": "withTypecheckProjects / owningTypecheckProjects / changedFiles / runTypechecks",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

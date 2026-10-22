@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09c23d7e-6db6-4d74-858f-e05d2bc452d8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.227Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Switch the unscoped label branch from counting epics to keeping candidates that resolve",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f64a7ea4014991d0b34e7306a6f0837b971d2a235b0a6c88d6ec06ff2553c310",
+        "at": "2026-10-22T12:43:49.227Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.227Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Switch the unscoped label branch from counting epics to keeping candidates that resolve",
+    "summary": "The reported defect's fix. resolveByLabel's unscoped branch stops reading `hashes.length !== 1` and instead attempts a reference per enumerated candidate, resolving when exactly one succeeds and refusing on zero or more than one. The enumeration is UNCHANGED — deduped, DEF-anchored first, ISSUE-anchored after — so a bugfix definition artifact stays a full epic peer and is not demoted; it simply cannot evidence a story it does not have. No separate containment notion: candidate selection and reference construction are the same operation. The explicit-epicHash branch keeps prefix-match semantics and inherits t3's verification. This task makes the two tests encoding today's behaviour go RED; they are rewritten at t5, not here, so review sees the behaviour change and the test rewrite as separate acts.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "t1's (a) turns GREEN — the mirror direction of the reported defect resolves",
+      "t1's (e) turns GREEN — two feature epics, only one containing the label, resolves. CRITIQUE APPLIED: this is now a check t4 must SATISFY, written red at t1, rather than a claim t4 introduces",
+      "Two feature epics that BOTH contain the label still refuse when unscoped — genuine ambiguity still refuses",
+      "The explicit-epicHash branch still resolves via prefix-match, and still verifies the story",
+      "listEpicHashes is NOT narrowed: membership and ordering byte-identical, pinned so a later reader cannot mistake this for the rejected alternative a2",
+      "id-resolve.test.ts:459 and tracker.test.ts:283's multi-epic arm are RED at the end of this task, and left red",
+      "MUTATION PROOF, run and recorded: restoring the count rule turns t1's (a) and (e) red again"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "genuine ambiguity still refuses: two feature epics BOTH containing s1, unscoped → null"
+      },
+      {
+        "level": "integration",
+        "name": "a bugfix-only repo — `S001` refuses unscoped because every ISSUE epic has one, and resolves with an explicit scope"
+      },
+      {
+        "level": "unit",
+        "name": "listEpicHashes membership and ordering stay byte-identical — pins that the ISSUE was NOT demoted and this is not alternative a2"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF: restoring the `hashes.length !== 1` count rule turns t1's (a) and (e) red again"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3948869e-253f-4f14-81a5-29e3469571c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:22.390Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Build the VS-Code-free daemon-freshness flow module + its seam types",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a9e57a214eff806a3ca26f8a9322c9086f73787b3aa6b19ccfe5141879ef73b0",
+        "at": "2026-10-22T12:44:22.390Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:22.391Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the VS-Code-free daemon-freshness flow module + its seam types",
+    "summary": "New module vscode-plugin/src/freshness/daemon-freshness.ts exporting runDaemonFreshnessCheck(deps: DaemonFreshnessDeps): Promise<void> + the seam types DaemonFreshnessDeps / FreshnessNotify / PluginVersionState. The flow (all over injected seams, NO vscode import): opportunistic reachability gate (skip unless client.reachability()==='running'); read client.status().installedCommit (sc2, skip if ''); compute upstream via deps.gitLsRemote(daemonRoot, branch) (skip if ''/throws/equal — up to date); branch on versionState.current!==getLastSeen() → self-update (auto client.update(), notify-after, no prompt) vs startup-check (notify('Update','Dismiss'), client.update() only on 'Update'); after update() a bounded reconnect-and-confirm polling client.updateOutcome()/status().installedCommit under reconnectBudgetMs → success notify or a SINGLE failure notify with the raw error (no retry/rollback); ALWAYS setLastSeen(current). Wrapped in an outer try/catch so it NEVER rejects. Consumes sc1 client.update()/updateOutcome() — NOT controller.run('update') (k2).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "runDaemonFreshnessCheck + DaemonFreshnessDeps/FreshnessNotify/PluginVersionState exported from vscode-plugin/src/freshness/daemon-freshness.ts with NO vscode import",
+      "reachable + drift + current===lastSeen → notify('Update','Dismiss'); client.update() called ONLY on 'Update'; unreachable/''-commit/equal-commit/ls-remote-fail → skip (no notify, no update)",
+      "current!==lastSeen + drift → client.update() with NO prompt (notify-after)",
+      "after update(): bounded reconnect-confirm via updateOutcome()/status(); success → success notify; update() reject OR updateOutcome().state==='failed' OR no commit advance in budget → exactly one failure notify with the raw error, no retry",
+      "setLastSeen(current) on every terminal path; the function never rejects (outer try/catch); calls client.update() (sc1), never controller.run('update') / daemon-ctl.sh (k2)",
+      "tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "daemon-freshness: reachable + drift + current===lastSeen -> notify('Update','Dismiss') shown; client.update() ONLY on 'Update', NOT on 'Dismiss'/undefined"
+      },
+      {
+        "level": "unit",
+        "name": "daemon-freshness skip paths: unreachable -> no notify/no update; installedCommit==='' -> skip; installedCommit===upstream -> skip; gitLsRemote ''/throws -> skip"
+      },
+      {
+        "level": "unit",
+        "name": "daemon-freshness self-update: current!==lastSeen + drift -> client.update() with NO prompt (notify-after), setLastSeen(current) recorded"
+      },
+      {
+        "level": "unit",
+        "name": "daemon-freshness reconnect-confirm success: after update() polled status().installedCommit advances / updateOutcome().state==='succeeded' -> success notify"
+      },
+      {
+        "level": "unit",
+        "name": "daemon-freshness failure: update() rejects OR updateOutcome().state==='failed' OR no commit advance in budget -> exactly ONE failure notify with the raw error, no retry, no second update()"
+      },
+      {
+        "level": "unit",
+        "name": "daemon-freshness never-throws: a throwing seam is swallowed by the outer backstop; runDaemonFreshnessCheck resolves; setLastSeen(current) called on every terminal path"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

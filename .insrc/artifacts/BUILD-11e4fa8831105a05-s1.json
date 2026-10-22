@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "11e4fa8831105a05",
+    "storyId": "s1",
+    "createdAt": "2026-10-04T12:52:39.593Z",
+    "triageRationale": "Approved small bugfix (issue -> build): one fold branch drops out-of-scope findings without recording it; the fix adds disclosure only.",
+    "updatedAt": "2026-10-04T13:03:17.329Z",
+    "epicSlug": "controller-code-review-silently-discards-every",
+    "epicCreatedAt": "2026-10-04T05:13:54.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b4c00a67c7bbdcb63de39f5527391fb52f2e4b7121f8a3399bca667e586e433c",
+        "at": "2026-10-04T12:52:39.593Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T13:03:17.426Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Fix ISSUE-11e4fa8831105a05: code-review findings whose file is outside the Story's changed set are dropped in silence. Keep the filter, but make every scope-drop visible: recorded per dimension on the persisted code-review record (and rendered in CR.md), reported on the insrc_code_review_step response, and logged. The verdict and counts must not change.",
+    "producesLld": false,
+    "commit": "09d06cb",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "The controller code-review path still filters out findings whose file is outside the changed set, but no longer discards them: each dimension carries its dropped findings verbatim as outOfScope on the record, CR.md lists them and says they are not counted, and the insrc_code_review_step response reports scopeDropped (total, per dimension, changed-set size) with a warn log. Verdict and counts are unchanged, and a record with no drops is byte-identical. 4 tests added; 13 mutations each turn them red. The daemon-driven dimension judges apply the same filter and remain silent.",
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-11e4fa8831105a05.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-04T12:56:56.487Z"
+      }
+    ]
+  }
+}

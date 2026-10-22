@@ -28,144 +28,6 @@
       "AMD-315d510cb28100e2-4"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "warn",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S1 covers the upstream tracker capability checks, extraction and distinct missing-tool/sign-in errors.",
-          "evidence": "DEF S001 ac1–ac4 require successful capability-checked loading, refusal naming missing capabilities, GitHub parity and distinct tool/sign-in errors. HLD §5.1 assigns extraction and the timeout to s1. The proposed loader, adapter, runner and migration cover those responsibilities. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Retain this scope.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The two compatibility exceptions have upstream authorization to relax ac3 and k4.",
-          "evidence": "DEF still says results are 'the same as before' and a policy-free repo behaves 'exactly as it does today'. HLD requires a 10-second timeout, but the reviewed documents do not establish acceptance of both exceptions. This LLD itself lists acceptance as an open question. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Record explicit acceptance of the exceptions in the upstream contract before implementation.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Typed creation currently retries after every typed-attempt failure, and label lookup conflates failure with absence.",
-          "evidence": "ghCreateIssueTyped wraps both execution and parsing in an unconditional catch before the untyped POST: 'catch { /* org may not have issue types — fall through untyped */ }'. ghFindIssueByLabels uses 'catch { return undefined; }' and selects '.[0].number'. The shared execution helpers currently supply no timeout. [files: src/workflow/tracker/github.ts]",
-          "action": "Preserve the stated baseline in regression tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The documented configuration precedence matches current valid configuration behavior.",
-          "evidence": "resolveGithubConfig checks the repo entry before default. resolveEntry receives allowEntryTarget=false for default, accepts an own owner/repo pair without type, and uses gitOriginOwnerRepo for explicit type github without a complete target. Explicit none disables integration. [files: src/workflow/config/github.ts]",
-          "action": "Keep strict validation separate from this lenient resolver.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The port is new, while its detailed issue result and synchronous execution seam already exist with the stated shapes.",
-          "evidence": "Source searches found no existing TrackerPort or PortResult implementation. github.ts defines CreatedIssue with readonly ref:string, id:number and typed:boolean. TrackerExec accepts readonly argv and optional ExecFileSyncOptions; _setTrackerExecForTests replaces the shared executor. [files: src/workflow/tracker/github.ts]",
-          "action": "Reuse or re-export CreatedIssue consistently rather than maintaining duplicate definitions.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The migration inventory includes the production callers of the moved wrappers and preserves bugfix dependency signatures.",
-          "evidence": "Repository-wide searches locate these callers in tracker-auto.ts, bugfix/tracker.ts, questions.ts and setup.ts, plus listMyOpenTasks inside github.ts. Reading the implementations confirms readonly create labels, numeric childId, both optional factory options, and createBugfixTrackerIssue passing created.id to linkToParent. No additional production callers of queryTasks or ghCurrentLogin were found outside github.ts. [files: src/workflow/tracker-auto.ts, src/workflow/bugfix/tracker.ts, src/workflow/questions.ts, src/workflow/tracker/setup.ts, src/workflow/tracker/github.ts]",
-          "action": "Use this inventory for migration regression coverage.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S1 can retain existing stored tracker records without a migration.",
-          "evidence": "TrackerMeta stores optional string references and reference maps. readTrackerMeta returns the existing nested block; patchTrackerMeta merges '{ adapter: \"github\", ...prior, ...patch }'. The proposed port retains string IssueRef and leaves these writers and fields unchanged. HLD assigns units and revision additions to s4. [files: src/workflow/tracker/refs.ts, src/workflow/tracker-auto.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Pin existing record contents in the proposed parity tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design preserves the HLD sc1 signatures and has a durable supersession record for the competing abstraction.",
-          "evidence": "HLD §4.1 has the same synchronous loader and seven port methods; issueOps is explicitly proposed as an addition. HLD assigns policy reading to s2 and orchestration/revisions to s4. The earlier LLD contains 'Superseded (2026-10-17)' and 'Do not build from this document', naming this s1 port as the sole abstraction. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md]",
-          "action": "Carry the proposed issueOps amendment into the shared contract before dependent stories implement against it.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Throwing on failed port results, with the three documented exceptions, preserves the inspected legacy caller failure behavior.",
-          "evidence": "linkToParent catches link errors and returns false; closeBugfixTrackerIssue closes before returning closed and has no close catch. Relink recovery records then closes, while undefined lookup returns 'relink-by-label found no matching issue'. Epic adoption occurs before its create catch. questions.ts catches comment failures. ghCreateLabel returns false on any error, and ghEnsureMilestone swallows creation errors. [files: src/workflow/bugfix/tracker.ts, src/workflow/tracker-auto.ts, src/workflow/questions.ts, src/workflow/tracker/github.ts, src/workflow/tracker/setup.ts]",
-          "action": "Keep unwrapping inside the existing catch boundaries, as designed.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each S001 acceptance criterion has a proposed test mapping supported by the existing test seam.",
-          "evidence": "DEF S001 ac1–ac4 map respectively to loader success, capability refusal, operation/caller parity and tool/sign-in classification tests in §6. TrackerExec exposes execution options needed to inspect timeout settings. Existing tasks tests assert the empty-login error, and bugfix tests cover link failure, close propagation and relink recovery. These are planned tests, not verified implementation results. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, src/workflow/tracker/github.ts, src/workflow/tracker/__tests__/tasks.test.ts, src/workflow/__tests__/bugfix-tracker.test.ts]",
-          "action": "Implement the mapped tests and run the affected suites; this review did not execute tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-17T09:55:06.379Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-17T10:09:50.333Z",
     "questionResolutions": {
       "qcf73b12e": {
         "question": "Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.",
@@ -202,14 +64,68 @@
         "resolvedAt": "2026-10-17T10:23:09.273Z"
       },
       "q6051ee2a": {
-        "question": "The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.",
+        "question": "The companion design LLD-9a7bbe63297457c2-s1 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-s1; it needs its own decision.",
         "status": "deferred",
-        "rationale": "The companion LLD-9a7bbe63297457c2-S001 needs its own decision outside s1's plan.",
+        "rationale": "The companion LLD-9a7bbe63297457c2-s1 needs its own decision outside s1's plan.",
         "resolvedAt": "2026-10-17T10:23:24.719Z"
       }
     },
-    "staleAckedAt": "2026-10-17T10:23:44.097Z",
-    "staleAckedReason": "The HLD change since approval is AMD-8 (sc1 issueOps), which this LLD itself proposed and already designs against; no redesign needed."
+    "staleAckedReason": "The HLD change since approval is AMD-8 (sc1 issueOps), which this LLD itself proposed and already designs against; no redesign needed.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "617a566d3bf0e503534ba301f838ef51f9b46540826f0de3a06696a49ef4aba6",
+        "at": "2026-10-17T09:55:02.552Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T10:09:50.333Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-10-17T09:55:06.379Z",
+        "report": {
+          "entityId": "LLD-315d510cb28100e2-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-315d510cb28100e2-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -217,7 +133,7 @@
       "audience": "technical"
     },
     "hldContextSlice": {
-      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
       "ownedContracts": [
         {
           "id": "sc1",
@@ -240,7 +156,7 @@
           "sc1"
         ],
         "depends": [],
-        "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+        "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-s1 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
       },
       "adjacentBoundaries": [
         {
@@ -805,7 +721,7 @@
       {
         "contractId": "sc1",
         "role": "implements",
-        "howDetails": "s1 owns sc1 and implements the sketch exactly. GitHub declares claim and issue-create only; signoff-request and completion are undeclared so loadTracker refuses a policy that needs them, and the signoff methods return rejected without a tracker call. To deliver the HLD's full extraction scope, s1 proposes one additive amendment: the issueOps field (sharedContract.fieldAdd, breaking false); the sketch methods are unchanged so s4, s5 and s7 are unaffected. Supersession: the owner decided in chat on 2026-10-17 that s1 supersedes the unbuilt tracker-tool LLD-38436e90625a83a2-S001 (approvedAt unset). The durable record is the 'Superseded (2026-10-17)' note under that LLD's title in docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, which settles the conflicting approval status the HLD names; its companion LLD-9a7bbe63297457c2-S001 needs its own decision. sc1 is the one tracker abstraction."
+        "howDetails": "s1 owns sc1 and implements the sketch exactly. GitHub declares claim and issue-create only; signoff-request and completion are undeclared so loadTracker refuses a policy that needs them, and the signoff methods return rejected without a tracker call. To deliver the HLD's full extraction scope, s1 proposes one additive amendment: the issueOps field (sharedContract.fieldAdd, breaking false); the sketch methods are unchanged so s4, s5 and s7 are unaffected. Supersession: the owner decided in chat on 2026-10-17 that s1 supersedes the unbuilt tracker-tool LLD-38436e90625a83a2-s1 (approvedAt unset). The durable record is the 'Superseded (2026-10-17)' note under that LLD's title in docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, which settles the conflicting approval status the HLD names; its companion LLD-9a7bbe63297457c2-s1 needs its own decision. sc1 is the one tracker abstraction."
       }
     ],
     "errorPaths": {
@@ -1187,7 +1103,7 @@
       "Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.",
       "s1 now edits the tracker-auto call sites that s4 later refactors (shared issue-creation code, find-by-label dedupe). The split is: s1 switches the calls mechanically with no change to labels, order or persisted TrackerMeta; s4 refactors the orchestration afterwards on top of the port (it depends on sc1). s4's LLD should cite this.",
       "The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.",
-      "The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.",
+      "The companion design LLD-9a7bbe63297457c2-s1 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-s1; it needs its own decision.",
       "GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.",
       "The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration."
     ]

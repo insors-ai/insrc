@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c0207d97-b3d0-4b4a-af31-a453112b95a5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.254Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "storyChangeSet attributes commits by the Story trailer",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c3d561b90c3dccb15d9de422488cd66d4e2c950c1330c4e3b254546515a5f60",
+        "at": "2026-10-22T12:44:18.254Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.255Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "storyChangeSet attributes commits by the Story trailer",
+    "summary": "Give storyChangeSet (src/workflow/runners/build/story-commits.ts:82-128) an optional storyKey: keep only non-merge commits whose message carries `Insrc-Story: <storyKey>` plus merge edits; return attribution 'story-trailer' | 'first-parent-range' and sharedWithExcluded (Story paths an excluded commit also changed); fall back to today's set when no commit carries the trailer or reading trailers fails; warn on untrailed commits whose subject names the Story's build format; update the module header's limits (octopus exception kept).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Without storyKey the units and paths equal today's exactly.",
+      "With storyKey, another Story's interleaved commits contribute no unit; two standalone S001 Stories are told apart.",
+      "With no trailered commit, or when trailer reading fails, the result is today's with attribution 'first-parent-range'.",
+      "sharedWithExcluded lists the Story's paths an excluded commit also changed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'two standalone Stories both S001 are told apart by the trailer's epicHash'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/story-commits.test.ts (existing, still passes)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

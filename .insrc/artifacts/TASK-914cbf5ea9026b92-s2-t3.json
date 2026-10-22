@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-97bc891e-6f79-402e-869a-4bc0509f62a3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.875Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Pure resolution core resolveAgainst(map, protocol, rawExpression)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b40cfccd44544193c71b2351712103312bd8d1ba72c03bdf8e1bacec4fe12ce",
+        "at": "2026-10-22T12:43:58.875Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.876Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure resolution core resolveAgainst(map, protocol, rawExpression)",
+    "summary": "In src/indexer/target-resolution/resolver.ts write the PURE core resolveAgainst(map: ConfigSourceMap, protocol: ExternalProtocol, rawExpression: string): ResolvedTarget: a literal (no ${...}) resolves {resolved:true, protocol, identity=literal} with no lookup; an interpolation is expanded against the map with a bounded max-depth + cycle detection; if every referenced key pins to a concrete value => {resolved:true, protocol, identity}; a missing key, a partial pin, or a non-terminating chain => {resolved:false, rawExpression}. No graph/fs dependency — pure over its args, deterministic.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a literal resolves true with identity=the literal; a fully-pinned interpolation resolves true with the substituted identity",
+      "a missing key OR a two-key expr with one key missing => {resolved:false, rawExpression} (no partial pin)",
+      "a cyclic / over-deep interpolation terminates (bounded depth + cycle set) and returns {resolved:false, rawExpression}",
+      "resolveAgainst has no import of the db/graph or fs — pure over (map, protocol, rawExpression)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a concrete literal rawExpression resolves {resolved:true, protocol, identity=literal} with no map lookup"
+      },
+      {
+        "level": "unit",
+        "name": "an interpolation referencing a key present only in localConfig resolves from the default"
+      },
+      {
+        "level": "unit",
+        "name": "a two-key interpolation where one key is missing returns {resolved:false, rawExpression} (no partial pin, k5)"
+      },
+      {
+        "level": "unit",
+        "name": "a cyclic / over-deep interpolation chain terminates and returns {resolved:false} (bounded depth + cycle detection)"
+      },
+      {
+        "level": "unit",
+        "name": "protocol is carried through onto a resolved identity for http/messaging/rpc without shape validation"
+      },
+      {
+        "level": "unit",
+        "name": "precedence via resolveAgainst: a key defined in k8s + envFile + localConfig resolves to the k8s value; k8s+docker resolves to k8s (deploy-time tie-break); envFile beats localConfig (ac1)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-dd277f9cddd6d879-S001 -->
+<!-- insrc:artifact BUILD-dd277f9cddd6d879-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -18,14 +18,14 @@ BUILD joins the pending kinds (src/workflow/pending.ts). A build record that is 
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/BUILD-8d4b90c9ab301e66-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/BUILD-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/CR-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/CR-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/TESTS-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/TESTS-8d4b90c9ab301e66-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
-- `.insrc/artifacts/TESTS-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/BUILD-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/BUILD-8d4b90c9ab301e66-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/BUILD-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/CR-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/CR-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/TESTS-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/TESTS-8d4b90c9ab301e66-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
+- `.insrc/artifacts/TESTS-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T20:14:17.594Z)
 - `docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/BUILD.md` — **insrc-build** (2026-10-13T20:14:17.594Z)
 - `docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/CR.md` — **insrc-build** (2026-10-13T20:14:17.594Z)
 - `docs/standalone/open-document-presented-approval-review-pane-E20261013e62a9269/S001/TESTS.md` — **insrc-build** (2026-10-13T20:14:17.594Z)

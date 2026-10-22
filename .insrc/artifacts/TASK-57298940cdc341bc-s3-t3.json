@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-70277aeb-24cd-4aca-819d-b1fbc6e883ec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.339Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement readAll(): scan .insrc/artifacts + project WorkflowChainDto per Epic",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5233cafa7442d0bc870bb3c5e61353a655bf21557e6e82b86c0272a37be25a9e",
+        "at": "2026-10-22T12:43:33.339Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.340Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement readAll(): scan .insrc/artifacts + project WorkflowChainDto per Epic",
+    "summary": "Fill readAll(): resolve each open project's artifacts dir via artifactsDirOf; for each, scan DEF-*.json (epicHash/epicSlug + body.stories[]{id,title} + define StageMark from meta.approvedAt/rejectedAt); read HLD-*.json (StageMark + meta.runId); per story read LLD-<hash>-<storyId>.json (hasLld, approved, stale = lld.meta.hldEffectiveHash != computeHldEffectiveHash(hld.runId, approvedAmendmentIds)); tally AMD-*.json by matching-epicHash status into amendmentsPending/Approved. Gson parse per file; never-throws (per-file JsonSyntaxException swallow + missing/unreadable dir + no-basePath skip). HLD-missing guard: stale=false/staleReason=null when hldRunId blank. NOTE (t3 critique): kept as one cohesive L; the s5 test-strategy names a separate proving test per failure mode (malformed-file swallow, missing-dir skip, HLD-missing guard, amendment tally) so the L stays verifiable in slices.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "One WorkflowChainDto per DEF-*.json across all open projects' artifacts dirs; empty list when none",
+      "define/hld StageMarks reflect exists + meta.approvedAt/rejectedAt; per-story hasLld/approved from the LLD file; stale from the hash mismatch",
+      "amendmentsPending/Approved count only matching-epicHash AMD by status (rejected excluded)",
+      "A malformed JSON file, a missing/unreadable dir, and a no-basePath project are each swallowed — readAll never throws",
+      "HLD-missing (blank runId) yields stale=false/staleReason=null, not a crash"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll projects a fully-populated Epic (DEF+HLD approved, approved LLD, stale LLD, absent LLD) into the right StageMarks + StoryChainMarks"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll staleness: matching-hash LLD => stale=false, mismatching-hash LLD => stale=true with staleReason"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll amendment tally: mixed-status AMD counts amendmentsPending/Approved by matching epicHash, rejected excluded"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll never-throws: a malformed JSON file, a missing/unreadable dir, and a no-basePath project are each swallowed"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll HLD-missing guard: LLDs present but no HLD/blank runId => stale=false/staleReason=null, no crash"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.readAll empty: an empty .insrc/artifacts dir (and a no-open-project resolver) yields an empty List<WorkflowChainDto>"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

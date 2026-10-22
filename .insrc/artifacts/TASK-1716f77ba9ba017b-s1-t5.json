@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e55dd86-59a3-41f4-8fd4-a15212c3810c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.814Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Daemon request to review an existing design artifact, and the MCP stream helpers",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c1cf6725b956c3a51a88130f2179401548ab5660a6c51e216970bbf326aa6d11",
+        "at": "2026-10-22T12:43:14.814Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.814Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon request to review an existing design artifact, and the MCP stream helpers",
+    "summary": "Register a daemon stream method, workflow.review, that takes an artifact path and runs reviewArtifactFile with the provider resolved for the review role, streaming progress and a final frame. The same-party refusal added in t4 is what produces its error frame for daemon-authored work, which is why this task follows t4. Add two MCP helpers, one for it and one for codeReview.run, built like the workflow-run helper but treating a plain line with a top-level error and no stream field as a final failure, and one with a top-level result and no stream field as a protocol error.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "workflow.review on a controller-authored artifact streams progress and ends with a done frame carrying the verdict and reviewedBy daemon; on a daemon-authored one it ends with an error frame",
+      "Each helper resolves on the done frame and rejects on an error frame, on a connection error and on a close before the final frame",
+      "A fake daemon that answers with a plain unknown-method line and keeps the socket open makes each helper reject at once, not at its timer"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T12 workflow.review streams progress and a done frame for controller-authored work and an error frame for daemon-authored work"
+      },
+      {
+        "level": "integration",
+        "name": "T11 each stream helper resolves on done and rejects on an error frame, a connection error and an early close"
+      },
+      {
+        "level": "integration",
+        "name": "T11 a plain unknown-method line with the socket kept open makes each helper reject at once, not at its timer"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

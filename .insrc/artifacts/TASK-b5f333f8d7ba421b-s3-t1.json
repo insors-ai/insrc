@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-206ff2ae-9730-49ff-b150-9f0291290e02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:19.388Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the sc2 write surface to the gateway (SaveResult + writeSetting/clearSetting)",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6e4be87ba11882b137979b4eedda9bcedcd81d848c160795f2d02d19371a7b94",
+        "at": "2026-10-22T12:44:19.388Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.390Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the sc2 write surface to the gateway (SaveResult + writeSetting/clearSetting)",
+    "summary": "In DaemonGateway.kt add a sealed SaveResult { Saved | Rejected(reason) | Unavailable(reason) }, add writeSetting(pathSegments: List<String>, value: Any?): SaveResult and clearSetting(pathSegments: List<String>): SaveResult to the interface, implement both in DaemonGatewayImpl over rpc.call(METHOD_CONFIG_WRITE='config.write') (writeSetting sends {path: segments, value}; clearSetting sends {path: segments} with value OMITTED; ok=true→Saved, ok=false (no throw)→Rejected, DaemonUnavailableException/RuntimeException→Unavailable), add the DaemonGatewayService delegate overrides, and add writeSetting/clearSetting stubs to the 4 test doubles (DaemonLifecycleServiceTest throws AssertionError like its settingsCatalog stub; the 3 Onboarding tests return Unavailable('not used')). Additive to the interface — must compile all consumers in one change. Land the gateway-classification tests (writeSetting/clearSetting Fake + WireRpc) with this task so its ./gradlew test proves the sc2 slice.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonGateway declares writeSetting(pathSegments, value) and clearSetting(pathSegments) returning SaveResult; SaveResult is a sealed interface with Saved/Rejected/Unavailable.",
+      "DaemonGatewayImpl.writeSetting calls config.write with {path: segments, value}; clearSetting calls config.write with {path: segments} and NO value key.",
+      "ok=true→Saved, ok=false→Rejected, DaemonUnavailable/RuntimeException→Unavailable (never throws).",
+      "DaemonGatewayService delegates both; all 4 test doubles compile with the new stubs; ./gradlew test still green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "writeSetting: ok=true→Saved, ok=false→Rejected, DaemonUnavailable→Unavailable; sends {path: segments, value}"
+      },
+      {
+        "level": "unit",
+        "name": "clearSetting omits the value key (FakeDaemonRpc param assertion); ok=true→Saved"
+      },
+      {
+        "level": "unit",
+        "name": "WireRpc real UnixSocketDaemonRpc.parse: {result:{ok:true}}→Saved, {result:{error}}→Unavailable"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

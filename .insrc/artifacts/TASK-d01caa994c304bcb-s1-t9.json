@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19f8c266-cff9-4704-9057-b5ef85bc03d3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.037Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the authoritative reconcile into daemon boot, preserving first-boot behaviour exactly",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0a8cc9210854d28b0b422dba92ccce2f35019005c71104c0646149f40ccb6761",
+        "at": "2026-10-22T12:44:41.042Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.043Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the authoritative reconcile into daemon boot, preserving first-boot behaviour exactly",
+    "summary": "Replace step '2b. Ensure config.json exists with agent defaults' at src/daemon/index.ts:178-203 with an unconditional read → reconcile → write-if-changed via the t7 wrapper. The `if (!existsSync(PATHS.config))` short-circuit goes away: the absent-file case must reduce EXACTLY to today's write-defaults behaviour — not merely a superset — while the previously no-op else branch at L194-203 gains the real reconcile. The hand-rolled L180-192 literal (~17 of 41 catalog rows) is deleted in favour of catalog defaults, so before deleting it, assert key-by-key against the t2 captured literal fixture that each key's catalog default is deep-equal to the literal's value. Any divergence must be surfaced as a deliberate, named default change (key, old value, new value) with its own acceptance check — never absorbed silently, because the unconditional reconcile would also write that divergent value into existing configs that lack the key. Tighten the existing `catch { /* ignore parse errors */ }` at L202 into the explicit no-write-and-warn behaviour. The whole sequence is wrapped so a reconcile failure never aborts boot — copy the non-fatal shape of the legacy-storage sweep immediately above at L154-171 (`warn ... non-fatal, retry on next boot`) — but a ConfigCatalogError is logged distinguishably (an explicit shipped-catalog-bug warn naming the catalog path) so a programmer error in our own catalog does not read as a transient EACCES. No DB dependency: 2b runs before the DB opens at L213. Ship boot integration tests asserting the reconcile is unconditional and that a throwing reconcile still reaches listening state.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "src/daemon/index.ts no longer short-circuits on an existing config.json; the reconcile runs on every boot",
+      "A test enumerates every key of the deleted L180-192 literal from the t2 captured fixture and asserts the corresponding catalog default is deep-equal to the literal's value; any intended divergence is named in a dedicated check listing the key and its old and new value",
+      "With no config.json present, boot writes a document whose values for the former literal's keys are identical to the pre-change output, plus the remaining catalog defaults, in one write",
+      "A reconcile that throws or fails (catalog error, unreadable config, write failure) logs exactly one warn line, leaves the on-disk file untouched, and the daemon still reaches listening state",
+      "A ConfigCatalogError produces a warn line that names the offending catalog path and is textually distinguishable from a user-config or I/O failure warn",
+      "The former silent `catch { /* ignore parse errors */ }` now emits an explicit warn naming the file and the parse failure, and writes nothing",
+      "src/daemon imports the catalog from src/config, and grep confirms src/daemon still has zero imports of src/cli"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "daemon boot — reconcile runs on startup unconditionally and does not short-circuit on an existing config.json"
+      },
+      {
+        "level": "integration",
+        "name": "daemon boot — a throwing/failing reconcile (catalog error, unreadable config, write failure) logs exactly one warn, leaves the file untouched, and the daemon still reaches listening state"
+      },
+      {
+        "level": "integration",
+        "name": "daemon boot — a ConfigCatalogError warn names the offending catalog path and is textually distinguishable from a user-config or I/O warn"
+      },
+      {
+        "level": "integration",
+        "name": "daemon boot first-boot equivalence — no config.json present writes the former literal's key values identically to the pre-change output plus the remaining catalog defaults, in one write"
+      },
+      {
+        "level": "integration",
+        "name": "daemon boot — the former silent parse-error catch now emits an explicit warn naming the file and the parse failure and writes nothing"
+      },
+      {
+        "level": "unit",
+        "name": "defaults-literal parity — every key of the deleted src/daemon/index.ts:180-192 literal (from the t2 fixture) is deep-equal to its catalog default, with any intended divergence named key/old/new"
+      },
+      {
+        "level": "unit",
+        "name": "module boundary — src/daemon imports the catalog from src/config and a source scan confirms src/daemon has zero imports of src/cli"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

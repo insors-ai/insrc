@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c9a60ee6-ed7c-4081-bbb0-c4f3d6f209be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.503Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Split tracker-auto into legacy and team mode",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "354e4fdc83de779ef49b7d30ebf700729417d25da6bbb9806b841dd611abd505",
+        "at": "2026-10-22T12:43:25.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.504Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Split tracker-auto into legacy and team mode",
+    "summary": "Make autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan read the policy and pick the mode: legacy (policy none or teamMode false) runs today's code exactly, including the per-entry-point extras (the Epic and plan review comments on every push); team mode adopts through ensureUnitIssueDetailed, runs the extras through runUnitExtras, forces Task issues on, and an unreadable policy returns failed. The signatures and the terminal approve call sites stay unchanged.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "The existing tracker-auto.test.ts passes with no edit.",
+      "In team mode the three pushes adopt draft-created issues and create none, Task issues are created with pushTasks off, a failed Epic lookup returns failed, and an unreadable policy makes all three return failed.",
+      "After a draft-created Story issue the first approve runs the Epic task-list splice, the design comment and the review comment once and a second approve posts nothing.",
+      "With policy none the gh command sequence and tracker block equal the pre-change ones and pushTasks off still returns skipped."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/approve-fallback-issues.test.ts: in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/approve-fallback-issues.test.ts: with no policy the three pushes behave exactly as before"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/tracker-auto.test.ts: the existing solo regression suite passes unedited"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

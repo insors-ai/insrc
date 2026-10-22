@@ -24,19 +24,6 @@
     "hldBaseRunId": "wf-1789799576767-kl7v1b",
     "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-19T12:05:25.571Z",
-      "model": "client"
-    },
     "questionResolutions": {
       "q24c46fa1": {
         "question": "General-comment mapping (load-bearing): how should a section/quote/general comment (no anchor.openQuestionId) be recorded through the existing open-question machinery? Recommended a1 = append a new body.openQuestions entry then resolve it (all comments recorded, no types.ts change, but mutates the artifact's authored body.openQuestions). Alternatives: a2 = a meta-only 'note' resolution keyed by a synthesized qId (needs a cross-cutting QuestionResolutionStatus enum change) or a3 = restrict submission to open-question-anchored comments only (drops general comments, violating ac1). Confirm a1 or choose a2/a3 before build.",
@@ -46,7 +33,61 @@
         "resolvedAt": "2026-09-19T12:12:15.339Z"
       }
     },
-    "approvedAt": "2026-09-19T12:13:05.412Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b75b1ae92a461f9a5acb974b96455b7e225c2587a3b30234fb77f73cd7c3cac0",
+        "at": "2026-09-19T12:03:43.541Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T12:13:05.412Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-19T12:05:25.571Z",
+        "report": {
+          "entityId": "LLD-238917216d8fd532-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-238917216d8fd532-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

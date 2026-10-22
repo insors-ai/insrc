@@ -21,10 +21,38 @@
     "epicSlug": "permission-hook-integration-test-ts-hangs",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-03T16:24:04.464Z",
     "parentRef": {
       "slug": "add-daemon-driven-code-review-stage",
       "storyId": "s1"
+    },
+    "epicCreatedAt": "2026-10-03T16:23:58.780Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d33946b065ec4a14cd6048cced7c0568ee092a88bcf7e2613ce36721090b71b5",
+        "at": "2026-10-03T16:23:58.780Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-03T16:24:04.464Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

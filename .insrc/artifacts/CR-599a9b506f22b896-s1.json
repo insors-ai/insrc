@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "599a9b506f22b896",
     "storyId": "s1",
-    "epicSlug": "restructure-docs-artifact-markdown-from-flat"
+    "epicSlug": "restructure-docs-artifact-markdown-from-flat",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "78e21f0d8188c17b3b97f5a78ce452704cbd643e2b2eeb519a24cbbff5ddc460",
+        "at": "2026-09-15T18:53:05.336Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

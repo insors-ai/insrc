@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-368cd321-81d5-47e9-b3f9-ed17cd8bf940",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.572Z",
+    "epicCreatedAt": "2026-10-10T05:39:29.105Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "One run takes one measure: the run driver and the plan RPC hand theirs to the context builder",
+      "parent": {
+        "entityId": "STORY-008e146ad1475ef9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-008e146ad1475ef9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-008e146ad1475ef9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dbb0d62304ea8fcd6ae671cc5e2422b19297384d3ecdddf471a098b7b127c2a8",
+        "at": "2026-10-22T12:43:10.572Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.572Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One run takes one measure: the run driver and the plan RPC hand theirs to the context builder",
+    "summary": "Add the optional `measure` to RunShapeInput and leave it out of the bundle cache key. In the exploration pipeline use a handed measure whose source is 'named-area' or 'data-source' for the planning call and measure as today otherwise. Add the optional `signal` to PlanBuilderOpts and pass it to the measure of each child plan. In the run driver pass the run's signal to the measure and to the planner and hand the measure to buildRunBundle; in the plan RPC hand the measure to buildRunBundle.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "With a handed measure of a named area or a data source, the pipeline does not call its measuring step, and the intent given to the planning call has the handed measure's size.",
+      "With no handed measure, or one whose source is 'lookup-results', the pipeline measures as today.",
+      "A handed measure that is not determined is used as it is: the planning call is given XL and nothing is measured again.",
+      "The bundle cache key is the same with and without a handed measure.",
+      "The run driver calls the measure once per run, with its signal, and passes the measure to buildRunBundle, so the builder does not measure again.",
+      "The plan RPC measures its intent once and passes the measure to buildRunBundle, so the builder does not measure again.",
+      "The recursive planner passes the signal of its options to the measure of each child plan.",
+      "The bundle RPC, the classify RPC, the freeform probe and the analyze-step tool are unchanged.",
+      "`npx tsc --noEmit` is clean and the context, planner and orchestrator suites pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way"
+      },
+      {
+        "level": "integration",
+        "name": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before"
+      },
+      {
+        "level": "integration",
+        "name": "the bundle cache key is the same with and without a handed measure"
+      },
+      {
+        "level": "integration",
+        "name": "the run driver passes its signal to the measure and to the recursive planner, and the planner passes it to the measure of each child plan"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

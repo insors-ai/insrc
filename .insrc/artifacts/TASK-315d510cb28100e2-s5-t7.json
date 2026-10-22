@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5e2e1d15-3422-4acf-b852-8d00e2831e25",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.247Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Guard the authoring routes",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "76caf07b1c4c215129568e88c92672189abe5305194054924fa50bf0e9cd57e1",
+        "at": "2026-10-22T12:43:26.247Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.247Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Guard the authoring routes",
+    "summary": "Call the gate with action author in the workflow-step phases (src/daemon/steps/workflow-step/phases) and in the daemon's server-side driver (runWorkflowServerSide and its runStart stream handler in src/daemon/workflow-rpc.ts) at its start and before it writes the draft, each deriving its UnitRef from the request it holds. A held-by-other outcome throws TeamGateRefusedError before any state changes; the first-author exception lets the one first draft through. Analyze and code review get no call.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes",
+      "runWorkflowServerSide and the workflow.run done path are refused for a non-holder before the draft is written",
+      "The first author turn of a stage with no issue is let through",
+      "A repo with no policy behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

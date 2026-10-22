@@ -20,101 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "a0f4c1cfe262a497",
     "epicSlug": "provenance-traceability-workflow-artifact-json-two",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "hc1",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "New daemon tools are registered via registerTool in src/daemon/tools/registry.ts, the seam the append API's tool wrapper plugs into.",
-          "evidence": "Confirmed: src/daemon/tools/registry.ts:18 `export function registerTool(tool: Tool): void`. The append-API tool wrapper's registration seam exists as cited.",
-          "action": "None — registerTool seam exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc2",
-          "ref": "sc2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A feature module outside src/daemon/tools registers its own tool via a nullary register<Name>Tool() wrapper — precedent registerDocgenTool in src/docgen/tool.ts.",
-          "evidence": "Confirmed: registerDocgenTool @ src/docgen/tool.ts:83, mounted at src/daemon/tools/builtins/index.ts:58; the register<Name>Tool() wrapper convention is real (28 register*Tool functions across src/).",
-          "action": "None — the wrapper precedent holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc3",
-          "ref": "sc2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Artifact JSON has a production READ path (readArtifact) but NO production WRITE path — writeArtifact exists only as test helpers — so the append API must introduce the production key-preserving writer.",
-          "evidence": "Confirmed: readArtifact is real production code (src/workflow/resolve-comment.ts:254 returns ArtifactShape), and every writeArtifact hit is a test helper (5 in __tests__/, 0 production). The 'no production writer' gap the HLD builds sc2 around is real.",
-          "action": "None — the gap is correctly identified; sc2 rightly introduces the production writer.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc4",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/format/bindings.ts exists and is the additive body-slot binding surface the render binding (sc3) extends.",
-          "evidence": "Confirmed: companionBodyLines is exported from src/workflow/artifacts/format/bindings.js (imported by the companion tests); the additive body-slot binding surface sc3 extends exists.",
-          "action": "None — bindings.ts surface exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc5",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The BUILD body is shaped in src/mcp/build-step/types.ts, where the optional feedback + changeLog fields attach.",
-          "evidence": "Confirmed by direct file check (DEF review): src/mcp/build-step/types.ts exists and is the BUILD-step shape module. The broad greps matched unrelated 'Build*' names, but the cited file is present as the attach point for the optional feedback + changeLog fields.",
-          "action": "None — the BUILD body module exists as cited.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc6",
-          "ref": "sc1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An additive absent-safe optional body-field precedent already exists (S002 summary, S003 erDefinition), so a new optional feedback field can be added the same admit-but-never-emit way.",
-          "evidence": "Confirmed: ER_DEFINITION_PROPERTY_SCHEMA @ src/workflow/artifacts/companion/er-schema.ts:19 is wired into the synthesizer body schema at orchestrator.ts:1458 — the S003 additive optional-body-field precedent is live, so the new feedback field can follow the same admit-but-never-emit pattern.",
-          "action": "None — additive-field precedent confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc7",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The existing attribution model ArtifactModelAttribution the new provenance vocabulary aligns with lives in src/workflow/types.ts with helpers in src/workflow/attribution.ts.",
-          "evidence": "Confirmed: interface ArtifactModelAttribution @ src/workflow/types.ts:295 + singleModelAttribution @ src/workflow/attribution.ts:50. The attribution model the new provenance vocabulary aligns with (k6) exists as cited.",
-          "action": "None — attribution model exists.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "hc8",
-          "ref": "s1/s2",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "s1 owns sc1/sc2/sc3 and s2 dependsOn s1, so every s2-consumed contract is downstream of its owner (internal consistency).",
-          "evidence": "Internally consistent: s1 owns sc1/sc2/sc3 and s2 dependsOn s1, so every s2-consumed contract is downstream of its owner — the ownership graph is sound and no Epic dependency was invented.",
-          "action": "None — ownership/ordering is self-consistent.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-28T09:48:59.161Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-28T09:49:20.034Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6ee5c893c83e4f5a8c348729ea9aef1c2421fa3cac84fb16b7f3218ad776db10",
+        "at": "2026-09-28T09:47:18.886Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-28T09:49:20.034Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-28T09:48:59.161Z",
+        "report": {
+          "entityId": "HLD-a0f4c1cfe262a497",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-a0f4c1cfe262a497-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "Add attributed provenance to the workflow ledger by giving every artifact body an optional, absent-safe feedback record, plus a BUILD-only change-log, all as structured data in the artifact JSON (the source of truth) from which the rendered document is generated. A single shared provenance vocabulary defines the feedback entry, its attribution (aligned with both the existing ArtifactModelAttribution stamp and the ReviewComment anchor), and the change-log entry; a production read-append-rewrite append API (daemon tool + IPC) lets a user add a feedback entry to any artifact without losing what is already there; and an additive render binding surfaces the records exactly like the S001/S002/S003 additive body-field pattern, byte-identical when absent. Story s1 lays the whole foundation (vocabulary + append API + doc-body wiring + render binding); story s2 reuses it to record the BUILD change-log from the build's actual changed set and BUILD code-anchored feedback.",

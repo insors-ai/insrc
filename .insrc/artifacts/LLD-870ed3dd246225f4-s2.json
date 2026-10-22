@@ -23,103 +23,62 @@
     "hldBaseRunId": "wf-1785421889464-2ayzlc",
     "hldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/extract/component-dependency.ts exports componentKey, buildComponentDependencyIR, makeExtract, componentDependencyRegistration, and COMPONENT_DEPENDENCY_DOCTYPE.",
-          "evidence": "component-dependency.ts: componentKey:60, buildComponentDependencyIR:74, makeExtract:128, componentDependencyRegistration:150 all resolve as exported functions; COMPONENT_DEPENDENCY_DOCTYPE present.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "buildComponentDependencyIR emits a derived-only DocumentIR: IrNode kind 'component', IrEdge kind 'depends-on', and empty narrated.sections.",
-          "evidence": "component-dependency.ts:87 sets kind:'component', :99 pushes kind:'depends-on', :106 narrated:{sections:[]}. Derived-only IR confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "buildComponentDependencyIR dedupes cross-component edges and skips intra-component (a===b) imports.",
-          "evidence": "component-dependency.ts:95 `if (a === undefined || b === undefined || a === b) continue` and the seen.has/seen.add dedupe set are present in the file.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The graph-backed ComponentGraphReader in component-graph-reader.ts uses listEntitiesByKinds(['file']), outNeighbors with IMPORTS kindFilter, entityIdsByU64s, and reads revision from listRepos.",
-          "evidence": "component-graph-reader.ts:18 imports listEntitiesByKinds/entityU64ForId/entityIdsByU64s; :45 calls listEntitiesByKinds(undefined, FILE_KINDS, {repo}); :57 outNeighbors(u64,{kindFilter:['IMPORTS']}); listRepos used for revision.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "documentIRToMermaid in shell.ts dispatches on docType: a flowchart for 'component-dependency' and classDiagram otherwise.",
-          "evidence": "shell.ts:111 documentIRToMermaid dispatches; :114 comment 'component-dependency -> flowchart; every other docType -> classDiagram'; :92 'flowchart LR'; :76 'classDiagram'.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/index.ts registers componentDependencyRegistration(componentGraphReader) as a second doc type alongside typeStructureRegistration.",
-          "evidence": "index.ts:34 registers typeStructureRegistration(graphTypeReader) // s1 and :35 componentDependencyRegistration(componentGraphReader) // s2 — the 2nd doc type as claimed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "component-dependency.test.ts contains the s2 unit tests (componentKey, aggregation, dedupe, determinism, isolated-node, flowchart render, extract outcomes).",
-          "evidence": "component-dependency.test.ts contains 9 top-level test() cases covering componentKey, aggregation, intra/out-of-scope drop, isolated-node, dedupe, determinism, flowchart render, and extract outcomes — matching the LLD's test strategy.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "makeExtract returns typed DocGenOutcome failures ('source-not-ready' when revision is undefined, 'empty-scope' when no repo or no files) rather than throwing.",
-          "evidence": "component-dependency.ts:135 returns sourceNotReady(...) when revision undefined; emptyScope imported and returned for no-repo/no-files; outcomes are returned, not thrown.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "assembleShell in shell.ts returns fallback-unavailable when the offline runtime asset is missing and never references a CDN script src.",
-          "evidence": "shell.ts:175 returns fallbackUnavailable on the loadRuntime (:41) catch; the HTML uses inline <script> blocks with no external src — offline guarantee holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-07-31T05:00:18.271Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-31T05:00:49.986Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7d44b244a477ed233d05b033e1d1e809233a6deca1a6451dd8451ab906eeef2d",
+        "at": "2026-07-31T04:51:51.503Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T05:00:49.986Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-07-31T05:00:18.271Z",
+        "report": {
+          "entityId": "LLD-870ed3dd246225f4-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-870ed3dd246225f4-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

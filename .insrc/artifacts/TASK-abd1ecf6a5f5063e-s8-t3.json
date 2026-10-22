@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c69ce1e3-76a6-4313-9f30-78141e5efbba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.931Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Wire both define entry points to call resolveStageFocus",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f375680eb5f68c24d92b6cb7336ce67a3df736d3174f8a2ddd4e7a8c188ef20",
+        "at": "2026-10-22T12:44:10.932Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.932Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire both define entry points to call resolveStageFocus",
+    "summary": "In src/mcp/workflow-step/phases/start.ts (:62) and src/daemon/workflow-rpc.ts (:414), call resolveStageFocus(repoPath, focus, params) just before building the WorkflowIntent and use its returned focus as intent.focus (params, which already carries specHash, is unchanged so finalizeDefine can read it). No change to the define step prompts. Preserve the plain-focus path exactly (call is a passthrough when no specHash).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "both start.ts and workflow-rpc.ts build intent.focus from resolveStageFocus(...).focus",
+      "a plain-focus start is byte-identical (no specHash -> focus unchanged) (ac4)",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "seed-focus.test.ts: the plain-focus passthrough (resolveStageFocus with no specHash returns focus verbatim) proves the wiring is byte-identical for the plain path (covered in t4)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7a0c6f86-c3c9-497e-9452-41f6b942efe5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.862Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The guide, the suite comparison and the live check",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ccae18c88687fb44f04b25f454650ab6caafacb757ab3cb9a208b46fd0f698e5",
+        "at": "2026-10-22T12:44:24.862Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.862Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The guide, the suite comparison and the live check",
+    "summary": "Describe in docs/daemon.md how a request's size is measured: the table, what is counted for each kind of source and scope, the hint, the not-determined case and the measure line, and correct the pages that say a size is picked or defaulted. Compare the suites by test name with the baseline of the first Task and name the tests removed or changed. Then the live check: the push, the daemon's update and the two requests are each done only on the stakeholder's word; the runs spend the stakeholder's model quota, are started detached, one at a time, after checking that no other session is running one.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "docs/daemon.md states the table, what is counted for each kind of source and scope, the hint, the not-determined case and the measure line, and no page says a size is picked by a model or defaulted to M",
+      "No test that passed in the baseline fails after the last Task; the tests removed or changed with the picker and the classifier's size are named",
+      "Live: a code request scoped to one directory and the same request scoped to the whole repository return different measured sizes with their counts in the report, and no model call picks a size; the date and results are in the Story's records"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "no test of the analyze, planner, classifier, data-driver and daemon suites that passed before the Story's first change fails after its last, compared by test name against a baseline taken at the plan's approval; the tests of the scope picker and of the classifier's size are named as removed or changed"
+      },
+      {
+        "level": "live",
+        "name": "through the installed daemon, a code request scoped to one directory of this repository and the same request scoped to the whole repository return different measured sizes, each with its counts in the report, and no model call picks a size"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

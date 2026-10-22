@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6294755a-5386-4dc5-91fd-d9d707f1966b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.706Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify contract coverage and strict build integration",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0ae92e8f3d3c3e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "86b2d8b4433c0bfb8b9ea9053b69488cec0f2e92ba9069dc020399c43856826a",
+        "at": "2026-10-22T12:43:50.706Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.709Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify contract coverage and strict build integration",
+    "summary": "Run current-source isolated import and preflight, corpus regressions, strict build and affected insrc gates. Independently recompute development goldens, retaining the record golden, and obtain fresh daemon code review before S001 completion.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "ac1 and ac2 each have passing proving tests; expected digest bytes/values are independent of the helper under test.",
+      "Focused unit/contract tests and npm run build pass, or unrelated pre-existing failures are isolated and reported accurately.",
+      "Compiled import has no live-store/provider requirements; no test touches live ~/.insrc data.",
+      "Diff remains within S001 modules/tests and tracked artifacts; no completion is claimed before build validation and independent code review.",
+      "An isolated process exercises valid and invalid preflight with external I/O instrumented or forbidden; asserts no filesystem writes, network/provider calls or live-store creation.",
+      "Rerun t2/t4/t5/t6 gates against corrected source; include t1/t3 tests in focused suite. Fresh daemon review covers final corpus commit range, with no dirty-ledger scope substitution."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "module-isolation.test.ts — compiled import and valid/invalid preflight without external I/O"
+      },
+      {
+        "level": "smoke",
+        "name": "npm run build — strict NodeNext compilation"
+      },
+      {
+        "level": "integration",
+        "name": "acceptance-coverage.test.ts — ac1/ac2 across record-to-manifest pipeline"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

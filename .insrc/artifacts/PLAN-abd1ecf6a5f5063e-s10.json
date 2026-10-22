@@ -22,151 +22,57 @@
     "storyId": "s10",
     "lldRunId": "wf-1785854329968-xbqyc5",
     "lldEffectiveHash": "68bedb3a95b69abab8f259d05568f45f429c987a2b059ece1cac1b56b7f765a3",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "src/workflow/types.ts defines a step-finalize return union whose current members are {type:'output'} and {type:'error'}, to which an additive {type:'llm-pause'} variant can be appended.",
-          "evidence": "Grep resolves StepRunnerFinalize = (llmResponse, preparedBlob, ...) => the finalize return type in the workflow layer; the LLD s10 restates the current {output}|{error} union. The additive 'llm-pause' variant is a pure type extension.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/executor.ts defines resumeRun, which finalizes the paused step and either advances (output) or stays paused (error) — the function the re-pause branch is added to.",
-          "evidence": "Grep resolves resumeRun + the ExecutorTickResult finalize handling; the s10 LLD documents the re-pause branch on the same step. The function targeted by t1 exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "StepRunnerContext is defined in src/workflow/types.ts and is the per-step context object the executor constructs for run()/finalize(); it can carry an optional draftProvider.",
-          "evidence": "Grep resolves `interface StepRunnerContext { intent; plan; runId; stepOutputs; params; ... }` — the per-step context exists and is the correct place for the optional draftProvider field.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "LLMProvider is exported from src/shared/types.js and can be imported as a type into src/workflow/types.ts for the draftProvider field.",
-          "evidence": "Prior LLD/HLD citations confirm the LLMProvider type is imported from shared/types.js (HLD sc3 'The LLMProvider type ... exists'); completeStructured is on it. The type-import for draftProvider is valid.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/config/role-taxonomy.ts defines a closed ROLES registry and a resolveRole function, where each role has {id, criticality, defaultTier}; a new peripheral/mid role can be appended.",
-          "evidence": "Grep resolves the role-taxonomy ROLES registry + the field-add site; the closed registry with {id, criticality, defaultTier} is the correct target for the new peripheral/mid role.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A peripheral role in role-taxonomy is not core-floor-clamped, so resolveRole returns clampedByFloor=false for it (only critical roles are clamped).",
-          "evidence": "Grep resolves clampedByFloor (RoleResolution, HLD sc2) and the core-floor mechanism clamping only critical roles; a peripheral role is therefore not clamped — resolveRole returns clampedByFloor=false.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "createRoleRouter(...).resolveProviderForRole(role, cfg, repoPath) exists and returns a resolved provider, usable to resolve the mid-tier draft provider.",
-          "evidence": "Grep resolves createRoleRouter + resolveProviderForRole in src/analyze/context/role-router.ts (cited by the s10 LLD c3 analyze bundle). The resolution API t4 calls exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon workflow.run drive path exists at src/daemon/workflow-rpc.ts and constructs/runs the executor, so a draftProvider dep can be injected there.",
-          "evidence": "src/daemon/workflow-rpc.ts is present (read anchor resolved) and is the daemon workflow.run drive path; injecting the draftProvider executor dep there is well-founded.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The MCP workflow-step drive path exists at src/mcp/workflow-step/phases/start.ts and step.ts and runs startRun/resumeRun in-process, so the same draftProvider can be injected there.",
-          "evidence": "src/mcp/workflow-step/phases/start.ts + step.ts resolved (read anchors); prior brainstorm LLDs (s3) confirm startRun/resumeRun are driven in-process here. The MCP injection site exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/runners/brainstorm/index.ts currently defines a single-pass finalizeElicit (the elicit runner's finalize) and registerBrainstormRunners, which t5 reworks into the adaptive draft/pause loop.",
-          "evidence": "DEF + EXT + HLD grep confirm today's elicit is a single controller-freeform pause; the s10 LLD reworks finalizeElicit/registerBrainstormRunners in src/workflow/runners/brainstorm/index.ts. The rework target exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "t5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "brainstormElicitSchema is defined in src/workflow/runners/brainstorm/schemas.ts and is the elicit step OUTPUT shape (category, workingStatement, openItems, confirmed, decisions, nonGoals) that the unchanged synthesize step consumes; new decisionDraftSchema + decisionAnswerSchema are added alongside it.",
-          "evidence": "Grep resolves brainstormElicitSchema (HLD workingStatement field; s2 LLD schema definition) as the elicit OUTPUT shape synthesize consumes. Adding decisionDraft/decisionAnswer schemas alongside it keeps the output shape unchanged.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl12",
-          "ref": "t5",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The SpecArtifact is written solely by the brainstorm synthesize step (not the elicit runner), and seed-focus composeSpecFocus consumes the SpecArtifact body — both remain unchanged by this plan.",
-          "evidence": "The s10 LLD explicitly marks 'unchanged: SpecArtifact body + seed-focus composeSpecFocus'; synthesize remains the sole SpecArtifact writer. The invariance the plan relies on is documented and consistent.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl13",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency spine is acyclic and topologically ordered: t2->t1; t4->t2,t3; t5->t1,t2,t3; t6->t4,t5, with t1 and t3 having no dependencies.",
-          "evidence": "By inspection of the task table: t1[] , t2[t1], t3[] , t4[t2,t3], t5[t1,t2,t3], t6[t4,t5] — every edge points to a strictly-lower order; the graph is acyclic and order 1..6 is a valid topological sort.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 13
-      },
-      "reviewedAt": "2026-08-04T15:08:50.921Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-04T15:17:59.136Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c66226a35a7ae1edec71367d81408f0b05fb89c571e20c8e3f3ad8fe37c713d5",
+        "at": "2026-08-04T15:06:41.739Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T15:17:59.136Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 13
+        },
+        "at": "2026-08-04T15:08:50.921Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s10",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s10-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

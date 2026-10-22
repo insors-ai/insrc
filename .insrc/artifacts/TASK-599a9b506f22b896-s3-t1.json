@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-790077ef-f549-4777-b38e-73d6ad1c0d37",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.524Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Pure planMigration core (enumerate + group + derive-identity + resolve + fail-loud)",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe41caaf291e8d0278dc30aa8b981981751dd09c10cbf973b593bab8829f839f",
+        "at": "2026-10-22T12:43:35.524Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.525Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure planMigration core (enumerate + group + derive-identity + resolve + fail-loud)",
+    "summary": "Add src/workflow/migrate-docs-tree.ts with the pure `planMigration(repoPath): MigrationPlan` + the MigrationPlan/MigrationMove/LinkRewrite/Unmappable types. Enumerate the authoritative artifact set from .insrc/artifacts/*.json (parse kind+epicHash+storyId from each id via the storage.ts *ArtifactId conventions); LOCATE each artifact's current flat md path by scanning the flat docs md for the insrc:artifact marker (ARTIFACT_ID_MARKER_RE) — slug-named DEF/HLD/LLD/PLAN/SPEC/EXT via marker, markerless BUILD/CR via their hash-named filename. GROUP by work item (epicHash + meta.standalone); per group derive ONE WorkItemIdentity from the anchor createdAt (DEF's, or standalone-LLD's) + a slug sourced from a slug-carrying member; compute each member's `to` via resolveArtifactMdPath. Record unmappable[] (missing anchor/slug/md, duplicate-`to` collision) and SKIP already-nested (idempotent). No disk writes, no git.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "planMigration is pure (no fs mutation, no git) and returns { moves, linkRewrites, unmappable }",
+      "Every member of a work item resolves to ONE folder via a single per-group WorkItemIdentity (shared anchor createdAt from the DEF/standalone-LLD + shared slug); story artifacts land under S<nnn>/",
+      "Both LOCATE paths work: a slug-named marker-bearing md is found via its insrc:artifact marker, and a markerless BUILD/CR via its hash-named filename — identity comes only from companion-JSON metadata, the slug is only a label (k5)",
+      "A group with no anchor/slug source, a missing md, or a duplicate destination is recorded in unmappable[] with a reason (fail-loud, ac2); an artifact already at its nested destination is skipped (idempotent)",
+      "A hand-written non-artifact doc (no companion JSON) is never enumerated"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "planMigration: epic with DEF/HLD + two stories resolves every member to the same docs/epics/<slug>-E<date><hash8>/ folder, story artifacts under S<nnn>/"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: BUILD/CR without epicSlug takes the slug from a slug-carrying sibling (its `to` matches the sibling's folder)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: anchor is the DEF's createdAt for EVERY member even when a member's own createdAt is a different UTC day (no split)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: standalone item (meta.standalone) resolves under docs/standalone/ with the standalone LLD's createdAt as anchor"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: an artifact already at its nested destination is SKIPPED; a second run yields empty moves[] (idempotent)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: no anchor/slug source, a missing md, or a duplicate-`to` collision → unmappable[] with reason (fail-loud)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: a hand-written non-artifact doc (no companion JSON) is never enumerated"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: both locate paths pinned — slug-named marker-located md AND hash-named markerless BUILD"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

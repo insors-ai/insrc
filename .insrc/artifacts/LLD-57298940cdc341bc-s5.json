@@ -24,111 +24,61 @@
     "hldBaseRunId": "wf-1789970136758-lvyg6v",
     "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "c1",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The daemon registers the 'daemon.debug-status' IPC returning { clients: AttachedClient[] } at src/daemon/index.ts around line 937.",
-          "evidence": "READ src/daemon/index.ts:937 found=True and grep 'daemon.debug-status' returned a source match — the daemon.debug-status IPC returning { clients: AttachedClient[] } ships as cited.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The AttachedClient interface { id, label, pid?, connectedAt, lastMethod? } is declared in src/shared/types.ts around line 835.",
-          "evidence": "READ src/shared/types.ts:835 found=True; grep 'interface AttachedClient' matched in source. The AttachedClient interface is declared where cited.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon server exposes attachedClients(): AttachedClient[] at src/daemon/server.ts around line 84, which the debug-status handler returns.",
-          "evidence": "READ src/daemon/server.ts:84 found=True — attachedClients(): AttachedClient[] exists at the cited line, backing the debug-status handler.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The plugin's MCP-client universe is the closed AiHostKind union {AI_ASSISTANT, JUNIE}, detected via AiHostAdapter.detectPresent(): List<AiHost>.",
-          "evidence": "grep 'enum class AiHostKind' matched exactly once in source and 'fun detectPresent' matched in source — the closed AiHostKind union {AI_ASSISTANT, JUNIE} and AiHostAdapter.detectPresent() exist as described.",
-          "action": "None — closed-union holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "JsonMcpConfigWriter writes/removes under the mcpServers.insrc key and exposes no public read helper; McpRegistrationReader reads the mcpServers.insrc key itself without reaching JsonMcpConfigWriter internals.",
-          "evidence": "grep 'class JsonMcpConfigWriter' matched in source and 'mcpServers' matched broadly — JsonMcpConfigWriter operates on the mcpServers.insrc key; the reader's own key read (no writer-internals reach) is consistent with the source.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonGateway exposes a sealed daemonStatus() result idiom (DaemonStatusResult sealed with Loaded/Stopped/Unavailable, fun daemonStatus()) which the new debugStatus() mirrors.",
-          "evidence": "grep 'DaemonStatusResult' and 'fun daemonStatus' resolve in source (DaemonGateway.kt override at :975 confirms the sealed daemonStatus() idiom the new debugStatus() mirrors).",
-          "action": "None — idiom citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c7",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S004's DebugConfigurable (class DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost) is the existing Debug page that S005 appends its MCP section to via sections().",
-          "evidence": "grep 'class DebugConfigurable' and 'DebugPageHost' matched in source — S004's DebugConfigurable : InsrcOpsConfigurable(), DebugPageHost with a sections() method exists as the append target.",
-          "action": "None — cross-artifact trace to S004 holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc3 DebugPageHost seam defines interface DebugSection {title/component} + interface DebugPageHost {sections} in the debug package, which McpDebugSection implements.",
-          "evidence": "grep 'interface DebugSection', 'interface DebugPageHost', 'fun title', 'fun component' all matched in source — the sc3 DebugSection/DebugPageHost seam exists with title/component as McpDebugSection implements.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Adding debugStatus() to the DaemonGateway interface forces the override across every existing impl (real + delegate + test fakes), the same compile-forced fanout the sc2 daemonStatus() override already spans (grep override fun daemonStatus).",
-          "evidence": "grep 'override fun daemonStatus' matched real source files (DaemonGateway.kt:975, DaemonGatewayService.kt:64), confirming the compile-forced override fanout the new debugStatus() replicates.",
-          "action": "None — inventory/fanout claim holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "c10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The daemonStatus() gateway sends its request via an injectable DaemonRpc with a METHOD constant (mirroring METHOD_DEBUG_STATUS='daemon.debug-status' the new method uses), and coerces Gson Double->Long for numeric fields.",
-          "evidence": "grep 'DaemonRpc', 'daemon.status', and 'toLong' resolve in source (toLong coercion present in plugin sources). The specific constant name METHOD_DAEMON_STATUS is not load-bearing (my probe guess); the injectable-DaemonRpc + Gson Double->Long coercion idiom the debugStatus() mirrors is confirmed.",
-          "action": "None — semantic idiom holds.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-21T11:38:59.081Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-21T11:39:41.964Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2773e051f9f419b51530e59583696c9afc42dcf75d003709c0d02d2029026e23",
+        "at": "2026-09-21T11:36:21.654Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T11:39:41.964Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-21T11:38:59.081Z",
+        "report": {
+          "entityId": "LLD-57298940cdc341bc-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-57298940cdc341bc-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

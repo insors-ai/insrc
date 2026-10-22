@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-89ffa884-edab-4d92-a412-ffd9fbe18185",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.929Z",
+    "epicCreatedAt": "2026-10-17T06:04:27.059Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1102dc7125ad0c07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The index queue reports a repository's code-index work",
+      "parent": {
+        "entityId": "STORY-1102dc7125ad0c07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1102dc7125ad0c07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5b7b930f7c167f6d36300c3f6bb4f3fc0723d0733fc65829c4323ce17942dc87",
+        "at": "2026-10-22T12:43:12.929Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.929Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The index queue reports a repository's code-index work",
+    "summary": "IndexQueue records the job in flight for the duration of processor(job), clearing it in finally, and gains codeIndexWorkFor(repoPath) => { inFlight, pending } counting kind full/reconcile naming repoPath and kind file under repoPath (repoPath or repoPath + separator). depthForRepo is unchanged.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Pending and in-flight full, reconcile and file jobs for the repository are counted.",
+      "Other repositories, a prefix-sharing repository, config, reembed and document-summary jobs are not.",
+      "After a throwing processor the in-flight job is cleared.",
+      "depthForRepo returns what it did before."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/queue-code-index-work.test.ts: codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b66ef6fb-896a-4825-9fdf-b62a16c00f49",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.468Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Tests: governor unit suite + host/wiring/store extensions + full sweep",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8bce1a97b30f7aadffaae5cec334f94b2b73779e92d23f71a8e2a1583c0c1f61",
+        "at": "2026-10-22T12:44:53.468Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.469Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: governor unit suite + host/wiring/store extensions + full sweep",
+    "summary": "Add edit-governor.test.ts (lifecycle, review accept/reject revert via fake fs, same-path-once baseline, new-file remove, non-git no-baseline, provider-agnostic diff) with fake WorkspaceBaseline/FsSeam/EditRenderSeam; extend chat-panel.test.ts (set-edit-mode persist, review vs auto, diffView chat/editor routing, shell CSP), extension-chat-wiring.test.ts (diffView manifest enum/default + wiring), session-store.test.ts (editMode round-trip). Each of ac1-ac4 must have an explicit passing proving test. Run the full plugin sweep + tsc --noEmit.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "ac1, ac2, ac3, ac4 each have at least one passing proving test (no ac silently uncovered)",
+      "edit-governor.test.ts + the three extended suites pass under tsx --test; tsc --noEmit clean",
+      "the CSP/one-script/no-innerHTML shell invariants are asserted for the chat-view diff"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat-panel: review turn posts sc3 edit-prompt; auto turn posts none; diffView 'chat'->showChat vs 'editor'->showEditor (no edit-prompt)"
+      },
+      {
+        "level": "smoke",
+        "name": "full vscode-plugin sweep green under tsx --test + tsc --noEmit clean; ac1-ac4 all have a passing proving test"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0028a561-4bfc-45f3-9b85-64eef206d162",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.478Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Wire the sequencer behind registerBuildRunners, emit outcome progress, and persist the outcome list incrementally",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c402c37efeba32161590820e5260b9a2c501d5539d2e0ba35542dc129269cc7",
+        "at": "2026-10-22T12:43:15.478Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.479Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the sequencer behind registerBuildRunners, emit outcome progress, and persist the outcome list incrementally",
+    "summary": "Drive the sequencer from the build stage's start/decompose/synthesize/finalize turn handlers registered via registerBuildRunners() (sc1, owned by s1) — adding the sequencing turn behind the existing registration without re-registering or mutating sibling stages. Emit BuildTaskOutcome progress at every Task boundary (task-start, implementer-finished, test-verdict, advance-or-halt) through the WorkflowStepOutputBuild / WorkflowProgress driving surface (sc2, owned by s1), keeping a single source of truth for Task status — no second store. Own the durability NFR explicitly: supply the storage-writer implementation behind the sequencer's per-Task-boundary checkpoint hook (t6) so the accumulated BuildTaskOutcome[] is persisted through the existing hash-json/storage writers AT EACH Task boundary, not only at finalize — because build (unlike define/design/plan) mutates the working tree non-transactionally, a daemon restart mid-run must leave a readable record of what already landed. All stage-boundary logging goes through getLogger('workflow:build'), never console.log (migration step 7; interactionWithShared sc1/sc2; observability + durability NFR).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The sequencer runs behind the build stage handlers registered by registerBuildRunners(); no sibling stage (define / design.epic / design.story / tracker) is re-registered or mutated, and BuildTaskOutcome data is emitted at each Task boundary through the WorkflowStepOutputBuild / WorkflowProgress surface with no second source of truth for Task status.",
+      "The accumulated BuildTaskOutcome[] is persisted incrementally at each Task boundary via the sequencer's checkpoint hook through the existing hash-json/storage writers (not only at finalize), so a simulated mid-run restart leaves a readable record of the outcomes already landed; halts name the failed Task + reason + blocked set, and all logging uses getLogger('workflow:build')."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "wiring: the sequencing turn runs behind registerBuildRunners() without re-registering sibling stages, emits BuildTaskOutcome at each Task boundary through the WorkflowStepOutputBuild/WorkflowProgress surface, and the checkpoint hook persists the accumulated outcomes at each boundary so a simulated mid-run restart leaves a readable record"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

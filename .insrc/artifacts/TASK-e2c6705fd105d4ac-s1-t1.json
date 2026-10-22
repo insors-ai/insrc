@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-98add389-8f16-46f7-a926-d2ecb7a340b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:48.128Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Import + splice UX_CONTENT_GATE_RULE at the four ER injection sites",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e2c6705fd105d4ac-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1d5dfd17e8f1493308e22ad92a3bd959fb9ade77473fd0cac593a7e60f218d88",
+        "at": "2026-10-22T12:44:48.128Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:48.129Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Import + splice UX_CONTENT_GATE_RULE at the four ER injection sites",
+    "summary": "Add UX_CONTENT_GATE_RULE to the companion-schema import in orchestrator.ts (alongside the existing UX_DEFINITION_PROPERTY_SCHEMA import) and add a sibling ux-schema.js import in design-story/index.ts and design-epic/index.ts. Then splice `UX_CONTENT_GATE_RULE,` as a bare array element immediately adjacent to `ER_CONTENT_GATE_RULE,` in each of the four synth-prompt HARD-RULES blocks: orchestrator.ts:1424 (designEpicSynthesizer/HLD synth) + :1801 (designStorySynthesizer/LLD synth), design-story/index.ts:297 (contract.detail s4), design-epic/index.ts:268 (framework.write s4). No builder signature change; the ER injection stays intact adjacent (not replaced).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "UX_CONTENT_GATE_RULE is imported in all three files (orchestrator.ts via the ux-schema.js import, design-story/index.ts + design-epic/index.ts via a sibling '../../artifacts/companion/ux-schema.js' import) with the .js extension (NodeNext).",
+      "UX_CONTENT_GATE_RULE appears as a bare array element adjacent to ER_CONTENT_GATE_RULE at orchestrator.ts:1424, orchestrator.ts:1801, design-story/index.ts:297, design-epic/index.ts:268 — the ER element is preserved, not replaced.",
+      "tsc (strict, NodeNext) compiles clean; the existing suite is unaffected (no schema/renderer/dimension change)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ux-synth-schema: source-scan orchestrator.ts asserts UX_CONTENT_GATE_RULE present at :1424 (HLD) + :1801 (LLD) adjacent to ER + imported (the co-location assertion re-derives the wiring t1 lands)"
+      },
+      {
+        "level": "unit",
+        "name": "ux-synth-schema: source-scan design-story/index.ts + design-epic/index.ts assert UX_CONTENT_GATE_RULE imported (ux-schema.js) + present adjacent to ER at the two s4-step prompts"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

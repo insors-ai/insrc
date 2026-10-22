@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-48b4475e-2f39-413d-8859-8e2f362da424",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.666Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Bundle the installer asset into the extension package via a repeatable copy step",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e45cabc9f206c4ed922f9a075d9b667860d767b4da33ccba41cf2c8e5e1157e",
+        "at": "2026-10-22T12:44:12.666Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.667Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bundle the installer asset into the extension package via a repeatable copy step",
+    "summary": "Establish vscode-plugin/assets/insrc-daemon-install.sh as a copy of scripts/insrc-daemon-install.sh, produced by a REPEATABLE build/copy step (a package.json script) so it stays in sync and ships in the .vsix; have the default DaemonPaths.bundledInstaller resolve it relative to the extension install dir (context.extensionPath). The final .vsix packaging that includes assets/ is s6's boundary; s2 establishes the asset + its copy step + the resolution.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "vscode-plugin/assets/insrc-daemon-install.sh exists and byte-matches scripts/insrc-daemon-install.sh (a source-scan/drift test flags divergence)",
+      "the copy is produced by a repeatable step (a package.json script), not a one-off manual copy",
+      "the default DaemonPaths resolves bundledInstaller to the assets path relative to the extension dir (injectable for tests)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "bundle-fidelity: vscode-plugin/assets/insrc-daemon-install.sh exists and byte-matches scripts/insrc-daemon-install.sh (drift test)"
+      },
+      {
+        "level": "smoke",
+        "name": "the copy step (package.json script) regenerates assets/insrc-daemon-install.sh from scripts/ deterministically"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

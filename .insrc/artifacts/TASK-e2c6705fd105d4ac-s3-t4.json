@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d1fcd26e-4fe2-4243-967a-f43d866a6f31",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:48.962Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Admit the two optional body slots (types + synth schemas)",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e2c6705fd105d4ac-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f542ea381cec80ee6784e6aed52ecf0020b80a09c2e9eff87fa8cd8d6e4b53d4",
+        "at": "2026-10-22T12:44:48.963Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:48.963Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Admit the two optional body slots (types + synth schemas)",
+    "summary": "Add optional sequenceDefinition? / componentDependencyDefinition? fields to the HLD + LLD body TYPES (artifacts/hld.ts, artifacts/lld.ts) next to erDefinition/uxDefinition, and admit sequenceDefinition: SEQUENCE_DEFINITION_PROPERTY_SCHEMA + componentDependencyDefinition: COMPONENT_DEFINITION_PROPERTY_SCHEMA into the two synth body schemas (orchestrator.ts:1467 HLD, :1863 LLD) under the existing additionalProperties:false — additive, never required.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "prepareSynthesize(design.epic) and prepareSynthesize(design.story standalone) both expose sequenceDefinition + componentDependencyDefinition as body properties, neither in required, body still additionalProperties:false and compiles under ajv",
+      "the HLD + LLD body types type-check with the two new optional fields",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "diagram-synth-schema.test.ts — prepareSynthesize(design.epic + design.story standalone) admits both diagram slots, neither required, additionalProperties:false, compiles under ajv (admit-but-never-force)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

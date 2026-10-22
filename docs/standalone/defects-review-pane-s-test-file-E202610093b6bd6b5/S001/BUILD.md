@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-3b6bd6b5fa3c30d1-S001 -->
+<!-- insrc:artifact BUILD-3b6bd6b5fa3c30d1-s1 -->
 
 # Build (standalone) — Story S001
 

@@ -23,81 +23,56 @@
     "storyId": "s2",
     "lldRunId": "wf-1789979714328-nwulc7",
     "lldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are exactly 6 DaemonGateway implementations (DaemonGatewayImpl + DaemonGatewayService + the 4 test fakes DaemonLifecycleServiceTest/OnboardingLifecycleTest/OnboardingWiringTest/OnboardingCleanupIntegrationTest) that must each gain the 3 new backup/compact/shutdown overrides — t2 covers DaemonGatewayImpl, t3 the other 5.",
-          "evidence": "grep 'override fun daemonStatus(): DaemonStatusResult' returns 7 matches: 6 are the real gateway impls (DaemonGateway.kt:925 DaemonGatewayImpl + DaemonGatewayService + the 4 test fakes) and 1 is a doc-table reference; so the source fanout is exactly the 6 impls the 3 new backup/compact/shutdown overrides must reach (t2=DaemonGatewayImpl, t3=the other 5). Count is correct.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonLifecycleService.production() already wires ProcessBuilderRunner() + DefaultDaemonScriptLocator() + DefaultNodeRuntimeResolver — the exact trio the DaemonLifecycleCommandRunner reuses.",
-          "evidence": "read DaemonLifecycleService.kt:134 found:true; grep confirms ProcessBuilderRunner() (:136), DefaultDaemonScriptLocator() (:137), DefaultNodeRuntimeResolver( (:134) all wired in production() — the exact trio the DaemonLifecycleCommandRunner reuses in production.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "scripts/daemon-ctl.sh accepts start/restart/update (+stop/status) with exit codes 2/3/4, so the runner maps those exits.",
-          "evidence": "read scripts/daemon-ctl.sh:274 found:true = 'start|stop|restart|update|status) CMD=\"$1\"' — the subcommands + (documented 2/3/4) exit codes the runner targets are real.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t2",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The daemon exposes daemon.backup (requires path), daemon.compact (busy-refusal), daemon.shutdown IPC handlers that the three new gateway methods call.",
-          "evidence": "grep confirms 'daemon.backup'/'daemon.compact'/'daemon.shutdown' each appear once as handlers in src/daemon/index.ts (read :1465 found:true = daemon.compact) — the three IPCs the new gateway methods call exist.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The DaemonGatewayImpl repoStats()/daemonStatus() sealed-*Result classification template (rpc.call + !ok/error->Unavailable/Failed, catch DaemonUnavailableException, never throw) exists for the three new methods to clone; PARAM_PATH='path' already exists.",
-          "evidence": "grep confirms override fun repoStats( (the classification template, DaemonGateway.kt:659), const val PARAM_PATH = \"path\" (:961), const val METHOD_STATUS = \"daemon.status\" (:947) — the template + reused path constant the three new methods clone are real.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonConfigurable (the S001 placeholder that t5 fills) extends the InsrcOpsConfigurable base, and the ProgressManager.runProcessWithProgressSynchronously off-EDT idiom exists in InsrcSettingsConfigurable.",
-          "evidence": "read DaemonConfigurable.kt:12 found:true = 'class DaemonConfigurable : InsrcOpsConfigurable()'; grep confirms runProcessWithProgressSynchronously in InsrcSettingsConfigurable.kt:131 — the placeholder page t5 fills + the off-EDT long-action idiom it reuses both exist.",
-          "action": "",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-09-21T09:01:22.953Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T09:01:41.955Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b83b7025292847fa910a94f9dc7512d9ee6918719450ca7e62d2caec4ad29c6b",
+        "at": "2026-09-21T09:00:12.761Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T09:01:41.955Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-09-21T09:01:22.953Z",
+        "report": {
+          "entityId": "PLAN-57298940cdc341bc-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-57298940cdc341bc-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-76516ea3-61f7-46cf-a39c-ebcf4e4a6301",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.519Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add the team park and team resume terminal commands",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s6-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ca4920c10db71358c66cb3e67b33ffc689de506e7dbfcb51637e648b328d6505",
+        "at": "2026-10-22T12:43:26.519Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.520Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the team park and team resume terminal commands",
+    "summary": "In runTeam (src/cli/command.ts) add team park <epicHash> [storyId] and team resume <epicHash> [storyId] [--workflow <name>], parse the unit and workflow, call teamPark and teamResume in src/cli/services/team.ts, which use the daemon rpc for team.park and team.resume, extend the Services interface and the test fakes, the usage line and the help text, and print the outcome or the refusal naming the holder.",
+    "size": "M",
+    "order": 12,
+    "acceptanceChecks": [
+      "team park and team resume parse the unit and --workflow, call the daemon operations and print the outcome or the holder",
+      "Bad or missing arguments print the usage line and call nothing",
+      "The refusal line for a held stage includes the park command when an offer exists"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/cli/__tests__/team-park-resume.test.ts: team park and team resume parse the unit and --workflow, print the offer, the outcome or the holder, and print the usage line for bad arguments"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

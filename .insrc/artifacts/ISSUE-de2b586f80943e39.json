@@ -21,9 +21,37 @@
     "epicSlug": "insrc-build-step-cannot-address-any",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-02T14:43:23.764Z",
     "parentRef": {
       "slug": "insrc-build-step-cannot-address-any"
+    },
+    "epicCreatedAt": "2026-10-02T14:41:09.735Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1d381563b7b5480b1f37818dfdf71dfaa91f8f9956b9d59b7f5e924360814deb",
+        "at": "2026-10-02T14:41:09.735Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-02T14:43:23.764Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -84,7 +112,7 @@
     {
       "id": "c9",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/PLAN-93081bff91ae5108-S001.json — the approved 10-task plan whose tasks are unaddressable, establishing the defect is currently blocking rather than theoretical",
+      "ref": ".insrc/artifacts/PLAN-93081bff91ae5108-s1.json — the approved 10-task plan whose tasks are unaddressable, establishing the defect is currently blocking rather than theoretical",
       "quotedText": "10 tasks (t1..t10), 64 tests, 38 citations; meta.approvedAt stamped 2026-10-02T14:30:42.891Z. Named PLAN-<hash>-S001.json — uppercase story id, with no sibling DEF-<hash>.json in the same directory."
     },
     {

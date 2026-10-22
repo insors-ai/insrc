@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a63d436c-2bdd-4ca4-87d5-cd5a28711e74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.054Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Artifact gates: approval and review facts",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f81ce4f6ec4d7ef56c785bed20a5f6507deeaf21528093d14014f3f852c8f0ae",
+        "at": "2026-10-22T12:43:24.054Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.055Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Artifact gates: approval and review facts",
+    "summary": "New src/workflow/delivery/gate.ts exporting deriveGates(graph, recordSet). Layer 1 builds one ArtifactGate per record: approval state and time; the review for design kinds from meta.review (findings filtered to well-formed entries before effectiveReviewVerdict, resolvedFindings, reviewOverride, reviewerPartyOf with unknown as null, effectiveVerdict including warn-with-unresolved-MED as block and all-resolved block as pass) and for a CR from body.verdict / body.counts (per-field, non-numbers as 0) / reviewerPartyOf(meta); review null for BUILD and AMD; blocking for design artifacts against their own approval and for a CR against its story's BUILD approval, ignoring the CR's own stamp and reading no config. After this task deriveGates returns the full artifacts map with an empty items map and no notices; t3 fills those.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Approved, rejected and unstamped records read approved, rejected and pending with the matching time.",
+      "An unapproved block with no override is blocking; an approved block and an overridden block are not, and still report the verdict and override.",
+      "A block whose HIGH/MED findings are all resolved has effectiveVerdict pass; a warn with an unresolved MED has effectiveVerdict block.",
+      "A CR blocks only while its story has no approved BUILD, whatever the CR's own stamp.",
+      "A CR stamped model 'client' without reviewedBy reads reviewedBy 'controller'.",
+      "Malformed reviews, findings and CR bodies never throw and invent nothing."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'approved, rejected and unstamped artifacts read approved, rejected and pending'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'an approved historical block and an overridden block do not block and still show the verdict and the override'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'a code review blocks only while its story has no approved build'"
+      },
+      {
+        "level": "unit",
+        "name": "gate.test.ts: 'the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

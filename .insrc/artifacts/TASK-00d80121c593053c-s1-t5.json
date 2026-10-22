@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-956234b6-deeb-4c06-87a1-676e0669d3d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.819Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Load the highlighter in the chat shell and colour the token classes",
+      "parent": {
+        "entityId": "STORY-00d80121c593053c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-00d80121c593053c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-00d80121c593053c-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aea9238dbc014bb5ff3818a16cf7a14e5ea8b6c40bb6ee18db87b3b480eac4ce",
+        "at": "2026-10-22T12:43:10.821Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.822Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Load the highlighter in the chat shell and colour the token classes",
+    "summary": "Evaluate HLJS_SRC in the chat shell next to marked in chat-panel.ts only, add the token class rules to the widget's stylesheet using only existing :root names (keyword magenta, string accent, number amber, function and title user, type and built-in accent2, comment muted, meta/attribute/tag link), and list the added selectors exactly in chat-theme.test.ts.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the shell inlines the highlighter source exactly once, holds one script tag, and the CSP is unchanged",
+      "the widget rules name no --vscode- variable and the added selectors match the inline list exactly",
+      "docs-review-panel.ts and webview-marked.ts are unchanged and the review pane's single-script test passes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

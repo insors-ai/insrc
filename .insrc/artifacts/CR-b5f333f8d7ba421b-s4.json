@@ -11,7 +11,26 @@
     "epicHash": "b5f333f8d7ba421b",
     "storyId": "s4",
     "epicSlug": "expose-all-daemon-config-settings-via",
-    "epicCreatedAt": "2026-09-19T14:57:29.012Z"
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b6633f040c129b5e82443e5f3e6b69a4d1e5623bdef4d5fd8d53fc5239cadd97",
+        "at": "2026-09-20T07:10:02.992Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

@@ -23,91 +23,56 @@
     "storyId": "s4",
     "lldRunId": "wf-1789984944132-7k0epd",
     "lldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The plan's 7 tasks form an acyclic dependency graph with a valid topological order (t1<-t2,t3; t4,t5 independent; t6<-t2,t3,t4,t5; t7<-t2,t3,t4,t6), respecting storyDependsOn s1 (already shipped).",
-          "evidence": "The dependsOn graph (t1:[], t2:[t1], t3:[t1], t4:[], t5:[], t6:[t2,t3,t4,t5], t7:[t2,t3,t4,t6]) is acyclic and order 1..7 is a valid topological sort; s1 (sc1 base + sc2 + placeholder Debug page) is already shipped, so ordering respects storyDependsOn.",
-          "action": "None — ordering is valid.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl2",
-          "ref": "t2/t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/debug.ts defines the orphan scan/kill heuristic (scanOrphansWith + killOrphansWith) the OrphanProcessSeam tasks t2/t3 mirror.",
-          "evidence": "Confirmed: scanOrphansWith + killOrphansWith resolve in src/cli/services/debug.ts (imported at debug-orphans.test.ts:17), the exact CLI heuristic t2/t3 mirror — and the CLI even carries a debug-orphans.test.ts seam-test the plugin tests parallel.",
-          "action": "None — both CLI functions resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl3",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/services/debug.ts buildDaemonCard + readPid/readVersion is the local-derive t4 mirrors for the status card socket/pid/version.",
-          "evidence": "Confirmed: buildDaemonCard at debug.ts:82 with readPid (debug.ts:55, pidfile) + readVersion (debug.ts:66, DAEMON_ROOT/package.json) — the local-derive t4 mirrors for socket/pid/version.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl4",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The shipped sc2 daemonStatus():DaemonStatusResult (DaemonGateway.kt) is consumed unchanged by t4's DebugStatusCardReader.",
-          "evidence": "Confirmed: DaemonGateway.kt:383 sealed interface DaemonStatusResult + :596 interface daemonStatus() (+ :975 impl) — the shipped sc2 t4 consumes unchanged.",
-          "action": "None — sc2 surface resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl5",
-          "ref": "t5/t6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc1 base InsrcOpsConfigurable + the placeholder DebugConfigurable both exist in the plugin; t6 fills the latter (implementing the new DebugPageHost).",
-          "evidence": "Confirmed: InsrcOpsConfigurable.kt has the abstract base and DebugConfigurable.kt:13 'class DebugConfigurable : InsrcOpsConfigurable()' is the placeholder t6 fills (implementing the new DebugPageHost).",
-          "action": "None — base + fill target resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl6",
-          "ref": "t7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The test idioms t7 extends exist: NestedOpsPagesTest.kt (placeholder guard) + DaemonLifecycleCommandRunnerTest.kt (seam-injection idiom) + the CLI debug.test.ts.",
-          "evidence": "Confirmed: NestedOpsPagesTest.kt:17 (the placeholder guard t7 edits) + DaemonLifecycleCommandRunnerTest.kt:19 (the seam-injection idiom the seam tests extend); the CLI debug.test.ts/debug-orphans.test.ts are the mirrored TS tests.",
-          "action": "None — test idioms resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "pl7",
-          "ref": "coverage",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Every task derivedFrom id (c1..c7) resolves to a plan citation, and all 6 LLD testStrategy subjects are covered by >=1 task in testStrategyCoverage.",
-          "evidence": "All task derivedFrom ids c1..c7 are defined in the plan's citations block, and all 6 LLD testStrategy subjects appear in testStrategyCoverage each with >=1 covering task — no dead citation, no uncovered subject.",
-          "action": "None — grounding + coverage complete.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-21T10:56:36.260Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T11:05:35.682Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0e7203312e4a2de062299c01617deb211f47478c8e94abf5feaa7581c4c3a50f",
+        "at": "2026-09-21T10:55:42.127Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T11:05:35.682Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-21T10:56:36.260Z",
+        "report": {
+          "entityId": "PLAN-57298940cdc341bc-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-57298940cdc341bc-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

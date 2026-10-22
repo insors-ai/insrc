@@ -6,7 +6,27 @@
     "createdAt": "2026-10-09T16:54:22.468Z",
     "updatedAt": "2026-10-09T17:21:51.676Z",
     "standalone": true,
-    "epicSlug": "defect-against-epic-e2-6a131558-vs"
+    "epicSlug": "defect-against-epic-e2-6a131558-vs",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d0a26a4b6f2bec18d42313c6fe3c4c16b8ec00481eb8d84c1b22124c71d07d6e",
+        "at": "2026-10-09T16:54:22.468Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

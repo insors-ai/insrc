@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6dc1be2a-3ccb-4bd8-8451-fb65d93aee81",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.930Z",
+    "epicCreatedAt": "2026-10-13T14:35:06.077Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f74c81f507dbe78",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Reload the shown document in place",
+      "parent": {
+        "entityId": "STORY-1f74c81f507dbe78-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f74c81f507dbe78-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f74c81f507dbe78-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a22da70643775292317773980db829703da72b96cb1e0c62790f18cabbe3f82b",
+        "at": "2026-10-22T12:43:16.932Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.933Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reload the shown document in place",
+    "summary": "On a content for the document already shown, keep the scroll position of the document region, and when it is marked changed and its version differs, say that the document changed on disk. A reload after the shell's own decision keeps the decision's result line.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The scroll position and the drafts are kept across a reload",
+      "The changed line is shown only for a reload marked changed with a different version",
+      "The decision's result line survives the decision's own re-read"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T17:11:58.324Z",
     "parentRef": {
       "slug": "docs-migrator-leaves-stale-labels-json"
+    },
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6acf5ef5d5e46b21138efe0ee27e092b529420f56f0411be778ef7d773d6a2ef",
+        "at": "2026-10-11T15:17:01.452Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T17:11:58.324Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

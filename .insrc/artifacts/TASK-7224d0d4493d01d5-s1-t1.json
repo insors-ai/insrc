@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-568843fd-f3f1-4b47-9930-2e2e333cf5fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.605Z",
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7224d0d4493d01d5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish each item's description from its records",
+      "parent": {
+        "entityId": "STORY-7224d0d4493d01d5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7224d0d4493d01d5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a048998bc04e4697b6a880f640c32a084ee1f41345dee7d06de3c54fde4a03fd",
+        "at": "2026-10-22T12:43:44.605Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.606Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish each item's description from its records",
+    "summary": "Add DeliveryRecorded, DeliveryItemDescription and DeliveryItem.description to src/workflow/delivery/types.ts, and fill description for every item in assembleSnapshot: an epic's problem and summary from its head DEF, a story's purpose and size from its DEF entry by ordinal (else the EXT addedStory's userValue), an issue's reproduction, root cause and fix intent from its ISSUE body, and { kind: 'task' } for a task. A value is recorded only when it is a non-empty string (size: one of S, M, L, XL), published exactly as stored with its record's artifactId. Extend the record fixtures with body overrides, update the IPC member test and regenerate the JetBrains sample so the suite stays green.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Every item's description.kind equals its kind, and each kind carries only its own fields.",
+      "Recorded values carry the source record's artifactId and equal the stored strings exactly; missing, blank or wrongly typed values read not-recorded.",
+      "A story added by an extension takes its purpose from the EXT; a standalone story reads not-recorded for purpose and size.",
+      "Two snapshots of the same store are identical, including description.",
+      "The JetBrains sample equals the assembler's output and the IPC member test lists description; the root suite passes."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded"
+      },
+      {
+        "level": "integration",
+        "name": "types.test.ts: the delivery IPC types list exactly the sketched members"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87342945-75a1-4999-8cfd-1030dc449898",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.526Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Replace the decline branch with the diff-only degraded path",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d9efe76c6fcf2f58f8bad4bbac0ab58e81ce15b8334c30fa0df5b6130c08aa7",
+        "at": "2026-10-22T12:43:45.527Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.527Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Replace the decline branch with the diff-only degraded path",
+    "summary": "In src/mcp/code-review-step/handler.ts replace the s9 decline exit (errorResult('review-declined', ...) at ~handler.ts:211) with: call deps.assembleDiffGrounding(repo); on a both-paths git failure return a CodeReviewStepError (code 'diff-unavailable', retryable:true) and write NO record; otherwise saveState({subject, grounding, groundingMode:'degraded'}) and return next:'emit_judgements' over the diff grounding. In the judgements turn, when the loaded state is marked groundingMode:'degraded', drive runCodeReview with groundingMode:'degraded' + capVerdictAtWarn:true; otherwise (graph path) pass neither. The fresh path + proceed:true poll + graph judgements turn stay byte-identical to s9 (ac6).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the decline branch (proceed:false + state) calls assembleDiffGrounding and returns next:'emit_judgements' (no 'review-declined' error)",
+      "a both-paths diff failure returns next:'error' code 'diff-unavailable' and writes NO record",
+      "the degraded judgements turn drives runReview with groundingMode:'degraded' + capVerdictAtWarn:true and persists a record",
+      "the fresh path + proceed:true poll + graph judgements turn are unchanged (graph path passes neither opt)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handler: decline (proceed:false + state) -> assembleDiffGrounding is called, next:'emit_judgements' over the diff grounding, and NO 'review-declined' error"
+      },
+      {
+        "level": "unit",
+        "name": "handler: the degraded judgements turn drives runReview with groundingMode:'degraded' + capVerdictAtWarn:true (assert the runReview spy's opts) and persists a record"
+      },
+      {
+        "level": "unit",
+        "name": "handler: a diff-unavailable failure (assembleDiffGrounding rejects) -> next:'error' (diff-unavailable), no write"
+      },
+      {
+        "level": "unit",
+        "name": "handler ac6 regression: a fresh index (no decline) still returns emit_judgements over graph grounding and drives runReview with the default opts (groundingMode:'full', no cap)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

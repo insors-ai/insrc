@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-00b52382-8e4b-4ca9-990c-1a2b134f286f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.016Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board-state reducer and down-message derivation",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f32637a78921e479ef8f61fa02665855e56b966ca1c41a64ff2f061af9873656",
+        "at": "2026-10-22T12:43:41.016Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.017Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board-state reducer and down-message derivation",
+    "summary": "initialBoardState, reduceBoardState over refresh-requested, snapshot-arrived and selection-changed events, and boardDownMessages, which derives the status message and the interim item list from state using the display labels.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "An answer whose seq is not the latest leaves state unchanged.",
+      "Status is empty only for a non-partial snapshot with no items; partial snapshots are ready with a partial notice; daemon-unavailable and no-workspace give unavailable, read-failed and timed-out give failed, each keeping the last snapshot.",
+      "The selection survives an applied snapshot; a selected item that is gone is cleared with a notice; selection-changed changes only the selection and leaves status and latestSeq unchanged.",
+      "boardDownMessages always starts with status, marks a failure over an old snapshot as stale with the failure and its time, and lists every item of the shown snapshot in its own order."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'an answer to a superseded refresh is dropped and nothing from it is applied'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'empty, unavailable, failed and partial snapshots each give their own status, a partial snapshot still lists every item, and a snapshot with no items but unreadable records is partial, not empty'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'a failed refresh keeps the last snapshot as stale with the failure and its time'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'a refresh keeps the selection, and clears a selected item that is gone with a notice'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

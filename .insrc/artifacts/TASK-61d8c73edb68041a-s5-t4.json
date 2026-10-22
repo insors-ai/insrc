@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-de4f5ef5-7d81-4629-9c0d-2559460e73a8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.526Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "584f481354f707a84510a4935f5676dc189b216e9f81bfda6edebbd350d2d978",
+        "at": "2026-10-22T12:43:40.526Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.527Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+    "summary": "Wave A (pure fakes, no fixture): unit tests over OnboardingLifecycle with a fake DaemonGateway (isProjectRegistered true/false/throws; registerProject true/false/throws), a recording fake AiHostAdapter (detectPresent present/absent/both; recording removeMcp/removeRules + write* asserted never called; optional HostFileAccessException), a fake OnboardingOffer capturing (root,onAccept), a recording notify + synchronous executor — covering ac1/ac2/ac3 offer gating, accept-callback registerProject + error/reason handling, and ac4 per-host cleanup + isolation. Wave B (IntelliJ Platform fixture): an integration test over the real AiHostAdapterImpl proving onPluginUninstalled restores a host's mcp.json + rules.md to their pre-insrc bytes (seeded via the real writeMcpRegistration/writeRulesBlock), and that OnboardingLifecycle is a registered sc1 broadcaster consumer running off the EDT. Implement Wave A first. Verify locally JDK21+Gradle8.10; no GitHub CI.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Wave A unit tests cover: offer gating (host+unregistered->offer, empty-detect no-op, already-registered no-op), registerProject only-on-accept + DaemonUnavailableException/RegistrationResult(false) handling, and per-host removeMcp+removeRules with isolation and 0 writes.",
+      "Wave B integration test proves uninstall restores mcp.json + rules.md to pre-insrc bytes via the real AiHostAdapterImpl, and the disable-vs-uninstall distinction (no uninstall event on disable).",
+      "The full jetbrains-plugin suite compiles and passes locally (JDK21 + Gradle 8.10)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "OnboardingCleanupIntegrationTest.uninstall_restoresMcpAndRulesToPreInsrcBytes_realAdapter"
+      },
+      {
+        "level": "integration",
+        "name": "OnboardingCleanupIntegrationTest.hostWithNoInsrcSection_leftByteUnchanged"
+      },
+      {
+        "level": "integration",
+        "name": "OnboardingCleanupIntegrationTest.disable_deliversNoUninstallEvent_filesLeftInPlace"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

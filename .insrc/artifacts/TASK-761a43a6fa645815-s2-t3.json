@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b3bbf97-152b-45c7-a632-0a478896d69c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:46.422Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the fake-provider unit tests + live-gated test",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef792e620268722945e058dc34f366ba3d7b1ac1a7db5eb2b55652955fdb4f77",
+        "at": "2026-10-22T12:43:46.422Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:46.422Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the fake-provider unit tests + live-gated test",
+    "summary": "Add src/workflow/code-review/dimensions/__tests__/adherence.test.ts: a fake LLMProvider (completeStructured returns scripted output; a call-counting spy) drives the offline cases — findings-with-expectationRef (ac1), empty/satisfied + empty-grounding (ac2), faithful-but-differently-decided => no finding + a prompt-content assertion the decision-out-of-scope instruction is present (ac3), exactly-one-call/no-other-method (ac4), out-of-subject drop, and an invalid-output-exhausts-retry failure case. A live case (buildShaperProvider-resolved real provider) gates behind INSRC_LIVE_TESTS.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "all four ACs (ac1-ac4) have a passing offline unit test using a fake LLMProvider; no real model call in the default sweep",
+      "the retry-exhaustion failure test asserts StructuredOutputError propagates (no fabricated pass)",
+      "the live case skips cleanly when INSRC_LIVE_TESTS is unset"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a faithful-but-differently-decided case yields findings:[] — the decision itself is not reported (ac3), with a prompt-content assertion the out-of-scope instruction is present"
+      },
+      {
+        "level": "unit",
+        "name": "invalid model output => StructuredOutputError propagates after the retry cap (no empty 'no divergence' pass)"
+      },
+      {
+        "level": "live",
+        "name": "a real buildShaperProvider-resolved provider (CliProvider/Ollama, no cloud REST, high tier k10) produces a schema-valid DimensionResult"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

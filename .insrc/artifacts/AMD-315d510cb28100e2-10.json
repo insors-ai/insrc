@@ -1,27 +1,60 @@
 {
-  "id": "AMD-315d510cb28100e2-10",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "findIssues",
-      "signature": "findIssues(labels: string[]): PortResult<IssueRef[]>",
-      "purpose": "Lists every issue, open or closed, that carries all the given labels, following every page of results, in ascending numeric issue-number order, so a creator can tell whether another issue for the same unit exists and keep the lowest. The GitHub adapter test that proves complete pagination, ordering and closed issues is s1's to add."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-18T04:27:38.453Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "abf4798aded2002597ec08c5ff27d24433984a48e9ed61b47e3b0a0b24902129",
+        "at": "2026-10-18T04:27:38.453Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T12:40:03.456Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "findIssue returns only the first match and gh lists newest first, so two daemons that each created an issue for a unit cannot both reach the same answer. A complete ascending listing lets every daemon keep the lowest-numbered issue and close its own. The method is additive, the sc1 sketch is otherwise unchanged, and the owner recorded the need in docs/plans/team-workflow.md on 2026-10-18.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792297318763-1dp38i",
-    "storyId": "s4",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-10",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "findIssues",
+        "signature": "findIssues(labels: string[]): PortResult<IssueRef[]>",
+        "purpose": "Lists every issue, open or closed, that carries all the given labels, following every page of results, in ascending numeric issue-number order, so a creator can tell whether another issue for the same unit exists and keep the lowest. The GitHub adapter test that proves complete pagination, ordering and closed issues is s1's to add."
+      }
+    },
+    "rationale": "findIssue returns only the first match and gh lists newest first, so two daemons that each created an issue for a unit cannot both reach the same answer. A complete ascending listing lets every daemon keep the lowest-numbered issue and close its own. The method is additive, the sc1 sketch is otherwise unchanged, and the owner recorded the need in docs/plans/team-workflow.md on 2026-10-18.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792297318763-1dp38i",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-18T04:27:38.453Z",
+    "approvedBy": "Subho Ghosh"
   },
-  "proposedAt": "2026-10-18T04:27:38.453Z",
-  "status": "approved",
-  "approvedAt": "2026-10-18T12:40:03.456Z",
-  "approvedBy": "Subho Ghosh"
+  "citations": []
 }

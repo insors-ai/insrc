@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-47fba928-f187-4149-b36e-d17e51680005",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.576Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "The renderer spine: SVG primitives, slot factory, and the ER derivation (INERT)",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8073c1acda6c90e50b1ad26a7f9ad299ce4bd43a817039508d0ce9836f9946ef",
+        "at": "2026-10-22T12:44:32.576Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.577Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The renderer spine: SVG primitives, slot factory, and the ER derivation (INERT)",
+    "summary": "Add DOCS_DIAGRAM_SOURCE as the fourth member of the DOCS_*_SOURCE family and inline it into the single nonce'd script after its three siblings. This task carries the SPINE: the SVG writer (createElementNS + textContent only), the slot factory implementing the four-combination gate, and the ER derivation re-implementing erDefinitionToIr's rules. Layout iterates the SORTED CLASS LIST, never edges, so a cyclic or self-referencing model cannot fail to terminate. INERT — functions are defined and nothing calls them, so the surface is unchanged. THE SHELL BASELINE MOVES HERE. Its own mutations are run here, and the ER drawing gets its FIRST visual read here, in isolation, before anything is wired.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "PARITY, with a named mechanism and a stated authority: a SHARED fixture module under the daemon test tree is imported directly by a daemon-side erDefinitionToIr call AND loaded into the `new Function`-evaluated client derivation in the plugin test. The DAEMON output is the expected value and the client must MATCH it, so a client drift fails rather than redefining correctness",
+      "A DANGLING range omits that ONE edge and still draws every box and every other edge — the deliberate divergence from the daemon's ErDefinitionError throw at er.ts:291-294, asserted as intended and commented at the source",
+      "A self-referencing slot and a CYCLIC class graph both terminate and draw",
+      "Every SVG element is created via createElementNS with the SVG namespace and every label written via textContent — proved by a recording stub that captures the calls, so 'no markup' is EXECUTED, not grepped",
+      "A hostile class/slot name containing `<script>`, `&` and angle brackets renders character-for-character as text and creates no element and no attribute",
+      "DOCS_DIAGRAM_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write — scanned with COMMENTS STRIPPED FIRST, because a source scan that reads prose has produced false results in this repo before",
+      "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still the guarded vendored body parse",
+      "The shell baseline is UPDATED IN THIS COMMIT with sha256 + char + byte counts captured at a FIXED nonce, and the delta COMPUTED (an earlier Story pinned a hash captured at a different nonce and typed a figure from memory — neither is acceptable)",
+      "FIRST VISUAL READ: the 8-class REAL ledger erDefinition is rendered in isolation, screenshotted headless and the image READ — boxes not overlapping, edges connecting the boxes they name, no clipped labels. Catching layout defects here costs one task, not two",
+      "MUTATIONS RUN AND REVERTED, each turning its named test RED: build the slot with innerHTML (no-markup + injection-count); treat a dangling range as fatal (omit-one-edge); drive layout by edge traversal (cyclic test hangs/fails); change one client derivation rule (parity)",
+      "The surface is otherwise unchanged — nothing calls the new functions yet"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PARITY: daemon erDefinitionToIr is authoritative and the client derivation MATCHES its node set and edge set over a shared fixture module"
+      },
+      {
+        "level": "unit",
+        "name": "derivation: class-ranged slot becomes an edge; scalar-ranged and rangeless slots become attributes on the box"
+      },
+      {
+        "level": "unit",
+        "name": "derivation: a DANGLING range omits that one edge and still draws every box and every other edge (deliberate divergence from the daemon throw)"
+      },
+      {
+        "level": "unit",
+        "name": "derivation: cardinality flags in every combination produce the daemon's crow's-foot token"
+      },
+      {
+        "level": "unit",
+        "name": "layout: a self-referencing slot and a cyclic class graph both terminate and draw (sorted class list, never edge traversal)"
+      },
+      {
+        "level": "unit",
+        "name": "layout: determinism — the same record renders an identical element tree every time"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: every SVG element via createElementNS with the SVG namespace and every label via textContent, proved by a recording stub"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: a hostile class/slot name (<script>, &, backticks, angle brackets) comes back character-for-character and creates no element or attribute"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: no attribute value is built from record text"
+      },
+      {
+        "level": "unit",
+        "name": "contract: DOCS_DIAGRAM_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write — scanned with comments stripped FIRST"
+      },
+      {
+        "level": "unit",
+        "name": "contract: the emitted shell still has EXACTLY ONE `.innerHTML=` and it is still the guarded vendored parse, after a fourth source string joins the script"
+      },
+      {
+        "level": "unit",
+        "name": "gate: the factory's four-combination table asserted in isolation, through the discriminator AND through what was built"
+      },
+      {
+        "level": "unit",
+        "name": "gate: 'absent' does ZERO DOM work — no createElement call, reached before any construction"
+      },
+      {
+        "level": "unit",
+        "name": "gate: a diagram-mermaid ref with no projected record routes to 'unshowable' with a reason that NAMES what was referenced"
+      },
+      {
+        "level": "unit",
+        "name": "gate: diagram-html routes to 'unshowable' naming the kind (lc1), never a silent nothing"
+      },
+      {
+        "level": "unit",
+        "name": "gate: linkOut present on BOTH 'rendered' and 'unshowable' whenever a ref exists, absent when there is no ref"
+      },
+      {
+        "level": "unit",
+        "name": "shell: the moved baseline is pinned at a FIXED nonce with sha256 + char + byte COMPUTED, not typed"
+      },
+      {
+        "level": "smoke",
+        "name": "FIRST VISUAL READ: the 8-class real erDefinition rendered in isolation, screenshotted and the image read — no overlap, no clipping, edges connecting the named boxes"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: build the slot with innerHTML → the no-markup AND injection-count tests go RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: treat a dangling range as fatal → the omit-one-edge test goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: drive layout by edge traversal → the cyclic-model test hangs or goes RED"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: change one client derivation rule → the PARITY test goes RED"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

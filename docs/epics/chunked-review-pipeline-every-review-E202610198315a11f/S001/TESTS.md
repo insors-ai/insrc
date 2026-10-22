@@ -386,4 +386,4 @@ the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: Installed daemon: a real under-limit code review and a real design review complete with today's result shape (manual smoke recorded in the BUILD record)**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt (process-to-build linkage, input sizes, daemon log lines), docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt, .insrc/artifacts/CR-f431a4420d03374f-S001.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt (process-to-build linkage, input sizes, daemon log lines), docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt, .insrc/artifacts/CR-f431a4420d03374f-s1.json

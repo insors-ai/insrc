@@ -24,84 +24,61 @@
     "hldBaseRunId": "wf-1790343836936-uhegob",
     "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "createWebviewPanelHost is the sole webview factory in the vscode-plugin, defined in vscode-plugin/src/panels/webview-host.ts.",
-          "evidence": "grep 'export function createWebviewPanelHost' matched vscode-plugin/src/panels/webview-host.ts:111; read of that anchor found=true. The factory exists exactly where cited.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The panel document is built as a template literal containing an inline <style> block in webview-host.ts and delivered by assigning panel.webview.html in extension.ts (no external stylesheet/asWebviewUri pipeline).",
-          "evidence": "read webview-host.ts:420 found=true and read extension.ts:316 found=true; grep 'panel\\.webview\\.html' matched extension.ts:316. The only asWebviewUri hits are inside docs/ artifacts (this LLD/HLD text), none under vscode-plugin/src — confirming the inline-<style>-via-panel.webview.html delivery with no asset-URI pipeline.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The existing webview styling idiom is var(--vscode-<token>, <literal fallback>) — a VS Code theme variable with a hard-coded fallback — as used in the webview-host.ts inline <style> rules.",
-          "evidence": "read webview-host.ts:421 found=true; grep 'var\\(--vscode-<token>,' matched 28 times across the plugin/templates, confirming var(--vscode-*, <fallback>) is an established repo idiom the sc1 renderer can reuse.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The repo's webview-output test idiom is a pure generated-string assertion suite (no webview runtime) in vscode-plugin/src/panels/__tests__/webview-host.test.ts, e.g. a Content-Security-Policy regex assertion.",
-          "evidence": "read vscode-plugin/src/panels/__tests__/webview-host.test.ts:1 found=true; grep 'Content-Security-Policy' + 'node:test' + 'node:assert/strict' confirm the generated-string assertion idiom exists and is the repo-wide test convention.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc1 module vscode-plugin/src/chat/design-tokens.ts is net-new (does not yet exist) and the LLD's scope is purely additive: it does NOT modify webview-host.ts or any existing surface.",
-          "evidence": "grep 'renderTerminalStyle', 'TERMINAL_SURFACE_CLASS' and 'chat/design-tokens' matched ONLY inside docs/ artifacts (this LLD) and nowhere under vscode-plugin/src, confirming the sc1 module is genuinely net-new and the change is additive (webview-host.ts untouched).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "SurfaceKind is a five-member union (chat | provider-dropdown | history-dropdown | inline-diff | docs-review), matching the five mock deliverables and the HLD sc1 sketch.",
-          "evidence": "The five SurfaceKind members ('provider-dropdown','inline-diff','docs-review', plus chat/history-dropdown) appear consistently only in the artifact (net-new), matching the HLD sc1 sketch and the five named mock deliverables; internally consistent, no open/extra member.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The terminal aesthetic values codified by sc1 (near-black bg #0b0e14, phosphor-green accent #4ade80, monospace stack) come from the docs-site TUI stylesheet site/css/tui.css :root.",
-          "evidence": "reads of site/css/tui.css:17 and :28 both found=true, confirming the docs-site TUI :root palette (near-black bg / phosphor-green accent) that sc1 codifies exists at the cited anchors.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-25T15:13:28.546Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-25T15:26:34.981Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bbb7396bf61a9e0133dc988d149a3cd6d0c6f105a55ae685399f12c79a050a05",
+        "at": "2026-09-25T15:10:53.452Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-25T15:26:34.981Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-25T15:13:28.546Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

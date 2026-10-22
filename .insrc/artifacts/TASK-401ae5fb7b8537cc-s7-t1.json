@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4cf40848-e051-409c-92fa-140d79b971a5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.003Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s7",
+    "envelope": {
+      "description": "sc9 amendment types (types.ts): RepoConfigRenderer/RepoConfigRendererDeps/RepoConfigWrite + repoRenderer/onRepoConfigWrite",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7edd5aa339cd7bc037d9ff1c1d77eecabe32142a98e92661c499773a3b52e06d",
+        "at": "2026-10-22T12:43:31.003Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.004Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc9 amendment types (types.ts): RepoConfigRenderer/RepoConfigRendererDeps/RepoConfigWrite + repoRenderer/onRepoConfigWrite",
+    "summary": "Additively extend vscode-plugin/src/panels/types.ts: export `type RepoConfigRenderer = (selected: string | undefined) => Promise<string>` (the renderer reads its own raw config internally — s3 refinement so the host stays a pure dispatcher with no config read), `interface RepoConfigRendererDeps { registeredRepos(): Promise<readonly RepoRef[]>; rawConfig(): Promise<Record<string, unknown>> }`, `interface RepoConfigWrite { readonly repoPath: string; readonly segments: readonly string[]; readonly value: unknown }`; add optional `repoRenderer?: RepoConfigRenderer | undefined` + `onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined` to WebviewPanelHostDeps. No existing member removed/changed (breaking:false); mirrors the S005 detailRenderers + S006 tabControllers/onDetailAction additive precedent.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "types.ts exports RepoConfigRenderer ((selected)=>Promise<string>) + RepoConfigRendererDeps { registeredRepos; rawConfig } + RepoConfigWrite and adds the two optional WebviewPanelHostDeps fields",
+      "No existing sc9 type member (detailRenderers/tabControllers/onDetailAction/PanelHandle/DaemonDataGateway) is removed/renamed — S004/S005/S006 types still compile",
+      "Compiles under strict/exactOptionalPropertyTypes with .js imports; no 'vscode' import"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types source-scan: RepoConfigRenderer/RepoConfigRendererDeps/RepoConfigWrite + repoRenderer?/onRepoConfigWrite? added ADDITIVELY (no existing sc9 member removed/renamed)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

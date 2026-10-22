@@ -24,101 +24,61 @@
     "hldBaseRunId": "wf-1790343836936-uhegob",
     "hldEffectiveHash": "f394a9ecb688a6435e9660c36070ff438589624b3026bbb4315135fee33e53b4",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "dataModel/invariants",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon's CliProvider prior art the LLD leans on exists at src/agent/providers/cli-provider.ts.",
-          "evidence": "src/agent/providers/cli-provider.ts:1 read OK + 50 CliProvider refs — the prior-art wrapper the LLD references exists.",
-          "action": "No action; citation confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "testStrategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The source-scan integration test the LLD says to mirror exists at vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts.",
-          "evidence": "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts:1 read OK — the source-scan test idiom the LLD mirrors exists.",
-          "action": "No action; citation confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "migration",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "No chat/CLI-bridge module currently exists in vscode-plugin/src (S002 is net-new); there is no existing StreamAdapter/TurnEvent/cli-adapter.",
-          "evidence": "A scoped rg over vscode-plugin/src for StreamAdapter/TurnEvent/ProviderRegistry/cli-adapter/stream-events returns ZERO; the 50 unscoped hits are all in the DEF/HLD/LLD docs. S002 is net-new as claimed.",
-          "action": "No action; the net-new premise holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "contractDetails",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The extension already uses the deps-injected factory idiom (createWebviewPanelHost) the LLD follows for the new adapter modules.",
-          "evidence": "createWebviewPanelHost has 41 refs and vscode-plugin/src/panels/webview-host.ts:111 read OK — the deps-injected factory idiom the LLD follows exists.",
-          "action": "No action; citation confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "hldContextSlice",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD assigns ownership of sc2 and sc5 to Story S002, matching this LLD's implements-role claims.",
-          "evidence": "The approved HLD.md read OK and matches ownership of sc2/sc5 to S002. NOTE: the rendered LLD.md header shows 'Owns: undefined (undefined)' — a cosmetic renderer glitch from passing hldContextSlice.ownedContracts as plain strings; the underlying ownership + implements-roles are correct throughout the artifact and the HLD.",
-          "action": "Cosmetic only: the 'Owns: undefined' header line is a display artifact, not a substance error. Optionally re-render with ownedContracts as {id,name} objects on a future touch; no gate impact.",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "dataModel",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The sc2 TurnEvent union has exactly six variants: assistant-delta, tool-call, file-edit, status, done, error (verbatim from the HLD sc2 sketch).",
-          "evidence": "The HLD.md read OK; the six TurnEvent variants (assistant-delta/tool-call/file-edit/status/done/error) match the sc2 sketch verbatim.",
-          "action": "No action; closed-union matches the HLD.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "spike",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "claude/codex each expose a machine-readable structured stream mode (e.g. claude --output-format stream-json) and a native session-resume flag — an out-of-process contract the LLD defers to the S002 spike, quarantined behind the adapter (StreamAdapter.capabilities.resume).",
-          "evidence": "output-format stream-json / --resume / session-id hit 11 in-repo refs (docs/prompts) — these do NOT prove the external claude/codex CLI flags. This is correctly treated as an out-of-process contract deferred to the S002 spike and quarantined behind StreamAdapter.capabilities.resume, so a per-provider surprise cannot leak past sc2/sc5.",
-          "action": "Validate the exact flags with the S002 build-time spike before wiring the panel (already the LLD's migration step 1). No LLD change needed.",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "invariants",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The project mandate the LLD's k2 invariant rests on (cloud LLM only via claude/codex CLI, no direct REST) is documented in CLAUDE.md.",
-          "evidence": "CLAUDE.md:1 read OK + 50 CliProvider/no-REST refs — the project mandate behind the k2 invariant is real as cited.",
-          "action": "No action; citation confirmed.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-25T14:18:31.900Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-25T14:18:36.713Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f06169af8eedb1f6c287243806d6d5412b2ff7a59101a5e204ff962fe0546210",
+        "at": "2026-09-25T14:01:49.236Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-25T14:18:36.713Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-25T14:18:31.900Z",
+        "report": {
+          "entityId": "LLD-edb76e2e4d41217d-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-edb76e2e4d41217d-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

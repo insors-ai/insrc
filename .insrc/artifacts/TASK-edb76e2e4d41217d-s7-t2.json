@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-463a4ecc-b8d7-4906-bbb8-73234551f0d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:54.542Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s7",
+    "envelope": {
+      "description": "New docs-review-client.ts (DocsReviewClient over the shared IpcClient)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1ca502410ad38ca90a53a584f103cf14d8c680fb2d690017800368549e1c8b36",
+        "at": "2026-10-22T12:44:54.542Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:54.543Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "New docs-review-client.ts (DocsReviewClient over the shared IpcClient)",
+    "summary": "Add vscode-plugin/src/chat/docs-review-client.ts: createDocsReviewClient(client) + DocsReviewClient (pending/content/approve/comment) + DocsContent type, wrapping workflow.pending/artifactContent/approve/resolveComment. pending() maps PendingArtifact -> DocsArtifactSummary + retains id->mdPath; every { error } arm throws. Pure/vscode-free (mirrors createDaemonConfigGateway).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "exports createDocsReviewClient + DocsReviewClient/DocsContent; imports no vscode",
+      "pending() maps PendingArtifact->DocsArtifactSummary (+ id->mdPath); { error } throws; { artifacts:[] } -> []",
+      "content/approve/comment call the right rpc method with the right params; { error } throws"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "docs-review-client: pending() maps PendingArtifact->DocsArtifactSummary + retains id->mdPath; { error } throws; { artifacts:[] } -> []"
+      },
+      {
+        "level": "unit",
+        "name": "docs-review-client: content(mdPath) returns { markdown, openQuestions, blocked }; { error } throws"
+      },
+      {
+        "level": "unit",
+        "name": "docs-review-client: approve(mdPath) -> rpc('workflow.approve',{artifactPath:mdPath}) returns WorkflowApproveResult verbatim; comment(id,note) -> rpc('workflow.resolveComment'); only client.rpc used"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

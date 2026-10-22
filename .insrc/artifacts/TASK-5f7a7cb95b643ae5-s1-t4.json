@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5c4c7b06-5c49-42fa-bbfb-6cc8c419a3a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.947Z",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f7a7cb95b643ae5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the finished-build test and the stamper",
+      "parent": {
+        "entityId": "STORY-5f7a7cb95b643ae5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f7a7cb95b643ae5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f7a7cb95b643ae5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6035b942d436183aec6559c18545fc782a5e7f9e1671cb994443e2ee4173ea36",
+        "at": "2026-10-22T12:43:36.947Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.948Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the finished-build test and the stamper",
+    "summary": "In range-base.ts add the FINISHED test over the BUILD record and PLAN json, read directly from .insrc/artifacts, and stampBuildStart with its two branches: with a valid stamp, replace it only when the build is finished and approved after the stamp; with no valid stamp, write nothing when the record has a task and is not finished, otherwise stamp. No runtime import of gates.ts.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Valid stamp: kept when there is no record, when a record is approved mid-plan, when a task has passed false or absent, when the record is task-less, when the plan is malformed, and when a finished record was approved before the stamp",
+      "Valid stamp: replaced at the new HEAD for a finished plan-driven build, a finished standalone build, and a planned Story whose record holds a passed whole-Story task, each approved after the stamp",
+      "No stamp: skipped for an unapproved record with a task, an approved record covering part of its plan, and an approved record with a failed task; stamped for no record, a task-less record and a finished record",
+      "An invalid stamp is replaced when no task is recorded and left alone (skipped) when the record is unfinished",
+      "Never throws; returns not-written when HEAD is unresolvable or the file cannot be written",
+      "range-base.ts has no runtime import of gates.ts, type-only imports excluded",
+      "Each new test was seen to fail with the production change reverted"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T1 first stamp writes HEAD and the Story's ids"
+      },
+      {
+        "level": "unit",
+        "name": "T2 a valid stamp is kept when HEAD moves"
+      },
+      {
+        "level": "unit",
+        "name": "T3 mid-build approval keeps the stamp"
+      },
+      {
+        "level": "unit",
+        "name": "T4 an approved record with a failed or unset task keeps the stamp"
+      },
+      {
+        "level": "unit",
+        "name": "T5 an approved task-less record keeps the stamp"
+      },
+      {
+        "level": "unit",
+        "name": "T6 a finished plan-driven build re-stamps"
+      },
+      {
+        "level": "unit",
+        "name": "T7 a finished standalone build re-stamps"
+      },
+      {
+        "level": "unit",
+        "name": "T8 a whole-Story task covers a plan and re-stamps"
+      },
+      {
+        "level": "unit",
+        "name": "T9 a finished record approved before the stamp keeps it"
+      },
+      {
+        "level": "unit",
+        "name": "T10 a malformed plan keeps the stamp"
+      },
+      {
+        "level": "unit",
+        "name": "T11 no stamp and an unapproved record with a task is skipped"
+      },
+      {
+        "level": "unit",
+        "name": "T12 no stamp and an approved partial record is skipped"
+      },
+      {
+        "level": "unit",
+        "name": "T13 no stamp and an approved failed record is skipped"
+      },
+      {
+        "level": "unit",
+        "name": "T14 no stamp and a finished record is stamped"
+      },
+      {
+        "level": "unit",
+        "name": "T15 no stamp and a task-less record is stamped"
+      },
+      {
+        "level": "unit",
+        "name": "T16 not-written for no commits and for an unwritable directory, without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "T17 invalid stamps are replaced with no recorded task and skipped with an unfinished record"
+      },
+      {
+        "level": "unit",
+        "name": "T21 range-base has no runtime import of gates"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

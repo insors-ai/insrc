@@ -1,0 +1,2096 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T09:07:53.194Z",
+    "updatedAt": "2026-10-15T09:31:33.572Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "epicSlug": "add-syntax-highlighting-chat-diff-widget",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "f17585233354c3bccfc3690a6ff2bef26fcb993cb0fd932d5ab80fde6f6a310c",
+        "at": "2026-10-15T09:07:53.194Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "95015df1",
+        "ranAt": "2026-10-15T09:07:53.194Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
+                "title": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the highlighter module holds no script tag and its byte length stays under 250 KB",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
+                "title": "the highlighter module holds no script tag and its byte length stays under 250 KB",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 321,
+            "titles": [
+              {
+                "title": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup",
+                "result": "pass"
+              },
+              {
+                "title": "the highlighter module holds no script tag and its byte length stays under 250 KB",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "14597ae6",
+        "ranAt": "2026-10-15T09:14:36.000Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+                "title": "the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+                "title": "t2: ColumnSet renders as ux-columnset with its Columns as children, in order",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 377,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16640,
+            "titles": [
+              {
+                "title": "open() posts the pending list from client.pending()",
+                "result": "pass"
+              },
+              {
+                "title": "open-doc for a known id posts docs-content mapped from the client",
+                "result": "pass"
+              },
+              {
+                "title": "open-doc for a stale/unknown id does NOT fetch content — it refreshes the list",
+                "result": "pass"
+              },
+              {
+                "title": "docs-decision approve records the decision through client.decide by the document's path and re-fetches pending",
+                "result": "pass"
+              },
+              {
+                "title": "a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call",
+                "result": "pass"
+              },
+              {
+                "title": "a withheld approval surfaces the reason non-lossily and stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "docs-decision reject and feedback send their comments through the same client.decide call and re-fetch",
+                "result": "pass"
+              },
+              {
+                "title": "a stale decision (id no longer pending) is dropped, not sent to the client",
+                "result": "pass"
+              },
+              {
+                "title": "client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)",
+                "result": "pass"
+              },
+              {
+                "title": "HIGH-1: a content-fetch failure posts blocked:true so approve is suppressed (review not defeated)",
+                "result": "pass"
+              },
+              {
+                "title": "MED-4: commentable is true for LLD/HLD/DEF and false for other pending kinds (PLAN)",
+                "result": "pass"
+              },
+              {
+                "title": "MED-3: a slow refresh response cannot overwrite a newer one (sequence guard)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-605c7057: a slow earlier open cannot overwrite a newer one (newer wins, either completion order)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-605c7057: a superseded open that FAILS does not replace the current document with its error",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-605c7057: a failure of the CURRENT open still posts blocked:true (fail-closed kept)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-605c7057: a list refresh does not discard an in-flight open",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the body container is NOT preformatted, and the shell carries markdown element rules for it",
+                "result": "pass"
+              },
+              {
+                "title": "the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the happy path parses through the vendored renderer and scrubs with guardMd",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a PARSE FAILURE falls back to textContent with the FULL body present and degradation { degraded: true, notice }",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a MISSING vendored global takes the SAME fallback path as a parse throw — one code path, one message",
+                "result": "pass"
+              },
+              {
+                "title": "t4: guardMd strips a non-http href and an image src from the rendered body, and moves an http(s) address to data-url",
+                "result": "pass"
+              },
+              {
+                "title": "t6 (contract): StructuredRenderer is still exported and now implemented in exactly ONE named place — a DELIBERATE narrowing at the first implementer, not an eroded invariant",
+                "result": "pass"
+              },
+              {
+                "title": "the file builds no fake DOM and declares no tree flatten of its own — both come from fake-dom.ts",
+                "result": "pass"
+              },
+              {
+                "title": "there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads",
+                "result": "pass"
+              },
+              {
+                "title": "t5: opening a document posts docs-content carrying BOTH the markdown and a sections index derived from it",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the index is derived from THE MARKDOWN ON THAT MESSAGE — the two cannot be paired across documents",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a document with NO headings posts an empty anchors array",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a degraded index posts degradation and does NOT set blocked; a fetch failure sets blocked and claims NO degradation",
+                "result": "pass"
+              },
+              {
+                "title": "t5: source-scan — the index rides the EXISTING docs-content variant; no new message type",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the pre-existing SIX members of the docs-content variant keep their meaning",
+                "result": "pass"
+              },
+              {
+                "title": "t6: rendered headings carry the slugs derived for the SAME markdown — every target matches a posted anchor",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a heading the deriver never indexed is left UNSTAMPED rather than mis-targeted",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a document with NO headings renders no chooser AT ALL — not an empty control",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the chooser labels each entry with the heading VERBATIM and jumps to the chosen slug",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the chooser placeholder selection does NOT fire a jump",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the ac3 notice appears when degraded and is ABSENT when not",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the shell still has exactly ONE markup-injection site after the chooser and notice",
+                "result": "pass"
+              },
+              {
+                "title": "t6: approve and send feedback reach the daemon through client.decide, and the COMMENTABLE_KINDS gate holds",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a DEGRADED index posts degradation and does NOT set blocked — the branch the earlier test never reached",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DEGRADED body renders NO chooser — entries whose targets do not exist are worse than none",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a content() rejection still posts blocked:true and carries no record",
+                "result": "pass"
+              },
+              {
+                "title": "t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape",
+                "result": "pass"
+              },
+              {
+                "title": "t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere",
+                "result": "pass"
+              },
+              {
+                "title": "t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups",
+                "result": "pass"
+              },
+              {
+                "title": "t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element",
+                "result": "pass"
+              },
+              {
+                "title": "t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId",
+                "result": "pass"
+              },
+              {
+                "title": "t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell's injection-site count is still exactly one",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the item CSS fragment references only --it-* variables",
+                "result": "pass"
+              },
+              {
+                "title": "t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match",
+                "result": "pass"
+              },
+              {
+                "title": "t3 (contract): docs-sections.ts is unchanged and still has zero imports",
+                "result": "pass"
+              },
+              {
+                "title": "t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld",
+                "result": "pass"
+              },
+              {
+                "title": "t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed",
+                "result": "pass"
+              },
+              {
+                "title": "t4: removal to end — an FR section that is the last section removes to the end of the container without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t4: heading preservation — the heading element, its text and its stamped id are identical before and after",
+                "result": "pass"
+              },
+              {
+                "title": "t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched",
+                "result": "pass"
+              },
+              {
+                "title": "t5: DOCS_FR_SOURCE is inlined into the single nonce'd script and the placement call sits after stampSlugs and before the chooser / notice",
+                "result": "pass"
+              },
+              {
+                "title": "t5: notice precedence — host-posted beats body beats placement, and exactly one notice is ever rendered",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the renderContent try/catch backstop — a forced throw inside placement still renders the chooser, notice, open questions and controls",
+                "result": "pass"
+              },
+              {
+                "title": "t5: opening a document with no record yields a body byte-identical to the S001 rendering of the same markdown",
+                "result": "pass"
+              },
+              {
+                "title": "t5: idempotence — two consecutive docs-content messages with the same record leave exactly one container; a third with no record leaves none",
+                "result": "pass"
+              },
+              {
+                "title": "t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate and the blocked banner behave as before",
+                "result": "pass"
+              },
+              {
+                "title": "t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: the same record rendered twice yields identical identifiers — the cross-document guarantee",
+                "result": "pass"
+              },
+              {
+                "title": "a very large record renders every requirement — no pagination, no virtualisation, no truncation",
+                "result": "pass"
+              },
+              {
+                "title": "the functional-requirement items carry LIST semantics, not just visual separation",
+                "result": "pass"
+              },
+              {
+                "title": "t2: all three records are forwarded by REFERENCE on the existing docs-content message",
+                "result": "pass"
+              },
+              {
+                "title": "t2: openDoc posts exactly ONE docs-content message per open — no second round trip",
+                "result": "pass"
+              },
+              {
+                "title": "t2: an absent record stays an ABSENT KEY ('erDefinition' in payload === false)",
+                "result": "pass"
+              },
+              {
+                "title": "t2: a document carrying ONLY a sequence record leaves erDefinition absent — the real S002 shape",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the fail-closed arm posts blocked:true and carries NONE of the three records",
+                "result": "pass"
+              },
+              {
+                "title": "t2 (contract): protocol.ts indexes all three off DocsContent rather than restating them",
+                "result": "pass"
+              },
+              {
+                "title": "t3: the 'absent' state carries NO member other than state — enforced by the TYPE, not just at runtime",
+                "result": "pass"
+              },
+              {
+                "title": "t3: companionVisualKind maps the closed union TOTALLY — both diagram kinds to diagram, the mock to experience",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an unhandled companion kind is a COMPILE error, not an unlabelled slot",
+                "result": "pass"
+              },
+              {
+                "title": "t3: linkOut is reachable on BOTH non-absent states — the failure state most of all",
+                "result": "pass"
+              },
+              {
+                "title": "t3: body is `unknown`, matching the shipped StructuredRenderer<T> return shape",
+                "result": "pass"
+              },
+              {
+                "title": "t3: sc4 is TYPE-ONLY so far — nothing on the surface consumes it yet",
+                "result": "pass"
+              },
+              {
+                "title": "t4 PARITY: the client derivation matches erDefinitionToIr over shared fixtures, with the daemon as the authority",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a class-ranged slot becomes an edge; scalar, rangeless and unknown-shaped slots become attributes",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a DANGLING range loses only its relationship — every box and every other edge still draw",
+                "result": "pass"
+              },
+              {
+                "title": "t4: cardinality flags produce the daemon's crow's-foot token in every combination",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a self-reference and a 3-cycle both terminate and draw — layout iterates the sorted class list",
+                "result": "pass"
+              },
+              {
+                "title": "t4: determinism — the same record renders an identical element tree every time",
+                "result": "pass"
+              },
+              {
+                "title": "t4 ac4: every element is createElementNS in the SVG namespace and every label is textContent",
+                "result": "pass"
+              },
+              {
+                "title": "t4 ac4: hostile class and slot names survive character-for-character and reach no attribute",
+                "result": "pass"
+              },
+              {
+                "title": "t4 contract: DOCS_DIAGRAM_SOURCE assigns no markup, and the shell still has EXACTLY ONE innerHTML",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: the four-combination table, asserted through the discriminator AND what was built",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: absent does ZERO DOM work — no element is created at all",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: a diagram ref with no drawable record is UNSHOWABLE and NAMES what was referenced",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: diagram-html routes to unshowable naming the kind (lc1), never a silent nothing",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: a ux-mock ref is not this factory's business — the experience slot stays s4's",
+                "result": "pass"
+              },
+              {
+                "title": "t4 gate: linkOut is present on rendered AND unshowable whenever a ref exists, absent without one",
+                "result": "pass"
+              },
+              {
+                "title": "t4 layout: no row escapes its box, and no two boxes overlap — the defects the first visual read caught",
+                "result": "pass"
+              },
+              {
+                "title": "t4 layout: a box grows to fit its longest row rather than clipping it",
+                "result": "pass"
+              },
+              {
+                "title": "t5 PARITY: the client sequence derivation matches sequenceDefinitionToIr, daemon as the authority",
+                "result": "pass"
+              },
+              {
+                "title": "t5 PARITY: ordering, labels and the :repeat suffix over constructed shapes",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a message naming an undeclared participant is DROPPED, not fatal — the deliberate divergence",
+                "result": "pass"
+              },
+              {
+                "title": "t5: every participant and every message from the REAL record is rendered, in order",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the sequence renderer reuses t4 primitives — SVG namespace, textContent, no markup",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an empty or malformed sequence record is ABSENT and creates no element",
+                "result": "pass"
+              },
+              {
+                "title": "t5: determinism — the same sequence record renders an identical tree every time",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the factory dispatches on the RECORD present, never on the ref kind",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a sequence record with no ref is labelled from the record, not left blank",
+                "result": "pass"
+              },
+              {
+                "title": "t5 layout: no caption escapes the canvas and no two participant heads overlap",
+                "result": "pass"
+              },
+              {
+                "title": "t6 gate: the four-combination table, driven through the SHIPPED bootstrap",
+                "result": "pass"
+              },
+              {
+                "title": "t6 ac2: the dominant path does ZERO DOM work and leaves the body region untouched",
+                "result": "pass"
+              },
+              {
+                "title": "t6: `classes: {}` and an empty sequence record are ABSENT, not an empty frame",
+                "result": "pass"
+              },
+              {
+                "title": "t6: diagram-html routes to the stated failure (lc1), never a silent nothing",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the link-out is offered in the FAILURE state, where it matters most",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the slot build runs AFTER stampSlugs — every heading id is undisturbed",
+                "result": "pass"
+              },
+              {
+                "title": "t6 placement: a resolving anchor mounts beside that heading; a stale one falls back rather than dropping",
+                "result": "pass"
+              },
+              {
+                "title": "t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none",
+                "result": "pass"
+              },
+              {
+                "title": "t6 resilience: a forced throw in the slot build leaves all five other surfaces intact",
+                "result": "pass"
+              },
+              {
+                "title": "t6 regression: the decision controls and the blocked state are the same with a diagram present",
+                "result": "pass"
+              },
+              {
+                "title": "t6 regression: the HOST decision path still reaches the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the fail-closed arm shows the blocked banner and NO slot",
+                "result": "pass"
+              },
+              {
+                "title": "t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce'd script and the call sits between stampSlugs and the chooser",
+                "result": "pass"
+              },
+              {
+                "title": "t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity",
+                "result": "pass"
+              },
+              {
+                "title": "t7 (updated by S004/t6): a document carrying BOTH refs now shows TWO slots, diagram FIRST",
+                "result": "pass"
+              },
+              {
+                "title": "t7 (updated by S004/t6): a ux-mock ref ALONE now routes to the stated failure, not to nothing",
+                "result": "pass"
+              },
+              {
+                "title": "t7: every committed evidence image exists at the path its commit claims",
+                "result": "pass"
+              },
+              {
+                "title": "t6 FIX: the anchor resolves on a NUMBERED heading — the format every real insrc document uses",
+                "result": "pass"
+              },
+              {
+                "title": "CR/coverage: all four webview source strings PARSE together in one scope",
+                "result": "pass"
+              },
+              {
+                "title": "t1: uxDefinition is forwarded by REFERENCE on the existing docs-content message",
+                "result": "pass"
+              },
+              {
+                "title": "t1: openDoc posts exactly ONE docs-content message per open — no second round trip",
+                "result": "pass"
+              },
+              {
+                "title": "t1: an absent record stays an ABSENT KEY ('uxDefinition' in payload === false)",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a ux-mock ref's ofSectionId resolves HOST-side to experienceAnchorSlug over THIS markdown's index",
+                "result": "pass"
+              },
+              {
+                "title": "t1: an ofSectionId naming no section posts NO experienceAnchorSlug key — not an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t1: the two pickers PARTITION the companions array — the ux ref is not the diagram ref",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a companions array of DIAGRAM refs only yields no experienceAnchorSlug",
+                "result": "pass"
+              },
+              {
+                "title": "t1: the fail-closed arm posts blocked:true and carries NO uxDefinition",
+                "result": "pass"
+              },
+              {
+                "title": "t1 (contract): protocol.ts indexes uxDefinition off DocsContent rather than restating it",
+                "result": "pass"
+              },
+              {
+                "title": "t1/t2: the shell matches the pin, and NOTHING reads either new field yet",
+                "result": "pass"
+              },
+              {
+                "title": "the shell inlines each of its source strings verbatim and exactly once, with the ux CSS fragment",
+                "result": "pass"
+              },
+              {
+                "title": "t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "t2: TextBlock renders as <p class=\"ux-text\"> with its text via textContent",
+                "result": "pass"
+              },
+              {
+                "title": "t2: every TextBlock modifier maps to the daemon class, including all four colour roles",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Container renders as ux-container and recurses over items",
+                "result": "pass"
+              },
+              {
+                "title": "t2: ColumnSet renders as ux-columnset with its Columns as children, in order",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Column honours a numeric width as the flex grow factor, a keyword falls back to 1, absent sets no style",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Image shows its url as TEXT — no img element, no src, nothing fetchable",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Image with no altText falls back to the daemon’s literal \"image\"",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Input.Text is a non-interactive affordance — a label and a styled span, never an input",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Input.Text multiline adds ux-input--multi; a missing label falls back to the id",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Input.ChoiceSet renders each choice as text with a mark — no select, no option",
+                "result": "pass"
+              },
+              {
+                "title": "t2: a multi-select ChoiceSet uses the daemon’s box mark, single-select its circle",
+                "result": "pass"
+              },
+              {
+                "title": "t2: ActionSet renders Submit and OpenUrl as chips that are TELLABLE APART, with no anchor and no href",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the stated parity divergence fires on LINK chips and only link chips",
+                "result": "pass"
+              },
+              {
+                "title": "t2: each of the FOUR real ledger uxDefinitions renders COMPLETELY",
+                "result": "pass"
+              },
+              {
+                "title": "t2: an unknown element type renders a VISIBLE ux-unknown NAMING the type",
+                "result": "pass"
+              },
+              {
+                "title": "t2: a malformed element, a missing text and a non-array child list each degrade IN PLACE",
+                "result": "pass"
+              },
+              {
+                "title": "t2: a non-array body yields an empty card rather than throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t2: every element is created with createElement and every string written without parsing",
+                "result": "pass"
+              },
+              {
+                "title": "t2: hostile text renders character-for-character and creates no element and no attribute",
+                "result": "pass"
+              },
+              {
+                "title": "t2: no attribute value anywhere is built from record text",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the renderer emits NO node/edge construct — the uxDefinitionToIr regression guard",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY: the daemon tree and the client tree are structurally IDENTICAL over every shared fixture",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY POSITIVE CONTROL: a re-nested variant makes the structural diff FAIL",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY of vocabulary: every ux-* class the client emits is one the daemon’s stylesheet defines",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY of coverage: the client handles exactly the union members the daemon’s elementHtml handles",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY of degradation: the client renders ux-unknown for the same inputs the daemon does",
+                "result": "pass"
+              },
+              {
+                "title": "t2 PARITY, the ONE stated asymmetry: the daemon THROWS on a null element, the client degrades",
+                "result": "pass"
+              },
+              {
+                "title": "t2 THEME: the ux CSS fragment carries NO literal colour and no var() that can resolve to nothing",
+                "result": "pass"
+              },
+              {
+                "title": "t2: DOCS_UX_SOURCE contains no markup sink, scanned with comments stripped first",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the emitted shell still contains EXACTLY ONE .innerHTML= after a FIFTH source string joins",
+                "result": "pass"
+              },
+              {
+                "title": "t2: ALL FIVE source strings parse together in one scope — the dgEl-collision guard, extended",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the FULL emitted script parses — including the bootstrap consts the five strings share scope with",
+                "result": "pass"
+              },
+              {
+                "title": "t3/t7: every committed S004 evidence artefact exists at the path its commit claims",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the bound is a SINGLE named constant with no second hard-coded copy",
+                "result": "pass"
+              },
+              {
+                "title": "t4: the chosen value is strictly greater than the plan floor AND than the measured real maximum",
+                "result": "pass"
+              },
+              {
+                "title": "t4: EVERY one of the four real records renders UNTRUNCATED — the bound never fires on authored content",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a synthetic over-deep structure TRIPS the guard, names depth as the reason, and TERMINATES",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a CYCLIC structure terminates — the case that would hang without a bound",
+                "result": "pass"
+              },
+              {
+                "title": "t4 MUTATION: removing the bound makes the pathological case diverge",
+                "result": "pass"
+              },
+              {
+                "title": "t5 PICKER PARTITION: uxPickRef takes the ux-mock ref and ONLY it, across all FOUR diagram refs",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a companions array of DIAGRAM refs only yields NO ux ref",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the three sc4 states come back correctly from the factory in isolation",
+                "result": "pass"
+              },
+              {
+                "title": "t5: `body: []` and a malformed record are treated as ABSENT, not as a broken card",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a record with NO ref still renders — the record gates content, the ref gates label and link",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the label comes from the REF, never hard-coded per call",
+                "result": "pass"
+              },
+              {
+                "title": "t5: ac3’s dominant path is ZERO DOM ACTIVITY — the absent gate returns before anything is created",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a renderer throw degrades to the stated failure rather than escaping the factory",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the bound is PASSED IN, not re-declared — still one named constant after the factory lands",
+                "result": "pass"
+              },
+              {
+                "title": "t5/t6: the factory is inlined and called at EXACTLY ONE site",
+                "result": "pass"
+              },
+              {
+                "title": "t6 GATE: the four-combination table, driven through the SHIPPED bootstrap",
+                "result": "pass"
+              },
+              {
+                "title": "t6: ac3’s dominant path is ZERO DOM ACTIVITY from the experience path",
+                "result": "pass"
+              },
+              {
+                "title": "t6: `body: []` and a malformed record are ABSENT through the real bootstrap",
+                "result": "pass"
+              },
+              {
+                "title": "t6: adding the experience slot leaves the DIAGRAM slot BYTE-IDENTICAL to what S003 renders",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the two slots are PEERS — diagram first, experience second, in the emitted markup",
+                "result": "pass"
+              },
+              {
+                "title": "t6 IDEMPOTENCE: two identical messages leave exactly ONE slot; a third carrying neither leaves none",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a forced throw in the experience slot build leaves SIX other surfaces intact — including the diagram",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a resolvable anchor places the slot beside its heading; a stale one falls back rather than dropping it",
+                "result": "pass"
+              },
+              {
+                "title": "t6: a DIGIT-LEADING anchor slug places the EXPERIENCE slot without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the mount REUSES s3’s dgMountSlot, so the digit-leading-slug fix is inherited and not re-implemented",
+                "result": "pass"
+              },
+              {
+                "title": "t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section identity",
+                "result": "pass"
+              },
+              {
+                "title": "openArtifact opens a non-pending artifact with feedback only, and a pending one as its list row does",
+                "result": "pass"
+              },
+              {
+                "title": "openArtifact on a cold pane decides pending from its own pending read, even when the boot ping's refresh is superseded",
+                "result": "pass"
+              },
+              {
+                "title": "history and compiler checks skip with a stated reason when what they need is missing, and never run on an empty window",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: a document that is not awaiting review shows its history and offers send feedback only",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: author, comment and quote text are set as text, never as markup",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: no comment button is offered while no document is open",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the list view shows 25 rows a page ordered by type then title, and the pager moves between pages and is disabled at the ends",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the search matches every word in the title, id or work item id without regard to case, the type select filters with counts, and either change goes to page 1",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the datalist offers at most 50 titles and ids of the chosen type",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: pressing a row's title posts open-doc, a content with reveal switches to the document view (an unavailable one too), a content without it never changes the view, and the back button returns to the list with the document and its drafts kept",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the search, type, page and the view on show are restored from the saved state when the shell is rebuilt, a re-post to the rebuilt shell does not leave the list view, a draft saved after the list state keeps it and the reverse, and a saved state of another shape gives the defaults",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the list view's table is its own scrolling region, the toolbar and pager are outside it, titles and ids are set as text, and the recorded baseline is that of the new shell",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: the host's notice of a failed read is shown in the list view's notice line, does not change the view, and is cleared by the next list that carries documents",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: a reload marked changed keeps the scroll position and the drafts and says the document changed; a reload after the shell's own decision keeps the decision's result line",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: a diagram or mock that has its own tab is not also drawn inside the markdown; one with no tab still is",
+                "result": "pass"
+              },
+              {
+                "title": "docs review shell: a BUILD row is listed between ISSUE and CR, counted in the type select, and opens like any other row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 297,
+            "titles": [
+              {
+                "title": "the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, moves, querying and listeners",
+                "result": "pass"
+              },
+              {
+                "title": "allOf walks pre-order, root first, and skips text nodes",
+                "result": "pass"
+              },
+              {
+                "title": "fake-dom nodes carry scrollTop, scrollHeight and clientHeight",
+                "result": "pass"
+              },
+              {
+                "title": "the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5b2c314f",
+        "ranAt": "2026-10-15T09:15:41.982Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the extension is matched without regard to case and a Dockerfile has a language",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+                "title": "the extension is matched without regard to case and a Dockerfile has a language",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+                "title": "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+                "title": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a span with no hljs- class is read as classless text and does not reject the section",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+                "title": "a span with no hljs- class is read as classless text and does not reject the section",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "highlighter output that is not plain spans and text falls back to plain text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+                "title": "highlighter output that is not plain spans and text falls back to plain text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 303,
+            "titles": [
+              {
+                "title": "the extension is matched without regard to case and a Dockerfile has a language",
+                "result": "pass"
+              },
+              {
+                "title": "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+                "result": "pass"
+              },
+              {
+                "title": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+                "result": "pass"
+              },
+              {
+                "title": "a span with no hljs- class is read as classless text and does not reject the section",
+                "result": "pass"
+              },
+              {
+                "title": "highlighter output that is not plain spans and text falls back to plain text",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "6a97d6ce",
+        "ranAt": "2026-10-15T09:18:08.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a block comment opened on a context line colours an added line as comment",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "a block comment opened on a context line colours an added line as comment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a removed line and an added line are each tokenised from their own side",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "a removed line and an added line are each tokenised from their own side",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unknown extension and a failing highlighter leave every line as plain text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "an unknown extension and a failing highlighter leave every line as plain text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a diff line's text span holds no assigned markup",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "a diff line's text span holds no assigned markup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+                "title": "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+                "title": "S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 339,
+            "titles": [
+              {
+                "title": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+                "result": "pass"
+              },
+              {
+                "title": "a block comment opened on a context line colours an added line as comment",
+                "result": "pass"
+              },
+              {
+                "title": "a removed line and an added line are each tokenised from their own side",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown extension and a failing highlighter leave every line as plain text",
+                "result": "pass"
+              },
+              {
+                "title": "a diff line's text span holds no assigned markup",
+                "result": "pass"
+              },
+              {
+                "title": "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 342,
+            "titles": [
+              {
+                "title": "renderRow dispatches to a registered renderer for its kind",
+                "result": "pass"
+              },
+              {
+                "title": "renderRow falls back to line() for an unmapped kind (incl. the reserved 'approval-request')",
+                "result": "pass"
+              },
+              {
+                "title": "the fallback renderer applies the vm cssClass (byte-identical to line(s,cls))",
+                "result": "pass"
+              },
+              {
+                "title": "a renderer that throws is caught and the row falls back to line() (per-row isolation)",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: default-collapsed wraps with the collapsed class + a ▸ icon-only chevron",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: clicking the chevron toggles collapsed<->expanded and swaps ▸/▾",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: defaultCollapsed=false starts expanded with a ▾ chevron",
+                "result": "pass"
+              },
+              {
+                "title": "renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked",
+                "result": "pass"
+              },
+              {
+                "title": "RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel maps transcript rows: user/assistant/marker to the right kind + role",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel is total: an unrecognised event maps to a fallback row",
+                "result": "pass"
+              },
+              {
+                "title": "parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: an assistant multi-step turn renders each step's actual text (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "the tool-command renderer never wraps its content in the collapse primitive (k6 d)",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: distinct keys render distinct rows (two identical prompts -> two rows)",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)",
+                "result": "pass"
+              },
+              {
+                "title": "appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: the user and assistant-text renderers emit distinct role tones",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not",
+                "result": "pass"
+              },
+              {
+                "title": "S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): plain prose renders as a paragraph (marked), text preserved",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): malformed JSON does not throw — it renders as markdown text",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a command-less tool-result renders no command line and its output",
+                "result": "pass"
+              },
+              {
+                "title": "tool result: a short output is drawn with no chevron and a long one folds",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines; it has the chevron and the user can fold it",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a short assistant row still renders in full, uncollapsed",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: card buttons invoke the registered decision sink with (requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: a rejected permission-outcome reuses the red deny tint",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: an approval card with no decision sink registered does not throw on click",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a table-only response still renders as a table (marked GFM)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws radio controls for single-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns",
+                "result": "pass"
+              },
+              {
+                "title": "approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row",
+                "result": "pass"
+              },
+              {
+                "title": "render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel: a diff row maps to the diff kind in the host and in the webview mirror",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f76285bb",
+        "ranAt": "2026-10-15T09:21:40.637Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "title": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "title": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 462,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 304,
+            "titles": [
+              {
+                "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name used in the shell style, the row renderer style and the chat's markdown rules is defined in the named layer",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown)",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the history chip is one wrapper around the select with a masked icon in the current text colour; the select keeps its id and options, and every image source the shell declares is allowed by its content security policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops",
+                "result": "pass"
+              },
+              {
+                "title": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "2c3b52fa",
+        "ranAt": "2026-10-15T09:25:11.509Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a click on an added or context line posts open-code-ref with its path and new-side line",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+                "title": "a click on an added or context line posts open-code-ref with its path and new-side line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a click on a removed line posts the new-side line it sat before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+                "title": "a click on a removed line posts the new-side line it sat before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+                "title": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+                "title": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts",
+                "title": "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts",
+                "title": "the chat registry hands a clicked link to the open-link sink",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 368,
+            "titles": [
+              {
+                "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name used in the shell style, the row renderer style and the chat's markdown rules is defined in the named layer",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every name but the one derived ground holds a theme variable of this design's mapping, and every optional one falls back to another theme variable",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: each component uses the name the mapping gives it (bars, transcript, user and assistant bubbles, tool row, markers, diff lines, approval card and buttons, decided badge, selection card, input, selects, pill, attachment chips, progress, markdown)",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the history chip is one wrapper around the select with a masked icon in the current text colour; the select keeps its id and options, and every image source the shell declares is allowed by its content security policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: every selector and element id of the shell and the row renderer from before the change is still present, the added selectors are exactly the listed ones, and the shell is still one nonce'd inline script under the same policy",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the shared token sheet and the docs-review markdown rules are byte-identical to before the change, and the docs-review panel uses none of the chat's three style sources",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet",
+                "result": "pass"
+              },
+              {
+                "title": "chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops",
+                "result": "pass"
+              },
+              {
+                "title": "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 316,
+            "titles": [
+              {
+                "title": "a click on an added or context line posts open-code-ref with its path and new-side line",
+                "result": "pass"
+              },
+              {
+                "title": "a click on a removed line posts the new-side line it sat before",
+                "result": "pass"
+              },
+              {
+                "title": "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget",
+                "result": "pass"
+              },
+              {
+                "title": "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 347,
+            "titles": [
+              {
+                "title": "a code reference with a line in running text becomes a link carrying its path and line",
+                "result": "pass"
+              },
+              {
+                "title": "text inside code and pre and existing anchors is not wrapped",
+                "result": "pass"
+              },
+              {
+                "title": "a version number is not treated as a path",
+                "result": "pass"
+              },
+              {
+                "title": "a click on an http link posts open-link and prevents the default",
+                "result": "pass"
+              },
+              {
+                "title": "a click on a code reference posts open-code-ref with path and line",
+                "result": "pass"
+              },
+              {
+                "title": "guardMd still drops a non-http href",
+                "result": "pass"
+              },
+              {
+                "title": "an http link keeps its target in data-url and has no href, so it cannot open by itself",
+                "result": "pass"
+              },
+              {
+                "title": "inline code whose whole text is a code reference becomes a link",
+                "result": "pass"
+              },
+              {
+                "title": "the chat registry hands a clicked link to the open-link sink",
+                "result": "pass"
+              },
+              {
+                "title": "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click",
+                "result": "pass"
+              },
+              {
+                "title": "the chat page and the review pane both include the linkify and click wiring",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 299,
+            "titles": [
+              {
+                "title": "the host opens a valid http url externally and refuses a non-http url",
+                "result": "pass"
+              },
+              {
+                "title": "the host opens an existing in-workspace path with the line selected",
+                "result": "pass"
+              },
+              {
+                "title": "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder",
+                "result": "pass"
+              },
+              {
+                "title": "the host refuses a symlink inside the workspace that points outside it",
+                "result": "pass"
+              },
+              {
+                "title": "the host logs and survives an open that rejects or resolves false",
+                "result": "pass"
+              },
+              {
+                "title": "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host and the review host hand a clicked link and code reference to the opener",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "2c3b52fa",
+        "ranAt": "2026-10-15T09:31:33.572Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Reported by the user on 2026-10-15 in the installed plugin (0.5.14). The diff of a TypeScript change is coloured by syntax and readable in a light and a dark theme. For the unknown type, a scratch file (scratch-plain-check.txt, inside the workspace, since a /tmp file outside it drew no diff widget) was created with two plain lines; the user's reply was 'work', which I read as the plain diff showing correctly. That reading is the builder's, not a quoted observation; the logic is also covered by the automated test 'an unknown extension and a failing highlighter leave every line as plain text'. The scratch file was deleted afterwards."
+            }
+          },
+          {
+            "name": "clicking a diff line opens the file at that line beside or in the editor group the review pane uses",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Reported by the user on 2026-10-15 in the installed plugin: clicking an added and a removed diff line opens the file at the line, the header path opens the file while the rest of the header still toggles the widget, selecting text opens nothing, and the file lands in the right editor group (the review pane's, else beside the chat)."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

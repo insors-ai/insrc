@@ -22,8 +22,36 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T14:57:59.329Z",
-    "parentRef": null
+    "parentRef": null,
+    "epicCreatedAt": "2026-10-10T14:46:43.082Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e0ec2df14eaa8768e9a9162663c7a95d8f26123de7a59add813d8dde75b6f929",
+        "at": "2026-10-10T14:46:43.082Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T14:57:59.329Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "The index keeps the entities of files that are deleted or are now ignored",

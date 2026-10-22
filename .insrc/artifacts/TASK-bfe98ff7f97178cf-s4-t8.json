@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f1c5a854-e1df-4920-ab91-3881a0ca5169",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.991Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Rebuild the extension, report the computed size delta, state that no daemon rebuild is needed",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "721cc874e362b235730a9059c9135110e83b2a0fa5594dd1f16cf72cb9febcf4",
+        "at": "2026-10-22T12:44:32.992Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.992Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rebuild the extension, report the computed size delta, state that no daemon rebuild is needed",
+    "summary": "The shipping act. Rebuild and package the extension and report the VSIX size delta COMPUTED from the two artefacts against S003's 247,667-byte baseline. State explicitly that NO daemon rebuild is required — S004 changes no file under src/ — because conflating the two is how a correct change came to look broken earlier in this Epic, when a daemon update fast-forwarded to the wrong commit and a live check would have reported a working field missing.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "The extension is rebuilt and the VSIX size delta is COMPUTED from the two artefacts and reported — never typed from memory",
+      "The delta is a few KB, not megabytes, confirming the DOM-construction route avoided alternative a2's bundle cost just as S003 avoided a3's",
+      "COUNTS ARE DERIVED, NOT TYPED (critique): the plugin sweep and docs-review suite pass counts are READ OUT of the committed transcript by the same command that produced it, and the transcript is committed in the SAME commit as the message quoting it. No count is typed into a commit message or a completion note — this repo has shipped exactly that",
+      "The completion note states that NO daemon rebuild is required and WHY — uxDefinition is one of sc1's original four projected fields, so no file under src/ changed",
+      "The changed-file set is listed and contains nothing under src/ — the same proof t1 asserted, re-checked over the Story's whole diff"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the full plugin sweep runs green and its count is READ OUT of the committed transcript"
+      },
+      {
+        "level": "integration",
+        "name": "the docs-review suite runs green and its count is READ OUT of the same transcript"
+      },
+      {
+        "level": "unit",
+        "name": "the VSIX size delta is COMPUTED from the two packaged artefacts against S003's 247,667-byte baseline"
+      },
+      {
+        "level": "unit",
+        "name": "the Story's whole changed-file set contains nothing under src/ — no daemon rebuild required"
+      },
+      {
+        "level": "integration",
+        "name": "the only input to the mock is a record from the existing docs-content message: no fetch, no companion-file read, no external call anywhere in the diff"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

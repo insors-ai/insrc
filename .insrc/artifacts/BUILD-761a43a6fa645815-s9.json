@@ -6,9 +6,36 @@
     "storyId": "s9",
     "createdAt": "2026-08-05T12:00:00.000Z",
     "updatedAt": "2026-08-05T12:00:00.000Z",
-    "approvedAt": "2026-08-05T06:34:29.764Z",
     "epicSlug": "add-daemon-driven-code-review-stage",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "87c5daa9667f1e1b84d7f04d8aa64d5dd54f1f7862a71d413d0584455b55b303",
+        "at": "2026-08-05T12:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T06:34:29.764Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "Wait for a fresh index before grounding a Story code review (indexing-readiness gate)",

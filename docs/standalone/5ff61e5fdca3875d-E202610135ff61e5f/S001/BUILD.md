@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-5ff61e5fdca3875d-S001 -->
+<!-- insrc:artifact BUILD-5ff61e5fdca3875d-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,5 +26,5 @@ A long assistant response (more than 3 lines or 240 characters) now has the coll
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-7fefc3fc5c51793e-S001.json` — **insrc-build** (2026-10-13T07:18:27.074Z)
+- `.insrc/artifacts/BUILD-7fefc3fc5c51793e-s1.json` — **insrc-build** (2026-10-13T07:18:27.074Z)
 - `docs/standalone/make-dev-chat-follow-vs-code-E202610137fefc3fc/S001/BUILD.md` — **insrc-build** (2026-10-13T07:18:27.074Z)

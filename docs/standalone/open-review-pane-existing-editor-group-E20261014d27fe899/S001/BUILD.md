@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-d27fe8996fc3a2db-S001 -->
+<!-- insrc:artifact BUILD-d27fe8996fc3a2db-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -22,7 +22,7 @@ A new review pane opens in an editor group that is already open and holds no cha
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
-- `.insrc/artifacts/BUILD-de069d56d76eaacd-S001.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
+- `.insrc/artifacts/BUILD-babd84c6e2fb480a-s1.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
+- `.insrc/artifacts/BUILD-de069d56d76eaacd-s1.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
 - `docs/standalone/keep-chat-s-progress-widget-when-E20261014de069d56/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:41.032Z)
 - `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:41.032Z)

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-05cc06d8-1a83-4478-a40e-96d704e04fb9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.528Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Tests: decline diff-only path, assembler fallback, runner opts, enforce gate",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d73e3695b36727c7a9119d76bde5fc63eb6a1d59efe74c54675d7ddba9297658",
+        "at": "2026-10-22T12:43:45.528Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.528Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: decline diff-only path, assembler fallback, runner opts, enforce gate",
+    "summary": "Finalize the s10 test suite, node:test via npx tsx --test. In src/mcp/code-review-step/__tests__/handler.test.ts: extend makeDeps with an injectable assembleDiffGrounding + a runReview spy that records opts; REPLACE the s9 abort->review-declined assertion (~handler.test.ts:312) with the diff-only expectation. In src/workflow/code-review/__tests__: add the enforce-gate degraded-warn test; confirm the assembler + runner unit tests (from t2/t3/t5) and the gated integration test all pass. Run the code-review + mcp suites green.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "handler.test.ts abort->review-declined assertion is replaced by the diff-only expectation and the decline/degraded/diff-unavailable/ac6 tests pass",
+      "the assembler unit tests (working-tree, HEAD^ fallback, binary, both-empty, truncated-diff bounded grounding, read-only) + the gated real-git integration test pass",
+      "the runner groundingMode-stamp + warn-cap unit tests and the degraded-warn enforce-gate test pass",
+      "the full code-review + mcp suites run green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gate: the codeReview.enforce gate over a groundingMode:'degraded' record with verdict 'warn' withholds completion (requires an override), exactly as any non-pass verdict does"
+      },
+      {
+        "level": "unit",
+        "name": "handler: the abort path no longer returns 'review-declined' (the s9 assertion is replaced by the diff-only expectation)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

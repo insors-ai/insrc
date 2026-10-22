@@ -1,0 +1,362 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792006603311-6a0p2w",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T19:38:17.866Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 94552,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57a2ba4d5f18c356",
+    "epicSlug": "always-show-chat-s-progress-widget",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792006603311-6a0p2w",
+    "hldEffectiveHash": "57a2ba4d5f18c356e395f9652fb617547c60fee6ad675180d3a4c5db568a7d8f",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One module (chat-panel.ts: the widget's CSS, markup and webview script) and one obvious approach; small choices for the LLD: what idle looks like, reduced motion, no session. Three existing test files pin the hidden behaviour.",
+    "authoredBy": "controller",
+    "rangeBase": "1e4c1dd9aa388f50d51d84215705030eeef0b768",
+    "epicCreatedAt": "2026-10-14T19:38:17.866Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a8495e552a468a1e04ba54ef4ed1c9021951dc3c5d8d7dc8402e29dc3f81bd39",
+        "at": "2026-10-14T19:38:17.866Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:43:15.499Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-10-14T19:40:20.341Z",
+        "report": {
+          "entityId": "LLD-57a2ba4d5f18c356-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-57a2ba4d5f18c356-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The bar above the chat input is now always there. When no turn is running it shows a calm, slow idle animation and the word 'idle' instead of disappearing; when a turn runs it shows the working animation, label and elapsed time exactly as it does today. Nothing about when a turn starts or ends changes.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Always show the chat's progress widget, with an idle animation when nothing runs"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "setProgress",
+          "signature": "setProgress(text: string): void   // webview script function in chat-panel.ts",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "purpose": "The label to show, for example 'working…' or the status label.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Puts the widget in its running state."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the widget shows the label, is not idle and the elapsed timer runs (started once per turn)",
+            "the widget was never hidden, so there is nothing to un-hide"
+          ]
+        },
+        {
+          "name": "hideProgress",
+          "signature": "hideProgress(): void   // renamed setIdle(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Puts the widget in its idle state; it is no longer ever hidden."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the widget stays visible with the idle class and the idle label ('idle')",
+            "the elapsed timer is stopped and its text is empty",
+            "called on the same events as hideProgress is today: a turn-event done or error, session-restored, and Stop"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "#insrc-progress markup, CSS and idle state (chat-panel.ts renderShell)",
+        "change": "invariant-change",
+        "details": "Today the widget is rendered with the hidden attribute and `#insrc-progress[hidden]{display:none;}` hides it, so it is absent when nothing runs. After the change it is rendered without hidden, starting in the idle state (an idle class and the label 'idle'), and the [hidden] rule is removed. An .idle variant draws the same three dots with a slow, gentle breathing animation (a longer cycle than the working blink and no vertical movement) in the muted colour; the reduced-motion rule stops it as it stops the working animation. The widget is still exactly one element, above the input and never persisted.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/__tests__/chat-theme.test.ts (selector baseline)",
+          "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        ]
+      },
+      {
+        "entity": "hideProgress call sites in the webview script",
+        "change": "invariant-change",
+        "details": "hideProgress becomes setIdle at its call sites: the turn-event done or error handler, the session-restored handler and the Stop click. setProgress is unchanged apart from removing the idle class instead of removing hidden. The elapsed timer starts and stops exactly as now.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The widget element is missing from the page (the shell was rendered without it)",
+          "detection": "the script's lookup document.getElementById('insrc-progress') returns null, so prog is null, as the existing guards already check (`if(prog)`)",
+          "response": "setProgress and setIdle do nothing, as they do today",
+          "userImpact": "No widget; no error is thrown into the page",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The chat is opened with no turn running",
+          "expected": "The widget is visible in the idle state with the idle animation and the label 'idle', and no elapsed time"
+        },
+        {
+          "input": "A turn starts ('turn-running' or a status event while running)",
+          "expected": "The idle class is removed and the working animation, label and elapsed timer show as today"
+        },
+        {
+          "input": "A turn ends (done or error), or Stop is clicked",
+          "expected": "The widget goes idle: the timer stops, the elapsed text is empty, the idle animation shows; it does not disappear"
+        },
+        {
+          "input": "A chat is switched (session-restored)",
+          "expected": "The widget goes idle with the restored view, as it did hide before"
+        },
+        {
+          "input": "A done event of an informational line (a retry or sign-in note) arrives while a turn runs",
+          "expected": "The widget goes idle although a turn is running, which is what hide did before (the page treats any done as the end); this Story does not change that. A separate fix would make the page react only to the running turn's own done"
+        },
+        {
+          "input": "prefers-reduced-motion is set",
+          "expected": "The idle animation is off and the dots are static, as the working animation is"
+        },
+        {
+          "input": "The chat has no session or no provider is installed",
+          "expected": "The widget is still shown, in the idle state"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "There is exactly one #insrc-progress widget, above the input bar, and it is never written to the transcript.",
+          "source": "c3"
+        },
+        {
+          "text": "The working state is unchanged: the label from status events (only while running), the three blinking dots and the elapsed m:ss timer started once per turn and cleared when the turn ends.",
+          "source": "c2"
+        },
+        {
+          "text": "The widget keeps its theme colours (the inset background, the lit border-top, the progress colour on the dots).",
+          "source": "c3"
+        },
+        {
+          "text": "setRunning, the Stop button and the input placeholder behave as before; only what the widget shows when nothing runs changes.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The widget's markup and style, and the page's state changes, over the shell test harness that runs the webview script.",
+          "subjects": [
+            "chat-panel.test.ts: renderShell embeds one #insrc-progress widget above the input that is not hidden and starts idle (an idle class and the label 'idle'), and the [hidden] rule is gone",
+            "chat-panel.test.ts: the done/error handler, the Stop click and session-restored call setIdle, and no script path sets the widget hidden",
+            "chat-shell.test.ts: driving the page, a turn-running message makes the widget working (no idle class, label 'working…'), a done event makes it idle with the timer stopped and the elapsed text empty, and the widget is never hidden at any step",
+            "chat-theme.test.ts: the widget keeps its background, border and dot colour, and the idle variant and its slower animation exist, with reduced motion stopping both",
+            "chat-theme.test.ts compares the shell's selectors with chat-theme-before.json (it fails on any removed or renamed selector and pins the exact list of added ones): the removal of `#insrc-progress[hidden]` is made an intended removal (its entry in chat-theme-before.json is updated or exempted) and the new `#insrc-progress.idle` selectors and any new keyframes are added to the added-selector list"
+          ],
+          "fixturesNeeded": [
+            "the shell test harness in chat-shell.test.ts (the webview script over fake elements), EXTENDED for this Story: its element stub makes classList inert and returns a new span from every querySelector, so the page's label and idle class cannot be read. For #insrc-progress the harness gives a recording classList and a querySelector that returns the same .plabel stub each time; setIdle and setProgress may instead set className, as setRunning does for the send button, so the state is a plain value the test reads"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "chat-shell.test.ts: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "chat-theme.test.ts: the idle variant has its own slow animation and reduced motion stops it"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "chat-panel.test.ts: exactly one #insrc-progress widget above the input, not hidden, starting idle; and the working state's script is unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test (node:assert/strict) run through tsx: npx tsx --test; the chat shell, panel and theme tests under src/chat/__tests__"
+    },
+    "migration": {
+      "stateBefore": "The progress widget is rendered with the hidden attribute, hidden by a [hidden] CSS rule, shown by setProgress on turn-running and status events, and hidden again by hideProgress on done or error, session-restored and Stop (bundles read:widget-markup-and-style and read:widget-script). So it is absent whenever nothing runs, and also whenever the page treats any done as the end of the turn.",
+      "stateAfter": "The widget is always visible. It starts idle, setIdle replaces hideProgress at the same call sites, setProgress takes it out of idle, and an idle style shows a slow breathing animation and the label 'idle'. The hidden rule is gone.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Change the markup to render the widget without hidden, in the idle state with the idle label; remove the [hidden] rule; add the idle style and its reduced-motion rule",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In the webview script replace hideProgress with setIdle (idle class, idle label, timer stopped, elapsed text empty) and make setProgress remove the idle class; update the three call sites",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite the existing assertions that pin 'hidden at rest' and hideProgress (chat-panel.test.ts about :1621, :1807-1825; chat-shell.test.ts about :503 stays) and add the shell test that drives the widget through its states and the theme test for the idle style; update the selector baseline the theme test compares against (chat-theme-before.json and the added-selector list in chat-theme.test.ts) for the removed #insrc-progress[hidden] rule and the new idle selectors and keyframes; extend the shell test harness so the widget's idle class and label can be read",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data and no message changes: only what the page shows above the input when no turn runs. A page opened before the update keeps the old behaviour until it is reloaded.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One widget with an idle state, switched by a class",
+        "oneLineSummary": "The single widget starts visible in an idle state; hideProgress becomes setIdle, which adds an idle class, clears the timer and elapsed text and sets an idle label; setProgress removes the class.",
+        "approach": "The markup loses the hidden attribute and starts with the idle class and an idle label ('idle'). The CSS drops the [hidden] rule and adds an .idle variant: the same three dots, a slow breathing animation (a longer, gentler cycle than the working blink, no vertical movement) and the muted colour; reduced motion stops it as for the working state. In the script hideProgress is replaced by setIdle (same calls: done or error, session-restored, Stop), setProgress removes the idle class as today, and the elapsed timer behaves as now (empty when idle). The existing assertions that pin 'hidden' and hideProgress are rewritten.",
+        "pros": [
+          "One element, so the 'exactly one progress widget' invariant stays",
+          "Touches only the widget's markup, CSS and the three call sites; no message or contract changes",
+          "The running state is untouched"
+        ],
+        "cons": [
+          "Renames a function used in two existing source-scan assertions, which must be rewritten",
+          "Idle look is a taste choice (label and animation) the user has not specified"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Keep the function names and make hide mean idle",
+        "oneLineSummary": "Leave setProgress and hideProgress and their call sites, and make hideProgress put the widget in an idle look instead of hiding it.",
+        "approach": "Remove only the hidden attribute and the [hidden] rule, and change the body of hideProgress to add an idle class, clear the timer and set the idle label. All call sites and most assertions stay.",
+        "pros": [
+          "The smallest diff and the fewest test changes"
+        ],
+        "cons": [
+          "hideProgress would no longer hide anything, a misleading name in the one place the state is decided",
+          "The three call sites keep reading as 'hide'"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Same behaviour with a smaller diff, but leaves a misleading name where the state is decided."
+      },
+      {
+        "id": "a3",
+        "name": "A separate idle element shown when the progress element is not",
+        "oneLineSummary": "Add a second element for idle and toggle between the two.",
+        "approach": "Keep #insrc-progress as it is and add a second bar for idle, toggled opposite to it.",
+        "pros": [
+          "The working widget's markup and tests are untouched"
+        ],
+        "cons": [
+          "Two widgets in the same spot, against the invariant that there is exactly one progress widget",
+          "Two things to keep in step on every state change"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Breaks the one-widget invariant and doubles the state to keep in step."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd1 (partial): setIdle is the new name hideProgress takes in this change; it is stated as a rename, not an existing symbol.",
+      "ts1 (partial): the Story has no acceptance criteria; ac1-ac3 are derived from the request, not stated by the owner.",
+      "alt2 (partial): the alternatives are scored against the request, the one-widget invariant and clarity only; the Story has no formal constraints, HLD contracts or Epic constraints.",
+      "OWNER DECISION: the idle look is a choice made here: the same three dots breathing slowly, and the label 'idle'. Change the label or the animation?",
+      "KNOWN LIMIT (not fixed here): the page treats any done event as the end of the running turn, so an informational line's done shows the idle look while a turn runs. A separate fix would react only to the running turn's own done."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "read:widget-markup-and-style: the widget's markup and CSS in chat-panel.ts renderShell"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "read:widget-script: setProgress, hideProgress and the events that call them in the webview script"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "read:tests: the tests that pin the widget (chat-panel.test.ts, chat-theme.test.ts, chat-shell.test.ts)"
+    }
+  ]
+}

@@ -1,0 +1,542 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792052591189-36jgsd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T08:24:57.082Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 105890,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "epicSlug": "add-syntax-highlighting-chat-diff-widget",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792052591189-36jgsd",
+    "hldEffectiveHash": "00d80121c593053c7c5bcb7a298a2c7cae22b502ad5e41679c4842310f78c3b3",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story with real design choices (which highlighter to bundle and how, how a diff line is highlighted when each line is a fragment of a file, how token colours follow the VS Code theme, whether fenced code blocks share it) and several build tasks across the diff widget renderer, the shared stylesheet and a vendored asset. It reuses the existing diff sections and the vendored-library pattern, so there is no new subsystem or cross-service contract and it is not an epic.",
+    "authoredBy": "controller",
+    "rangeBase": "5169e04f40629f77d6291b97d22ae23db70a3f3e",
+    "questionResolutions": {
+      "qe2ebfc79": {
+        "question": "The contract entry names the existing symbol renderRegistryWebviewSource while describing the new page function diffTokens (a schema workaround); diffTokens, the highlighter string and the language map are new.",
+        "status": "resolved",
+        "choice": "Keep workaround, document alias",
+        "rationale": "As decided for the links story: no schema work; tasks and tests use the real new names.",
+        "resolvedAt": "2026-10-15T09:01:26.748Z"
+      },
+      "q1daf4a0e": {
+        "question": "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
+        "status": "resolved",
+        "choice": "Accept derived ac1-ac4 as-is",
+        "rationale": "The user approved the LLD, which states the derivation; ac5 (click to open) came from the user's own review comment.",
+        "resolvedAt": "2026-10-15T09:02:01.225Z"
+      },
+      "q5937c2fd": {
+        "question": "Whether fenced code blocks in assistant replies share the highlighter is left out of this Story and is a candidate follow-up.",
+        "status": "resolved",
+        "choice": "Defer, but keep the highlighter reusable",
+        "resolvedAt": "2026-10-15T09:02:29.451Z"
+      },
+      "q3ef3c8d4": {
+        "question": "Which languages the bundled subset holds, and the size it adds to the one inline script, are settled and recorded at build; the generator builds the core plus subset with esbuild, a different step from marked's prebuilt-file copy.",
+        "status": "resolved",
+        "choice": "Fix list plus a size budget",
+        "rationale": "Languages: typescript, javascript, json, python, go, java, scala, bash, yaml, css, xml/html, markdown, plus Dockerfile and Makefile by name. Budget: the added highlighter source stays under 250 KB, enforced by a test.",
+        "resolvedAt": "2026-10-15T09:02:55.110Z"
+      },
+      "qb88b727a": {
+        "question": "The section's path is relative to the folder the diff ran in, and the host resolves a clicked path from the first workspace folder; if the chat's folder is not that workspace folder, the click is refused and logged. Carrying the folder with the click is left for a follow-up.",
+        "status": "resolved",
+        "choice": "Accept the limitation, defer to follow-up",
+        "resolvedAt": "2026-10-15T09:03:07.824Z"
+      }
+    },
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8a9662c453a35c9d4b032f4a8cdf7a8ea97cfa1206ba596ee39f1718ef1fb05a",
+        "at": "2026-10-15T08:24:57.082Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T09:00:34.037Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 15
+        },
+        "at": "2026-10-15T08:57:30.430Z",
+        "report": {
+          "entityId": "LLD-00d80121c593053c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-00d80121c593053c-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Added and removed lines in the chat's diff widget are coloured by syntax, in the language of the changed file, using the editor theme's colours. The page tokenises each side of a diff section with a bundled highlighter, so a comment or string that spans lines stays correct, and a file it does not know, or any failure, shows the plain text it shows today. The change stays inside the page: no new message, no stored data and no change to the CSP. Clicking a line of a diff section, or the file's path in its header, also opens that file in the editor at the relevant line, through the same message and host opener the chat's code-reference links use, so it opens in the same editor group.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Add syntax highlighting to the chat diff widget"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderRegistryWebviewSource",
+          "signature": "function renderRegistryWebviewSource(): string  // the page script it returns gains: diffTokens(path: string, lines: readonly string[]): Array<Array<{ text: string; cls?: string | undefined }>> | undefined",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "the changed file's path, whose extension picks the language",
+              "optional": false
+            },
+            {
+              "name": "lines",
+              "type": "readonly string[]",
+              "purpose": "the section's diff lines with their ' ', '+', '-' or '\\' prefix",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Array<Array<{ text: string; cls?: string | undefined }>> | undefined",
+            "meaning": "for each diff line, its text as runs of plain text and classed tokens; undefined when the language is unknown or tokenising failed, and the widget then writes the line as plain text, as today. Token classes map to existing :root names in chat-panel.ts, which approximate the editor's token colours and do not reproduce them: keyword to --magenta, string to --accent, number to --amber, function and title to --user, type and built-in to --accent2, comment to --muted, and meta, attribute and tag to --link (each of those is already a VS Code theme variable)"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "an unknown extension, a missing highlighter or any throw while tokenising returns undefined and is never shown as an error"
+            }
+          ],
+          "preconditions": [
+            "the highlighter source has been evaluated in the page before the rows are rendered"
+          ],
+          "postconditions": [
+            "each line's text span holds only text nodes and class-named spans built by DOM construction, never assigned markup",
+            "the sign, the line number and the add/del background are unchanged",
+            "the old side (context and removed lines) and the new side (context and added lines) are tokenised separately, so a removed line is never read as part of the added text",
+            "the highlighter's output is turned into runs by a string scanner over its restricted markup (span open with a class, span close, and the five entities &amp; &lt; &gt; &quot; &#x27;); nested spans are flattened so the innermost class wins, a span that crosses a newline continues on the next line's runs, and any other tag or entity makes the scanner return undefined; a span whose class has no hljs- prefix (a sub-language wrapper) is read as classless text, not as a reason to reject"
+          ]
+        },
+        {
+          "name": "open-code-ref",
+          "signature": "{ type: 'open-code-ref'; path: string; line?: number | undefined }  // sent by the diff widget on a click",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "the section's path as git names it",
+              "optional": false
+            },
+            {
+              "name": "line",
+              "type": "number",
+              "purpose": "1-based line in the file as it is now: an added or context line's own new-side number; a removed line's is the new-side number the next line would have; the path in the header uses the section's first new-side line",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "the existing page-to-host message from the links story; the host validates the path inside the workspace and opens it at the line in the review pane's editor group, else beside the chat"
+          },
+          "errors": [
+            {
+              "type": "refused",
+              "condition": "the host refuses a path that is absent, outside the workspace, or does not exist (a deleted file); it logs and the click does nothing"
+            }
+          ],
+          "preconditions": [
+            "each diff line element carries its path and its new-side line as data attributes, written when the row is built",
+            "a click on the header's collapse control keeps toggling the widget"
+          ],
+          "postconditions": [
+            "a click on a line, or on the path in the header, posts one open-code-ref and does not toggle the widget",
+            "the line number is never taken from the old side of a hunk"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DiffSection",
+        "change": "invariant-change",
+        "details": "No field changes. The section's lines are tokenised in the page from the existing path and lines; nothing is added to the row message or the stored transcript, so rows already stored are highlighted the same way as new ones. The page also gains a bundled highlighter string and a small extension-to-language map, and the widget's stylesheet gains token classes whose colours come from VS Code theme variables. Token colours are not new --vscode-* names: the token rules in the widget's style (RENDER_REGISTRY_STYLE) name only the existing :root layer in chat-panel.ts, so the tests that forbid a --vscode- name in the widget rules and keep the exhaustive list of referenced theme variables stay valid. The added selectors are added to the inline added-selector list in chat-theme.test.ts; chat-theme-before.json is the frozen before-fixture and is not edited. diff-sections.ts is read, not changed: the section's path and lines are the input. The new generated highlighter module is produced by vscode-plugin/gen-webview-libs.mjs. The highlighter goes into its own generated module (webview-hljs.ts), imported only by chat-panel.ts; webview-marked.ts is not changed, and docs-review-panel.ts, which also inlines the marked string, is unchanged and gets no highlighter, so its single-script test is untouched. Existing tests that read a diff line's text span are affected differently by suite. chat-shell.test.ts runs the whole page script over the shared fake DOM, and its diff rows use a path in the language map, so its text-span assertions would read an empty textContent once the span is built from children: the shared fake's textContent getter is made to join the text of its children when it has any, as the real DOM does, and createTextNode is wired into that suite's document stub; the assertions are unchanged. render-registry.test.ts has its own local fake node and document, sets no highlighter global, so its existing diff assertions stay on the plain-text path and are unchanged; the new tokenising unit tests use the shared fake DOM with a highlighter global injected. Other suites that use the shared fake are re-run to confirm the join changes none of them. A diff line element also gains two data attributes, its path and its new-side line, written while the row is built; a delegated click handler in the registry posts the existing open-code-ref message through the registry's link-open sink. The row message and stored rows are still unchanged.",
+        "callSites": [
+          "vscode-plugin/src/chat/render-registry.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/package.json",
+          "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+          "vscode-plugin/gen-webview-libs.mjs",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+          "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+          "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The highlighter throws or is missing in the page",
+          "detection": "diffTokens wraps the whole tokenising call in try/catch and checks that the highlighter global is defined before using it",
+          "response": "diffTokens returns undefined and the widget writes every line as plain text, as today",
+          "userImpact": "The diff shows without colours",
+          "recoverable": true
+        },
+        {
+          "scenario": "The file's extension has no language in the map",
+          "detection": "The extension-to-language lookup finds no entry (or the language is not in the bundled subset)",
+          "response": "diffTokens returns undefined; no guessing from the content",
+          "userImpact": "The diff shows without colours",
+          "recoverable": true
+        },
+        {
+          "scenario": "The highlighter returns markup that is not the expected spans and text",
+          "detection": "The string scanner over the highlighter's output accepts only a span open with a class attribute, a span close and the five entities, and returns undefined at anything else",
+          "response": "The whole section falls back to plain text",
+          "userImpact": "The diff shows without colours",
+          "recoverable": true
+        },
+        {
+          "scenario": "A section is large (up to the saved line limit) and tokenising is slow",
+          "detection": "The page tokenises each side only when its widget row is built, and a section is at most the saved line limit",
+          "response": "The row is built once and not re-tokenised when the widget is opened or closed",
+          "userImpact": "A short delay when a large diff first appears",
+          "recoverable": true
+        },
+        {
+          "scenario": "The bundled highlighter text contains <script or </script (for example the HTML grammar's own regex)",
+          "detection": "The generator scans the bundled string and escapes every '<' that starts '<script' or '</script' as \\x3c, and the build fails if the check still finds one",
+          "response": "The module cannot be emitted with a literal script tag in it, so the shell's single-script check and the browser's inline script both stay valid",
+          "userImpact": "None at run time; a developer sees the failed generation",
+          "recoverable": true
+        },
+        {
+          "scenario": "A clicked section's file cannot be opened (a deleted file, or the chat's folder is not the workspace folder the host resolves from)",
+          "detection": "The host's link opener refuses the path (it is missing, or does not resolve inside the workspace folder) and logs",
+          "response": "Nothing opens and the widget does not change",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "a TypeScript section where a block comment opens on a context line and closes on an added line",
+          "expected": "The added line is coloured as comment, because the new side is tokenised as one text"
+        },
+        {
+          "input": "a removed line and an added line that make different tokens at the same place",
+          "expected": "Each is coloured from its own side, never from the other"
+        },
+        {
+          "input": "a section that starts in the middle of a string or template",
+          "expected": "Tokenising starts from the section's first line, so the colouring may be wrong until the string closes; the text is always correct"
+        },
+        {
+          "input": "a line starting with a backslash (no newline at end of file)",
+          "expected": "Shown as the note it is today, not tokenised"
+        },
+        {
+          "input": "a file with an extension of mixed case, such as .TS, or a name like Dockerfile or Makefile",
+          "expected": "The extension is matched without regard to case, and a few well-known file names have their own entries"
+        },
+        {
+          "input": "a binary file or an empty section",
+          "expected": "No lines, nothing to tokenise, the widget shows what it shows today"
+        },
+        {
+          "input": "a new file or a deleted file",
+          "expected": "Only one side has lines; that side is tokenised and the other is empty"
+        },
+        {
+          "input": "a click on a removed line",
+          "expected": "Opens the file at the new-side line the removed text sat before, never an old-side number"
+        },
+        {
+          "input": "a click on the file path in the widget header",
+          "expected": "Opens the file at the section's first new-side line; a click elsewhere on the header still collapses or expands the widget"
+        },
+        {
+          "input": "a click while text is being selected in a line",
+          "expected": "A non-empty text selection is left alone and nothing opens"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The chat page keeps one nonce'd inline script under the unchanged CSP (default-src 'none'; scripts nonce-only), and no markup is assigned for a diff line: its text span is built from text nodes and class-named spans",
+          "source": "c1"
+        },
+        {
+          "text": "The diff widget's structure, sign, line numbers, add/del backgrounds, collapse behaviour and 'more lines' control are unchanged; only the text span's content gains token spans, and a line gains click-to-open",
+          "source": "c2"
+        },
+        {
+          "text": "Stored transcript rows and the row message are unchanged, so highlighting is derived in the page and works for rows already stored",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), as the existing chat tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The language choice, the side-by-side tokenising and the DOM building, run on the page source against the fake DOM",
+          "subjects": [
+            "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+            "a block comment opened on a context line colours an added line as comment",
+            "a removed line and an added line are each tokenised from their own side",
+            "an unknown extension and a failing highlighter leave every line as plain text",
+            "the extension is matched without regard to case and a Dockerfile has a language",
+            "highlighter output that is not plain spans and text falls back to plain text",
+            "a diff line's text span holds no assigned markup",
+            "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+            "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+            "a span with no hljs- class is read as classless text and does not reject the section",
+            "a click on an added or context line posts open-code-ref with its path and new-side line",
+            "a click on a removed line posts the new-side line it sat before",
+            "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget"
+          ],
+          "fixturesNeeded": [
+            "the shared fake DOM's existing text node, with createTextNode wired into the page's document stub in the tests"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The widget keeps its structure and the page carries the highlighter without widening the CSP",
+          "subjects": [
+            "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on",
+            "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+            "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+            "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused"
+          ],
+          "fixturesNeeded": [
+            "the rendered chat shell",
+            "the selector baseline in chat-theme-before.json"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "What only a running VS Code shows",
+          "subjects": [
+            "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain",
+            "clicking a diff line opens the file at that line beside or in the editor group the review pane uses"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
+            "a block comment opened on a context line colours an added line as comment",
+            "a removed line and an added line are each tokenised from their own side",
+            "the extension is matched without regard to case and a Dockerfile has a language",
+            "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+            "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class",
+            "a span with no hljs- class is read as classless text and does not reject the section"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly",
+            "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged",
+            "a diff line's text span holds no assigned markup",
+            "highlighter output that is not plain spans and text falls back to plain text"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "an unknown extension and a failing highlighter leave every line as plain text",
+            "the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "a click on an added or context line posts open-code-ref with its path and new-side line",
+            "a click on a removed line posts the new-side line it sat before",
+            "a click on the header's path posts the section's first new-side line, and a click on the rest of the header still toggles the widget",
+            "a clicked diff line is opened by the host in the editor group the review pane uses, and a deleted file is refused",
+            "clicking a diff line opens the file at that line beside or in the editor group the review pane uses"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Each diff line in the widget is a div holding a line-number span, a sign span and one text span set from the line as plain text, with add and del backgrounds; no highlighter is bundled and the page's only library is marked, evaluated from a generated string inside the one nonce'd script (render-registry.ts, webview-marked.ts and chat-panel.ts, from the s1 bundles).",
+      "stateAfter": "The page also evaluates a generated highlighter string with a fixed language subset. For each diff section the widget tokenises the old side and the new side separately, maps the tokens back to their lines and builds each line's text span from text nodes and class-named spans. Token classes take their colours from VS Code theme variables. An unknown language or any failure leaves the plain text. The row message, stored rows and CSP are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the highlighter as its own generated webview module (webview-hljs.ts) produced by gen-webview-libs.mjs, bundling highlight.js core and the language subset into one self-contained string (built with esbuild, already a devDependency), escaping any script tag text in it, and record the added size; webview-marked.ts is not touched",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the extension-to-language map and the tokenising of each section side, with the string scanner that turns the highlighter's output into per-line runs and the plain-text fallback, to the widget's renderer in the page script",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Evaluate the highlighter string in the chat shell next to marked (chat-panel.ts only; the review pane's page is unchanged), and add the token class rules, using only the existing :root colour names, to the widget's stylesheet, adding the new selectors to the inline list in chat-theme.test.ts in the same commit",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Write each diff line's path and new-side line as data attributes when the row is built, add the delegated click handler that posts the existing open-code-ref message, and make the header's path open the file while the rest of the header still toggles the widget",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive and page-only: no message, stored data or CSP change, and stored diff rows are highlighted the same way as new ones. A page that cannot run the highlighter shows the plain diff it shows today.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Bundle highlight.js core with a language subset, tokenise each side of a section",
+        "oneLineSummary": "A bundled highlight.js subset tokenises each side of a diff section; token classes take the theme's colours.",
+        "approach": "Generate a webview string for highlight.js core plus a fixed set of common languages (selected by file extension through a small extension-to-language map), exactly as marked is bundled, and evaluate it in the one nonce'd script. For a section, rebuild the old side (context and removed lines) and the new side (context and added lines) as two texts and tokenise each, so a comment or string that spans lines is carried across them; then turn the result into per-line runs with a string scanner over its restricted span markup and build each line's text span from text nodes and class-named spans, never inline colours or assigned markup. Token classes map to theme variables in the widget's rules. An unknown extension, a missing library or a thrown error leaves the plain text.",
+        "pros": [
+          "A maintained tokeniser with real grammars for many languages",
+          "Follows the existing vendored-library pattern, no CDN and no CSP change",
+          "Tokenising each side keeps multi-line comments and strings correct",
+          "Fenced code blocks in replies can reuse it later",
+          "Reuses the open-code-ref message and the host opener, so clicking a diff line shares the links' safety checks and editor placement"
+        ],
+        "cons": [
+          "Adds a sizeable generated asset to the one inline script, so shell size grows",
+          "highlight.js emits HTML text, so it is read by a string scanner and never assigned as markup",
+          "Only the languages in the subset are highlighted"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "A small hand-written tokeniser in the page",
+        "oneLineSummary": "A compact in-house tokeniser covers the common languages with no new dependency.",
+        "approach": "Write a compact tokeniser of our own for the families the repo mostly changes (TypeScript and JavaScript, JSON, Python, shell, Markdown, YAML, CSS, HTML): comments, strings, numbers and keywords from short per-language lists. It runs per section side like a1 and builds token spans by DOM construction with textContent, so it never assigns markup. The language comes from a small extension map and anything else stays plain.",
+        "pros": [
+          "No new dependency and a small asset",
+          "Built by DOM construction with textContent, so no markup is ever assigned",
+          "Fully under our control and tested"
+        ],
+        "cons": [
+          "Less accurate than real grammars (regex literals, template nesting, heredocs)",
+          "Every new language is more code for us to maintain",
+          "Likely to look wrong at the edges and draw bug reports"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "No dependency and no markup, but it trades accuracy for size, and accuracy is the project's first principle; its edge cases would keep producing wrong colours."
+      },
+      {
+        "id": "a3",
+        "name": "Tokenise in the extension host with a TextMate grammar engine",
+        "oneLineSummary": "The host tokenises with TextMate grammars and sends token lists to the page.",
+        "approach": "Do the tokenising in the extension host with a TextMate engine and grammars, and send the tokens with each diff row, so the page only paints spans. The row message gains a per-line token list.",
+        "pros": [
+          "The same grammar family VS Code uses, so the most accurate result",
+          "The page stays light"
+        ],
+        "cons": [
+          "Adds a heavy native or WASM dependency to the extension and a larger package",
+          "Changes the row message and the stored transcript rows, so old rows stay unhighlighted",
+          "More moving parts and a slower first render"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "The most accurate result, but a heavy dependency, a changed row message and old rows left unhighlighted make it disproportionate for a colouring feature."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The contract entry names the existing symbol renderRegistryWebviewSource while describing the new page function diffTokens (a schema workaround); diffTokens, the highlighter string and the language map are new.",
+      "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
+      "Whether fenced code blocks in assistant replies share the highlighter is left out of this Story and is a candidate follow-up.",
+      "Which languages the bundled subset holds, and the size it adds to the one inline script, are settled and recorded at build; the generator builds the core plus subset with esbuild, a different step from marked's prebuilt-file copy.",
+      "The section's path is relative to the folder the diff ran in, and the host resolves a clicked path from the first workspace folder; if the chat's folder is not that workspace folder, the click is refused and logged. Carrying the folder with the click is left for a follow-up."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: How a library reaches the page under the strict CSP (webview-marked.ts, chat-panel.ts, package.json)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: The diff widget renderer and its sections (render-registry.ts, diff-sections.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: Colours and the theme, and test patterns (chat-panel.ts, chat-theme.test.ts)"
+    }
+  ]
+}

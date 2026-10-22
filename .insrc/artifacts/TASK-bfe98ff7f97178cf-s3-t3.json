@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5ec2c0c-d011-48dc-8c6b-0d2a9cd966ef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.573Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Publish sc4's companion-slot contract (types only)",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ed5d3abf0d9b72e31e02d8b5b3ec878fa7f0bce9cd1ce2741ab6fc61a7ab4b9",
+        "at": "2026-10-22T12:44:32.573Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.574Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish sc4's companion-slot contract (types only)",
+    "summary": "Publish the contract s3 OWNS and s4 consumes: CompanionVisualKind ('diagram' | 'experience'), the three-state CompanionSlotState, CompanionSlotFactory<TRecord> and CompanionLinkOut. Two deliberate widenings over the HLD sketch: `body` typed `unknown` to match sc2's shipped StructuredRenderer<T> (docs-review-panel.ts:343-348), and `linkOut` optional on BOTH non-absent states, because the reviewer whose diagram could not be drawn is the one who most needs the authentic file. Type-only, consumed by nothing yet, so s4's dependency lands independently of any diagram-specific decision.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The 'absent' state carries NO other member, so no caller can read a label, body or link from it — k3's never-reserve-space rule as a type guarantee rather than a convention",
+      "CompanionVisualKind's mapping is TOTAL over the closed CompanionKind union: 'diagram-mermaid' and 'diagram-html' → 'diagram', 'ux-mock' → 'experience'; a new union member would be a compile error here, not an unlabelled slot",
+      "`linkOut` is declared optional on BOTH 'rendered' and 'unshowable'",
+      "`body: unknown` matches the shipped StructuredRenderer<T> return shape rather than introducing an HTMLElement bound a source string cannot satisfy",
+      "tsc passes with no change to any existing type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc4 types: the 'absent' state carries no label, body or link — a type-level assertion that nothing downstream can read one"
+      },
+      {
+        "level": "unit",
+        "name": "sc4 types: CompanionVisualKind's mapping is TOTAL over the closed CompanionKind union (exhaustiveness, no bare default)"
+      },
+      {
+        "level": "unit",
+        "name": "sc4 types: linkOut is optional on BOTH 'rendered' and 'unshowable'"
+      },
+      {
+        "level": "unit",
+        "name": "sc4 types: body is `unknown`, matching the shipped StructuredRenderer<T> return shape"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

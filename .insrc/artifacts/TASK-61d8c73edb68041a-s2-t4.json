@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1a24ca19-19e4-4c46-bc35-a0e676ef20d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.305Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "InsrcMcpRegistration launcher composition (per-call repo scoping, no cloud path)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "689475d3293ec7c17a991dbaf614ce7a4baf331bb7cf20becff4779ebc150c59",
+        "at": "2026-10-22T12:43:39.305Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.305Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "InsrcMcpRegistration launcher composition (per-call repo scoping, no cloud path)",
+    "summary": "Compose the S002-internal 'mcp' block body: an MCP-server registration whose launch command is a thin plugin-provided launcher that spawns ONLY the existing stdio insrc-mcp (out/bin/insrc-mcp.js via buildInsrcMcpServer) and attaches the active project's root (sc1 ProjectContext.projectRootPath) as the explicit repo argument per call — reusing the resolve-repo explicit-over-INSRC_REPO contract. No cloud/REST endpoint. Skip composing when the insrc-mcp launch target cannot be resolved.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "the composed registration's launch command references only the existing insrc-mcp stdio server — no cloud/REST endpoint (k1, ac4)",
+      "the registration attaches the active project's root as the explicit repo argument; composing for two distinct roots yields two registrations each scoped to its own root (k3, ac2)",
+      "when the insrc-mcp launch target is absent, composition is skipped (no registration pointing at a missing server) and the condition is logged",
+      "the launcher resolves repo per call (not a fixed shared INSRC_REPO default), so a shared MCP process across windows stays correctly scoped"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "RegistrationCompositionTest#launchCommandReferencesOnlyStdioInsrcMcp_noCloudEndpoint (ac4/k1)"
+      },
+      {
+        "level": "unit",
+        "name": "RegistrationCompositionTest#attachesActiveProjectRootAsExplicitRepoArg_twoRootsScopeIndependently (ac2/k3)"
+      },
+      {
+        "level": "unit",
+        "name": "RegistrationCompositionTest#missingLaunchTarget_skipsComposition_logged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

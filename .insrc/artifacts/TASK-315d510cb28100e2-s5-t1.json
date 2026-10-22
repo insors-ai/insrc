@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-10897c1a-5747-49be-8aed-546fcc528f82",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.237Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add addAssignee to the tracker port and the GitHub adapter",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "52cea3f808ee3a0b436aad9eb468fb4321bff108bbe37140c119acb30c2cfb8d",
+        "at": "2026-10-22T12:43:26.238Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.238Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add addAssignee to the tracker port and the GitHub adapter",
+    "summary": "Add the add-only addAssignee(issue, who) to TrackerPort in src/workflow/tracker/port.ts and implement it in the GitHub adapter (src/workflow/tracker/github-adapter.ts) beside setAssignee: it adds who without removing anyone, re-reads, and returns the assignees read back. setAssignee stays for release. This Task adds the method as the additive sc1 amendment AMD-315d510cb28100e2-12, which is still pending with s1 and needs its approval, as was done for findIssues; it changes no existing method. Other test doubles that cast to TrackerPort are unaffected.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "addAssignee adds the login without removing another assignee and returns the assignees read back",
+      "A failed or timed-out step is reported as a classified PortResult failure and is not retried",
+      "setAssignee behaviour is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: addAssignee adds without removing, returns the assignees read back and reports a failed step without a retry"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

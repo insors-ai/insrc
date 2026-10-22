@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-db6c90ca-51aa-4043-b8a0-b66360cc777e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.799Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Generate the highlighter module with a language subset and a size budget",
+      "parent": {
+        "entityId": "STORY-00d80121c593053c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-00d80121c593053c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0a7c400a74a64687aed36e8aebb4c098fd4b147fce0b9f2f85c25b6897619a7e",
+        "at": "2026-10-22T12:43:10.804Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.805Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Generate the highlighter module with a language subset and a size budget",
+    "summary": "Add highlight.js as a dev dependency and extend gen-webview-libs.mjs to bundle highlight.js core plus typescript/javascript, json, python, go, java, scala, bash, yaml, css, xml/html and markdown into one self-contained string with esbuild, escape any script-tag text in it, and write it to src/chat/webview-hljs.ts (HLJS_SRC). webview-marked.ts is not touched.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "npm run gen:webview-libs writes webview-hljs.ts exporting HLJS_SRC and still writes webview-marked.ts unchanged",
+      "evaluating HLJS_SRC defines a highlighter global that highlights TypeScript, JSON and Python text and returns span markup",
+      "the string holds no <script or </script text, and the generator fails if it finds one",
+      "the byte length of HLJS_SRC alone is under 250 KB and a test fails above that"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup"
+      },
+      {
+        "level": "integration",
+        "name": "the highlighter module holds no script tag and its byte length stays under 250 KB"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

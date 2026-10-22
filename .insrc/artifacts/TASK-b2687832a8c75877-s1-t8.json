@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0f54078c-18e9-4608-ba8a-2f01be3fba24",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.549Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Details and panel renderers",
+      "parent": {
+        "entityId": "STORY-b2687832a8c75877-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2687832a8c75877-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5ddf563413b795f6d6fb7acd1de349c19e7d1a82daa7a6a4f00a0da44ecb6bf2",
+        "at": "2026-10-22T12:44:16.549Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.550Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Details and panel renderers",
+    "summary": "Rewrite renderDetails and the status rendering in BOARD_WEBVIEW_SCRIPT: kicker, chips, the conflict box first, task <details> rows with result and dependency chips and checks, the 'Why this stage?' highlight, chain rows, the existing Records/Notices/Linked sections; #panel for the status panel and, when a view's emptySelection is true, 'Nothing matches this view' with Clear filters (posts clear-filters); Retry posts refresh; the partial panel's 'Inspect affected records' disclosure; the freshness line in the app bar. Remove #empty, #notice and the old <select>/checkbox controls.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Opening a card shows #details before #board with its heading focused; the conflict box is the first element after the chips, before the task list",
+      "Tasks render as <details> rows with result and dependency chips and acceptance checks; the chain shows 'Not recorded' rows from the model",
+      "A view with emptySelection shows 'Nothing matches this view' with Clear filters posting clear-filters; Retry posts refresh; the partial panel lists affected artifact ids",
+      "Escape closes details and focus returns to the card or the shown view's tab",
+      "#empty, #notice, the scope <select> and the attention checkbox no longer exist"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: opening a card shows #details before #board in DOM order with its heading focused, tasks as <details> rows with checks and dependency chips, and a 'Why this stage?' highlight with the stage reason"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the conflict box is the first element after the details chips, before the task list"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: a view with emptySelection renders 'Nothing matches this view' with Clear filters posting clear-filters; Retry posts refresh; the partial panel's 'Inspect affected records' lists artifact ids"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the script uses textContent only and posts only BoardUpMessage envelopes; Escape closes details and focus returns to the card or the tab"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

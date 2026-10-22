@@ -19,76 +19,58 @@
     "schemaVersion": 1,
     "specHash": "bfa1f6c830c53982",
     "epicSlug": "add-debug-pane-tab-insrc-tui",
-    "review": {
-      "artifact": "brainstorm",
-      "stage": "brainstorm",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The insrc TUI's existing panes are implemented as PascalCase *Pane.tsx files under src/cli/panes (Daemon/Repos/Workflows/Setup, plus ModelTiers), wired into the app.tsx pane host.",
-          "evidence": "The pane files resolve as real paths in sibling probes (src/cli/panes/DaemonPane.tsx:53, src/cli/panes/ReposPane.tsx:62) and the earlier module.profile listed DaemonPane/ReposPane/WorkflowsPane/SetupPane/ModelTiersPane under src/cli/panes. The literal-filename grep returned 0 only because ripgrep scans contents, not names — the inventory holds.",
-          "action": "None — confirmed via sibling paths + the analyze bundle.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon exposes a `daemon.status` IPC that the CLI daemon service consumes to infer running/stopped (getStatus throw = stopped), and the stop path sends a `daemon.shutdown` RPC rather than a process signal.",
-          "evidence": "daemon.status handler at src/daemon/index.ts:849, consumed by src/cli/services/daemon.ts:50 (rpc<DaemonStatus>('daemon.status')); daemon.shutdown at daemon/index.ts:1347 + daemon.ts:77; getStatus-throw-means-stopped shown at cli/__tests__/tui.test.ts:107; stopDaemon at command.ts:84 + DaemonPane.tsx:53. Confirmed — the status card + stopped-inference + shutdown-RPC premises hold.",
-          "action": "None — anchors resolve.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon entry point that a `ps` cmdline scan would match is out/daemon/index.js (the compiled daemon binary the installer/CLI spawns).",
-          "evidence": "The daemon entry is DEFINED at src/cli/services/daemon.ts:24 as DAEMON_ENTRY = join(__dirname, '../../daemon/index.js') — i.e. the resolved absolute path ends in 'daemon/index.js' (compiled: .../out/daemon/index.js under the install root). The spec's 'out/daemon/index.js' is approximately right; the ps cmdline scan should anchor on the resolved DAEMON_ENTRY, not a hard-coded 'out/daemon/index.js' literal.",
-          "action": "Design (LLD) should ground the ps cmdline pattern on src/cli/services/daemon.ts:24 DAEMON_ENTRY (suffix 'daemon/index.js') rather than a fixed 'out/' prefix — noted, not a spec blocker.",
-          "fixability": "assisted"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly two physical log files exist under PATHS.logDir today — daemon.log (daemon mode) and agent.log (shared by CLI mode and MCP mode) — written via the shared logger, and they are rotated (pino-roll).",
-          "evidence": "src/shared/paths.ts:104-105 define daemonLog + agentLog under LOG_DIR; src/shared/logger.ts has three pino-roll transports (lines 66/101/130) for the daemon/cli/mcp modes, with cli+mcp both routing to agentLog (src/bin/insrc-mcp.ts:39 setLogMode('mcp')). Exactly two physical files, rotated, agent.log shared by CLI + MCP — confirmed.",
-          "action": "None — the two-file + rotation premise (the basis for collapsing to two log categories) holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "MCP client registration/connection status is obtained by running each CLI's `mcp list` (the same mechanism mcp-register.ts uses to register the insrc MCP server).",
-          "evidence": "src/daemon/mcp-register.ts (registerMcpClients) drives `mcp list` (mcp-register.test.ts:38 isList = args[0]==='mcp' && args[1]==='list') and `mcp add` via argv arrays. The per-client registration/status mechanism the MCP section reuses exists and is confirmed.",
-          "action": "None — anchor resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "There is no existing debug-status IPC that enumerates the daemon's connected socket clients (label/pid/connected-at) — the spec proposes it as a NEW daemon IPC surface.",
-          "evidence": "No matches for debug-status/debugStatus/debug.status or any connected-clients/clientList/socketClients enumeration anywhere in src/ — confirming the debug-status IPC (status fields + live IPC client list) is genuinely a NEW surface the spec introduces, as claimed.",
-          "action": "None — the 'new IPC' premise is correct; design must add both the tracking + the method.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-05T09:35:32.150Z",
-      "model": "client"
+    "standalone": true,
+    "epicCreatedAt": "2026-08-05T09:33:59.668Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-05T10:48:13.934Z",
-    "standalone": true
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "72f0c9c36c6901f255a1d9f444585dfa9ff6b99d4b9043baf1ed693ec23f7839",
+        "at": "2026-08-05T09:33:59.668Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-05T10:48:13.934Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-05T09:35:32.150Z",
+        "report": {
+          "entityId": "SPEC-bfa1f6c830c53982",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-SPEC-bfa1f6c830c53982-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

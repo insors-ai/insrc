@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab9bc789-4003-4224-8b0e-3893e5a7df4e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.973Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the OrphanScanResult / OrphanProcess / KillOutcome types",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd4a423a87a1bc758c0fad9e0351e95748c315a3a87e6193af49858572b83e7c",
+        "at": "2026-10-22T12:44:58.973Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the OrphanScanResult / OrphanProcess / KillOutcome types",
+    "summary": "Add the three view-model types to src/cli/services/debug-types.ts (colocated with the sc1 types): OrphanScanResult = { supported:true; orphans: readonly OrphanProcess[] } | { supported:false }; OrphanProcess { readonly pid:number; readonly command:string }; KillOutcome { readonly pid:number; readonly result:'terminated'|'forced'|'not-found'|'error' }. Additive type surface, referenced by nothing yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "OrphanScanResult is discriminated on `supported`; the unsupported variant is exactly { supported:false }",
+      "OrphanProcess is {pid,command}; KillOutcome is {pid,result} with the four-member result union",
+      "tsc compiles the new types"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "debug-types.test.ts: OrphanScanResult/OrphanProcess/KillOutcome are exercised by a type-level round-trip (supported + unsupported variants, four KillOutcome results) and the suite compiles"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

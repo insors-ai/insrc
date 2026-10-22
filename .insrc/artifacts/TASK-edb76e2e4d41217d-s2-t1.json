@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a1537ac4-d860-47ee-a83e-beed598cc399",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:50.975Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Spike the claude/codex structured-stream + native-resume contract; capture fixtures",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c8f9eef8b77ea5ae08f4e9e747a31e38ea8f822493515b130617637c886f29cb",
+        "at": "2026-10-22T12:44:50.975Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:50.976Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Spike the claude/codex structured-stream + native-resume contract; capture fixtures",
+    "summary": "Run a throwaway spike against the installed claude/codex CLIs to pin the exact structured-stream invocation flags (e.g. claude --output-format stream-json) and the native session-resume mechanism, and capture representative native-stream sample lines as test fixtures under vscode-plugin/src/chat/__tests__/fixtures/. Spike code is discarded; only the findings + fixtures are kept.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The exact per-provider structured-stream flags + native resume flag/id are documented (in the adapter's comments / a short note)",
+      "Representative native-stream fixtures for claude (and codex if available) are captured for the unit tests",
+      "No throwaway spike code remains in the shipped source"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "opt-in: real claude/codex structured-stream invocation emits parseable events the mapper turns into TurnEvents"
+      },
+      {
+        "level": "live",
+        "name": "opt-in: real native session-resume yields a usable SessionHandle (or the provider is marked resume:false)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

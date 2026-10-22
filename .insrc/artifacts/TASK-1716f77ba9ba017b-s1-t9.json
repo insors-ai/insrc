@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-01aa869f-37ad-4844-a8e9-e55bf06a290f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.819Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Shared test helper, and existing tests moved onto it",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fcdb4c5d8b8858f976222ec541aedbca05360da8f7ad127ed2ba3fa444cd3da0",
+        "at": "2026-10-22T12:43:14.819Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.820Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared test helper, and existing tests moved onto it",
+    "summary": "Add one shared test helper that stamps a review by the party that did not author a fixture, reading the author with the shared reader from t1; a fixture with no author gets a review the gate still accepts. List, from a search of the test tree, every test that approves a DEF, HLD, LLD or BUILD fixture that was never reviewed (about 31 files in six folders), and move each onto the helper. The list is written into the build record with each file marked migrated or not-applicable. This is done before the gate changes, so the suites stay green at every step.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "The helper stamps a review whose reviewer party is the other party to the fixture's author, and a review the gate accepts when the fixture has no author",
+      "The build record lists every test file found by the search, by folder, each marked migrated or not-applicable, and the count matches the search",
+      "The workflow and MCP suites pass before and after this task"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T18 the shared helper stamps a review by the party that did not author the fixture"
+      },
+      {
+        "level": "integration",
+        "name": "the workflow and MCP suites pass with every approving test moved onto the helper"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

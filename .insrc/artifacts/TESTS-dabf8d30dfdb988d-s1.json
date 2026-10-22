@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "dabf8d30dfdb988d",
+    "storyId": "s1",
+    "createdAt": "2026-10-19T04:28:13.257Z",
+    "updatedAt": "2026-10-19T04:28:13.257Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-19T04:26:54.745Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "fd79cc223208c6ef4c3188bb9f18aceb70ad1c1ca965a5046a56ba2317e9f503",
+        "at": "2026-10-19T04:28:13.257Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "662b0468",
+        "ranAt": "2026-10-19T04:28:13.257Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/handoff-resume.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/team/__tests__/handoff-resume.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/handoff-resume.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9318,
+            "titles": [
+              {
+                "title": "a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone",
+                "result": "pass"
+              },
+              {
+                "title": "a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

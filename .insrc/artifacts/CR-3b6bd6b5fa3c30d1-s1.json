@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791560274346-64l6rl",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-09T15:37:54.346Z",
+    "model": "claude:opus",
+    "elapsedMs": 75367,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "defects-review-pane-s-test-file",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-09T13:11:02.374Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "24ccde5806a3e808a987f79fd0797e087405b91a5005817b706fd8b5629b10f2",
+        "at": "2026-10-09T15:37:54.346Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

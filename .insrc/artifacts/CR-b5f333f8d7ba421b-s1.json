@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "b5f333f8d7ba421b",
     "storyId": "s1",
-    "epicSlug": "expose-all-daemon-config-settings-via"
+    "epicSlug": "expose-all-daemon-config-settings-via",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "4edd26149306ad736333af86799f286ad266dbf4d0a94a3d160719982f2fc154",
+        "at": "2026-09-19T19:30:11.872Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

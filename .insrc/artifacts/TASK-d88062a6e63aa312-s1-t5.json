@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7320c035-abe7-44b5-a5c5-7449a9ba4d99",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:43.416Z",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the three-mode unit tests for subject + dimensions",
+      "parent": {
+        "entityId": "STORY-d88062a6e63aa312-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d88062a6e63aa312-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d88062a6e63aa312-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d88062a6e63aa312-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "45121ffc3ddd0da8631ced0dc8a032a2eaa13adfb68bdc8f41a229d2b57ba01e",
+        "at": "2026-10-22T12:44:43.420Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:43.420Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the three-mode unit tests for subject + dimensions",
+    "summary": "Add node:test unit tests under src/workflow/code-review/__tests__ (subject resolution via the SubjectDeps stub seam) and src/workflow/code-review/dimensions/__tests__ (adherence + coverage prompt/judge). Cover: subject mode A/B/C + asymmetric + no-build-record + non-Artifact-propagates; judgeAdherence zero-provider-call in mode C (spy provider) + one call when a contract is present; buildAdherencePrompt mode-A vs mode-B payload branching (no null deref); buildCoveragePrompt plan-null softening. Confirm conventions.ts + quality.ts AND the MCP handler remain unedited. Run the code-review suite green.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Subject tests cover all three modes, the asymmetric case, no-build-record, and non-Artifact propagation",
+      "A spy LLMProvider proves judgeAdherence makes zero calls in mode C and one call when a contract is present",
+      "buildAdherencePrompt and buildCoveragePrompt branching are asserted directly (no null deref; softened framing)",
+      "conventions.ts + quality.ts AND src/mcp/code-review-step/handler.ts are unchanged in the diff (mode-C reachability comes purely from the resolver returning ok:true)",
+      "npx tsx --test over src/workflow/code-review/**/*.test.ts passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "conventions + quality prompt builders byte-identical across all three modes (no approvedLld/approvedPlan read)"
+      },
+      {
+        "level": "unit",
+        "name": "code-review suite green: npx tsx --test over src/workflow/code-review/**/*.test.ts passes with conventions.ts/quality.ts/handler.ts unedited"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

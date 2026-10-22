@@ -22,85 +22,57 @@
     "storyId": "s4",
     "lldRunId": "wf-1785488046682-skwg6k",
     "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t2 wires the k1-safe provider: buildShaperProvider (shaper-provider.ts) + loadAnalyzeConfig (config/analyze.ts) both exist.",
-          "evidence": "buildShaperProvider at shaper-provider.ts:277 and loadAnalyzeConfig at config/analyze.ts:261 both exist — t2's k1-safe provider wiring is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "t3's target shell.ts has assembleShell + buildHtml + escapeHtml today and NO narrated region (no '#docgen-narrative') — t3 adds it.",
-          "evidence": "shell.ts has assembleShell + buildHtml + escapeHtml; grep -c 'docgen-narrative' src/docgen/render/shell.ts = 0 — the narrated region is genuinely new work t3 adds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/docgen/index.ts currently registers 3 doc types (s1/s2/s3); t4 wires the s2/s3 registrations as bases and adds 'narrative' as the 4th.",
-          "evidence": "grep -c 'r.register(' src/docgen/index.ts = 3 (s1/s2/s3); callSequenceRegistration + componentDependencyRegistration present to reuse as bases; t4 adds 'narrative' as the 4th. narrativeRegistration only in docs.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl4",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "t4's 'no new tool/IPC surface' premise holds: docgen_generate tool + docgen.generate IPC exist and enumerate the registry.",
-          "evidence": "DOCGEN_TOOL_ID='docgen_generate' (tool.ts:25) and the docgen.generate IPC handler (daemon/index.ts:1157) exist and use listDocTypes — t4's 'no new tool/IPC surface' premise holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The s2/s3 base registrations t4 reuses exist: callSequenceRegistration + componentDependencyRegistration (each returns a DocTypeRegistration with a bound extract).",
-          "evidence": "callSequenceRegistration (call-sequence.ts:221) + componentDependencyRegistration both exist and return a DocTypeRegistration with a bound extract — the base extractors t4 wires are real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The new s4 files (narrative.ts, narrative-generator.ts, narrative.test.ts) do NOT yet exist — they are this plan's build output.",
-          "evidence": "buildNarrativeDocument = 0 in src (only in the design docs); narrative.ts does not exist (ls: No such file) — correctly identifying the new s4 files as this plan's build output.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl7",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task DAG (t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4}) is acyclic with order 1..5 a valid topological sort, respecting storyDependsOn=[s1].",
-          "evidence": "Task graph t1<-{}, t2<-t1, t3<-t1, t4<-{t1,t2,t3}, t5<-{t1,t2,t3,t4} is acyclic; order 1..5 is a valid topological sort; every task sits after s1 (storyDependsOn respected).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-07-31T09:15:18.453Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-07-31T09:16:57.197Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "55d36316853db47b267f434dc62c69c792dc7cb6ebd02e22283ccf421a29a6bb",
+        "at": "2026-07-31T09:13:41.612Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T09:16:57.197Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-07-31T09:15:18.453Z",
+        "report": {
+          "entityId": "PLAN-870ed3dd246225f4-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-870ed3dd246225f4-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

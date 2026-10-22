@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7b88aa8a-0bc4-42ac-ba65-6c02ed203b3b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.739Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The prompts and the guide tell the builder and the judge about the mapping",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc851189b1133b2e625e93f6e879e2427718616e60baa003c52efe00ee5e5de2",
+        "at": "2026-10-22T12:44:02.742Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.743Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The prompts and the guide tell the builder and the judge about the mapping",
+    "summary": "The implement prompt tells the builder to pass, at the validate turn, the file and title of every case that carries each listed test, and for a live or smoke test it cannot hand to the gate, the result and where the evidence is. The validate prompt tells the judge to check that the cases do exercise what each name says and that a reported result is backed by its evidence. Update the build section of the steering source and docs/daemon.md. The copy of the steering block stamped into this repository's CLAUDE.md is not edited by hand: the updated daemon refreshes it at boot, in the last Task.",
+    "size": "S",
+    "order": 11,
+    "acceptanceChecks": [
+      "The implement prompt tells the builder to pass the cases for each listed test at the validate turn",
+      "The validate prompt's instruction on tests names the cases and the reported results",
+      "The build section of src/prompts/steering-block.md, between its markers, describes the mapping and the test record, and the guide tool's reader returns it",
+      "docs/daemon.md describes the test record, the mapping and 'invalid-test-mapping'",
+      "The stamped copy in CLAUDE.md is not changed by this Task"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "render.test.ts: the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e016999f-3ca4-4b5c-8186-edee53f3c605",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.725Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The full index keeps an in-process running record and writes lastRun once at its end",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "94e561406ec8707ba1c049173dfd0e5c1028891896eaadfd099a8a8f6a428158",
+        "at": "2026-10-22T12:44:36.726Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.726Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The full index keeps an in-process running record and writes lastRun once at its end",
+    "summary": "A new leaf module src/indexer/run-record.ts holds the daemon's in-process index-run record (IndexRunView { repoPath, startedAt, filesSelected?, filesDone }) and exports open / update / close / read-by-path; it imports nothing beyond types, so the analyzer's invariants.ts can read it without importing the indexer. Indexer.fullIndex (src/indexer/index.ts) opens the record when it sets 'indexing', sets filesSelected once the walk has counted, bumps filesDone per finished file in memory, and at its end writes lastRun in whichever of its two final status writes runs: outcome 'completed' with the 'ready' write (src/indexer/index.ts:726) and outcome 'failed' with the error with the 'error' write (:735); the record is closed on both paths (a finally block). No store write per file. The start-up re-queue is unchanged. Grounding: repo.reindex (src/daemon/index.ts:806) only enqueues a full index; status 'indexing' is set when that queued full index starts (src/indexer/index.ts:596). The start-up re-queue predicate is at src/indexer/index.ts:289.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "During a real full index of a small temporary repository held mid-walk, the record shows began and files done of selected.",
+      "At the end the row's lastRun is written once with outcome 'completed'; a failure forced mid-walk writes outcome 'failed' with the error and how far it got; the record is closed either way.",
+      "The number of registry writes during the run does not grow with the number of files (counted).",
+      "After a repo.reindex of a 'ready' repository, once the queued full index has started, the status is 'indexing' and the running record carries the new run's figures.",
+      "The start-up re-queue's selection of repositories left 'indexing' without lastIndexed is unchanged (its existing test stays green, or one is added that pins it)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)"
+      },
+      {
+        "level": "integration",
+        "name": "reindex of a ready repository: status indexing and the running record carries the new run's figures"
+      },
+      {
+        "level": "unit",
+        "name": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

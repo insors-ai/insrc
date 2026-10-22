@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bdfe93a1-73e4-4c6b-add5-ea9b81b246bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.649Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s3",
+    "envelope": {
+      "description": "sc4 companion types + ErDefinition (LinkML subset) types + absent-safe body fields",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a6f2764f0ac66f17ef2485c00c4aadfec64e42e5e33b647758a157b2844554d",
+        "at": "2026-10-22T12:44:38.650Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.651Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc4 companion types + ErDefinition (LinkML subset) types + absent-safe body fields",
+    "summary": "Add src/workflow/artifacts/companion/types.ts (CompanionArtifactRef, CompanionKind) and companion/er.ts type block (ErDefinition/ErClass/ErSlot). Add absent-safe optional erDefinition?/companions? to HldBody + LldBody. Additive types only, no behaviour yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "CompanionArtifactRef + ErDefinition/ErClass/ErSlot compile with the LLD field shapes",
+      "erDefinition?/companions? are optional + absent-safe on HldBody/LldBody (older bodies still type-check)",
+      "tsc clean; no renderer/behaviour change yet"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ErDefinition/companions/erDefinition body fields are optional + absent-safe (older bodies type-check + render unchanged)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-51f26161-9454-482a-8226-c81d40149253",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.618Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Post the section index and degradation on the existing docs-content message",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "71b33b85e1b85ff988ef1f4596804d454fc4f3bfb9fe2bac87ef5ac9db94a38a",
+        "at": "2026-10-22T12:44:30.618Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.619Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Post the section index and degradation on the existing docs-content message",
+    "summary": "Append two optional members — sections and degradation — to the existing docs-content variant in protocol.ts (six members at :57-63) and post them from openDoc alongside the content. No new message TYPE: the name list at protocol.ts:117 is untouched and the webview's single message handler keeps its existing switch. The host computes the index once per opened document rather than per interaction. REVISED per the plan review (HIGH-2): the LLD's test-strategy item for this task presumes the pane's monotonic refresh guard protects the opened-document path. It does not. refreshSeq is declared at docs-review-panel.ts:66 and checked at :75/:78/:83, all three inside refreshPending(), which posts the docs-LIST — the source comment at :63-65 says exactly that. openDoc(), the function that awaits client.content() and posts the docs-content message this task extends, takes no sequence number and does no supersede check. So this task asserts the invariant that IS true and is the one the reviewer depends on: the sections index and the markdown it was derived from ride ONE message, so a superseded open swaps both together and a stale index can never be paired with newer markdown. The pre-existing openDoc race — two quick opens with the first IPC slower will display the wrong document entirely — is a real defect but is NOT introduced by this Story and is NOT in its scope; it is recorded here so it is filed as its own tracked bugfix rather than absorbed into this task or papered over by a test that measures refreshPending instead.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "opening a document posts a docs-content message carrying BOTH the markdown and a sections index derived from that same markdown",
+      "the index rides the EXISTING docs-content message — no new message type appears in the protocol name list",
+      "the degradation state is carried on the same message rather than inferred in the webview",
+      "the degraded-render state is DISTINCT from the content-fetch-failure state: a render degradation does NOT set blocked, and a fetch failure does NOT claim a render degradation",
+      "the sections index and the markdown it was derived from ride ONE message, so a superseded open swaps both together and a stale index can never be paired with newer markdown — asserted on the posted payload, NOT by testing refreshPending's guard, which covers only the docs-list path (docs-review-panel.ts:75/:78/:83)",
+      "the pre-existing openDoc supersede gap is recorded as out of scope and filed as its own bugfix — this task neither fixes it nor claims to have",
+      "the pre-existing six members of the docs-content variant keep their meaning"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "opening a document posts docs-content carrying both the markdown and a sections index derived from that same markdown"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the posted index rides the existing docs-content variant — no new message type in the protocol name list"
+      },
+      {
+        "level": "integration",
+        "name": "a document with no headings posts an empty anchors array"
+      },
+      {
+        "level": "integration",
+        "name": "a degraded render posts degradation on the same message and does NOT set blocked; a fetch failure sets blocked and claims no degradation"
+      },
+      {
+        "level": "integration",
+        "name": "a posted docs-content carries a sections index derived from the markdown on that same message — the two cannot be paired across different documents"
+      },
+      {
+        "level": "unit",
+        "name": "the pre-existing six members of the docs-content variant keep their meaning"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

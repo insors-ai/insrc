@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1e5bc8f2-8da0-4e5e-a231-e8d35b45f574",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.796Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Approve gate writes only the lifecycle",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t19",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t22",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t23",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t24",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t25",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84290e836daaec34ffe6a243941a11e7f39e15d3262b17e8ba68a86fc34b75bb",
+        "at": "2026-10-22T12:43:22.796Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.796Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Approve gate writes only the lifecycle",
+    "summary": "In src/workflow/gates.ts approveArtifactByJsonPath calls LifecycleService only; remove approvedAt, rejectedAt, rejectReason and reviewOverride from STAMP_KEYS and remove mirrorLegacyReview; keep meta.rangeBase in its own constant. Update src/workflow/__tests__/gates.test.ts, gate-approve.test.ts, gates-revision.test.ts, plan-gate.test.ts and approve-workflow-target.test.ts.",
+    "size": "M",
+    "order": 26,
+    "acceptanceChecks": [
+      "Approval goes through LifecycleService",
+      "meta.rangeBase is still stamped at approval and read by the build range",
+      "The approve gate writes none of the removed stamps"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields"
+      }
+    ],
+    "planTaskId": "t26"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-67516ed9-0239-4446-b7fb-b41156ce105d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.461Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The worker's act and the runner's onWaiting",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c26e6838536662f97c3681600776d0617f343a424b449dd3c147f4e03ed55b75",
+        "at": "2026-10-22T12:43:37.461Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.462Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The worker's act and the runner's onWaiting",
+    "summary": "In chat-queue-worker.ts: ChatQueueWorker gains act(seq, 'cancel' | 'dismiss' | 'resend') -> { ok: true } | { ok: false; note }, applying store.cancel / dismiss / resendFrom(seq, newTurnId(), claim.windowKey), catching StoreBusy / unavailable into a note, and ticking at once on success (AMD-3). QueuedTurnRunner.run gains the optional onWaiting argument; runMessage passes a handler that writes markWaiting(message.seq, on), keeping the latest value to write again on the next tick if the write fails (AMD-8).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "act cancel removes a waiting message and is refused with a note once it has started; dismiss and resend likewise refuse rows in the wrong state",
+      "act resend hands the message to this window's key",
+      "An act that succeeds is seen by an onChange listener without waiting for a poll",
+      "onWaiting from the runner sets and clears waitingOn on the running message's row; a busy write is retried on the next tick"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once"
+      },
+      {
+        "level": "integration",
+        "name": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

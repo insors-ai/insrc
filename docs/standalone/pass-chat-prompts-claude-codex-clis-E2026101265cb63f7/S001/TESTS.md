@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-65cb63f7186f84fa-S001 -->
+<!-- insrc:artifact TESTS-65cb63f7186f84fa-s1 -->
 
 # Tests: 65cb63f7186f84fa S001
 

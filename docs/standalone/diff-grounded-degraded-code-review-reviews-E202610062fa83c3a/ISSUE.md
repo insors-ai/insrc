@@ -19,4 +19,4 @@ A diff-grounded review of a Story must cover the Story's committed range when on
 - **[[c1]]** `code` `src/workflow/code-review/grounding.ts` — "if (working.files.length > 0) return working;"
 - **[[c2]]** `code` `src/mcp/code-review-step/handler.ts` — "const diff = await deps.assembleDiffGrounding(repo, undefined, {"
 - **[[c3]]** `code` `src/daemon/code-review-rpc.ts` — "diff = await (deps.assembleDiffGrounding ?? assembleDiffCodeReviewGrounding)(repoPath, undefined, {"
-- **[[c4]]** `prior-artifact` `CR-1716f77ba9ba017b-S001`
+- **[[c4]]** `prior-artifact` `CR-1716f77ba9ba017b-s1`

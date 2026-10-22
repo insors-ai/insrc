@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-ae864466e7f1f4ea-S001 -->
+<!-- insrc:artifact BUILD-ae864466e7f1f4ea-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,4 +26,4 @@ extractClass passes the class's export status to extractMethod, which marks a me
 
 ## Changes
 
-- `.insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json` — **insrc-build** (2026-10-17T18:23:24.116Z)
+- `.insrc/artifacts/LLD-0f0e4f45f698aeb6-s1.json` — **insrc-build** (2026-10-17T18:23:24.116Z)

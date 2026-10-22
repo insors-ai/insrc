@@ -25,192 +25,61 @@
     "hldEffectiveHash": "215b5fd4f60f170f38988460f98266f0362e4bae9bbe54683b9e039b927875b2",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of s4 ac1–ac5 in DEF-2ff0dfdadb1c8d1c is designed, and the build-without-plan half of ac4 is correctly left to s5 as the HLD boundary assigns.",
-          "evidence": "DEF story s4 has ac1 (current/stale only from recorded fields, never mtime), ac2 (an added extension story stays present), ac3 (a malformed file is named with the coverage it leaves unknown), ac4 (missing records / no title → incomplete evidence) and ac5 (no store file changed). The HLD s4 boundary says: 'Its ac4 test covers the missing-field half (an artifact with no title); the build-without-plan half is tested in s5.' The LLD acceptance mapping covers ac1–ac5, and ac4 maps only to the no-title test. ac1's 'shown exactly as recorded with the time it was made' is handled by sc5: ArtifactGate.review carries verdict and reviewedAt (types.ts:184-195). [files: .insrc/artifacts/DEF-2ff0dfdadb1c8d1c.json, .insrc/artifacts/HLD-2ff0dfdadb1c8d1c.json, src/workflow/delivery/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc6 types (ReviewCurrency, ArtifactCurrency, EffectiveAmendment, CurrencyPassResult) match the HLD sketch exactly.",
-          "evidence": "HLD sc6 interfaceSketch: ArtifactCurrency {artifactId, reviewCurrency: ReviewCurrency|null, basis: string|null}; EffectiveAmendment {amendmentId, status, type, storyId, appliesToHld}; CurrencyPassResult {artifacts: Map keyed by artifactId, amendments: Map keyed by epic itemId sorted by amendmentId, notices}. The LLD §2 matches field for field. [files: .insrc/artifacts/HLD-2ff0dfdadb1c8d1c.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "scanLldStaleness / listApprovedAmendments hash the approved amendments in this order: numeric id suffix first, then a stable sort by rising approvedAt. The stale reason is 'hld-rerun', otherwise the first approved amendment missing from hldAmendmentsApplied, otherwise 'unknown'.",
-          "evidence": "store.ts:207 `out.sort((a, b) => amendmentSuffixNum(a.id) - amendmentSuffixNum(b.id))`; store.ts:216-218 filters `a.status === 'approved' && typeof a.approvedAt === 'string'` then `.sort((a,b) => (a.approvedAt ?? '').localeCompare(...))` (Array.prototype.sort is stable). staleness.ts:109-114: `meta.hldBaseRunId !== baseHld.meta.runId` → 'hld-rerun', else `amendments.find(a => !applied.has(a.id))` → `amendment-<id>`, else 'unknown'; `new Set(meta.hldAmendmentsApplied ?? [])`. [files: src/workflow/amendments/store.ts, src/workflow/amendments/staleness.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The built graph builder never raises record-unreadable for load failures (the gap tracked as ISSUE-34b6a247a4828d49), so s4 must not raise that code itself.",
-          "evidence": "A grep of graph.ts for 'record-unreadable' and 'failures' finds nothing. buildWorkItemGraph only reads recordSet.records through groupRecordsByWorkItem. The ISSUE-34b6a247a4828d49 json is present in the store (it shows in git status). [files: src/workflow/delivery/graph.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "appendStoryToDefine keeps the DEF's createdAt and appends the story, so a real accepted EXT is newer than its DEF while the DEF already lists the story. The cited real shape (DEF-b9d5c5c40df5a574 created 2026-10-06, which lists s8, and EXT s8 created 2026-10-08) is accurate.",
-          "evidence": "gates.ts:182 `const next = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } }`, so meta is unchanged. DEF-b9d5c5c40df5a574.json:6 has createdAt '2026-10-06T17:47:38.720Z' and line 680 has `\"id\": \"s8\"`. EXT-b9d5c5c40df5a574-s8.json has createdAt '2026-10-08T13:00:34.210Z', approvedAt set, and addedStory.id 's8'. [files: src/workflow/gates.ts, .insrc/artifacts/DEF-b9d5c5c40df5a574.json, .insrc/artifacts/EXT-b9d5c5c40df5a574-s8.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The reused pure helpers have the stated shapes: computeHldEffectiveHash(baseRunId, ids), isAmendmentRecord(v), asObject/asString/storyOrdinalOf, kindOfFile(fileName), and makeNotice(code, message, refs)/sortNotices. deriveCurrency and the sc6 types do not already exist.",
-          "evidence": "lld.ts:221 `computeHldEffectiveHash(baseRunId: string, approvedAmendmentIds: readonly string[]): string` is a pure sha256. types.ts:220 `isAmendmentRecord(v: unknown)`. read.ts:18/23/28. load.ts:43 `kindOfFile(fileName): DeliveryArtifactKind | null`. notice.ts:44/73. The delivery/ directory has no currency.ts, and types.ts defines sc1–sc5 only. NoticeCode already contains 'review-currency-unknown', 'base-predates-extension' and 'incomplete-evidence' (types.ts:127-129). [files: src/workflow/artifacts/lld.ts, src/workflow/amendments/types.ts, src/workflow/delivery/read.ts, src/workflow/delivery/load.ts, src/workflow/delivery/notice.ts, src/workflow/delivery/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Applying isAmendmentRecord to an sc1 AMD record's meta with the amendment body put back reproduces the on-disk record check that listAmendments uses.",
-          "evidence": "load.ts:72-82 lifts a flat AMD as `const { amendment, ...meta } = top; ... meta, body: amendment`, so `{...meta, amendment: body}` is the original top-level object. isAmendmentRecord (types.ts:220-234) checks id, epicHash, epicSlug, hldBaseRunId, isAmendment(amendment), rationale, citations, proposedBy, proposedAt and status, the same check listAmendments applies at store.ts:204. [files: src/workflow/delivery/load.ts, src/workflow/amendments/types.ts, src/workflow/amendments/store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Only types.ts (new types) and the new currency.ts change. No notice table or caller has to be updated, because the notice codes and their attention flags already exist and s5 (the only consumer) is not built yet.",
-          "evidence": "notice.ts:27-29 already maps 'incomplete-evidence', 'review-currency-unknown' and 'base-predates-extension' to attention false, which matches the LLD's 'attention false' for all three. No delivery snapshot or handler module exists in src/workflow/delivery/ yet (the files are notice, load, read, graph, stage, gate and types). [files: src/workflow/delivery/notice.ts, src/workflow/delivery/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The PLAN currency rule compares fields that real PLAN records carry: meta.lldRunId = the LLD's meta.runId, and meta.lldEffectiveHash = the LLD's meta.hldEffectiveHash.",
-          "evidence": "orchestrator.ts:2620-2621 stamps `lldRunId: lld.meta.runId, lldEffectiveHash: lld.meta.hldEffectiveHash`, and plan.ts:83-84 declares both fields. Older or partial records are handled by the asString checks and fall through to 'unknown'. [files: src/workflow/orchestrator.ts, src/workflow/artifacts/plan.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Records that sc1 joins under one story from two id spellings (s1 and S001) end up in one story's evidence, so the 'several LLD/PLAN records on one story → unknown' rule is reachable as designed. A failed AMD file name (AMD-<h>-3.json) is never misread as a story ordinal.",
-          "evidence": "graph.ts:48 groups by `${r.workItemHash}|${r.storyOrdinal}`, so 's1' and 'S001' share a group and both land in evidenceArtifactIds (graph.ts:317). id.ts:123 storyIdToOrdinal accepts only `/^[sS](\\d+)$/`, so the AMD suffix '3' does not parse as a story. [files: src/workflow/delivery/graph.ts, src/workflow/id.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.3",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "approval.state for an AMD can read 'approved' from approvedAt alone, so appliesToHld must check meta.status === 'approved' and a string approvedAt, as listApprovedAmendments does.",
-          "evidence": "load.ts:52 `approvedAt !== null || status === 'approved' ? 'approved'`. store.ts:217 filters `a.status === 'approved' && typeof a.approvedAt === 'string'`. The LLD's appliesToHld rule mirrors the latter. [files: src/workflow/delivery/load.ts, src/workflow/amendments/store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s4 stays inside the HLD's s4 boundary: it reuses only pure helpers (not the disk-reading listers or scanLldStaleness), raises no route-dependent gap, never raises s1's record-unreadable, and adds or removes no items.",
-          "evidence": "The HLD s4 internal text reads: 'reusing only pure helpers such as computeHldEffectiveHash and never the amendments module's disk-reading listers … It never decides route-dependent gaps, which need s2's route.' The LLD §3.2 says it 'never calls the amendments module's disk-reading listers or scanLldStaleness'. Alternative a3 is rejected for that reason. incomplete-evidence for build-without-plan is left to s5, and record-unreadable is left to s1. [files: .insrc/artifacts/HLD-2ff0dfdadb1c8d1c.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every input that deriveCurrency compares is type-checked before use with never-throwing readers, so a malformed record yields unknown or null rather than an exception.",
-          "evidence": "read.ts:18-34: asObject and asString return null for other types, and storyOrdinalOf catches the throw from storyIdToOrdinal. computeHldEffectiveHash takes only strings, and the LLD guards runId and ids as strings before calling it. isAmendmentRecord returns false and never throws. kindOfFile returns null for an unknown prefix (load.ts:43-46). The stated detection for each error case matches these helpers. [files: src/workflow/delivery/read.ts, src/workflow/delivery/load.ts, src/workflow/amendments/types.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion maps to a named test, and the fixture infrastructure the tests rely on exists (fixtures.ts, and a ReadonlyStoreFs stub pattern in load.test.ts).",
-          "evidence": "The acceptance mapping lists ac1→3 tests, ac2→1, ac3→1, ac4→1 (the no-title half, as the HLD directs) and ac5→1 (byte and mtime comparison over a temp store). src/workflow/delivery/__tests__/fixtures.ts and load.test.ts exist, and ReadonlyStoreFs is the loader's injectable port (types.ts:237-241, load.ts:113). One caveat: the ac3 integration assertion of 'exactly one record-unreadable' depends on ISSUE-34b6a247a4828d49 landing first, which the LLD states as a precondition. [files: src/workflow/delivery/__tests__/fixtures.ts, src/workflow/delivery/__tests__/load.test.ts, src/workflow/delivery/types.ts]",
-          "action": "Order the build after ISSUE-34b6a247a4828d49, or have the ac3 test assert only this pass's incomplete-evidence notice until that fix lands.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 14,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-08T14:52:20.877Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-08T15:09:57.399Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "44eb0773fe692ca939f312e7558ad4008c8e4acb39919174020d70a4d49a58bc",
+        "at": "2026-10-08T14:33:14.176Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T15:09:57.399Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 14
+        },
+        "at": "2026-10-08T14:52:20.877Z",
+        "report": {
+          "entityId": "LLD-2ff0dfdadb1c8d1c-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2ff0dfdadb1c8d1c-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -329,7 +198,7 @@
             "sc2",
             "sc3"
           ],
-          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-S001."
+          "internal": "Private to s3: reading each artifact's recorded review per kind (meta.review for design artifacts; body.verdict, body.counts and meta.reviewedBy for code-review records) and its recorded override; deciding when a block is still blocking, by reusing effectiveReviewVerdict over meta.review and meta.reviewResolutions and then requiring the artifact to be unapproved with no meta.reviewOverride; reading build task results from body.tasks[].passed and matching them to planned tasks; detecting the approved-with-failed-tasks conflict; and the attention rule itself, including the confirmed policy that a pending artifact stops counting once a downstream gate on the same work item is approved. It never changes a stage. Its LLD maps each of s3 ac1-ac7 to a named test, including ac7 against the confirmed attention policy. A build task recorded under the story's own id is the story-level result, never an unplanned task. A failed story-level result on an approved build raises the validation conflict and the validation-failed reason exactly as a failed task does; s3's LLD tests this with the shape of BUILD-0855311b6b32eb72-s1."
         },
         {
           "storyId": "s5",

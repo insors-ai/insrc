@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95c3d6f3-87b3-4ac8-a141-778ae7912229",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.182Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move the delivery and artifact renderer importers",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "98a98fba9fbb7ccc07e4f5ada34eecc57576dfd59337ababd963d2ce08c72163",
+        "at": "2026-10-22T12:43:20.182Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.183Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the delivery and artifact renderer importers",
+    "summary": "Move the importers of id.ts in the delivery module (graph and read ordinals) and the artifact renderers (define, plan, hld, lld and the companion header) to the new module, passing story ordinals through ArtifactIds.parse, and update their tests.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "the delivery reader loads a lowercase repository",
+      "rendered headers show the artifact id",
+      "the delivery and artifact tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/delivery/__tests__/identity-contract.test.ts: the delivery reader loads a lowercase repository with ordinals from the identity module"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

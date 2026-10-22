@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-127df0b5-ea6d-48cd-9b57-eab46f36ada4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.502Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the team-only extras runner",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "40552b708417abcf1940cd63393f2af98471e50a5cd7e48c0d3303fe71eebec3",
+        "at": "2026-10-22T12:43:25.502Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.502Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the team-only extras runner",
+    "summary": "Add runUnitExtras and ExtrasOutcome: each approve-time extra (milestone, Epic task-list splice, design comment, review comment) runs as its own step that reports success or failure, its completion is recorded per extra in UnitIssue.extrasDone through patchTrackerMeta, a marked step is skipped, a failed step stays unmarked and is reported, and the stated residual repeat is a marker-write failure after a successful post.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A step with a mark is skipped; a failed step is reported and unmarked; a second run after a partial success posts only the missing extras.",
+      "When the marker write fails after a successful post the next run posts that step again, as the LLD states.",
+      "No step goes through bestEffort."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/unit-extras.test.ts: runUnitExtras marks, skips, reports failures, retries only missing steps and repeats only after a marker failure"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

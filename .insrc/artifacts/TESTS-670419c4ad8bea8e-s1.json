@@ -6,7 +6,26 @@
     "createdAt": "2026-10-17T13:09:28.300Z",
     "updatedAt": "2026-10-17T13:46:11.657Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
-    "epicSlug": "understand-changes-before-committing"
+    "epicSlug": "understand-changes-before-committing",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "ae77d307313c882b859f807025ca540a9915cc40a655c7499e75208ef0114078",
+        "at": "2026-10-17T13:09:28.300Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

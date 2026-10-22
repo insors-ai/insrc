@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c3e4c013-1727-41f9-a6c6-7d6ed6dded9b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:22.780Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Pure DaemonFreshnessFlow + seam types",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b6c90b3e0240d36c-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e8121b15eb9795075c1f1c9177d1423c6a0c77147b0e9d83b868d09adc75a4e",
+        "at": "2026-10-22T12:44:22.780Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:22.781Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure DaemonFreshnessFlow + seam types",
+    "summary": "Add the VS-fixture-free pure flow DaemonFreshnessFlow.check(deps: FreshnessDeps) — the JetBrains analogue of S003's runDaemonFreshnessCheck — plus the seam types FreshnessDeps / FreshnessGateway (reachability/installedCommit/update/updateOutcome view over t1's gateway) / FreshnessNotify (UpdatePrompt|Info|Failure) / PluginVersionState (current + getLastSeen/setLastSeen). Flow: reachability gate (k6, skip unless reachable) -> installedCommit (sc2, '' -> skip) -> gitLsRemote(root,branch) drift (k1 no pull; ''/throw -> skip; ==installed -> skip) -> branch on version delta (k4, current=='' guard -> prompt path): self-update auto notify-after vs startup-check Update/Dismiss balloon -> update() -> reconnect-and-confirm via updateOutcome()/installedCommit under reconnectBudgetMs (300_000; stale-outcome guard by finishedAt>=start) -> success info balloon OR exactly ONE failure balloon with the raw error (k5, no retry/rollback); always setLastSeen(current) on every terminal path; outer try/catch = never throws. Injected sleep/now for deterministic tests. Deps t1.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "DaemonFreshnessFlow.check(deps) + FreshnessDeps/FreshnessGateway/FreshnessNotify/PluginVersionState added; pure, no IDE-fixture/platform import; never throws (outer try/catch)",
+      "startup-check drift (current==lastSeen) -> Update/Dismiss balloon (k7); update() ONLY on Update; unreachable/''-commit/==upstream/ls-remote-fail -> skip (no balloon/update)",
+      "self-update (current!=lastSeen, current!='') + drift -> update() with NO prompt (notify-after); current=='' guard -> prompt path",
+      "after update(): bounded reconnect-and-confirm via updateOutcome()/installedCommit; success -> info balloon; update() Failed OR fresh updateOutcome().state=='failed' OR no commit advance in budget -> exactly ONE failure balloon with the raw error, no retry; stale outcome (finishedAt<start) ignored",
+      "setLastSeen(current) on every terminal path; ./gradlew test green (JDK21)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "startup-check drift: reachable + installedCommit != upstream + current==lastSeen -> Update/Dismiss balloon; update() ONLY on Update, NOT on Dismiss/expire (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "skip paths: unreachable -> no balloon/no update; installedCommit=='' -> skip; installedCommit==upstream -> skip; gitLsRemote ''/throws -> skip (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "self-update: current!=lastSeen + drift -> update() with NO prompt (notify-after), setLastSeen(current) recorded (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "reconnect-and-confirm success: fresh updateOutcome().state=='succeeded' / installedCommit advances -> info balloon"
+      },
+      {
+        "level": "unit",
+        "name": "failure: update() Failed OR fresh updateOutcome().state=='failed' OR no commit advance in budget -> exactly ONE failure balloon with the raw error, no retry, no second update() (ac4)"
+      },
+      {
+        "level": "unit",
+        "name": "never-throws: a throwing seam is swallowed by the outer backstop; check() returns; setLastSeen(current) runs on every terminal path"
+      },
+      {
+        "level": "unit",
+        "name": "empty-version guard: current=='' (PluginManagerCore null) -> startup-check prompt path, not the silent auto path"
+      },
+      {
+        "level": "unit",
+        "name": "stale-outcome guard: a prior updateOutcome with finishedAt before the update start is ignored; commit-advance decides"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

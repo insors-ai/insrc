@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-673f88ee-83ca-4695-b91e-0df7d6101ceb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.313Z",
+    "epicCreatedAt": "2026-07-28T15:15:41.182Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5ef8ac073911ace",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Register the 3 runtimes + templates + trim discovery overpromise",
+      "parent": {
+        "entityId": "STORY-a5ef8ac073911ace-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5ef8ac073911ace-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a5ef8ac073911ace-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a5ef8ac073911ace-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a5ef8ac073911ace-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "56a2a5bd8a7d9e33fe9a6ac44e4b8be04e8695d356d2b34543db161ecbefa838",
+        "at": "2026-10-22T12:44:06.317Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.318Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the 3 runtimes + templates + trim discovery overpromise",
+    "summary": "Wire everything: append infraInventoryHelm/Docker/Ci Runtime (+ re-export lines) to INFRA_RUNTIMES in src/analyze/runtimes/infra/index.ts (5→8); add 3 AnalyzeTaskTemplate descriptors (id 'infra.inventory.<family>', target 'infra', family 'inventory', kind 'leaf', revision 'r1', inputSchema {scopeRef: SCOPE_REF_SCHEMA}, produces ['<family>-inventory']) to INFRA_TEMPLATES in src/analyze/planner/templates/infra/index.ts (5→8); and trim ansible/pulumi/cloudformation from the infra.discovery.families description (index.ts:29). Land as one unit so template↔runtime parity never breaks.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; each new template.produces[0] === its runtime output-Map key",
+      "the infra.discovery.families description no longer mentions ansible/pulumi/cloudformation",
+      "registerBuiltinRuntimes + registerInfraTemplates register all 3 with no validator error",
+      "tsc + build pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registration parity: all 3 templates register, each template.produces[0] === the runtime output-Map key, INFRA_RUNTIMES.length === INFRA_TEMPLATES.length === 8"
+      },
+      {
+        "level": "unit",
+        "name": "the trimmed infra.discovery.families description no longer mentions ansible/pulumi/cloudformation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791955189137-jk4kof",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-14T05:19:49.200Z",
+    "model": "claude:opus",
+    "elapsedMs": 52466,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fb584b4856ebeea9",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T04:21:03.437Z",
+    "epicSlug": "label-failed-last-index-rejected-ollama",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "52e7995afbb7029cfd6629daa86ba63d232770995c9aa4e815d123525447c99c",
+        "at": "2026-10-14T05:19:49.200Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "fb584b4856ebeea9",
+    "storyId": "s1",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
+        "src/agent/providers/ollama.ts",
+        "src/agent/providers/structured-output.ts",
+        "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
+        "src/daemon/steps/analyze-step/handler.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/ollama.ts:771",
+            "message": "Present but unverified: isRequestRejection and the new pass-through branch in wrapOllamaError are exercised by the new test in src/agent/providers/__tests__/ollama-model-call-failure.test.ts (ResponseError 400 passes through unwrapped with status_code 400, is not retried, and isModelCallFailure is false; 404 and 500 stay ModelCallFailedError; checked for both stream and complete, failing at the call and during iteration). testsReaching is empty only because the changed entities are file-level diff nodes, not graph symbols. No build record exists and the test run could not be executed here, so its pass-state is unconfirmed.",
+            "expectationRef": "isRequestRejection / wrapOllamaError (src/agent/providers/ollama.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/structured-output.ts:240",
+            "message": "Present but unverified: the change that keeps lastThrown as the cause of withStructuredRetry's final plain Error is exercised by the completeStructured block of the new ollama-model-call-failure test (maxAttempts 1, a 400 rejection becomes the cause, the error is not a ModelCallFailedError, isModelCallFailure is false). The pass-state is unconfirmed because there is no build record and the test was not run. Minor gap: no test covers resetting lastThrown to undefined after a later attempt fails validation without throwing, which happens only when maxAttempts > 1.",
+            "expectationRef": "withStructuredRetry lastThrown cause (src/agent/providers/structured-output.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/steps/analyze-step/handler.ts:128",
+            "message": "Present but unverified: the change to scopeErrorResult, where 'repo-indexing' is retryable only when status is 'indexing', is exercised by the new test in src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts. It calls scopeErrorResult directly for status 'indexing' (retryable true) and 'error' (retryable false), and also goes end to end through step.call for a registered repo whose last index failed. The pass-state is unconfirmed because there is no build record and the test was not run.",
+            "expectationRef": "scopeErrorResult (src/daemon/steps/analyze-step/handler.ts)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/agent/providers/ollama.ts:774",
+            "message": "isRequestRejection treats every 4xx except 404 as a rejection of the request's content. That includes transient statuses such as 408 (request timeout) and 429 (too many requests), which a proxy in front of Ollama can return. Those errors would pass through unwrapped and would not be recognised as a failed model call (an outage), which goes against the doc comment's own split between content rejection and failing to reach the model. Consider excluding 408 and 429 alongside 404.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/agent/providers/structured-output.ts:219",
+            "message": "A content rejection (for example a 400 for an invalid format schema) now reaches withStructuredRetry as a plain Error, and the helper still retries it up to maxAttempts times as if it were a validation failure. Every retry sends the same request and gets the same rejection. The behaviour is unchanged from before (it was wrapped, and still retried), but now that the rejection can be told apart by its type, the helper could stop at once on it, as it already does for cancellation.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/analyze-step/handler.ts:128",
+            "message": "The cast `(scoped.data as { status?: unknown } | undefined)?.status` is not needed. ScopeErrorMapping is a union discriminated on `code`, and its 'repo-indexing' member types `data` as RepoIndexingData, so checking `scoped.code === 'repo-indexing' && scoped.data.status === 'indexing'` narrows it with full typing. The cast hides a rename of `status` from the compiler. This is a matter of taste.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 6
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-23e466c7-0d94-4389-a5a9-453ef6c1a4de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.794Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Switch the question comment and pin the other affected callers",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "433b64fc9a4d54a39a2200ee50df8b843c8afe7656485f9463a85dde557def57",
+        "at": "2026-10-22T12:43:24.794Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.794Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Switch the question comment and pin the other affected callers",
+    "summary": "Change the ghComment call in src/workflow/questions.ts to the adapter with its existing catch kept, and add tests for the other callers of migrated wrappers: setup label creation with a timing-out label create, and listMyOpenTasks with a classified or empty login failure before any search call, with queryTasks left untouched.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "questions.ts posts its comment with the same argv and a failed comment is logged in the existing catch",
+      "setup ensureLabels records a timed-out label as failed and continues",
+      "listMyOpenTasks propagates a login failure as a thrown Error before any search call and the empty-login message still matches /no login/"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/questions.test.ts: the comment goes through the adapter with the same argv and a failure is logged in the existing catch"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/setup.test.ts: ensureLabels with a timing-out label create records the label as failed and continues"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/tasks.test.ts: listMyOpenTasks propagates a classified or empty login failure before any search call"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/tasks.test.ts: queryTasks keeps its current execution path and results"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

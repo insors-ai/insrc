@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-58012abc-2a7d-4125-ab00-7fe95d11f76a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.547Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "One file-selection predicate shared by the full index and the cross-file pass",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5397aa320bf14592ed7b7b4c75fb4e43508f8fd1c1cc2aaf7300db719ad3ca2c",
+        "at": "2026-10-22T12:44:34.548Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One file-selection predicate shared by the full index and the cross-file pass",
+    "summary": "Extract the full index's per-file rule (src/indexer/index.ts:630-640: the repository's ignore list, a parser for the extension or basename, not generated or minified) plus the artifact parser's skip rules (SKIP_BASENAMES and MAX_SIZE, artifact.ts:89, :117-118, exported for it) into one predicate returning 'selected' | 'not-code' | 'excluded-by-ignore'; fullIndex's selection loop calls it. Story s6 later replaces its ignore part. Anchors: src/indexer/index.ts:630 lists files with listRepoFiles(repoPath, resolveRepoIgnore(repoPath)); :634-635 keep a file only when a parser handles its extension or basename; :636-639 skip isGeneratedOrMinified (GENERATED_FILE_PATTERN at :90); the artifact parser returns no entities for SKIP_BASENAMES or source over MAX_SIZE = 256 KB (src/indexer/parser/artifact.ts:89, :117-118).",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "fullIndex selects exactly the same files as before on the existing indexer fixtures",
+      "The predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as 'not-code', a .ts under an ignored directory as 'excluded-by-ignore', and a .css/.json under the limit as 'selected'"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/indexer/__tests__/file-selection.test.ts: predicate classes .png, .min.js, lock file, >256 KB JSON as not-code, ignored .ts as excluded-by-ignore, .css/.json as selected"
+      },
+      {
+        "level": "integration",
+        "name": "existing indexer full-index fixtures select the same files"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

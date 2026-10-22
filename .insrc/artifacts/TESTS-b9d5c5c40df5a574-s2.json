@@ -6,7 +6,26 @@
     "createdAt": "2026-10-09T16:31:36.297Z",
     "updatedAt": "2026-10-09T20:24:33.449Z",
     "epicSlug": "make-insrc-analysis-complete-used-right",
-    "epicCreatedAt": "2026-10-06T17:47:38.720Z"
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "1f86e2fe8c9fe2bec7f9770b2bd6d59fbf01fd8f3ecc5a63031724bc17489e0b",
+        "at": "2026-10-09T16:31:36.297Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

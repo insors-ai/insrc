@@ -22,10 +22,38 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T04:33:03.185Z",
     "parentRef": {
       "slug": "harden-insrc-artifact-creation-flows-two",
       "storyId": "s2"
+    },
+    "epicCreatedAt": "2026-10-16T19:09:31.298Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c1dad6b3b6236f160778acd908af934eba7366bc1190e06d8c4a1d873b4879ac",
+        "at": "2026-10-16T19:09:31.298Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T04:33:03.185Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

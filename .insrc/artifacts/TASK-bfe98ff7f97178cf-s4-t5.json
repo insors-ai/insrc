@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c3915565-ed63-4a96-98e3-4671e2262422",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.985Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the sc4 experience slot factory — uxPickRef and uxBuildMockSlot (INERT)",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ede63f5167d8f49bfd2cc59c92b34276d700672fef3578cee10fbc12962fbf55",
+        "at": "2026-10-22T12:44:32.985Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.986Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the sc4 experience slot factory — uxPickRef and uxBuildMockSlot (INERT)",
+    "summary": "The sc4 plumbing half, split out of the original t2 by the critique. Add uxPickRef and uxBuildMockSlot as exact mirrors of S003's shipped dgPickRef/dgBuildDiagramSlot, instantiating sc4's CompanionSlotFactory<TRecord> over the uxDefinition record and passing the bound t4 decided. Still INERT — nothing calls it until t6 — so the slot's three-state logic and its ref discrimination are proved before a single pixel moves. The critique's uxPickRef gap closes here: this Story is the FIRST time two slots read the same `companions` array, and S003 established the refs cannot be told apart naively, since three daemon renderers all stamp `kind:'diagram-mermaid'`.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "PICKER PARTITION (critique): over one fixture carrying a ux-mock ref AND all three diagram-kind refs, uxPickRef selects the ux-mock ref and ONLY it, and s3's dgPickRef over that same fixture still selects exactly what it selected before. The two pickers PARTITION the array rather than overlap — a loose match would hand the mock a diagram's label and link-out, producing a slot that renders, looks plausible, and points the reviewer at the wrong companion",
+      "THE INVERSE: a companions array of diagram refs only yields NO ux ref — which is what routes ac3's dominant path to 'absent'",
+      "The three sc4 states are returned correctly from the factory in isolation: absent / rendered / unshowable, with `linkOut` optional on both non-absent states as sc4 shipped it",
+      "`body` is handled as sc4's widened `unknown`, matching sc2's shipped StructuredRenderer<T> rather than the HLD sketch",
+      "The slot's label comes from sc4's companionVisualKind applied to the ux ref — never hard-coded, which is what lets t6 prove the two slots are distinguishable",
+      "The depth bound is PASSED IN, not re-declared — one named constant, t4's value, no second copy",
+      "The surface is STILL unchanged: the emitted shell differs from t2's pinned baseline only by the added source text, and nothing calls the factory"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "PICKER PARTITION: over a fixture carrying a ux-mock ref and all three diagram-kind refs, uxPickRef selects the ux-mock ref and only it, and dgPickRef's selection is unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "a companions array of diagram refs only yields NO ux ref"
+      },
+      {
+        "level": "unit",
+        "name": "the factory returns sc4's three states correctly in isolation: absent / rendered / unshowable"
+      },
+      {
+        "level": "unit",
+        "name": "ref present + record absent returns 'unshowable' with a reason NAMING what was referenced, and linkOut offered"
+      },
+      {
+        "level": "unit",
+        "name": "a malformed record with a ref present returns 'unshowable' rather than a broken card"
+      },
+      {
+        "level": "unit",
+        "name": "the absent state carries no label, body or link"
+      },
+      {
+        "level": "unit",
+        "name": "body: [] and a malformed record are treated as ABSENT"
+      },
+      {
+        "level": "unit",
+        "name": "the slot label is derived from the ref's title via companionVisualKind, never invented per call"
+      },
+      {
+        "level": "unit",
+        "name": "body is handled as sc4's widened unknown, matching the shipped StructuredRenderer<T>"
+      },
+      {
+        "level": "unit",
+        "name": "the depth bound is passed in, not re-declared — still one named constant"
+      },
+      {
+        "level": "unit",
+        "name": "all FIVE source strings still parse together in one scope after the factory's names join"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

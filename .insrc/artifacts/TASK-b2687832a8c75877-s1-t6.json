@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8863703-01a6-4907-aa8f-cc49388c2367",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.545Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Document chrome and stylesheet",
+      "parent": {
+        "entityId": "STORY-b2687832a8c75877-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2687832a8c75877-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ce8615a759a4c31fea1b2cd8804219efdcddb93243ba27f9612b609804600a3a",
+        "at": "2026-10-22T12:44:16.545Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.546Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Document chrome and stylesheet",
+    "summary": "Rewrite renderBoardDocument (app bar with wordmark, breadcrumb, #status freshness and Read-only, Refresh and density; role=tablist underline tabs; chip toolbar with search, scope chips and the Needs attention chip; #totals; #announce; #panel; layout region with #details before #board) and BOARD_STYLE (six equal columns when wide, side-column details, tone pills mapped to --vscode-* variables, chips, meters, rollup rows, conflict box, panels, narrow grouped list with empty stages ordered last and wrapped, both densities, focus ring). Keep every element id the current script reads (#notice, #empty, #search, #scope, #attention, tab ids) alongside the new ones until t8 removes the old ones.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "CSP string unchanged; exactly one aria-live region (#announce); #status keeps role=status without aria-live",
+      "#details precedes #board in the DOM",
+      "BOARD_STYLE uses only var(--vscode-*) colours and has no display:none, visibility:hidden or clipping rule",
+      ".board is display:grid with repeat(6,minmax(0,1fr)) when wide and one list below 600 px, with empty stage sections ordered after the others",
+      "Both density rules and the :focus-visible outline remain",
+      "The existing host tests still pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: CSP string unchanged, exactly one aria-live region, #details precedes #board"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: BOARD_STYLE has only var(--vscode-*) colours, no display:none/visibility:hidden/clip, six equal columns when wide, density rules and :focus-visible"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: BOARD_STYLE's 600 px block orders empty stage sections after non-empty ones and contains no hiding rule"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

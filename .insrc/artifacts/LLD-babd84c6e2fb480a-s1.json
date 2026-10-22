@@ -1,0 +1,500 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792040975761-1c69sj",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T05:12:06.864Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 151098,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "epicSlug": "make-links-code-references-clickable-chat",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792040975761-1c69sj",
+    "hldEffectiveHash": "babd84c6e2fb480aea1773f80e4f6757f2ccc994f07b87e893e4f91f3053e4c1",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive capability across two webview surfaces: a new page-to-host open message, a safe link policy, and a code-reference recogniser; several build tasks under one design.",
+    "authoredBy": "controller",
+    "rangeBase": "49b794b39d5352a34a95bd53c0847e078a1e3d96",
+    "questionResolutions": {
+      "q6aed0048": {
+        "question": "The Story has no acceptance criteria; ac1-ac3 were derived from its three user-value points.",
+        "status": "resolved",
+        "choice": "Accept derived ac1-ac3 as-is",
+        "rationale": "User approved the LLD with the derivation disclosed; PLAN notes they were derived.",
+        "resolvedAt": "2026-10-15T05:32:51.759Z"
+      },
+      "qdf0d2c9a": {
+        "question": "The contract entry for the two new messages is named open-attachment (an existing message) as a schema workaround; they are the new open-link and open-code-ref messages.",
+        "status": "resolved",
+        "choice": "Keep the workaround, document the alias",
+        "rationale": "User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref.",
+        "resolvedAt": "2026-10-15T05:33:23.411Z"
+      },
+      "qa6f82020": {
+        "question": "A live click must confirm an http link opens in the browser exactly once and a code reference opens at its line; no automated test can prove VS Code's own behaviour.",
+        "status": "resolved",
+        "choice": "Automated seam test plus live check",
+        "resolvedAt": "2026-10-15T05:33:44.919Z"
+      },
+      "q8b6fe6e8": {
+        "question": "Whether VS Code places a clicked file in the chosen group is checked live, as the review pane placement is.",
+        "status": "resolved",
+        "choice": "Both: unit test plus a live check",
+        "resolvedAt": "2026-10-15T05:33:54.529Z"
+      }
+    },
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2fd8919da341cddb71f11f4320f79ecc8d57d7d838ff51196a283d2f53b792c3",
+        "at": "2026-10-15T05:12:06.864Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T05:31:05.019Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 11
+        },
+        "at": "2026-10-15T05:29:10.330Z",
+        "report": {
+          "entityId": "LLD-babd84c6e2fb480a-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-babd84c6e2fb480a-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Links in assistant replies and in review-pane documents become clickable. http and https links open in the browser, and a repository file path with an optional line, such as src/foo.ts:42, becomes a link that opens that file at that line in the editor. The page only reports what was clicked; the extension host validates the target and does the opening, so the strict CSP and the guardMd scrub stay as they are.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Make links and code references clickable in the chat and the review pane"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "guardMd",
+          "signature": "function guardMd(el: HTMLElement): void",
+          "parameters": [
+            {
+              "name": "el",
+              "type": "HTMLElement",
+              "purpose": "the rendered markdown container to scrub and linkify",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "the container is scrubbed as today (non-http(s) hrefs dropped); afterwards code references in text outside code, pre and anchors, and inline code elements (not under pre) whose whole text is a code reference, are wrapped in anchors carrying data-path and data-line, and http(s) anchors lose their href and keep only data-url, so VS Code's own link handling has nothing to open and the click handler is the single path"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "any failure inside the scrub is caught, as today, and leaves the rendered text unlinked"
+            }
+          ],
+          "preconditions": [
+            "el holds the output of marked.parse"
+          ],
+          "postconditions": [
+            "no anchor keeps an href",
+            "every http(s) anchor carries data-url and every code reference carries data-path",
+            "text inside pre elements and inside inline code that is not wholly a code reference is never wrapped"
+          ]
+        },
+        {
+          "name": "open-attachment",
+          "signature": "{ type: 'open-link'; url: string } | { type: 'open-code-ref'; path: string; line?: number | undefined }",
+          "parameters": [
+            {
+              "name": "url",
+              "type": "string",
+              "purpose": "the clicked http or https address",
+              "optional": true
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "the clicked repository-relative file path",
+              "optional": true
+            },
+            {
+              "name": "line",
+              "type": "number",
+              "purpose": "1-based line to reveal",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "two new page-to-host messages added beside open-attachment and open-companion in protocol.ts and its allowlist. The file opens in the column chosen by chooseReviewColumn (review-column.ts), the same rule that places the review pane"
+          },
+          "errors": [
+            {
+              "type": "refused",
+              "condition": "the host drops a url that is not http or https, and a path that is absolute, contains .. segments, resolves outside the workspace folder, or does not exist; each is logged, never thrown"
+            }
+          ],
+          "preconditions": [
+            "sent by the delegated click handler after preventDefault"
+          ],
+          "postconditions": [
+            "a valid url opens in the browser; a valid path opens in the editor with the line selected, in the editor group the review pane placement chooses (an existing group that holds no chat tab, else the active group), never in the chat group"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WebviewToHost protocol messages",
+        "change": "field-add",
+        "details": "Two new message variants, open-link and open-code-ref, added to the webview-to-host union and its allowlist. No stored data changes. The hosts receive their open dependencies from extension.ts, since chat-panel.ts and docs-review-panel.ts do not import vscode; the vscode.d.ts shim gains env.openExternal, Range and Position. On the chat surface the linkify step and the guardMd href change land in render-registry.ts, keeping the innerHTML-then-guardMd pairing that render-registry.test.ts asserts. Existing tests that pin the old scrub change with it: docs-review-panel.test.ts t4 (guardMd strips a non-http href and an image src) asserts that an https href survives with rel and target, and is rewritten to assert no href, a data-url and the same non-http and image scrub; its stub DOM is extended so the linkify step can run. render-registry.test.ts string assertions on guardMd are checked and updated the same way. The review-pane shell is pinned byte-for-byte: the SHELL_BASELINE chars, bytes and sha256 constants (the t1 shell-baseline test and its matching pin) are updated in the same commit that changes the shell, and the linkify fragment is inlined once into the review shell (inside the renderer source), so the 'inlines each source string verbatim and exactly once' test keeps holding. Clicked files are placed by the existing chooseReviewColumn rule; that function is reused as is, not changed.",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/vscode.d.ts",
+          "vscode-plugin/src/chat/companion-reader.ts",
+          "vscode-plugin/src/chat/render-registry.ts",
+          "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+          "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+          "vscode-plugin/src/chat/review-column.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Clicked url is not http or https (a crafted href that survived rendering)",
+          "detection": "The host checks the parsed URL protocol against http: and https: before opening",
+          "response": "Dropped and logged; nothing opens",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        },
+        {
+          "scenario": "Clicked path escapes the workspace (absolute, .. segments, or resolves outside the workspace folder)",
+          "detection": "The host rejects absolute paths and .. segments, then compares the realpath of the target with the realpath of the workspace folder, so a symlink inside the workspace that points outside is refused",
+          "response": "Dropped and logged; nothing opens",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        },
+        {
+          "scenario": "Clicked path does not exist (the text only looked like a path)",
+          "detection": "The host stats the resolved file and finds no regular file",
+          "response": "Logged; nothing opens",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        },
+        {
+          "scenario": "No workspace folder is open",
+          "detection": "The host finds no workspace folders",
+          "response": "Code references are not opened; logged",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        },
+        {
+          "scenario": "The editor fails to open the file",
+          "detection": "The vscode.open call rejects",
+          "response": "Caught and logged, never thrown into the message handler",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        },
+        {
+          "scenario": "The browser open fails (openExternal rejects or resolves false)",
+          "detection": "The open dependency's result is checked: a rejection is caught by a rejection handler as with the attachment open, and a false result is read as a failure",
+          "response": "Logged; nothing else happens",
+          "userImpact": "The click does nothing",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "src/foo.ts:42 in running text",
+          "expected": "Wrapped as a link to src/foo.ts line 42"
+        },
+        {
+          "input": "src/foo.ts:10-20",
+          "expected": "Linked to line 10"
+        },
+        {
+          "input": "src/foo.ts with no line",
+          "expected": "Linked, opens at the top of the file"
+        },
+        {
+          "input": "a path inside a fenced block, or inline code that holds more than just the path",
+          "expected": "Left as plain code, not wrapped"
+        },
+        {
+          "input": "text already inside an anchor",
+          "expected": "Not wrapped again"
+        },
+        {
+          "input": "a version like 1.2.3 or a word with a dot but no known extension",
+          "expected": "Not treated as a path"
+        },
+        {
+          "input": "a path split across two assistant-delta rows",
+          "expected": "Each row is rendered on its own, so the split path stays unlinked"
+        },
+        {
+          "input": "a markdown link in a review-pane document whose href is not http(s)",
+          "expected": "guardMd removes the href as today and the anchor text stays plain"
+        },
+        {
+          "input": "inline code whose whole text is a path, such as `src/foo.ts:42`",
+          "expected": "Linked, because assistant replies and documents write paths in backticks"
+        },
+        {
+          "input": "a code reference is clicked while the only open editor group holds the chat tab",
+          "expected": "No column is chosen, so the file opens Beside, as the quiet review pane does, and not in the chat group"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "guardMd keeps dropping every non-http(s) href (and now every href on handled anchors), and the CSP stays default-src 'none' with nonce-only scripts",
+          "source": "c1"
+        },
+        {
+          "text": "The review pane keeps handling open-companion and its artifact-membership check unchanged",
+          "source": "c2"
+        },
+        {
+          "text": "The page never opens anything itself; it only posts a message and the host does the opening, as with open-attachment",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), as the existing chat tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Page script behaviour on the stub DOM: linkify rules and the delegated click",
+          "subjects": [
+            "a code reference with a line in running text becomes a link carrying its path and line",
+            "text inside code and pre and existing anchors is not wrapped",
+            "a version number is not treated as a path",
+            "a click on an http link posts open-link and prevents the default",
+            "a click on a code reference posts open-code-ref with path and line",
+            "guardMd still drops a non-http href",
+            "an http link keeps its target in data-url and has no href, so it cannot open by itself",
+            "inline code whose whole text is a code reference becomes a link",
+            "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click"
+          ],
+          "fixturesNeeded": [
+            "the stub DOM in chat-shell.test.ts extended with anchors and text nodes",
+            "a stub DOM with text nodes that support splitting and replacing, confirmed before the linkify tests are written"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Host handlers validate and open, and both surfaces carry the wiring",
+          "subjects": [
+            "the host opens a valid http url externally and refuses a non-http url",
+            "the host opens an existing in-workspace path with the line selected",
+            "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder",
+            "the chat page and the review pane both include the linkify and click wiring",
+            "protocol allowlist includes open-link and open-code-ref",
+            "the host refuses a symlink inside the workspace that points outside it",
+            "the host logs and survives an open that rejects or resolves false",
+            "companion-reader behaves as before after the containment helper is extracted",
+            "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none"
+          ],
+          "fixturesNeeded": [
+            "a temporary workspace folder with a file",
+            "a recording stub for the open calls"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a click on an http link posts open-link and prevents the default",
+            "the host opens a valid http url externally and refuses a non-http url",
+            "the host logs and survives an open that rejects or resolves false",
+            "an http link keeps its target in data-url and has no href, so it cannot open by itself"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a code reference with a line in running text becomes a link carrying its path and line",
+            "the host opens an existing in-workspace path with the line selected",
+            "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder",
+            "the host refuses a symlink inside the workspace that points outside it",
+            "inline code whose whole text is a code reference becomes a link",
+            "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click",
+            "the chat page and the review pane both include the linkify and click wiring",
+            "guardMd still drops a non-http href",
+            "companion-reader behaves as before after the containment helper is extracted"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Chat and review-pane markdown is rendered by marked and scrubbed by guardMd. guardMd keeps http(s) hrefs and sets rel=noopener noreferrer and target=_blank on them, so VS Code's own webview link handling may already open them; it drops every other href (removing the href but leaving the anchor), and no click handler of ours exists (render-registry.ts and docs-review-panel.ts, from the s1 bundles).",
+      "stateAfter": "http(s) links and repository file references are clickable on both surfaces. guardMd strips the href from handled anchors and keeps the target in a data attribute, so VS Code's own link handling has nothing to open; one delegated click handler posts open-link or open-code-ref and the host validates and opens the target. The CSP is unchanged and guardMd still never leaves a non-http(s) href.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the open-link and open-code-ref message variants and allowlist entries to the protocol",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the host handlers to the chat host and the review-pane host: open-link opens an http(s) url externally, open-code-ref validates the path with a new exported helper (resolveWithin(root, relPath, fs) returning the real path or undefined) extracted from companion-reader.ts; createCompanionReader is rewired onto it unchanged (docs/ root, .html, size cap) and its existing tests stay green; the host then opens the path at the line. Inject the open-external and open-file-at-line dependencies and the workspace folder from extension.ts into both hosts, and add env.openExternal, Range and Position to the vscode.d.ts shim so a real Range selects the line. The open-file-at-line dependency in extension.ts takes its viewColumn from the existing reviewColumn closure (chooseReviewColumn over the tab groups), so a clicked code reference opens in the same group the review pane would; if the closure yields no column the file opens Beside, as the quiet review pane does, so it never lands in the chat group",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend the page scripts of both surfaces with the linkify step after guardMd, a rule that styles the handled anchors as links, and the delegated click handler, updating the review-pane SHELL_BASELINE pins in the same commit",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive: no stored data, no existing message changes meaning; an older page that does not send the new messages is unaffected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Page-side linkify + host-side validated open",
+        "oneLineSummary": "After marked + guardMd, the page script wraps code references in links and one delegated click handler posts the target to the host, which validates and opens it.",
+        "approach": "A shared page-script fragment (used by both render-registry.ts and docs-review-panel.ts) runs after guardMd: it walks text nodes outside code/pre/a, wraps path[:line[-line]] matches in anchors carrying data attributes, and keeps http(s) hrefs. A single delegated click listener on the container preventDefaults and posts {type:'open-link', url} or {type:'open-code-ref', path, line}. The host validates (http/https only for url; path resolved under the workspace folder, must exist, no escape) and opens via vscode.env.openExternal or vscode.open with a selection.",
+        "pros": [
+          "Reuses the existing guardMd pipeline and the open-attachment message pattern",
+          "Host is the only place that opens anything; CSP unchanged",
+          "One fragment serves both surfaces"
+        ],
+        "cons": [
+          "Recognition runs in the page, so it is testable only via the stub-DOM harness",
+          "Text-node walking must be careful around code blocks and existing links"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Pure recognizer module + host resolves",
+        "oneLineSummary": "A pure TS recognizer is inlined into the page script by stringification; host does the same validated open.",
+        "approach": "Write the code-reference recognizer as a pure function in its own module (unit-testable), embed its source into the page script via Function.prototype.toString, and use the same delegated click + host open-link/open-code-ref messages as a1.",
+        "pros": [
+          "Recognition rules unit-tested directly in Node",
+          "Same safe host-side open as a1"
+        ],
+        "cons": [
+          "Stringifying a function into the page is fragile under tsx/tsc output",
+          "Extra indirection for a small rule set"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same runtime behaviour as a1 with better unit-testability, but function stringification is fragile and adds indirection for a small rule set."
+      },
+      {
+        "id": "a3",
+        "name": "Host-side rewrite before render",
+        "oneLineSummary": "The host rewrites markdown to add links before it reaches the page.",
+        "approach": "The host preprocesses assistant markdown, replacing code references with markdown links using a custom scheme, and guardMd is widened to allow that scheme; clicks post the scheme target back.",
+        "pros": [
+          "Recognition runs in Node and is simple to test"
+        ],
+        "cons": [
+          "Streaming responses render incrementally in the page, so host rewriting does not cover them",
+          "Widens guardMd to a new scheme, weakening the scrub",
+          "Review pane documents are rendered in the page too"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Does not cover streamed rendering and requires weakening guardMd."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The Story has no acceptance criteria; ac1-ac3 were derived from its three user-value points.",
+      "The contract entry for the two new messages is named open-attachment (an existing message) as a schema workaround; they are the new open-link and open-code-ref messages.",
+      "A live click must confirm an http link opens in the browser exactly once and a code reference opens at its line; no automated test can prove VS Code's own behaviour.",
+      "Whether VS Code places a clicked file in the chosen group is checked live, as the review pane placement is."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: Markdown rendering and the guardMd scrub in the chat page (render-registry.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: Review pane markdown scrub (docs-review-panel.ts, open-companion)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: Page-to-host open messages and host handlers (protocol.ts, chat-panel.ts, extension.ts)"
+    }
+  ]
+}

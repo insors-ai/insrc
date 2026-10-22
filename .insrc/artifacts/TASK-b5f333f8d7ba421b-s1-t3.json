@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-10c69589-7302-4f33-a163-ed3765292f0d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.621Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add src/config/settings-catalog.ts: SettingsCatalogPayload + pure buildSettingsCatalog",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b5f333f8d7ba421b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a21c4c92b398d4990849e464b574d6515896ca18a2d8d4f2481e97a5aa262bd8",
+        "at": "2026-10-22T12:44:18.622Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.622Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add src/config/settings-catalog.ts: SettingsCatalogPayload + pure buildSettingsCatalog",
+    "summary": "Create the new module exporting the SettingsCatalogPayload type and the pure buildSettingsCatalog(rawConfig): map CONFIG_CATALOG to options, derive groups as the distinct group labels in first-seen order, derive roles + tierNames from reasoningRoleTaxonomy() (roles as {id,defaultTier}; tierNames as the rankOf keys), and build values by resolving each catalog path from rawConfig (reusing an existing dotted-path getter if one exists near write-path.ts, else a small local walk), omitting paths that are absent. Pure and total — no IO, never throws; only catalog paths appear in values.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "buildSettingsCatalog({}) returns options (31), groups (distinct, first-seen), roles, tierNames (cheap/mid/core) and values === {}.",
+      "Given a rawConfig with set catalog paths, an unset path, an absent intermediate, and a non-catalog key: values contains only the set catalog paths (absent/intermediate omitted; non-catalog keys excluded); no throw.",
+      "roles/tierNames are taken from reasoningRoleTaxonomy(), not hardcoded."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "settings-catalog: buildSettingsCatalog({}) returns 31 options + distinct first-seen groups + roles + tierNames(cheap/mid/core) with values={}"
+      },
+      {
+        "level": "unit",
+        "name": "settings-catalog: values resolution from a fixture — set paths present; unset path + absent intermediate omitted; non-catalog keys excluded; no throw"
+      },
+      {
+        "level": "unit",
+        "name": "settings-catalog: roles + tierNames are derived from reasoningRoleTaxonomy(), and groups from the catalog (not hardcoded)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

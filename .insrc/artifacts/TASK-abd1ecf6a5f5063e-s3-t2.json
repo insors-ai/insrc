@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-45547f87-d339-459e-849f-98f4654a9935",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:08.438Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Reshape the elicit runner body for single-pause convergence",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2dd4c97718f981f2a4d8ccb915294d3fd33ab3839f73cfdadf6c6f0202166a9",
+        "at": "2026-10-22T12:44:08.439Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:08.439Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reshape the elicit runner body for single-pause convergence",
+    "summary": "In src/workflow/runners/brainstorm/index.ts, rewrite buildPrompt (and the run/finalize wiring) so the single paused `elicit` step conducts the entire clarify -> fold -> show-understanding -> confirm conversation within one llm-pause: fold each answer into workingStatement, present the current understanding every turn, re-ask only unresolved openItems, keep probing with no fixed round budget, and only finalize the step when the resume payload validates t1's evolved brainstormElicitSchema with confirmed:true. Beyond ajv schema-validity, finalize() must independently reject (leave paused, re-prompting on the still-open items) a resume payload that is schema-valid but has confirmed:true together with a non-empty openItems array — this is the LLD's dedicated error-path requirement and is NOT covered by t1's schema. Runner id ('elicit'), workflow name ('brainstorm'), and registerBrainstormRunners/registerWorkflowRunners wiring stay byte-identical to s2 — sc2's scaffold is out of this story's boundary.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "elicit.run() returns a StepRunnerLlmPause carrying t1's evolved brainstormElicitSchema, not the s2 questions schema",
+      "buildPrompt instructs folding answers into workingStatement, showing the current understanding each turn, re-asking only unresolved openItems, and not finishing until confirmed:true — with no fixed round budget",
+      "finalize() leaves the run paused on a confirmed:false or schema-invalid resume payload, and only completes the step on a schema-valid confirmed:true payload",
+      "finalize() additionally leaves the run paused (re-prompting on the remaining openItems) when a resume payload is schema-valid but has confirmed:true with a non-empty openItems array, distinct from and in addition to the plain schema-validity check",
+      "registerBrainstormRunners, the runner id ('elicit'), and the 'brainstorm' workflow registration in workflow/index.ts remain structurally unchanged (sc2 boundary respected)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "elicit.run() returns a StepRunnerLlmPause carrying the evolved brainstormElicitSchema (not the s2 questions schema)"
+      },
+      {
+        "level": "unit",
+        "name": "buildPrompt instructs: fold answers into workingStatement, show the current understanding each turn, re-ask only unresolved openItems, and do not finish until confirmed"
+      },
+      {
+        "level": "unit",
+        "name": "resumeRun with a confirmed:false payload keeps the step's semantics intact (intermediate turn) and resumeRun with confirmed:true completes the run carrying the converged { category, workingStatement, openItems, confirmed } forward as the step output"
+      },
+      {
+        "level": "unit",
+        "name": "the runner exposes no server-side loop: run() pauses exactly once and only finalize() advances (k2)"
+      },
+      {
+        "level": "unit",
+        "name": "finalize() rejects a schema-valid resume payload with confirmed:true and non-empty openItems, leaving the run paused and re-prompting on the remaining openItems"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_workflow_step start (workflow:'brainstorm') -> plan -> emit_step for `elicit` carrying the evolved schema"
+      },
+      {
+        "level": "live",
+        "name": "given a vague idea, successive answers are folded into workingStatement and the next turn asks only still-unresolved openItems, not settled points (ac1)"
+      },
+      {
+        "level": "live",
+        "name": "each turn's workingStatement reflects the latest answers as a shown current understanding (ac2)"
+      },
+      {
+        "level": "live",
+        "name": "a large ambiguous new-capability idea keeps probing across many turns and does not stop early with unresolved openItems (ac4)"
+      },
+      {
+        "level": "live",
+        "name": "convergence presents the statement and only emits confirmed:true after agreement (ac3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

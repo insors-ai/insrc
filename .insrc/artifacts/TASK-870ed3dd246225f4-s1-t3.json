@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fb60843e-ce7d-43ca-9390-2cbbe9eb924a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.048Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement DocTypeRegistry (register/list/get)",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8f6366339f1b0153d2d1e10e8e8fcadc0b0d254393715229a6ee3e2dce0e2532",
+        "at": "2026-10-22T12:43:53.048Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.049Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement DocTypeRegistry (register/list/get)",
+    "summary": "Implement the registration store with the validation and copy semantics the LLD specifies, as the single dispatch surface for docType lookups.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "register() throws DuplicateDocTypeError when an entry with the same docType is already registered",
+      "register() throws InvalidRegistrationError when extractorInputSchema is not a valid JSON schema object, or capability.id !== docType",
+      "list() returns a copy of all registrations in registration order; mutating the returned array does not alter the registry",
+      "get(docType) returns the matching registration or undefined for an unregistered docType"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DocTypeRegistry.register/list/get: valid record registers and is retrievable by get; duplicate docType throws DuplicateDocTypeError; malformed extractorInputSchema and capability.id mismatch throw InvalidRegistrationError; list() returns a mutation-safe copy in registration order; get() on an unregistered docType returns undefined"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

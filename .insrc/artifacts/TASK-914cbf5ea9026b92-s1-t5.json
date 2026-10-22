@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab9aa45c-daa3-4253-9965-fceec240e0b7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.593Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bump SCHEMA_VERSION 3->4 with a no-op additive migration step",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "193c76be67499ad0f9652bcfaf51aafe165bfb356b9fa0bce22a7d7adf346c0f",
+        "at": "2026-10-22T12:43:58.593Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.594Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bump SCHEMA_VERSION 3->4 with a no-op additive migration step",
+    "summary": "Bump SCHEMA_VERSION in src/db/graph/store.ts from 3 to 4 (per the keys.ts 'bump SCHEMA_VERSION when adding' convention) and register a forward-migration step 3->4 in src/db/graph/migrations.ts whose run() is a no-op (the new EntityKind/RelationKind values are additive; existing rows never carry them and decode unchanged, so NO row rewrite). This keeps store-open version checks coherent (an index written by v4 code auto-advances a v3 index on open; newer-index-on-older-code is the tolerated, unsupported single-daemon-build skew per the LLD error case) without any destructive rebuild.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "SCHEMA_VERSION is 4 in store.ts and a 3->4 migration step is registered in migrations.ts so a v3 index auto-advances to v4 on open (no manual step)",
+      "the 3->4 step's run() performs no row rewrite (no-op), and opening a v3 index advances it to v4 leaving every existing entity/edge row byte-identical",
+      "opening a freshly created v4 store round-trips existing entities unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "opening a v3 index advances schema_version to 4 via the no-op 3->4 step leaving every existing entity/edge row byte-identical (mirrors migration-v2-to-v3.test.ts)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

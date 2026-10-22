@@ -6,7 +6,26 @@
     "createdAt": "2026-10-20T08:14:23.816Z",
     "updatedAt": "2026-10-20T13:05:18.377Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
-    "epicSlug": "chunked-review-pipeline-every-review"
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "ce3cd880097d00acd2eda18a4c76793f4e0ce11337541389ba6cd4da7e5ba14c",
+        "at": "2026-10-20T08:14:23.816Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -1494,7 +1513,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt (process-to-build linkage, input sizes, daemon log lines), docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt, .insrc/artifacts/CR-f431a4420d03374f-S001.json"
+              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt (process-to-build linkage, input sizes, daemon log lines), docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt, .insrc/artifacts/CR-f431a4420d03374f-s1.json"
             }
           }
         ],

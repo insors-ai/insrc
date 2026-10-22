@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d9e0c7e9-1f47-4a47-afb4-fe2ea8806e73",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.384Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Draw the diff widget and the row message in the webview",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c3a161af710cf244a3ab3c027c91970bdbca9c6e3c3bda7e7d1703e1fcfe4a37",
+        "at": "2026-10-22T12:44:17.388Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.389Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Draw the diff widget and the row message in the webview",
+    "summary": "render-registry.ts registers the 'diff' renderer (built through line(), remembered by sid) and redrawDiff, and folds a tool result only when its output is long. protocol.ts gains 'transcript-row'. The shell in chat-panel.ts handles 'transcript-row', carries the widget's rules and the no-shrink rule, and loses renderDiff, its 'edit-prompt' handler and the seven .insrc-diff-* rules. chat-theme.test.ts and chat-theme-before.json follow, and the renderDiff source assertions in chat-panel.test.ts are replaced. Until t6 the host still posts 'edit-prompt' and the shell ignores it; the old box was already invisible, so nothing the reader sees is lost.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "A diff row draws the widget of the mock: header, line numbers, signs, 8 lines until opened, labels for new, deleted and binary files and for omitted lines",
+      "A transcript-row with a replacing row redraws the widget of that sid and keeps it open; a withdrawing one hides it",
+      "A diff row in a restored window and in an older page is appended as a widget",
+      "A short tool output has no chevron",
+      "The transcript's children do not shrink and the widget's rules name only the shell's theme names"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "diff widget: header, line numbers, signs and classes are drawn from a diff row; 8 lines show until the header or the button is used"
+      },
+      {
+        "level": "unit",
+        "name": "diff widget: 8 lines or fewer has no chevron and no button; a binary row, a new file, a deleted file and an omitted count are labelled; a row with replaces or withdrawn appends nothing"
+      },
+      {
+        "level": "unit",
+        "name": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing"
+      },
+      {
+        "level": "unit",
+        "name": "transcript-row: a marker row appends the same line a restored marker row draws"
+      },
+      {
+        "level": "unit",
+        "name": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget"
+      },
+      {
+        "level": "unit",
+        "name": "tool result: a short output is drawn with no chevron and a long one folds"
+      },
+      {
+        "level": "unit",
+        "name": "chat theme: the transcript's children do not shrink, the diff widget's rules name only the shell's theme names, and the .insrc-term-diff rule still out-ranks the shared sheet (__tests__/chat-theme.test.ts; replaces the three has() lines on .insrc-diff-add, .insrc-diff-del and .insrc-diff-actions button, and the seven .insrc-diff-* selectors leave chat-theme-before.json while the widget's selectors join the test's list of added selectors)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

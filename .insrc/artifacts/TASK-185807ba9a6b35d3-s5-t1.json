@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8bd9d56-e9d7-4252-849c-38de29f7f647",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.441Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Define artifacts/build.ts — BuildArtifact type family, guards, and renderer",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6bae93911c8160e60ba23cead3fa575db18f0704ac10781cc8e2768a7bb351e4",
+        "at": "2026-10-22T12:43:16.441Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.442Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define artifacts/build.ts — BuildArtifact type family, guards, and renderer",
+    "summary": "Add the new per-stage artifact-definition module src/workflow/artifacts/build.ts, mirroring artifacts/plan.ts (plain module, no base class). Declare BUILD_ARTIFACT_KIND ('build'), BuildArtifactUpstream, and the flat BuildArtifact (runState/halt?/filesTouched/summary on the record, taskOutcomes[] as detail) exactly per the HLD sc7 interfaceSketch. Add an isBuildBody-style guard enforcing the halt-present-iff-runState==='halted' invariant, the filesTouched dedup-union projection across taskOutcomes, and renderBuildMarkdown producing the slug-md with the `insrc:artifact` marker, one entry per Task in plan order (status + testVerdict + filesTouched), and the BuildArtifactUpstream citation block — this renderer is s5-private and the sole place the PlanArtifact citation is formatted.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/artifacts/build.ts exports BUILD_ARTIFACT_KIND ('build'), BuildArtifactUpstream, and BuildArtifact matching the HLD sc7 interfaceSketch verbatim (flat runState/halt?/filesTouched/summary, taskOutcomes[] as detail)",
+      "renderBuildMarkdown emits slug-md carrying the `insrc:artifact` marker, listing one entry per Task in plan order with each Task's status, testVerdict, and its filesTouched",
+      "renderBuildMarkdown emits the BuildArtifactUpstream citation block (planArtifactId/planArtifactHash/storyId/epicId) into the slug-md so a reviewer can trace the run back to the approved PlanArtifact revision",
+      "BuildArtifact.filesTouched is the deduplicated union across taskOutcomes (overlapping paths listed exactly once)",
+      "the body guard rejects a record where halt is present but runState !== 'halted', or runState==='halted' with no BuildHaltInfo",
+      "unit tests over complete-run, halted-run, empty-run, overlapping-filesTouched, and citation-block fixtures pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "artifacts/build.ts canonical-json + slug-md render over complete-run, halted-run, and empty-run fixtures (asserts `insrc:artifact` marker, per-Task plan-order entries, upstream citation block)"
+      },
+      {
+        "level": "unit",
+        "name": "filesTouched dedup-union projection over the overlapping-filesTouched fixture (a path touched by several BuildTaskOutcome entries appears exactly once)"
+      },
+      {
+        "level": "unit",
+        "name": "isBuildBody halt-present-iff-halted invariant: rejects halt-on-complete and runState='halted'-without-BuildHaltInfo, accepts consistent complete/halted records"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

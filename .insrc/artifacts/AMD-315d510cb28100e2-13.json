@@ -1,33 +1,66 @@
 {
-  "id": "AMD-315d510cb28100e2-13",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc4",
-    "method": {
-      "name": "registerParkOfferProvider",
-      "signature": "registerParkOfferProvider(provider: (repo: string, unit: UnitRef, actor: string) => boolean): void",
-      "purpose": "Lets the handoff module say whether the acting user has unparked local work for a unit, so the gate can set offerPark on a held-by-other outcome without importing the handoff module (same shape as registerCompletionHook; shipped with no provider, so offerPark stays false)."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-18T15:44:21.068Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bc3587bb793b58d40856c5fdcc941fc3a8dfc049aa0da7f1abcab41713479952",
+        "at": "2026-10-18T15:44:21.068Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T16:52:02.172Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "offerPark exists on GateOutcome but nothing can set it: the gate cannot know about local runs or drafts, and importing the handoff module from the gate would create a cycle. A provider registration, declared by sc4 and registered by s6, is additive and mirrors the completion hook s5 already ships unregistered.",
+  "body": {
+    "id": "AMD-315d510cb28100e2-13",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc4",
+      "method": {
+        "name": "registerParkOfferProvider",
+        "signature": "registerParkOfferProvider(provider: (repo: string, unit: UnitRef, actor: string) => boolean): void",
+        "purpose": "Lets the handoff module say whether the acting user has unparked local work for a unit, so the gate can set offerPark on a held-by-other outcome without importing the handoff module (same shape as registerCompletionHook; shipped with no provider, so offerPark stays false)."
+      }
+    },
+    "rationale": "offerPark exists on GateOutcome but nothing can set it: the gate cannot know about local runs or drafts, and importing the handoff module from the gate would create a cycle. A provider registration, declared by sc4 and registered by s6, is additive and mirrors the completion hook s5 already ships unregistered.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792338027656-x6ds2e",
+      "storyId": "s6",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-18T15:44:21.068Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "src/workflow/team/gate.ts:228"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792338027656-x6ds2e",
-    "storyId": "s6",
-    "stepId": "s4"
-  },
-  "proposedAt": "2026-10-18T15:44:21.068Z",
-  "status": "approved",
-  "approvedAt": "2026-10-18T16:52:02.172Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

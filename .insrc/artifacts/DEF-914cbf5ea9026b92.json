@@ -20,91 +20,57 @@
     "epicHash": "914cbf5ea9026b92",
     "epicSlug": "work-framed-approved-spec-proceed-from",
     "seededFromSpec": "26c321a52f39c4b7",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1/assumption-1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "EntityKind in src/shared/types.ts is a code-only union (repo/file/module/function/method/class/interface/type/variable/document/section/config) with no external-endpoint/service kind.",
-          "evidence": "grep confirms `export type EntityKind` in src/shared/types.ts ending in `'config';` — the code-only union with no external-endpoint kind, as the assumption states.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1/k1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "RelationKind in src/shared/types.ts is intra-code (DEFINES/IMPORTS/CALLS/INHERITS/IMPLEMENTS/DEPENDS_ON/EXPORTS/REFERENCES) with no outbound-call / pub-sub / RPC edge kind.",
-          "evidence": "grep confirms `export type RelationKind` with `'DEPENDS_ON'` and `'REFERENCES'` present — the intra-code edge union; no outbound/pub-sub/RPC edge kind exists.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1/k2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The deterministic entity-id convention SHA256(repo+file+kind+name) hex-32 is documented on the Entity type in src/shared/types.ts.",
-          "evidence": "grep confirms the deterministic id convention `SHA256(repo + file + kind + name)` + `hex-32` documented on Entity in src/shared/types.ts — the id model k2 reuses.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c2/assumption-2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The indexer's manifest parsing covers only package-dependency manifests (package.json/go.mod/pyproject/pom/build.sbt) and has no service-URL/topic or .env/k8s/docker env resolution.",
-          "evidence": "grep confirms `export function parseManifest` in src/indexer/manifest.ts alongside package.json/go.mod handling — manifest parsing is package-dependency-only, so config/env/k8s/docker resolution is genuinely new (assumption 2 holds).",
-          "action": "None — semantic premise verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c3/assumption-3",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "No external-service notion (endpoint/route/http-client/messaging/topic/openapi/asyncapi/inbound/outbound) exists in the non-test source of src/indexer or src/db/graph today.",
-          "evidence": "The review grep matched ExternalEndpoint/CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC, but a scoped check (grep -rl over src/) returns ZERO hits — every match is in this session's workflow ARTIFACTS (docs/specs, docs/defines, .insrc/artifacts), not in src/indexer or src/db/graph source. The premise (no external-service notion in the source today) therefore holds; the matches are the spec/DEF/design docs describing the new vocabulary, not a pre-existing implementation.",
-          "action": "None — premise verified after excluding self-authored artifacts; the source has no external-service notion.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c4/k1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The LMDB graph layer exposes a transitive-closure traversal API (transitiveClosure/outNeighbors/inNeighbors) that the DEPENDS_ON-closure scoping relies on.",
-          "evidence": "grep confirms transitiveClosure (33), outNeighbors (50), inNeighbors (28) in the graph layer — the closure-traversal API k1's DEPENDS_ON-closure constraint depends on exists.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "meta/seededFromSpec",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "This DEF is seeded from the approved SpecArtifact SPEC-26c321a52f39c4b7, whose 14 decisions the Epic's constraints/non-goals restate.",
-          "evidence": "The DEF meta records seededFromSpec=26c321a52f39c4b7 and the SPEC json exists at .insrc/artifacts/SPEC-26c321a52f39c4b7.json — the cross-artifact seed trace holds; constraints k5/k6 + non-goals restate that spec's decisions.",
-          "action": "None — cross-artifact trace verified.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-08-06T15:52:54.411Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-06T15:54:30.851Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7557e9a19ea77097c481f948cb2d718d26a83371458d8cd4f66b9bc4e6d039bf",
+        "at": "2026-08-06T15:51:10.850Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T15:54:30.851Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-08-06T15:52:54.411Z",
+        "report": {
+          "entityId": "DEF-914cbf5ea9026b92",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-914cbf5ea9026b92-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "new-capability",

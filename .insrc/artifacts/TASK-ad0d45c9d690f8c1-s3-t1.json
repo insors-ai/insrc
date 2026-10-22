@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56c87204-e980-4101-851f-a5be3f240ed4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.058Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Shared reversible writers + composeMcpEntry over an injectable HostFileSystem",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3826cb97eb9831288d4eb256d8f401a5c0786942c6b66cf183f14b7fdadad856",
+        "at": "2026-10-22T12:44:13.058Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.064Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared reversible writers + composeMcpEntry over an injectable HostFileSystem",
+    "summary": "Create vscode-plugin/src/hosts/ with: HostFileSystem interface { read(path): string|undefined; write(path, content): void; exists(path): boolean } + a default node:fs impl (creates parent dirs on write); McpConfigWriter.writeInsrcServer/removeInsrcServer (JSON key-merge under mcpServers.insrc preserving every other key; throw HostFileAccessError on a present-but-non-object mcpServers — never clobber; idempotent; no partial write on fs failure); SteeringWriter.upsert/remove (pure marker-delimited block: no-markers→append preserving prior content, markers→replace between, malformed/duplicate→leave untouched); composeMcpEntry(launchTargetPath): { command:'node', args:[path] } | undefined (fail-safe skip when absent; no cloud/env/argv — k2). Mirrors JsonMcpConfigWriter/MarkerSection/InsrcMcpRegistration; the HostFileAccessError type lives here.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "McpConfigWriter.writeInsrcServer sets mcpServers.insrc preserving other keys/servers; idempotent; creates {} for an absent file; removeInsrcServer deletes only the insrc key; throws HostFileAccessError (no write) on a non-object mcpServers",
+      "SteeringWriter.upsert appends when no markers / replaces between markers / leaves malformed-or-duplicate markers untouched; remove deletes the block; both no-op idempotently",
+      "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write); errors surface as HostFileAccessError",
+      "composeMcpEntry returns { command:'node', args:[path] } and undefined for an undefined launch target (no cloud/env/argv)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "McpConfigWriter.writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent on re-run; creates {} when the file is absent"
+      },
+      {
+        "level": "unit",
+        "name": "McpConfigWriter throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)"
+      },
+      {
+        "level": "unit",
+        "name": "McpConfigWriter.removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent"
+      },
+      {
+        "level": "unit",
+        "name": "SteeringWriter.upsert: no-markers→append preserving prior content; markers→replace between; malformed/duplicate→leave untouched (guarded no-op); idempotent; remove deletes the block + no-op when no markers"
+      },
+      {
+        "level": "unit",
+        "name": "both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)"
+      },
+      {
+        "level": "unit",
+        "name": "composeMcpEntry(path) = { command:'node', args:[path] } and returns undefined (skip) for an undefined launch target (no cloud/env/argv)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

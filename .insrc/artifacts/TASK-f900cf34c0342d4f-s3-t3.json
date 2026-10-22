@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-46320a35-eb70-479c-bda5-5f84d2209750",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.977Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement scanOrphansWith/killOrphansWith + the scanOrphans/killOrphans facade methods",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4540c369c273a6c5f9287abd818f85a4858fbb7b5302cdb2f559fc90649bd059",
+        "at": "2026-10-22T12:44:58.978Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.978Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement scanOrphansWith/killOrphansWith + the scanOrphans/killOrphans facade methods",
+    "summary": "In src/cli/services/debug.ts add injectable-deps helpers: scanOrphansWith(deps) (deps: ps-runner, platform, managedPid, daemonEntry) runs the ps scan, matches the resolved DAEMON_ENTRY, excludes the managed pid, returns {supported:false} on win32, and folds any ps failure into {supported:true; orphans:[]}; killOrphansWith(deps) (deps: kill(pid,signal), isAlive/liveness probe, wait/clock, platform, managedPid) does SIGTERM -> wait ~3s -> SIGKILL-only-for-survivors over exactly the passed pids, re-excludes the managed pid, folds signal errors into per-pid KillOutcome, no-ops off-POSIX, never throws. Add zero-arg wrappers scanOrphans()/killOrphans(pids) over realDeps (DAEMON_ENTRY, pidFromFile, execFileSync ps, process.kill, process.platform), add the two methods to the DebugService interface, and bind them onto the makeServices() debug entry. Build note: land WITH t5 (the fakes) in one increment.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "DebugService interface gains scanOrphans(): OrphanScanResult + killOrphans(pids: readonly number[]): Promise<KillOutcome[]>; existing members unchanged",
+      "scanOrphansWith returns non-managed daemon-entry pids from canned ps output; {supported:false} on win32; {supported:true;orphans:[]} on ps failure",
+      "killOrphansWith sends SIGTERM then SIGKILL only to survivors (injected clock), acts only on the passed pids, re-excludes the managed pid, folds errors into per-pid KillOutcome, never throws",
+      "makeServices().debug.scanOrphans + .killOrphans are bound to the real impls; tsc compiles",
+      "no real ps/process.kill runs in the unit tests (deps injected)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scanOrphansWith: canned ps output (daemon-entry + managed-pid + unrelated node) -> {supported:true} with ONLY the non-managed daemon-entry pid(s)"
+      },
+      {
+        "level": "unit",
+        "name": "scanOrphansWith: platform 'win32' -> {supported:false} with no ps invoked"
+      },
+      {
+        "level": "unit",
+        "name": "scanOrphansWith: throwing/garbled ps-runner -> {supported:true; orphans:[]} (never throws)"
+      },
+      {
+        "level": "unit",
+        "name": "scanOrphansWith: managed pid undefined -> every matching daemon-entry process is a candidate"
+      },
+      {
+        "level": "unit",
+        "name": "killOrphansWith([p]) p dies on SIGTERM -> (p,'SIGTERM') then liveness clears; 'terminated', no SIGKILL"
+      },
+      {
+        "level": "unit",
+        "name": "killOrphansWith([p]) p survives -> (p,'SIGTERM') then after injected wait (p,'SIGKILL'); 'forced'"
+      },
+      {
+        "level": "unit",
+        "name": "killOrphansWith([managedPid,p]) -> managed pid never signalled; only p processed"
+      },
+      {
+        "level": "unit",
+        "name": "killOrphansWith([p]) kill throws EPERM/ESRCH -> 'error'/'not-found', no re-throw, other pids still processed"
+      },
+      {
+        "level": "unit",
+        "name": "killOrphansWith([]) -> no kill calls, resolves []; off-POSIX -> no-op"
+      },
+      {
+        "level": "integration",
+        "name": "makeServices().debug exposes scanOrphans + killOrphans bound to the real impls"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

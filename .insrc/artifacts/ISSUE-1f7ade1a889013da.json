@@ -21,10 +21,38 @@
     "epicSlug": "both-cli-providers-reject-top-level",
     "standalone": true,
     "magnitude": "sized",
-    "approvedAt": "2026-10-03T18:01:07.606Z",
     "parentRef": {
       "slug": "documentation-generation-framework-docgen-produces-self",
       "storyId": "s6"
+    },
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8a4a5a143c95080ba3fef1443b9a79fbd93df462bedb8ae984ac42cd49177db6",
+        "at": "2026-10-03T17:50:31.562Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-03T18:01:07.606Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

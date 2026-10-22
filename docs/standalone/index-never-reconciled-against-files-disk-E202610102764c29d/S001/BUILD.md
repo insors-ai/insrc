@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-2764c29d7ccb66a5-S001 -->
+<!-- insrc:artifact BUILD-2764c29d7ccb66a5-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -22,8 +22,8 @@ The guide (docs/daemon.md, "The index is cleaned of files that are gone or ignor
 
 ## Changes
 
-- `.insrc/artifacts/CR-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
-- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-S001.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `.insrc/artifacts/CR-2764c29d7ccb66a5-s1.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
+- `.insrc/artifacts/PLAN-2764c29d7ccb66a5-s1.json` — **insrc-build** (2026-10-10T16:38:39.311Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-10T16:38:39.311Z)
 - `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/CR.md` — **insrc-build** (2026-10-10T16:38:39.311Z)
 - `docs/standalone/index-never-reconciled-against-files-disk-E202610102764c29d/S001/smoke-installed-daemon.md` — **insrc-build** (2026-10-10T16:38:39.311Z)

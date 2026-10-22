@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1be5dc72-761a-45d3-b351-7b5d10a44920",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.379Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the saved diff row and give its latest version at the first row's place",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "01e99d951990ecc713ce27b20b591cb75a1b53d07e2ec46f6b5c7fbca4722773",
+        "at": "2026-10-22T12:44:17.382Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.383Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the saved diff row and give its latest version at the first row's place",
+    "summary": "session-store.ts gains the role:'diff' variant with sid, replaces and withdrawn. pageBefore in transcript-window.ts substitutes by sid. The host toViewModel and its webview mirror map a diff row to the 'diff' kind. Tests of the window cut, of the view-model parity and of the file store round trip with another writer's rows in between.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "pageBefore gives a diff row with the content of the last later row that replaces its sid, and leaves firstIndex and the row count as they are",
+      "A diff row, a replacing row and a withdrawing row saved through the file store by separate saves are read back by a new store",
+      "The host and webview toViewModel agree on a diff row"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change"
+      },
+      {
+        "level": "unit",
+        "name": "toViewModel: a diff row maps to the diff kind in the host and in the webview mirror"
+      },
+      {
+        "level": "integration",
+        "name": "session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

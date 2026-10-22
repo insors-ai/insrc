@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-011bbb7e-74f3-4b14-8702-dd273d5a13a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.816Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route insrc_review_step by author",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "47c6df211d8832dcdad61a8a21fc9efc0e17b4bf78d9c80f48f5ac26a856268c",
+        "at": "2026-10-22T12:43:14.816Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.817Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route insrc_review_step by author",
+    "summary": "On start the tool reads the author before it chooses a path. Daemon-authored work runs the existing controller loop. Controller-authored or unknown-author work is sent to the daemon review request; the tool waits up to its limit (11 minutes for an HLD or LLD, 10 minutes for a DEF) and returns done with the verdict, or an error that names the cause and offers no controller review. The verdicts phase and the findings phase refuse controller-authored work. The fixtures of the two review-step suites get a daemon author so they keep exercising the controller loop.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A controller-authored or unknown-author DEF and LLD each return done with the daemon's verdict and never return the extract prompt or the template prompt",
+      "A daemon-authored DEF returns emit_claims and a daemon-authored LLD returns emit_findings, as today",
+      "Daemon unreachable, an error frame, an older daemon and a timeout each return an error, stamp nothing and offer no controller loop",
+      "With a fake daemon and an injected timer, the tool waits with the 11 minute limit for an HLD or LLD and the 10 minute limit for a DEF",
+      "The verdicts phase and the findings phase each refuse controller-authored work and stamp nothing",
+      "The two existing review-step suites pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T9 insrc_review_step sends controller-authored and unknown-author work to the daemon and returns done; daemon-authored work runs the controller loop"
+      },
+      {
+        "level": "integration",
+        "name": "T14 a controller-authored LLD goes to the daemon before the template prompt is returned; a daemon-authored LLD returns emit_findings"
+      },
+      {
+        "level": "integration",
+        "name": "T11 insrc_review_step: daemon unreachable, error frame, older daemon and timeout each return an error, stamp nothing and offer no controller loop; the wait limit is 11 minutes for a design and 10 for a DEF"
+      },
+      {
+        "level": "integration",
+        "name": "T12 the verdicts phase and the findings phase (LLD and HLD) refuse controller-authored work and stamp nothing"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

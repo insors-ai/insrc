@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e11f5e0-b946-457a-bcb7-83e718f799c1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.119Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Render the ux-mock companion + wire the renderUxCompanionForBody finalize seam",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cee1ce27b6dc9114d0ddf644ebad9998bcead6b9b9924f3a5174eccae46b220d",
+        "at": "2026-10-22T12:44:39.119Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.120Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render the ux-mock companion + wire the renderUxCompanionForBody finalize seam",
+    "summary": "Add renderUxCompanion(uxDef, title, destPath, opts?):Promise<CompanionArtifactRef> in companion/render.ts (deterministic HTML ux-mock via the existing docgen assembleShell, kind:'ux-mock', catches assembleShell failure -> no picture) and renderUxCompanionForBody(body, destPath, repoPath):Promise<CompanionArtifactRef|undefined> in orchestrator.ts, wired alongside renderErCompanionForBody (orchestrator.ts:1498) in the SAME finalize seam so a document can carry both an ER diagram and a UX mock. Absent uxDefinition -> undefined (content gate) -> byte-identical render. CompanionKind/CompanionArtifactRef reused unchanged.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "renderUxCompanion returns a kind:'ux-mock' CompanionArtifactRef for a validated uxDefinition; a stubbed assembleShell throw is caught and yields no companion",
+      "renderUxCompanionForBody returns undefined when uxDefinition is absent (content gate) and a linked ux-mock ref when present+valid",
+      "finalize invokes renderUxCompanionForBody alongside renderErCompanionForBody; a body with both an ER and a UX definition emits both companions",
+      "the ux mock is LINKED from the core markdown, never inlined (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderUxCompanion / renderUxCompanionForBody: present+valid uxDefinition -> kind:'ux-mock' CompanionArtifactRef; absent uxDefinition -> undefined (content gate); a stubbed assembleShell throw is caught and yields undefined (document still produced)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

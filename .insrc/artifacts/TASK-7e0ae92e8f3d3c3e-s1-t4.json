@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5828935d-61c6-4c7a-bda2-ed0cb556b212",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.704Z",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0ae92e8f3d3c3e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Validate release inventory and exact references",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0ae92e8f3d3c3e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-7e0ae92e8f3d3c3e-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b93a7c0b3b9b5400420871cc13bf846802a0ea728c061c94cad057d41c39faff",
+        "at": "2026-10-22T12:43:50.704Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.705Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate release inventory and exact references",
+    "summary": "Extend validate.ts with pure in-memory manifest/inventory validation: closed membership, regular files, portable paths, raw-byte digests, unique record identities and exact acyclic relations. Verify the digest sequence and referenced source/notices/coverage files without implementing source or editorial policies.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Reject missing/undeclared/duplicate/case-colliding entries, unsafe paths and nonregular files.",
+      "Manifest record pairs match decoded bytes; relations resolve exactly, with duplicate/self/cyclic references rejected.",
+      "Verify file, record, candidate, review and release digests; no manifest self hash or final releaseId in coverage.",
+      "Format limits return explicit issues instead of silently truncating records or inventory.",
+      "Coverage is inspected only as canonical JSON for digest/candidate binding; no licensing allowlist or editorial coverage algorithm is implemented.",
+      "Malformed coverage membership remains ineligible: zero matches preserves reference.missing, duplicates inventory.invalid, and no computable candidate is invented."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "manifest-validation.test.ts — in-memory exact inventory, portable paths, relations DAG and tamper cases"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-77868d6d-85d6-4a53-b00c-41c6ae07b4ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.238Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pipeline core: bounded gather",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1ec89adc8182b1d91fa81e45a70014373bd54597b616d0c72057957ed21a3ce1",
+        "at": "2026-10-22T12:43:51.238Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pipeline core: bounded gather",
+    "summary": "Add the gather to the pipeline core: obligation calls; level-by-level reduction under the quarter-limit note cap, with the job keeping which atoms and earlier notes each note stands for; relationCall returning one or more calls, counted under pipelineCalls.relation; merge; and result.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "An obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and provenance is kept.",
+      "A relation judged by two calls is complete only when both are answered."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a relation judged by two calls is complete only when both are answered'"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

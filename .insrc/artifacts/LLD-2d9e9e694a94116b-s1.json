@@ -24,111 +24,57 @@
     "hldEffectiveHash": "707006cbcfe4fe7a0b0084b28b91c62482ad129db66e67680dca226a2c274921",
     "hldAmendmentsApplied": [],
     "standalone": true,
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The claude-provider Approve grant re-run in chat-panel.ts sends the vague nudge runTurn('Approved: please proceed with the ${grantTool} action...', [grantTool]) — the defect FIX #1 replaces.",
-          "evidence": "Confirmed: chat-panel.ts:731 = `void runTurn(\\`Approved: please proceed with the ${grantTool} ac...` — the vague grant-nudge the fix replaces, verbatim.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "pendingPerms is populated with ONLY the tool name (pendingPerms.set(ev.requestId, ev.toolName)) so the exact command isn't available to re-issue — the field-modify target.",
-          "evidence": "Confirmed: chat-panel.ts:581 is the approval-request registration block (the `if (ev.kind === 'approval-request' ...)` guard whose body sets pendingPerms with the tool name) — the field-modify locus.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "runTurn(text, allowedTools?) is the reused engine (resumes the session + adds --allowedTools); its signature is unchanged and only the tool-gate Approve call site's text changes.",
-          "evidence": "Confirmed: chat-panel.ts:517 = `async function runTurn(text: unknown, allowedTools?: readonly string[])` — the reused engine, signature unchanged.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The codex/in-turn branch relays a decision via providers.get(activeProvider).decide(...) — the path consumed unchanged (and the deferred FIX #2), a stale/unknown requestId falls through to it.",
-          "evidence": "Confirmed: chat-panel.ts:739 = `deps.providers.get(activeProvider).decide(activeTurnId, msg.reque...` — the codex/in-turn relay consumed unchanged (deferred FIX #2 path).",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The approval-request TurnEvent (stream-events.ts) today carries { kind, turnId, requestId, title, detail, toolName? } with NO command field — the additive field-add target.",
-          "evidence": "Confirmed: stream-events.ts:64 = `readonly kind: 'approval-request';` — the event whose optional command field is the additive field-add.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The tool-call TurnEvent (stream-events.ts) already carries an optional command?: string (from the assistant tool_use input.command), evidencing the command is available in the stream.",
-          "evidence": "Confirmed: stream-events.ts:42 = `readonly command?: string;` on the tool-call event — the command IS present in the stream (evidence the harvest is feasible).",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "claudeMapper.mapLine's system/permission_denied handler reads tool_name + tool_use_id + message and emits an approval-request event { title:`Permission: ${toolName}`, detail:message, toolName } — no command harvested today.",
-          "evidence": "Confirmed: cli-adapter.ts:262 = `if (obj['subtype'] === 'permission_denied') {` — the claude denial handler that emits the approval-request event.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "buildArgs adds only --allowedTools for the grant re-run; there is no --add-dir / working-directory-widening argv (the no-sandbox-widening invariant the chosen design keeps).",
-          "evidence": "Confirmed: cli-adapter.ts:243 is the buildArgs grant region (the S001 --allowedTools pre-allow comment); no --add-dir exists — the no-sandbox-widening invariant the design preserves.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The WebviewToHost permission-decision message is { type:'permission-decision'; requestId: string; decision:'approve'|'deny' } — unchanged by this design (the host owns the command via pendingPerms).",
-          "evidence": "Confirmed: protocol.ts:90 = `readonly type: 'permission-decision';` — the webview message left unchanged by this design.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The chat test suites the regression extends exist: cli-adapter.test.ts, chat-panel.test.ts, stream-events.test.ts, protocol.test.ts under vscode-plugin/src/chat/__tests__/.",
-          "evidence": "Confirmed: vscode-plugin/src/chat/__tests__/chat-panel.test.ts (and the cli-adapter/stream-events/protocol suites) exist — the suites the regression extends.",
-          "action": "No change needed.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-29T08:00:21.176Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-29T07:46:38.613Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-29T08:07:24.718Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "63e2f8ead7f83d0eb6e93afd691aca9f6ebed6dd59113d91386a148ba590e6c6",
+        "at": "2026-09-29T07:59:02.040Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T08:07:24.718Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-29T08:00:21.176Z",
+        "report": {
+          "entityId": "LLD-2d9e9e694a94116b-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2d9e9e694a94116b-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

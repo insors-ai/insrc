@@ -19,71 +19,6 @@
     "schemaVersion": 1,
     "epicHash": "f9563bf5bbb29c43",
     "epicSlug": "vs-code-editor-dev-chat-ui",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "In vscode-plugin/src/chat/chat-panel.ts the webview bootstrap renders each transcript row via a flat textContent line() helper and does not echo the user's prompt live on submit.",
-          "evidence": "read chat-panel.ts:234 confirms `function line(s,cls){...d.textContent=s;...}` (flat textContent render); submit-turn appears 3x with no live user-echo line() call.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "In vscode-plugin/src/chat/cli-adapter.ts the claude/codex spawn args contain no permission-mode / --ask-for-approval / auto flag.",
-          "evidence": "cli-adapter.ts shows `claude -p <prompt> --output-format=stream-json --verbose`; grep for permission-mode/ask-for-approval/dangerously-skip-permissions returns 0 — no permission flag, as claimed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The TurnEvent union in vscode-plugin/src/chat/stream-events.ts has no approval/permission kind (kinds are assistant-delta/tool-call/file-edit/status/done/error).",
-          "evidence": "TURN_EVENT_KINDS defined at stream-events.ts:50; grep approval|permission over stream-events.ts returns 0 — the union has no approval/permission kind (closed-union holds).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "In vscode-plugin/src/chat/markers.ts the tool-call marker label is the tool/mcp name only (no command args).",
-          "evidence": "markers.ts:66 label = `event.mcp ? server · name : event.tool` — the tool/mcp NAME only, no command args, as claimed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The agreed UX design mock exists at the referenced docs path (post-review c2 re-pointed to this epic's own mocks.html).",
-          "evidence": "docs/epics/vs-code-editor-dev-chat-ui-E20260926f9563bf5/mocks.html exists on disk (authored + published v5 this session).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-26T12:37:14.005Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-26T13:14:53.527Z",
     "questionResolutions": {
       "q42234e8d": {
         "question": "Item a2: the low-confidence assumption (headless claude -p / codex exec permission behaviour is unverified) is carried as s4 localConstraint lc1 (a verification gate before S4 is designed/built) rather than a formal openQuestion field; the HLD must resolve it before S4.",
@@ -92,6 +27,57 @@
         "rationale": "Verified against the installed binaries: `claude -p` supports `--permission-mode` (incl. bypassPermissions/manual) and `--permission-prompts host|none` (host = the SDK host answers prompts; none = denied automatically, which is today's silent-block cause) plus --allowed-tools/--disallowed-tools; `codex exec` supports -s/--sandbox, approval-request routing, and --dangerously-bypass-approvals-and-sandbox, with --json events. Both expose headless permission handling + an auto/bypass flag, so S004 is designed on verified ground: host-answered permission prompts relayed to the webview + a permission-mode seam for auto/review. lc1 discharged.",
         "resolvedAt": "2026-09-26T13:17:04.244Z"
       }
+    },
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "12fd11989385b2dd7389a0577a672dd3f9172865bba8d972c3759b7df78fa15c",
+        "at": "2026-09-26T12:35:53.222Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T13:14:53.527Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-26T12:37:14.005Z",
+        "report": {
+          "entityId": "DEF-f9563bf5bbb29c43",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-f9563bf5bbb29c43-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

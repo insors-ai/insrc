@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-230724ed-ffda-4758-b9c3-b1007f6ba5f5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.430Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Declare the DaemonProgressReader and DaemonProgressSnapshot type surface",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81945d5b26bbb7a7159a5fd539bdb6b5e5847e5e62f18cc0cfbe9375f084807c",
+        "at": "2026-10-22T12:43:43.430Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.431Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the DaemonProgressReader and DaemonProgressSnapshot type surface",
+    "summary": "Add type-only declarations in the module path pinned by t2, using the member set fixed by the t1 amendment decision: `DaemonProgressReader` with onStage / onToken / onComplete from the published sc3 interfaceSketch (all returning void — registration only), plus release() and/or onError() if and only if t1 approved them, plus the snapshot accessor if and only if t2 recorded it as a published member. `DaemonProgressSnapshot` is declared as `{ operation: ProgressOperation; currentStage: StageProgressEvent | null; tokensTotal: number; done: boolean }`. All handler parameter types are imported from the s1 sc1 types — nothing is re-declared locally. Additive only: no existing declaration is touched, no runtime behaviour is introduced, and WorkflowProgress (s1-internal driver vocabulary at src/daemon/workflow-rpc.ts:61) must not appear anywhere in this surface. Follows the module convention: PascalCase types, no class introduced.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "DaemonProgressReader declares onStage, onToken and onComplete with the sketch's signatures, each returning void.",
+      "The declared member set matches the t1 decision and the t2 accessor decision exactly — no unapproved member is present and no approved member is missing.",
+      "DaemonProgressSnapshot declares operation, currentStage (nullable), tokensTotal and done with the sketch's types and no field renamed or narrowed.",
+      "StageProgressEvent / TokenProgressEvent / ProgressOperation are imported from src/shared/types.ts; no local re-declaration exists.",
+      "WorkflowProgress does not appear in any exported type of this surface.",
+      "No class is introduced and no existing declaration is modified; `npm run build` type-checks clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "reader-surface-typechecks: the declared DaemonProgressReader and DaemonProgressSnapshot compile clean under `npm run build` with onStage/onToken/onComplete returning void"
+      },
+      {
+        "level": "unit",
+        "name": "member-set-matches-decisions: the exported member set equals exactly the t1-approved members plus the t2 accessor decision — no unapproved member present, no approved member missing"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot-shape: DaemonProgressSnapshot exposes operation, nullable currentStage, tokensTotal and done with sketch types, no field renamed or narrowed"
+      },
+      {
+        "level": "unit",
+        "name": "no-workflow-progress-in-surface: WorkflowProgress appears in no exported type of the module, and sc1 types are imported rather than re-declared"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

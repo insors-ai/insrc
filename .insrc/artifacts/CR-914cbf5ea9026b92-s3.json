@@ -11,7 +11,26 @@
     "epicHash": "914cbf5ea9026b92",
     "storyId": "s3",
     "epicSlug": "work-framed-approved-spec-proceed-from",
-    "epicCreatedAt": "2026-08-06T15:51:10.850Z"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "e3b3efd2db276a6cce926b8c9a029ef47133c2e589a43e6d6f5592618b7162f4",
+        "at": "2026-08-07T09:52:03.355Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

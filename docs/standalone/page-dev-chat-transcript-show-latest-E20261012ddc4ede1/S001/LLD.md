@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-ddc4ede1dbf84626-S001 -->
+<!-- insrc:artifact LLD-ddc4ede1dbf84626-s1 -->
 
 # LLD: E20261012ddc4ede1:S001
 
@@ -372,7 +372,7 @@ The host still posts the whole transcript; the webview keeps the rows as data an
 - **[[c8]]** `code` `vscode-plugin/src/chat/__tests__/fake-dom.ts` — "insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;"
 - **[[c9]]** `code` `vscode-plugin/src/chat/render-registry.ts` — "function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}"
 - **[[c10]]** `stakeholder` `user request, 2026-10-12` — "Support pagination of chat history, it takes ages to open when chat history is long. - even active session should page out history"
-- **[[c11]]** `prior-artifact` `first review of LLD-ddc4ede1dbf84626-S001 (block: 1 high, 4 medium)` — "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"
+- **[[c11]]** `prior-artifact` `first review of LLD-ddc4ede1dbf84626-s1 (block: 1 high, 4 medium)` — "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"
 
 ## 10. Open questions
 
@@ -398,4 +398,4 @@ The host still posts the whole transcript; the webview keeps the rows as data an
 - **[[c8]]** `code` `vscode-plugin/src/chat/__tests__/fake-dom.ts` — "insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;"
 - **[[c9]]** `code` `vscode-plugin/src/chat/render-registry.ts` — "function appendKeyed(vm,key){if(key==null)return renderRow(vm);if(KEYS[key])return KEYS[key];var n=renderRow(vm);if(n)KEYS[key]=n;return n;}"
 - **[[c10]]** `stakeholder` `user request, 2026-10-12` — "Support pagination of chat history, it takes ages to open when chat history is long. - even active session should page out history"
-- **[[c11]]** `prior-artifact` `first review of LLD-ddc4ede1dbf84626-S001 (block: 1 high, 4 medium)` — "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"
+- **[[c11]]** `prior-artifact` `first review of LLD-ddc4ede1dbf84626-s1 (block: 1 high, 4 medium)` — "Every row the registry renders goes through the shell's `line()`, which forces the view to the bottom on each append"

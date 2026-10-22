@@ -1,29 +1,62 @@
 {
-  "id": "AMD-2f27754d4ad00b8e-9",
-  "epicHash": "2f27754d4ad00b8e",
-  "epicSlug": "one-common-model-every-artifact",
-  "hldBaseRunId": "wf-1792406752203-whj6zi",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc3",
-    "field": {
-      "name": "Feedback.inReplyTo",
-      "type": "string | undefined",
-      "optional": true,
-      "purpose": "The id of the feedback entry this entry replies to. A stored line can never be rewritten, so a reply is its own line that names its parent; the thread is built at read. An entry with no inReplyTo is a thread root."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "createdAt": "2026-10-21T11:44:44.234Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "562f93725780a80822cbec76f1a96d3933272a97aee7bfb5f6ddde7bdf3a389d",
+        "at": "2026-10-21T11:44:44.234Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T11:53:16.226Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Feedback.feedback holds nested replies, but a stored line is immutable (k4), so a reply cannot be added to a parent that is already written. One optional field lets a reply be a separate immutable line; a3 (merge same-id lines) would weaken the integrity rule sc5 owns.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792582680524-ox15vn",
-    "storyId": "s5",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-2f27754d4ad00b8e-9",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc3",
+      "field": {
+        "name": "Feedback.inReplyTo",
+        "type": "string | undefined",
+        "optional": true,
+        "purpose": "The id of the feedback entry this entry replies to. A stored line can never be rewritten, so a reply is its own line that names its parent; the thread is built at read. An entry with no inReplyTo is a thread root."
+      },
+      "breaking": false
+    },
+    "rationale": "Feedback.feedback holds nested replies, but a stored line is immutable (k4), so a reply cannot be added to a parent that is already written. One optional field lets a reply be a separate immutable line; a3 (merge same-id lines) would weaken the integrity rule sc5 owns.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792582680524-ox15vn",
+      "storyId": "s5",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-21T11:44:44.234Z",
+    "approvedBy": "user (explicit yes in chat, 2026-10-21)"
   },
-  "proposedAt": "2026-10-21T11:44:44.234Z",
-  "status": "approved",
-  "approvedAt": "2026-10-21T11:53:16.226Z",
-  "approvedBy": "user (explicit yes in chat, 2026-10-21)"
+  "citations": []
 }

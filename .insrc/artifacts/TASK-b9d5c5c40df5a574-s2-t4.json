@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a1bc2e15-2616-47a6-8eca-ec7b7deac303",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.854Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The measure in the answer report and under the completeness line",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6fca4145a8d7edb6af6757c0a64029f1bed38a301503e18d7a56ae324438b34b",
+        "at": "2026-10-22T12:44:24.855Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.855Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The measure in the answer report and under the completeness line",
+    "summary": "Type the report's `measure` field, let reportFromLookups take a measure, and add renderReportHead: the completeness line and, when the report has a measure, the measure line under it. completenessHeadLine returns it for a report, and the direct writers of an answer's head call it. On the plan tree the driver's merged report is given a measure after the merge. No caller supplies a measure yet, so no answer changes until the later Tasks.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "AnswerReport.measure is typed RequestMeasure and isAnswerReport accepts a report with or without one",
+      "reportFromLookups puts a given measure in the report, and a report built without one is exactly today's",
+      "renderReportHead is the completeness line alone for a report with no measure, and both lines for one with a measure",
+      "Every writer of an answer's head goes through renderReportHead: assembleMarkdown, both writers in bundle-md.ts, the step tool's answer turn, both writers in workflow-rpc.ts and the plan tree's final report",
+      "A report or a run record stored before the change is read as it is"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "every writer of an answer's head (the run context's markdown, both writers of the bundle's markdown, the step tool's answer turn, both writers of the workflow runner, and the plan tree's final report) carries the measure line under the completeness line; the plan tree's merged report carries the run's measure; and a report or a run record stored before the change is read as it is"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-0c845762241ba26c-S001 -->
+<!-- insrc:artifact BUILD-0c845762241ba26c-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,7 +26,7 @@ runShaper's index-state check (checkScopeState, on a cache hit and a miss alike)
 
 ## Changes
 
-- `.insrc/artifacts/CR-0c845762241ba26c-S001.json` — **insrc-build** (2026-10-14T04:46:53.809Z)
+- `.insrc/artifacts/CR-0c845762241ba26c-s1.json` — **insrc-build** (2026-10-14T04:46:53.809Z)
 - `.insrc/artifacts/ISSUE-0c845762241ba26c.json` — **insrc-build** (2026-10-14T04:46:53.809Z)
 - `docs/standalone/refuse-docs-request-scope-index-does-E202610130c845762/S001/CR.md` — **insrc-build** (2026-10-14T04:46:53.809Z)
 - `src/analyze/context/__tests__/run-shaper-wiring.test.ts` — **insrc-build** (2026-10-14T04:46:53.809Z)

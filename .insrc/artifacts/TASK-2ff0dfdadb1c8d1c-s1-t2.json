@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-184cfee7-61d2-492d-97fe-32fd2e7d1707",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:23.081Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Notice module: attention table, constructor and deterministic sort",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e822c0d383f969c4d2d27a9e5743a149f68c20741310cda5e72cc05aae839caf",
+        "at": "2026-10-22T12:43:23.081Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:23.081Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Notice module: attention table, constructor and deterministic sort",
+    "summary": "Create src/workflow/delivery/notice.ts exporting NOTICE_ATTENTION (exhaustive over NoticeCode, true for record-unreadable, identity-ambiguous, unresolved-parent and validation-conflict), makeNotice (sorts and de-duplicates id lists, takes attention from the table) and sortNotices (code, then artifactIds, itemIds, fileNames, message; duplicates removed).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "NOTICE_ATTENTION is typed Record<NoticeCode, boolean>, so a new code fails to compile until it is given a value.",
+      "makeNotice never lets a caller set attention; attention always equals NOTICE_ATTENTION[code].",
+      "sortNotices returns the same order for any permutation of the same input."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "notice.test.ts: 'NOTICE_ATTENTION is true for exactly record-unreadable, identity-ambiguous, unresolved-parent and validation-conflict'"
+      },
+      {
+        "level": "unit",
+        "name": "notice.test.ts: 'makeNotice sorts and de-duplicates ids and takes attention from the table'"
+      },
+      {
+        "level": "unit",
+        "name": "notice.test.ts: 'sortNotices gives one order for every permutation and drops exact duplicates'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

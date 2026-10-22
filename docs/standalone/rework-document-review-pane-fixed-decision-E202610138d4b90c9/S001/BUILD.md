@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-8d4b90c9ab301e66-S001 -->
+<!-- insrc:artifact BUILD-8d4b90c9ab301e66-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -31,19 +31,19 @@ Task 14 adds no code of its own. Both suites were run, the daemon was pushed, up
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/BUILD-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/BUILD-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/BUILD-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/BUILD-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/CR-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
 - `.insrc/artifacts/ISSUE-1f1e16c61c017931.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/LLD-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/LLD-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/LLD-dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/LLD-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/PLAN-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/TESTS-1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
-- `.insrc/artifacts/TESTS-e62a9269a7cb9550-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/LLD-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/LLD-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/LLD-dd277f9cddd6d879-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/LLD-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/PLAN-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/TESTS-1f74c81f507dbe78-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/TESTS-cb09a32ccdc4ed2b-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
+- `.insrc/artifacts/TESTS-e62a9269a7cb9550-s1.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
 - `.insrc/build-start/1f74c81f507dbe78-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
 - `.insrc/build-start/cb09a32ccdc4ed2b-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)
 - `.insrc/build-start/dd277f9cddd6d879-S001.json` — **insrc-build** (2026-10-13T19:27:26.754Z)

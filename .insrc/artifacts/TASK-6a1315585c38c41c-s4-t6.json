@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ba5dea0-a936-4248-b503-246185c94143",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.251Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Wiring: pass the review pane to the board",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d38a2f0d49420cd5be549a47660a5e9054eb3fa233f5de05c921806165eaead8",
+        "at": "2026-10-22T12:43:42.251Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.252Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wiring: pass the review pane to the board",
+    "summary": "registerDeliveryBoard takes reviewPane? and passes it to the host; extension.ts declares docsReviewHost before the chat gate, assigns it inside, and passes it to registerDeliveryBoard after the gate.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "registerDeliveryBoard passes reviewPane through, so an open-evidence on a review-view entry reaches it; without it the board reads the record read-only.",
+      "extension.ts declares docsReviewHost before the chat gate and passes it to registerDeliveryBoard outside the gate; the existing chat wiring tests pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-wiring.test.ts: 'the board receives the review pane when the chat setting creates one, and reads evidence itself when it does not'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

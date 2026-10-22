@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8b994733-0dbc-42bb-9b77-5fc132c1599c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.267Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Daemon methods repo.settings.get, repo.settings.set and repo.trackerConfig.ensure",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6a0312e0c24d46dfd410e3340fdeac566ae48c234f047b1bff8291482aa7f9e2",
+        "at": "2026-10-22T12:43:25.267Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.268Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon methods repo.settings.get, repo.settings.set and repo.trackerConfig.ensure",
+    "summary": "Register the three IPC methods in the daemon, built and validated in the order get, set, ensure: exact registered-path check, one strict read and resolution from that snapshot, the exhaustive sign-in mapping from whoAmI on s1's adapter (read only), policy rows from PolicyReader, validation and refusal of non-local keys, writes through writeRepoEntryKeys, and the trackerConfig patch (type github, owner, repo, pushTasks true, commitArtifacts true). Business errors are returned as data.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "get returns what set wrote and a write made outside the daemon on the next get; get never writes github.json or the policy file",
+      "set refuses policy and status rows, unknown keys, invalid values (including branchPattern) and unregistered or aliased repo paths with the right code and writes nothing",
+      "A fake gh shows only the signed-in-user read runs, once, when the type is github and none when the type is none, and every PortResult failure maps to a sign-in state",
+      "get and set on malformed files return github-json-unreadable and leave the bytes untouched; get reads the file once",
+      "ensure writes the five keys in one write, returns changed false when already complete, and refuses unregistered repos and invalid owner or name; concurrent set calls through the socket both land"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: buildRepoSettings values, resolved target and policy rows"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: sign-in mapping for every whoAmI outcome"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: repo identity uses the exact registered path"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: get returns what set wrote and shows an outside write"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: set refuses read-only, unknown, invalid and unregistered inputs and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: only the signed-in-user read runs through s1's adapter"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: malformed files return github-json-unreadable and keep their bytes"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: get reads once, never writes, and resolves from the git remote when there is no own target"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: ensure writes the five keys once and concurrent sets both land"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

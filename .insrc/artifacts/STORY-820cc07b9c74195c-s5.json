@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-ae47668e-9462-49ae-9adf-56cfe989b588",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.979Z",
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Apply role-aware routing at every reasoning site, including the hardcoded ones",
+      "parent": {
+        "entityId": "EPIC-820cc07b9c74195c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "60c2447bbf25a915de0663c27024ed751cae4f3dd0a80ccd13c7220fe779e61c",
+        "at": "2026-10-22T12:43:06.979Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

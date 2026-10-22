@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5bf96907-1d22-4282-8d1e-86d19aca49cc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.001Z",
+    "epicCreatedAt": "2026-07-27T10:06:18.120Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93b2b1d6e5628b51",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Widen the Ui interface: MsgLine type + note/task methods",
+      "parent": {
+        "entityId": "STORY-93b2b1d6e5628b51-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93b2b1d6e5628b51-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d7aa69ba797b7fbeecac482f2538644c0fe2f2cb0753033f413a264c7a44a83",
+        "at": "2026-10-22T12:44:01.004Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.005Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Widen the Ui interface: MsgLine type + note/task methods",
+    "summary": "In src/cli/ui/context.ts add `export interface MsgLine { id: number; text: string; kind: 'info' | 'error' | 'success'; transient: boolean }` and extend `interface Ui` with `note(line: string, kind?: 'info' | 'error'): void` and `task(title: string): { push(line: string): void; done(message: string): void; fail(message: string): void }`. Leave `toast(message?: string): void` and `capture(on: boolean): void` exactly as-is. Purely additive; no implementation here.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "context.ts exports MsgLine with the four fields id/text/kind/transient",
+      "Ui has note + task methods alongside the unchanged toast + capture",
+      "tsc passes (interface-only change)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tsc typecheck: widened Ui + MsgLine compile; the fake Ui in tui.test.ts satisfies the interface"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

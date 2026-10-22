@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-91640defac1b5816-S001 -->
+<!-- insrc:artifact TESTS-91640defac1b5816-s1 -->
 
 # Tests: 91640defac1b5816 S001
 

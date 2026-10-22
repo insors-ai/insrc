@@ -31,150 +31,65 @@
       "AMD-315d510cb28100e2-12"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Lost-machine recovery may restart the unfinished stage rather than recover individual steps.",
-          "evidence": "docs/plans/team-workflow.md explicitly records: 'Decision (user, option A): ac28 is read at stage level' and rejects continuous per-step checkpointing. The proposed branch-less restart follows that decision. [files: docs/plans/team-workflow.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Changing workflow turns already refuse another holder, and held-by-other currently has offerPark false.",
-          "evidence": "handleStart, handlePlan and handleStep call assertMayAuthor before execution. assertMayAuthor throws TeamGateRefusedError for a disallowed outcome. teamGate returns '{ kind: held-by-other, holder, offerPark: false }' for another holder. [files: src/workflow/team/gate.ts, src/workflow/team/author-gate.ts, src/daemon/steps/workflow-step/phases/start.ts, src/daemon/steps/workflow-step/phases/plan.ts, src/daemon/steps/workflow-step/phases/step.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "snapshotUpstream's listed artifacts cover the inputs consumed by plan and design.story.",
-          "evidence": "readPlanUpstream reads 'requireApprovedLld', 'requireApprovedHld' and 'requireApprovedEpic', returning both HLD context and Define dependency edges. The design snapshots only LLD for plan. Furthermore, requireApprovedHld returns getEffectiveHld, which applies approved amendments while retaining base metadata. Comparing only the base HLD revision misses changes to the effective HLD used by design.story. [files: src/workflow/gates.ts, src/workflow/amendments/effective.ts, src/workflow/runners/plan/index.ts, src/workflow/runners/design-story/index.ts]",
-          "action": "Snapshot all actual upstream inputs, including Define and effective HLD state for Epic-scoped plans and approved amendment state for HLD consumers. Preserve the standalone exception.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The tracker port already supports the identity, assignee and comment operations needed for handoff.",
-          "evidence": "TrackerPort declares 'whoAmI(): PortResult<string>' and 'readAssignee(issue: IssueRef): PortResult<string | null>'; IssueOps declares 'comment(issue: IssueRef, body: string): PortResult<void>'. These match the proposed reuse. [files: src/workflow/tracker/port.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The listed change sites are sufficient to expose park and resume to MCP clients.",
-          "evidence": "src/mcp/server.ts independently validates phase with 'z.enum([start, plan, step, synthesize, resolve_question, review_deferred])'. The design's change-site inventory omits this registration and the workflow-step input/output types. Adding daemon handlers alone leaves park and resume rejected at the MCP boundary. [files: src/mcp/server.ts, src/daemon/steps/workflow-step/types.ts, src/daemon/steps/workflow-step/handler.ts, src/mcp/__tests__/schema-registry.test.ts, src/mcp/__tests__/fixtures/tool-surface.golden.json]",
-          "action": "Include the MCP registration, workflow-step input/output unions, dispatcher, schema-registry expectations and tool-surface fixture in the implementation inventory.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Carrying metadata through encodeState and replaceState covers the existing plan and step token replacements.",
-          "evidence": "Both paused and completed branches of handlePlan and handleStep call reencodeState. reencodeState delegates to replaceState, which currently saves the replacement and releases the previous token. The proposed metadata propagation targets the common replacement seam. [files: src/daemon/steps/workflow-step/state.ts, src/daemon/steps/workflow-step/state-store.ts, src/daemon/steps/workflow-step/phases/plan.ts, src/daemon/steps/workflow-step/phases/step.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Older artifacts without meta.revision can be read as revision 0 using the existing helper.",
-          "evidence": "readRevision returns 0 when the artifact or meta is not a record, and otherwise accepts only a nonnegative integer revision. Existing artifact-writer tests explicitly cover absent metadata and malformed revisions. [files: src/workflow/storage.ts, src/workflow/__tests__/artifact-writer.test.ts]",
-          "action": "Pass parsed artifacts to readRevision; it does not accept a filename as an artifact lookup.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The park-offer extension has an established place in sc4 without changing GateOutcome's shape or taking over signoff.",
-          "evidence": "HLD §4.4 assigns sc4 to s5 and names s6 as a consumer; its held-by-other variant already contains 'offerPark: boolean'. HLD §5.6 assigns parking, issue notes and state reconstruction to s6. The proposed provider fills that existing field and leaves the completion hook with s7. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/team/gate.ts]",
-          "action": "Record registerParkOfferProvider as the proposed sc4 amendment.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing git and tracker interfaces expose detectable failures for parking and issue-note handling.",
-          "evidence": "runGit catches subprocess failures and returns '{ ok: false, stderr, quiet }'; successful calls return stdout. IssueOps.comment returns PortResult<void>. These support the stated stop-on-git-failure and noted:false-after-comment-failure branches. [files: src/workflow/team/git.ts, src/workflow/tracker/port.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each upstream acceptance criterion has a proposed proving test.",
-          "evidence": "DEF §6.6 lists ac25–ac28. The design maps these respectively to refusal/offer and ownership tests, park/push/comment tests, cross-clone progress restoration tests, and branch-less stage restart tests. The latter follows the documented ac28 decision. This verifies the test plan, not implemented test results. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/plans/team-workflow.md, src/workflow/gates.ts, src/workflow/amendments/effective.ts]",
-          "action": "Extend upstream-drift cases to include changed Define dependencies and approved HLD amendments.",
-          "fixability": "manual",
-          "outcome": "holds"
+    "staleAckedReason": "The only HLD change since approval is AMD-315d510cb28100e2-13 (registerParkOfferProvider on sc4), the amendment this LLD itself proposed and which the user approved; the LLD already designs against it.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d879d4e9dc1659dae49d804509bc0a33cd3dbc3f975e353e2d2b26768ea1071b",
+        "at": "2026-10-18T15:57:42.565Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
         }
-      ],
-      "counts": {
-        "high": 2,
-        "med": 0,
-        "low": 8,
-        "unverified": 0
       },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-18T15:57:46.910Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-18T16:46:14.328Z",
-    "reviewOverride": {
-      "reason": "Approved past the daemon's block verdict after three review rounds (round 1: 6 HIGH, 1 MED; round 2: 5 HIGH; round 3: 2 HIGH, 0 MED, 8 LOW). The two open round-3 findings are recorded in docs/plans/team-workflow.md ('s6 LLD approval') as binding build requirements: (1) snapshotUpstream must cover every input the stage reads, including the Define and the effective HLD with its approved amendments for plan and design.story, preserving the standalone exception; (2) the MCP exposure sites for the new park and resume phases (src/mcp/server.ts phase enum, workflow-step types and dispatcher, schema-registry test, tool-surface golden fixture) belong to the change inventory, with a test that both phases pass MCP validation. ac28 is read at stage level per the user's decision. The sc4 amendment registerParkOfferProvider is proposed by this LLD.",
-      "at": "2026-10-18T16:46:14.328Z"
-    },
-    "staleAckedAt": "2026-10-18T16:52:19.019Z",
-    "staleAckedReason": "The only HLD change since approval is AMD-315d510cb28100e2-13 (registerParkOfferProvider on sc4), the amendment this LLD itself proposed and which the user approved; the LLD already designs against it."
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T16:46:14.328Z",
+        "override": {
+          "reason": "Approved past the daemon's block verdict after three review rounds (round 1: 6 HIGH, 1 MED; round 2: 5 HIGH; round 3: 2 HIGH, 0 MED, 8 LOW). The two open round-3 findings are recorded in docs/plans/team-workflow.md ('s6 LLD approval') as binding build requirements: (1) snapshotUpstream must cover every input the stage reads, including the Define and the effective HLD with its approved amendments for plan and design.story, preserving the standalone exception; (2) the MCP exposure sites for the new park and resume phases (src/mcp/server.ts phase enum, workflow-step types and dispatcher, schema-registry test, tool-surface golden fixture) belong to the change inventory, with a test that both phases pass MCP validation. ac28 is read at stage level per the user's decision. The sc4 amendment registerParkOfferProvider is proposed by this LLD."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 2,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-10-18T15:57:46.910Z",
+        "report": {
+          "entityId": "LLD-315d510cb28100e2-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-315d510cb28100e2-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
@@ -182,7 +97,7 @@
       "audience": "product"
     },
     "hldContextSlice": {
-      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
       "ownedContracts": [],
       "consumedContracts": [
         {
@@ -214,7 +129,7 @@
             "sc1"
           ],
           "depends": [],
-          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-s1 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
         },
         {
           "storyId": "s2",

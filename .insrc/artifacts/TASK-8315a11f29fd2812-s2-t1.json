@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28e4ee17-bbd0-4be0-9bf0-e4c9e40f7294",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.540Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "envelope": {
+      "description": "codeReviewMaterial: atoms and relations from a dimension's grounding",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "824778edcbecfd9932318b3d2ce3d336e64bf29fa3ca23abcaa6034cb325d297",
+        "at": "2026-10-22T12:43:51.540Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.541Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "codeReviewMaterial: atoms and relations from a dimension's grounding",
+    "summary": "Add codeReviewMaterial(grounding) in src/workflow/review-pipeline/adapters/code-review-material.ts: one whole atom per ChangedSymbolSummary in grounding order (id entityId, label file#name, file, module = the file's directory or '.', text = the row's JSON); 'calls' relations by name either direction (a name matching several rows relates to each, no self-relation, an unmatched name gives none); 'same-file' and 'same-module' relations; obligations empty and context absent. A duplicate entityId throws, naming it and both labels. Pure and deterministic.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Every row of the grounding is exactly one atom with the specified id, label, file, module and text.",
+      "Calls, same-file and same-module relations follow the contract, including same-named rows, self-calls, unmatched names and diff-review rows.",
+      "A duplicate entityId raises an error naming it; the same grounding always gives identical material."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

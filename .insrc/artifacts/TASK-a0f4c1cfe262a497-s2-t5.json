@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-26e606a4-7649-4bb9-84f3-b2334abb9c28",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.820Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Populate rec.body.changeLog at the validate phase",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e7946f400f205e122fe936be4a09f51e6fbcf17c232263111dc9bd8922a9f592",
+        "at": "2026-10-22T12:44:04.820Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.820Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Populate rec.body.changeLog at the validate phase",
+    "summary": "In the validate phase (phases/validate.ts, before the persistBuildRecord call at :96), call collectBuildChangeLog(repoPath, ctx) (async) and set rec.body.changeLog; a git_diff failure → empty change-log, never aborts the build. No signature change to handleValidate/persistBuildRecord.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a plan-driven build persists a BUILD json whose body.changeLog reflects the real changed set (ac1/lc1)",
+      "git_diff failure leaves changeLog empty and the build still succeeds"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a plan-driven build over a repo with a known changed set → the BUILD json carries a changeLog with one attributed entry per changed file, and renderPlanBuildRecordMd shows the Changes section (ac1)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

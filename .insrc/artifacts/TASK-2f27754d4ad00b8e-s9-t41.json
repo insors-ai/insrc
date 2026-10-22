@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8528d8c-eef7-4ef3-8257-200097421d47",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.818Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Remove the older Epic and Story refs",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t40",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "790a17d8703a3852994ea5052db46a4b613c88df7e51bc41fb5fe26b7aac8705",
+        "at": "2026-10-22T12:43:22.818Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.819Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the older Epic and Story refs",
+    "summary": "Remove epicRef, storyRef and storyRefs from meta.tracker and their readers: src/workflow/tracker/sync.ts, link.ts and conventions.ts, src/workflow/chain.ts, questions.ts, storage.ts and tracker-auto.ts, src/workflow/artifacts/define.ts, hld.ts, lld.ts and tracker.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts, src/daemon/steps/build-step/render.ts. Update src/workflow/__tests__/define-artifact.test.ts, hld-artifact.test.ts, lld-artifact.test.ts, lld-head.test.ts, lld-head-resolve.test.ts, tracker-artifact.test.ts, tracker-push-modes.test.ts, tracker-tasks.test.ts, redraft-preserves-tracker.test.ts, draft-issues.test.ts, draft-write-revision.test.ts, id-resolve.test.ts and approve-fallback-issues.test.ts.",
+    "size": "L",
+    "order": 41,
+    "acceptanceChecks": [
+      "The Epic and Story refs are read only from the binding of the EPIC and STORY head",
+      "The renderers' tracker lines read the binding"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "tracker-artifact.test.ts: the tracker lines read the binding, not the older refs"
+      }
+    ],
+    "planTaskId": "t41"
+  },
+  "citations": []
+}

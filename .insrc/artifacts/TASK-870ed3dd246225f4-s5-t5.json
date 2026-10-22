@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e1d8ffa2-38e6-408b-9232-7a4ecb946f36",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.667Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Extend assembleShell() with oversized primary-vs-fallback dispatch",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9a721cab29379c8b3587649cdfe704b31657e3fb37b54c1b21551e0ea33b809",
+        "at": "2026-10-22T12:43:54.667Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.668Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend assembleShell() with oversized primary-vs-fallback dispatch",
+    "summary": "In src/docgen/render/shell.ts, add the optional renderer?: SubprocessRenderer param (defaulting to graphvizSubprocessRenderer) and the oversized(ir) branch ahead of the existing primary path: on !oversized(ir) keep the unchanged primary-inline path; on oversized(ir) call toGraphvizDot + renderer.renderSvg and map {status:'ok'} to ok(assembleFallbackShell(...)) or {status:'unavailable'} to the sc4 fallback-unavailable outcome naming tried binaries + remedy.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "assembleShell(ir) with !oversized(ir) is byte-identical to the pre-s5 primary-inline path (backend='primary-inline'); the subprocess renderer is never invoked",
+      "assembleShell(ir) with oversized(ir) true and a renderer returning {status:'ok'} returns ok(assembleFallbackShell(...)) with backend='fallback-subprocess'",
+      "assembleShell(ir) with oversized(ir) true and a renderer returning {status:'unavailable'} returns the sc4 DocGenOutcome fallback-unavailable variant naming the tried binaries and an install remedy, emitting no document",
+      "assembleShell accepts an injected renderer for tests and defaults to graphvizSubprocessRenderer when omitted",
+      "the existing loadRuntime-missing failure path (svg-pan-zoom asset absent) is preserved unchanged and still maps to fallback-unavailable",
+      "generateDocument's existing call to assembleShell(ir) in src/docgen/index.ts continues to compile and pass its own tests unchanged with the new optional renderer param, with no edit required to generateDocument's signature or behavior"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleShell(small IR) -> primary path, backend='primary-inline', byte-identical to the pre-s5 output (ac4)"
+      },
+      {
+        "level": "unit",
+        "name": "assembleShell(oversized IR, fake renderer returning ok svg) -> backend='fallback-subprocess', inlined SVG + svg-pan-zoom (ac1/ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "assembleShell(oversized IR, fake renderer returning unavailable) -> DocGenOutcome 'fallback-unavailable' naming the tried binaries + remedy (ac3)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

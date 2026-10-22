@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c79db6bf-ad3d-44ac-90a3-ad2d1075231c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.928Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Let updateContent carry an outcome and name the round writer shape",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "efcdc3aa7a07809e54587f4ae955c9740aa627e43bd70c6c6827511549630508",
+        "at": "2026-10-22T12:43:20.928Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.928Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Let updateContent carry an outcome and name the round writer shape",
+    "summary": "Give LifecycleService.updateContent an optional outcome and references that ride on the staged ChangeLogEntry through the queued mutation, and define the shared RoundWriter shape ({ writer, actor }) next to ensureBuildRecordOnCompletion's existing one so the round persisters can take it.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "an update with an outcome logs that outcome and the new revision, and an update without one behaves as before",
+      "the first round of a record can be created through the store, so a later replacement keeps it readable in the log",
+      "an identical rewrite logs nothing and moves no revision"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lifecycle-update-outcome.test.ts: updateContent with an outcome and references logs them with the new revision, an update without behaves as before, and an identical rewrite logs nothing"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

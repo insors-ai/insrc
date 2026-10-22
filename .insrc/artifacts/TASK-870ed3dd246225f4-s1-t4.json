@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-43a1c9a5-efea-4902-b8a0-3661b783c1fb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.049Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Export loadMermaidCdnMeta for shell-assembly reuse",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8da6fd7fdfdbda0fdd0344503ce27b9355886c39b6e2c6afa2ea63891dd1db73",
+        "at": "2026-10-22T12:43:53.049Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.050Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export loadMermaidCdnMeta for shell-assembly reuse",
+    "summary": "Export the existing loadMermaidCdnMeta from artifacts-rpc.ts so shell assembly can reuse it instead of standing up parallel plumbing.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "loadMermaidCdnMeta is exported from src/daemon/artifacts-rpc.ts (or lifted to a shared module) with its existing signature and behavior unchanged",
+      "existing callers of loadMermaidCdnMeta at its current call sites continue to compile and behave identically"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "existing loadMermaidCdnMeta call sites still compile and return identical metadata after the export change"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

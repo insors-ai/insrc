@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a75733a7-1ead-486e-9161-779d68324fc0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.375Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route the tracker resolver through the shared head",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c00559b7e38bb6ce-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "17035710d73c4e9d90c9b67f3f53674902705199a671edc01c4152c22a675e50",
+        "at": "2026-10-22T12:44:33.375Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.376Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route the tracker resolver through the shared head",
+    "summary": "In resolve.ts: readEpicIdentity maps readEpicDefinitionCore's result to {epicSlug, createdAt, tracker?}; listEpicHashes appends hashes that have an LLD and no DEF/ISSUE; resolveByLabel's unscoped tiering gains a last tier for LLD-headed hashes; readEpicDefinition stays DEF/ISSUE-only.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "S001/t1 + epicHash, s1/t1 + epicHash and the hierarchical id resolve to a task for an LLD+PLAN-only work item.",
+      "Unscoped s1/t1 over a mixed DEF + ISSUE + LLD-only fixture resolves exactly as before.",
+      "insrc_build_step implement admits t1 of a standalone plan (was unresolved-target).",
+      "workflowIdForIssue for a DEF epic with a tracker block is unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "readEpicIdentity and listEpicHashes over DEF/ISSUE/LLD fixtures"
+      },
+      {
+        "level": "unit",
+        "name": "resolveWorkflowRef reaches an LLD+PLAN-only task by scoped label and hierarchical id"
+      },
+      {
+        "level": "unit",
+        "name": "unscoped label tiering over a mixed DEF + ISSUE + LLD-only fixture"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_build_step implement + validate admit t1 of a standalone plan"
+      },
+      {
+        "level": "integration",
+        "name": "workflowIdForIssue unchanged for a DEF epic with a tracker block"
+      },
+      {
+        "level": "integration",
+        "name": "existing id-resolve, folder-identity, storage and migrate-docs-tree suites pass"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

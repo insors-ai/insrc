@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-451288a1-c6f9-4e7f-9893-c7031021085c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.564Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Analyzer lookups state an incomplete repository",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "955c6d2e164319c3e3defe39505fdf85699078468cb0c091c64992cafc39ff33",
+        "at": "2026-10-22T12:44:34.564Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.564Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Analyzer lookups state an incomplete repository",
+    "summary": "ExplorationRunnerContext (src/analyze/explore/types.ts) gains repoCompleteness, set at all three context constructions in executor.ts (around :216, :522, :584); graphCompleteness adds only repoCompleteness? to its parameter; usage.example, import.graph, class.hierarchy, data-model.trace and convention.detect pass it, so an incomplete repository yields notEstablished with the reasons in the basis note. Anchors: graphCompleteness (src/analyze/explore/completeness-facts.ts:66-74) has 19 call sites in 14 files; only the five relationship lookups pass repoCompleteness (src/analyze/explore/usage-example.ts:141/:183, src/analyze/explore/import-graph.ts:106/:181, src/analyze/explore/class-hierarchy.ts:113/:187, src/analyze/explore/data-model-trace.ts:105/:206, src/analyze/explore/convention-detect.ts:114/:169). The other nine callers (concept-resolve, manifests-locate, symbol-locate, test-locate, discovery-entrypoints, discovery-modules, structure-module-tree, surface-functional, adherence) do not walk relationships and keep their calls unchanged; the field is optional. ExplorationRunnerContext (src/analyze/explore/types.ts:880-905) is built at three PRODUCTION places in src/analyze/explore/executor.ts (the object literals at :214-218, :520-524 and :582-586; the only three uses of ignoreFilter in a context). Depends on t2 for completenessOf. repoCompleteness is optional on ExplorationRunnerContext: about ten test fixtures in src/analyze/explore/__tests__/ (e.g. completeness-all-lookups.test.ts:109, failed-lookups.test.ts:209) build a context without it and keep compiling; absent means no repository facts, so the lookup's completeness is computed as today.",
+    "size": "M",
+    "order": 16,
+    "acceptanceChecks": [
+      "Each of the five lookups reports notEstablished with the counts for an incomplete repository and as today for a complete one",
+      "graphCompleteness's 19 existing call sites compile and behave unchanged; the nine non-relationship callers do not pass repoCompleteness"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts: five lookups notEstablished for an incomplete repository, executor sets the field at all three constructions (mutation: one construction left without it)"
+      },
+      {
+        "level": "unit",
+        "name": "graphCompleteness existing-argument behaviour unchanged"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

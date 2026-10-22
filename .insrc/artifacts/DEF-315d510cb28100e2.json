@@ -21,343 +21,6 @@
     "epicSlug": "team-signoff-claim-based-workflow",
     "seededFromSpec": "be8bcc435fe0cf93",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/tracker-auto.ts looks up an existing Epic issue by label before creating it, via `const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);`.",
-          "evidence": "The grep for the exact cited text found it in source at src/workflow/tracker-auto.ts:123: `const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);`. A direct read of src/workflow/tracker-auto.ts:123 also returned FOUND with the same line. The only other match is the DEF's own citation entry (DEF.md:251). The file, the symbol `ghFindIssueByLabels` and the label-based lookup on `[cfg.epicLabel, membership]` all resolve as the citation says. The evidence does not show the create path that follows. Still, a variable named `adopted` that is assigned from a find-by-labels lookup fits the premise's description of finding an existing Epic issue to adopt.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The citation matches the source exactly at src/workflow/tracker-auto.ts:123, so no edit is needed."
-          }
-        },
-        {
-          "claimId": "p2",
-          "ref": "Assumptions/c4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "In tracker-auto.ts the label lookup before create (ghFindIssueByLabels) is used only for the Epic issue; Story and Task issues are created via ghCreateIssueTyped without any prior lookup, so idempotent creation for them is new work.",
-          "evidence": "grep /ghFindIssueByLabels\\(/ finds one call site in tracker-auto.ts, `src/workflow/tracker-auto.ts:123` (`const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);`). Its label set uses `cfg.epicLabel`, so it looks up the Epic issue. Its only other matches are the definition at `src/workflow/tracker/github.ts:215` and the DEF's own citation. grep /ghCreateIssueTyped\\(/ finds three create sites in tracker-auto.ts: `:137` (`epicRef = ghCreateIssueTyped(...)`, the Epic create, right after the line-123 lookup), `:205` (`created = ghCreateIssueTyped(...)`) and `:302` (`issue = ghCreateIssueTyped(`). Neither the line-205 nor the line-302 create has a ghFindIssueByLabels call before it. This supports the claim that the label lookup is used only for the Epic, and that Story and Task issues are created without it. One caveat: the evidence does not include the code around lines 205 and 302. Some other guard there, such as a stored-ref check, is not ruled out, but there is no label-based lookup.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "Assumptions/c4",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The current tracker flow creates issues for three kinds: Epics, Stories and (optionally) Tasks.",
-          "evidence": "The evidence partly supports the premise. grep /ghCreateIssueTyped\\(/ finds exactly three call sites in the anchor file: src/workflow/tracker-auto.ts:137 (`epicRef = ghCreateIssueTyped(cfg.owner, cfg.repo, title,`), :205 (`created = ghCreateIssueTyped(cfg.owner, cfg.repo, title,`) and :302 (`issue = ghCreateIssueTyped(`). The fourth match is the definition at src/workflow/tracker/github.ts:151. Three creation sites fit a count of three kinds, and the `epicRef` binding at :137 confirms one of them is the Epic. The read lines do not show which kinds the sites at :205 and :302 create; nothing ties them to Stories and Tasks. Nothing shows that Task issues are optional either: no flag or guard was returned. grep /createTaskIssues|taskIssues/ returned 0 matches, so no named Task-issue path was found. The count is consistent with the code, but 'Stories' at :205, 'Tasks' at :302 and 'optionally' cannot be verified from this evidence.",
-          "action": "Read the code around src/workflow/tracker-auto.ts:205 and :302 to confirm that they create the Story and Task issues. Also find the condition that makes Task issue creation optional, such as a config flag or guard before :302. Then cite those lines in Assumptions/c4. If :302 turns out not to be a Task issue, or Task creation is not optional, correct the premise.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The count of three creation sites matches the code, and the Epic site is confirmed. The kinds behind :205 and :302, and whether Tasks are optional, were not shown in the evidence, so a person must confirm before the anchors are made more specific. No auto-edit is safe because the evidence does not establish the kinds.",
-            "options": [
-              "Keep the premise and add anchors: src/workflow/tracker-auto.ts:137 (Epic), :205 (Story), :302 (Task), after confirming each by reading the code around it.",
-              "Reword it to say what the evidence supports: 'The current tracker flow creates issues at three ghCreateIssueTyped call sites in tracker-auto.ts (Epic at :137, plus two more at :205 and :302).'",
-              "If reading the code shows Task issues are not optional, drop '(optionally)' from the premise."
-            ]
-          }
-        },
-        {
-          "claimId": "p4",
-          "ref": "c10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/config-catalog.ts re-exports the shared catalog: `export { CONFIG_CATALOG } from '../config/config-catalog.js';`.",
-          "evidence": "Read of src/cli/config-catalog.ts:14 returns exactly the line \"export { CONFIG_CATALOG } from '../config/config-catalog.js';\". The grep also found this line in that file, alongside the DEF citation itself (DEF.md:257) and the earlier PLAN.md:51, which planned this re-export when CONFIG_CATALOG moved to src/config/config-catalog.ts. The premise matches the source word for word.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The citation matches the real source at src/cli/config-catalog.ts:14, so no fix is needed. The citation could add the line number (:14) to make the anchor more precise, but that is optional."
-          }
-        },
-        {
-          "claimId": "p5",
-          "ref": "Assumptions/c10",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The terminal client reads the shared settings catalog through its command bar but has no per-repo tracker settings screen; its Setup screen covers only system and model setup.",
-          "evidence": "Part of the premise is confirmed. `read src/cli/config-catalog.ts:14` shows `export { CONFIG_CATALOG } from '../config/config-catalog.js';`, so the terminal client does re-export the shared catalog. README.md:209 describes the Setup pane as \"hardware detection + model recommendation; `a` apply config · `p` …\", which fits the claim that Setup covers only system and model setup. The rest of the premise has no support in the evidence. Nothing shows the command bar reading CONFIG_CATALOG; the only evidence is the re-export, not a consumer under src/cli/panes. The claim that no per-repo tracker settings screen exists is a negative claim. The grep for /tracker/ was cut off at 50 matches, all in AGENTS.md, CLAUDE.md, README.md, design/ and docs/epics/, with no hit under src/cli/panes. The grep for /SetupPane|Setup/ was also cut off, mostly at camon/ and docs/epics/ matches, and never reaches src/cli/panes. Because both searches stopped early, they cannot show that src/cli/panes has no tracker screen. The anchor `src/cli/panes` was never read.",
-          "action": "Confirm the premise against src/cli/panes directly. List the pane files and grep them for `tracker` and for `CONFIG_CATALOG` or `config-catalog` consumers, so the search is not cut off by docs matches. Record where the command bar reads the catalog with a file:line citation. If a tracker or per-repo settings pane exists, or the Setup pane writes tracker config, rewrite the assumption and any scope that depends on the terminal client having no tracker settings screen.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The re-export at src/cli/config-catalog.ts:14 and the Setup pane scope in README.md:209 are confirmed. The command-bar consumer and the absence of a tracker screen were not checked because both greps were cut off before reaching src/cli/panes. The wording can't be corrected automatically without inventing facts, so a person needs to check the panes and pick an option.",
-            "options": [
-              "Keep the premise as written after a scoped grep of src/cli/panes finds no tracker pane and confirms a command-bar consumer of CONFIG_CATALOG, and add the file:line citations.",
-              "Reword it to cover only what the evidence shows: 'The terminal client re-exports the shared settings catalog (src/cli/config-catalog.ts:14); its Setup screen covers hardware detection and model recommendation (README.md:209).' Then add the tracker-screen claim back only once it is checked.",
-              "If a scoped check finds a tracker or per-repo settings surface in src/cli/panes, revise the assumption and the scope that depends on it."
-            ]
-          }
-        },
-        {
-          "claimId": "p6",
-          "ref": "c5/k6",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "src/config/settings-catalog.ts is the daemon's shared settings catalog from which VS Code, JetBrains and the terminal client present settings from one definition.",
-          "evidence": "The file exists. The read of src/config/settings-catalog.ts:1 returned FOUND, and line 7 describes it as \"The self-describing settings-catalog payload (Story S001 / sc1)\". The daemon uses it: src/daemon/index.ts:113 imports `buildSettingsCatalog` from '../config/settings-catalog.js', and src/config/__tests__/settings-catalog.test.ts:23 tests it.\n\nTwo clients are supported by the evidence. For JetBrains, plans/reviews/design-intelligence-di1-original-approved-hld.json:72 says SettingsView.kt `groupsOf` iterates `catalog.groups`, which comes from this payload. For VS Code, the work-framed DEF.md:149 says config.catalog is \"the existing IPC the VS Code surface reuses\".\n\nTwo parts of the premise are not supported:\n- **The terminal client.** No match shows the terminal client reading this payload.\n- **Where the definition lives.** Several matches put the single static definition in `CONFIG_CATALOG` in src/config/config-catalog.ts. For example, HLD.md:50 says it \"derives groups from first-seen CONFIG_CATALOG order\", and S004/LLD.md:254 says `values` is \"populated only for the static CONFIG_CATALOG paths\". settings-catalog.ts builds the wire payload (options/groups/roles/tierNames/values) from that definition rather than holding it.\n\nSo the anchor points at the right concept, but the premise overstates its role and claims a terminal consumer that the evidence does not show. Nothing gets built differently because of this, since clients still read the catalog over config.catalog, so it does not reach HIGH.",
-          "action": "Change the premise to say that src/config/settings-catalog.ts builds the config.catalog payload (`buildSettingsCatalog` → SettingsCatalogPayload) from the static `CONFIG_CATALOG` definition in src/config/config-catalog.ts. Cite both files. Name the terminal client as a consumer only if it can be shown to call config.catalog, for example a grep for config.catalog under src/cli; otherwise drop it from the premise.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The anchor is right, but the premise gives settings-catalog.ts the single definition, which actually lives in CONFIG_CATALOG (config-catalog.ts). It also names a terminal consumer the evidence does not show. Choosing the new wording, and whether to keep the terminal client, needs a human decision.",
-            "options": [
-              "Reword: 'src/config/settings-catalog.ts (buildSettingsCatalog) builds the config.catalog payload from CONFIG_CATALOG in src/config/config-catalog.ts; VS Code and JetBrains render settings from that payload.' Then add config-catalog.ts as an anchor.",
-              "Keep the current wording, but first confirm with a grep that the terminal client (src/cli) calls config.catalog, and cite that call.",
-              "Remove the terminal client from the premise, and keep settings-catalog.ts as the payload builder with config-catalog.ts as the definition."
-            ]
-          }
-        },
-        {
-          "claimId": "p7",
-          "ref": "c3/k3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts is where the meaning of the other-party model review (meta.review) and local approval (approvedAt) is enforced.",
-          "evidence": "The evidence backs both halves of the premise. For meta.review, `src/workflow/gates.ts:40` imports `effectiveReviewVerdict` from './review/resolve.js', and `src/workflow/gates.ts:603` uses it to enforce the review: `if (review !== undefined && effectiveReviewVerdict(review, artifact.meta.reviewResolutions) === 'block') {`. For approvedAt, the gates.ts grep hits are cut off by the cap, but several artifacts point at the same place. docs/epics/add-daemon-driven-code-review-stage-E20260803761a43a6/HLD.md:353 cites gates.ts `approveArtifactByJsonPath(jsonPath, {overrideReview}) (488) which, before stamping approvedAt, filters review.findings for unresolved HIGH/MED and refuses unless overrideRe…`. S007/LLD.md:169 and :211 say gates.ts holds ReviewBlockedError:71, approveArtifactByJsonPath:488 (which enforces meta.review) and approveWorkflowTarget:586 (which routes a block into skipped[]). add-plan-workflow S003/LLD.md:80 says plan approval \"sets meta.approvedAt … reused verbatim from gates.ts\". delivery/gate.ts:119 also calls gates.ts \"The approval gate\". So gates.ts is the module that enforces the review block before approval and stamps approvedAt.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms gates.ts enforces meta.review through effectiveReviewVerdict (gates.ts:40, :603) and stamps approvedAt in approveArtifactByJsonPath (cited across several HLDs and LLDs). No change is needed."
-          }
-        },
-        {
-          "claimId": "p8",
-          "ref": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "docs/plans/meta-workflow-framework.md has a section titled 'Tracker integration (GitHub only)'.",
-          "evidence": "Verified: grep found `docs/plans/meta-workflow-framework.md:532: ### 7.4 Tracker integration (GitHub only)`, and the read of line 532 confirms that heading (FOUND). The only other match is the DEF's own citation line, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md:253. The section exists under the title the premise cites. It is numbered §7.4, but the premise does not mention a section number.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence confirms the premise, so no correction is needed."
-          }
-        },
-        {
-          "claimId": "p9",
-          "ref": "c7",
-          "kind": "cross-artifact",
-          "severity": "MED",
-          "premise": "docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md contains 'ONE tracker tool, with one implementation per tracker type.'; that LLD has passed daemon review, carries no approval stamp, and is not built.",
-          "evidence": "The quoted part of the premise holds. A read of docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md:134 returns \"ONE tracker tool, with one implementation per tracker type. The tool is a normal insrc MCP tool, insrc_tracker, registered in src/mcp/server.ts…\". The grep for that sentence matches only this LLD line and the DEF's own citation at docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md:254.\n\nThe rest of the premise has no support in the evidence. It claims the LLD \"has passed daemon review, carries no approval stamp, and is not built\". The `approvedAt` grep stopped at its 50-match cap, and none of the matches it returned come from this LLD's .json or .md. No evidence reads the LLD's meta.review, meta.approvedAt or a BUILD.md for this work item. The evidence does show that a companion LLD (tracker-epics…E202610069a7bbe63/S001/LLD.md) depends on insrc_tracker, but that says nothing about this LLD's lifecycle state. So the quote is verified, and the review, approval and build status cannot be verified from this evidence.",
-          "action": "Ground the status claim directly. Read docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.json and check three things: meta.review is present, its reviewer is the daemon and its verdict is not 'block'; meta.approvedAt is absent; and no S001/BUILD.md or BUILD.json exists. Then add those reads as anchors to c7. Until that is done, the DEF should not rely on the LLD being reviewed but unapproved and unbuilt. If the check shows otherwise, change the wording: for example, an approved LLD makes insrc_tracker a committed design, and a built one makes it existing code.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The quote is verified at LLD.md:134. The review, approval and build status cannot be verified because no read of the LLD's meta or BUILD record was gathered. That status has to be confirmed before the wording is fixed or reworded, and nothing in the evidence supports an automatic edit.",
-            "options": [
-              "Keep c7 as written and add anchors on LLD.json (meta.review, meta.approvedAt) and on the absence of S001/BUILD.md that confirm the status.",
-              "Narrow c7 to the verified quote only, removing the review, approval and build status, and record the status in a separate premise backed by its own evidence.",
-              "If the LLD.json read shows it is approved or built, reword c7 to match, and recheck any DEF reasoning that treats insrc_tracker as not built yet."
-            ]
-          }
-        },
-        {
-          "claimId": "p10",
-          "ref": "c9/k7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "CLAUDE.md states 'Daemon owns all DB access'.",
-          "evidence": "The read of CLAUDE.md:135 returned \"1. **Daemon owns all DB access** — CLI, MCP, and the IDE workbench communicate via IPC only.\" The grep /Daemon owns all DB access/ also matched CLAUDE.md:135 with the same text, and AGENTS.md:135 holds the same line. The quoted phrase appears word for word in the cited anchor, CLAUDE.md, so the citation resolves exactly.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The premise is verified. CLAUDE.md:135 holds the quoted rule word for word, so no edit is needed. The anchor could optionally be tightened to CLAUDE.md:135, but that is not required."
-          }
-        },
-        {
-          "claimId": "p11",
-          "ref": "c1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The seeding SPEC exists at docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md (SPEC-be8bcc435fe0cf93).",
-          "evidence": "read docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md:1 → FOUND: `<!-- insrc:artifact SPEC-be8bcc435fe0cf93 -->`. The file is at the cited path and carries the cited artifact id. A grep for SPEC-be8bcc435fe0cf93 also hits docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md:8 (`**Seeded from:** `SPEC-be8bcc435fe0cf93``), so the DEF cites this SPEC as its seed.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Premise verified: the SPEC file is at the cited path, its artifact id matches, and the DEF cites it as its seed. No edit needed."
-          }
-        },
-        {
-          "claimId": "p12",
-          "ref": "c2/c8",
-          "kind": "cross-artifact",
-          "severity": "MED",
-          "premise": "docs/plans/team-workflow.md exists and records the user decisions of the 2026-10-16 brainstorm session that constraints k1, k2, k5, k8 cite.",
-          "evidence": "The file exists. `read docs/plans/team-workflow.md:1` returned FOUND with the heading \"# Plan: Team-compatible workflow\". All four grep matches for /team-workflow/ are references to the file from the artifacts themselves: DEF.md:249 (citation c2), DEF.md:255 (citation c8, \"User decisions made in the 2026-10-16 brainstorm session, recorded in docs/plans/team-workflow.md\"), and SPEC.md:13 and SPEC.md:31. None of the matches comes from inside team-workflow.md, and the only line read is its heading. Nothing in the evidence shows that the file records decisions from a 2026-10-16 brainstorm session, or that it holds the content that constraints k1, k2, k5 and k8 rely on. The first half of the premise (the file exists) is confirmed. The second half (what the file records) cannot be verified from this evidence. It is not contradicted, so this is not HIGH.",
-          "action": "Re-probe docs/plans/team-workflow.md for its decision content. Read past line 1 and grep it for \"decision\", \"2026-10-16\", and the specific choices behind k1, k2, k5 and k8. Confirm the file actually records each decision those constraints cite. If any decision is missing, either add it to the plan doc or change constraint c8 to cite the brainstorm SpecArtifact (docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md) instead.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The file is confirmed to exist, but the evidence does not show that it contains the 2026-10-16 decisions. Someone needs to read the file and decide whether citation c8 points to the right source. Making a text edit without that check would mean inventing grounding.",
-            "options": [
-              "Keep c8 as written once a fuller read of docs/plans/team-workflow.md confirms it records the decisions that k1, k2, k5 and k8 cite.",
-              "Re-point c8 to the approved brainstorm SpecArtifact (docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md), which also says the decisions are pinned, and keep c2 as the plan-doc citation.",
-              "Add the missing decisions to docs/plans/team-workflow.md under a dated 2026-10-16 decisions section, then keep c8 unchanged."
-            ]
-          }
-        },
-        {
-          "claimId": "p13",
-          "ref": "Problem",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Settings today are per machine; there is no repo-committed team policy file read by the daemon.",
-          "evidence": "The premise says no repo-committed team policy file exists yet. The evidence agrees. `grep /policy\\.(json|ya?ml)/` found only 2 matches, and both are in design docs, not source code. `docs/plans/team-workflow.md:88` proposes a future `.insrc/policy.json` read from the remote default branch. The other is the team-signoff SPEC.md:9. Neither match is under `src/config` or anywhere else in `src/`. `grep /teamMode|team-policy/` found 0 matches, so no code yet reads a team-mode or team-policy setting. The 'per machine' part of the premise is not directly shown by these probes. They do not contradict it, and the doc at team-workflow.md:88 describes the current settings as per-repo entries in `~/.insrc/github.json` plus per-user items in the user config, which is per-machine storage under the home directory.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The premise is a claim that something does not exist yet. The probes found no policy-file reader or team-policy setting in source, only design-doc proposals, so no change is needed."
-          }
-        },
-        {
-          "claimId": "p14",
-          "ref": "Problem/s1",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Tracker support today is GitHub-only (gh CLI), with no common tracker interface declaring capabilities.",
-          "evidence": "The GitHub-only half is supported. Every tracker consumer in the evidence imports the GitHub module `tracker/github.js` directly: src/workflow/tracker-auto.ts:43, src/workflow/bugfix/tracker.ts:49, src/workflow/questions.ts:59 (commitAndPushArtifacts, ghComment), src/workflow/resolve-comment.ts:39, src/workflow/config/github.ts:43 (gitOriginOwnerRepo, parseGithubRemoteUrl), src/cli/services/workflow.ts:55, and three tests (bugfix-tracker, tracker-auto, tracker-tasks via _setTrackerExecForTests / TrackerExec). No match imports any tracker abstraction module. That other half (no common tracker interface declaring capabilities) cannot be confirmed from this evidence. The /capabilit/ grep hit its 50-match cap. Its results are sorted by path and stop inside docs/epics/build-deployment-design-..., so they never reach src/. The visible matches are all prose in AGENTS.md, CLAUDE.md, README.md, design/ and docs/, plus the LLM-provider field `provider.capabilities.structuredOutput` in some LLDs. None of them is a tracker interface. Even so, a tracker capability declaration somewhere under src/ is not ruled out. The `TrackerExec` type in github.ts only injects the exec function for tests. It is not a provider interface.",
-          "action": "Re-run the absence probe limited to src/, so docs no longer use up the match cap. For example, grep /interface\\s+\\w*Tracker|TrackerProvider|TrackerCapabilit|capabilities/ over src/workflow/ and src/workflow/tracker/. Confirm that nothing apart from github.ts implements or declares a tracker contract. If the probe finds nothing, the premise holds as written. If it finds an existing interface, change the Problem statement to \"extend the existing interface\" instead of \"introduce one\".",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The GitHub-only claim is supported by the imports. The no-common-interface claim is unverified only because the capability grep hit its cap before reaching src/. If a scoped re-probe confirms the absence, the planned change stays the same. Only a human-run probe can settle it, so no auto-edit is safe.",
-            "options": [
-              "Keep the premise as written once a src/-scoped probe confirms there is no tracker interface or capability declaration",
-              "Narrow the premise to what the evidence shows: 'All tracker callers (tracker-auto.ts, bugfix/tracker.ts, questions.ts, resolve-comment.ts, config/github.ts, cli/services/workflow.ts) import tracker/github.js directly; no tracker abstraction is imported anywhere'",
-              "If the probe finds an existing tracker contract, re-scope s1 to extend that contract instead of introducing a new one"
-            ]
-          }
-        },
-        {
-          "claimId": "p15",
-          "ref": "Problem/FR008",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Unfinished stage state lives in the local daemon and an opaque state token, so it cannot be resumed on another machine.",
-          "evidence": "The evidence supports what the premise says. Its anchor (src/mcp) is stale.\n\nSupporting: The state token is a short reference into a store on one machine, not a self-contained payload:\n- mcp.txt:27 shows \"encodeState mints a short URL-safe base64 token (22 chars, no padding)\". A token that short cannot carry the folded payload, so it can only point to an entry held elsewhere.\n- S001/LLD.md:39 says the token is \"realized as a private state-store record, never persisted to LMDB/Lance/DuckDB\".\n- frame-epic S005/LLD.md:35 says \"The token was minted by a prior encodeState/saveState on this server instance and has not expired (TTL) or been released.\"\n- S005/LLD.md:31 and :55 say an unknown token raises StateTokenNotFound, with the messages \"server restarted / TTL expired / already completed\".\n- mcp.txt:32 shows \"releaseState drops the entry so a subsequent decodeState fails\".\n\nTogether these confirm that unfinished stage state lives only in the local daemon's own store, behind an opaque token. Another machine's daemon cannot resolve that token.\n\nStale anchor: Every match in live source is under src/daemon/steps/*. Examples: src/daemon/steps/workflow-step/types.ts:37/44/50, src/daemon/steps/analyze-step/types.ts:35, and src/daemon/steps/workflow-step/phases/synthesize.ts:139 (inputStateToken). The src/mcp/workflow-step/state.ts path appears only in older LLD/PLAN docs (S005/LLD.md:55, PLAN.md:18). The gathered evidence has no source match under src/mcp. The anchor is out of date but still points at the right concept.",
-          "action": "Keep the premise. Re-anchor it from src/mcp to the live state-token code under src/daemon/steps: the per-step types.ts files and the step state module or state store, wherever encodeState/decodeState/saveState now live. Then the probe can resolve against current source and not against old design docs.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The premise is correct according to the evidence: short opaque token, a private store on this server instance that is never persisted, and not-found after a restart or TTL. Only the anchor directory is stale, because the live matches are under src/daemon/steps and not src/mcp. The anchors field may not appear verbatim in the artifact markdown, so no safe find/replace can be derived.",
-            "options": [
-              "Change the anchor from src/mcp to src/daemon/steps.",
-              "Anchor to the specific state module that defines encodeState/decodeState/saveState under src/daemon/steps, once its path is confirmed.",
-              "Leave the anchor as it is and record that the state-token code moved from src/mcp to src/daemon/steps."
-            ]
-          }
-        },
-        {
-          "claimId": "p16",
-          "ref": "Stories",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The Epic has 8 Stories (s1–s8), 13 Epic-level FRs, 8 constraints (k1–k8) and 38 acceptance criteria (ac1–ac38).",
-          "evidence": "Only part of the premise is confirmed. The Story count holds: grep /### 6\\.\\d E20261016315d510c:S00\\d/ returns exactly 8 headings in docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, from line 120 (6.1 S001 \"Rely on a tracker only for what it can really do\") to line 232 (6.8 S008 \"Revise a signoff request after reviewers ask for changes\"). That matches \"8 Stories (s1–s8)\".\n\nThe other three counts are not addressed by the evidence. The acceptance-criteria grep /\\*\\*ac\\d+:\\*\\*/ ran across the whole repo and was cut off at 50 matches. Every match shown comes from other Epics (add-bugfix-triage-category…, add-build-workflow-insrc-5th-stage…, add-daemon-driven-code-review-stage…), and none comes from the team-signoff DEF.md, so \"38 acceptance criteria (ac1–ac38)\" cannot be confirmed. No probe counted the Epic-level FRs (\"13\") or the constraints k1–k8 (\"8\"). Those inventory counts are therefore unverifiable. Even if one is miscounted, it changes no Story boundary or task that would be built, so this is MED, not HIGH.",
-          "action": "Re-run the count probes limited to docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md:\n- `rg -c '\\*\\*ac\\d+:\\*\\*'` for acceptance criteria. Note that ac numbering restarts in each Story, so the total is the sum of the per-Story counts. Check whether \"ac1–ac38\" means a global numbering or a sum of per-Story numbering.\n- the FR heading/bullet pattern, for the 13 Epic-level FRs.\n- `rg '\\*\\*k\\d+'`, for the 8 constraints.\nThen correct whichever count differs. The Story count (8, s1–s8) is verified and needs no change.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The Story count is confirmed by the evidence. The FR, constraint and acceptance-criteria counts could not be checked because the ac grep ran across the repo, was truncated, and returned no match from this DEF, and no FR or constraint probe ran. No edit can be derived from the evidence. A person needs to re-run the probes limited to this DEF and confirm or correct the numbers.",
-            "options": [
-              "Re-run the ac, FR and k count probes on the team-signoff DEF.md only, and replace any count that differs with the measured value",
-              "Restate the premise as an inventory of Stories only (8, s1–s8), the part the evidence supports, and drop the unverified counts",
-              "Keep the counts but label the ac total as the sum of per-Story criteria (each Story numbers from ac1), if that is how the DEF is structured"
-            ]
-          }
-        },
-        {
-          "claimId": "p17",
-          "ref": "Stories",
-          "kind": "ordering",
-          "severity": "MED",
-          "premise": "Story dependencies: s3 on s2; s4 on s1,s2; s5 on s1,s2,s4; s6 on s5; s7 on s1,s2,s5; s8 on s7 — acyclic.",
-          "evidence": "The grep for /\\*\\*Depends on:\\*\\*/ returned 50 matches and was TRUNCATED at the cap. None of the returned matches can be identified as this artifact's Stories section. The DEF dependency blocks shown come from other epics, and none of them match the stated graph. add-bugfix-triage DEF.md:57/70/90/104 give s1, s1, s2+s3, s2+s3. add-build-workflow DEF.md:71/92/115/129 give s1, s2, s3, s3+s4. add-daemon-driven-code-review DEF.md:79–195 give s1×4, s2–s5, s6, s6. add-module-test-health DEF.md:59–119 give s1, s2, s3, s2, s2+s3+s5. add-plan-workflow DEF.md:62–104 give s1×3, s1+s3. build-deployment-design DEF.md:58/74 give s1, s2, and the list is cut off there. No match shows \"s3 on s2; s4 on s1,s2; s5 on s1,s2,s4; s6 on s5; s7 on s1,s2,s5; s8 on s7\", and no 8-story DEF appears. The evidence neither confirms nor contradicts the claimed edges. The acyclicity claim is consistent as stated, since every edge points to a lower-numbered story. Even so, the edges themselves are not grounded.",
-          "action": "Re-run the probe scoped to this artifact's own DEF.md, the epic dir that holds stories s1–s8, so the 50-match cap does not cut off its \"**Depends on:**\" lines. Then check the eight stories' Depends-on lines against the stated graph: s1 and s2 have no deps, s3→s2, s4→s1,s2, s5→s1,s2,s4, s6→s5, s7→s1,s2,s5, s8→s7. If they match, downgrade to LOW. Acyclicity holds on its face, because every edge points to a lower-numbered story.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The evidence is truncated and does not reach this artifact's Stories, so no evidence-backed edit is possible. A narrower re-probe is needed before anything can change.",
-            "options": [
-              "Re-probe with the grep scoped to this epic's DEF.md and re-judge",
-              "Keep the premise as-is, since the stated graph is internally acyclic (every edge points to a lower-numbered story), and accept it as unverified",
-              "Cite each story's Depends-on file:line in the premise so later probes can ground it"
-            ]
-          }
-        },
-        {
-          "claimId": "p18",
-          "ref": "Assumptions/a2",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "Jira has an approval concept that can stand in for a signoff request (low confidence, unverified).",
-          "evidence": "No probes were run for this premise, so there are no ripgrep matches and no path:line reads. The premise concerns an external system (Jira), and the artifact itself marks it \"low confidence, unverified\". Nothing in the gathered evidence confirms or contradicts that Jira has an approval concept that could map to a signoff request.",
-          "action": "Before any task builds a Jira signoff path, check this premise against Jira's own documentation. Find out whether Jira Service Management's approval steps or a workflow transition or status can stand in for a signoff request, and whether Jira Software (without Service Management) has any approval primitive at all. Then either cite the specific Jira feature and the API that drives it, or re-scope signoff for Jira to a fallback such as a comment, label or status transition. Record that fallback as a design decision.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The premise is about how an external product behaves and has no grounding in the repo. Resolving it is a design decision about how signoff maps onto Jira, not a mechanical text fix, so no artifact edits are proposed.",
-            "options": [
-              "Verify against Atlassian docs that Jira Service Management approvals (or a workflow approval step) exist, then cite the feature and its REST endpoint in the assumption.",
-              "Map signoff to a generic Jira workflow transition or status (for example 'Awaiting Signoff' → 'Signed Off') that works on any Jira project, and state this as the contract.",
-              "Mark Jira signoff as unsupported or degraded (a comment plus a label only) and keep it out of the story's scope until it is verified."
-            ]
-          }
-        },
-        {
-          "claimId": "p19",
-          "ref": "S005/S007",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "The tracker (GitHub) exposes issue assignee and pull-request/review completion readable on demand via the gh CLI, sufficient for claims and signoff without polling or webhooks.",
-          "evidence": "Assignee: the evidence supports this half. Existing passing tests show that assignee data is read through gh on demand: `workflow.txt:1588 ok 1588 - queryTasks: owner → assignee:, epic/story → label qualifiers` and `workflow.txt:1592 ok 1592 - listMyOpenTasks: resolves the current login → assignee:<me> is:open` (make-insrc-analysis S007 measurements/after). The build-handler LLD:70 projects `assignees: string[]` from the GitHub issue shape. docs/plans/tools.md:227,229 list `gh:issue:create` / `gh:issue:edit` with assignees, so assignees can be written, which claim and release (ac19, ac22) need. The DEF itself only states the premise (DEF.md:33, :65, :99) and does not prove it.\n\nPull-request and review completion: no evidence. The grep pattern (`gh issue|'issue', 'edit'|assignee`) did not cover `gh pr`, `reviewDecision`, `reviews` or merge state. None of the 50 matches, which were cut off at the cap, shows a gh wrapper, tool or test that reads whether a PR or review is complete. The other part, \"without polling or webhooks\", is a design stance (DEF.md:99 \"insrc only needs to know whether a request completed\"). No probe addresses it. Half the premise, the half that signoff (S007) depends on, cannot be verified from what was gathered.",
-          "action": "Ground the PR and review half before S007 builds on it. Re-run the probe with a pattern that covers `gh pr view|gh pr list|reviewDecision|statusCheckRollup|mergedAt|gh:pr:` across src/workflow/tracker and docs/plans/tools.md. Then confirm one of two things: either a gh wrapper or built-in tool already reads a PR's review decision and merge state, or S007 must add one, for example `gh pr view <N> --json reviewDecision,state,mergedAt,reviews`. Record the result as a cited premise in the S007 LLD. The S005 assignee half can stay as written: the evidence supports it (queryTasks / listMyOpenTasks assignee: qualifiers, gh:issue:edit with assignees).",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The assignee half (S005) is backed by existing tracker code and passing tests. The PR and review completion half (S007) has no gathered evidence because the probe pattern never searched for gh pr or review reads. The premise needs either a citation added or a scope note. Choosing between those is a human decision, not a mechanical text fix.",
-            "options": [
-              "Split the premise. Keep the S005 assignee claim, citing queryTasks and listMyOpenTasks (assignee: qualifiers) and gh:issue:edit. Add a separate S007 premise that cites an existing gh PR read wrapper, once a re-probe finds one.",
-              "If no PR or review read exists, reword the S007 part as new work: S007 adds a gh wrapper (`gh pr view --json reviewDecision,state,mergedAt`) through the injectable _exec, read on demand at each stage turn.",
-              "Re-run the probe with a pr/reviewDecision pattern before deciding, and keep the premise unverified until then."
-            ]
-          }
-        },
-        {
-          "claimId": "p20",
-          "ref": "s4/ac17",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The task-issue creation is controlled today by a local setting (Task issues optional), which team mode must override.",
-          "evidence": "The only probe was a grep for /createTaskIssues|taskIssues|tasksAsIssues/. It returned 0 matches, and no `path:line` reads were gathered from src/workflow/tracker-auto.ts or anywhere else. The evidence therefore shows no local setting that controls task-issue creation under those names. It also doesn't show any other control, such as a 'Task issues optional' toggle, a config key or a flag. So the premise that task-issue creation is controlled today by a local setting that team mode must override can't be verified. The probe may also have missed the setting because it has a name the pattern doesn't cover.",
-          "action": "Re-ground ac17 against src/workflow/tracker-auto.ts and the tracker config. Find the actual identifier (config key, field or function) that decides whether task issues are created, cite it as `file:line` in the premise, and probe again with that identifier. If no such local setting exists, reword ac17. Team mode would then need to introduce the control rather than override an existing one, which changes what s4 builds.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence has no matches and no reads, so no value from it can go into an auto-edit. The premise has to be re-grounded, or reworded once the author confirms whether the setting exists.",
-            "options": [
-              "Find the real setting in tracker-auto.ts / tracker config (e.g. grep for 'task' + 'issue' near the config reader), cite it as file:line in ac17, and keep the 'team mode overrides it' wording.",
-              "If no local setting exists, reword ac17 so that team mode introduces task-issue creation control (a new setting and its default) instead of overriding one.",
-              "If task issues are always or never created with no setting at all, re-scope ac17 to describe that hard-coded behaviour and what team mode changes."
-            ]
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 12,
-        "low": 8
-      },
-      "reviewedAt": "2026-10-16T14:46:50.819Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-16T15:23:36.256Z",
-    "reviewOverride": {
-      "reason": "Daemon review of DEF-315d510cb28100e2 returned block (0 HIGH, 12 MED, 8 LOW). Each MED finding was checked against the repo and external documentation: six hold as written; four hold with wording notes (terminal client's tracker settings, catalog definition site, tracker-tool design approval status, state-store anchor); one is better supported than the DEF assumes (PR state is already readable); one (Jira approvals) is externally open and deferred to the Jira adapter. No finding was shown not to hold. The wording notes and open items are carried to design.",
-      "at": "2026-10-16T15:23:36.256Z"
-    },
     "questionResolutions": {
       "q425abf90": {
         "question": "Item a2: One assumption is low confidence (Jira approval can stand in for a signoff request, unverified); how a Jira approval refers to artifact content must be verified at design.",
@@ -373,6 +36,60 @@
         "rationale": "User chose option 4 over the daemon's recommendation, to avoid amending the approved DEF. The HLD treats the goal as 'a common tracker interface with GitHub as its first adapter' (GitLab and Jira adapters are later work, but Jira must follow the GitHub pattern: daemon-created issues, Jira key written back to the artifact, git sync also runs a Jira sync). The DEF text is not edited. Migration of existing artifacts means deciding whether artifacts that have a local approval but no signoff are grandfathered in team mode or need a one-time signoff; the HLD must settle that in its Story boundaries. The 'my items' view is deferred as a non-goal of this HLD.",
         "resolvedAt": "2026-10-16T16:38:18.518Z"
       }
+    },
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "4593805ebd72175aaa46c8ba26feb5e962e6a8c5570947429dda78cc07e871ba",
+        "at": "2026-10-16T14:46:39.254Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T15:23:36.256Z",
+        "override": {
+          "reason": "Daemon review of DEF-315d510cb28100e2 returned block (0 HIGH, 12 MED, 8 LOW). Each MED finding was checked against the repo and external documentation: six hold as written; four hold with wording notes (terminal client's tracker settings, catalog definition site, tracker-tool design approval status, state-store anchor); one is better supported than the DEF assumes (PR state is already readable); one (Jira approvals) is externally open and deferred to the Jira adapter. No finding was shown not to hold. The wording notes and open items are carried to design."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 12,
+          "low": 8
+        },
+        "at": "2026-10-16T14:46:50.819Z",
+        "report": {
+          "entityId": "DEF-315d510cb28100e2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-315d510cb28100e2-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

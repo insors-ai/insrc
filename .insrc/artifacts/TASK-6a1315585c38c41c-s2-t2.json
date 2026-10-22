@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a6d9f4ad-5035-465e-80eb-49b3c1cf0d48",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.269Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Board model: filtering, columns, counts and paging",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b30014a9f4f6c6092f30dec335b4150e66cfc4774ba48b555412161de52f5399",
+        "at": "2026-10-22T12:43:41.270Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.270Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board model: filtering, columns, counts and paging",
+    "summary": "board-model.ts with each item's epic (a story's parent epic; an issue's corrected epic, or the epic of its corrected story), buildBoardViewModel's matching (scope, search, attention), STAGE_ORDER columns in snapshot order, totals counted before paging, BoardPaging with BOARD_PAGE_SIZE and showMore, scopeOptions, emptySelection, and unknownStages.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Six columns in workflow order hold every story and issue with a known stage exactly once, in the column its stage names, in snapshot order; epics, tasks and stage-less items are not cards.",
+      "Scope all, epic and standalone, a trimmed case-insensitive substring search over title, id, source ids and epic title, and Needs attention select exactly the matching items.",
+      "For every column total = cards.length + hiddenCount and cards.length = min(total, limit); totals sum the columns; showMore raises one column by BOARD_PAGE_SIZE.",
+      "unknownStages returns every unknown stage id with its count; those items are not in any column or total.",
+      "The same arguments give a deep-equal model."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'six columns in workflow order hold every story and issue exactly once, in the column the snapshot assigns'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'with an epic scope and a search, cards, hidden counts, column totals and totals agree, and clearing both restores the full set'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'the same snapshot and filters give an identical model, including items with equal timestamps'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'unknownStages counts every stage id outside the six, and those items are in no column'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

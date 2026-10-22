@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e48bc537-1e7f-4c35-91c9-c40b9d416ab7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.509Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Carry the envelope binding and attachments through a content write",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "eb5f4e270a1d59f0778863569f03f4293df5cc9596500b84355a9c4e1ebae83d",
+        "at": "2026-10-22T12:43:21.509Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.510Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry the envelope binding and attachments through a content write",
+    "summary": "Add carryBinding beside carryTracker in src/workflow/storage.ts and call it in the content branch of prepareArtifactWrite: for an existing artifact the meta.envelope.binding and meta.envelope.attachments on disk win over the caller's, and a first write keeps what the caller gave. The change moves no revision number and no content hash.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "a content write of an existing artifact through the store keeps the on-disk binding and attachments whatever the caller's artifact carries",
+      "a first write keeps the binding and attachments the caller gave",
+      "the revision number and content hash are unchanged by the carry",
+      "the existing storage and store write tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "binding-carry.test.ts: a content write by the store keeps the binding and attachments on disk, a first write keeps what the caller gave, and the carry leaves the revision number and content hash alone"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -14,7 +14,7 @@ Added a vscode-free chat/group-lock.ts that locks the chat's editor group the fi
 
 ## Changes
 
-- `.insrc/artifacts/LLD-c4c420c22b71651e-S001.json` — **insrc-build** (2026-10-04T08:50:42.280Z)
+- `.insrc/artifacts/LLD-c4c420c22b71651e-s1.json` — **insrc-build** (2026-10-04T08:50:42.280Z)
 - `docs/standalone/vs-code-plugin-lock-insrc-chat-E20261004c4c420c2/S001/LLD.md` — **insrc-build** (2026-10-04T08:50:42.280Z)
 - `vscode-plugin/package.json` — **insrc-build** (2026-10-04T08:50:42.280Z)
 - `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-04T08:50:42.280Z)

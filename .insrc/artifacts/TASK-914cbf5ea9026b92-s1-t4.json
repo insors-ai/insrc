@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-223b779d-5766-4c36-9c72-091ca489aa0e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:58.592Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Canonical DEPENDS_ON-closure kind set including the four boundary kinds (export + entity-level reachability only)",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe3ca0a13afd371d3a4746a1c648457b643d3e8313d81071cd2789c117d01bd6",
+        "at": "2026-10-22T12:43:58.592Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:58.593Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Canonical DEPENDS_ON-closure kind set including the four boundary kinds (export + entity-level reachability only)",
+    "summary": "Introduce ONE exported canonical constant (e.g. DEPENDS_ON_CLOSURE_KINDS = ['DEPENDS_ON','CALLS_HTTP','PUBLISHES_TO','SUBSCRIBES_TO','CALLS_RPC']) as the single source of truth for 'what counts as a dependency-closure edge'. SCOPE: export the set and prove entity-level reachability via transitiveClosure under it; LEAVE src/db/search.ts resolveClosure's repo-level ['DEPENDS_ON'] semantics UNCHANGED (that pass is repo->repo reachability; boundary edges are entity-level) so repo-scoping does not regress. Additive: with no boundary edges present, any closure using the set returns exactly what ['DEPENDS_ON'] returned.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a single exported canonical closure-kind set contains DEPENDS_ON + the four boundary kinds and is the referenced source of truth (no scattered literal boundary-kind lists)",
+      "a transitiveClosure from a code entity under the canonical set reaches a linked externalEndpoint node via its boundary edge",
+      "src/db/search.ts resolveClosure repo-level DEPENDS_ON reachability is unchanged, and a graph with zero boundary edges yields a closure byte-identical to the pre-S001 ['DEPENDS_ON'] result"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "transitiveClosure from a repo root reaches its externalEndpoint node via a boundary edge when the closure kindFilter includes the four boundary kinds (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "closure over an existing-kinds-only graph is byte-identical to pre-S001 (additive invariant; resolveClosure repo-level DEPENDS_ON unchanged)"
+      },
+      {
+        "level": "integration",
+        "name": "per-repo dedup: two boundary edges from two call-sites to the same resolved target+protocol resolve to a single endpoint node (k2)"
+      },
+      {
+        "level": "integration",
+        "name": "two repos reaching the same target produce two distinct per-repo endpoint nodes"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c6628695-b859-40e2-81fc-fe192a7a8b47",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.537Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Store: three new sub-DBs and the V4->V5 migration step",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b86263f29e20eaf3f549c3e63ea4b08ef22734ecebc9235ce1c6597881e0d568",
+        "at": "2026-10-22T12:44:34.537Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.538Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Store: three new sub-DBs and the V4->V5 migration step",
+    "summary": "In src/db/graph/store.ts open unresolved_by_target (dupsort, awaited id -> pending row id), export_names (dupsort, (file u64, exported name) -> target id) and index_state (repoId -> IndexStateRow) beside unresolved_by_file; IndexStateRow encode/decode in src/db/graph/codec.ts; SCHEMA_VERSION 4 -> 5 and MIGRATION_V4_TO_V5 in src/db/graph/migrations.ts, which opens the three sub-DBs and writes an IndexStateRow per workspace repository with fullIndexFinished false and pending counts recounted from the existing rows. removeRepo (src/db/repos.ts:177) deletes the repository's index_state row with its registry row. Anchors: unresolvedByFile is opened at src/db/graph/store.ts:558 (open_ at :532-536 opens dupsort sub-DBs); none of unresolved_by_target, export_names or index_state exists in src today. The migration runner runs each step and writes the new version in one transaction (src/db/graph/migrations.ts:442-447, store.root.transaction), and src/db/graph/__tests__/migrations.test.ts already proves a throwing step leaves the previous version (the test 'runMigrations leaves intermediate version on disk after a per-step crash', :151-176: the throwing step at :156 rejects at :159 and the stored version stays 2 at :165); row codecs live in src/db/graph/codec.ts (e.g. decodeEdgeProps at :209). removeRepo (src/db/repos.ts:177) removes the registry row inside withWriteTxn (:196-199); the index_state delete goes in that same callback.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A V4 store opened by the new code is at version 5 with the three sub-DBs and one IndexStateRow per workspace repository, fullIndexFinished false, pending counts equal to a recount of the existing rows",
+      "A migration whose run throws leaves the stored version at 4 and the store unchanged",
+      "V1->V2, V2->V3 and V3->V4 steps are untouched (existing migration tests pass)",
+      "repo.remove leaves no index_state row for the removed repository"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/db/graph/__tests__/migration-v4-to-v5.test.ts: V4 store migrates to 5 with three sub-DBs and one IndexStateRow per repository; a throwing step leaves version 4"
+      },
+      {
+        "level": "integration",
+        "name": "src/db/__tests__/repos-lmdb.test.ts: repo.remove deletes the index_state row"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

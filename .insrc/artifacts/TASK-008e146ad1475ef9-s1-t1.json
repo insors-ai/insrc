@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-72d1f31f-a0fc-4105-989f-1d9a246fa8a1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.566Z",
+    "epicCreatedAt": "2026-10-10T05:39:29.105Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A live data source is measured within a time limit, and a cancelled request stops measuring",
+      "parent": {
+        "entityId": "STORY-008e146ad1475ef9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-008e146ad1475ef9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1a41c3a73ebcb58e765c26a3f0cb43e8e62909e47e6303bca438051f81aadbc",
+        "at": "2026-10-22T12:43:10.567Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.569Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A live data source is measured within a time limit, and a cancelled request stops measuring",
+    "summary": "Add the setting analyzer.dataSourceListingTimeoutMs (number, default 120000) to the configuration catalog and a reader for it in src/config/analyze.ts that never throws and falls back to the default. Add the MeasureOptions type and the optional options argument to measureRequestScope, measureResolvedScope and measureDataSource, and pass it to the private measureConnection and measureDataPool. In measureConnection give reaching and listing one connection one bounded wait; on a time-out or a cancellation return a measure that is not determined with its reason, and catch the abandoned call's later rejection. In measureDataPool check the signal before each connection. On entry to measureResolvedScope return not determined when the signal is already aborted. No caller passes options yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A source whose listing never returns, and one whose acquire never returns, gives a measure that is not determined after the limit, with the note `the listing of '<id>' timed out: the source did not answer within <n> seconds`; items and files are 0 and the size is XL.",
+      "A signal that fires while a source is being measured ends the wait at once with the note that the request was cancelled; the remaining connections of a pool are not asked; a signal already aborted on entry reads nothing.",
+      "With several connections, one that stalls does not stop the others from being measured, each has its own limit, and the result is not determined with today's form of note naming the one that timed out.",
+      "A listing that rejects after its wait was abandoned causes no unhandled rejection.",
+      "The limit is the setting's value; `sourceTimeoutMs` in the options replaces it; a value that is not a finite number greater than 0, or an unreadable configuration file, gives 120000.",
+      "The setting is in the configuration catalog as a number with default 120000 in the group 'Analysis & memory'.",
+      "A source that answers within the limit, a source whose kind lists a sample of keys and a scope that names no connection give today's measure; the existing tests of the measuring pass pass unchanged.",
+      "`npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count"
+      },
+      {
+        "level": "unit",
+        "name": "a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing"
+      },
+      {
+        "level": "unit",
+        "name": "one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count"
+      },
+      {
+        "level": "unit",
+        "name": "the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection"
+      },
+      {
+        "level": "unit",
+        "name": "the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds"
+      },
+      {
+        "level": "unit",
+        "name": "the setting analyzer.dataSourceListingTimeoutMs is in the configuration catalog as a number with a default of 120000"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

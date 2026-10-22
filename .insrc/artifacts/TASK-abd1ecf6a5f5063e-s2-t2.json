@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a4bde4a1-2b3e-425a-a7db-dd4e82bfbbc2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:07.457Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Convert the elicit StepRunner to an llm-pause via llmPauseRunner in index.ts",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "550d6c8e88de82e40f4d1cc34945503f9e2f2382068e86eddb2147e936a04ef0",
+        "at": "2026-10-22T12:44:07.458Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:07.458Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Convert the elicit StepRunner to an llm-pause via llmPauseRunner in index.ts",
+    "summary": "In src/workflow/runners/brainstorm/index.ts, reshape the already-registered `elicit` StepRunner from the s1 output-runner placeholder into an llm-pause runner built with the existing llmPauseRunner(spec) helper (mirroring the inline pattern used by design-story/design-epic/plan runners, not a shared import). buildPrompt embeds the run's focus plus the BRAINSTORM_CATEGORY_CLASSES vocabulary/descriptions and instructs the controller to classify the idea and emit clarifying questions targeting unstated scope/exclusions/success gaps; schema is t1's brainstormElicitSchema. registerBrainstormRunners() and the executor registration call in this same file are left structurally untouched (same runner id, same registration signature) — this task only edits the elicit runner's body. Also add an integration test proving the reshaped runner round-trips correctly through the real insrc_workflow_step dispatch, not just in isolation.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "elicit.run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, never an 'output' with a spec",
+      "buildPrompt embeds both the run's focus and the BRAINSTORM_CATEGORY_CLASSES descriptions in the emitted prompt text",
+      "the runner is built via the existing llmPauseRunner(spec) helper using t1's brainstormElicitSchema, following the inline pattern of the design-story/design-epic/plan runners rather than a new shared abstraction",
+      "the diff for this task touches only the elicit runner's buildPrompt/schema wiring inside index.ts; registerBrainstormRunners' call sites and other runner ids are byte-identical to s1's output",
+      "an integration test driving insrc_workflow_step for a standalone brainstorm run confirms: the first step returned is an ask/emit_step (not synthesize) carrying t1's brainstormElicitSchema, a valid {category, questions[]} controller response is accepted and the run pauses, and the opaque state token is unchanged across the turn"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "elicit.run() returns a StepRunnerLlmPause (type:'llm-pause') on the first turn, never an 'output' with a spec"
+      },
+      {
+        "level": "unit",
+        "name": "elicit buildPrompt output contains both the run's focus text and the BRAINSTORM_CATEGORY_CLASSES descriptions"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_workflow_step start (workflow:'brainstorm') → plan → the returned step is emit_step for 'elicit' carrying brainstormElicitSchema, not a synthesize step"
+      },
+      {
+        "level": "integration",
+        "name": "posting a valid {category, questions[]} controller response to the elicit step validates and pauses the run without writing a spec artifact"
+      },
+      {
+        "level": "integration",
+        "name": "the opaque continuation state token is unchanged across the elicit ask turn"
+      },
+      {
+        "level": "live",
+        "name": "(gated INSRC_LIVE_TESTS=1) given a rough idea leaving scope/exclusions/success unstated, the emitted questions target those gaps and are not a restatement"
+      },
+      {
+        "level": "live",
+        "name": "(gated INSRC_LIVE_TESTS=1) given an idea recognisable as requirements vs design vs implementation, the chosen category and questions reflect that categorisation"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

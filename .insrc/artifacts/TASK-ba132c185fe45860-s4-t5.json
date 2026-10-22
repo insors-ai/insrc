@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b5b3a65-711c-467b-82a1-27d97cfc3828",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:27.345Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add JUnit5 tests: pure model + gateway + source-scan",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "86350c60ce01c73df352dd87b45ae6bab87c8c5fa1029928ad5f8de808830b06",
+        "at": "2026-10-22T12:44:27.345Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:27.346Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add JUnit5 tests: pure model + gateway + source-scan",
+    "summary": "Add ModelTiersModelTest (pure, all k7 branches over a SettingsCatalogDto builder + a Map<String,ModelListResult> of Loaded/Loaded-empty/Unavailable), Sc2ListModelsGatewayTest (a handler-lambda FakeDaemonRpc driving the real DaemonGatewayImpl — Loaded/available:false/Unavailable/malformed + method+params), and a source-scan extension to InsrcSettingsConfigurableTest (section registered, models.tiers.* excluded from the table, model combo non-editable, off-EDT Refresh). All green under ./gradlew test on JDK21 (verified locally).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "ModelTiersModelTest covers all k7 branches (dropdown, empty/unavailable, '(current, not in catalog)' override-only, clear-on-provider-switch, idempotent no-op, defaulted-runner fallback) over injected fakes — no Swing/live daemon",
+      "Sc2ListModelsGatewayTest proves available:false→Loaded(false,[]) (not Unavailable), Unavailable on socket/ok=false, malformed skipped, and the method+params wiring",
+      "A source-scan asserts ModelTiersSection registered + models.tiers.* excluded + non-editable combo + off-EDT Refresh",
+      "The full plugin suite passes locally via ./gradlew test (JDK21), not on GitHub CI"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the full jetbrains-plugin suite passes locally via ./gradlew test (JDK21)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f4cca542-56bd-4d13-a01c-f133346640b8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.156Z",
+    "epicCreatedAt": "2026-09-17T18:27:16.414Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "kotlin.test.ts (unit + registry integration + smoke regression)",
+      "parent": {
+        "entityId": "STORY-6efc97c8dc73e0aa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6efc97c8dc73e0aa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6efc97c8dc73e0aa-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a99725aaa7b46ccb0c7908a4b2e62fca48f7ef0709729c67e73d6ed0eab517de",
+        "at": "2026-10-22T12:43:44.158Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.158Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "kotlin.test.ts (unit + registry integration + smoke regression)",
+    "summary": "Add src/indexer/parser/__tests__/kotlin.test.ts (node:test, mirroring scala.test.ts): unit tests feeding inline Kotlin source to `new KotlinParser().parse(...)` asserting the entity kinds + relation kinds (class/interface/object/companion/data class; top-level/member/extension fun; val/var property; package/import incl. alias; supertype INHERITS+IMPLEMENTS; a recognised HTTP/messaging client emits CALLS; a parse-error file emits clean entities + marks the file; makeEntityId stable). A registry integration test: after importing the indexer, getParser('X.kt'/'X.kts') returns the KotlinParser and supportedExtensions() includes .kt/.kts; a real Kotlin fixture yields a non-empty entities array. A smoke regression test: _require('tree-sitter-kotlin') + setLanguage + parse succeeds (guards a future dep bump that breaks loading).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "kotlin.test.ts unit tests cover every entity kind + relation kind + the parse-error contract + makeEntityId stability, over inline Kotlin source.",
+      "An integration test proves getParser routes .kt/.kts to KotlinParser (language 'kotlin'), supportedExtensions() includes them, and a real Kotlin fixture yields non-empty entities.",
+      "A smoke regression test asserts the grammar loads + parses (turns red on a broken dep)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "kotlin.test.ts: class/interface/object/companion/data class/funcs/extension/property/package → correct Entity kinds + signature markers + DEFINES"
+      },
+      {
+        "level": "unit",
+        "name": "kotlin.test.ts: supertype INHERITS+IMPLEMENTS, imports (alias in meta.alias) → IMPORTS, a recognised client → CALLS/REFERENCES"
+      },
+      {
+        "level": "unit",
+        "name": "kotlin.test.ts: parse-error file emits package + clean top-level entities + marks file (never throws); unmapped node skipped; makeEntityId stable hex-32"
+      },
+      {
+        "level": "integration",
+        "name": "kotlin.test.ts: getParser routes .kt/.kts to KotlinParser + a real Kotlin fixture yields non-empty entities; kotlin/java/scala jvm import dedup"
+      },
+      {
+        "level": "smoke",
+        "name": "kotlin.test.ts: committed regression — the tree-sitter-kotlin grammar loads + parses (red on a broken dep bump)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

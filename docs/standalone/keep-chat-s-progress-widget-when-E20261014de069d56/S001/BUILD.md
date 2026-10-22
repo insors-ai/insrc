@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-de069d56d76eaacd-S001 -->
+<!-- insrc:artifact BUILD-de069d56d76eaacd-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -34,5 +34,5 @@ Fix for ISSUE-de069d56d76eaacd. In chat-panel.ts, the 'ready' case now posts 'tu
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:40.423Z)
+- `.insrc/artifacts/BUILD-babd84c6e2fb480a-s1.json` — **insrc-build** (2026-10-15T08:21:40.423Z)
 - `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:40.423Z)

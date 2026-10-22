@@ -1,35 +1,68 @@
 {
-  "id": "AMD-613abdb351c2c738-14",
-  "epicHash": "613abdb351c2c738",
-  "epicSlug": "per-repo-chat-turn-queue-outbox",
-  "hldBaseRunId": "wf-1791967985926-oydluz",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc4",
-    "breaking": false,
-    "field": {
-      "name": "runnerNote",
-      "type": "QueuedTurnRunner.note?(message: QueuedMessage, text: string): void",
-      "optional": true,
-      "purpose": "optional member of QueuedTurnRunner: the worker asks the chat host to say one line in the message's chat when it gives up writing a message's outcome after BUSY_GIVE_UP_MS (60 s), asking the user to reload the window"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "createdAt": "2026-10-14T19:08:37.063Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "61293460ce67379329f1fcfac2cef4ba9f8c98dec6932d0159d460beaec3ea48",
+        "at": "2026-10-14T19:08:37.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T19:10:17.105Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "S004 bounded the busy outcome write at 60 s; the worker owns the store but only the chat host can speak in the chat. Additive and optional. Built and approved in S004.",
+  "body": {
+    "id": "AMD-613abdb351c2c738-14",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc4",
+      "breaking": false,
+      "field": {
+        "name": "runnerNote",
+        "type": "QueuedTurnRunner.note?(message: QueuedMessage, text: string): void",
+        "optional": true,
+        "purpose": "optional member of QueuedTurnRunner: the worker asks the chat host to say one line in the message's chat when it gives up writing a message's outcome after BUSY_GIVE_UP_MS (60 s), asking the user to reload the window"
+      }
+    },
+    "rationale": "S004 bounded the busy outcome write at 60 s; the worker owns the store but only the chat host can speak in the chat. Additive and optional. Built and approved in S004.",
+    "proposedBy": {
+      "workflow": "epic-end-batch",
+      "runId": "manual-2026-10-14T19:08:37.063Z",
+      "storyId": "s4",
+      "stepId": "batch"
+    },
+    "proposedAt": "2026-10-14T19:08:37.063Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
       "kind": "code",
       "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "epic-end-batch",
-    "runId": "manual-2026-10-14T19:08:37.063Z",
-    "storyId": "s4",
-    "stepId": "batch"
-  },
-  "proposedAt": "2026-10-14T19:08:37.063Z",
-  "status": "approved",
-  "approvedAt": "2026-10-14T19:10:17.105Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

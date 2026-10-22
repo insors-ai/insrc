@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b7755983-797e-4521-a8ed-5152c8a4ba91",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.797Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Reject and ack-stale gates write only the lifecycle",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "50f8233934b4f4d9776788cc0eacc2eccce40cad245aa3c3965b910bf2b50df4",
+        "at": "2026-10-22T12:43:22.797Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.798Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reject and ack-stale gates write only the lifecycle",
+    "summary": "In src/workflow/gates.ts the reject and ack-stale gates call LifecycleService only. Update src/workflow/__tests__/gates-lifecycle-guard.test.ts and gates-lifecycle-service.test.ts.",
+    "size": "S",
+    "order": 27,
+    "acceptanceChecks": [
+      "Rejection and stale acknowledgement go through LifecycleService",
+      "Neither writes meta.rejectedAt, rejectReason or staleAckedAt"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService"
+      }
+    ],
+    "planTaskId": "t27"
+  },
+  "citations": []
+}

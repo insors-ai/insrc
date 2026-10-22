@@ -23,122 +23,62 @@
     "hldBaseRunId": "wf-1785928117126-v61buv",
     "hldEffectiveHash": "ddca67745f5ce27a72fd98622c88c10523b7fb157faee13556f302030c37eece",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "dm/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DAEMON_ENTRY is a module-private const defined in src/cli/services/daemon.ts around line 24 (join(__dirname,'../../daemon/index.js')), which s3 exports.",
-          "evidence": "read src/cli/services/daemon.ts:24 = \"const DAEMON_ENTRY = join(__dirname, '../../daemon/index.js');\" — the module-private const is exactly at the cited line.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "dm/c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "pidFromFile is a module-private function in src/cli/services/lifecycle.ts around line 20 that reads PATHS.pidFile for the managed pid, which s3 exports.",
-          "evidence": "read src/cli/services/lifecycle.ts:20 = \"function pidFromFile(): number | undefined {\" — the module-private managed-pid read is at the cited line.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The managed-pid liveness probe pattern is process.kill(pid, 0) in src/cli/services/lifecycle.ts (pidAlive), which the kill re-uses to detect SIGTERM survivors.",
-          "evidence": "grep matched process.kill(pid, 0) in lifecycle.ts (pidAlive at :28) — the liveness-probe primitive the kill re-uses is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "execSync from node:child_process is the existing subprocess precedent (src/shared/system-info.ts) that the orphan `ps` scan mirrors.",
-          "evidence": "read src/shared/system-info.ts:7 = \"import { execSync } from 'node:child_process';\" — the subprocess precedent is at the cited line.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ConfirmPrompt is an existing modal widget exported from src/cli/ui/widgets.tsx (around line 56) that the guarded kill gates behind.",
-          "evidence": "read src/cli/ui/widgets.tsx:56 = \"export function ConfirmPrompt(props: { label: string; onYes: () => voi...\" — the confirm-gate modal is exported at the cited line.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The SIGTERM-then-drain(-then-force) stop sequence exists in scripts/daemon-ctl.sh (around lines 142-149), which the killOrphans escalation mirrors.",
-          "evidence": "read scripts/daemon-ctl.sh:148 = 'log \"SIGTERM daemon (pid $pid)\"' — the SIGTERM-then-drain stop sequence the escalation mirrors is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "sc1/c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The DebugService interface + the s2 DaemonSection component the orphan area augments exist from s1/s2 (src/cli/services/debug-types.ts + src/cli/panes/DaemonSection.tsx).",
-          "evidence": "grep matched `interface DebugService` (debug-types.ts) and `export function DaemonSection` in src — the sc1 facade + s2 component s3 augments both exist.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "contractDetails",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "scanOrphans/killOrphans/OrphanScanResult/OrphanProcess/KillOutcome do not exist in src yet; they are this Story's new sc1 additions.",
-          "evidence": "grep for scanOrphans|killOrphans|OrphanScanResult|OrphanProcess|KillOutcome returned zero src hits — these are genuinely new sc1 additions, as the LLD claims.",
-          "action": "none — the new-surface premise holds",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "killOrphans",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "killOrphans acts only on the explicit pid list, re-excludes the managed pid, escalates SIGTERM->SIGKILL for survivors, and never throws (folds errors into per-pid KillOutcome).",
-          "evidence": "No source probe (design intention for the NEW killOrphans method). Internally consistent: the artifact's killOrphans postconditions state explicit-pids-only + managed-pid re-exclusion + SIGTERM->SIGKILL + per-pid KillOutcome (never throws), and its readonly number[] signature type-enforces the explicit-selection guarantee; build + code-review verify the impl.",
-          "action": "none — design intention, verified internally consistent; enforced at build/code-review",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "interactionWithShared",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD assigns sc1 ownership to s1; s3 depends on (consumes) sc1 and adds scanOrphans/killOrphans via an additive sharedContract.methodAdd amendment, not by owning sc1.",
-          "evidence": "Cross-artifact: the approved HLD boundary assigns sc1 to s1; the s3 LLD interactionWithShared declares role=consumes for sc1 and records scanOrphans/killOrphans as an additive sharedContract.methodAdd (not an ownership claim), consistent with the flat s2 daemonStatus precedent (cl7 grep shows the shared DebugService base).",
-          "action": "none — cross-artifact trace consistent",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-08-06T07:21:06.784Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-06T07:36:56.742Z",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b4784f8bd607f7e61d69f584942c04a4db6de36732638348f3d90ba61e5fdba3",
+        "at": "2026-08-06T07:19:53.245Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T07:36:56.742Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-08-06T07:21:06.784Z",
+        "report": {
+          "entityId": "LLD-f900cf34c0342d4f-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-f900cf34c0342d4f-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

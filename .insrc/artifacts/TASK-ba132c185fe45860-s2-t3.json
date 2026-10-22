@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e6982c8a-3ada-4172-8f76-ecaf37fc7328",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.808Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Flip the providers.listModels map entry to the real handler",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1ce4482aebc53e17535b181ac3228ff671f0732eef397d2af6fd0483f363d242",
+        "at": "2026-10-22T12:44:26.808Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.808Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Flip the providers.listModels map entry to the real handler",
+    "summary": "Change the daemon IPC handler-map entry (src/daemon/index.ts, ~:1519) for 'providers.listModels' from offlineRpc('providers.listModels') to a real RpcHandler that delegates to listModels(params) from src/daemon/list-models.ts. One-line map-entry change + one import; no other entry changes; revive-in-place (lc1) so there is exactly one working model-listing entry.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "the 'providers.listModels' map entry is a real handler delegating to listModels(params), no longer offlineRpc — invoking it does NOT return the backend-offline error",
+      "invoking the registered handler with {provider:'cli-claude'} returns a ModelListResult sourced from the real getCuratedCatalog() (post-boot)",
+      "no dead duplicate model-listing entry exists (lc1); no other handler-map entry or transport changes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the daemon handler map entry for 'providers.listModels' is not offlineRpc (invoking it does NOT return the backend-offline error)"
+      },
+      {
+        "level": "integration",
+        "name": "the handler is registered once (no dead duplicate model-listing entry) — lc1"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

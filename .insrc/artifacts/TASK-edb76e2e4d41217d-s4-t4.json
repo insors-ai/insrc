@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c328dd76-e9d3-4663-a948-491f0072ce7a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:52.591Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Tests: markerFor parity + shell-routing contract + integration turn",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b94693d86306f66f65d7a037199b4f5b19933ad9b5439ae367f3f656eb131343",
+        "at": "2026-10-22T12:44:52.591Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:52.592Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: markerFor parity + shell-routing contract + integration turn",
+    "summary": "Add vscode-plugin/src/chat/__tests__/markers.test.ts (host<->webview parity + CSP-safe scan) and EXTEND the existing chat-panel.test.ts (reuse its FakePanel + fake StreamAdapter harness, no parallel harness): rendered-shell routes non-delta events to an insrc-term__marker--* class with one nonce'd script + CSP intact; integration: status->tool-call(mcp)->status->file-edit->done sequence persists status+done marker rows and enriches the insrc MCP marker while the host invokes no workflow tool. node:test + assert/strict, in-memory ChatSessionStore double.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "markers.test.ts covers the parity (eval(markerWebviewSource()) deepEquals markerFor per kind) + the CSP-safe assertions",
+      "chat-panel.test.ts (extended, same harness) asserts shell marker-routing (not the bare bracket), one nonce'd script + strict CSP, and status+done transcript rows via a scripted turn",
+      "the full vscode-plugin chat sweep is green under tsx --test",
+      "ac1 and ac2 each have >=1 passing proving test"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample event (drift fails build)"
+      },
+      {
+        "level": "unit",
+        "name": "markerWebviewSource() references only the five marker classes; no import / http(s): / asWebviewUri / vscode token"
+      },
+      {
+        "level": "unit",
+        "name": "renderTerminalStyle output (sc1) unchanged by S004 and defines all five marker ::before rules"
+      },
+      {
+        "level": "integration",
+        "name": "a status(thinking)->tool-call(mcp)->status(streaming)->file-edit->done(ok:true) turn posts a marker turn-event per event and persists status+done rows (reuse chat-panel.test.ts harness)"
+      },
+      {
+        "level": "integration",
+        "name": "an insrc MCP tool-call renders an enriched 'insrc · insrc_analyze_step' marker while the host invokes no workflow tool (k8 passthrough)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

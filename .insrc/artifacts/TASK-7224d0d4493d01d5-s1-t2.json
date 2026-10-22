@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c0e9265b-a133-4ae1-807f-bdb571562370",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.607Z",
+    "epicCreatedAt": "2026-10-09T16:27:38.957Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7224d0d4493d01d5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish the feedback recorded on an item's own design records",
+      "parent": {
+        "entityId": "STORY-7224d0d4493d01d5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7224d0d4493d01d5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7224d0d4493d01d5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "70b84e835cf1a8378fe42976ccab806e3ca16a7d072788afc8dc997653132d75",
+        "at": "2026-10-22T12:43:44.607Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.607Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish the feedback recorded on an item's own design records",
+    "summary": "Add DeliveryFeedback and DeliveryItem.feedback to the published types and fill feedback in assembleSnapshot from body.feedback on the item's own DEF, HLD, LLD and PLAN evidence records, with absent optional fields as null, sorted by timestamp, artifactId and id, never inherited. Malformed entries (or a non-array feedback) are left out and named in an incomplete-evidence notice on the item. Regenerate the sample and update the member test.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "An item lists every well-formed feedback entry of its own design records, with its artifactId, in timestamp, artifactId, id order; a parent's or child's feedback is not listed.",
+      "Missing kind, version or segment read as null; feedback on BUILD, CR or ISSUE bodies is not read.",
+      "A malformed entry is left out, the others on the same record are kept, and an incomplete-evidence notice names the record and the count.",
+      "Two snapshots of the same store are identical, including description and feedback."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.test.ts: two snapshots of the same store, with equal timestamps, are identical in order and counts"
+      },
+      {
+        "level": "integration",
+        "name": "contract.test.ts: the JetBrains sample snapshot is plain JSON and equals what the assembler produces"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6f31586f-83b0-4d29-aec6-15c4490f9a2b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.523Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s10",
+    "envelope": {
+      "description": "Add assembleDiffCodeReviewGrounding + DiffGroundingDeps (working-tree diff, HEAD^ fallback)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s10",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s10",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s10-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f2dc15f443faafb255e9050e0c938b4bb5a41b3194258ef4233d63da44c5ff22",
+        "at": "2026-10-22T12:43:45.524Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.524Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add assembleDiffCodeReviewGrounding + DiffGroundingDeps (working-tree diff, HEAD^ fallback)",
+    "summary": "In src/workflow/code-review/grounding.ts add assembleDiffCodeReviewGrounding(repoPath, deps?) — a peer of assembleCodeReviewGrounding — plus a DiffGroundingDeps seam (workingTreeDiff + lastCommitDiff over the git_diff builtin) and a real default. It derives the changed set from the working-tree diff; when that is empty it falls back to gitDiffTool { from:'HEAD^' } (last commit); when HEAD has no parent it falls back to the root commit's contents; and it emits a CodeReviewGrounding whose symbols[] is one per-file pseudo-ChangedSymbolSummary (kind:'file', name:file, hunks in signature, empty edges; a binary marker where no textual hunks). Returns { grounding, changedFiles }. Read-only; hunks bounded by git_diff maxBytes. An empty result is a valid grounding (symbols:[]), not an error; a git failure on BOTH paths propagates.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "assembleDiffCodeReviewGrounding(repoPath, deps?) returns { grounding, changedFiles } with one pseudo-ChangedSymbolSummary per changed file",
+      "non-empty working tree uses the working-tree diff and does NOT call the HEAD^ seam",
+      "empty working tree falls back to { from:'HEAD^' }; HEAD-with-no-parent falls back to the root commit; both-empty yields symbols:[]",
+      "a binary changed file yields a pseudo-symbol with a binary marker (no hunks) still present in changedFiles",
+      "the assembler is read-only (never mutates / reindexes / commits) and a both-paths git failure propagates"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembler: working tree NON-empty -> one row per working-tree changed file (kind:'file', name:file, hunks in signature); HEAD^ seam NOT called"
+      },
+      {
+        "level": "unit",
+        "name": "assembler: working tree EMPTY -> falls back to { from:'HEAD^' } diff; symbols reflect the last commit's changed files"
+      },
+      {
+        "level": "unit",
+        "name": "assembler: a binary changed file -> a pseudo-symbol with a binary marker (no hunks), still present in changedFiles"
+      },
+      {
+        "level": "unit",
+        "name": "assembler: both working-tree and HEAD^ empty -> a valid grounding with symbols:[] (no crash)"
+      },
+      {
+        "level": "unit",
+        "name": "assembler: a truncated GitDiffData still yields a valid grounding (bounded hunks, review proceeds, no crash)"
+      },
+      {
+        "level": "unit",
+        "name": "assembler: neither git call mutates (the injected git seam is read-only; no reindex/commit invoked)"
+      },
+      {
+        "level": "integration",
+        "name": "assembler: a clean-working-tree fixture repo with one commit -> real gitDiffTool returns the last commit's changed files + hunks via the HEAD^ fallback"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

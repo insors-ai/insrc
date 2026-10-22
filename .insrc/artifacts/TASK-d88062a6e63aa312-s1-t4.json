@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5d83cad-6053-403c-b2b7-72e971b9c443",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:43.411Z",
+    "epicCreatedAt": "2026-08-04T19:09:56.031Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d88062a6e63aa312",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Soften buildCoveragePrompt promised-tests framing when no plan",
+      "parent": {
+        "entityId": "STORY-d88062a6e63aa312-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d88062a6e63aa312-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d88062a6e63aa312-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "79811c99cfba87f95c9e4e062147570ebd430936f75e1660fa231a12972fe6db",
+        "at": "2026-10-22T12:44:43.415Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:43.415Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Soften buildCoveragePrompt promised-tests framing when no plan",
+    "summary": "In src/workflow/code-review/dimensions/coverage.ts, when approvedPlan===null, keep promisedTestsOf's empty list but soften the system framing so no missing-promised-test finding is raised ('no approved plan — judge testsReaching coverage of the changed symbols only; do not report missing promised tests'). When a plan is present, the promised-tests section + missing-promised-test rule are unchanged. testsReaching-based coverage is unchanged in all modes. promisedTestsOf is already null-tolerant — only the prompt framing branches.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Plan present: the promised-tests section and the missing-promised-test HIGH rule are byte-identical to today",
+      "Plan null: the promised-tests list is empty and the framing instructs the judge to score testsReaching coverage only, not report missing promised tests",
+      "testsReaching-based coverage behaviour is identical across all three modes",
+      "No throw when approvedPlan is null"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildCoveragePrompt: plan present keeps promised-tests section; plan null emits empty list + softened 'testsReaching only' framing"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

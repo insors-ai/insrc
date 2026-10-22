@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1ab79e8d-f84b-4283-b4ee-e9fab0492878",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.447Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Publish the final sc3 type surface for the IDE fork to mirror",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c960131d725a16eba84bbe7ff0635c48cc91bae782b3b86a211757456d92b235",
+        "at": "2026-10-22T12:43:43.447Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.447Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish the final sc3 type surface for the IDE fork to mirror",
+    "summary": "Final, deliberately non-rollbackable step. Publish the settled DaemonProgressReader + DaemonProgressSnapshot type surface — including whichever of release() and onError() t1 approved — as the contract the IDE fork mirrors, recording explicitly that the fork supplies the implementation and render path (out of scope for this repo). Do this only after the unit and integration suites pass: once mirrored, renaming or narrowing these types breaks lock-step across insrc / insrc-ide and stops being cheaply rollbackable. Record the t1 amendment outcomes, the t2 accessor decision, and the residual open questions (the flag-infrastructure note, and any subject deferred for want of a transport close signal or a live analyze.run) alongside the published surface so the fork inherits an accurate picture rather than a clean-looking one.",
+    "size": "S",
+    "order": 16,
+    "acceptanceChecks": [
+      "The full test sweep passes before publication; publication does not precede green t10, t11 and t15 suites.",
+      "The published surface matches the shipped code exactly, including every t1-approved member and no unapproved member.",
+      "The snapshot accessor is recorded as either a published sc3 member or an s3-internal affordance, with the t2 profiling finding as the stated reason.",
+      "The published record states that the fork owns implementation and render, and that this repo owns only the type surface plus the sc1 wire contract.",
+      "Amendment outcomes for release() and onError() are recorded as approved or rejected, not left ambiguous.",
+      "Residual open questions — the unconfirmed feature-flag infrastructure and any deferred integration subject — are recorded with the published surface.",
+      "No sc1 type and no IpcStreamKind member is changed by this Task."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "full-sweep-green-before-publish: `npx tsx --test 'src/**/__tests__/*.test.ts'` passes, including t10, t11 and (INSRC_LIVE_TESTS=1) t15, before publication"
+      },
+      {
+        "level": "unit",
+        "name": "published-surface-matches-shipped-code: every member in the published record exists in the shipped types and no unapproved member appears"
+      },
+      {
+        "level": "smoke",
+        "name": "publication-record-completeness: accessor decision, t1 amendment outcomes, fork-ownership statement and residual open questions are all recorded"
+      },
+      {
+        "level": "smoke",
+        "name": "no-sc1-or-wire-change: `git diff` shows no sc1 type and no IpcStreamKind member changed by this Task"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

@@ -30,124 +30,6 @@
       "AMD-2f27754d4ad00b8e-8"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Storing round content through the existing updateContent preserves earlier round outcomes in the log and satisfies ac12.",
-          "evidence": "DEF ac12 requires an entry 'with the round's outcome, so earlier rounds can still be read'. LifecycleService.updateContent supplies only `options: { operation: 'update' }`. ArtifactStore constructs entries with revision number/hash and includes outcome only when `options.outcome !== undefined`; it stores neither the old payload nor the new payload in the entry. The proposed three-argument RoundWriter cannot supply an outcome. Creating the first round without logging also leaves that round unavailable after its replacement. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts]",
-          "action": "Specify how round outcomes enter the staged ChangeLogEntry, including preservation of the first overwritten round. Extend the writer contract or explicitly derive the outcome inside the queued mutation.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Current recovery can overwrite a moved head, and the current TESTS writer restores its prior JSON when markdown writing fails.",
-          "evidence": "completePending appends a missing entry, then executes `if (current !== op.bytes) ...writeHead...(path, op.bytes)` without checking the prior head. persistTestRecordTask captures priorJson, writes JSON before markdown, and restores priorJson or removes the new JSON in its markdown-failure catch. [files: src/workflow/artifact-core/store.ts, src/workflow/runners/build/test-record.ts]",
-          "action": "Preserve the proposed recovery conflict check and the explicitly scoped rollback behavior.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Durable sidecar and journal implementations are new work behind existing ports; the proposed RoundWriter shape already exists in the completion hook.",
-          "evidence": "sidecar.ts defines SidecarIo, createMemorySidecar and an unframed appendSidecarLine; journal.ts defines WriteJournal and createMemoryJournal. Searches found no production durable implementations. ensureBuildRecordOnCompletion already accepts `{ writer: BuildContentWriter; actor: Actor }`, where updateContent takes id, actor and HeadPayload and returns Promise<boolean>. [files: src/workflow/artifact-core/sidecar.ts, src/workflow/artifact-core/journal.ts, src/workflow/runners/build/completion-record.ts]",
-          "action": "Reuse these ports and consolidate the existing completion-hook writer type.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Supplying RoundWriter from the code-review step handler covers production CR record persistence.",
-          "evidence": "The daemon also registers `codeReview.run` through codeReviewRunStart. src/daemon/code-review-rpc.ts calls runCodeReview directly in degraded, injected-write and default branches; the default branch supplies no dependencies. The step handler routes daemon reviews to this RPC. This production writer is absent from the design's registry and RoundWriter change-site inventories, so those reviews retain the explicitly unchanged no-through finalize path. [files: src/daemon/index.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts]",
-          "action": "Add codeReviewRunStart and its dependency contract to the change sites. Supply the repository RoundWriter in every runner branch and test both daemon and controller review routes.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing heads without sidecars can pass lifecycle integrity checks with empty history.",
-          "evidence": "checkIntegrity returns `{ ok: true }` when `logTail?.revision === undefined`, after checking the head's own hash. LifecycleService.inspect and apply select the last revision-bearing entry, which is undefined for an empty log. Thus the proposed missing-file-as-empty reader preserves this compatibility, provided the head itself is valid. [files: src/workflow/artifact-core/lifecycle.ts, src/workflow/artifact-core/lifecycle-service.ts]",
-          "action": "Keep an integration fixture with an existing valid head and no sidecars.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Durable lifecycle wiring and prior-head recovery checks are assigned to s4 rather than unauthorized extensions into s2 or s3.",
-          "evidence": "The HLD assigns physical sidecar storage and recovery to s4. AMD-2f27754d4ad00b8e-8 has `status: 'approved'` and adds s4 as an sc4 consumer for durable LifecycleService wiring. core-data-model.md explicitly assigns 'Recovery conflict (s4)' and staging the expected prior-head hash to s4. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, .insrc/artifacts/AMD-2f27754d4ad00b8e-8.json, docs/plans/core-data-model.md]",
-          "action": "Retain these ownership references; leave lifecycle transition rules and Task build-history semantics with their designated stories.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "An oversized entry rejected by appendRecord can be recovered simply by shortening the outcome and retrying.",
-          "evidence": "ArtifactStore calls `journal.stage` before `history.appendLog`. Subsequent writes and updates execute completePending first, which retries the immutable staged entry. The proposed size check occurs only at appendRecord, so an oversized entry becomes a permanently failing pending operation; a shorter replacement cannot reach staging. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, src/workflow/artifact-core/journal.ts]",
-          "action": "Validate serialized entry size before staging, using the same framing validator as appendRecord. Specify recovery for already-staged invalid entries and test that a rejected oversized operation does not block a later valid write.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each upstream s4 acceptance criterion has a named proving test in the design.",
-          "evidence": "The DEF assigns ac11 to merging appended history/feedback, ac12 to preserving round outcomes, and ac13 to head conflicts. The design maps these to two-clone merge/read tests, round-recording tests and head-conflict/recovery tests respectively. The existing store-kit supplies stage, append, replace and clear fault injection suitable for the proposed recovery matrix. This verifies test-plan coverage, not execution or passing results. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/epics/one-common-model-every-artifact-E202610192f27754d/S004/LLD.md, src/workflow/artifact-core/__tests__/store-kit.ts]",
-          "action": "Make ac12 assertions inspect actual historical outcomes across multiple replacements, and add the omitted daemon CR route and oversized-staging regression cases identified above.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 3,
-        "med": 0,
-        "low": 5,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-21T09:10:27.150Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-21T09:15:29.045Z",
-    "reviewOverride": {
-      "reason": "Two authoring passes; the daemon review went from 5 HIGH to 3 HIGH and the three remaining findings (round outcome on the staged entry, the codeReview.run RPC writer, size validation before staging) are recorded as binding requirements in docs/plans/core-data-model.md for the plan and the build.",
-      "at": "2026-10-21T09:15:29.044Z"
-    },
     "questionResolutions": {
       "q162d5894": {
         "question": "After a merge the union of both clones' log lines can be ahead of the head git kept (log-ahead-of-head), and ArtifactStore.write refuses only a hash-mismatch: should a write on a log-ahead-of-head artifact also need the conflict-resolved option, or should the next ordinary write move the head up to the log?",
@@ -177,6 +59,64 @@
         "rationale": "The citations point at the s1 bundles; this is a documentation gap, not a design one, covered by the LLD approval override.",
         "resolvedAt": "2026-10-21T09:18:35.088Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "79edac09c8817e599781a0f53b4b58e5851c1ba0720732acf9b4b8c9c0f92f38",
+        "at": "2026-10-21T09:10:21.659Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T09:15:29.045Z",
+        "override": {
+          "reason": "Two authoring passes; the daemon review went from 5 HIGH to 3 HIGH and the three remaining findings (round outcome on the staged entry, the codeReview.run RPC writer, size validation before staging) are recorded as binding requirements in docs/plans/core-data-model.md for the plan and the build."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 3,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-10-21T09:10:27.150Z",
+        "report": {
+          "entityId": "LLD-2f27754d4ad00b8e-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2f27754d4ad00b8e-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

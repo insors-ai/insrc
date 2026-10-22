@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7de8c2f6-946b-4aad-bc47-557349a864a9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.295Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bring assembleFallbackShell to context-band parity",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97e289e28841db07-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-97e289e28841db07-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e46ed1b596c9c682fcdbb1aaf85869b6a8cb81ae7dc599a72afb09f570fdfcd8",
+        "at": "2026-10-22T12:44:01.298Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.299Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bring assembleFallbackShell to context-band parity",
+    "summary": "Extend assembleFallbackShell (fallback.ts) to render the same narrative sections + escaped source-link region as buildHtml (was svg-only), guarded so the empty-sections+no-sourceLink case stays byte-identical.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "assembleFallbackShell renders narrated.sections + the escaped sourceLink <a> matching buildHtml's band.",
+      "With empty sections and no sourceLink, assembleFallbackShell output is byte-identical to before.",
+      "No remote URL appears in the fallback output."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "assembleFallbackShell parity + empty-case byte-identical golden"
+      },
+      {
+        "level": "unit",
+        "name": "assembleFallbackShell output has no remote URL"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

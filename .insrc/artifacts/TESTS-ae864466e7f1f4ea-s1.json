@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ae864466e7f1f4ea",
+    "storyId": "s1",
+    "createdAt": "2026-10-17T16:50:34.941Z",
+    "updatedAt": "2026-10-17T16:50:34.941Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T16:43:29.367Z",
+    "epicSlug": "resolve-calls-methods-class-defined-another",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "55971571fe807d57ff74712ff9a79bea98d923efe975205c8b84b552f1d1c4ec",
+        "at": "2026-10-17T16:50:34.941Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "f14d99a9",
+        "ranAt": "2026-10-17T16:50:34.941Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/method-calls-cross-file.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/indexer/__tests__/method-calls-cross-file.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/method-calls-cross-file.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1091,
+            "titles": [
+              {
+                "title": "a call to a method of an exported class in an imported file is an edge from the caller",
+                "result": "pass"
+              },
+              {
+                "title": "a private method, a #name method and a method of a class the file does not export are not resolved across files",
+                "result": "pass"
+              },
+              {
+                "title": "a method name that two imported classes share is recorded ambiguous with both candidates, not guessed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

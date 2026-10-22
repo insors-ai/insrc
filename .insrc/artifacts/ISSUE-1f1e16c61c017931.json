@@ -21,32 +21,33 @@
     "epicSlug": "src-shared-classify-ts-carries-second",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-10T14:49:33.522Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d49466982cc119e97cea3969089b87b34e6749c8a007712668965cad2899b4e0",
+        "at": "2026-10-10T14:49:33.522Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "src/shared holds a second size scale and two class lists that nothing uses",
     "reproduction": "Search the sources for each name `src/shared/classify.ts` exports and for importers of its two sibling files. Observed on 2026-10-10: `ScopeSize` (seven steps, S to XXXXL), `SCOPE_META`, `SCOPE_ORDER`, `scopeLabel`, this file's `scopeDescription`, `ClassifyInput` and `ClassifyResult` are used nowhere outside the file; `src/shared/scope-classes.ts` and `src/shared/intent-classes.ts` are imported by nothing. One export of the file is in use: the type `ClassChoice`, imported by `src/shared/brainstorm-classes.ts` for the brainstorm workflow. The file's comment says that a size a model does not return in a recognisable form becomes M. Expected: the sources hold one size scale, the analyzer's five steps counted by code with no default, and no description of another.",
     "rootCause": "The file is left from an earlier classifier that sized every kind of request on its own seven-step scale and fell back to M. The analyzer replaced it with a size counted by code, and the callers of the old classifier were removed, but the file, its scale and its two class lists were not. An earlier note said nothing imports the file; that was wrong for one type, `ClassChoice`.",
-    "fixIntent": "Delete the leftover code of the old request-size classifier: its seven-step size scale, the helper functions for that scale, two types only it used, and two category-list files that nothing imports. Keep the `ClassChoice` type, which the brainstorm workflow still uses. Nothing the system does changes; the build and all tests pass as before.",
-    "feedback": [
-      {
-        "id": "9056bd1b",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-13T14:23:19.318Z",
-        "target": {
-          "file": "docs/standalone/src-shared-classify-ts-carries-second-E202610101f1e16c6/ISSUE.md",
-          "version": "6da4c3ef651a1e93"
-        },
-        "comment": "Explain this in a human understandable form.",
-        "kind": "comment",
-        "anchor": {
-          "quote": "The sources no longer hold the unused size scale, its helper functions, the two unused types, or the two class lists nothing imports. The ClassChoice type the brainstorm workflow uses stays available to it. No behaviour changes: the build and every suite pass as before.",
-          "sectionSlug": "fix-intent"
-        },
-        "decision": "feedback",
-        "batchId": "ee9e59a5"
-      }
-    ]
+    "fixIntent": "Delete the leftover code of the old request-size classifier: its seven-step size scale, the helper functions for that scale, two types only it used, and two category-list files that nothing imports. Keep the `ClassChoice` type, which the brainstorm workflow still uses. Nothing the system does changes; the build and all tests pass as before."
   },
   "citations": [
     {

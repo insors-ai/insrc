@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b7672631-2493-4be8-a071-24119c47dd7f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.443Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Move the two live-store tests to a temporary store and search again for openers",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1dc98e96339ec8b034f94bde7037e9026548022bdd44a1ecdeed953b5aa81fc6",
+        "at": "2026-10-22T12:44:35.443Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.444Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the two live-store tests to a temporary store and search again for openers",
+    "summary": "Give src/analyze/explore/__tests__/freeform-probe-scope.test.ts and phase5-explorations-params.test.ts a temporary store through setGraphStorePath; this part does not wait for anything. Then, after t8, repeat the search for code that opens the live store over everything the CLI's and the MCP server's entry points import, and record what it finds; any further opener is handled like the review's or raised before t10.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "Both test files pass with a temporary home and create no file at the user's real store path",
+      "The search's result is recorded with the list of entry points covered and every opener found, each marked handled or raised"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the two formerly live-store test files pass against a temporary store and create nothing at the default path"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

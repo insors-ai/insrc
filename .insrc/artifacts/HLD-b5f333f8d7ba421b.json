@@ -20,20 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "b5f333f8d7ba421b",
     "epicSlug": "expose-all-daemon-config-settings-via",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-19T18:12:38.906Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-19T18:35:53.063Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9204b96a5c2c9f7c4a86a73a8ccf9dcc8fa83e1bb4fe86341f49ec152bbf4377",
+        "at": "2026-09-19T18:11:33.929Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T18:35:53.063Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-19T18:12:38.906Z",
+        "report": {
+          "entityId": "HLD-b5f333f8d7ba421b",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-b5f333f8d7ba421b-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "frameworkSummary": "A daemon-owned, self-describing settings contract feeds a native JetBrains Settings page that renders whatever the daemon reports. The daemon's single-definition catalog is enriched with two structured fields (allowed fixed values and a group label) and, together with the recognized role taxonomy and tier names, is exposed over ONE new read-only IPC. The plugin adds config gateway methods behind the established sealed three-state result pattern and a native applicationConfigurable that builds a grouped, collapsible Swing form purely from the daemon's description — hardcoding no setting, group, role, or tier. Reads use the new catalog IPC plus the existing value read; writes reuse the existing segment-aware write. The plugin owns no settings semantics; the daemon stays the single source of truth.",

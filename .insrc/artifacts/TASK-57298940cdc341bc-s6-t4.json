@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cfeb3a59-633e-497d-bf5f-b8d068102eb8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:34.781Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add LogEditorSection (sc3 DebugSection + project resolution) and append it to DebugConfigurable.sections()",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a33a06d23e01fd9001651e05db439c23d233659dd09159a0ea53327de27b2706",
+        "at": "2026-10-22T12:43:34.781Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:34.782Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add LogEditorSection (sc3 DebugSection + project resolution) and append it to DebugConfigurable.sections()",
+    "summary": "New debug/LogEditorSection.kt implementing sc3 DebugSection (title 'Logs' + off-EDT component()): a read-only category picker (Daemon/Agent from LogCategories.all) + an 'Open in editor' control that resolves a Project via an injectable projectResolver (default = DataManager DataContext CommonDataKeys.PROJECT of the section component, falling back to ProjectManager.getInstance().openProjects.firstOrNull()) and calls LogEditorSurface.openLog; a null resolve renders a clear 'open a project to view logs' line and opens nothing. Then the ONE-LINE edit to ops/DebugConfigurable.kt: sections()=listOf(statusSection(), orphansSection(), mcpSection(), logSection()) + a private logSection()=LogEditorSection() factory (mirrors S005's mcpSection()). The 'Open in editor' button lives in LogEditorSection.kt (NOT DebugConfigurable.kt), so DebugConfigurable's sole-mutating-control (Kill button) source-scan invariant stays true. Per the s3 critique, RESOLVE at build the real DataManager/DataContext accessor for CommonDataKeys.PROJECT (grep existing plugin DataManager/CommonDataKeys usages; if DataContext is not cleanly available inside a Configurable component, fall back to a ProjectManager-only resolver) — the injectable projectResolver seam stays unchanged so the section test uses a fake resolver regardless.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "LogEditorSection implements DebugSection, resolves a Project (real resolved DataContext accessor + openProjects fallback, or ProjectManager-only if DataContext is unavailable in a Configurable), opens the log ONLY in an editor tab (not inline), and degrades to a clear line when no project resolves",
+      "DebugConfigurable.sections() returns [status, orphans, mcp, log] with the log section appended last; S004/S005 sections + buildBody() unchanged; parent settings page + plugin.xml byte-unchanged (k1/k4)",
+      "The section adds no log-mutating control (nothing deletes/rotates/clears a log); the epic's single mutation stays S004's orphan kill (k3); the 'Open in editor' button lives in LogEditorSection.kt, not DebugConfigurable.kt"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "LogEditorSectionTest.sourceScanImplementsDebugSectionResolvesProjectDegradesOpensEditorNotInlineNoLogMutation"
+      },
+      {
+        "level": "unit",
+        "name": "DebugPageTest.sectionsAppendsLogAfterStatusOrphansMcp (+ existing ac2 sole-mutating-control Kill-button assertion still passes)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

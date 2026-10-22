@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-87260626-ebc0-4b41-bad1-fe23af341a29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.475Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement the daemon verifier (test-run + working-tree diff → BuildTestVerdict + filesTouched) behind an injectable seam",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "43df57366e95edb33a9cb485f1207b6010bd9463b6b834d85690f6bbcfd83116",
+        "at": "2026-10-22T12:43:15.475Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.476Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the daemon verifier (test-run + working-tree diff → BuildTestVerdict + filesTouched) behind an injectable seam",
+    "summary": "Extract the self-contained daemon-side verifier that the sequencer and both test Tasks assume as an injectable 'fake daemon test-run+diff hook'. It takes the stated test command verbatim from a PlanTask, runs it as a subprocess, captures exit code + summary into BuildTestVerdict ({ command, passed, exitCode, summary }), and takes the git working-tree diff to compute filesTouched — the daemon's OWN authority for a reached outcome, computed independently of the advisory report. Exposes a single narrow interface (the seam t8/t9 stub) and handles the empty/absent stated test command case explicitly (no command → not a passing verdict). Real subprocess/git mechanics live here, not inside sequencer guts (split out of the former t5 L per s3 critique; invariants c1).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The verifier is a self-contained module exposing a single injectable interface that, given a PlanTask and repoRoot, extracts the stated test command verbatim, runs it, and returns BuildTestVerdict + filesTouched computed from the git working-tree diff — the same seam t8/t9 fake instead of reaching a real provider/git.",
+      "An empty or absent stated test command yields a non-passing verdict (never a fabricated 'passed'), and filesTouched reflects only the actual working-tree diff; the verdict is computed with no reference to any TaskImplementerReport."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "verifier: given a PlanTask + repoRoot the injectable verifier extracts the stated test command verbatim, returns BuildTestVerdict + filesTouched from the working-tree diff, and yields a non-passing verdict (never a fabricated 'passed') for an empty/absent command"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

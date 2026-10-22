@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2ba33415-92d3-4f14-93f2-57049437adfe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.473Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The docs constraint and decision tasks keep to their area at retrieval",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0d7a07351bf879afc7426fc42bf5aed04f94e52a4b145581b998d375b245d6f5",
+        "at": "2026-10-22T12:44:25.473Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.474Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The docs constraint and decision tasks keep to their area at retrieval",
+    "summary": "Add the optional area to RunDocConstraintEnumerateArgs, RunDocDecisionTraceArgs and DocsRetrievalArgs, forwarded where each shared runner builds its prepare function's arguments and where prepare calls retrieval, so that the keyword pass ranks and limits within the area and the completeness record counts within it. The docs constraint and decision tasks set it for a module or file scope. The lookup pipeline's direct calls of the prepare functions pass no area.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A constraint task and a decision task with a module scope retrieve only sections under that directory, and their completeness records count within it, through the runner, its prepare function and retrieval",
+      "The same two runners called without an area, and the lookup pipeline's direct calls of the prepare functions, return what they did before",
+      "Dropping the area at the hand-over from runner to prepare makes a test fail"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

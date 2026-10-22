@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0738eb0f-00f8-4877-8ae3-4a6dc70b0837",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.208Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Apply the lifecycle helper to analyze-step and build-step",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c5c6c818ccc1bd32fb927d4f7fff702f6bd9266957efd5371e409b5e256e96b2",
+        "at": "2026-10-22T12:43:43.208Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.208Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply the lifecycle helper to analyze-step and build-step",
+    "summary": "Mechanical repetition of the t7 mechanism at the two remaining servers, kept separate so a per-server wiring omission is distinguishable in review from a lifecycle bug. At each of the analyze-step and build-step handlers registered inside buildInsrcMcpServer (at the sites established by t1), read the token off request _meta, construct exactly one sink via mcpProgressSink before the daemon operation starts, and attach the t7 reader helper — reusing it verbatim, not reimplementing the attach/settle/teardown logic per server. Same two-file shape per server: the request entry where _meta first becomes observable, and the per-phase dispatch point. Rollout narrows to workflow.run only — i.e. this Task drops the analyze-step half and records why — if t1 found analyze.run does not share the stream:'progress' binding. Handlers hold a ProgressSink and call report(); the notification type stays confined to the sink module.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "The analyze-step and build-step handlers each construct exactly one ProgressSink per request from _meta, before the daemon operation is invoked.",
+      "Both servers reuse the t7 lifecycle helper unchanged — no attach, settled-flag, or teardown logic is reimplemented per server.",
+      "McpProgressNotification does not appear anywhere in handler code — handlers hold a ProgressSink and call report().",
+      "No file under src/daemon/ is modified by this Task.",
+      "If t1 found analyze.run does not share the stream:'progress' binding, the analyze-step wiring is narrowed accordingly and the deviation is recorded in the code."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "analyze-step and build-step handlers each construct exactly one sink per request from _meta before the stubbed daemon operation starts, asserted via the sink-factory spy"
+      },
+      {
+        "level": "integration",
+        "name": "both servers reuse the t7 lifecycle helper unchanged: the same attach / settled-flag / teardown assertions pass per server with no per-server reimplementation"
+      },
+      {
+        "level": "unit",
+        "name": "McpProgressNotification is absent from handler code — a source-level assertion that handlers hold only a ProgressSink and call report()"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

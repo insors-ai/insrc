@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-144bfeae-247e-4ba7-8ee8-333fa99d35b6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.766Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Planner core",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "95edcebb9179c2dce37d88b0c26f926666885778d89cba50218cff5afae8d6fe",
+        "at": "2026-10-22T12:43:22.766Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.767Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Planner core",
+    "summary": "Add src/workflow/convert/plan.ts and src/workflow/convert/raw-heads.ts: refuse on a merge in progress or uncommitted changes under .insrc/artifacts and docs/epics; read every file raw, list unreadable files as problems; compute the before-snapshot with legacyDeliveryView; return equal plans for the same tree and an empty plan for a converted tree; recompute-and-compare for apply. Test src/workflow/convert/__tests__/convert-preview.test.ts.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A merge or dirty tree is refused naming the paths",
+      "An unreadable file is a problem in the plan and nothing is skipped silently",
+      "Two plans of the same tree are equal and a preview writes nothing"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-preview.test.ts: a preview writes nothing, refuses a dirty tree and lists unreadable files as problems"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

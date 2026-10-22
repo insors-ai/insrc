@@ -21,7 +21,27 @@
     "epicSlug": "decode-socket-child-process-output-utf",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-13T06:10:03.483Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "b0fd5818231371e7f301a67bd7efc646090d4b379ec212bcf22e84ede6820f9a",
+        "at": "2026-10-13T06:10:03.483Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Decode socket and child-process output as a UTF-8 stream so a character split across two reads is not corrupted",

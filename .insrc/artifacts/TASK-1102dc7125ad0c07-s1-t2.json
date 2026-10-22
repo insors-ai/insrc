@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-93ef234e-ebec-445b-ada0-0c374ff519d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.928Z",
+    "epicCreatedAt": "2026-10-17T06:04:27.059Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1102dc7125ad0c07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Coverage shows each test file's latest run from the TESTS record",
+      "parent": {
+        "entityId": "STORY-1102dc7125ad0c07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1102dc7125ad0c07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1102dc7125ad0c07-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9329926ed54a80c72de42a2b62204994c862a6cbb9d68571cb07089c2b4db9e1",
+        "at": "2026-10-22T12:43:12.928Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.928Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Coverage shows each test file's latest run from the TESTS record",
+    "summary": "buildCoveragePrompt replaces the one-line build-record signal with a trailing section built per test file: the latest run by ranAt (valid ranAt beats missing; tie or no ranAt -> the failing run), chosen before normalisation; that run alone decides the file; a timed-out, non-zero or title-less latest run makes the file failing/unverified; titles only in older runs are unverified; a malformed latest entry is an unverified barrier; entries without a file name are dropped with a note; the BUILD record's per-task passed is shown, or 'unavailable'. With no TESTS record, today's every-test-unverified rule stays.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A re-run task stored first with a newer ranAt decides its file's results.",
+      "A newer timed-out or title-less run supersedes an older passing title, which is not shown as passing.",
+      "A newer malformed entry for a file makes the file unverified; the older pass is not shown.",
+      "A tie or missing ranAt is decided by the failing run.",
+      "Per-task passed from the BUILD record is shown; no tasks or no passed shows 'unavailable'.",
+      "With testRecord null the prompt keeps the every-test-unverified rule."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

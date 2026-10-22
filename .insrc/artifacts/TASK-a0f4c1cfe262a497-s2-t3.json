@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e9eb932-800c-4b47-99aa-0bf01fc3ca04",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.817Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add collectBuildChangeLog (changed set → attributed ChangeLog)",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bd4d404be36a53a0dc72448d471245217cfa662ac67d2d1bf6506d73e08fbef0",
+        "at": "2026-10-22T12:44:04.817Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.818Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add collectBuildChangeLog (changed set → attributed ChangeLog)",
+    "summary": "Add collectBuildChangeLog(repoPath, ctx:{author,timestamp,version?}): Promise<ChangeLog> — for each path from changedFiles(repoPath), build a ChangeLogEntry {target:{file, version?}, author, timestamp, summary?} (segment omitted, file-level); empty/failed changed set → []. Grounded in the real git_diff set (lc1). Co-locate its unit test.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "each changed file → one attributed ChangeLogEntry (file+author+timestamp+version?)",
+      "empty changed set (or git_diff failure caught) → [] — never throws out of collectBuildChangeLog"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "collectBuildChangeLog: each changed file → one ChangeLogEntry {target.file, author, timestamp, version?}, segment omitted; empty changed set → []"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

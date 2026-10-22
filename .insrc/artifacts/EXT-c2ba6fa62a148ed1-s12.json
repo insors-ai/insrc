@@ -21,7 +21,26 @@
     "epicHash": "c2ba6fa62a148ed1",
     "epicSlug": "complete-consistent-richer-code-index-one",
     "storyId": "s12",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "758e4ee88bd917b80f3f0243ae6f2d4a3bfd3c249cbac038414edac5dfe64c94",
+        "at": "2026-10-17T09:16:43.958Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "L",
@@ -87,19 +106,7 @@
     "nextAction": {
       "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"c2ba6fa62a148ed1\",\"storyId\":\"s12\"}",
       "description": "Approve the HLD amendment (`AMD-c2ba6fa62a148ed1-7`) and the updated Epic, then run `design.story` for the new Story `s12` to produce its LLD."
-    },
-    "feedback": [
-      {
-        "id": "85eecc34",
-        "author": "Subho Ghosh (stakeholder, chat 2026-10-17)",
-        "timestamp": "2026-10-17T16:23:58.496Z",
-        "target": {
-          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S012/EXT.md"
-        },
-        "comment": "Boundary decision 2026-10-17 (s13 option A): s12's parser work also covers emitting a binding key with every call and type reference, in every supported parser, derived from the caller's own file without reading another file: (target file id, exported name) for TypeScript/JavaScript and Python (relative or path-mapped specifiers resolved to the target's absolute path; namespace imports and module-qualified calls likewise), and (package, name) for Go, Java, Kotlin and Scala (explicit or wildcard import, or the caller's own package for an unqualified call); plus classifying a call as external (bound to a module outside the repository) or unbindable (unknown receiver type, Scala implicits, computed dynamic imports) at parse time. s13 consumes these keys in its pending map. Build order: s1 -> s3 -> s2 -> s12 -> s13.",
-        "kind": "feedback"
-      }
-    ]
+    }
   },
   "citations": [
     {

@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "d4b2cd1c2c1ba649",
+    "storyId": "s1",
+    "createdAt": "2026-10-19T05:27:52.965Z",
+    "updatedAt": "2026-10-19T05:39:07.513Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-19T05:18:18.372Z",
+    "epicSlug": "stalled-premise-call-discards-daemon-s",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "07e144c57cb71da705e93e3003f4bf8fab6168e65203cfbb2161acc3e23e6497",
+        "at": "2026-10-19T05:27:52.965Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "881891a4",
+        "ranAt": "2026-10-19T05:39:07.513Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-review-session.test.ts"
+            ]
+          },
+          {
+            "name": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-subprocess.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/__tests__/review.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/__tests__/review.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13970,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-subprocess.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4360,
+            "titles": [
+              {
+                "title": "a timed-out CLI child is killed with its process group, so a grandchild it started is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured and complete run the CLI in opts.cwd when it is given",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured without opts.cwd runs the CLI in the inherited working directory",
+                "result": "pass"
+              },
+              {
+                "title": "a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 652,
+            "titles": [
+              {
+                "title": "HIGH inventory finding when claim says two but ripgrep finds three",
+                "result": "pass"
+              },
+              {
+                "title": "citation confirmed by path:line read is LOW",
+                "result": "pass"
+              },
+              {
+                "title": "verdict is block when HIGH present, pass when all LOW",
+                "result": "pass"
+              },
+              {
+                "title": "gatherEvidence sets truncated when matches exceed the cap",
+                "result": "pass"
+              },
+              {
+                "title": "auto finding yields artifactEdits whose find is a real substring; manual yields options and no edits",
+                "result": "pass"
+              },
+              {
+                "title": "renderReviewReport emits a verdict header, a table, and orders HIGH first",
+                "result": "pass"
+              },
+              {
+                "title": "gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)",
+                "result": "pass"
+              },
+              {
+                "title": "a premise call that fails once is retried as a fresh call and judged; the review completes",
+                "result": "pass"
+              },
+              {
+                "title": "a premise call that fails twice is recorded as not judged, never as a pass, and every other premise is kept",
+                "result": "pass"
+              },
+              {
+                "title": "every premise judgement carries a per-call limit well under the provider default",
+                "result": "pass"
+              },
+              {
+                "title": "a cancelled review still ends at once instead of recording the premise as not judged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

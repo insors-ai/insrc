@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-78c732de-b13e-4171-9e39-f0c423f8ca47",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.565Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move the pane's host to the open document's path, the one call and the chat message",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fdd3d41831cab97b82371ce622e58cd7313621c1e914b0f47ec956722643fc6f",
+        "at": "2026-10-22T12:43:56.568Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.569Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the pane's host to the open document's path, the one call and the chat message",
+    "summary": "The host keeps the open document's id, path and companions; acts on a decision for that document only (approve and reject need it pending, feedback does not); calls decide once; posts the result; re-reads the list and the document by path; and hands the chat one message. It answers 'open-companion' with the file's text, scripts stamped with the shell's nonce, and re-posts the open document when the rebuilt shell sends its boot ping.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A decision calls decide once with the document's path and every comment, and the chat gets one message, the decision line alone when there are no comments",
+      "Send feedback works on a document that is not pending; approve and reject are refused for it",
+      "A companion of the open document is posted with its scripts stamped; any other path, or a failed read, is posted with no html",
+      "A boot ping from a rebuilt shell re-posts the open document, pending or not",
+      "A failing decide or chat hand-over is reported and nothing saved is undone",
+      "The tests that pin the replaced decision handling are rewritten for the new call; none is removed without a replacement"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: a decision with no comments sends the chat the decision line alone"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result"
+      },
+      {
+        "level": "integration",
+        "name": "docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

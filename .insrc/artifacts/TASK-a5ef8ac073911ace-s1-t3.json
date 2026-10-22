@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f56581d1-95f0-44ac-b011-1c100793888f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.308Z",
+    "epicCreatedAt": "2026-07-28T15:15:41.182Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a5ef8ac073911ace",
+    "storyId": "s1",
+    "envelope": {
+      "description": "inventory-ci.ts runtime",
+      "parent": {
+        "entityId": "STORY-a5ef8ac073911ace-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a5ef8ac073911ace-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0aed10dcdd2e2f9a2af00ea0adf125d1e1652164cd125abd65e0a8297416359b",
+        "at": "2026-10-22T12:44:06.312Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.312Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "inventory-ci.ts runtime",
+    "summary": "Create src/analyze/runtimes/infra/inventory-ci.ts: `infraInventoryCiRuntime` (templateId 'infra.inventory.ci'). Filters .github/workflows/*.yml (js-yaml parse name + normalized `on` triggers [string/array/map → sorted string[]] + job ids + step `uses`) and .gitlab-ci.yml (GITLAB_CI_RE; parse stages + job ids excluding reserved keys stages/variables/default/include). Returns { outputs: Map(['ci-inventory', CiInventory]) } = {githubWorkflows[], gitlabCi[], truncated}. Deterministic/sorted; per-file YAML parse failure swallowed.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "inventory-ci.ts exports infraInventoryCiRuntime with templateId 'infra.inventory.ci' and output key 'ci-inventory'",
+      "GHA `on` normalizes across string/array/map to sorted trigger names; job ids + step uses captured; GitLab reserved keys excluded from jobs",
+      "deterministic/sorted; parse failures swallowed",
+      "tsc passes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "ci runtime over a .github/workflows/ci.yml + .gitlab-ci.yml yields ci-inventory (triggers/jobs/stepUses + stages/jobs)"
+      },
+      {
+        "level": "unit",
+        "name": "GHA `on` normalization across string/array/map to sorted trigger names + GitLab reserved-key exclusion (stages/variables/default/include not counted as jobs)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

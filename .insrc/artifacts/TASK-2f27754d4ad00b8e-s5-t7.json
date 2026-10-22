@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8633ae0-3a67-4199-8159-e15bf6b3aac6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.232Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Give the registry the services and add the daemon feedback and identity methods",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s5-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7d9d0ff53ac271110922d91429bbe89ad795d43c09ca08ab3cb5995d21bf6feb",
+        "at": "2026-10-22T12:43:21.232Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.232Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the registry the services and add the daemon feedback and identity methods",
+    "summary": "Extend the repository entry in src/daemon/lifecycle-registry.ts with a FeedbackService (and its History) and the IdentityService, and register artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare in the handler map of src/daemon/index.ts, with the request actor handled by approvalActorOf and the current actor as the default. A repository that cannot get an entry is refused with that error.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "artifact.feedback.add stores an entry for the request's actor id, or the current actor when none is given, through the repository's FeedbackService",
+      "artifact.feedback.list returns threads, open ones when asked, for any artifact id including a Task",
+      "identity.show and identity.declare read and write the identity file through the service",
+      "an actor that is not a namespaced lower-case id is refused and nothing is recorded",
+      "a repository whose registry entry cannot be created is refused"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "feedback-wiring.test.ts: the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

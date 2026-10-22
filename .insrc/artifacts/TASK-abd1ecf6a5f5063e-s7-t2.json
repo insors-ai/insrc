@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-10481fb8-19be-476f-bef3-0630c85bd129",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.534Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Add the 'spec.resolveApproved' daemon IPC handler with a small pure error-to-code mapper",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4314e171314e3cf01f2413c80a9a3f6a0e549180b7ade1fc9aa68f7ba0006a58",
+        "at": "2026-10-22T12:44:10.534Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.535Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the 'spec.resolveApproved' daemon IPC handler with a small pure error-to-code mapper",
+    "summary": "In src/daemon/index.ts, add a 'spec.resolveApproved' entry in the handler map next to 'workflow.approve' (daemon/index.ts:551). Read params { repo, specHash }, resolve repoPath = p.repo || process.env.INSRC_REPO (return { error } when empty), `const { requireApprovedSpec } = await import('../workflow/gates.js')`, then try -> { spec } / catch -> { error, code }. Per the s3 critique, extract the error->{error,code} mapping into a small pure helper (SpecNotApprovedError -> 'not-approved', SpecArtifactNotFoundError -> 'not-found', else a generic error) so it is unit-testable WITHOUT standing up a live daemon socket. Honors k11. No MCP tool wiring in s7 (s8/s9 add the consuming call).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "daemon/index.ts registers 'spec.resolveApproved' mirroring the 'workflow.approve' repoPath-resolution + dynamic-import pattern",
+      "the pure error->{error,code} mapper maps SpecNotApprovedError->'not-approved', SpecArtifactNotFoundError->'not-found', success->{ spec }",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "spec-resolver.test.ts: the pure error->{error,code} mapper returns 'not-approved' for SpecNotApprovedError, 'not-found' for SpecArtifactNotFoundError, { spec } on success (covered in t4)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

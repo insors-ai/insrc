@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7fc3f24-428b-4a2f-a3ae-f7fd899cc33e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.337Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement computeHldEffectiveHash (sha256 base + approved-amendment fold)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "10360c256e5b8aa2eb3ad038bb1119cc8f7d2cf81982303c508747e1f73403a3",
+        "at": "2026-10-22T12:43:33.337Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.338Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement computeHldEffectiveHash (sha256 base + approved-amendment fold)",
+    "summary": "Add the private computeHldEffectiveHash(hldRunId:String, approvedAmendmentIds:List<String>):String using java.security.MessageDigest(\"SHA-256\"), folding hldRunId + concat('|'+id) over approvedAmendmentIds — mirroring artifacts/lld.ts:176 / gates.ts:293; base case (no amendments) = sha256(hldRunId).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "computeHldEffectiveHash(runId, []) returns sha256(runId) hex",
+      "computeHldEffectiveHash(runId, [a,b]) folds '|a|b' onto runId in order, matching the CLI rule",
+      "Pure, no I/O"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.computeHldEffectiveHash base case: (runId, []) == sha256(runId) hex"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowChainReaderTest.computeHldEffectiveHash fold: (runId, [a,b]) folds '|a|b' in order, matching the CLI rule (mirrors chain.test.ts hldEffectiveHash)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

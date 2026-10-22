@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c914052a-892c-4778-bddf-e616a2a2c52a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.004Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Issue view builder",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a97ffc31508effeeb9dbc6a0e82f9efcec7f6d87e70aa959f9968743e7d8a60c",
+        "at": "2026-10-22T12:43:42.004Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.005Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Issue view builder",
+    "summary": "board-views.ts buildIssueView: each matching issue in snapshot order with its parent link (the story or epic its correctsRef resolves to) or its unresolved-parent notice (or a fixed 'Parent not on the board' text when the resolved id is missing), and each fix story among its children with its own stage.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "An issue correcting a story has a parent link carrying that story's id, title and stage label; one correcting an epic links the epic with no stage label.",
+      "An issue whose parent is unresolved is listed with parent null and its unresolved-parent notice message; a resolved id missing from the snapshot gives the fixed 'Parent not on the board' text when there is no notice; an issue with no correctsRef has neither.",
+      "An issue with two fix stories lists both as separate entries with their own stage labels, whether or not they match the search; totals.issues equals the board's issue cards."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: 'an issue links to the story it corrects, and an issue with an unresolved parent is listed with its notice'"
+      },
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: 'an issue with two fix stories lists each as its own child with its own stage'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

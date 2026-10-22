@@ -1,22 +1,65 @@
 {
-  "id": "AMD-c2ba6fa62a148ed1-9",
-  "epicHash": "c2ba6fa62a148ed1",
-  "epicSlug": "complete-consistent-richer-code-index-one",
-  "hldBaseRunId": "wf-1791697214822-7bombm",
-  "proposedBy": {
-    "workflow": "controller",
-    "runId": "chat-2026-10-17",
-    "storyId": "s13",
-    "stepId": "boundary-decision"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "createdAt": "2026-10-17T16:23:58.442Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ac66f774926b2e1bba32a04381ff03620c4400de4ef7492295e939c9a0cbfda8",
+        "at": "2026-10-17T16:23:58.442Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T16:26:58.755Z"
+      },
+      "signoffs": []
+    }
   },
-  "proposedAt": "2026-10-17T16:23:58.442Z",
-  "status": "approved",
-  "amendment": {
-    "type": "storyBoundary.addConsumer",
-    "contractId": "sc1",
-    "consumer": "s13"
+  "body": {
+    "id": "AMD-c2ba6fa62a148ed1-9",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "amendment": {
+      "type": "storyBoundary.addConsumer",
+      "contractId": "sc1",
+      "consumer": "s13"
+    },
+    "rationale": "Story s13 (the binding-key pending map and the event-proportional settle) reads and moves pending-row counts and the generation through IndexState, owned by s1: its settle promotes and re-classes pending rows (completing awaiting-target rows, writing external and unbindable classes) and must keep IndexState's counts true in the same transaction. Stakeholder decision 2026-10-17 (option A): s13 builds on s1, s2, s3 and s12; build order s1 -> s3 -> s2 -> s12 -> s13.",
+    "proposedBy": {
+      "workflow": "controller",
+      "runId": "chat-2026-10-17",
+      "storyId": "s13",
+      "stepId": "boundary-decision"
+    },
+    "proposedAt": "2026-10-17T16:23:58.442Z",
+    "approvedBy": "Subho Ghosh",
+    "sideEffects": {
+      "addedStoryDependencies": [
+        {
+          "from": "s13",
+          "to": "s1"
+        }
+      ]
+    }
   },
-  "rationale": "Story s13 (the binding-key pending map and the event-proportional settle) reads and moves pending-row counts and the generation through IndexState, owned by s1: its settle promotes and re-classes pending rows (completing awaiting-target rows, writing external and unbindable classes) and must keep IndexState's counts true in the same transaction. Stakeholder decision 2026-10-17 (option A): s13 builds on s1, s2, s3 and s12; build order s1 -> s3 -> s2 -> s12 -> s13.",
   "citations": [
     {
       "id": "c1",
@@ -29,15 +72,5 @@
       "kind": "prior-artifact",
       "ref": ".insrc/artifacts/EXT-c2ba6fa62a148ed1-s13.json feedback e913193b (refined s13 design)"
     }
-  ],
-  "sideEffects": {
-    "addedStoryDependencies": [
-      {
-        "from": "s13",
-        "to": "s1"
-      }
-    ]
-  },
-  "approvedAt": "2026-10-17T16:26:58.755Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

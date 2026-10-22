@@ -6,7 +6,27 @@
     "createdAt": "2026-10-10T05:47:27.819Z",
     "updatedAt": "2026-10-10T06:22:58.974Z",
     "standalone": true,
-    "epicSlug": "defect-against-e2-6a131558-issue-b2687832"
+    "epicSlug": "defect-against-e2-6a131558-issue-b2687832",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "92ece3fdd3fe0472027c2f33d23ba5f4ded71a1db82eeeb0f22e3e4e886dc897",
+        "at": "2026-10-10T05:47:27.819Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

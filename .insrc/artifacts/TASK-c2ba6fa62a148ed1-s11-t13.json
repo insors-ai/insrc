@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7b51cee-54bd-4b27-a75d-4db93faa1256",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.983Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Ship and check the installed daemon with every session restarted",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ebd165f44d133a0bc0191a7e15357237dfabce974c62f992e40b3a68f444731",
+        "at": "2026-10-22T12:44:34.983Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.984Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship and check the installed daemon with every session restarted",
+    "summary": "Push, update and restart the installed daemon, then restart every client session; smoke-check an analysis and a multi-turn step across a session restart; check with lsof that no process but the daemon holds the store files or the lance directory; record the result beside the build.",
+    "size": "S",
+    "order": 13,
+    "acceptanceChecks": [
+      "each smoke check is recorded with what was run and seen",
+      "lsof shows only the daemon on ~/.insrc/graph.lmdb, its lock file and ~/.insrc/lance"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "installed daemon: an analysis through a restarted client session works"
+      },
+      {
+        "level": "smoke",
+        "name": "installed daemon: a multi-turn workflow step continues after the client session's MCP server restarts"
+      },
+      {
+        "level": "smoke",
+        "name": "installed daemon after every client session has restarted: lsof shows only the daemon on the store files and the lance directory"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

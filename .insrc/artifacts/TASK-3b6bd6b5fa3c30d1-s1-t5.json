@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4377651f-a359-4236-9ff5-00f054a6bd91",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.297Z",
+    "epicCreatedAt": "2026-10-09T13:11:02.374Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3b6bd6b5fa3c30d1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "One document opener",
+      "parent": {
+        "entityId": "STORY-3b6bd6b5fa3c30d1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3b6bd6b5fa3c30d1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3b6bd6b5fa3c30d1-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9438811a88424666fb6bff01a9dd3945340935ec4e9670b3b3ca9f43e01f2e85",
+        "at": "2026-10-22T12:43:28.297Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.297Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "One document opener",
+    "summary": "Fold openAndGetContent into openWithContent(content: DocsContent | string), where a string is served as { markdown, openQuestions: [], blocked: false }. Repoint its 5 call sites and add the source-scan and equal-payload test.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The file declares no openAndGetContent and exactly one openWithContent, and the 16 call sites use it.",
+      "openWithContent(markdown) and openWithContent({ markdown, openQuestions: [], blocked: false }) return identical payloads."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "docs-review-panel.test.ts: 'there is one document opener, and a markdown string and the same markdown as DocsContent open to identical payloads'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "3e701ba812813029",
+    "storyId": "s1",
+    "createdAt": "2026-08-04T17:57:23.168Z",
+    "updatedAt": "2026-08-04T17:57:23.168Z",
+    "sizeClass": "small",
+    "epicSlug": "specartifact-md-json-path-resolution-jsonpathformd",
+    "epicCreatedAt": "2026-08-04T17:45:05.639Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "aa037a64c7159bc263f3b13e3472aea534036ecd619206d24c0eacdf4b4d30a0",
+        "at": "2026-08-04T17:57:23.168Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T17:59:56.962Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "commit": "4dd1e6e",
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ]
+  }
+}

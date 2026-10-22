@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4642e167-ffbc-4894-b9ea-ff256de0dc29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.426Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Profile src/cli/client.ts and pin the module path, attach seam and accessor decision",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e577d88a2ab3c668bc1eaf15f451bda03fea42cec478d67893ef71843d3b8730",
+        "at": "2026-10-22T12:43:43.426Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.427Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Profile src/cli/client.ts and pin the module path, attach seam and accessor decision",
+    "summary": "Read-only discovery. Profile the RPC client entity `rpc` at src/cli/client.ts (f27cea44e1963ae4dbcccf2c5c185bfa) — never profiled by the s1 bundle (resolved 0.159) and returning zero hits from symbol.locate in the s3 grounding pass. Produce a written map of: (a) the method/stream-dispatch surface where inbound IpcStreamMessage frames are received, (b) the concrete attach point a per-operation reader would hook into, (c) the transport close/teardown signal available for abnormal-close detection (errorCase 4 is contingent on this), and (d) the minimal surface a unit-test stub must fake. This Task also settles two things the plan otherwise leaves contradictory: the file the reader module lands in (which fixes where its tests live), and whether the snapshot accessor is a published sc3 member or an s3-internal affordance — profiling src/cli/client.ts is the LLD's own stated trigger for that deferred decision. Re-confirm the line references the LLD inherited from the s1 bundle (workflow-rpc.ts:61 declaration, :110-184 phase sites, :218 error frame, :238 transport binding, shared/types.ts:732/:734-738) since the s3 grounding pass could resolve no entity line ranges. Write NO production code in this Task.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The reader module's file path is named concretely, and the sibling __tests__/ directory that follows from it is named — so t10/t11 place tests beside the code rather than by assumption.",
+      "The snapshot accessor is recorded as either a published sc3 member or an s3-internal affordance, with the profiling finding as the stated reason.",
+      "A written seam map names the concrete src/cli/client.ts method(s) that receive IpcStreamMessage frames and the exact call at which a per-operation reader would attach.",
+      "The transport close/teardown signal is either named concretely (symbol + file:line) or explicitly recorded as absent, with the consequence for errorCase 4 stated.",
+      "The minimal fake-client surface needed by unit tests is enumerated, so the t10 fixture is written against an observed shape rather than a guessed one.",
+      "Each inherited line reference (workflow-rpc.ts:61/:110-184/:218/:238; shared/types.ts:732/:734-738) is confirmed or corrected against the current tree.",
+      "No file under src/ is modified by this Task."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "seam-map-record: reader module path, sibling __tests__/ dir, frame-receiving method(s) and attach call are each named concretely"
+      },
+      {
+        "level": "smoke",
+        "name": "close-signal-record: transport close/teardown signal named with symbol + file:line, or recorded absent with the errorCase 4 consequence stated"
+      },
+      {
+        "level": "smoke",
+        "name": "inherited-line-refs-reconfirmed: workflow-rpc.ts:61/:110-184/:218/:238 and shared/types.ts:732/:734-738 each confirmed or corrected against the current tree"
+      },
+      {
+        "level": "smoke",
+        "name": "no-src-diff: `git diff --stat src/` is empty for this Task"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

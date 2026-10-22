@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-0f0e4f45f698aeb6-S001 -->
+<!-- insrc:artifact BUILD-0f0e4f45f698aeb6-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -22,9 +22,9 @@ Code work comes first, checked next to every summary start. Queue: waitForIndexI
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-ae864466e7f1f4ea-S001.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
-- `.insrc/artifacts/CR-ae864466e7f1f4ea-S001.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
-- `.insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
+- `.insrc/artifacts/BUILD-ae864466e7f1f4ea-s1.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
+- `.insrc/artifacts/CR-ae864466e7f1f4ea-s1.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
+- `.insrc/artifacts/LLD-0f0e4f45f698aeb6-s1.json` — **insrc-build** (2026-10-17T18:31:25.996Z)
 - `AGENTS.md` — **insrc-build** (2026-10-17T18:31:25.996Z)
 - `CLAUDE.md` — **insrc-build** (2026-10-17T18:31:25.996Z)
 - `docs/standalone/resolve-calls-methods-class-defined-another-E20261017ae864466/S001/BUILD.md` — **insrc-build** (2026-10-17T18:31:25.996Z)

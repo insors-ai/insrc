@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ee00cd5d-4133-4414-8c25-5e80aa8b21ba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.767Z",
+    "epicCreatedAt": "2026-10-01T11:57:40.327Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the full sweep, typecheck, and rebuild the installed daemon",
+      "parent": {
+        "entityId": "STORY-85e6a58693579b6d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-85e6a58693579b6d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-85e6a58693579b6d-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-85e6a58693579b6d-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cbae2d7bf2313b1e0fc5a20da59f4d8dcc61948842f4a1579a28c8e6f4e6bd3c",
+        "at": "2026-10-22T12:43:52.767Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.768Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the full sweep, typecheck, and rebuild the installed daemon",
+    "summary": "Close out the verification the earlier tasks cannot: the whole daemon suite, a repo-wide typecheck, and the daemon rebuild+restart. The rebuild is load-bearing rather than ceremonial — until it runs, the repository holds the fix while the INSTALLED daemon keeps emitting node diagrams for every document approved from here on, which is the state most likely to be mistaken for 'done'.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "npx tsc --noEmit is clean across the repo",
+      "The full daemon sweep passes, with any pre-existing unrelated failure named EXPLICITLY rather than absorbed — the known better-sqlite3 native-ABI mismatch is the expected one",
+      "source-scan: src/docgen/render/shell.ts is absent from the Story's diff, so the three other companions carry no risk from this change",
+      "The installed daemon is rebuilt and restarted, and a freshly-rendered companion is confirmed to come out as a mock rather than a diagram"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "the full daemon sweep passes, with any pre-existing unrelated failure named explicitly"
+      },
+      {
+        "level": "integration",
+        "name": "source-scan: src/docgen/render/shell.ts is absent from the Story's diff"
+      },
+      {
+        "level": "smoke",
+        "name": "the installed daemon is rebuilt and restarted, and a freshly-rendered companion comes out as a mock rather than a diagram"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

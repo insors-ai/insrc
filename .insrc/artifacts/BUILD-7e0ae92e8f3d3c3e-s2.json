@@ -6,7 +6,35 @@
     "createdAt": "2026-10-12T04:54:28.333Z",
     "updatedAt": "2026-10-12T06:27:03.586Z",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T06:27:03.788Z"
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "de7b2fcb22e395893ddf6402e6ba19f0a07a97cf1b839fc28628b14022cf3261",
+        "at": "2026-10-12T04:54:28.333Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T06:27:03.788Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

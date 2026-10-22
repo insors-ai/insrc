@@ -24,30 +24,61 @@
     "hldBaseRunId": "wf-1790009331473-c5to0q",
     "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl7",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "esbuild is already available in the repo (a dependency), so the bundle step needs no new bundler dependency.",
-          "evidence": "`require.resolve('esbuild')` succeeds (node_modules/esbuild/lib/main.js present), so the LLD's factual claim 'esbuild is already available' is accurate. BUT esbuild appears in NO package.json dependencies/devDependencies (root or vscode-plugin) — only in package-lock.json. It is a TRANSITIVE dep, so the bundle step rests on a dependency that a future `npm install`/dep-bump could drop.",
-          "action": "In the plan/build, add esbuild as an explicit devDependency (root or vscode-plugin) so the bundle step does not silently rely on a transitive dependency. The LLD wording is fine; this is a build-time robustness note, not an artifact defect.",
-          "fixability": "assisted"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 1
-      },
-      "reviewedAt": "2026-09-22T07:29:01.567Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-22T07:37:47.685Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "93cb57707d5f28abb8b47ed847d30f9d5bcddc9a9e070be2226c02f5f67368d2",
+        "at": "2026-09-22T07:27:00.322Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T07:37:47.685Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 1
+        },
+        "at": "2026-09-22T07:29:01.567Z",
+        "report": {
+          "entityId": "LLD-ad0d45c9d690f8c1-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ad0d45c9d690f8c1-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

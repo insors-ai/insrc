@@ -30,171 +30,63 @@
       "AMD-315d510cb28100e2-10"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The design delivers the explicit claim and release commands owned by s5.",
-          "evidence": "HLD §5.5 explicitly assigns 'claim and release commands' to s5. The LLD defines library functions but no command syntax, dispatch, service or IPC integration. The existing runTeam dispatcher supports only 'init' and 'refresh', then returns usage. Implementing the listed changes leaves users without the promised explicit release operation. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/cli/command.ts]",
-          "action": "Specify the user-facing claim/release entry points, target resolution, dispatch wiring and refusal output.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Applying a review finding changes content; accept, override and defer only change metadata.",
-          "evidence": "resolveReviewFinding applies edits and writes markdown only inside action === 'apply'. Its final persistence explicitly uses writeArtifact(jsonPath, artifact, action === 'apply' ? 'content' : 'meta-only'). [files: src/workflow/review/resolve.ts]",
-          "action": "Preserve this distinction when adding authorization.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Both automatic review paths need a decision before applying content fixes.",
-          "evidence": "handleVerdicts and reviewArtifactFile both call applyAutoFixes, persist fixed.body, and select 'content' when fixed.applied.length > 0. Both also render the resulting markdown. [files: src/daemon/steps/review-step/phases/verdicts.ts, src/workflow/review/run-artifact.ts]",
-          "action": "Place reviewFixDecision before applyAutoFixes in both paths, retaining report persistence.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The gate can reuse the identity already verified by loadTracker without another identity call.",
-          "evidence": "loadTracker executes 'const who = tracker.whoAmI(); if (!who.ok) return who;' but returns only '{ ok: true, value: tracker }'. TrackerPort exposes no verified identity field, and its whoAmI implementation calls ghCurrentLogin every time. The verified login is discarded. [files: src/workflow/tracker/github-adapter.ts, src/workflow/tracker/port.ts]",
-          "action": "Agree an sc1 change that exposes or caches the verified identity, or explicitly design and budget a second whoAmI call.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The listed guarded entry points cover every authoring route.",
-          "evidence": "The terminal calls runWorkflowStreaming. daemon/index.ts routes 'workflow.run' to workflow-rpc.runStart, whose driver runs startRun/resumeRun directly and persists with 'writeArtifact(paths.json, JSON.parse(finalized.renderedJson), \u000027content\u000027)'. It does not call the workflow-step phase handlers listed by the LLD. Guarding those phases leaves this authoring route unprotected. [files: src/cli/services/workflow.ts, src/daemon/index.ts, src/daemon/workflow-rpc.ts]",
-          "action": "Add authorization to the server-side workflow driver at the relevant turns and before persistence, and include the terminal streaming route in the inventory and refusal tests.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design supplies enough target information to authorize BUILD approval against the correct claim unit.",
-          "evidence": "The policy assigns BUILD claims to Tasks. Task implementation resolves a taskId, but approveWorkflowTarget's buildRefFor returns only epicHash and storyId for a Story-wide BUILD record. The LLD supplies no rule for selecting or aggregating Task claims at this approval site. Standalone implement/validate branches also bypass Task resolution. [files: src/workflow/team/types.ts, src/workflow/gates.ts, src/daemon/steps/build-step/phases/implement.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/tracker/refs.ts]",
-          "action": "Define artifact/action-to-UnitRef mapping, including Story-wide BUILD approval and standalone routes, with explicit multi-holder behavior.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "BUILD approval must authorize before ensureBuildRecordOnCompletion to prevent a refused target from being modified.",
-          "evidence": "Both single-target and batch branches currently await ensureBuildRecordOnCompletion before approveOne. The design correctly identifies that placing the gate only in approveArtifactByJsonPath would be too late. [files: src/workflow/gates.ts]",
-          "action": "Keep the proposed pre-materialization authorization in both branches.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Existing tracker references can be reconciled into unit records without changing content, approval state or revision.",
-          "evidence": "resolveUnitIssueLocal reads units first, then legacy epicRef/storyRef/storyRefs/taskRefs, and calls reconcile. recordUnit uses patchTrackerMeta, which persists through writeArtifact(..., 'meta-only'). That writer preserves the prior revision; readRevision returns 0 for absent revision data. [files: src/workflow/tracker/unit-issue.ts, src/workflow/tracker/refs.ts, src/workflow/storage.ts]",
-          "action": "Reuse this path and retain the documented allowance for reconciliation before a later refusal.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The add-only claim operation is an outstanding sc1 amendment owned by s1, rather than an existing port capability.",
-          "evidence": "AMD-315d510cb28100e2-12 has status 'pending' and proposes 'addAssignee(issue: IssueRef, who: string): PortResult<string[]>', explicitly assigning the adapter test to s1. TrackerPort currently has readAssignee and setAssignee but no addAssignee. [files: .insrc/artifacts/AMD-315d510cb28100e2-12.json, src/workflow/tracker/port.ts, src/workflow/tracker/github-adapter.ts]",
-          "action": "Use the fake only for isolated development/tests; make the approved, implemented sc1 amendment a production integration prerequisite.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Two simultaneous claimants will both be told their claim is contested.",
-          "evidence": "docs/plans/team-workflow.md explicitly says both developers can believe they hold the claim 'until the next read'. With the proposed separate read/add/reread operations, A and B can both read empty, A can add and reread only A, and B can add afterward. A has already returned allowed; only B necessarily observes contention. The LLD's promise that both callers are told is stronger than the documented mechanism. [files: docs/plans/team-workflow.md, .insrc/artifacts/AMD-315d510cb28100e2-12.json, src/workflow/tracker/github-adapter.ts]",
-          "action": "State that contention is reported when observed and that an earlier successful claimant may discover it only on a subsequent gate read. Add this interleaving to tests.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The policy reader distinguishes confirmed absence from an unreadable policy in a known team repository.",
-          "evidence": "readPolicy dispatches valid sightings to readKnownRepo and damaged sightings to readDamaged; neither returns 'none'. readKnownRepo returns ok:false when the policy cannot be recovered. readUnseen returns 'none' for confirmed non-git, no remote or missing policy cases, while inspection failures return ok:false. [files: src/workflow/team/policy-reader.ts]",
-          "action": "Handle every ok:false result as a refusal rather than treating it as policy absence.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The acceptance mapping covers ac19–ac23 at the gate level and correctly leaves completion integration for s7.",
-          "evidence": "DEF ac19–ac23 specify claim, refusal naming the holder, direct tracker assignment, release and no stale takeover. Each has a corresponding named unit test in the LLD. DEF ac24 requires completion-triggered release; HLD's test map assigns that integration to s7, matching the LLD's explicit hook-only qualification. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/LLD.md]",
-          "action": "Retain this mapping, and add end-to-end tests for the missing command surfaces and workflow.run authorization identified above.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 3,
-        "med": 1,
-        "low": 8,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-18T13:53:13.343Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-18T13:59:37.172Z",
-    "reviewOverride": {
-      "reason": "Approved past a block verdict from design review round 2 (3 HIGH, 1 MED, 1 could-not-verify; round 1's 5 HIGH and 3 MED were fixed in the revised LLD). The five open findings (user-facing claim and release commands, a second whoAmI call, guarding the daemon workflow driver, contested-claim wording, BUILD approval target mapping) are build-level details that do not change the chosen design; they are recorded as binding build requirements in docs/plans/team-workflow.md (\"s5 LLD approval\"). The add-only addAssignee amendment AMD-315d510cb28100e2-12 is a pending build prerequisite with s1.",
-      "at": "2026-10-18T13:59:37.172Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a072979ea5fbf663495a4467f509b2a368cb47bce8734be9d2aa41f502fa3176",
+        "at": "2026-10-18T13:53:10.059Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T13:59:37.172Z",
+        "override": {
+          "reason": "Approved past a block verdict from design review round 2 (3 HIGH, 1 MED, 1 could-not-verify; round 1's 5 HIGH and 3 MED were fixed in the revised LLD). The five open findings (user-facing claim and release commands, a second whoAmI call, guarding the daemon workflow driver, contested-claim wording, BUILD approval target mapping) are build-level details that do not change the chosen design; they are recorded as binding build requirements in docs/plans/team-workflow.md (\"s5 LLD approval\"). The add-only addAssignee amendment AMD-315d510cb28100e2-12 is a pending build prerequisite with s1."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 3,
+          "med": 1,
+          "low": 8
+        },
+        "at": "2026-10-18T13:53:13.343Z",
+        "report": {
+          "entityId": "LLD-315d510cb28100e2-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-315d510cb28100e2-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -203,7 +95,7 @@
       "audience": "product"
     },
     "hldContextSlice": {
-      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
       "ownedContracts": [
         {
           "id": "sc4",
@@ -280,7 +172,7 @@
             "sc1"
           ],
           "depends": [],
-          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-s1 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
         },
         {
           "storyId": "s2",

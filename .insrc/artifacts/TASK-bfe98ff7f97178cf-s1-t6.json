@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-84d803d5-0d8a-47cc-ab6e-ec0dc68f50cf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.620Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp the slugs, render the section chooser, and wire jump-to-section",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "099e40f852c89c405aaaaa9a07dc913dcde2760d5651ee0ec6595a34054f8315",
+        "at": "2026-10-22T12:44:30.620Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.621Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp the slugs, render the section chooser, and wire jump-to-section",
+    "summary": "Stamp t3's derived slugs onto the rendered heading elements (moved here from t4 per critique — stamping and the chooser are the two halves of jump-to-section and nothing between t4 and here reads the slugs), build the chooser from the posted index, and scroll the chosen slug into view. Omit the chooser ENTIRELY when the index is empty — not an empty control. Built by DOM construction with textContent only, injecting no markup, so the surface keeps exactly one injection site. Render the ac3 degradation notice from the posted state, also by textContent. REVISED per critique: also carries the approval-path and COMMENTABLE_KINDS checks, which belong to the task that last touches this surface rather than to a trailing catch-all.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "rendered heading elements carry the slugs t3 derived for the same markdown — the anchor target matches a posted anchor",
+      "choosing a section moves the view directly to it without scrolling through the intervening content",
+      "a document with no headings renders NO section chooser at all — not an empty or placeholder control",
+      "the chooser labels each entry with the heading's verbatim text",
+      "the chooser and the degradation notice are built by DOM construction with textContent — the shell still contains exactly one markup-injection site",
+      "the ac3 notice appears alongside the full body text when the render degraded, and is absent when it did not",
+      "approve and request-changes still call workflow.approve and workflow.resolveComment with unchanged parameters",
+      "the COMMENTABLE_KINDS gate still restricts request-changes to DEF/HLD/LLD",
+      "a manual pass renders the real shell and reads it back visually, since whether elements read as distinct is not something a string assertion can establish"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "rendered heading elements carry the slugs derived for the same markdown — anchor target matches a posted anchor"
+      },
+      {
+        "level": "integration",
+        "name": "choosing a section scrolls directly to it"
+      },
+      {
+        "level": "integration",
+        "name": "a document with no headings renders no section chooser at all — not an empty control"
+      },
+      {
+        "level": "integration",
+        "name": "the chooser labels each entry with the heading's verbatim text"
+      },
+      {
+        "level": "unit",
+        "name": "the shell still contains exactly one markup-injection site after the chooser and notice are added"
+      },
+      {
+        "level": "integration",
+        "name": "the ac3 notice appears with the full body when degraded and is absent when not"
+      },
+      {
+        "level": "integration",
+        "name": "approve and request-changes still call workflow.approve and workflow.resolveComment with unchanged parameters"
+      },
+      {
+        "level": "integration",
+        "name": "the COMMENTABLE_KINDS gate still restricts request-changes to DEF/HLD/LLD"
+      },
+      {
+        "level": "smoke",
+        "name": "manual: render the real shell, screenshot it and read it back — confirm headings, lists and emphasis read as visually distinct"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -21,9 +21,37 @@
     "epicSlug": "build-record-writer-mis-files-standalone",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-04T12:10:57.416Z",
     "parentRef": {
       "slug": "build-record-writer-mis-files-standalone"
+    },
+    "epicCreatedAt": "2026-10-04T04:32:05.547Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d335807c612b6f0e961db2edd08af8deb98da347016ceaa9f20046a0e3a3ae9d",
+        "at": "2026-10-04T04:32:05.547Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T12:10:57.416Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

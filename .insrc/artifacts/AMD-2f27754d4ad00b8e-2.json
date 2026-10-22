@@ -1,20 +1,53 @@
 {
-  "id": "AMD-2f27754d4ad00b8e-2",
-  "epicHash": "2f27754d4ad00b8e",
-  "epicSlug": "one-common-model-every-artifact",
-  "hldBaseRunId": "wf-1792406752203-whj6zi",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc1",
-    "field": {
-      "name": "RequirementIds.parse result",
-      "type": "{ date: string; hash8: string; story?: number | undefined; fr: number } | undefined",
-      "optional": false,
-      "purpose": "Stored requirement ids carry only the date and the first 8 hash characters, so parse returns those parts (story and fr as numbers) instead of epicHash, ordinal and storyId."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "createdAt": "2026-10-20T07:49:25.694Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "rejected",
+      "revision": {
+        "number": 0,
+        "contentHash": "41d53dc04792ca60b4e1dd243f4c9562939e4d8ae1ab50068bc8081e74ed90e9",
+        "at": "2026-10-20T07:49:25.694Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "The interface sketch in sc1 cannot be implemented from stored requirement ids: they contain no full epic hash. The existing parseFrId result is what its tests and callers rely on.",
+  "body": {
+    "id": "AMD-2f27754d4ad00b8e-2",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "RequirementIds.parse result",
+        "type": "{ date: string; hash8: string; story?: number | undefined; fr: number } | undefined",
+        "optional": false,
+        "purpose": "Stored requirement ids carry only the date and the first 8 hash characters, so parse returns those parts (story and fr as numbers) instead of epicHash, ordinal and storyId."
+      },
+      "breaking": false
+    },
+    "rationale": "The interface sketch in sc1 cannot be implemented from stored requirement ids: they contain no full epic hash. The existing parseFrId result is what its tests and callers rely on.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792482300809-x4lyc0",
+      "storyId": "s1",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-20T07:49:25.694Z"
+  },
   "citations": [
     {
       "id": "c1",
@@ -26,15 +59,5 @@
       "kind": "code",
       "ref": "src/workflow/__tests__/fr-id.test.ts"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792482300809-x4lyc0",
-    "storyId": "s1",
-    "stepId": "s4"
-  },
-  "proposedAt": "2026-10-20T07:49:25.694Z",
-  "status": "rejected",
-  "rejectedAt": "2026-10-20T08:43:12.644Z",
-  "rejectedReason": "Superseded: the AMD-5 amendment states the RequirementIds.parse change explicitly as superseding the old return type; this was one of four identical duplicates filed by repeated design.story runs for s1."
+  ]
 }

@@ -13,7 +13,6 @@
     "storyId": "s1",
     "lldRunId": "wf-1784304852747-uu8si8",
     "lldEffectiveHash": "6d130af6ef10bff101a734601ec38ce873de2037786e62c3303fa417c1d5912c",
-    "approvedAt": "2026-07-18T04:53:37.234Z",
     "tracker": {
       "adapter": "github",
       "taskRefs": {
@@ -28,6 +27,35 @@
         "insrc:task",
         "epic:add-build-workflow-insrc-5th-stage"
       ]
+    },
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a5a2c916f0e0db3b80dc55ff01a67e45a2b611d269d50ec80cedc9150217b00a",
+        "at": "2026-07-17T20:41:18.829Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-18T04:53:37.234Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

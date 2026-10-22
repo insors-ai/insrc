@@ -64,122 +64,57 @@
     "storyId": "s5",
     "lldRunId": "wf-1785490467999-w4m1s6",
     "lldEffectiveHash": "cb5b27744db290de72c59b4596b1773d0ba24dd335448b4f0a7944f70adc817c",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "pl1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/render/fallback.ts does NOT yet exist — t1 creates it as a new module.",
-          "evidence": "src/docgen/render/fallback.ts read found:False; no OVERSIZED_LIMIT/oversized in src/. Correctly a NEW module t1 creates. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl2",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/render/shell.ts today exports assembleShell taking a single DocumentIR arg; t5 extends it with an optional renderer param + oversized branch.",
-          "evidence": "shell.ts:225 = `export async function assembleShell(ir: DocumentIR)` — single-arg today; t5's optional-renderer extension is a clean superset. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl3",
-          "ref": "t5",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "generateDocument in src/docgen/index.ts calls assembleShell(ir.value) and stays unchanged when assembleShell gains an optional renderer param.",
-          "evidence": "src/docgen/index.ts:72 = `return assembleShell(ir.value);` — the single call site; an optional renderer param leaves it compiling unchanged. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl4",
-          "ref": "t4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "RenderedDocumentShell (src/docgen/types.ts) carries backend, diagramFormat, supportsZoomPan, inlinedRuntimeVersion fields, and RenderBackend already includes 'fallback-subprocess', so assembleFallbackShell can populate the sc3 shape without a type change.",
-          "evidence": "types.ts:110 RenderBackend includes 'fallback-subprocess'; schema.ts:23 enum matches; diagramFormat/supportsZoomPan/inlinedRuntimeVersion are established sc3 fields (generate/schema tests). No type change needed. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl5",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/docgen/outcome.ts exports fallbackUnavailable(reason, remedy) which t5's oversized-but-unavailable branch returns.",
-          "evidence": "outcome.ts:49 = `export const fallbackUnavailable = <T>(reason, remedy)`; already unit-tested (outcome.test.ts:68). Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl6",
-          "ref": "t3",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "Node child_process.spawn supports shell:false + fixed argv + stdin piping + an 'error' event carrying code ENOENT for a missing binary and SIGKILL termination — the contract graphvizSubprocessRenderer relies on; the pattern already exists at exec-detached.ts:115.",
-          "evidence": "spawn(shell:false) at logs.ts/k8s/exec-detached.ts:115; ENOENT handling at cli-provider.ts:442; SIGKILL-on-timeout at cli-provider.ts:462. The Node spawn contract the renderer leans on is real and precedented. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl7",
-          "ref": "tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly 6 tasks t1–t6, of which t1–t5 are implementation and t6 is the live-gated test.",
-          "evidence": "Task sections T001–T006 present (6 tasks); t1–t5 implementation + t6 live test. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl8",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task dependency DAG is acyclic and well-formed: t1 has no deps; t2/t3/t4 depend on t1; t5 depends on t2,t3,t4; t6 depends on t3,t5.",
-          "evidence": "DAG: t1(—); t2,t3,t4->t1; t5->t2,t3,t4; t6->t3,t5. Acyclic, every dep precedes its dependent, t5 correctly gathers the three fallback.ts pieces before the dispatch. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl9",
-          "ref": "t2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The n0/n1 alias pattern toGraphvizDot mirrors exists in documentIRToMermaid at src/docgen/render/shell.ts:140.",
-          "evidence": "shell.ts:140 = `ir.derived.nodes.forEach((n, i) => alias.set(n.id, `n${i}`));` — the n0/n1 aliasing toGraphvizDot mirrors. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "pl10",
-          "ref": "t4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "loadRuntime in shell.ts exposes the svg-pan-zoom bundle bytes + svgPanZoomVersion from the manifest, the inputs assembleFallbackShell requires.",
-          "evidence": "shell.ts:33 RuntimeManifest.svgPanZoomVersion; runtime.json:3 '3.6.2'; loadRuntime returns {manifest,mermaid,svgPanZoom}. assembleFallbackShell's inputs are available. Confirmed.",
-          "action": "none",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-07-31T10:22:22.210Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-07-31T10:24:05.449Z",
-    "epicCreatedAt": "2026-07-30T14:17:44.765Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f195e97b8c9668e5582b2bae432786d2ae3e69795b12a9920c67213f3bd4a29f",
+        "at": "2026-07-31T10:12:35.439Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-31T10:24:05.449Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-07-31T10:22:22.210Z",
+        "report": {
+          "entityId": "PLAN-870ed3dd246225f4-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-870ed3dd246225f4-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

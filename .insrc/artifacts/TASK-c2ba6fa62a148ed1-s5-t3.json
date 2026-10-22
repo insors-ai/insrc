@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-395a7eaa-3ea7-4b38-910a-5cd7aae2d2a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.718Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The tool loop and the final structured emit name the call that failed",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4a166097f609c3d88d80a8407351b6316b026ded30b5b6ea9adee01d0825140a",
+        "at": "2026-10-22T12:44:36.719Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.720Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The tool loop and the final structured emit name the call that failed",
+    "summary": "src/analyze/context/driver.ts: ShaperModelCall gains 'tool loop' and 'final structured emit'; classifyOllamaError(err, call) takes the call from its two callers; ShaperLlmUnavailableError is always built with a call, and its Ollama-specific wording is retired. Grounding: callers at src/analyze/context/driver.ts:793 (tool loop) and :959 (runFinalStructuredEmit); the definition is at :1019. The test seam _classifyOllamaErrorForTest (:1683) is called directly by src/analyze/context/__tests__/driver-unit.test.ts:84-137 and model-failure-callers.test.ts:32; those tests are updated to pass a ShaperModelCall. ShaperLlmUnavailableError (driver.ts:149) already takes an optional call (provider-neutral wording with it, 'Local Ollama unavailable ...' without); t3 makes call required, passes it from classifyOllamaError at :1029, and updates the constructions without a call: src/analyze/context/__tests__/driver-unit.test.ts:206, shaper-errors.test.ts:29, src/analyze/orchestrator/__tests__/orchestrator.test.ts:102 and :135, shaper-error-mapping.test.ts:39, :184 and :187.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama.",
+      "A failure from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'; an Ollama failure's own detail is kept.",
+      "The direct test callers of _classifyOllamaErrorForTest (driver-unit.test.ts, model-failure-callers.test.ts) pass a ShaperModelCall and still pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept"
+      },
+      {
+        "level": "unit",
+        "name": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

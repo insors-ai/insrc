@@ -49,139 +49,57 @@
     "schemaVersion": 1,
     "epicHash": "abd1ecf6a5f5063e",
     "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl-c1",
-          "ref": "c1/k3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/questions-gate.ts exists and implements the clarifying-question gate the Epic reuses as the elicitation primitive.",
-          "evidence": "src/mcp/workflow-step/questions-gate.ts:1 found=True — the clarifying-question gate the Epic reuses as the elicitation primitive exists.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c2",
-          "ref": "c2/k... vocab",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/shared/brainstorm-classes.ts defines the reusable BrainstormCategoryClass interface / BrainstormCategory vocabulary (spec / architecture / how-to-build).",
-          "evidence": "src/shared/brainstorm-classes.ts:19 `export interface BrainstormCategoryClass extends ClassChoice` (exact), BrainstormCategory type at :12, BRAINSTORM_CATEGORY_CLASSES at :23 — reusable vocabulary grounded.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c3",
-          "ref": "c3/k4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/runners/design-story/index.ts exports registerDesignStoryRunners and has a sibling schemas.ts (the per-stage runner template the new stage follows).",
-          "evidence": "registerDesignStoryRunners resolves; src/workflow/runners/design-story/index.ts:1 found=True and schemas.ts confirmed present — the per-stage runner template is real.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c4",
-          "ref": "c4/k4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/runners/design-epic/index.ts exports registerDesignEpicRunners with a sibling schemas.ts (the second peer runner confirming the template).",
-          "evidence": "registerDesignEpicRunners resolves; src/workflow/runners/design-epic/index.ts:1 found=True and schemas.ts confirmed — second peer runner confirms the template.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c5",
-          "ref": "c5/k6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/define.ts exists — the artifacts module holds one file per artifact type, so a new spec artifact is a peer file there.",
-          "evidence": "src/workflow/artifacts/define.ts:1 found=True — per-type artifact-file convention holds; a spec artifact is a peer file.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c6",
-          "ref": "c6/k7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/artifacts/plan.ts exists as a second peer artifact file confirming the per-type artifact-file convention.",
-          "evidence": "src/workflow/artifacts/plan.ts:1 found=True — second peer artifact confirms the convention.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c7",
-          "ref": "c7/k8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/types.ts exists — the MCP step surface types the new additive phase extends.",
-          "evidence": "src/mcp/workflow-step/types.ts:1 found=True — the MCP step surface types the additive phase extends.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-c8",
-          "ref": "c8/k9",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step/handler.ts exists — the handler dispatch the new phase routes through.",
-          "evidence": "src/mcp/workflow-step/handler.ts:1 found=True — the handler dispatch the new phase routes through.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-machinery",
-          "ref": "c14/k9",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/mcp/workflow-step carries the multi-turn loop machinery a controller-driven stage needs: state.ts, state-store.ts, and a phases/ directory (state persistence + phase dispatch reused, not re-invented).",
-          "evidence": "Confirmed present in src/: state.ts, state-store.ts, and phases/ (start.ts, step.ts, synthesize.ts, plan.ts, resolve-question.ts, review-deferred.ts) — the multi-turn loop machinery is reused, not re-invented (k9 grounded).",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-stub",
-          "ref": "k10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The chat-agent brainstorm runtime is an offlineRpc stub in this backend: brainstorm.addIdea is wired via offlineRpc in src/daemon/index.ts — the naming-collision guard (k10) is grounded, not invented.",
-          "evidence": "src/daemon/index.ts:1354 `'brainstorm.addIdea': offlineRpc('brainstorm.addIdea')` (and comment at :1347) — the chat-agent brainstorm runtime is genuinely an offlineRpc stub here; the k10 naming-collision guard is grounded, not invented.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-stories",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The Epic enumerates exactly 9 stories, S001 through S009.",
-          "evidence": "grep E20260801abd1ecf6:S00[1-9] → exactly 9 hits (S001–S009); story inventory matches.",
-          "action": "none",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl-order",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The story dependency DAG is acyclic and every dependency precedes its dependent: s1(—); s2→s1; s3→s2; s4→s3; s5→s2; s6→s3,s4; s7→s6; s8→s7; s9→s7.",
-          "evidence": "DAG per artifact: s1(—); s2→s1; s3→s2; s4→s3; s5→s2; s6→s3,s4; s7→s6; s8→s7; s9→s7. Acyclic; every dependency precedes its dependent; elicitation (s1–s5) precedes persistence (s6) precedes approval (s7) precedes consumption (s8,s9). Internally consistent.",
-          "action": "none",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 12
-      },
-      "reviewedAt": "2026-08-01T11:58:23.295Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-01T12:04:58.917Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "682fe9d73d1dd341788944029a54e7ee8f93285a6352c8bdc4235875f649b0c5",
+        "at": "2026-08-01T11:55:48.046Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-01T12:04:58.917Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-08-01T11:58:23.295Z",
+        "report": {
+          "entityId": "DEF-abd1ecf6a5f5063e",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-abd1ecf6a5f5063e-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "new-capability",

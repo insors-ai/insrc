@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "f52996c2709dba81",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T11:29:23.058Z",
+    "updatedAt": "2026-10-16T11:46:49.111Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T09:01:43.796Z",
+    "epicSlug": "make-code-references-docgen-companion-html",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3125af751716fc238e3bca6f947d4ffbaab475e53ec8480d8e9ce9f0321b27e9",
+        "at": "2026-10-16T11:29:23.058Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T11:46:49.865Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/make-code-references-docgen-companion-html-E20261016f52996c2/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/docgen/__tests__/code-ref-grammar-pin.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/extract/__tests__/call-sequence-label.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/extract/call-sequence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/code-ref-script.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T11:46:49.111Z"
+      }
+    ],
+    "commit": "f887c578",
+    "summary": "The docgen call-sequence diagram labels each frame with its repo-relative path and line. A page script, inlined in the companion page and both docgen shells, marks code references and posts a click to the parent. The review pane forwards such a message only from its own companion frame, with valid fields, as the existing open-code-ref. A test pins the script's grammar to the chat page's."
+  }
+}

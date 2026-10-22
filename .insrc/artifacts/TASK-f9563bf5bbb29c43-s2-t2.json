@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed4d0f92-7e4e-438f-915f-5c939f87cfef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:01.407Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Route 'cancel-turn' to the existing cancelActive() in handleMessage",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "78e558e48b3d6da6384b8b372f945e90f2ef6546eae9079c7c08f2cdc1267309",
+        "at": "2026-10-22T12:45:01.407Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:01.408Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route 'cancel-turn' to the existing cancelActive() in handleMessage",
+    "summary": "Add a 'cancel-turn' case to the host handleMessage dispatcher that calls the existing cancelActive() reap; leave all other cases and cancelActive() itself untouched.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "a 'cancel-turn' WebviewToHost message invokes cancelActive() and cancels the in-flight turn (the provider's cancel fires)",
+      "'cancel-turn' with no active turn is an idempotent no-op (no throw)",
+      "all existing handleMessage cases are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a 'cancel-turn' WebviewToHost message routes to cancelActive() and cancels the active turn (the scripted adapter's cancel fires)"
+      },
+      {
+        "level": "integration",
+        "name": "existing chat-panel/protocol suites stay green — status persistence skip (chat-panel.ts:424) unchanged (k2/lc1)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

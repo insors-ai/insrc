@@ -25,152 +25,61 @@
     "hldEffectiveHash": "a20e4da9408dfea954d2ef18bb08b0d7eaad28b1155c8f8eead228779aaf2088",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The revised candidate-digest rule (whole manifest minus releaseId, reviewDigest and the coverage entry's digest; empty value when zero or more than one entry matches coveragePath) matches the approved HLD and the amendment, and the LLD builds no non-goal such as sc3/sc4 policy.",
-          "evidence": "HLD-7e0ae92e8f3d3c3e.json:167 gives the rule as 'candidate digest over the whole manifest minus releaseId/reviewDigest/coverage-entry digest; unique coverage entry or not computable'. HLD :406 requires 'role-swap plus missing/duplicate coverage-entry regressions'. plans/design-intelligence-di1-s1-digest-amendment.md steps 1-4 and the 'Malformed coverage membership' section match LLD §3.5 word for word. DEF s1 ac1 says missing provenance, examples, applicability or review blocks publication. ac2 says identity, version, relations, rationale and lineage are visible. LLD §3.1/§6 design both. [files: .insrc/artifacts/HLD-7e0ae92e8f3d3c3e.json, .insrc/artifacts/DEF-7e0ae92e8f3d3c3e.json, plans/design-intelligence-di1-s1-digest-amendment.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today candidateContentDigest uses the 'projected-pairs' formula, which leaves out role paths and attribution metadata. This is the defect the revision fixes.",
-          "evidence": "src/design/corpus/canonical.ts:95-103 hashes only `records.map(({recordId, recordVersion}))` and `files.filter(f => f.path !== copy.coveragePath).map(({path, digest}))`. sourceManifestPath, noticesPath, maintainer, label, createdAt, mediaType and record path/digest are all left out, so swapping the role paths keeps the digest the same. [files: src/design/corpus/canonical.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "checkPublication marks every supplied assessment stale when the candidate identity is empty. When validation fails it still computes manifestDigest separately, so returning '' for bad coverage membership gives the stated behaviour.",
-          "evidence": "validate.ts:342 `if (!contentDigest || assessment.candidateContentDigest !== contentDigest) issues.push(issue('assessment.stale', ...))`. validate.ts:313-323 recomputes `manifestDigest = releaseContentDigest(decoded.value)` and `contentDigest = candidateContentDigest(decoded.value)` from the decoded manifest when validateRelease fails. [files: src/design/corpus/validate.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Validation never coerces, injects defaults or strips fields, and objects are closed at every level (reuses the existing TypeBox/Ajv setup).",
-          "evidence": "contracts.ts:5 `Type.Object(properties, { additionalProperties: false })`. contracts.ts:80 `new Ajv({ allErrors: true, strict: true, useDefaults: false, coerceTypes: false, removeAdditional: false })`. [files: src/design/corpus/contracts.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Changing candidateContentDigest covers every place that uses candidate identity: validateRelease, validateCoverageEnvelope, the checkPublication fallback and the fixtures/goldens.",
-          "evidence": "Production callers: validate.ts:231 (validateRelease → validateCoverageEnvelope), validate.ts:321 (checkPublication fallback). Test callers: package-fixtures.ts:22 (envelope binding), digest-chain.test.ts:19-28, publication-check.test.ts:10,23, acceptance-coverage.test.ts:12 and :34 (hard-coded golden '3924cd36…'), module-isolation.test.ts:62. The LLD's instruction to independently regenerate the candidate/review/release goldens covers acceptance-coverage.test.ts:34. [files: src/design/corpus/validate.ts, src/design/corpus/__tests__/acceptance-coverage.test.ts, src/design/corpus/__tests__/package-fixtures.ts]",
-          "action": "Make sure the hard-coded golden at acceptance-coverage.test.ts:34 is recomputed independently, not taken from the new helper's output.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "There are no published corpus releases or stored records to migrate. Only development fixtures and goldens change, and the record-identity goldens stay the same.",
-          "evidence": "The amendment says 'There are no published corpus releases to migrate; existing development fixtures and golden vectors must be regenerated'. recordContentDigest (canonical.ts:90-94) is untouched by the revision, so record goldens stay valid. The schema (contracts.ts) keeps schemaVersion literal 1 and the sc1/sc2 shapes do not change. [files: src/design/corpus/canonical.ts, plans/design-intelligence-di1-s1-digest-amendment.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The s1 code composes the downstream eligibility and coverage assessments only. It does not import or implement any sc3–sc7 behaviour.",
-          "evidence": "validate.ts imports only ./canonical.js, ./contracts.js and node:util. validateCoverageEnvelope treats coverage as opaque ('Coverage is opaque except for canonical bytes, exact binding and prohibited self-reference'), and checkPublication only checks stage count, digest binding and passed/issues consistency. [files: src/design/corpus/validate.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "When zero or more than one files entry matches coveragePath, 'inventory.invalid remains' is the detected diagnostic (§5 error case).",
-          "evidence": "This holds for duplicates only. validate.ts:184 emits inventory.invalid for duplicate manifest file paths. For ZERO matching entries the existing check at validate.ts:199 emits `reference.missing` ('/manifest/coveragePath', 'Required package file is missing.'), not inventory.invalid. Building to the LLD's wording could lead an implementer to add a redundant inventory.invalid, or write a test that expects the wrong code for the zero-entry case. [files: src/design/corpus/validate.ts]",
-          "action": "Change §5 so the zero-entry case says reference.missing (existing) and the duplicate case says inventory.invalid, or state that a new inventory.invalid is deliberately added for zero matches.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A role swap with unchanged bytes is detected even before the assessment check, because the coverage envelope binds the candidate digest.",
-          "evidence": "validate.ts:286-287 emits review.stale when the coverage envelope's candidateContentDigest !== the recomputed candidateDigest. With the new formula a sourceManifestPath/noticesPath swap changes candidateDigest, so the old envelope is flagged, and validate.ts:342 marks the old assessments stale. This matches the LLD's 'review.stale and/or assessment.stale'. [files: src/design/corpus/validate.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion maps to named tests, and the new regressions (role swap, missing/duplicate coverage entry) are listed as subjects. The test framework is node:test with node:assert/strict.",
-          "evidence": "LLD §6 maps ac1 → record-schema … stale-role-assessment, noncomputable-candidate and ac2 → record-roundtrip, canonical-golden, digest-chain, candidate-metadata-binding. Every corpus test file imports node:test and node:assert (2 imports in each of 9 files). No test today covers a noticesPath/sourceManifestPath swap: grep finds noticesPath only in fixtures, so these tests are correctly called new. [files: src/design/corpus/__tests__/digest-chain.test.ts, src/design/corpus/__tests__/package-fixtures.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 9,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-11T18:04:20.624Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "error-paths.1": {
-        "findingId": "error-paths.1",
-        "status": "resolved",
-        "note": "Corrected the malformed coverage error case to preserve reference.missing for zero matches (validate.ts:199) and inventory.invalid for duplicates (validate.ts:184). No new redundant issue code, override or deferral; noncomputable identity and stale-assessment behavior remain as approved in the HLD.",
-        "resolvedAt": "2026-10-11T18:05:41.919Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-7e0ae92e8f3d3c3e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
       }
     },
-    "approvedAt": "2026-10-11T18:22:25.461Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e1f4e8aab7a25782e3a32b794f525ed47693c288601d719be4ec1c025c53516f",
+        "at": "2026-10-11T18:04:16.027Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T18:22:25.461Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 9
+        },
+        "at": "2026-10-11T18:04:20.624Z",
+        "report": {
+          "entityId": "LLD-7e0ae92e8f3d3c3e-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-7e0ae92e8f3d3c3e-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

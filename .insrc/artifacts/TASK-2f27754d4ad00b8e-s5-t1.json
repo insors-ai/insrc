@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-20c42250-ff22-4eb6-915a-8f6a916ce517",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.223Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add inReplyTo to Feedback and validate it",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7bf0b40b4db488efdf7352c211e62b97832596c6ab5202d8ce76c0e1f3f179ea",
+        "at": "2026-10-22T12:43:21.223Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.224Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add inReplyTo to Feedback and validate it",
+    "summary": "Add the optional inReplyTo field to the Feedback type in src/workflow/artifact-core/types.ts (AMD-2f27754d4ad00b8e-9) and make validateFeedback in src/workflow/artifact-core/history.ts accept it only as a non-empty string different from the entry's own id, and refuse a reply (an entry with inReplyTo) that carries nested replies. Nothing else about the shape or the stored lines changes.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "an entry with inReplyTo set to a non-empty string appends and reads back with the field",
+      "inReplyTo equal to the entry's own id, empty, or not a string is refused with HistoryEntryError",
+      "a reply that carries nested feedback[] is refused",
+      "an entry without inReplyTo validates exactly as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "feedback-reply-shape.test.ts: History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

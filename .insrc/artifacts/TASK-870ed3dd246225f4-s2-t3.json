@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eaf44bbe-3740-4694-aeda-20f1ef33b53a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.347Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Generalize the shell renderer to dispatch by docType",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6f8551f1eebc5c75f5d0b79ad06f2e09a6d7103ffbf5ad9964c7c1d5b00de9ad",
+        "at": "2026-10-22T12:43:53.347Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.347Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Generalize the shell renderer to dispatch by docType",
+    "summary": "Refactor src/docgen/render/shell.ts documentIRToMermaid from a single classDiagram emitter into a docType dispatch: toClassDiagram (s1, unchanged) vs toFlowchart (new: 'flowchart LR' + n<i>[label] boxes + 'from --> to' arrows). assembleShell/buildHtml/escapeHtml/escapeLabel untouched so the sc3 RenderedDocumentShell (offline, inlined runtimes, SVG, zoom/pan) is unchanged. This is the one edit touching a shared s1 file — the byte-identical type-structure check below is the load-bearing regression guard.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "documentIRToMermaid(component-dependency IR) starts with 'flowchart LR' and emits 'from --> to' arrows",
+      "type-structure IR still renders the identical classDiagram output as before (byte-unchanged) — HARD GATE",
+      "assembleShell still returns backend='primary-inline', diagramFormat='svg', supportsZoomPan=true with inlined runtimes",
+      "npx tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "documentIRToMermaid (flowchart LR body, n<i>[label] boxes, from --> to arrows, no classDiagram)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

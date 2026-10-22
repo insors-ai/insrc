@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-99650173-c316-4c0b-89a4-2f5bed6e859c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.272Z",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ca7382b0952a539",
+    "storyId": "s1",
+    "envelope": {
+      "description": "turn-lifecycle.ts: follow a saved turn",
+      "parent": {
+        "entityId": "STORY-8ca7382b0952a539-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ca7382b0952a539-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8ca7382b0952a539-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d98d33c1dd4cd0ac8c30554927f2ba014cb304e5718fb9babdfb6261347a1d59",
+        "at": "2026-10-22T12:43:56.272Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.273Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "turn-lifecycle.ts: follow a saved turn",
+    "summary": "Add follow(session, sink) and FollowSink to the module: move followLiveTurn's ownership and skip rules, the resume with the throttled cursor saves, nativeSessionId, the end-of-turn cursor clear and onEnd. Make stop also abort the follow and stop the resumed process, and make detach abort the follow without stopping that process. Add unit tests.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "follow is a no-op with no liveTurn, while already following the session, for a turn running in this host, and when the owner is another live host",
+      "follow takes ownership from a dead owner (ownerHostPid saved), passes every event to onEvent, clears the cursor and saves at the end, then calls onEnd",
+      "a resume that throws is logged and the cursor stays saved",
+      "stop aborts the follow and stops the resumed process; detach aborts the follow and leaves that process running",
+      "after detach of a session-file turn started here, follow resumes it"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "follow skips a running turn, a turn already followed and a turn owned by a live host"
+      },
+      {
+        "level": "unit",
+        "name": "follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd"
+      },
+      {
+        "level": "unit",
+        "name": "a failing resume keeps the cursor saved"
+      },
+      {
+        "level": "unit",
+        "name": "stop ends a followed turn's process; detach leaves it running"
+      },
+      {
+        "level": "unit",
+        "name": "a detached session-file turn is resumed by follow"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

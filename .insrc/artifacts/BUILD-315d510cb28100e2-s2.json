@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow",
-    "approvedAt": "2026-10-17T08:32:20.821Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ec6cae7dfbb4bd3c069c59f028f6a617019a2142b0b26bb208b433573dd68573",
+        "at": "2026-10-17T06:22:44.508Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T08:32:20.821Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

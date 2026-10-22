@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-92f436c5-73f3-4f54-a0fe-6cdeaa7dcc18",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.811Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp the reviewer on reviews",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb2f2b5d18e5eab8fbc66f647345d650d21f07ee1476d7225d4e176486759f26",
+        "at": "2026-10-22T12:43:14.811Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.812Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp the reviewer on reviews",
+    "summary": "reviewArtifactFile stamps reviewedBy daemon on both its pipeline path and its template path. The controller's verdicts phase and findings phase stamp controller. runCodeReview takes an optional reviewedBy and writes it on the code-review record; the MCP handler passes controller and the daemon code review passes daemon.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "A DEF reviewed by reviewArtifactFile and an LLD reviewed by it both carry reviewedBy daemon",
+      "A review stamped by the verdicts phase and one stamped by the findings phase carry reviewedBy controller",
+      "A code-review record carries the reviewedBy its caller gave, and none when the caller gave none"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T4 reviewArtifactFile writes daemon on its pipeline path (a DEF) and its template path (an LLD)"
+      },
+      {
+        "level": "unit",
+        "name": "T4 the verdicts phase (a DEF) and the findings phase (an LLD and an HLD) write controller"
+      },
+      {
+        "level": "unit",
+        "name": "T4 runCodeReview writes each reviewedBy value it is given and none when given none"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c64f5ce0-5e75-4e27-b250-377c92676c8e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.407Z",
+    "epicCreatedAt": "2026-09-20T11:24:43.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9225688d966a8588",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repurpose SettingsView.settingsTree as the collapsible-panel builder",
+      "parent": {
+        "entityId": "STORY-9225688d966a8588-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9225688d966a8588-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7eb53c0e87a284bf6f539997d2e68aa0e46b1c4aa78fc7ead894680d2d5f9c11",
+        "at": "2026-10-22T12:44:00.410Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.411Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repurpose SettingsView.settingsTree as the collapsible-panel builder",
+    "summary": "Keep SettingsTreeNode{Category,Section}/SettingsTree + settingsTree(catalog, sectionTitles) unchanged in signature/logic: ordered Category nodes from groupsOf (declared groups then trailing bucket, every option once) followed by one Section node per sectionTitle, defaultIndex = General-or-first-else-first-node (-1 when empty). It now describes which panels to render + which is expanded on first load, not JTree nodes. No new symbol.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "settingsTree returns Category nodes in groupsOf order then one Section node per section title; every catalog option lands in exactly one Category node's options (no drop/dup/reorder), out-of-groups options in a trailing node",
+      "defaultIndex is the General category index when present, else the first category, else the first node (-1 only when there are no nodes)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "SettingsTreeModelTest: settingsTree yields category nodes in groupsOf order then one node per section title"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsTreeModelTest: defaultIndex is General when present, else the first category, else the first node"
+      },
+      {
+        "level": "unit",
+        "name": "SettingsTreeModelTest: every catalog option maps to exactly one category node (no drop/dup/reorder); an out-of-groups option gets a trailing node"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

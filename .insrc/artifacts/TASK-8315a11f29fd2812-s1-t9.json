@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4e0218c3-12af-41c7-ab1b-2381e5321f78",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.240Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Serial daemon driver runReviewJob",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "390c653b8c61eaee991992f920e3c9f9d8d815d434c2e5fb17423f115b109d09",
+        "at": "2026-10-22T12:43:51.240Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.241Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Serial daemon driver runReviewJob",
+    "summary": "runReviewJob drives a job to the end serially: issue pending calls one at a time with internalRetry false and each call's execution mode (cwd, timeoutMs, or reviewer session with deadlineMs = min(deadlineAt - now, per-session limit)), run deterministic stages with runStage, apply answers and failures, pass the signal into every call, and return the adapter's result. A cancelled review ends at once with AbortError and records nothing.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Calls are serial and each runs with its execution mode.",
+      "A cancel during a call in flight ends the review at once with AbortError, no re-issue, nothing recorded.",
+      "A re-issued session never restarts the deadline."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

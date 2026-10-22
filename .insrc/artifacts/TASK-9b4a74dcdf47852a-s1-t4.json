@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69c97b57-3494-4ded-a2d8-7dc10a4cee80",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.707Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Every reader of the artifacts directory leaves the record alone, and it cannot be approved",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b4a74dcdf47852a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec1b6ed23f83c7cda7a7b0892860dbbfd3a00964f202a69baced13beb1eea98d",
+        "at": "2026-10-22T12:44:02.710Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.711Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Every reader of the artifacts directory leaves the record alone, and it cannot be approved",
+    "summary": "Go through each reader of the artifacts directory named in the design and make it handle or skip a TESTS record: the delivery loader skips the prefix before its unknown-kind branch, the VS Code plugin's workflow chain skips it, the docs-tree migration takes TESTS into its own kind pattern and story-scoped list, and the rest are shown by test to be unaffected. Add NotApprovableError; approveArtifactByJsonPath and rejectArtifactByJsonPath throw it for a TESTS record, and the approval tool's single-path route checks the kind before it reads the meta or runs the code-review gate.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "With a TESTS record in the artifacts directory, each reader (the delivery view, by its records and its load failures; the pending list; the ownership scan; the question scan; the Epic catalogue; the tracker's resolver; the CLI's workflow service; the amendment staleness scan; both scans of the amendment store; the path walk; the id parser) returns what it returned without it, and none throws",
+      "Approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and no code-review outcome, also for a Story whose code review blocks with enforcement on",
+      "The TUI service's approve and reject throw NotApprovableError, the batch does not stamp the record, and the record is unchanged",
+      "Converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty",
+      "The VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it. Its test is run by the root command the gate uses and by the plugin's own test script and passes in both; if the root command cannot run it, the build record says so and names the plugin's command as the proof",
+      "The JetBrains reader is recorded as checked and unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "artifact-kinds.test.ts: with a TESTS record in the artifacts directory, each reader of that directory (the delivery view, for which both its records and its load failures are compared, the pending list, the ownership scan, the question scan, the Epic catalogue, the tracker's resolver, the CLI's workflow service, the amendment staleness scan, both scans of the amendment store, the path walk, the id parser) returns what it returned without it, and none throws"
+      },
+      {
+        "level": "integration",
+        "name": "artifact-kinds.test.ts: approval of a TESTS record by its md path and by its json path through the approval tool's route comes back in skipped[] with a reason that begins 'not-approvable:' and with no code-review outcome, also for a Story whose code review blocks with enforcement on; the TUI service's approve and reject throw NotApprovableError; the batch for its Epic does not stamp it; and the record is unchanged (mutations: put the kind check in the approval tool's route only; make it after the code-review gate)"
+      },
+      {
+        "level": "integration",
+        "name": "migrate-docs-tree.test.ts: converging a forked Story folder that holds BUILD.md and TESTS.md moves both to the same folder and leaves the old folder empty (mutation: leave TESTS out of the migration's kind pattern)"
+      },
+      {
+        "level": "integration",
+        "name": "daemon-gateway.test.ts: the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

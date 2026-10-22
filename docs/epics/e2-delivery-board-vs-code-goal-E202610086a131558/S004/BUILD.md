@@ -36,8 +36,8 @@ t6 done (commit f191c154).
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-2f07f59c76f70149-S001.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
-- `.insrc/artifacts/CR-2f07f59c76f70149-S001.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
+- `.insrc/artifacts/BUILD-2f07f59c76f70149-s1.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
+- `.insrc/artifacts/CR-2f07f59c76f70149-s1.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
 - `.insrc/artifacts/ISSUE-2f07f59c76f70149.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
 - `.insrc/build-start/2f07f59c76f70149-S001.json` — **insrc-build** (2026-10-09T12:04:52.965Z)
 - `docs/standalone/bug-test-t1-no-file-under-E202610092f07f59c/ISSUE.md` — **insrc-build** (2026-10-09T12:04:52.965Z)

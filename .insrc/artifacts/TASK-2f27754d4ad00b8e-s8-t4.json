@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa6046a9-9519-45f1-a2c0-c1b988ae68c7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.502Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Add the comment rules",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b954ec0d7c42391283d78bb110f74084b6eff10cdfc36014053835fed9829efe",
+        "at": "2026-10-22T12:43:22.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.503Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the comment rules",
+    "summary": "Add src/workflow/tracker/comment-rules.ts: classifyComment (first line /revise or revision: gives revision-request, /suggest or suggestion: gives suggestion, else comment), isFrameworkComment (any insrc marker comment, no legacy shape), the actor of a tracker login (github:<lowercased login>, github:unknown for an empty or deleted author) and the feedback entry id tracker:<comment id>.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Only the first line decides the kind, any case, and ordinary prose that starts with the word suggestion is a comment",
+      "isFrameworkComment is true for the insrc:post, insrc:review, insrc:handoff, insrc:attach and insrc:feedback markers and false for human text and for the old unmarked Attached comment",
+      "A mixed-case login gives its lowercased github actor, and an empty author gives github:unknown",
+      "The entry id is tracker: followed by the comment id"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "comment-rules.test.ts: classifyComment gives revision-request, suggestion or comment from the first line only"
+      },
+      {
+        "level": "unit",
+        "name": "comment-rules.test.ts: isFrameworkComment recognises every insrc marker and no human text"
+      },
+      {
+        "level": "unit",
+        "name": "comment-rules.test.ts: the author and the entry id are derived from a tracker comment, a mixed-case login lowercased"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

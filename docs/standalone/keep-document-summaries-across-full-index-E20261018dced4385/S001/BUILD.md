@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-dced43851723554f-S001 -->
+<!-- insrc:artifact BUILD-dced43851723554f-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,7 +23,7 @@ Pushed t1-t5 to main and updated the installed daemon (0fb0c2b7). The restore wr
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-dced43851723554f-S001.json` — **insrc-build** (2026-10-18T13:53:49.427Z)
+- `.insrc/artifacts/PLAN-dced43851723554f-s1.json` — **insrc-build** (2026-10-18T13:53:49.427Z)
 - `docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/PLAN.md` — **insrc-build** (2026-10-18T13:53:49.427Z)
 - `docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/er-model.html` — **insrc-build** (2026-10-18T13:53:49.427Z)
 - `docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md` — **insrc-build** (2026-10-18T13:53:49.427Z)

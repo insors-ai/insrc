@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8c95d2e0-6689-490a-beb5-a9c68052c3ba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.282Z",
+    "epicCreatedAt": "2026-09-20T17:12:59.449Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4c7992cc0f79ef2a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extend registerProject to forward steering",
+      "parent": {
+        "entityId": "STORY-4c7992cc0f79ef2a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4c7992cc0f79ef2a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4c7992cc0f79ef2a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "846c45d4d846059c571772191336c55db60d5f630d393cf1b1c94da0c0d6d5b7",
+        "at": "2026-10-22T12:43:31.284Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.285Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend registerProject to forward steering",
+    "summary": "Change registerProject to registerProject(projectRootPath: String, steering: SteeringSelection? = null): RegistrationResult; when steering != null build mapOf(PARAM_PATH to root, PARAM_STEERING to mapOf(\"claude\" to steering.claude, \"agents\" to steering.agents)) else the existing path-only map; keep the r.ok classification + DaemonUnavailableException throw. Update the DaemonGatewayService delegate. Nullable-default = backward-compatible. SteeringSelection(false,false) sends both-false (daemon no-op); null sends NO steering key.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "registerProject(root, SteeringSelection(true,false)) sends repo.add params with steering={claude:true,agents:false}.",
+      "registerProject(root, SteeringSelection(false,false)) sends steering={claude:false,agents:false} (daemon no-op).",
+      "registerProject(root) / registerProject(root, null) sends NO steering key (existing callers unchanged).",
+      "The nullable-default param compiles against the existing onboarding call site with no edit."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerProject(root, SteeringSelection(true,false)): fake rpc records METHOD_REPO_ADD params path=root AND steering={claude:true,agents:false}"
+      },
+      {
+        "level": "unit",
+        "name": "registerProject(root, null) and registerProject(root): NO steering key in the recorded params (backward-compat)"
+      },
+      {
+        "level": "unit",
+        "name": "registerProject: r.ok=true→registered=true; r.ok=false→registered=false+reason; DaemonUnavailableException still propagates"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

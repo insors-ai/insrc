@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "c5824e17eccf0c14",
     "storyId": "s1",
-    "epicSlug": "make-workflow-framework-s-generated-artifact"
+    "epicSlug": "make-workflow-framework-s-generated-artifact",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "bfe0b0b30646b8e7c4e3b5137859d0cc68e0d1405bba85d3bea826aea95a13a9",
+        "at": "2026-09-27T16:07:01.309Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

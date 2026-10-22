@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4e52f7b5-a0d5-4513-83df-00de7c5711a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:56.587Z",
+    "epicCreatedAt": "2026-10-16T09:01:43.796Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f52996c2709dba81",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Label a call frame with its repo-relative path and line",
+      "parent": {
+        "entityId": "STORY-f52996c2709dba81-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f52996c2709dba81-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c1a78e451736c251af8af604e2e7a4c32dcb87745783dad2eed96846d5f2699a",
+        "at": "2026-10-22T12:44:56.592Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:56.593Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Label a call frame with its repo-relative path and line",
+    "summary": "Give frameLabel and buildCallSequenceIR an optional repoRoot. With a root, a frame's label reads 'name (path:line)' where path is the file relative to the root with forward slashes; without a root, or for a file outside it, the label keeps the base-name form. Pass scope.repoRoot from makeExtract, the builder's only production caller. Node ids, edge ids and citations are not touched.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A frame inside the root is labelled 'name (relative/path.ts:line)' with forward slashes on every platform",
+      "A frame outside the root, or a build with no root, keeps the 'name (base.ts:line)' label",
+      "Node ids, edge ids and citations are unchanged, and the existing three-argument callers of the builder still compile and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/docgen/extract/__tests__/call-sequence-label.test.ts: a call frame is labelled with its path relative to the repo root and its line"
+      },
+      {
+        "level": "unit",
+        "name": "src/docgen/extract/__tests__/call-sequence-label.test.ts: a frame outside the root, or a build with no root, keeps the base-name label"
+      },
+      {
+        "level": "unit",
+        "name": "src/docgen/extract/__tests__/call-sequence-label.test.ts: node ids, edge ids and citations do not change with the label"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

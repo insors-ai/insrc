@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27731f74-a03c-420e-ad6e-c671346ba69a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.086Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Remove the output-parsing path and run the live checks",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "06e6db0b73c97cca7a729bc3c70a8ebafd758c7a576aab3bee4949eb669f040f",
+        "at": "2026-10-22T12:43:11.088Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.089Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Remove the output-parsing path and run the live checks",
+    "summary": "Once everything above is in, remove presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed to the presenter and the end-of-turn opening of whatever became pending, along with the TurnState fields only they used and the tests that pinned them. Nothing in the chat reads a tool result to decide what to open. Then run the live check against the finished behaviour: a declared document opens in the review pane even when the workflow result was large. The Codex chat live check (a Codex turn that calls insrc_present opens the declared document) is deferred by the user to a follow-up, because the insrc MCP server is not registered in Codex; until it is run, the Codex mapper rests on the unit tests against the pinned real capture.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "presentedPathOf, toolResult and the end-of-turn guess no longer exist and nothing references them",
+      "A turn with no declaration opens nothing at its end, and a result carrying a pendingApproval block opens nothing",
+      "The chat, presenter and extension tests and the type check pass",
+      "The live check was run by the user and its result recorded as reported, not run by the gate; the Codex chat live check is deferred"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing"
+      },
+      {
+        "level": "integration",
+        "name": "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist"
+      },
+      {
+        "level": "live",
+        "name": "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

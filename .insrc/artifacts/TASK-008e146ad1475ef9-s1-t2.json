@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2d53d891-4f2e-4d92-ae0f-303869c2b981",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.570Z",
+    "epicCreatedAt": "2026-10-10T05:39:29.105Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "008e146ad1475ef9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A symbol or file scope is measured without building every entity of the repository",
+      "parent": {
+        "entityId": "STORY-008e146ad1475ef9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-008e146ad1475ef9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-008e146ad1475ef9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "264a47f4d432cbe3b0870d04df497fc62a99f7c3a334a4cb87fa7c864a0221f7",
+        "at": "2026-10-22T12:43:10.570Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.571Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A symbol or file scope is measured without building every entity of the repository",
+    "summary": "In the measure of a stored area, read a symbol scope by its entity's id and a file scope by the entities of its file, count only entities of the scope's repository, and fall back to today's whole-repository read when the narrow read finds none. Add the two readers (getEntity, listEntitiesOfFile) to the measuring pass's test seam. The index check made while a code or docs scope is resolved is not changed.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "For a symbol scope whose entity is in its repository, measureResolvedScope makes one read by id and no read of the repository's entities; items is 1 and files is 1 (0 when the entity has no file path).",
+      "For a file scope whose file has entities, measureResolvedScope reads that file's entities and does not ask for every entity of the repository; files is 1.",
+      "For both, the counts and the size equal those the whole-repository read gives for the same stored entities.",
+      "A narrow read that finds nothing, or only entities of another repository, falls back to the whole-repository read and gives today's result, including not determined for a repository with no stored entity.",
+      "Driven through measureRequestScope for a code request, a file or symbol scope causes exactly one whole-repository read, the one made by the index check of the scope resolution.",
+      "A repo, workspace, module or directory scope is read as before.",
+      "`npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read"
+      },
+      {
+        "level": "unit",
+        "name": "a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

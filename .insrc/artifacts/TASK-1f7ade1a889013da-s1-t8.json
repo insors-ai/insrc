@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b999fe92-550d-49f0-a5d9-4696dbf18c61",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.156Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Delete `normaliseSchemaForAnthropic` and fix the orphaned comment",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ed96982d1623a9cd596e3f4e25c6df4c280fe683a13dcf03fc7ae35c119e1a70",
+        "at": "2026-10-22T12:43:17.156Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.157Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delete `normaliseSchemaForAnthropic` and fix the orphaned comment",
+    "summary": "Remove the helper and its doc comment. Then READ the resulting region to CONFIRM the 'Phases B.1-B.5 land per-provider implementations' block (:320) now sits directly above `notImplementedStructuredOutput` (:359) — verify it rather than assume the deletion fixed the mis-attachment as a side effect. Leave `notImplementedStructuredOutput` in place: it is also zero-caller, but it is a deliberate stub contract, not a false claim that a broken case is handled. `processSchemaForOpenAIStrict` is likewise untouched — its missing production caller is a separate backlog item, and this Story must not be read as wiring the OpenAI-strict path.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "ADDED PER CRITIQUE: the t1 reference search is RE-RUN inside this task, immediately before the deletion, and still returns exactly one line. t1's result is eight tasks old by now and must not be inherited.",
+      "The function and its doc comment are gone; `tsc --noEmit` is clean.",
+      "The 'Phases B.1-B.5' comment block is verified BY READING the file region to sit directly above `notImplementedStructuredOutput`, and that verification is recorded.",
+      "`notImplementedStructuredOutput` and `processSchemaForOpenAIStrict` are both still present and unmodified.",
+      "No shim, re-export, or deprecated alias is left behind — a shim would preserve the false signal that is the whole defect."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "pre-deletion re-run of the reference search still returns exactly one line — recorded, not inherited from t1"
+      },
+      {
+        "level": "smoke",
+        "name": "post-deletion read of the file region confirms the 'Phases B.1-B.5' block now sits directly above notImplementedStructuredOutput"
+      },
+      {
+        "level": "smoke",
+        "name": "`tsc --noEmit` clean after removal, and notImplementedStructuredOutput + processSchemaForOpenAIStrict both still present and unmodified"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

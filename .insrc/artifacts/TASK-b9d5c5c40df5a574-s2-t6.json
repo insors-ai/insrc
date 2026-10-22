@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c193424e-e4db-4528-bafb-f2f00abbd4ef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.857Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The lookup pipeline takes the measured size",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c2df2d2bc20ed3d05ca5548da306c6d0f19ea7fa7121980ff24cd92e342d4896",
+        "at": "2026-10-22T12:44:24.858Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.858Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The lookup pipeline takes the measured size",
+    "summary": "Make the context builder the one writer of the size in the lookup pipeline: its inputs take an unsized intent and an optional hint; after it resolves the scope it measures the named area and gives the planning call that size; after the plan has been executed it measures the lookup results, gives the answer step that size and puts the measure in the report. Leave the intent's size and the hint out of the cache key, and set the hint on a cached bundle's measure from the current call. Give the executor's entry points an optional request size, which the builder fills. Remove the default size from the one-shot tool, which passes the caller's size as the hint, and from the daemon's workflow runner, which passes none.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "The planning call receives the named-area size and the answer step the size from the lookup results, whose measure is in the report",
+      "The one-shot tool passes a caller's size as the hint and the workflow runner passes none; neither sets a size",
+      "The cache key leaves out the intent's size and the hint: a run and a plan request for the same scope share one cached run bundle, and a cached bundle's measure carries the current call's hint",
+      "The builder passes the request's named-area size to the executor through the new optional argument",
+      "The answers of the one-shot tool and of the workflow runner carry the measure line"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the context builder gives the planning call the size of the named-area measure, gives the answer step the size of the measure from lookup results, and puts that measure in the report, as do the step tool's bundle phase and answer turn; the one-shot tool, the step tool and the workflow runner set no size of their own; the free-form lookup uses the request size its runner context carries and, when it carries none, measures its resolved scope or a repo scope at its repo path"
+      },
+      {
+        "level": "integration",
+        "name": "the builder's cache key leaves out the intent's size and the size hint: a run and a plan request for the same scope share one cached run bundle"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

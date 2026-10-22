@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bc9f25f0-68d4-4809-aa2c-476921fa928a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.564Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The completeness record, the answer report and the completeness line",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9616d842ab06c35fd63e49da5098e07bf40b17cbd88a5f6c39b74b5d675d6c2f",
+        "at": "2026-10-22T12:44:24.564Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.565Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The completeness record, the answer report and the completeness line",
+    "summary": "Add src/analyze/completeness.ts: the Completeness type (with `limited` as a list of reached limits, each with a scope, and partlyRead's totalChars nullable with a note), buildCompleteness, the AnswerReport type, deriveAnswerReport and renderCompletenessLine. Nothing uses them yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "buildCompleteness computes `complete` (false for any reached limit, skipped item, partly read item or notEstablished) and never takes it as input",
+      "buildCompleteness throws RangeError for a negative count, a total below the returned count, and an overall limit below the returned count, and accepts a per-group limit below it",
+      "deriveAnswerReport names every incomplete and every failed source and throws RangeError for a source with neither a record nor a failure",
+      "renderCompletenessLine returns 'Complete.' or a line naming every incomplete and failed source",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildCompleteness computes complete and rejects contradictory facts with RangeError"
+      },
+      {
+        "level": "unit",
+        "name": "buildCompleteness accepts several reached limits and a per-group limit below the returned count"
+      },
+      {
+        "level": "unit",
+        "name": "deriveAnswerReport: all complete, one incomplete, one failed, and a source with neither is rejected"
+      },
+      {
+        "level": "unit",
+        "name": "renderCompletenessLine names every incomplete and failed source and repeats a shared basis note once"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

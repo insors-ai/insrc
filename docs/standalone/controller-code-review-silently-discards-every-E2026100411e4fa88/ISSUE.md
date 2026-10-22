@@ -50,5 +50,5 @@ DELIBERATELY NOT DECIDED HERE — for the fix stage:
 - **[[c4]]** `code` `src/mcp/code-review-step/handler.ts:18` — "out-of-changedFiles findings (daemon-path parity), then drive the SAME"
 - **[[c5]]** `code` `src/workflow/code-review/subject.ts:97` — "changedFiles = await deps.changedFiles(repoPath);"
 - **[[c6]]** `code` `src/workflow/code-review/subject.ts:37` — "import { changedFiles as realChangedFiles, NoBuildChangesError } from '../runners/build/changed-files.js';"
-- **[[c7]]** `prior-artifact` `CR-93081bff91ae5108-S001 — the live measurement` — "counts {high: 0, med: 0, low: 1}; adherence 0, conventions 0, coverage 1, quality 0 — against seven findings submitted"
+- **[[c7]]** `prior-artifact` `CR-93081bff91ae5108-s1 — the live measurement` — "counts {high: 0, med: 0, low: 1}; adherence 0, conventions 0, coverage 1, quality 0 — against seven findings submitted"
 - **[[c8]]** `prior-artifact` `ISSUE-5f7a7cb95b643ae5 — the separate changed-set/range decision` — "Sibling Stories approved together share one range base, so a later build reports its siblings' commits as its own changes"

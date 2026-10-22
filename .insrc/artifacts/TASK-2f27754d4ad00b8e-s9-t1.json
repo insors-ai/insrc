@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-395e6ac7-a1fa-46b6-9159-02eb3ac1a5e6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.758Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Change convertLegacyFeedback to the s5 mapping",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "83ea30310a74bd8115800fcb36036d84ede07e4d43be3e6cb351bb1a85162d85",
+        "at": "2026-10-22T12:43:22.758Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.759Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Change convertLegacyFeedback to the s5 mapping",
+    "summary": "In src/workflow/artifact-core/feedback-convert.ts: the actor id is the author text lower-cased when it is already an os:, git: or github: id, else legacy:<slug of the author> with the author text in actor.properties.name; kind is revision-request when the entry's decision or kind is feedback, suggestion stays, the rest comment; a target.file other than the artifact's own document goes to anchor.section and is no longer reported unmapped; id, timestamp, batchId and revision are kept. Update src/workflow/artifact-core/__tests__/feedback-convert.test.ts and add src/workflow/convert/__tests__/convert-feedback.test.ts.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A namespaced author is kept lower-cased and any other author becomes legacy:<slug> with the text in actor.properties.name",
+      "Decision or kind feedback is revision-request, suggestion stays suggestion, the rest comment",
+      "A foreign target.file lands in anchor.section and is not reported unmapped",
+      "id, timestamp, batchId and revision are kept"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off (actor, kind, anchor section, kept fields)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

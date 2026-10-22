@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-843eb021-1e70-4324-84cf-e48a31411630",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.080Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Place the rendered requirements — bounded in-section substitution, with a safe fallback",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a0ba90c1a24d228e061ca1b8978052200253871d1ff138757fe9885796e2f54",
+        "at": "2026-10-22T12:44:31.081Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.082Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Place the rendered requirements — bounded in-section substitution, with a safe fallback",
+    "summary": "Add `placeFunctionalRequirements(bodyEl, record, sections, bodyDegraded)` to `DOCS_FR_SOURCE`, returning `{ placed: 'in-section' | 'prepended' | 'none', degradation? }`. Three outcomes. ABSENT: an undefined record, an empty `requirements`, or a non-array yields `placed:'none'` with no element created and nothing removed. IN-SECTION: when the body rendered structurally and the resolved slug matches a heading element FOUND BY A LOOKUP SCOPED TO THE BODY CONTAINER, remove that heading's following siblings up to but NOT including the next heading element of ANY level (or the end of the container), and insert the built container in their place — leaving the heading, its text and its stamped slug untouched. PREPENDED: when the body degraded, the anchor does not resolve, or no heading carries the slug, insert the container as the body's first child instead; return a degradation ONLY when the body itself rendered fine, so no second notice stacks on an already-degraded document. On the degraded path the container the block lands in carries `.insrc-docs-plain`, whose `white-space:pre-wrap` and `word-break` would otherwise inherit into the items — the item rules must neutralise that explicitly (s3/t4). The sibling range is computed and the container fully built BEFORE the first removal, so a construction throw leaves the document intact. This task contains the only destructive operation in the Story.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A body whose functional-requirements section is followed by two further sections keeps BOTH, and no heading element at any level is ever removed.",
+      "A functional-requirements section that is the LAST section removes to the end of the container without an off-the-end read or a throw.",
+      "After an in-section placement the section's heading element, its text and its stamped id are identical to before, so its chooser entry and anchor target still resolve.",
+      "After an in-section placement the body contains the built container and NOT the prose list that was there — the requirements are separated from surrounding prose by that prose being gone, not merely by styling.",
+      "A record that makes construction throw leaves the body COMPLETELY unmodified, with nothing removed — proving the build-before-mutate ordering rather than relying on a catch.",
+      "An undefined record yields `placed:'none'` with zero createElement calls and zero mutations of the body — asserted as the absence of DOM activity, not merely the absence of a visible section.",
+      "A degraded body yields `placed:'prepended'` with NO degradation returned (s1's notice already covers it); an unresolvable anchor on a well-rendered body yields `placed:'prepended'` WITH a degradation.",
+      "The slug lookup is scoped to the body container, so an element elsewhere on the surface sharing the id can never have its siblings deleted.",
+      "ADDED (s3/t4): the DEGRADED-path rendering is verified VISUALLY — render the real shell with a degraded body plus a record, screenshot it headless and READ the image — confirming the inherited `.insrc-docs-plain` white-space/word-break rules do not mangle the items on the one path where this block is the reviewer's only legible access to the commitments. A DOM stub cannot see this, and a pixel is never signed off on a green suite.",
+      "CLOSING CONDITION (s3/t7): this task's mutations are run here — deleting the absent-safe gate must turn the absent check red, and changing the removal bound to end-of-container must turn the bounded-removal check red."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "t4: all three placement outcomes asserted through the returned discriminator AND the resulting stub tree, including the degradation returned and withheld"
+      },
+      {
+        "level": "unit",
+        "name": "t4: bounded removal — an FR section followed by two further sections keeps both, and no heading element at any level is removed"
+      },
+      {
+        "level": "unit",
+        "name": "t4: removal to end — an FR section that is the last section removes to the end of the container without throwing"
+      },
+      {
+        "level": "unit",
+        "name": "t4: heading preservation — the heading element, its text and its stamped id are identical before and after"
+      },
+      {
+        "level": "unit",
+        "name": "t4: build-before-mutate — a record that makes construction throw leaves the body completely unmodified"
+      },
+      {
+        "level": "unit",
+        "name": "t4: the slug lookup is scoped to the body container, so a same-id element elsewhere on the surface is never touched"
+      },
+      {
+        "level": "smoke",
+        "name": "t4: degraded-path visual — render the real shell degraded with a record, screenshot headless and read it back to confirm .insrc-docs-plain inheritance does not mangle the items"
+      },
+      {
+        "level": "unit",
+        "name": "t4 (mutation): delete the absent-safe gate -> the absent test fails"
+      },
+      {
+        "level": "unit",
+        "name": "t4 (mutation): change the removal bound to end-of-container -> the bounded-removal test fails"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

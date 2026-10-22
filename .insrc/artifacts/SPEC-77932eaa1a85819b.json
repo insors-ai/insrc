@@ -20,8 +20,36 @@
     "specHash": "77932eaa1a85819b",
     "epicSlug": "fully-converged-spec-all-decisions-made",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-11T10:25:45.207Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-10-11T10:25:12.755Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e2fafea249cacd2506f626b896c2d63f06050490d56bae2f4a8984effae53ac5",
+        "at": "2026-10-11T10:25:12.755Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T10:25:45.207Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "design",

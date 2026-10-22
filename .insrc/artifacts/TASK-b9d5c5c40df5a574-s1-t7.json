@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-de1e9677-af17-4f12-94f2-4ac4952c70bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.572Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A lookup that cannot run is reported as failed, with what it had found",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1c857e596ca472bbcbc3baa177f649a4f684b4839f70eebeb8ba5b22a29055f4",
+        "at": "2026-10-22T12:44:24.572Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.572Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A lookup that cannot run is reported as failed, with what it had found",
+    "summary": "List the lookups' catch clauses (twenty-five in twelve files at design time) and classify each: a clause that handles one named, expected condition keeps returning a result and says so in the record; every other clause rethrows. Add LookupFailedError and the failed output's `partial`; the executor's conversion copies the findings. The free-form lookup's turn limit becomes a failed output with the tool results gathered, carried on the loop's own error; a free-form answer's record has basis 'model-directed' and is not complete.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "The build record lists every catch clause with its class: 'expected: <condition>' or 'rethrow'",
+      "A test counts the catch clauses in the lookup files and fails when the count differs from the number of classified entries, so a clause added later cannot go unclassified",
+      "A text search that throws becomes the failed output; restoring the catch that returns an empty result makes the test fail",
+      "Each class of clause has a test: an expected condition returns a result whose record says so; anything else reaches the executor as a failed output",
+      "The free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered",
+      "A free-form answer's record has basis 'model-directed' and is not complete",
+      "When the tool loop is the whole answer, both mapping functions still map the turn-limit error to 'shaper-tool-loop-exhausted' and put the gathered tool results in its data"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a text search that throws becomes the failed output (mutation: restore the catch that returns an empty result)"
+      },
+      {
+        "level": "unit",
+        "name": "each class of lookup catch clause has a test: an expected condition says so in the record, anything else is a failed output"
+      },
+      {
+        "level": "unit",
+        "name": "the count of catch clauses in the lookup files equals the number of classified entries"
+      },
+      {
+        "level": "unit",
+        "name": "the free-form lookup at its turn limit is a failed output whose partial holds the tool results gathered"
+      },
+      {
+        "level": "unit",
+        "name": "a free-form answer's record has basis 'model-directed' and is not complete"
+      },
+      {
+        "level": "unit",
+        "name": "both mapping functions put the gathered tool results in the data of 'shaper-tool-loop-exhausted'"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

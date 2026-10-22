@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d53bec00-d76e-4fe3-a542-2176f1256c20",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.291Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Render sourceLink in renderNarrative/buildHtml + forward it from assembleShell",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97e289e28841db07-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b395e5598e36e1a5b7fa2470ca1b9eee99ee8b7cf526405fb5f24d7db32668c5",
+        "at": "2026-10-22T12:44:01.294Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.294Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render sourceLink in renderNarrative/buildHtml + forward it from assembleShell",
+    "summary": "Extend renderNarrative + buildHtml (shell.ts) to render ir.narrated.sourceLink as an escaped <a> in the context band; add the appended optional sourceLink param to buildHtml and have assembleShell pass ir.narrated.sourceLink. Preserve empty-sections+no-sourceLink byte-identity.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "buildHtml renders an escaped <a> (href + label escapeHtml'd) when sourceLink is present.",
+      "With empty sections AND no sourceLink, buildHtml output is byte-identical to before the change.",
+      "assembleShell forwards ir.narrated.sourceLink to buildHtml."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildHtml renders escaped <a> when sourceLink present"
+      },
+      {
+        "level": "unit",
+        "name": "buildHtml empty-sections+no-sourceLink byte-identical golden"
+      },
+      {
+        "level": "unit",
+        "name": "HTML-special chars escape with no injection"
+      },
+      {
+        "level": "unit",
+        "name": "assembleShell forwards ir.narrated.sourceLink to buildHtml"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

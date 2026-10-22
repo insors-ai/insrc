@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a244199-adaa-4e93-baf5-4e4065e261bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.555Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Completeness findings surfaced in code review",
+      "parent": {
+        "entityId": "STORY-d9f85b3cc8cc966b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d9f85b3cc8cc966b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d9f85b3cc8cc966b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d3b6b68bd8aa56c43dc5400f44726dc15adeaf624d34eb8ba3e434cda56a344a",
+        "at": "2026-10-22T12:44:44.558Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.559Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Completeness findings surfaced in code review",
+    "summary": "Add a pure completenessFindings(def) per kind returning at most two LOW DimensionFindings (missing narrative; elements missing a description) and call it from the code-review diagram handlers (er, sequence, component) and the ux dimension. Validators and firstCompanionValidationFailure stay unchanged.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "Absent narrative -> one LOW; missing descriptions -> one LOW naming them; fully described -> [].",
+      "Code-review records show these LOWs and the verdict never becomes block because of them."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "completenessFindings: absent narrative / missing descriptions / fully described"
+      },
+      {
+        "level": "integration",
+        "name": "code-review diagram + ux dimensions: completeness LOWs recorded, verdict not block"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

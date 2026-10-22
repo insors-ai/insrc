@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3a8f8b65-64b3-47fa-9348-04c5b0a39d33",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:05.307Z",
+    "epicCreatedAt": "2026-08-04T12:31:41.584Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a131994ea1f99207",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Fake-file unit tests for the widened sweep + the BUILD completion branch table (ac1-ac7)",
+      "parent": {
+        "entityId": "STORY-a131994ea1f99207-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a131994ea1f99207-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a131994ea1f99207-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "da96d7bb1d0b91eea02800563ec350c903a96a5d41045f940d723deeb57635be",
+        "at": "2026-10-22T12:44:05.311Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:05.313Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-file unit tests for the widened sweep + the BUILD completion branch table (ac1-ac7)",
+    "summary": "Extend src/workflow/__tests__/approve-codereview-gate.test.ts (or a new sibling) with BUILD-named artifacts using the existing harness (withRepo tmp .insrc/artifacts, writeArtifact({workflow:'build',storyId}), writeCR via codeReviewArtifactPaths, opts.enforce injected, isApproved): ac1 pendingArtifactJsonPaths sweeps a pending BUILD in an epic batch + excludes an already-approved BUILD; ac2 single BUILD + enforce ON + CR pass => completes (approvedAt) + codeReview[] 'pass'; ac3 BUILD + enforce ON + absent CR => withheld into skipped[] ('completion requires a code review'), NO approvedAt, codeReview[] 'no-review'; ac4 BUILD + enforce ON + absent CR + overrideReview => completes + override recorded on codeReview[]; ac5 BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] 'blocked'; ac6 BUILD + enforce OFF + absent CR => the CONCRETE byte-identical observable: out.approved contains the BUILD, isApproved(jsonPath)===true, codeReview[0].status==='no-review', out.skipped empty — PLUS a non-BUILD LLD + enforce ON + absent CR => completes (withhold is BUILD-scoped) AND a story-scoped non-BUILD artifact whose basename !== 'BUILD-' is NOT withheld even under enforce (guards the basename predicate); ac7 clean meta.review + BUILD withheld only by the code-review gate + an epic batch withheld-BUILD + clean-LLD splits non-lossy (BUILD skipped, LLD approved).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "a src/workflow/__tests__ suite runs under npx tsx --test with temp BUILD artifact json + temp CR json under a tmp repo + approveWorkflowTarget(req,{enforce}) — no live daemon/graph/config write",
+      "the seven ac1-ac7 subjects are each covered: widened sweep incl/excl, single-pass-completes, absent-CR withhold (no approvedAt), override bypass, block withhold, enforce-off byte-identical (approved + isApproved===true + codeReview 'no-review' + skipped empty) + non-BUILD unaffected + non-BUILD-basename not withheld, distinct-from-meta.review + non-lossy batch split",
+      "the full `npx tsx --test 'src/workflow/**/*.test.ts'` sweep passes (existing approve-workflow-target + approve-codereview-gate suites stay green)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "non-BUILD LLD + enforce ON + absent CR => completes (withhold is BUILD-scoped)"
+      },
+      {
+        "level": "unit",
+        "name": "clean meta.review + BUILD withheld only by the code-review gate (distinct from meta.review)"
+      },
+      {
+        "level": "unit",
+        "name": "epic batch: withheld BUILD + clean LLD => BUILD skipped, LLD approved (non-lossy)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

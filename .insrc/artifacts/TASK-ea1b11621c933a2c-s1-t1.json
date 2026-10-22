@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6cc62314-0230-4d46-b9f0-65be26c74f56",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:49.463Z",
+    "epicCreatedAt": "2026-08-01T09:12:18.048Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add refreshMarkedSection pure function to steering-inject.ts",
+      "parent": {
+        "entityId": "STORY-ea1b11621c933a2c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ea1b11621c933a2c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5adbba120efd950de29e21ebf62b240acecc935268e2ef8e4dc9dc173b615348",
+        "at": "2026-10-22T12:44:49.468Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:49.469Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add refreshMarkedSection pure function to steering-inject.ts",
+    "summary": "Implement the replace-only sibling of upsertMarkedSection in src/daemon/steering-inject.ts: same marker-detection, duplicate-guard, and malformed-guard logic, but both 'created' arms (absent file, present-without-markers) return {content:null, action:'skipped'} instead of adding a block. Export SteeringRefreshDeps and SteeringRefreshReport (SteeringFileOutcome list) types alongside it. No change to existing upsertMarkedSection or injectSteeringBlock.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "refreshMarkedSection(existing, block) returns action:'replaced' with the new content when existing has well-formed markers and a stale block; content outside the markers is preserved byte-for-byte",
+      "refreshMarkedSection returns action:'unchanged', content:null when the block already matches (idempotent, no write signaled)",
+      "refreshMarkedSection returns action:'skipped', content:null — never 'created' — when existing is null or the file has no markers (opt-out honoured)",
+      "refreshMarkedSection returns action:'unchanged'/'skipped' with a note, and leaves the file untouched, on duplicate or malformed markers",
+      "SteeringRefreshDeps ({listRepos, readBlock, readFile, writeFile}) and SteeringRefreshReport (SteeringFileOutcome list) types are exported from steering-inject.ts",
+      "upsertMarkedSection and injectSteeringBlock source is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "refreshMarkedSection: present + stale block returns 'replaced', surrounding content preserved byte-for-byte"
+      },
+      {
+        "level": "unit",
+        "name": "refreshMarkedSection: present + identical block returns 'unchanged' with content:null, no write"
+      },
+      {
+        "level": "unit",
+        "name": "refreshMarkedSection: absent file returns 'skipped', never 'created'"
+      },
+      {
+        "level": "unit",
+        "name": "refreshMarkedSection: present file without markers returns 'skipped', never 'created'/appended"
+      },
+      {
+        "level": "unit",
+        "name": "refreshMarkedSection: duplicate/malformed markers return unchanged/skipped + note, file untouched"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

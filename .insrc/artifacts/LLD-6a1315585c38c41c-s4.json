@@ -28,206 +28,61 @@
       "AMD-6a1315585c38c41c-2"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every s4 acceptance criterion (ac1–ac6), FR001/FR002 and local constraint lc1 is designed, and nothing beyond the read-only MVP is built.",
-          "evidence": "DEF.md:163-172 lists ac1–ac6 and lc1. The LLD covers them as follows: ac1 by task rows with dependsOn, acceptanceChecks, resultLabel and unplanned, plus taskCounts; ac2 by stageReason; ac3 by the conflict sentence; ac4 by approvalLabel, reviewLabel and overrideLabel; ac5 by opensIn and openArtifact; ac6 by notices and the CR evidence row. lc1 is covered because opensIn follows openWith. The PRD's FR-09 read-only invariant is kept, and no write path is added. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s1's reducer clears selection.selectedItemId when a refresh removes the selected item.",
-          "evidence": "board-state.ts:94-101 applySnapshot: `if (selected !== null && !items.some(i => i.id === selected)) return {...selection: { ...state.selection, selectedItemId: null }, selectionNotice: 'The selected item is no longer in the board.'}`. [files: vscode-plugin/src/delivery/board-state.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The review pane's client.content(mdPath) accepts a raw docs/ path, the daemon's docs/ guard applies to it, and a failed content read already gives an 'unavailable: <message>' body with blocked set.",
-          "evidence": "docs-review-client.ts:77 `resolvePath = (idOrPath) => mdPathById.get(idOrPath) ?? idOrPath`, and content() calls workflow.artifactContent with { mdPath }. artifact-content.ts:158-161 rejects outside-docs, not-md and symlink-escape paths. docs-review-panel.ts:1386-1392 posts `markdown: `unavailable: ${errText(err)}`, blocked: true`. [files: vscode-plugin/src/chat/docs-review-client.ts, vscode-plugin/src/chat/docs-review-panel.ts, src/workflow/artifact-content.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The snapshot item publishes the fields the builder reads: tasks (TaskValidation with planned), validation counts, stage.reason {text, artifactIds}, conflict {failedTaskItemIds, storyLevelFailed}, evidence with approval.state including 'rejected', and review {verdict, effectiveVerdict, override}.",
-          "evidence": "src/workflow/delivery/types.ts:285-308 defines DeliveryItem. TaskValidation at :200-205 has { taskItemId, result, planned }. ItemGates.conflict at :218. DeliveryEvidenceEntry at :273-283 has approval.state 'approved'|'rejected'|'pending' and review: ArtifactGate['review'], which carries verdict, override {reason, at} and effectiveVerdict (:184-195). The review-without-build notice is attached to the story through itemIds (stage.ts:227-229). [files: src/workflow/delivery/types.ts, src/workflow/delivery/stage.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The PLAN body has tasks[] with id, dependsOn and acceptanceChecks, and the snapshot's task items hold the plan task id in sourceIds, so the join works.",
-          "evidence": "src/workflow/artifacts/plan.ts:63-73: PlanTask { id: 't1'…, dependsOn: readonly string[], acceptanceChecks: readonly string[] }. graph.ts:405-411 creates task items with `sourceIds: [taskId]`, where taskId is the PLAN/BUILD entry id. [files: src/workflow/artifacts/plan.ts, src/workflow/delivery/graph.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "client.evidence(artifactId) is reused as is: it has a 15 s deadline and returns typed { ok: false } failures.",
-          "evidence": "board-wiring.ts:37 `DELIVERY_DEADLINES_MS = { snapshot: 30_000, evidence: 15_000 }`. delivery-client.ts:22 defines the kinds 'daemon-unavailable' | 'read-failed' | 'timed-out' | 'no-workspace', and evidence() never rejects. The LLD names only read-failed and timed-out, but its handling keys on { ok: false }, so the other two kinds are covered as well. [files: vscode-plugin/src/delivery/delivery-client.ts, vscode-plugin/src/delivery/board-wiring.ts]",
-          "action": "Optionally name daemon-unavailable and no-workspace in the PLAN-read error case for completeness.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc4 labels exist with the shape the LLD formats, e.g. 'Review blocked (now Review passed)', 'Rejected' and labels.unplanned.",
-          "evidence": "labels.ts:23-31 DisplayLabels has stage, notice, taskResult, approval, reviewVerdict and unplanned. reviewVerdict maps pass to 'Review passed' and block to 'Review blocked'; approval.rejected is 'Rejected'; unplanned is 'Unplanned'. [files: vscode-plugin/src/delivery/labels.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The change-site inventory is complete. §3 lists only board-protocol.ts, board-host.ts, chat/protocol.ts and docs-review-panel.ts, and §2.4 says registerDeliveryBoard passes reviewPane to the host and extension.ts passes the docs-review host.",
-          "evidence": "Four sites the design depends on are missing from the inventory. (1) DeliveryBoardHostDeps (board-host.ts:43-50) has no reviewPane field, and the LLD gives no signature change for createDeliveryBoardHost; only DeliveryBoardWiringDeps is specified. (2) BOARD_WEBVIEW_SCRIPT (board-host.ts:68-152) has no details pane, no click-to-select on board cards (renderCard attaches no listener; only issue-view linkButtons post select-item), and nothing that posts open-evidence or close-details. The LLD names it only as a test subject and does not design the rendering or these intents. (3) In extension.ts:594, `const docsReviewHost = createDocsReviewHost(...)` is declared inside `if (chatEnabled) {`, while registerDeliveryBoard is called at :606, outside that block. The host has to be hoisted, and extension.ts is not in any call-site list. (4) DeliveryItemView (delivery-contract.ts:59-61) does not pick 'tasks', which the builder reads. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/extension.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
-          "action": "Add these to the contract and §3: the DeliveryBoardHostDeps.reviewPane field; the webview script changes (selecting a card, rendering the details pane with textContent, the open-evidence and close-details buttons); hoisting docsReviewHost in extension.ts; and adding 'tasks' to DeliveryItemView.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "sc3 already declares the select-item, close-details and open-evidence up-messages and the 'details' down-message, so no protocol amendment is needed.",
-          "evidence": "board-protocol.ts:152 `{ type: 'details'; model: ItemDetailsViewModel | null }` and :167-169 declare the three up-messages, which parseBoardUpMessage (:190, :201-206) validates. :143 `export type ItemDetailsViewModel = unknown;` is the placeholder s4 replaces. board-host.ts:320 `case 'open-evidence': return; // opening evidence is s4's`. [files: vscode-plugin/src/delivery/board-protocol.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Adding the optional readOnly flag to 'docs-content' is additive: every existing post leaves it absent and behaves as before. Nothing is persisted (DetailsMemory lives in memory only).",
-          "evidence": "chat/protocol.ts:75-81 shows the 'docs-content' variant, which already carries an optional `commentable?`. All existing posts (docs-review-panel.ts:1258, 1319, 1386, 1408, 1424) build the object without readOnly. Under exactOptionalPropertyTypes, an absent key stays unchanged for these posts. The board host keeps all its state in closures (board-host.ts:186-192). [files: vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s4 redesigns nothing owned by s1, s2, s3 or s5 and does not amend E1's sc7. Task detail is read from the PLAN body rather than added to the snapshot.",
-          "evidence": "The LLD consumes sc1–sc4 unchanged and leaves keyboard and narrow layouts to s5 (§4 table). HLD.md:461-480 rejected alternative a3, which would have extended E1's view, and the LLD instead reads the PLAN through workflow.deliveryEvidence. HLD.md:393 requires the review pane's existing behaviour to stay unchanged, and the LLD's §2.2 postconditions restate that requirement. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "openArtifact can refresh the pending list and then decide pending versus read-only from the refreshed list: 'When the artifact is in the pending list after the refresh, it opens exactly as a click on its list row does'.",
-          "evidence": "refreshPending (docs-review-panel.ts:1246-1253) returns early without updating the `pending` map when a newer refresh superseded it: `if (mySeq !== refreshSeq) return;`. On a first open, open() calls refreshPending (:1784), and the webview's boot ping (:1739-1740) starts another. A refresh that openArtifact awaits can therefore resolve before `pending` is populated, so a pending artifact is wrongly shown read-only, without approve. On a cold panel, `pending` is also empty until a refresh lands. The LLD's error paths do not cover this race. [files: vscode-plugin/src/chat/docs-review-panel.ts]",
-          "action": "Specify how openArtifact gets an authoritative pending check: call client.pending() directly and use its result, or keep the open request and resolve it once the latest refresh completes. Add a test where the boot ping supersedes the refresh.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A late PLAN or record read can be detected and dropped by comparing the snapshot's request number, the current selection and the panel generation.",
-          "evidence": "board-host.ts:191-192 keeps `generation`, bumped on dispose. board-state.ts:116 stamps each applied snapshot with `requestSeq: event.seq`, and selection.selectedItemId sits in state. The refresh path already uses the same gen and seq pattern (board-host.ts:233-235). [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/board-state.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion maps to a named test, using fixtures that exist in the named test files.",
-          "evidence": "§6 maps ac1–ac6 to named tests in board-details.test.ts, board-host.test.ts and docs-review-panel.test.ts. The fixtures exist: board-host.test.ts:241 `runScript()` and :359 `openWith(snap)`, and docs-review-panel.test.ts:38 `fakeChannel()` and :68 `fakeClient(...)`. board-fixtures.ts exists. No test covers the openArtifact refresh race (see error-paths). [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts]",
-          "action": "Add a test for openArtifact while a superseding refresh is in flight.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 12,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-09T09:45:53.874Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "change-sites.1": {
-        "findingId": "change-sites.1",
-        "status": "resolved",
-        "note": "Applied: §2 and §3 now list DeliveryBoardHostDeps.reviewPane, the webview script's details pane, card select-item listener and close-details and open-evidence buttons, the docsReviewHost declaration moved before the chat gate in extension.ts, and 'tasks' added to DeliveryItemView.",
-        "resolvedAt": "2026-10-09T09:49:07.578Z"
-      },
-      "error-paths.1": {
-        "findingId": "error-paths.1",
-        "status": "resolved",
-        "note": "Applied: openArtifact reads client.pending() itself after bumping the pane's refresh counter, so in-flight refreshes are dropped and the pending decision comes from its own answer; a new error case and a docs-review-panel test cover the boot-ping race.",
-        "resolvedAt": "2026-10-09T09:49:07.580Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
       }
     },
-    "approvedAt": "2026-10-09T09:50:22.978Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ec7d230a471c092bb4202995750078326c2922c89419732377fc1fa7ee6a7c8d",
+        "at": "2026-10-09T09:45:11.650Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T09:50:22.978Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 12
+        },
+        "at": "2026-10-09T09:45:53.874Z",
+        "report": {
+          "entityId": "LLD-6a1315585c38c41c-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-6a1315585c38c41c-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

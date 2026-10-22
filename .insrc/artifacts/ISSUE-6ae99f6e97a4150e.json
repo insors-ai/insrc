@@ -21,9 +21,37 @@
     "epicSlug": "correct-dev-chat-panel-header-footer",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-09-30T08:41:08.854Z",
     "parentRef": {
       "slug": "correct-dev-chat-panel-header-footer"
+    },
+    "epicCreatedAt": "2026-09-30T08:39:58.001Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "49d8ac1f1dbc15256c061815f66d63d351303db85ad3fdf43442442fd885cd0d",
+        "at": "2026-09-30T08:39:58.001Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T08:41:08.854Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

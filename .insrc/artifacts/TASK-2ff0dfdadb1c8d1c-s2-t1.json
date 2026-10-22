@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-099a646a-c8a1-4d37-ae7e-1e18fe563605",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:23.318Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Stage annotation types",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "89e295062da72c5d8e4432ef94d921ad8d8b3a7262fc354911787e9287ce26c5",
+        "at": "2026-10-22T12:43:23.318Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:23.319Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stage annotation types",
+    "summary": "Add DeliveryStage, DeliveryRoute, StageAnnotation and StagePassResult to src/workflow/delivery/types.ts exactly as the HLD sc4 sketch.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The four sc4 types are exported from types.ts with exactly the HLD members and fields.",
+      "The module compiles under the repo's strict tsconfig."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types.test.ts: 'the stage and route types list exactly the HLD members'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

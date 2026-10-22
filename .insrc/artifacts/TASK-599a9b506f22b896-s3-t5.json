@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-18ddae42-a76e-4acf-8bed-1ec1117fac02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.530Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Run the one-time migration on this repo (dry-run gated) + refresh stale layout docs",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-599a9b506f22b896-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5b97d4de0025599e0b7a779fa44ed5cd463269b0467ad7a336f7b070acdbc6ef",
+        "at": "2026-10-22T12:43:35.530Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the one-time migration on this repo (dry-run gated) + refresh stale layout docs",
+    "summary": "Execute the migration on the insrc repo itself — the only Task that mutates the real repo, so it is DRY-RUN GATED: run the dry-run FIRST, confirm unmappable[] is empty and human-review the move set before --apply; then apply per-epic chunks relocating this repo's ~223 flat artifacts into the nested tree with history (each chunk an individually-revertible commit); run the post-move validation. Refresh the JSDoc/help text still describing the flat layout (artifacts/{plan,hld,lld}.ts headers, runners/tracker help text). Decide keep-or-delete the one-shot module.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The dry-run is run and reviewed with unmappable[]==empty BEFORE any --apply mutation (real mutation, confirm before executing)",
+      "After the run, docs/{defines,designs,plans,builds,specs,reviews} hold no artifact md; every artifact is under docs/{epics|standalone}/<slug>-E<date><hash8>/[S<nnn>/] with git history (ac1/lc1)",
+      "The post-move validation passes (no unresolved intra-artifact link, ac3); the .insrc/artifacts JSON store is unchanged",
+      "Stale flat-layout JSDoc/help text is refreshed to the nested reality; the full workflow+mcp test sweep still passes after the relocation"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "post-relocation: the full `npx tsx --test 'src/workflow/**/*.test.ts' 'src/mcp/**/*.test.ts'` sweep still passes and no artifact md remains under the flat docs dirs"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-f2f08ccf89f8ab25-S001 -->
+<!-- insrc:artifact BUILD-f2f08ccf89f8ab25-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -20,9 +20,9 @@ Built the structured design review template in seven plan tasks (commits 71bdb44
 
 ## Changes
 
-- `.insrc/artifacts/CR-f2f08ccf89f8ab25-S001.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `.insrc/artifacts/CR-f2f08ccf89f8ab25-s1.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
 - `.insrc/artifacts/ISSUE-b2e05b043846451c.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
-- `.insrc/artifacts/LLD-1716f77ba9ba017b-S001.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
+- `.insrc/artifacts/LLD-1716f77ba9ba017b-s1.json` — **insrc-build** (2026-10-05T07:56:26.234Z)
 - `docs/standalone/standalone-feature-has-no-definition-artifact-E20261005b2e05b04/ISSUE.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
 - `docs/standalone/structured-design-review-template-approved-spec-E20261005f2f08ccf/S001/CR.md` — **insrc-build** (2026-10-05T07:56:26.234Z)
 - `docs/standalone/two-sets-eyes-review-rule-only-E202610041716f77b/S001/LLD.md` — **insrc-build** (2026-10-05T07:56:26.234Z)

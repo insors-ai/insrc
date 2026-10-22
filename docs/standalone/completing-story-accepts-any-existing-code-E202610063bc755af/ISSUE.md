@@ -18,5 +18,5 @@ The completion rule should be satisfied only by a code review of the build being
 
 - **[[c1]]** `code` `src/workflow/gates.ts` — "reviewer = reviewerPartyOf(cr.meta);"
 - **[[c2]]** `code` `src/workflow/gates.ts` — "summary: 'completion requires a code review; none was run',"
-- **[[c3]]** `prior-artifact` `CR-1716f77ba9ba017b-S001`
-- **[[c4]]** `prior-artifact` `LLD-1716f77ba9ba017b-S001`
+- **[[c3]]** `prior-artifact` `CR-1716f77ba9ba017b-s1`
+- **[[c4]]** `prior-artifact` `LLD-1716f77ba9ba017b-s1`

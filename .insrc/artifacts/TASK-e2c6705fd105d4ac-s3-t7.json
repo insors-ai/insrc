@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0a71dda3-3d55-412a-8c77-9284a1fb23fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:48.968Z",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e2c6705fd105d4ac",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Code-review 'diagram' dimension: additive sequence/component peer handlers (Option B)",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e2c6705fd105d4ac-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e2c6705fd105d4ac-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "acf073653ee31a812200947b4e4f431c12377d4a5a1146f677026590d7a69ce6",
+        "at": "2026-10-22T12:44:48.968Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:48.969Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Code-review 'diagram' dimension: additive sequence/component peer handlers (Option B)",
+    "summary": "Add net-new src/workflow/code-review/dimensions/diagram/handlers/sequence.ts + component.ts that self-register via registerDiagramHandler (registry.ts:46, the reserved peer slot). Extend hasDiagramReferences (dimensions/diagram/index.ts:55) to also return true on body.sequenceDefinition / componentDependencyDefinition, and add two body-keyed dispatch branches at index.ts:97 mirroring the erDefinition branch. Reads the body.sequenceDefinition / componentDependencyDefinition fields added in t4. handlers/er.ts + isErCompanion UNTOUCHED (purely additive — the resolved open-question Option B).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "a code-review subject whose body carries a sequenceDefinition (resp. componentDependencyDefinition) engages the 'diagram' dimension and routes to the new sequence (resp. component) handler",
+      "hasDiagramReferences returns true for a body carrying only a sequence/component definition",
+      "handlers/er.ts and its isErCompanion are unchanged (no edit to the sc4-owned ref routing)",
+      "tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "diagram-handlers.test.ts — a body carrying only a sequenceDefinition (resp. componentDependencyDefinition) makes hasDiagramReferences true and dispatches to the new sequence (resp. component) handler; handlers/er.ts unchanged"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

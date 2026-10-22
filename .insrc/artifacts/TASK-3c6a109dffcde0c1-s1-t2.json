@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-86af97f1-668b-4a55-9f64-e00a85a84037",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.537Z",
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Put the rule in every synthesize prompt and the path-authoring step prompts",
+      "parent": {
+        "entityId": "STORY-3c6a109dffcde0c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c6a109dffcde0c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3c6a109dffcde0c1-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f3966f7e61ae9c97eec5d1356767ecbddcb7fc3858954035f117fd4cfa8ba148",
+        "at": "2026-10-22T12:43:28.540Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.541Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Put the rule in every synthesize prompt and the path-authoring step prompts",
+    "summary": "Interpolate PATH_FORM_RULE into the stub, brainstorm, issue, define, design.epic, design.story and plan synthesize prompts in src/workflow/orchestrator.ts, and into the step prompts that author callSites or pathsCited (the design-story s1 and s4 prompts and the issue capture prompt). In the design.story synthesize prompt, state the exception beside the 'verbatim from s4' hard rule: dataModelChanges are copied from s4 except that a call site is written in the path form. The tracker synthesize prompt is left alone because it does not reach validateBodyAndCitations.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The seven synthesize prompts for stub, brainstorm, issue, define, design.epic, design.story and plan each contain PATH_FORM_RULE, imported and not retyped, and the tracker synthesize prompt is not changed",
+      "The design-story s1 and s4 prompts and the issue capture prompt contain PATH_FORM_RULE",
+      "The design.story synthesize prompt lets a call site taken from s4 be written in the path form, beside the verbatim rule",
+      "The existing prompt-pinning tests (adjacent-scope-gate and the synthesizer tests) still pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

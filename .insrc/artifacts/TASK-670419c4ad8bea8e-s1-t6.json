@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-74717bea-1d75-49c3-a01e-268cac1f8600",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.778Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose daemon RPC and watch protocol",
+      "parent": {
+        "entityId": "STORY-670419c4ad8bea8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-670419c4ad8bea8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-670419c4ad8bea8e-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29d129ffb700aa1661da8dabbdfa0b23190ec69db52853614bf1f34e2e8ea1a9",
+        "at": "2026-10-22T12:43:40.778Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.779Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose daemon RPC and watch protocol",
+    "summary": "Register proposed understanding routes with typed success/error results and full redacted projections in existing progress stream frames.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Input validation, owner checks and current revision applied before mutation/replay",
+      "Watch subscribes before snapshot; monotonic coalesced revisions and reconnect refresh",
+      "Explicit done/error terminal, request-ID correlation, abort cleanup; no hidden answer keys",
+      "Add and pass focused tests for this task before proceeding."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "RPC forged-input rejection and typed revision-conflict result"
+      },
+      {
+        "level": "integration",
+        "name": "Real watch framing, snapshot race, reconnect, terminal and abort fixtures"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

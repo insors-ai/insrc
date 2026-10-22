@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e9656ecb-a06a-4b48-a235-eec9d72ae408",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.209Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Integration tests for the wiring, correlation, and teardown",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s2-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "83bd7565be3da729a64c4bbe9262256fa5e0ba235c3b73a9edce0d4272d1ad53",
+        "at": "2026-10-22T12:43:43.209Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.210Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration tests for the wiring, correlation, and teardown",
+    "summary": "Prove what the unit level structurally cannot: that the handler actually reads _meta.progressToken and constructs a token-bearing sink. A wiring mistake that always returns NOOP_PROGRESS_SINK would satisfy ac2 while silently failing ac1, and a report()-was-called assertion would not catch it — so the test must spy on the sink factory and assert WHICH sink was constructed for a token-bearing request. Equally, a wiring that skips attaching the reader entirely when the token is absent would pass every emission-count check while violating the NOOP_PROGRESS_SINK postcondition, so the token-less path must be asserted to consume the frame stream to completion. Fixtures: a stubbed daemon operation emitting a scripted sc1 ProgressEvent sequence then settling (plus a variant that throws mid-stream); a stubbed frame source standing in for the stream:'progress' / id: 0 binding, since s2 makes no daemon-side change and the seam is stubbed rather than driven (src/daemon/__tests__/workflow-rpc.test.ts is the reference for that surface); request envelopes with _meta present-with-token, absent entirely, present-but-progressToken-undefined (`_meta: {}`, a distinct optional-field read path under exactOptionalPropertyTypes), and carrying a non-conforming token; and a stream-end fixture. Cover the lifecycle assertions against t7 and the concurrency assertions against t8.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A test asserts on the sink object constructed for a token-bearing request — an always-NOOP wiring regression fails this test.",
+      "A no-_meta request, a `_meta: {}` request with progressToken absent, and a malformed-token request each produce zero notifications and a tool result identical to the token-bearing run's result.",
+      "On the token-less path the scripted frame sequence is asserted consumed to completion — every stub frame was read — rather than the reader being skipped.",
+      "Two concurrent invocations with different tokens receive strictly disjoint, correctly-keyed notification streams despite every frame carrying id: 0.",
+      "Two concurrent invocations supplying the same token are both honoured, with the token echoed verbatim and no deduplication.",
+      "A daemon operation that throws mid-stream tears down its subscription and leaves no reader attached; a stream-end fixture does the same.",
+      "A token-bearing invocation that settles before any frame arrives produces zero notifications, a normal result, and clean teardown.",
+      "A stage-only scripted run delivers more than one notification before the tool result and zero token notifications, without error.",
+      "The suite runs green under `npx tsx --test 'src/mcp/**/*.test.ts'` with hand-written doubles only."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "buildInsrcMcpServer tool-handler registration path: the sink-factory spy asserts WHICH sink was constructed for a token-bearing request — an always-NOOP wiring regression fails"
+      },
+      {
+        "level": "integration",
+        "name": "_meta acceptance matrix: no-_meta, `_meta: {}` with progressToken absent, and non-conforming-token requests each emit zero notifications with a tool result identical to the token-bearing run"
+      },
+      {
+        "level": "integration",
+        "name": "token-less path consumes the scripted frame sequence to completion — every stub frame read, proving the reader was attached rather than skipped"
+      },
+      {
+        "level": "integration",
+        "name": "concurrent-invocation correlation: two in-flight requests with different tokens receive strictly disjoint correctly-keyed streams despite the literal id: 0 on every frame"
+      },
+      {
+        "level": "integration",
+        "name": "two concurrent invocations supplying the SAME token are both honoured, token echoed verbatim, no deduplication"
+      },
+      {
+        "level": "integration",
+        "name": "teardown coverage: throw-mid-stream and stream-end fixtures each leave no reader attached; a token-bearing invocation settling before any frame produces zero notifications, a normal result, and clean teardown"
+      },
+      {
+        "level": "integration",
+        "name": "stage-only scripted run delivers more than one notification before the tool result and zero token notifications, without error"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

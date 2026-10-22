@@ -26,226 +26,6 @@
     "hldAmendmentsApplied": [
       "AMD-bfe98ff7f97178cf-1"
     ],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c5 / dataModelChanges CompanionArtifactRef",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly THREE daemon companion renderers emit kind:'diagram-mermaid' — the ER, sequence and component renderers — at src/workflow/artifacts/companion/render.ts lines 104, 205 and 243, which is why a ref's CompanionKind cannot identify which source record draws it.",
-          "evidence": "Direct read of src/workflow/artifacts/companion/render.ts (261 lines) confirms all three cited lines EXACTLY: line 104 `kind: 'diagram-mermaid'` in the ER renderer (preceded by log 'ER companion rendered'), line 205 the same literal in the sequence renderer ('sequence companion rendered'), line 243 the same in the component renderer ('component-dependency companion rendered'). All three return the identical ref shape with the same optional ofSectionId spread. The engine's ripgrep surfaced 9 src/ matches confined to __tests__ files, which did NOT address the non-test emit sites; the targeted reads resolved them. The premise's consequence therefore holds: a ref's CompanionKind cannot identify which source record drew it, because three distinct renderers stamp the same kind.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c4 / dataModelChanges CompanionKind",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "CompanionKind is a closed three-member union 'diagram-mermaid' | 'diagram-html' | 'ux-mock' declared at src/workflow/artifacts/companion/types.ts:24, and 'diagram-html' is declared but produced by ZERO emit sites.",
-          "evidence": "src/workflow/artifacts/companion/types.ts:24 reads exactly `export type CompanionKind = 'diagram-mermaid' | 'diagram-html' | 'ux-mock';` — a closed three-member union at the cited line. The doc comment at :21-23 independently corroborates the unproduced status: \"S003 ships `diagram-mermaid` (the ER render); `diagram-html` and `ux-mock` are peers reserved for later Stories\". A ledger recount found 8 companion refs across all artifacts with kinds {diagram-mermaid: 5, ux-mock: 3} and ZERO diagram-html, confirming it is declared but produced by nothing.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c4 / sc4 CompanionSlotFactory anchorSlug",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "CompanionArtifactRef is declared at src/workflow/artifacts/companion/types.ts:31-38 and carries an OPTIONAL ofSectionId field, which is the only positioning input sc4's factory accepts.",
-          "evidence": "REFUTED ON THE ANCHOR. types.ts is 36 lines long, so the cited range :31-38 runs PAST END OF FILE. The actual declaration is `export interface CompanionArtifactRef {` at line 29 through its closing brace at line 36 — i.e. 29-36, not 31-38. Line 31 is the mid-interface jsdoc for relPath, so the range also starts inside the body rather than at the declaration. The SUBSTANCE is confirmed exactly: ofSectionId is declared `readonly ofSectionId?: string | undefined;` at line 35 and is the only positioning input, and the jsdoc at :26-28 states it \"optionally binds the companion to a specific document section it visualizes\". Note the Epic HLD cites this as types.ts:28-36, also imprecise — the LLD did not inherit a correct range from upstream.",
-          "action": "Correct the two citation ranges in the LLD from `:31-38` to `:29-36` (migration body line 261 and citation c4 at line 428). No design decision changes: the field, its optionality and its role as sc4's sole anchor input are all confirmed at the corrected lines.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "A mechanical, evidence-derived line-range correction. The cited range overruns a 36-line file; the real declaration spans 29-36. The prescribed design is unaffected, so this is pure citation hygiene — but it must be fixed before the build reads these anchors, since a range past EOF cannot be opened.",
-            "artifactEdits": [
-              {
-                "find": "- `src/workflow/artifacts/companion/types.ts:24 (CompanionKind), :31-38 (CompanionArtifactRef)`",
-                "replace": "- `src/workflow/artifacts/companion/types.ts:24 (CompanionKind), :29-36 (CompanionArtifactRef)`"
-              },
-              {
-                "find": "- **[[c4]]** `code` `src/workflow/artifacts/companion/types.ts:24,31-38` — \"CompanionKind (closed three-member union) and CompanionArtifactRef with its optional ofSectionId\"",
-                "replace": "- **[[c4]]** `code` `src/workflow/artifacts/companion/types.ts:24,29-36` — \"CompanionKind (closed three-member union) and CompanionArtifactRef with its optional ofSectionId\""
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c1 / dataModelChanges ErDefinition",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ErSlot, ErClass and ErDefinition are declared at src/workflow/artifacts/companion/er.ts lines 34-44, 46-48 and 51-54 respectively, and ErDefinition's shape is { id?, classes: Record<string, ErClass> }.",
-          "evidence": "All three anchors resolve in src/workflow/artifacts/companion/er.ts (324 lines): `export interface ErSlot {` at line 34, `export interface ErClass {` at line 46, `export interface ErDefinition {` at line 51 — matching the cited 34-44, 46-48 and 51-54 ranges. ErSlot carries `readonly range?: string | undefined;` at line 36, which is the field the whole node/edge derivation turns on.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2 / renderErDiagram postconditions",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "erDefinitionToIr at src/workflow/artifacts/companion/er.ts:273-324 is the authoritative node/edge derivation: a slot whose `range` names a DEFINED class becomes an edge, and every other slot folds into the class box's attribute list — the exact rules this Story re-implements client-side.",
-          "evidence": "`export function erDefinitionToIr(erDef: ErDefinition): DocumentIR {` is at er.ts:273 and the file ends at 324, so the cited 273-324 span is exact. The body confirms the derivation rules verbatim: at :287 `if (range !== undefined && range.length > 0 && classNames.has(range))` pushes the slot into `relationSlots` (becoming an IrEdge at :307-311 with `to: range`), while :298 folds every other slot into `attributeNames` as `${slotName}: ${range}` or the bare slot name when range is empty. The jsdoc at :264-266 states the same split. This is exactly the rule pair the LLD commits to re-implementing client-side.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "errorPaths dangling-range / c2",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "erDefinitionToIr treats a DANGLING class range as fatal by throwing ErDefinitionError, which is the daemon behaviour this Story deliberately diverges from by omitting that one edge instead.",
-          "evidence": "Confirmed at er.ts:291-294: `if (range !== undefined && range.length > 0 && !LINKML_SCALAR_TYPES.has(range))` then `throw new ErDefinitionError(...)` with the message \"erDefinitionToIr: slot '...' on class '...' has range '...'\". The jsdoc at :269 declares `@throws ErDefinitionError when a class-ranged slot names a class absent from` the definition, and ErDefinitionError itself is declared at :58. So the daemon treats a dangling range as FATAL, which establishes the divergence the LLD documents: the client omits that one edge and draws the rest instead of failing the whole picture.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c3 / dataModelChanges invariant-change",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "validateErDefinition at src/workflow/artifacts/companion/er.ts:102-160 ajv-validates an ErDefinition at ASSEMBLY time only and does NOT run on the artifact read path, so a malformed record reaches the client renderer unvalidated.",
-          "evidence": "`export function validateErDefinition(erDef: unknown, fnDef?: FunctionalDefinition): readonly DimensionFinding[]` is at er.ts:102, within the cited 102-160 range. It RETURNS findings rather than throwing, and its referential-integrity pass at :127-133 flags a dangling range as a finding — confirming it is an assembly-time quality gate. Critically, it takes `erDef: unknown`, and the read-path projection (artifact-content.ts:203-215) never calls it: structuredRecords casts `body['erDefinition'] as ErDefinition | undefined` and spreads it through unvalidated. So a malformed record does reach the client renderer, exactly as the LLD's error paths assume.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c6 / migration stateBefore / the sc1 amendment",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The daemon projection structuredRecords in src/workflow/artifact-content.ts projects exactly FOUR structured records (functionalDefinition, erDefinition, uxDefinition, companions) verbatim, and projects NEITHER sequenceDefinition NOR componentDependencyDefinition — which is the precise gap the proposed sc1 amendment closes.",
-          "evidence": "The premise is CONFIRMED precisely. src/workflow/artifact-content.ts:203-204 declares `function structuredRecords(body): Partial<Pick<ArtifactReviewView, 'functionalDefinition' | 'erDefinition' | 'uxDefinition' | 'companions'>>` and :206-214 reads and conditionally spreads exactly those four — ArtifactReviewView itself declares them at :63-66. Neither `sequenceDefinition` nor `componentDependencyDefinition` appears anywhere in the file, so the projection gap the amendment targets is real. HOWEVER, a ledger recount materially qualifies the amendment's SECOND field: sequenceDefinition appears in 3 artifact bodies (HLD-9b72686c, LLD-bfe98ff7-s2, LLD-74bc0120-S001), but componentDependencyDefinition appears in ZERO. The amendment as proposed therefore adds a projection field, a client type, a third derivation, fixtures and a visual check for a record no producer has ever emitted.",
-          "action": "Narrow the proposed sc1 amendment to `sequenceDefinition` ONLY, and present that as the recommended form when the amendment is adjudicated. That keeps every justification evidence-backed (3 real records, including this Epic's own S002 LLD) and cuts the Story from three derivations to two. componentDependencyDefinition should be added when a producer first emits one — it is a pure additive field either way, so deferring costs nothing and carries no migration. Record the 0-producer count in the openQuestion so the decision is made on the real number rather than on symmetry with the sequence case.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "Not a mechanical text fix: it narrows the scope of a pending HLD amendment, which is the user's call to make at the approval gate. The evidence (3 sequenceDefinition bodies vs 0 componentDependencyDefinition bodies) argues for the narrower form, but the broader form is defensible if the intent is to close the projection gap once for all diagram kinds rather than twice.",
-            "options": [
-              "RECOMMENDED — amend sc1 with sequenceDefinition only; defer componentDependencyDefinition until a producer emits one. Two derivations, every field justified by real records.",
-              "Amend sc1 with both fields as originally proposed, accepting that componentDependencyDefinition is speculative, on the grounds that the projection gap is then closed once and the component renderer at render.ts:243 already exists to produce it.",
-              "Decline the amendment entirely and fall back to alternative a1 (entity models only), accepting that the 3 sequence-diagram documents show the referenced-but-unshowable state."
-            ]
-          }
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c7 / migration stateBefore",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DocsContent in vscode-plugin/src/chat/docs-review-client.ts:35-37 ALREADY mirrors erDefinition and companions, typed by indexing off the daemon's ArtifactReviewView — so both records already reach the extension host and are dropped there.",
-          "evidence": "Confirmed exactly at the cited lines of vscode-plugin/src/chat/docs-review-client.ts: `readonly erDefinition?: ArtifactReviewView['erDefinition'];` at line 35 and `readonly companions?: ArtifactReviewView['companions'];` at line 37 (functionalDefinition at 34, uxDefinition at 36). Both are INDEXED off the daemon view rather than restated, as claimed. The sc1 comment at :28-33 independently confirms the premise's consequence: the records are \"carried through from ArtifactReviewView UNCHANGED: no reshaping, no validation, no defaulting\" and are \"mirrored here so s2 (functional commitments), s3 (diagrams) and s4 (UX mocks) never have to reopen this file\". So both records already reach the extension host and are dropped at openDoc, exactly as the migration's stateBefore describes.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "c8 / DOCS_DIAGRAM_SOURCE / sc2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The webview carries exactly THREE inlined source strings today — DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE and DOCS_FR_SOURCE — concatenated into ONE nonce'd script, and DOCS_DIAGRAM_SOURCE would be the fourth member of that family.",
-          "evidence": "Exactly three exported webview source strings exist in vscode-plugin/src/chat/docs-review-panel.ts: DOCS_BODY_RENDERER_SOURCE at line 76, DOCS_SECTIONS_SOURCE at line 111, DOCS_FR_SOURCE at line 185. No fourth member of the family is present, confirming DOCS_DIAGRAM_SOURCE would be a new addition to a located, real pattern rather than an invented name.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl11",
-          "ref": "sc2 / invariantsToPreserve c2 / ac4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The docs-review surface has EXACTLY ONE markup-injection site — the markdown body's guarded innerHTML assignment — and no other innerHTML, outerHTML, insertAdjacentHTML or document.write occurs in docs-review-panel.ts.",
-          "evidence": "Confirmed by exhaustive grep of docs-review-panel.ts. `innerHTML` occurs three times and only ONE is an assignment: line 85, `el.innerHTML=marked.parse(s,{gfm:true,breaks:false,headerIds:false,mangle:false});` — the guarded vendored body parse. The other two are prose: line 156 a comment stating the single-site invariant, line 559 a comment noting the docs-list uses \"textContent only, no innerHTML\". Grep for outerHTML, insertAdjacentHTML and document.write returned NO matches anywhere in the file. The single-injection-site invariant the SVG renderer must preserve is therefore real and currently holds at exactly one.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl12",
-          "ref": "c9 / createSectionResolver / sc3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "createSectionResolver is shipped at vscode-plugin/src/chat/docs-sections.ts:136-149 and returns undefined for an ofSectionId naming no present section, which is the stale-anchor behaviour this Story consumes unchanged.",
-          "evidence": "`export function createSectionResolver(index: SectionIndex): SectionResolver {` is at vscode-plugin/src/chat/docs-sections.ts:136 and the file is 149 lines, so the cited 136-149 range is exact and spans the whole function. deriveSectionIndex sits at :86 in the same module, confirming both halves of sc3 are shipped and that S002 consumed only the latter — leaving createSectionResolver correct and unconsumed, as the migration's stateBefore states.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl13",
-          "ref": "c10 / a3 reasonRejected / nonFunctional",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "vscode-plugin has exactly ONE runtime dependency, marked@^4.3.0, and NO diagram library (no mermaid) is vendored anywhere in the plugin — which is why alternative a3's bundle cost was judged a >10x VSIX increase.",
-          "evidence": "vscode-plugin/package.json declares exactly one runtime dependency: {\"marked\": \"^4.3.0\"}, with esbuild the sole devDependency. Grep for `mermaid` across vscode-plugin/src and package.json returned NO matches. Nothing is vendored, so alternative a3's bundling cost is a genuine addition rather than a replacement of something already shipped — the basis on which a3 was rejected.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl14",
-          "ref": "c11 / openQuestions sc1 amendment",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "This Epic's own S002 LLD carries a diagram companion ref together with a sequenceDefinition and NO erDefinition — the concrete counterexample proving an ER-only S003 would show 'could not be shown' on a document the team reads often.",
-          "evidence": "CONFIRMED on the artifact itself. .insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json body: sequenceDefinition PRESENT, erDefinition ABSENT, and companions carries two refs — {kind: 'ux-mock', title: 'UX mock'} and {kind: 'diagram-mermaid', relPath: '.../S002/sequence-diagram.html', title: 'Sequence diagram'}. So this Epic's own S002 LLD is exactly the counterexample the LLD claims: a diagram-mermaid ref whose source record is a sequenceDefinition that sc1 does not project, meaning an ER-only S003 would render 'referenced but could not be shown' on it. It also confirms the dual-presence edge case (a diagram ref and a ux-mock ref on one document) is real rather than hypothetical.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl15",
-          "ref": "renderContent postconditions / migration step 6",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The companion slot build must run AFTER stampSlugs in renderContent, because the slug stamper pairs headings to anchors through a pointer that only advances and a mutated tree would mis-pair — the same ordering constraint S002's placement obeys.",
-          "evidence": "Confirmed in the shipped renderContent in docs-review-panel.ts: `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` at line 573, `var stamped=stampSlugs(bodyEl,m.sections);` at line 580, and the placement call `var fr={placed:'none'};try{fr=placeFunctionalRequirements(...)}catch(e){}` at line 597 — strictly AFTER the stamp. A comment at :586 states the constraint in the same terms the premise does (\"AFTER stampSlugs is a correctness constraint, not a style one\"), and the stampSlugs definition is at :112. The ordering constraint the diagram slot must obey is therefore established in shipped code, not asserted.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl16",
-          "ref": "sc4 interactionWithShared / cd2 openQuestion",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "sc2's shipped StructuredRenderer<T> already types its rendered output without an HTMLElement bound, which is the precedent for sc4's CompanionSlotState.body being typed `unknown` rather than HTMLElement.",
-          "evidence": "Confirmed verbatim at docs-review-panel.ts:343-348: `export type StructuredRenderer<T> = (record: T) => { readonly el: unknown; readonly degradation?: { readonly degraded: boolean; readonly notice?: string } | undefined; };` — the rendered element is typed `unknown`, with the comment \"The constructed element, built by DOM construction with textContent only.\" This is the exact precedent for sc4's CompanionSlotState.body being `unknown` rather than HTMLElement, and it also confirms the renderErDiagram return shape the LLD specifies ({ el, degradation? }) matches the shipped contract rather than inventing a new one.",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl17",
-          "ref": "c13 / openQuestions / sc3 limitation",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Across the artifact ledger there are 5 diagram-mermaid companion refs against only 2 erDefinitions and 3 sequenceDefinitions, and ZERO of the 8 total companion refs populate ofSectionId — so ac1's positioning clause is exercised by no real document today.",
-          "evidence": "An independent recount across all .insrc/artifacts/*.json bodies reproduces every figure EXACTLY: 8 total companion refs, of which 0 populate ofSectionId; kinds {diagram-mermaid: 5, ux-mock: 3}; 2 bodies carrying erDefinition (HLD-e2c6705fd105d4ac with 3 classes, HLD-bfe98ff7f97178cf with 8 classes — matching the LLD's stated 3 and 8); 3 bodies carrying sequenceDefinition. The ofSectionId finding is the material one and it is confirmed at zero: ac1's positioning clause is exercised by no document in the ledger, so the anchored placement path will ship tested but unexercised by real data. (Fixtures in src/workflow/artifacts/companion/__tests__/generate.test.ts:84 do set ofSectionId, so the field is exercised in tests — it is only real artifacts that never carry it, which is what the premise asserts.)",
-          "action": "none — verified sound",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 15
-      },
-      "reviewedAt": "2026-10-01T15:56:57.567Z",
-      "model": "client"
-    },
-    "reviewResolutions": {
-      "cl3": {
-        "findingId": "cl3",
-        "status": "resolved",
-        "note": "Citation range corrected to types.ts:29-36 by the review run's auto-apply (the cited :31-38 overran a 36-line file). Verified in both the migration body and citation c4.",
-        "resolvedAt": "2026-10-01T16:06:55.004Z"
-      },
-      "cl8": {
-        "findingId": "cl8",
-        "status": "resolved",
-        "note": "User adjudicated the sc1 amendment at the approval gate and chose OPTION 1 (the review's recommendation): amend sc1 with `sequenceDefinition` ONLY. componentDependencyDefinition is DEFERRED on the evidence — 0 producer bodies in the ledger vs 3 for sequenceDefinition — and is purely additive whenever a producer first emits one. The LLD was narrowed accordingly across 16 sites (openDoc postcondition, protocol field-add, a2 name/summary/approach/pros/cons, sc1 interaction, errorCases[2], migration steps 1 and 8, summary prose, openQuestions[0]): the Story now carries TWO derivations, not three, and a daemon rebuild is stated as required.",
-        "resolvedAt": "2026-10-01T16:06:55.006Z"
-      }
-    },
-    "approvedAt": "2026-10-01T16:09:20.098Z",
     "questionResolutions": {
       "q841c8f82": {
         "question": "RESOLVED at the approval gate — the sc1 amendment is ADOPTED IN NARROWED FORM: a `sharedContract.fieldAdd` (breaking:false) adding `sequenceDefinition` ONLY to sc1's projection. WHY THE AMENDMENT: three daemon renderers emit `kind:'diagram-mermaid'` — ER (render.ts:104), sequence (:205), component (:243) — but sc1 projected only the ER source record, and the ledger holds 5 diagram-mermaid refs against 2 erDefinitions and 3 sequenceDefinitions, so without it this Story would tell a reviewer 'a diagram was referenced but could not be shown' on the MAJORITY of documents that carry a diagram — including this Epic's own LLD for s2, whose 'Sequence diagram' companion and whose sequenceDefinition sit in the same body, unprojected. WHY NARROWED: the review's independent recount found `componentDependencyDefinition` in ZERO artifact bodies, so projecting it would buy a third derivation, a third set of fixtures and a third visual check for a record no producer has ever emitted; it is DEFERRED until one does, and is purely additive whenever that happens. CONSEQUENCES: the daemon changes by one line in `structuredRecords` and MUST be rebuilt, and the Story carries TWO derivations (entity model + call sequence), not three. backwardCompat is unchanged and symmetric, so no coordinated release is required.",
@@ -268,6 +48,61 @@
         "rationale": "All three partials have a documented, verified basis and none can change what gets built. cd1: a Story that adds code must add a name, and DOCS_DIAGRAM_SOURCE is anchored as the fourth member of a family confirmed to exist in shipped source (DOCS_BODY_RENDERER_SOURCE:76, DOCS_SECTIONS_SOURCE:111, DOCS_FR_SOURCE:185). cd2: the `unknown` typing is not a shortcut but a match to sc2's shipped StructuredRenderer<T>, verified at docs-review-panel.ts:343-348 to return `{ readonly el: unknown; ... }` — retyping would diverge from the contract s1 owns for no behavioural gain, and the code genuinely has no TypeScript boundary because it lives in a source string evaluated against DOM stubs. alt2: re-scoring k1-k7 as their own rows cannot change either elimination, since a3 falls on an explicit VIOLATES against both ac4 and sc2 and a4 on an explicit ac1 partial — so the 28 extra scores would be recorded busywork, not new information. Recording the reasoning keeps plan faithful to the approved LLD and lets review judge the partials rather than rediscover them.",
         "resolvedAt": "2026-10-01T16:19:16.680Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cf82c2f6979f6473614bc1041506e415974ee6de3a408f73788dd764f728c6da",
+        "at": "2026-10-01T15:50:29.127Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T16:09:20.098Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 15
+        },
+        "at": "2026-10-01T15:56:57.567Z",
+        "report": {
+          "entityId": "LLD-bfe98ff7f97178cf-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-bfe98ff7f97178cf-s3-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

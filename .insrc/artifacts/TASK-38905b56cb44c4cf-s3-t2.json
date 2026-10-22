@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d33af1d4-73d9-4415-b594-fa5bb06c9a8b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.517Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Restructure steering-block.md into skeleton + per-workflow guide sections",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "08e93dd00d3471325af7d321300ccaab96fd0423a942af3505d56c8f968266d3",
+        "at": "2026-10-22T12:43:27.517Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.517Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Restructure steering-block.md into skeleton + per-workflow guide sections",
+    "summary": "Rewrite src/prompts/steering-block.md: (1) a COMPACT SKELETON — a front-door decision tree (intent -> tool/workflow), a CATALOG of all 12 registered insrc_* tools (one line each: purpose + 'call insrc_schema for its exact shape') INCLUDING the previously-uncovered insrc_build_step, plus insrc_schema + insrc_guide; the schema-first rule ('call insrc_schema before emitting a call whose shape you are unsure of'); the insrc_schema self-entry (its { tool, phase? } -> InsrcSchemaResult call/response); and the pointer 'for a workflow's full step-by-step procedure call insrc_guide({workflow})'. (2) The current heavy per-workflow procedural detail MOVED into sections wrapped in the exact sc2 marker pairs '<!-- insrc:guide:<key>:start -->'..'<!-- insrc:guide:<key>:end -->' for the 10 WorkflowKeys define/design.epic/design.story/plan/build/review/code-review/brainstorm/tracker/triage (keys spelled EXACTLY so insrc_guide resolves).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "steering-block.md contains a guide-marker section for EACH of the 10 WorkflowKeys, each key spelled exactly (design.epic, code-review, etc.) with a complete start/end pair and non-empty body.",
+      "The skeleton (content outside the guide sections) names all 12 registered insrc_* tools incl. insrc_build_step, insrc_schema, insrc_guide, and contains the schema-first rule + the insrc_schema self-entry + the insrc_guide({workflow}) pointer (ac3).",
+      "No per-workflow procedural detail remains inline in the skeleton (it lives in the guide sections); the file is a single canonical source (ac4)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts (real-asset): readWorkflowGuide over the REAL steering-block.md resolves non-empty guidance for every expected WorkflowKey (ac2); the skeleton (stripGuideSections output) mentions all 12 registered insrc_* tools incl. insrc_build_step/insrc_schema/insrc_guide + the schema-first rule + the insrc_schema self-entry (ac3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

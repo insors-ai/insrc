@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-218ff3e6-a11b-4839-91cc-f5706e730da5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.977Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Retire the MCP sampling path",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e4a9c86075696af79200cd643d7532c03f15d3d0a4d96980c7c4cf07f009b05a",
+        "at": "2026-10-22T12:44:34.977Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.978Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retire the MCP sampling path",
+    "summary": "Delete src/mcp/sampling-bridge.ts, src/agent/providers/mcp-sampling-provider.ts, runWithSamplerContext and the ambient-sampler branch of buildShaperProvider, with their tests (sampling-bridge, mcp-sampling-provider, sampler-context, the sampler cases of shaper-provider); delete progress-forward.ts and its test.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "no source mentions runWithSamplerContext, the MCP sampling provider or the sampling bridge",
+      "the shaper's other providers' tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sampling retired: no source names the sampling bridge, the MCP sampling provider or runWithSamplerContext, and the shaper provider tests pass"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

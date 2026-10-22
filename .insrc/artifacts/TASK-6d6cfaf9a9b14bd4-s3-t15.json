@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7052e283-4410-4cd5-aff4-1e2a6bc3bd1c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.445Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the daemon-driven integration test for the reader",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "af8ea9285ea706bf57594483ea04c4fe4a747041f708863084f30be52accd5b0",
+        "at": "2026-10-22T12:43:43.445Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.446Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the daemon-driven integration test for the reader",
+    "summary": "Prove the reader decodes frames the real daemon actually emits, not only hand-written fixtures — this is what stops the unit suite from passing against a fixture shape that has drifted from the producer at src/daemon/workflow-rpc.ts:238. Drive a short 'workflow.run' through the IPC registration at src/daemon/index.ts:1423 with a reader attached, extending the established idiom at src/daemon/__tests__/analyze-rpc.live.test.ts:469-471 (collect frames, filter by `stream === 'progress'`, assert on the filtered set) and ADDING the ac2 assertion that no progress surfaces after the terminal frame. Also drive a short 'analyze.run' against its sibling construction site at src/daemon/analyze-rpc.ts:521 and assert the reader decodes its frames identically — sc1 defines both operations, so leaving analyze.run to synthetic fixtures alone would let a shape drift on that side pass the whole plan; the analyze-rpc.live.test.ts idiom already sits on that path, so the harness cost is small. Also cover: correlation surviving the server-side id override (precedent at handoff-stream.test.ts:224), and shared-socket noise from a non-uniform 'progress' producer leaving a bound reader unaffected. The abnormal-close subject is included only if t2 identified a usable close signal; otherwise it is recorded as deferred with the reason. Gate behind INSRC_LIVE_TESTS=1 and skip cleanly when unset, matching analyze-rpc.live.test.ts.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "A driven 'workflow.run' with a reader attached observes at least one stage event and the terminal completion through the reader API.",
+      "A driven short 'analyze.run' with a reader attached decodes stage and token events identically, or analyze.run is explicitly recorded as deferred with the reason.",
+      "The test asserts no progress is surfaced to the consumer after the terminal frame.",
+      "Correlation is verified to survive the server-side rewrite of the producer's literal `id: 0`.",
+      "A concurrent non-uniform 'progress' producer on the shared socket leaves the bound reader's state and dispatch unaffected.",
+      "A frame-collector compares raw IpcStreamMessages on the socket against events dispatched to the consumer, showing the reader saw the envelopes and the consumer saw only decoded sc1 events.",
+      "The suite gates behind INSRC_LIVE_TESTS=1 and skips cleanly when unset; both workflow inputs are short and deterministic, not 30-40 minute runs.",
+      "The abnormal-close subject is either implemented or explicitly recorded as deferred with the t2 finding as the reason."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "driven workflow.run through src/daemon/index.ts:1423 with a reader attached surfaces at least one stage event, ongoing token progress, and the terminal completion; no progress is surfaced after the terminal frame"
+      },
+      {
+        "level": "integration",
+        "name": "driven short analyze.run against src/daemon/analyze-rpc.ts:521 decodes stage and token events identically through the reader"
+      },
+      {
+        "level": "integration",
+        "name": "server-side frame-id override does not break correlation — the producer's literal `id: 0` is rewritten on write and routing still holds"
+      },
+      {
+        "level": "integration",
+        "name": "shared-socket noise: concurrent 'progress' frames from a non-uniform producer leave the bound reader's state and dispatch unaffected"
+      },
+      {
+        "level": "integration",
+        "name": "frame-collector comparison: collected raw IpcStreamMessages versus dispatched events show the reader consumed envelopes and the consumer saw only decoded sc1 events"
+      },
+      {
+        "level": "integration",
+        "name": "abnormal stream close mid-run: reader detaches, done becomes true, onComplete does NOT fire (or the subject is recorded deferred per the t2 finding)"
+      },
+      {
+        "level": "live",
+        "name": "suite gates behind INSRC_LIVE_TESTS=1 and skips cleanly when unset, matching src/daemon/__tests__/analyze-rpc.live.test.ts"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

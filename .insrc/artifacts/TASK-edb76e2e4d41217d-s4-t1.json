@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5e5547fc-7866-467a-bcc0-a1193e092aff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:52.586Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "New pure markers.ts: MarkerLine + markerFor + markerWebviewSource",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a986c2c6e24e57e9da63ada2a9e6dfacef600f36b68a2c071bfa02423725b2d",
+        "at": "2026-10-22T12:44:52.586Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:52.587Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "New pure markers.ts: MarkerLine + markerFor + markerWebviewSource",
+    "summary": "Add vscode-plugin/src/chat/markers.ts (vscode-free, pure): export interface MarkerLine {readonly cssClass; readonly label}; a single shared kind->{cssClass,label} decision table that BOTH markerFor and markerWebviewSource derive from (so they are structurally one source, per the s3 critique). markerFor(event: TurnEvent): MarkerLine | null is total over the sc2 union (assistant-delta->null; status thinking/streaming->pending, tool->tool, editing->edit + phase label; tool-call->tool with mcp?`${server} · ${name}`:tool; file-edit->edit path; done->done 'done'/'done (failed)'; error->error message), cssClass values exactly the five sc1 insrc-term__marker--* stems, plus a `const _never: never` exhaustiveness guard returning null on any unmapped kind. markerWebviewSource(): string returns a JS function-source mirroring that same table for the webview to embed inline (guards `event && typeof event.kind==='string'`, references only the five marker classes, no import/remote/vscode token).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "markers.ts compiles under strict tsc, imports only the sc2 TurnEvent type, no vscode import",
+      "markerFor is total: every sc2 kind returns a MarkerLine with a valid sc1 cssClass, or null for assistant-delta / unmapped kind (never throws)",
+      "tool-call enrichment: label = `${mcp.server} · ${mcp.name}` when mcp present, ev.tool otherwise",
+      "markerWebviewSource() returns a source string with no import / http(s): / asWebviewUri / vscode reference, derived from the same decision table as markerFor"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "markerFor maps every sc2 status phase (thinking/streaming->pending, tool->tool, editing->edit) to the right class + label"
+      },
+      {
+        "level": "unit",
+        "name": "markerFor(tool-call) -> tool class; label ev.tool with no mcp, `${server} · ${name}` with mcp"
+      },
+      {
+        "level": "unit",
+        "name": "markerFor file-edit/done(ok true+false)/error -> edit/done/error class + label; assistant-delta + unknown kind -> null (no throw)"
+      },
+      {
+        "level": "unit",
+        "name": "every markerFor cssClass is one of the five insrc-term__marker--* stems"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

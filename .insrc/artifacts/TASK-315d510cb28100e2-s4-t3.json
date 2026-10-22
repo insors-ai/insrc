@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d37f0ef2-fa26-448b-8e11-c69e76b5f12c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.495Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Route the content writers and the review paths through writeArtifact",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "34c987e7e410bdfdc7719e5958692ca70a7c4ce6887a70505896892cc5597821",
+        "at": "2026-10-22T12:43:25.495Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.496Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route the content writers and the review paths through writeArtifact",
+    "summary": "Move the draft pair JSON writes in synthesize.ts and workflow-rpc.ts, resolve-comment.ts, provenance/writer.ts, the BUILD standalone-record.ts, review/resolve.ts (apply is content; accept, override and defer are meta-only), review/run-artifact.ts and review-step verdicts.ts (auto-fix is content; report-only is meta-only) onto writeArtifact, so each real body change mints a revision.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A review that applies auto-fixes bumps the revision and a report-only review does not, through both verdicts.ts and run-artifact.ts.",
+      "Resolving a finding with apply bumps the revision and accept, override or defer do not.",
+      "A first draft written by synthesize or workflow.run has revision 1 and a re-draft keeps the whole prior tracker block.",
+      "The existing tests of these modules pass without edits."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review/__tests__/review-revision.test.ts: auto-fix review and apply resolution bump the revision, report-only review and accept override defer do not, through run-artifact and resolve"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts: the verdicts path bumps the revision only when auto-fixes change the body"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/draft-write-revision.test.ts: a first draft has revision 1 and a re-draft keeps the whole prior tracker block"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

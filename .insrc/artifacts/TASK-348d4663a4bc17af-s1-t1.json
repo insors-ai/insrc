@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c30f88d0-5933-4465-a482-90025763ca56",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.767Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Screen protocol types, labels and the new up-messages",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5d3009a744e874e25be570e0748d6c44cb4ac44d43b2c1c94bf4428cd51a3a57",
+        "at": "2026-10-22T12:43:26.767Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.768Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Screen protocol types, labels and the new up-messages",
+    "summary": "Add BoardScreen, ListView, ItemTab, ScreenModel, the ScreenBody variants (StagesBody, EpicsBody, IssuesBody, StoryBody, IssueBody), StageSectionView, StatePanelView.placement, ItemDetailsViewModel.correctedBy and EvidenceRowView.approvedAt to board-protocol.ts, and a 'screen' down-message. parseBoardUpMessage accepts set-view with a ListView, open-epic, open-item, set-item-tab, back (bare) and go-to-crumb (non-negative integer index); the old messages stay accepted until t7. DisplayLabels gains views, itemTabs, needsAttention, nothingAtStage and otherStages. statusView and selectionPanel set placement.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "parseBoardUpMessage returns the typed intent for every new up-message and null for a malformed one (go-to-crumb with a negative, fractional or string index; back or clear-filters carrying extra fields).",
+      "statusView gives placement 'body' for empty and for unavailable or refresh-failed with no snapshot shown, and 'banner' for a stale failure and for partial; no-matches and no-issues panels are 'body'.",
+      "DISPLAY_LABELS carries the four view labels, the three item-tab long and short labels, 'Needs attention', 'nothing at this stage' and 'Other stages · 0 matching'.",
+      "The plugin typechecks and the existing suite stays at its baseline."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-protocol.test.ts: 'every new up-message parses and a malformed crumb, back or set-view gives null'"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: 'statusView places empty and snapshot-less failures in the body and stale failures and partial evidence in the banner'"
+      },
+      {
+        "level": "unit",
+        "name": "labels.test.ts: 'DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

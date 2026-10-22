@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "4a6e7a40b308e164",
     "epicSlug": "provider-filtered-model-picker-model-tiers",
-    "approvedAt": "2026-09-23T11:46:15.794Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-09-23T11:39:36.724Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e62c72c05491ed1fc5d755248cfa598b3e73963698b992d743f6f7681e920c1f",
+        "at": "2026-09-23T11:39:36.724Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T11:46:15.794Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "requirements",

@@ -24,91 +24,61 @@
     "hldBaseRunId": "wf-1790248075351-dbqnsq",
     "hldEffectiveHash": "b8f0f1bf4237bd475f51a1368af9c5543f948c3358684f1bfc620ffdbb79d33e",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/docgen/handler.ts is a thin MCP wrapper that forwards to the daemon docgen.generate IPC via a daemon-stream client (docgenGenerate) — the precedent handleInsrcGuide mirrors.",
-          "evidence": "Confirmed: src/mcp/docgen/handler.ts imports docgenGenerate from ../daemon-stream.js (line 22) and forwards to it (line 83) — the thin-MCP-wrapper precedent handleInsrcGuide mirrors.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/mcp/daemon-stream.ts holds thin unaryRpc client wrappers (docgenGenerate/docgenList) that guideGet/guideList mirror.",
-          "evidence": "Confirmed: src/mcp/daemon-stream.ts defines the unaryRpc<T>(method, params, deps) helper (line 202) and the thin client-wrapper idiom over it (workflow.run.start/poll, workflow.approve, docgenGenerate imported by the docgen handler) — guideGet/guideList mirror this shape.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon IPC handler registry is an object-literal method map in src/daemon/index.ts containing 'docgen.generate' and 'docgen.list', beside which 'guide.get'/'guide.list' are added.",
-          "evidence": "Confirmed: src/daemon/index.ts registers 'docgen.generate' (line 1358) and 'docgen.list' (line 1367) in the object-literal method map, beside which guide.get/guide.list are added.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/steering-inject.ts resolves and readFileSync's the canonical prompts/steering-block.md asset and delimits regions with STEERING_MARKER_START/END ('<!-- insrc:steering:start/end -->'), the marker idiom the GUIDE_MARKER convention mirrors.",
-          "evidence": "Confirmed: src/daemon/steering-inject.ts exports STEERING_MARKER_START '<!-- insrc:steering:start -->' (line 41) and resolves the canonical prompts/steering-block.md asset (line 60) — the marker idiom + asset resolution the GUIDE_MARKER convention and the daemon guide handlers mirror.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The canonical steering source src/prompts/steering-block.md exists and is the single content the guide surface reads.",
-          "evidence": "Confirmed: src/prompts/steering-block.md exists and is the single canonical steering source the guide surface reads.",
-          "action": "No change — citation resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "boundary",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "No insrc_guide tool, guide.get/guide.list IPC, or guide-sections reader exists yet in the codebase — sc2 is net-new.",
-          "evidence": "Confirmed net-new: grep across src/ finds NO insrc_guide, NO 'guide.get'/'guide.list' IPC, and NO readWorkflowGuide/listWorkflowGuides/guide-sections — every match is in the epic's own docs. sc2 is entirely new work.",
-          "action": "No change — capability-absence claim resolves.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "contract",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "insrc_guide is registered via the s1 registerAndRecord recorder in buildInsrcMcpServer (shipped in S001), so being phaseless it also lands in the insrc_schema registry.",
-          "evidence": "Confirmed: S001 shipped buildInsrcMcpServerWithRegistry (src/mcp/server.ts:185) + the registerAndRecord recorder (206/223), so registering insrc_guide via registerAndRecord (phaseless) automatically lands it in the insrc_schema registry — the cross-story reuse the LLD relies on holds.",
-          "action": "No change — cross-artifact trace holds.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 7
-      },
-      "reviewedAt": "2026-09-24T12:10:20.609Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-24T12:27:28.983Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "79a29e5cd122bfbfd4b3468c7138efd92221ebd8e844ff6acee1408d6ba082c4",
+        "at": "2026-09-24T12:09:00.422Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-24T12:27:28.983Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 7
+        },
+        "at": "2026-09-24T12:10:20.609Z",
+        "report": {
+          "entityId": "LLD-38905b56cb44c4cf-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-38905b56cb44c4cf-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

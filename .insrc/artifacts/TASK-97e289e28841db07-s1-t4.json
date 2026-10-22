@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90365d64-96b4-466a-bdbd-fdf169a62dc3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.299Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Populate narrated.sections in the 4 companion toIr mappers",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8336a83e001c2840c880002ed3b4ee0dd7f5acbfb175882133281c2a3e1d6b17",
+        "at": "2026-10-22T12:44:01.302Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.303Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Populate narrated.sections in the 4 companion toIr mappers",
+    "summary": "In er.ts/ux.ts/sequence.ts/component.ts, have each xDefinitionToIr populate narrated.sections with a Purpose section + a per-element field-explanation section + a Legend section, derived read-only from the same definition parse. Implement er first as the reference, then mirror to ux/sequence/component (split a kind into a follow task only if its field-derivation proves non-trivial). Empty-but-valid def -> Purpose + Legend only. Do not mutate the input definition. Carries the invariant-change dataModel item (per-kind section population).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each of the 4 mappers returns narrated.sections with Purpose + per-element field-explanation + Legend for a well-formed definition.",
+      "An empty-but-valid definition yields Purpose + Legend with the field section omitted/empty and no throw.",
+      "The input definition object is not mutated (derived nodes/edges + scopeDescription unchanged)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "erDefinitionToIr sections"
+      },
+      {
+        "level": "unit",
+        "name": "uxDefinitionToIr sections"
+      },
+      {
+        "level": "unit",
+        "name": "sequenceDefinitionToIr sections"
+      },
+      {
+        "level": "unit",
+        "name": "componentDependencyDefinitionToIr sections"
+      },
+      {
+        "level": "unit",
+        "name": "empty-but-valid def -> Purpose+Legend, field section omitted"
+      },
+      {
+        "level": "unit",
+        "name": "read-only: input definition not mutated"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

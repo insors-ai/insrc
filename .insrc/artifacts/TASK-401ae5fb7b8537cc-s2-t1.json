@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31f5787a-66e6-4fb3-861d-fb64cb72cccf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:29.013Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Additively extend the sc8 boundary: ConfigKeyEntry.segments/source + ConfigGateway.writeKeyPath/rawConfig",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dfbad507cb8bc6b0fe000d47e1497e16d32aea89e760beecdda31708929538fd",
+        "at": "2026-10-22T12:43:29.013Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:29.014Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Additively extend the sc8 boundary: ConfigKeyEntry.segments/source + ConfigGateway.writeKeyPath/rawConfig",
+    "summary": "In vscode-plugin/src/config/types.ts add two OPTIONAL ConfigKeyEntry fields (segments?: readonly string[]; source?: 'catalog' | 'raw') and two ConfigGateway methods (writeKeyPath(segments, value): Promise<ConfigWriteResult>; rawConfig(): Promise<Record<string,unknown>>). In gateway.ts implement them on createDaemonConfigGateway: writeKeyPath wraps rpc('config.write', {path: segments, value}) widening {ok:boolean} to a reason-carrying ConfigWriteResult; rawConfig wraps rpc('config.show'). S001's writeKey + catalog + global entries are UNCHANGED (fields optional). Strictly additive.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "ConfigKeyEntry gains optional segments?/source? and ConfigGateway gains writeKeyPath + rawConfig; S001's writeKey(key:string)/catalog signatures are unchanged and tsc compiles",
+      "createDaemonConfigGateway.writeKeyPath calls config.write with the ARRAY path form and rawConfig calls config.show — no new IPC method",
+      "the existing 104 S001 plugin tests still pass (global path behavior untouched, k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "gateway writeKeyPath calls config.write with the array path form + rawConfig calls config.show (over a fake IpcClient recording method+params)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

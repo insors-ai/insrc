@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f14b594-bfa6-454f-881a-ed23c0b790cb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.395Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Register narrative as the 4th doc type (base wiring + generator)",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8e306b9ed6d001e50b20254347308ed012064feec14d4784776f83e87ca11cb",
+        "at": "2026-10-22T12:43:54.395Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.395Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register narrative as the 4th doc type (base wiring + generator)",
+    "summary": "In src/docgen/index.ts import narrativeRegistration + narrativeGenerator, build bases={'call-sequence': callSequenceRegistration(callGraphReader).extract, 'component-dependency': componentDependencyRegistration(componentGraphReader).extract} from the already-constructed s2/s3 registrations, and r.register(narrativeRegistration(bases, narrativeGenerator)) as the 4th doc type. No new tool/IPC code — docgen_generate + docgen.generate enumerate the registry, so k4 tool/IPC/MCP parity is inherited.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "docgenRegistry.list() includes 'narrative' (4 doc types total)",
+      "generateDocument('narrative', {repo, base, ...}) resolves through get->extract->assembleShell to an ok shell",
+      "no edit to src/docgen/tool.ts or the daemon IPC handler is required for s4 to be exposed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "makeExtract routes narration only through the injected NarrativeGenerator (fake in unit; buildShaperProvider core in live) — no cloud REST path exists"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

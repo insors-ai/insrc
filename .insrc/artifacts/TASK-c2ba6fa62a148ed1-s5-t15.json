@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d0a86ac-41eb-481f-870b-28b1aad6411e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.744Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The step tools pass 'repo-indexing' on; end-to-end refusal through the daemon",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b91a2959434ece6bf99aaa7ad6bcc5e6faf754b24ab80bafe25cca969312c9eb",
+        "at": "2026-10-22T12:44:36.745Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.745Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The step tools pass 'repo-indexing' on; end-to-end refusal through the daemon",
+    "summary": "The analyze step and the one-shot analyze (src/daemon/steps) map RepoIndexingError to an error reply with code 'repo-indexing' and the figures; the workflow steps, triage and code review pass that reply on unchanged. An integration test drives analyze.context.buildRun and the step tools through step.call on a repository being indexed. Grounding: step.call is registered at src/daemon/index.ts:1902 and analyze.context.buildRun at :1740; the step table src/daemon/steps/host.ts maps insrc_analyze (runAnalyzeOneShot) and insrc_analyze_step (handleAnalyzeStep). The pass-through claim is proven by the t15 integration test, not assumed.",
+    "size": "S",
+    "order": 15,
+    "acceptanceChecks": [
+      "analyze.context.buildRun and insrc_analyze / insrc_analyze_step through step.call on a repository being indexed return code 'repo-indexing' with the figures.",
+      "A workflow step that reaches the analyzer passes the reply on unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "analyze through the daemon (analyze.context.buildRun and the step tools via step.call) on a repository being indexed returns code 'repo-indexing' with the figures; the workflow step that reaches it passes the reply on unchanged"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0df7dd68-d66e-472b-8702-71c63326d075",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.231Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "review.chunkTokens setting",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee6a43efd82f55d255c7fa98c618de5b19aa1ee5f97a608842bd532d77b42a6f",
+        "at": "2026-10-22T12:43:51.231Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.232Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "review.chunkTokens setting",
+    "summary": "Add the review.chunkTokens catalog entry (number, default 128000) and REVIEW_CHARS_PER_TOKEN = 3, so limitChars defaults to 384,000 for every provider; config reconcile fills old files.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Default limitChars is 384,000 for every provider.",
+      "A configured value v gives v x 3."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d13b78f2-0a30-41eb-96f7-bb0769623f3e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.437Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Show the store failure in the daemon's status",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7ad24ac25a13c9d18776caa1c82194dfcee2548cfc7abc5644ec7549ce60a06f",
+        "at": "2026-10-22T12:44:35.437Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.438Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show the store failure in the daemon's status",
+    "summary": "Add the optional storeFailure field to DaemonStatus and to the mirrored type in both editor plugins. Guard the status handler's read of the repository list so that, with the store failed, it returns an empty list and storeFailure and does not throw. Show the cause line in the CLI's daemon pane and in both plugins when the field is present.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A healthy daemon's status has no storeFailure field and its other fields are unchanged",
+      "With the record locks-lost the status request answers with an empty repository list and storeFailure carrying kind, time, operation and cause",
+      "The cause text does not contain 'semume'",
+      "The CLI's daemon pane prints the cause line when the field is present",
+      "Each editor plugin's mirrored type accepts a status with the field and without it, and its display shows the cause line when the field is present"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost"
+      },
+      {
+        "level": "unit",
+        "name": "status handler with the store failed returns an empty repository list and storeFailure and does not throw"
+      },
+      {
+        "level": "unit",
+        "name": "daemon pane and both plugins: the cause line is shown when the field is present, and a status without it is accepted"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

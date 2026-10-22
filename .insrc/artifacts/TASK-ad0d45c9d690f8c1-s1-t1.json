@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b45991d5-7c3d-4718-ad93-bc6b59cf5ba4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.290Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extract src/shared/ipc-client + make src/cli/client.ts a re-export",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "06d5e5bb056adbec224f0542e1a587bf19ae56d620c0b20fd9d0347ed58d1863",
+        "at": "2026-10-22T12:44:12.291Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.292Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extract src/shared/ipc-client + make src/cli/client.ts a re-export",
+    "summary": "Create src/shared/ipc-client.ts holding the moved `rpc` fn (body verbatim from src/cli/client.ts:15, keeping the connect seam + {label,pid} envelope), plus a `createIpcClient(connect?)` factory exposing rpc<T>(), status(): Promise<DaemonStatus> (rpc('daemon.status')), and reachability(): Promise<DaemonReachability> (success⇒running; the ENOENT/ECONNREFUSED 'daemon is not running' throw⇒stopped; other throw⇒errored; never throws). Re-export IpcRequest/IpcResponse/DaemonStatus from src/shared/types.js and `sockFilePath` (= PATHS.sockFile). Turn src/cli/client.ts into `export { rpc } from '../shared/ipc-client.js'`.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/shared/ipc-client.ts exports rpc, createIpcClient, IpcRequest, IpcResponse, DaemonStatus, DaemonReachability, sockFilePath",
+      "src/cli/client.ts re-exports rpc; the four importers (src/cli/services/{debug,repo,config,daemon}.ts) compile + pass unchanged, and the { label: 'cli', pid } client-identity envelope is still emitted on the wire",
+      "reachability() derives running/stopped/errored from the call outcome and never throws",
+      "src/shared/ipc-client's import graph contains only node:net + src/shared/types + src/shared/paths (no daemon internals/indexer/storage)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "rpc() over a fake connect seam: success resolves result; ENOENT/ECONNREFUSED→'daemon is not running'; {error} line→Error(res.error); non-JSON→'invalid response from daemon'; { label:'cli', pid } envelope written on connect"
+      },
+      {
+        "level": "unit",
+        "name": "reachability() derives running/stopped/errored/(timeout→errored) from the call outcome and never throws"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: src/cli/client.ts re-exports rpc from src/shared/ipc-client and src/shared/ipc-client re-exports IpcRequest/IpcResponse/DaemonStatus from src/shared/types (no parallel type defs); import graph has no daemon internals/indexer/storage"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

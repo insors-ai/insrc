@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c577785d-18c1-4d4f-8c70-45d8fdceb5d6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.149Z",
+    "epicCreatedAt": "2026-09-17T18:27:16.414Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6efc97c8dc73e0aa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "KotlinParser (src/indexer/parser/kotlin.ts)",
+      "parent": {
+        "entityId": "STORY-6efc97c8dc73e0aa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6efc97c8dc73e0aa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6efc97c8dc73e0aa-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc24c90b0251d5564d7335ad278098fb8957b072feee2940b58b97059b47fa7c",
+        "at": "2026-10-22T12:43:44.151Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.152Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "KotlinParser (src/indexer/parser/kotlin.ts)",
+    "summary": "Add src/indexer/parser/kotlin.ts mirroring scala.ts, implemented in 3 layers on a compiling base (t4 unit tests gate each): LAYER 1 — _require('tree-sitter') + _require('tree-sitter-kotlin') GUARDED in try/catch (on load failure, log a warning + skip registration so index.ts's side-effect import can't crash the other 5 parsers), MODULE_NAMESPACE='jvm' + MODULE_REPO_ID=SHARED_MODULES_REPO_ID['jvm'], imports (makeEntityId from base.js, registerParser from registry.js, the http/messaging-client-shape helpers), class skeleton `class KotlinParser implements CodeParser { extensions=['.kt','.kts']; language='kotlin' as const; parse(filePath,source,repo,repoId) }` + `export const kotlinParser = new KotlinParser(); registerParser(kotlinParser)` inside the guard. LAYER 2 — entity extraction over the REAL tree-sitter-kotlin node kinds: package_header→Module; class_declaration→Class (interface class_modifier→Interface; data/sealed/abstract markers in signature); companion_object→Class '(companion of X)'; object_declaration→Class 'object'; function_declaration→Function (top-level)/Method (in class_body), leading user_type receiver→extension Method; property_declaration/class_parameter→Variable; DEFINES file→top-level + container→member; makeEntityId unchanged. LAYER 3 — relations + robustness: import_list→import_header(+import_alias→meta.alias)→IMPORTS to jvm Module stubs; delegation_specifier: constructor_invocation→INHERITS, user_type→IMPLEMENTS; CALLS/REFERENCES via the shared helpers; parse-error contract (rootNode.hasError → still emit package + clean top-level entities, mark file parse-error, never throw); unmapped node kinds skipped.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "kotlin.ts exports KotlinParser with extensions ['.kt','.kts'], language 'kotlin', and self-registers inside a guarded grammar load (load failure logs + skips registration, never throws).",
+      "parse() emits the correct Entity kind + signature marker for class/interface/object/companion object/data class, top-level/member/extension fun, val/var property, and package — mapping the real tree-sitter-kotlin node kinds.",
+      "parse() emits DEFINES (file→top-level, container→member), IMPORTS (jvm Module stubs, alias in meta.alias), INHERITS (superclass constructor_invocation), IMPLEMENTS (remaining supertypes), and CALLS/REFERENCES via the shared helpers.",
+      "makeEntityId is called unchanged (stable hex-32 ids); a parse-error file still emits its package + clean entities and marks the file, never throwing; unmapped node kinds are skipped."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "KotlinParser.parse emits the expected entity + relation kinds over inline Kotlin (entity/relation extraction, in kotlin.test.ts)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

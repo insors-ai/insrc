@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ad9b28f-826d-4944-bc04-38f7a8303eeb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:08.808Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Extend brainstormElicitSchema with decisions[] and nonGoals[]",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b68b5f0ba5322847a53dd4e33238d64620371f582b80eb52fa4ed26d7aad900",
+        "at": "2026-10-22T12:44:08.808Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:08.809Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend brainstormElicitSchema with decisions[] and nonGoals[]",
+    "summary": "In src/workflow/runners/brainstorm/schemas.ts, add the two additive fields to the s3 converged schema: `decisions` (array of { chosen:string minLength 1, ruledOut:string[], reason:string minLength 1 }, additionalProperties:false per entry) and `nonGoals` (string[]). Add both to `required`; keep additionalProperties:false at the top level; leave category/workingStatement/openItems/confirmed and the derived category enum unchanged. Update the file doc comment to describe the s4 extension.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "brainstormElicitSchema.required includes decisions and nonGoals in addition to the four s3 fields",
+      "decisions items are objects requiring chosen/ruledOut/reason with additionalProperties:false; chosen and reason have minLength:1; ruledOut and nonGoals are string arrays",
+      "the s3 fields (category enum, workingStatement minLength:1, openItems, confirmed) are byte-unchanged",
+      "top-level additionalProperties stays false"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema accepts a well-formed decisions[] + nonGoals[] payload and a fork-free empty-arrays payload"
+      },
+      {
+        "level": "unit",
+        "name": "schema REJECTS a malformed/incomplete decisions entry, empty chosen/reason, and a non-array nonGoals (additionalProperties:false)"
+      },
+      {
+        "level": "unit",
+        "name": "schema still requires + preserves the s3 fields (category/workingStatement/openItems/confirmed) unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

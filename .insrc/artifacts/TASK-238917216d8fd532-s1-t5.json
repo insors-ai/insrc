@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-710e64e4-82aa-4484-a01b-485b177f8b70",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.367Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Tests: daemon (unit + integration) and plugin (JUnit, fake DaemonRpc)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "96fda2d468117921f5085e074e6c0c12a91ca4c9a00b5c4105b8aee3b24067ab",
+        "at": "2026-10-22T12:43:17.367Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.368Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: daemon (unit + integration) and plugin (JUnit, fake DaemonRpc)",
+    "summary": "Add daemon node:test unit tests for listPendingArtifacts (written against t1 alone: mixed states, descriptor mapping, non-union exclusion, absent dir, malformed skip, missing openQuestions/workItemId) + integration tests for the workflow.pending handler (needs t2: pending set / empty / repo-unresolved-error / store-unreadable-error) over a temp .insrc/artifacts fixture; add plugin JUnit tests for pendingArtifacts (needs t3: Available/Unavailable mapping) with the Sc2DaemonGatewayTest fake DaemonRpc. Verify locally (npx tsx --test; ./gradlew test JDK21) — no GitHub CI. Per the s3 critique, the listPendingArtifacts unit layer only depends on t1; the integration/gateway layers on t2/t3 respectively — kept as one task since build implements t1..t4 before t5.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Every LLD test-strategy subject for ac1/ac2/ac3 has a passing test across the two layers.",
+      "Daemon subset green via npx tsx --test; plugin tests green via ./gradlew test on JDK21.",
+      "No test hits a live socket or GitHub Actions."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Aggregate: the listPendingArtifacts + pendingArtifacts unit subjects run green via npx tsx --test and ./gradlew test"
+      },
+      {
+        "level": "integration",
+        "name": "Aggregate: the workflow.pending handler integration subjects run green over the temp .insrc/artifacts fixture"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

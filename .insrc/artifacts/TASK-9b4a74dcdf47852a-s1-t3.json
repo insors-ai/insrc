@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c84e5339-b0bd-4bda-b589-887cacf7f10c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.702Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The test record: its kind, merge, paths and document",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "839215fee13153fd1c927287f0037781e9986698304ac65ff1b834e4bc03d048",
+        "at": "2026-10-22T12:44:02.705Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The test record: its kind, merge, paths and document",
+    "summary": "Add 'TESTS' to the kinds of artifact as a story-scoped kind, and a test record module beside the build record's: the record's shape, a write that replaces one Task's entry and keeps the others and the first createdAt, a read of a Task's stored mapping, the json and md paths, and the document. The folder derivation for a Story's records takes a persisted test record's createdAt and standalone flag when there is no build record. No caller writes a record yet.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+      "The json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one, and with no build record the folder comes from the test record's own persisted createdAt and flag",
+      "The document carries the artifact id marker and shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+      "A Task's stored mapping reads back as the mapping that was supplied; an unreadable or misshapen record reads as no stored mapping",
+      "Each Task's entry carries the commit and time of its run and testsPassed"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "test-record.test.ts: the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt"
+      },
+      {
+        "level": "integration",
+        "name": "test-record.test.ts: the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)"
+      },
+      {
+        "level": "integration",
+        "name": "test-record.test.ts: the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases"
+      },
+      {
+        "level": "integration",
+        "name": "test-record.test.ts: the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

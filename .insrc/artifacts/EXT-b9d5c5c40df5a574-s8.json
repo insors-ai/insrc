@@ -22,7 +22,34 @@
     "epicSlug": "make-insrc-analysis-complete-used-right",
     "storyId": "s8",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T13:57:47.644Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a0451ba4bedf1ca94b73cf34e8b2bccb8a298c1d15ce1881726c0e8d552da26b",
+        "at": "2026-10-08T13:00:34.210Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T13:57:47.644Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "M",

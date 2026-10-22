@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-8b5693528b025a55-S001 -->
+<!-- insrc:artifact BUILD-8b5693528b025a55-s1 -->
 
 # Build (standalone small) — Story S001
 
@@ -22,5 +22,5 @@ The daemon update follows a configured git remote URL and branch (daemonUpdate.r
 
 ## Changes
 
-- `.insrc/artifacts/CR-8b5693528b025a55-S001.json` — **insrc-build** (2026-10-22T12:32:19.990Z)
+- `.insrc/artifacts/CR-8b5693528b025a55-s1.json` — **insrc-build** (2026-10-22T12:32:19.990Z)
 - `docs/standalone/make-daemon-update-source-repo-url-E202610228b569352/S001/CR.md` — **insrc-build** (2026-10-22T12:32:19.990Z)

@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0c961bb9-e93a-41bc-ac07-93597aaa8a09",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.505Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the draft hook and carry readiness through the result types",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "abb9d4bbd0321d05eb5c226b7d69c3994b2b984ba081c28e81cdb0a07d057ac5",
+        "at": "2026-10-22T12:43:25.505Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.506Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the draft hook and carry readiness through the result types",
+    "summary": "Add ensureDraftIssues and IssueReadiness (not-applicable, ready, not-ready with outcomeKnown and the author's message; local-record fast path before loadTracker; Define, HLD, LLD and plan unit lists; Task issues forced; stop at the first failure). Call it right after the draft pair is written in synthesize.ts and in workflow-rpc.ts, and carry issueReadiness and notice on WorkflowStepDone, on RunWorkflowResult (return at line 352) and on the done frame (line 475).",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "A Define, LLD or plan draft in team mode creates one issue per unit and a second write creates none and runs no command, even with sign-in lost.",
+      "An unreachable tracker leaves the draft files, returns not-ready with the reason, and a failed create is worded as unconfirmed, never as no issue.",
+      "The emitted workflow.run done frame, RunWorkflowResult and the step result all carry the fields for a team repo and none for a repo without a policy.",
+      "A re-draft keeps epicRef, storyRefs and the units, so sync, the chain report and Task approval still work."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/draft-issues.test.ts: not-applicable without a team policy, policy-unreadable and sc1 failure kinds map to messages"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/draft-issues.test.ts: Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/draft-issues.test.ts: outcomeKnown wording for a failed lookup and for a create that times out"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/redraft-preserves-tracker.test.ts: a re-draft keeps epicRef and storyRefs for sync, chain report and Task approval"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/draft-issues-synthesize.test.ts: the synthesize result and the whole workflow.run path carry readiness at every hop"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

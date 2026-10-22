@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-61cda1eb-b0b2-4f56-930e-a346d32b4318",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.292Z",
+    "epicCreatedAt": "2026-09-18T06:53:41.492Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d565a953288f511",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Local build + verifyPlugin sweep (0 internal + 0 deprecated)",
+      "parent": {
+        "entityId": "STORY-0d565a953288f511-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0d565a953288f511-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0d565a953288f511-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b12943a0dd27b575fa471e555579cd2c17939ce99a50ea94d11f4674c04e898",
+        "at": "2026-10-22T12:43:12.293Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.294Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Local build + verifyPlugin sweep (0 internal + 0 deprecated)",
+    "summary": "Run ./gradlew test and ./gradlew verifyPlugin locally (JDK21 + the committed 8.10.2 wrapper). Confirm the full JUnit suite is green and the IntelliJ Plugin Verifier reports ZERO internal-API and ZERO deprecated-API usages for the three migrated sites (AppLifecycleListener.appStarted, PluginManagerCore.getPlugin, PluginDescriptor.isEnabled) while retaining the Compatible verdict (since-build 242, open-ended). No GitHub CI. Fix any fallout.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "./gradlew test is green (all JUnit5 + BasePlatformTestCase suites, incl. the new run-once test).",
+      "./gradlew verifyPlugin reports Compatible with 0 internal-API and 0 deprecated-API usages for appStarted / PluginManagerCore.getPlugin / PluginDescriptor.isEnabled."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "./gradlew verifyPlugin: 0 internal + 0 deprecated for appStarted / PluginManagerCore.getPlugin / PluginDescriptor.isEnabled, Compatible retained"
+      },
+      {
+        "level": "integration",
+        "name": "./gradlew test: full JUnit5 + BasePlatformTestCase suite green including the new run-once test"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

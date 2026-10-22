@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56109cd1-8920-4763-84f7-8fd1513a8a41",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.513Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Move Epic and Story unit records onto the binding",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9de6a222e94175a5690309bc2ed12ff60e5ee0c036179b315b8a54b11405b81a",
+        "at": "2026-10-22T12:43:21.513Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.513Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move Epic and Story unit records onto the binding",
+    "summary": "Switch resolveUnitIssueLocal, recordUnit, the pending-link save and retry and isUnitSettled in src/workflow/tracker/unit-issue.ts from meta.tracker.units to the binding for an Epic or Story unit, behind one record accessor whose Task branch keeps the Plan record until s7. With no binding the older epicRef, storyRef or storyRefs is read as a one-way rebind source. Update the tests that seed units so the draft hook, the gate and the handoff check read the binding.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+      "a failed link under the parent is stored as the binding's pending link, retried by the next ensure and cleared once done and not retried again",
+      "a pre-s6 head with only the old ref is rebound once from it with no new issue",
+      "the draft hook, the gate and the handoff check read the binding and the tests that seed units (unit-issue, draft-issues, redraft-preserves-tracker, artifact-writer, gate-approve, pending, draft-issues-synthesize and the cli tests) are updated and pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "unit-issue-binding.test.ts: ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan"
+      },
+      {
+        "level": "integration",
+        "name": "unit-issue-binding.test.ts: a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again"
+      },
+      {
+        "level": "integration",
+        "name": "unit-issue-binding.test.ts: the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue"
+      },
+      {
+        "level": "integration",
+        "name": "binding-gate.test.ts: the team gate resolves a bound unit's issue synchronously from the binding with no tracker call"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b5a62f289cbcdaee",
+    "storyId": "s1",
+    "createdAt": "2026-10-18T16:48:50.296Z",
+    "updatedAt": "2026-10-18T16:48:50.296Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T16:45:26.670Z",
+    "epicSlug": "keep-stored-good-summary-when-full",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "0c21bab41880004f3e5eb3b96e7a9b9dbfb27023ecabbfb5f31ff899bb0fc350",
+        "at": "2026-10-18T16:48:50.296Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "dc95953f",
+        "ranAt": "2026-10-18T16:48:50.296Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/db/__tests__/doc-summary-carry.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-summary-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6817,
+            "titles": [
+              {
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              },
+              {
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              },
+              {
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and schema version 5",
+                "result": "pass"
+              },
+              {
+                "title": "the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction rolls back the carry with the delete",
+                "result": "pass"
+              },
+              {
+                "title": "without carryDocSummaries the repository's carry rows are deleted",
+                "result": "pass"
+              },
+              {
+                "title": "repo removal of a repository with carry rows and no entities deletes the carry rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-fb584b4856ebeea9-S001 -->
+<!-- insrc:artifact BUILD-fb584b4856ebeea9-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,7 +26,7 @@ The step tool marks a 'repo-indexing' refusal retryable only while the repositor
 
 ## Changes
 
-- `.insrc/artifacts/CR-fb584b4856ebeea9-S001.json` — **insrc-build** (2026-10-14T05:35:08.018Z)
+- `.insrc/artifacts/CR-fb584b4856ebeea9-s1.json` — **insrc-build** (2026-10-14T05:35:08.018Z)
 - `.insrc/artifacts/ISSUE-fb584b4856ebeea9.json` — **insrc-build** (2026-10-14T05:35:08.018Z)
 - `docs/standalone/label-failed-last-index-rejected-ollama-E20261014fb584b48/S001/CR.md` — **insrc-build** (2026-10-14T05:35:08.018Z)
 - `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` — **insrc-build** (2026-10-14T05:35:08.018Z)

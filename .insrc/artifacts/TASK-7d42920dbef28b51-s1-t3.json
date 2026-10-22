@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2b62b7a0-907f-4a4a-8a60-45591eeb7de3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.446Z",
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d42920dbef28b51",
+    "storyId": "s1",
+    "envelope": {
+      "description": "planMigration plans md label-line edits and companion notes",
+      "parent": {
+        "entityId": "STORY-7d42920dbef28b51-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d42920dbef28b51-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7d42920dbef28b51-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3c1dc2f378fcd06abf9a4eedd4cba447bebab9e0c0f30f6362d6da1312494d6a",
+        "at": "2026-10-22T12:43:50.446Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.446Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "planMigration plans md label-line edits and companion notes",
+    "summary": "For members whose epicSlug is rewritten, plan exact whole-line edits against the md's post-move path (the move's `to`, else its current mdPath), building each old line exactly as the renderer did from the stored meta: PLAN/LLD '**Epic:** `${String(oldSlug)}`' (the literal 'undefined' when no slug was stored) -> new; EXT '# Extend: <old> — <title>' and '> **Extends Epic `<old>`** — ...' -> new; DEF '# Epic: <epicShortName(old)>' and HLD '# HLD: <hldShortName(old)>' -> new, computed by calling the exported helpers on the parsed artifact with old vs new meta. No md edit for BUILD/CR/TESTS/SPEC/ISSUE. For relabelled members carrying body.companions, list each companion relPath in companionNotes (pages are not edited).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "PLAN/LLD get the '**Epic:**' edit at the post-move path, including a member whose old line reads '**Epic:** `undefined`'",
+      "EXT gets both title-line edits; DEF and HLD get the H1 edit, including a slug-less DEF whose old H1 is its first sentence",
+      "BUILD/CR/TESTS rewrites carry no mdEdits",
+      "A relabelled HLD with a companion lists it in companionNotes and plans no edit to the page"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "planMigration: PLAN/LLD get the '**Epic:**' md edit at the post-move path (including an old '`undefined`' line)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit (slug-less DEF first-sentence H1 -> slug H1)"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration: a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b632dab1-0265-4a0f-aba5-a17fd3244c3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.259Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add build/schemas.ts with the BuildAdmissionResult discriminated union (sc3)",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bf9ca0e5a9ab142bd2414676a8843f3a20f6cbeb543ec39016fc89a34ec28c8c",
+        "at": "2026-10-22T12:43:15.260Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.260Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add build/schemas.ts with the BuildAdmissionResult discriminated union (sc3)",
+    "summary": "Create the new file src/workflow/runners/build/schemas.ts, purely additive with no edits to existing types. Define the flat BuildRefusalReason enum ('plan-missing' | 'plan-unapproved' | 'plan-stale'), the thin BuildAdmissionAccepted record ({planArtifactId, planArtifactHash, storyId}), the BuildAdmissionRefusal interface (reason, s2-authored message, optional inline staleness {planRecordedDesignHash, currentDesignHash} present only for 'plan-stale', and the treeUntouched:true structural invariant), and the BuildAdmissionResult union {admitted:true, plan} | {admitted:false, refusal}. Implement verbatim from the HLD interfaceSketch; keep the accepted branch thin (no full PlanArtifact — a4 rejected).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/runners/build/schemas.ts exists and exports BuildRefusalReason, BuildAdmissionAccepted, BuildAdmissionRefusal, and BuildAdmissionResult",
+      "BuildAdmissionResult is a discriminated union keyed on `admitted`; the accepted branch carries only {planArtifactId, planArtifactHash, storyId} and no PlanArtifact body",
+      "BuildAdmissionRefusal has treeUntouched typed as the literal `true` and staleness typed as an optional inline literal {planRecordedDesignHash, currentDesignHash} | undefined",
+      "BuildRefusalReason is a flat union of exactly 'plan-missing' | 'plan-unapproved' | 'plan-stale'",
+      "No existing type is modified; the module is additive and type-checks under strict + exactOptionalPropertyTypes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "BuildAdmissionResult discriminates on `admitted`; the accepted branch constructs with only {planArtifactId, planArtifactHash, storyId} and no PlanArtifact body"
+      },
+      {
+        "level": "unit",
+        "name": "BuildAdmissionRefusal types treeUntouched as the literal true and staleness as an optional inline {planRecordedDesignHash, currentDesignHash}"
+      },
+      {
+        "level": "unit",
+        "name": "BuildRefusalReason accepts exactly 'plan-missing' | 'plan-unapproved' | 'plan-stale' and nothing else"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

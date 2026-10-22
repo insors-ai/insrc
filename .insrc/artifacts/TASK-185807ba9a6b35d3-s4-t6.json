@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c7cc8f09-5a3c-4fd8-bf09-8399bc817763",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.225Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Surface progress through WorkflowStepOutputBuild",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2fb8788c6c6b07c557ae97c3929f0a164cab5d9dffb83df45e56280da36ef2c0",
+        "at": "2026-10-22T12:43:16.225Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.225Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Surface progress through WorkflowStepOutputBuild",
+    "summary": "Populate the build finalize handler's WorkflowStepOutputBuild so a developer inspects the run through the same insrc_workflow_step turn shape as every earlier stage: set next='done' on a halted-or-complete finalize and fill progress?: BuildRunProgress with the sc6 projection carrying the halt frame (failedTaskId/failedTaskTitle/reason) and filesTouchedSoFar. No bespoke command, IPC method, or UI — the existing driving surface is the only channel. Author the driving-surface mirror integration suite for this turn shape.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "On a halted-or-complete finalize, WorkflowStepOutputBuild.next==='done' and progress is the sc6 projection whose halt frame names failedTaskId, failedTaskTitle, and reason (daemon test-verdict summary, not a bare exit code), with filesTouchedSoFar populated.",
+      "Inspection names the failed Task and what earlier Tasks left in place without a working-tree read (ac2), flowing through the standard insrc_workflow_step surface with no new IPC method or UI.",
+      "A driving-surface mirror integration suite is authored in src/mcp/workflow-step/__tests__ asserting WorkflowStepOutputBuild.next==='done' with the halt-frame progress (failedTaskId/failedTaskTitle/reason + filesTouchedSoFar) for a halted finalize, driven via the stub sc5 TaskImplementerAdapter set to a chosen 'failed' verdict."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "integration (driving-surface mirror, src/mcp/workflow-step/__tests__): a halted finalize emits WorkflowStepOutputBuild.next==='done' with progress carrying the halt frame (failedTaskId/failedTaskTitle/reason) + filesTouchedSoFar through the standard insrc_workflow_step surface (no new IPC/UI), driven via a stub sc5 TaskImplementerAdapter set to 'failed' (ac2)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-28108262-f56a-45cb-867f-7a4ea181dbab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.279Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12f104b1fac77194a88d28c0d06749c85866dae175ca0eda14092e16ec8477c1",
+        "at": "2026-10-22T12:43:40.279Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.279Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit + integration tests (JUnit + IntelliJ Platform Test Framework)",
+    "summary": "Add tests in two waves within this task. Wave A (pure fakes, no fixture): unit tests for SteeringContent (present/missing/empty) and SteeringInjectionLifecycle (compose-and-write per host; empty-detect no-op; steeringBody-throws no-write; per-host HostFileAccessException isolation) using a recording fake AiHostAdapter (mirroring ProjectOpenWiringTest) + a fake steering-resource loader. Wave B (IntelliJ Platform fixture): an integration test over the real AiHostAdapterImpl rules writer on temp files proving ac2 (developer content byte-preserved, only the insrc RULES section added/replaced) and ac3 (both hosts each in their own rulesFilePath). Implement Wave A first so a fixture problem doesn't block the unit coverage. Verify locally with JDK21 + Gradle 8.10 + IntelliJ 2024.2 SDK; no GitHub CI.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Wave A unit tests cover: steeringBody present/missing/empty; compose-and-write once per host; empty-detect no-op; steeringBody-throws -> no write; per-host exception isolation.",
+      "Wave B integration test proves ac2 (surrounding developer content byte-preserved, only insrc section changed) via the real AiHostAdapterImpl rules writer over a temp file, and ac3 (both hosts written to their own rulesFilePath).",
+      "The full jetbrains-plugin suite compiles and passes locally (JDK21 + Gradle 8.10)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "SteeringInjectionIntegrationTest.projectOpen_writesRulesDelimitedSteeringIntoHostRulesFilePath_ac1"
+      },
+      {
+        "level": "integration",
+        "name": "SteeringInjectionIntegrationTest.preExistingDeveloperContent_preservedByteForByte_onlyInsrcSectionChanged_ac2"
+      },
+      {
+        "level": "integration",
+        "name": "SteeringInjectionIntegrationTest.bothHostsPresent_eachGetsSteeringInOwnRulesFilePath_ac3"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

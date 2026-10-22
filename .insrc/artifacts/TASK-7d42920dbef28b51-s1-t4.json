@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-291f71b1-4fa1-4b1e-970a-b5beef83460a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:50.447Z",
+    "epicCreatedAt": "2026-10-11T15:17:01.452Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d42920dbef28b51",
+    "storyId": "s1",
+    "envelope": {
+      "description": "applyMigration applies metaRewrites inside the per-group commits and rollback",
+      "parent": {
+        "entityId": "STORY-7d42920dbef28b51-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7d42920dbef28b51-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7d42920dbef28b51-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe12e0a22aa57508b906d33d1a8628e5f53b672b402e29cc0a586f2096030abc",
+        "at": "2026-10-22T12:43:50.447Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:50.448Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "applyMigration applies metaRewrites inside the per-group commits and rollback",
+    "summary": "Change the zero-moves early return to require no moves AND no metaRewrites. After link rewrites, for each MetaRewrite: JSON.parse the artifact (error names the artifact), set only the listed meta fields, write back as JSON.stringify(..., null, 2) + '\\n', git add; for each md edit, count exact whole-line matches of `from` in the file (error naming file + line when not exactly one), replace, git add. Commit per group with the moves' paths plus the group's JSON and md paths; groups with only rewrites get a 'chore(docs): realign <hash> artifact labels' commit. With zero moves the vacated set is empty and link validation still runs. All inside the existing try so failures reset --hard to startSha. Narrow the existing '.insrc/artifacts byte-identical after apply' test assertion to consistent members, since stale members are now expected to change.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "After apply, deriveMdPath on every member's stored meta equals its md location and PLAN.md shows the head label",
+      "Only the planned meta fields change; consistent members stay byte-identical (existing byte-identical assertion narrowed accordingly and passing)",
+      "A group's moves and rewrites land in one commit; a rewrite-only group gets its own realign commit",
+      "A rewrite-only plan applies (no early return; prune is a no-op and link validation passes)",
+      "A committed missing label line or corrupt JSON throws the rewrite-step error after an earlier chunk committed, and HEAD + work tree equal the start commit",
+      "Re-planning after apply yields no moves and no metaRewrites"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "applyMigration: after apply, deriveMdPath on every member's stored meta equals where its md sits, and PLAN.md shows the head label"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: only the planned meta fields change; a consistent member JSON is byte-identical"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a rewrite-only plan still applies (no early return)"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a committed missing label line / corrupt JSON rolls the whole two-group run back to the start commit with the rewrite-step error"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a second plan after apply has no moves and no metaRewrites"
+      },
+      {
+        "level": "integration",
+        "name": "applyMigration: a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

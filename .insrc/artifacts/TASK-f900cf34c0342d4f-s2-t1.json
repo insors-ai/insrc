@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-97ad84a8-1b48-416f-aa1f-edb0881fdbbb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.545Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the DaemonCardModel type",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6e8cbeed9cbcdacab930868ff7cc0ec1f195097bf0780ff0f7ef3560b5035c33",
+        "at": "2026-10-22T12:44:58.545Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.546Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the DaemonCardModel type",
+    "summary": "Add the DaemonCardModel discriminated-union type to src/cli/services/debug-types.ts (colocated with the sc1 types): `{ reachable: true; uptimeSec: number; repoCount: number; repos: readonly { name: string; status: RegisteredRepo['status'] }[]; socket: string; pid?: number | undefined; version?: string | undefined } | { reachable: false }`. Import RegisteredRepo type from ../../shared/types.js. Additive type surface, referenced by nothing yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "DaemonCardModel is a discriminated union keyed on `reachable`",
+      "the reachable variant carries uptimeSec/repoCount/repos[]/socket + optional pid/version; repos[].status reuses RegisteredRepo['status']",
+      "the unreachable variant is exactly { reachable: false } (no running fields)",
+      "tsc compiles the new type"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "debug-types compile-guard: a fixture builds both DaemonCardModel variants (reachable with all fields, unreachable) and narrows on `reachable` — verified by the suite compiling"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

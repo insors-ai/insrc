@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-76fda737-1182-45b9-889f-0072c55a691c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.780Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Shared test helper for lifecycle fixtures",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9bfaf4206947c6ad0b99c2bf7ffe987f61c8a75b50e387a49b761f3929ecef94",
+        "at": "2026-10-22T12:43:22.780Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.781Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared test helper for lifecycle fixtures",
+    "summary": "Add src/workflow/__tests__/lifecycle-fixtures.ts: helpers that write an approved, rejected, stale, reviewed or blocked head through the lifecycle (envelope, lifecycle, the review entry) instead of stamping meta.approvedAt, for the tests that the reader and writer tasks rewrite. Test src/workflow/__tests__/lifecycle-fixtures.test.ts.",
+    "size": "S",
+    "order": 16,
+    "acceptanceChecks": [
+      "Each helper produces a head the lifecycle readers see as approved, rejected, stale, reviewed or blocked",
+      "The helpers stamp none of the legacy fields"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lifecycle-fixtures.test.ts: each helper produces a head the lifecycle readers see in that state"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

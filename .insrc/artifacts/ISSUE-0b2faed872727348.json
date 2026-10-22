@@ -21,9 +21,37 @@
     "epicSlug": "standalone-lld-filed-second-work-item",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-04T15:00:12.741Z",
     "parentRef": {
       "slug": "artifact-docs-folders-fork-per-stage"
+    },
+    "epicCreatedAt": "2026-10-04T15:00:08.545Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6952acebea67a917b0ec3a2c98223d19c3da476dc9d58a5fa551c700bd9bcf65",
+        "at": "2026-10-04T15:00:08.545Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T15:00:12.741Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -54,7 +82,7 @@
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": "LLD-5f7a7cb95b643ae5-S001",
+      "ref": "LLD-5f7a7cb95b643ae5-s1",
       "quotedText": "docs/standalone/batch-approval-stamps-one-shared-meta-E202610045f7a7cb9/S001/LLD.md"
     },
     {

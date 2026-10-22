@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-029ea755-6376-4ce8-bee9-97ee09c90526",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.255Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The review subject is the Story's own files, with its attribution recorded",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "15d7b35e783d2d007b7421f1c3d41e05120bef75a12a6d29e49bd56d7010c7cf",
+        "at": "2026-10-22T12:44:18.255Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.256Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The review subject is the Story's own files, with its attribution recorded",
+    "summary": "changedFiles (src/workflow/runners/build/changed-files.ts:143-150) takes storyKey: with 'story-trailer' attribution the committed paths are the retained units' paths (exclusions kept), not the net range narrowed to them. resolveCodeReviewSubject (src/workflow/code-review/subject.ts:119-175) passes `<epicHash>/<storyId>` on the range-base attempt and sets changeSetAttribution ('working-tree' for the dirty-tree path) and sharedWithExcluded on the subject; the runner's record writer (src/workflow/code-review/runner.ts:289-292) persists both. Types in src/workflow/code-review/types.ts.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The subject holds only the Story's own files and records 'story-trailer'.",
+      "A file the Story changed and another Story reverted stays in the subject.",
+      "A dirty tree gives 'working-tree'; the step-down order is unchanged.",
+      "The code-review record carries changeSetAttribution and sharedWithExcluded."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'the review subject holds only the Story's own files and records attribution story-trailer'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a file one Story changed and another Story reverted stays in the first Story's subject and diff'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a dirty tree gives attribution working-tree and the step-down order is unchanged'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

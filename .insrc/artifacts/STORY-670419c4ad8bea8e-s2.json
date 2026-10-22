@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-4b671020-210e-4b55-847f-3101af26de4b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.943Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Explain change impact and the applicable project requirement",
+      "parent": {
+        "entityId": "EPIC-670419c4ad8bea8e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0bf271ddeee9b3c5f1cf218dfb3f4e9cb64059c71f729384225d6d6f1ac1bd9",
+        "at": "2026-10-22T12:43:06.943Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

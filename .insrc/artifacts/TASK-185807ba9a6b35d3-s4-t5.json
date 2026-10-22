@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a0e1247-3161-4e93-ab0d-96f320de069a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.223Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement the BuildRunProgress/BuildHaltInfo projection",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e3482c65b4560985a7183135e846aaafb2425f3f129cbec7deaf1507373ee23f",
+        "at": "2026-10-22T12:43:16.223Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.224Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the BuildRunProgress/BuildHaltInfo projection",
+    "summary": "Implement the winning alt a1 pure read-time fold from the accumulated BuildTaskOutcome[] plus the live approved-plan DEPENDS_ON graph into BuildRunProgress and its nested BuildHaltInfo, with no separately stored record: runState from the presence of a 'failed' row, completedTaskIds/filesTouchedSoFar by folding the array (set-union for files), inFlightTaskId from the single 'running' slot, and blockedTaskIds recomputed as the failed Task's transitive dependent closure (never snapshotted). The projection throws the defined invariant errors rather than fabricating a frame. Author the sc6 unit suite alongside the implementation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The projection is a pure deterministic fold: two reads with no intervening outcome write return an identical frame; no time- or random-derived field exists.",
+      "runState==='halted' iff exactly one 'failed' row and 'complete' iff every Task is terminal with none failed; inFlightTaskId is the single 'running' slot or undefined; filesTouchedSoFar is the deduped set-union of completed rows' filesTouched; blockedTaskIds is the recomputed transitive DEPENDS_ON closure of the failed Task.",
+      "The projection throws (never fabricates a frame) on: more than one 'failed' row, a taskId absent from the live plan graph (failed or non-failed row), an undecodable persisted outcome envelope, or an out-of-union status string.",
+      "The testStrategy unit suite is authored using the src/workflow/__tests__ plan-artifact.test.ts fixture idiom (explicitly NOT the src/analyze/** mkTask helpers, invariant c5), covering: determinism/idempotent-recompute, all five thrown error paths, and the edge cases (all-completed, no-dependents halt, empty plan, root failure, overlapping/empty filesTouched, mid-flight single 'running')."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit: BuildRunProgress/BuildHaltInfo projection folds BuildTaskOutcome[] + live PlanArtifact DEPENDS_ON graph — determinism/idempotent recompute, runState/completedTaskIds/inFlightTaskId/filesTouchedSoFar set-union, blockedTaskIds as recomputed transitive closure, all five thrown error paths, and edge cases (all-completed, no-dependents halt, empty plan, root failure, overlapping/empty filesTouched, mid-flight single 'running'), using the plan-artifact.test.ts fixture idiom (not mkTask, c5)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

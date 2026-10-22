@@ -1,14 +1,57 @@
 {
-  "id": "AMD-c2ba6fa62a148ed1-1",
-  "epicHash": "c2ba6fa62a148ed1",
-  "epicSlug": "complete-consistent-richer-code-index-one",
-  "hldBaseRunId": "wf-1791697214822-7bombm",
-  "amendment": {
-    "type": "storyBoundary.addStory",
-    "storyId": "s11",
-    "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "createdAt": "2026-10-11T08:30:52.243Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6127e5af1563e254ece003a29c07167159f23d40e35d0a049a69960fc12529e5",
+        "at": "2026-10-11T08:30:52.243Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T08:33:09.516Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa62a148ed1), building on its definition and high-level design and on Story s4's design: the step tools that today run in the MCP server's process and read the live store directly are moved into the daemon, so that s4's rule that only the daemon opens the live store can be switched on.",
+  "body": {
+    "id": "AMD-c2ba6fa62a148ed1-1",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s11",
+      "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+    },
+    "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa62a148ed1), building on its definition and high-level design and on Story s4's design: the step tools that today run in the MCP server's process and read the live store directly are moved into the daemon, so that s4's rule that only the daemon opens the live store can be switched on.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1791707415811-uw7lw7",
+      "storyId": "s11",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-10-11T08:30:52.243Z",
+    "approvedBy": "Subho Ghosh"
+  },
   "citations": [
     {
       "id": "c1",
@@ -34,15 +77,5 @@
       "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S004/LLD.md",
       "quotedText": "The live store opens only in a process that has declared itself its owner"
     }
-  ],
-  "proposedBy": {
-    "workflow": "define",
-    "runId": "wf-1791707415811-uw7lw7",
-    "storyId": "s11",
-    "stepId": "scope.assess"
-  },
-  "proposedAt": "2026-10-11T08:30:52.243Z",
-  "status": "approved",
-  "approvedAt": "2026-10-11T08:33:09.516Z",
-  "approvedBy": "Subho Ghosh"
+  ]
 }

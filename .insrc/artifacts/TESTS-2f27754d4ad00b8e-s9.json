@@ -6,7 +6,26 @@
     "createdAt": "2026-10-22T06:35:52.447Z",
     "updatedAt": "2026-10-22T11:24:12.560Z",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
-    "epicSlug": "one-common-model-every-artifact"
+    "epicSlug": "one-common-model-every-artifact",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2c3fb253db943aadde1aa810b29381fb575dc8137f7509b0eabb6a7c9099b9d2",
+        "at": "2026-10-22T06:35:52.447Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [
@@ -3066,7 +3085,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/plans/core-data-model.md, section 's9 build: hand-offs', item 1. Preview (handleRepoConvert, mode preview) on a git clone of this repository listed 453 renamed head files, equal to a direct count of S0nn head files in .insrc/artifacts; the 444 in the plan was an earlier analyzer figure. It listed 56 flat amendments (convert-amendment) and 0 problems. The same preview at the LLD-approval commit gave 453 too. The run also found PLAN-dfc0371b7200f5b5-s001 (a lowercase zero-padded id), now renamed by the conversion."
+              "evidence": "docs/plans/core-data-model.md, section 's9 build: hand-offs', item 1. Preview (handleRepoConvert, mode preview) on a git clone of this repository listed 453 renamed head files, equal to a direct count of S0nn head files in .insrc/artifacts; the 444 in the plan was an earlier analyzer figure. It listed 56 flat amendments (convert-amendment) and 0 problems. The same preview at the LLD-approval commit gave 453 too. The run also found PLAN-dfc0371b7200f5b5-s1 (a lowercase zero-padded id), now renamed by the conversion."
             }
           },
           {

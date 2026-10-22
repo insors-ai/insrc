@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dfc5b9ae-6a7f-4119-8cc8-88239d9dc3de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:45.486Z",
+    "epicCreatedAt": "2026-10-12T07:11:33.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ddc4ede1dbf84626",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Page-cutting module",
+      "parent": {
+        "entityId": "STORY-ddc4ede1dbf84626-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ddc4ede1dbf84626-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12add26c0215246f9bd7965a38398e401c81bac43d4a23dbde6dff8c444128e9",
+        "at": "2026-10-22T12:44:45.490Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:45.491Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Page-cutting module",
+    "summary": "Add the vscode-free transcript-window module: latestWindow(transcript, pageRows) and pageBefore(transcript, before, pageRows), each returning { firstIndex, rows }, with the one rule (PAGE_ROWS back from the end of the range, then back to the nearest user row within a further PAGE_ROWS, else the plain cut), `before` clamped to 0..length, and the fixed constants (PAGE_ROWS = 100). Nothing uses it yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A transcript no longer than one page is returned whole with firstIndex 0",
+      "A long transcript returns at most two pages of rows, starting at a user row when one is within reach, else the plain last page",
+      "pageBefore clamps `before`; at 0 it returns no rows and firstIndex 0",
+      "Walking pageBefore from the latest window to 0 reproduces the whole transcript, no row skipped or repeated",
+      "The sizes are named constants; no setting is read"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0"
+      },
+      {
+        "level": "unit",
+        "name": "latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows"
+      },
+      {
+        "level": "unit",
+        "name": "latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once"
+      },
+      {
+        "level": "unit",
+        "name": "pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0"
+      },
+      {
+        "level": "unit",
+        "name": "walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

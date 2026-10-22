@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0137c418-a6b1-4768-93a4-1a0ee0dc926d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:22.392Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Wire the real vscode seams in extension.ts + fire the check fire-and-forget",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b6c90b3e0240d36c-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fee7ed8f7821ebeb6d9346987a662bfae147ebb494bea38bbbabf83938fefe44",
+        "at": "2026-10-22T12:44:22.392Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:22.393Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the real vscode seams in extension.ts + fire the check fire-and-forget",
+    "summary": "In vscode-plugin/src/extension.ts (the sole vscode importer) construct the real DaemonFreshnessDeps and invoke runDaemonFreshnessCheck WITHOUT await from activation (the runReachabilityProbe fire-and-forget precedent): notify = (message,...actions)=>vscode.window.showInformationMessage(message,{},...actions); versionState = { current: context.extension.packageJSON.version, getLastSeen/setLastSeen over context.globalState under a new key constant (e.g. 'insrc.daemonSelfUpdate.lastSeenPluginVersion') }; gitLsRemote = a child_process git runner (`git -C <daemonRoot> ls-remote origin <branch>` — or resolve the branch first); client = the shared ipc client; daemonRoot = the daemon checkout root. Additive to activation (still returns void); introduces the first globalState usage. Does not touch sc1/sc2 internals or S004.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "extension.ts builds the DaemonFreshnessDeps real seams (showInformationMessage(message,{},...actions), context.globalState + context.extension.packageJSON.version, a child_process git ls-remote, the ipc client) and invokes runDaemonFreshnessCheck WITHOUT await",
+      "a new globalState key constant is defined + referenced for lastSeen persistence",
+      "activation still returns void and is not blocked (fire-and-forget); no controller.run('update') added",
+      "tsc clean across vscode-plugin"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extension.ts source-scan: constructs DaemonFreshnessDeps real seams (showInformationMessage(message,{},...actions), context.globalState + packageJSON.version, a child_process git ls-remote) and invokes runDaemonFreshnessCheck WITHOUT await"
+      },
+      {
+        "level": "unit",
+        "name": "extension.ts source-scan: the new globalState key constant is referenced for lastSeen persistence"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

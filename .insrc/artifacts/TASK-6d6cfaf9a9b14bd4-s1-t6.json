@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1e1f1aea-0fad-49e6-93b1-8c2946398f8f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.972Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Flip the workflow.run wrap site to emit ProgressEvent",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b320f6cd960625a406b19c3a02bb681336d70540a6e02f868f1df12a5ee2ef8e",
+        "at": "2026-10-22T12:43:42.972Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.972Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Flip the workflow.run wrap site to emit ProgressEvent",
+    "summary": "Change the wrap site at src/daemon/workflow-rpc.ts:238-239 — verified as adjacent sibling lines, so this is one contiguous hunk — so neither the raw WorkflowProgress shape nor the raw `{ stepId, token }` shape reaches the wire. This task owns BOTH lines: :238's progress adapter and :239's incumbent per-token delta emission, which is deleted and replaced by frames built from the t5 accumulator's published pairs.\n\nProgress side: map `phase` to stageId (optionally qualified by stepId), fold runner/attempt/detail (workflow-rpc.ts:63-66) into stageLabel so no sc1 field is needed for them, set total:null because synthesize-retry makes the workflow stage count non-enumerable, maintain a monotonically incrementing index across repeated stageIds, and emit as the `data` of the existing `stream: 'progress'` frame with `id: 0`. Delta side: wire the t5 accumulator's pairs into TokenProgressEvent on `stream: 'delta'`.\n\nHandle the unknown-phase path: `phase` is untyped `string` at :61, so a lookup miss must still emit a StageProgressEvent using the raw phase verbatim as both stageId and stageLabel with total:null, warn-logged via getLogger('workflow-rpc') — never dropped, never thrown. Wrap adapter-plus-send in the same try/catch backstop as t4. Update the workflow.run stream handler doc comment at workflow-rpc.ts:202 so it documents the ProgressEvent payload pairing rather than the raw WorkflowProgress shape. THIS IS THE OBSERVABLE CUT-OVER for workflow.run consumers: readers of data.phase / data.runner / data.attempt / data.detail read undefined afterwards, and readers of data.token on delta frames find no string.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Each of the eight known phases yields a StageProgressEvent with stageId from phase, runner/attempt/detail folded into stageLabel, operation:'workflow.run', and total:null.",
+      "No frame on the workflow.run delta channel carries a raw token string: the pre-existing per-token emission at :239 is gone and delta frames carry TokenProgressEvent payloads built from the t5 accumulator's batched pairs.",
+      "index increments monotonically across a synthesize-retry that repeats the same stageId; repeated stageIds are legal and not deduplicated.",
+      "An unrecognised phase string still yields a StageProgressEvent with the raw phase as stageId and stageLabel, warn-logged, never dropped or thrown.",
+      "Every emitted frame is `{ id: 0, stream, data }` — the numeric id assertion at src/daemon/__tests__/handoff-stream.test.ts:224 still passes.",
+      "An operation cancelled during its first stage emits zero ProgressEvents and the stream still terminates with the existing done/error frame.",
+      "A CLI-backed run (onToken never fires, per the comment at workflow-rpc.ts:77) emits stage frames for the whole run and zero TokenProgressEvents.",
+      "The doc comment at workflow-rpc.ts:202 describes progress ⇒ StageProgressEvent and delta ⇒ TokenProgressEvent, with no reference to the raw WorkflowProgress payload."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "workflow-progress-adapter: one fixture per known phase ('decompose'|'plan-ready'|'grounding'|'step-start'|'step-done'|'synthesize-attempt'|'synthesize-retry'|'done') yields stageId from phase, runner/attempt/detail folded into stageLabel, operation:'workflow.run', total:null"
+      },
+      {
+        "level": "unit",
+        "name": "workflow-progress-adapter: an unrecognised phase string yields a StageProgressEvent with the raw phase as both stageId and stageLabel, warn-logged via the getLogger('workflow-rpc') stub, never dropped and never thrown"
+      },
+      {
+        "level": "unit",
+        "name": "workflow-emission-backstop: a throwing adapter at the :238 wrap site is caught, warn-logged, emits no frame, and returns normally"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-run-stream: driving the `stream` method (workflow-rpc.test.ts:42) with a scripted phase sequence including a synthesize-retry yields {id:0, stream:'progress', data:StageProgressEvent} frames with index incrementing monotonically across the repeated stageId, and the handoff-stream.test.ts:224 numeric-id assertion still passes unmodified"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-run-stream: with an Ollama-like token-streaming provider stub, delta frames arrive as {id:0, stream:'delta', data:TokenProgressEvent} at the batch cadence and no delta frame carries a raw token string"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-run-stream: a CLI-like provider stub (onToken never fires) emits stage frames for the whole run and ZERO TokenProgressEvents — token silence asserted valid, not a stall"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-run-stream: a run cancelled during its first stage emits zero ProgressEvents and the stream still terminates with the existing done/error frame"
+      },
+      {
+        "level": "integration",
+        "name": "workflow-run-stream: a send stub throwing on the Nth call leaves the run to completion with a persisted result byte-identical to a listener-free run"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

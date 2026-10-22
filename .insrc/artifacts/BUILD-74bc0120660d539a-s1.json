@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "epicHash": "74bc0120660d539a",
+    "storyId": "s1",
+    "createdAt": "2026-10-01T06:43:09.881Z",
+    "updatedAt": "2026-10-01T06:49:13.959Z",
+    "epicSlug": "two-dev-chat-chrome-changes-1",
+    "epicCreatedAt": "2026-10-01T06:33:34.631Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "de5fe96728bf320d0341445cfc13796d02512be6ad9306817afc8408a89fa642",
+        "at": "2026-10-01T06:43:09.881Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T06:49:14.016Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:43:09.881Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-01T06:43:09.881Z"
+      }
+    ]
+  }
+}

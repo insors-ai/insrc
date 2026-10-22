@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09a8e408-9eb0-483d-a1cf-3cbebfba4c90",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.074Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Build the functional-requirements renderer as a third webview source string",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c91dba6115dbe4ad7f7987e7c5c992bf89c317b876634f0c6a0eac26f8ab0b0f",
+        "at": "2026-10-22T12:44:31.075Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.076Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the functional-requirements renderer as a third webview source string",
+    "summary": "Add `DOCS_FR_SOURCE` beside DOCS_BODY_RENDERER_SOURCE and DOCS_SECTIONS_SOURCE, containing `renderFunctionalRequirements` — the first implementation of sc2's published `StructuredRenderer<FunctionalDefinition>`, returning `{ el }`. It constructs one discrete element per requirement, writes EVERY string with textContent and assigns no markup anywhere, carries id / statement / rationale, and preserves the record's doc-level-then-per-item-grouped-by-itemRef order rather than flattening it. Written in the same ES5-compatible style as its two siblings so it evaluates both inline in the webview and under `new Function` in tests. The record is treated as structurally untrusted: `requirements` not an array yields an empty container, a malformed entry is skipped while its well-formed siblings render, duplicates are preserved and an orphan `itemRef` falls into the same bucket the prose renderer uses. Also add the item CSS as one more fragment in the existing `mdStyle` concatenation, using `--it-*` variables only. Inert after this task — the string is defined and inlined but nothing calls it.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "An id containing `*`, `_`, backtick and `[` comes out of the DOM stub byte-identical to the record's value — the central falsifiable claim of this Story.",
+      "A statement containing `<script>alert(1)</script>` renders as text and creates no child element.",
+      "The renderer produces exactly one discrete element per requirement, asserted as a count against the record length and as distinct sibling nodes — not as a substring of the rendered text.",
+      "Doc-level requirements render before per-item ones, per-item requirements are grouped under their `itemRef`, and a group with no members produces no header.",
+      "ADDED (s3/t2a): a record with TWO entries sharing one FrId renders BOTH as distinct items in record order — neither dropped nor merged; a de-duplicating implementation must fail this check, because collapsing a duplicate would hide a real producer-side defect from the reviewer at the approval gate.",
+      "ADDED (s3/t2b): a `scope:'item'` entry whose `itemRef` is missing or empty is grouped under the SAME literal key the existing prose renderer uses (functional-definition.ts:99), asserted against that key rather than an invented one, so the two renderings of one record cannot disagree about where an orphan belongs.",
+      "A malformed record — `requirements` not an array, an entry that is not an object, an entry with a non-string id or statement — produces fewer items or an empty container and never throws.",
+      "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still `el.innerHTML=marked.parse`; `DOCS_FR_SOURCE` itself contains no markup assignment, asserted with comments stripped before scanning.",
+      "Every item CSS rule references only `--it-*` variables — no `--sans`/`--fg-strong`/`--border`, which are undefined on this surface and would silently invalidate the declarations containing them.",
+      "CLOSING CONDITION (s3/t7): this task's own mutations are run here, not deferred — replacing textContent with a concatenated-markup assignment must turn the hostile-id check red, and flattening the doc/item grouping must turn the grouping check red."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "t2: one discrete element per requirement, every string via textContent, id + statement + rationale present, doc-level first then itemRef groups"
+      },
+      {
+        "level": "unit",
+        "name": "t2: hostile content — an id with * _ ` [ and a statement with <script> come back character-for-character identical and create no child element"
+      },
+      {
+        "level": "unit",
+        "name": "t2: malformed record table — non-array requirements, non-object entry, non-string id/statement, scope:'item' with no itemRef, and two entries sharing one FrId"
+      },
+      {
+        "level": "unit",
+        "name": "t2 (contract): DOCS_FR_SOURCE contains no markup assignment (comments stripped first) and the shell's injection-site count is still exactly one"
+      },
+      {
+        "level": "unit",
+        "name": "t2: the item CSS fragment references only --it-* variables"
+      },
+      {
+        "level": "unit",
+        "name": "t2 (mutation): replace textContent with a concatenated assignment -> the hostile-id test fails"
+      },
+      {
+        "level": "unit",
+        "name": "t2 (mutation): flatten the doc/item grouping -> the grouping test fails"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792138819408-xk7gig",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T08:20:19.409Z",
+    "model": "claude:opus",
+    "elapsedMs": 97454,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "epicSlug": "write-project-file-references-relative-project",
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "a8f33e5500452a369cd8933e4ecad32369fe2a8857a0ca4c18bbe004f8e923fa",
+        "at": "2026-10-16T08:20:19.409Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts",
+        "src/workflow/__tests__/lld-artifact.test.ts",
+        "src/workflow/__tests__/path-forms.test.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/runners/define/schemas.ts",
+        "src/workflow/runners/design-epic/schemas.ts",
+        "src/workflow/runners/design-story/index.ts",
+        "src/workflow/runners/design-story/schemas.ts",
+        "src/workflow/runners/issue/index.ts",
+        "src/workflow/runners/plan/schemas.ts",
+        "src/workflow/runners/scope-prompts.ts",
+        "src/workflow/synthesizer.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/synthesizer.ts:238",
+            "message": "pathFormProblem refuses a ref equal to the project root itself (`ref === root`), as well as a path under it. The approved design says the check matches the project root only as a prefix followed by a slash, and lists \"the project root itself\" as not detected (a known limit). The code is stricter than the approved contract. Either update the LLD edge case and postcondition to describe this behaviour, or drop the `ref === root` arm.",
+            "expectationRef": "LLD errorPaths.edgeCases: 'A root-anchored project path ... or the project root itself' → 'Not detected ... it matches the project root only as a prefix followed by a slash'; checkPathForms postcondition 'With repoPath, an absolute path that starts with the project root followed by a slash is refused'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/orchestrator.ts:2344",
+            "message": "finalizeStandaloneLld's `citations` parameter is typed with an inline `import('./types.js').Citation`, and the same pattern appears at lines 2478 and 2490. The rest of the module brings its types in through top-level `import type` declarations. This is not a verbatimModuleSyntax breach, because an inline type import is erased at compile time. It does depart from the module's import style; a top-level `import type { Citation } from './types.js'` would match it.",
+            "expectationRef": "module-idiom:top-level-import-type",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/synthesizer.ts",
+            "message": "The graph grounding has no test edges: every production symbol in the changed set (synthesizer.ts, orchestrator.ts, runner schemas and prompts) shows an empty testsReaching. This looks like an indexing gap, not missing coverage, so it is not reported as HIGH. To check, I ran the suites directly. src/workflow/__tests__/path-forms.test.ts ran 17 tests and all 17 passed; that includes all 12 tests the plan promised, with the exact titles, plus 5 added during the code-review fixes. These tests call checkPathForms and validateBodyAndCitations directly. The other changed test files (lld-artifact, amendments-e2e, design-story-e2e, questions-gate-e2e) ran 52 tests and all 52 passed. No build record confirms these results; the evidence is the reviewer's own run.",
+            "expectationRef": "checkPathForms / pathFormProblem / callSitesOf / validateBodyAndCitations",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/synthesizer.ts:224",
+            "message": "PROJECT_PATH_RE accepts any token without whitespace, '/', ':' or '#' as a project file, so a bare symbol or word used as a code/doc citation ref (e.g. `finalizeArtifact`, `TODO`) or as a call site passes checkPathForms as a well-formed path. The check exists to refuse refs that are not file references, but a symbol name with no path and no ':' gets through. SYMBOL_SUFFIX_RE only catches the `path:Symbol` form. One way to close the gap: require at least one '/' or a file extension, or refuse a single segment that looks like an identifier.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/synthesizer.ts:222",
+            "message": "The doc comment says PROJECT_PATH_RE matches 'the forms the chat page links (CREF_CORE in vscode-plugin/src/chat/link-markup.ts)', but the two regexes disagree. CREF_CORE allows only [A-Za-z0-9_.@-] in a segment and needs a known extension (CREF_EXT). PROJECT_PATH_RE accepts brackets, parentheses, other punctuation and names with no extension. So refs like `app/[id]/page.tsx`, `Makefile` or `docs/notes(v2).md` pass validation, yet the chat page will not render them as links. Either line the two grammars up or correct the comment so nobody relies on that guarantee.",
+            "counterpartRef": "CREF_CORE (vscode-plugin/src/chat/link-markup.ts)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/synthesizer.ts:237",
+            "message": "The repoPath prefix check is a plain string comparison: it only strips trailing slashes and does not normalise the path. If meta.repoPath is stored in a different form from the one the model writes (a symlinked path, a `~` path, or a Windows path with backslashes or different drive-letter case), an absolute path inside the project falls through to EXTERNAL_REF_RE and is accepted as an external file. When repoPath is undefined, every absolute path is accepted. That case is documented, but it means the 'absolute path inside the project' rule only works when a repoPath is stamped.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts:1",
+            "message": "The `Envelope` interface, `payload(env)` helper and `seed(repo, …)` fixture (which calls stampOtherPartyReview / approveArtifactByJsonPath / defineArtifactPaths / hldArtifactPaths) are copied, with small variations, across three e2e test files. Fixture changes in this Story had to be made three times. A shared test helper module would stop the copies drifting apart. This is test code only, so it carries no runtime risk.",
+            "counterpartRef": "payload / seed in src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts and amendments-e2e.test.ts",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 5
+    }
+  }
+}

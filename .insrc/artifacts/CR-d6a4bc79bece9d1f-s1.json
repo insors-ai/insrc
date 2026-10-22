@@ -12,7 +12,27 @@
     "storyId": "s1",
     "reviewedBy": "daemon",
     "epicSlug": "vs-code-plugin-chat-panel-concurrent",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d10e50c11057902a0a080dc43a03e5b2995b72a525255f81df9680f93c766d90",
+        "at": "2026-10-10T16:28:34.961Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

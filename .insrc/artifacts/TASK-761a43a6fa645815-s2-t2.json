@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aecfee85-ca4b-4f4f-852f-220cf00a1674",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:46.420Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Implement judgeAdherence (single serial call + map + scope)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "004b8e907d5c3d0c7e997e4b956a1f445c51b480570a0f85166b5247f546226b",
+        "at": "2026-10-22T12:43:46.420Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:46.421Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement judgeAdherence (single serial call + map + scope)",
+    "summary": "Add judgeAdherence(subject, grounding, provider): Promise<DimensionResult> that wraps ONE provider.completeStructured(messages, ADHERENCE_FINDINGS_SCHEMA) in withStructuredRetry(call, validateAgainstSchema(...), 3) — using the REAL positional maxAttempts signature, not an opts object — maps the validated findings onto DimensionResult{dimension:'adherence'} (populating expectationRef), and drops any finding whose location file is not in subject.changedFiles. Empty model output => findings:[]; empty grounding => findings:[]; a validation/provider failure after the cap PROPAGATES (never a fabricated pass). Read-only, exactly one provider call, no Promise.all.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "judgeAdherence calls withStructuredRetry(call, validateAgainstSchema(...), 3) with the POSITIONAL maxAttempts (matching the real helper), not an opts object",
+      "ac1: returns one DimensionFinding per scripted departure, each with expectationRef; ac2: no departures / empty grounding => findings:[] (no manufactured findings)",
+      "out-of-subject findings (location file not in subject.changedFiles) are dropped",
+      "ac4: exactly ONE completeStructured call is issued on the injected provider and no other provider method is touched (serial k4; LLMProvider-only k3)",
+      "a schema-validation or provider failure after the retry cap propagates as StructuredOutputError — never an empty 'no divergence' pass (S006 ac5)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "judgeAdherence maps model findings to DimensionResult{dimension:'adherence'} with expectationRef populated (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "empty model output => DimensionResult with findings:[] (ac2, no manufactured findings)"
+      },
+      {
+        "level": "unit",
+        "name": "empty grounding (no symbols) => findings:[] without a wasted judgement error"
+      },
+      {
+        "level": "unit",
+        "name": "out-of-subject finding (location file not in changedFiles) is dropped"
+      },
+      {
+        "level": "unit",
+        "name": "exactly one provider.completeStructured call is issued and no other provider method is touched (serial, k4; provider-abstraction only, k3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

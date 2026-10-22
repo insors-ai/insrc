@@ -1,0 +1,824 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "160fa1bb7a8604ad",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T04:48:09.043Z",
+    "updatedAt": "2026-10-15T04:48:09.043Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-14T20:02:51.690Z",
+    "epicSlug": "end-running-state-only-running-turn",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "d15b552088027af447793631811b32f6ba607317e212431a686af64fc34445c6",
+        "at": "2026-10-15T04:48:09.043Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "9344d0c8",
+        "ranAt": "2026-10-15T04:48:09.043Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4359,
+            "titles": [
+              {
+                "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
+                "result": "pass"
+              },
+              {
+                "title": "single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)",
+                "result": "pass"
+              },
+              {
+                "title": "new-chat mid-stream stops the prior turn (no cross-session post) (M3)",
+                "result": "pass"
+              },
+              {
+                "title": "malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)",
+                "result": "pass"
+              },
+              {
+                "title": "an errored turn persists its transcript rows (L3)",
+                "result": "pass"
+              },
+              {
+                "title": "empty/whitespace submit-turn is a no-op (no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "onDidDispose cancels the active turn and stops posting further",
+                "result": "pass"
+              },
+              {
+                "title": "unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "no provider installed: open posts an error notice (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell mints a FRESH nonce per render",
+                "result": "pass"
+              },
+              {
+                "title": "S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: empty providers.available -> disabled selector",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open() posts a history-list",
+                "result": "pass"
+              },
+              {
+                "title": "open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: a failed/empty derivation keeps the truncated-prompt fallback",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history",
+                "result": "pass"
+              },
+              {
+                "title": "S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent",
+                "result": "pass"
+              },
+              {
+                "title": "S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 a first-turn error still refreshes the history dropdown (title label)",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the restored window and an older page carry each section's latest version at its first row's place",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: set-edit-mode updates + persists session.editMode",
+                "result": "pass"
+              },
+              {
+                "title": "S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)",
+                "result": "pass"
+              },
+              {
+                "title": "S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 lc1: two identical prompts yield two distinct-keyed live user-rows",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)",
+                "result": "pass"
+              },
+              {
+                "title": "S002: a cancel-turn with no active turn is an idempotent no-op (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 (ux-polish) ac1/ac2/t3: the leading \">\" prompt (#insrc-prompt) is the send/stop control; the trailing #insrc-send button is retired",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "S002: an empty submit is a host no-op (no turn starts)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3: renderShell embeds a single #insrc-progress widget above the input, not hidden and starting idle",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input has no box chrome, rows=2 kept, ❯ top-aligned",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac2: the placeholder gains the interrupt hint",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar",
+                "result": "pass"
+              },
+              {
+                "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision with no active turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() supersedes an already-live channel (prior disposed; single active channel)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() with no agentic CLI posts the same error a fresh open does",
+                "result": "pass"
+              },
+              {
+                "title": "S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ready before any open-time delivery still populates history (models the dropped initial post)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): set-permission-mode persists onto the active (saved) session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the webview sets the mode control from a restored session",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+                "result": "pass"
+              },
+              {
+                "title": "with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each",
+                "result": "pass"
+              },
+              {
+                "title": "a lock failure other than a dropped wait is logged and shown, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "a turn whose adapter fails to start releases the session lease (the next turn does not wait)",
+                "result": "pass"
+              },
+              {
+                "title": "a turn records its cursor on the session as lines are handled and clears it at the terminal event",
+                "result": "pass"
+              },
+              {
+                "title": "after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end",
+                "result": "pass"
+              },
+              {
+                "title": "a cursor whose generation is gone (rolled over twice) is cleared without resuming",
+                "result": "pass"
+              },
+              {
+                "title": "a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over",
+                "result": "pass"
+              },
+              {
+                "title": "switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends a resumed turn's process through the handle resume() hands over",
+                "result": "pass"
+              },
+              {
+                "title": "closing the panel mid-turn leaves a session-file turn running with its cursor saved",
+                "result": "pass"
+              },
+              {
+                "title": "a failing store save or a failing process stop never becomes an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a failing save of a selection or permission outcome is logged and the run still continues",
+                "result": "pass"
+              },
+              {
+                "title": "a failing edit-governor call is logged, never an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "three requests in one turn: only the first card is posted (with '1 of 3')",
+                "result": "pass"
+              },
+              {
+                "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "Stop with requests queued records each as rejected and clears the queue",
+                "result": "pass"
+              },
+              {
+                "title": "outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)",
+                "result": "pass"
+              },
+              {
+                "title": "the second card is posted only after the first is decided; a decision on a waiting card's id does nothing",
+                "result": "pass"
+              },
+              {
+                "title": "live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started",
+                "result": "pass"
+              },
+              {
+                "title": "an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)",
+                "result": "pass"
+              },
+              {
+                "title": "approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions",
+                "result": "pass"
+              },
+              {
+                "title": "no approval ever supersedes a running follow-up: turns.start is called once per batch",
+                "result": "pass"
+              },
+              {
+                "title": "deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message",
+                "result": "pass"
+              },
+              {
+                "title": "a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants",
+                "result": "pass"
+              },
+              {
+                "title": "a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn",
+                "result": "pass"
+              },
+              {
+                "title": "a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip",
+                "result": "pass"
+              },
+              {
+                "title": "a request joining the queue while the head is shown updates the shown card in place (one card per requestId)",
+                "result": "pass"
+              },
+              {
+                "title": "reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue",
+                "result": "pass"
+              },
+              {
+                "title": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none",
+                "result": "pass"
+              },
+              {
+                "title": "write-then-post order: when each live row is posted, the transcript already holds it at that index",
+                "result": "pass"
+              },
+              {
+                "title": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "session-restored carries firstIndex 0 and total while the whole transcript is still sent",
+                "result": "pass"
+              },
+              {
+                "title": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
+                "result": "pass"
+              },
+              {
+                "title": "the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+                "result": "pass"
+              },
+              {
+                "title": "ready, new-chat and open-chat post the same windowed session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "a ready after older pages were requested posts the latest window again, with the approval head after it",
+                "result": "pass"
+              },
+              {
+                "title": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows",
+                "result": "pass"
+              },
+              {
+                "title": "the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn",
+                "result": "pass"
+              },
+              {
+                "title": "host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment",
+                "result": "pass"
+              },
+              {
+                "title": "host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored",
+                "result": "pass"
+              },
+              {
+                "title": "host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store",
+                "result": "pass"
+              },
+              {
+                "title": "host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit waits for an attachment still being written, and the message carries every chip in order",
+                "result": "pass"
+              },
+              {
+                "title": "host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it",
+                "result": "pass"
+              },
+              {
+                "title": "host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment supersedes queued approvals",
+                "result": "pass"
+              },
+              {
+                "title": "host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided",
+                "result": "pass"
+              },
+              {
+                "title": "host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its tool results and ends it when the follow ended; a ready message during a run turn begins nothing, and the run turn's end still opens a newly pending document",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a turn followed by a second message still passes its tool results to the presenter, which opens the document it presents, once",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 956,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              },
+              {
+                "title": "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+                "result": "pass"
+              },
+              {
+                "title": "a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+                "result": "pass"
+              },
+              {
+                "title": "every failed turn's cause and error text are logged",
+                "result": "pass"
+              },
+              {
+                "title": "a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI",
+                "result": "pass"
+              },
+              {
+                "title": "a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text",
+                "result": "pass"
+              },
+              {
+                "title": "an auth failure stores and posts a sign-in line in the chat",
+                "result": "pass"
+              },
+              {
+                "title": "a normal turn still pushes and echoes its user row exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "the worker give-up note is shown live and is not stored in the transcript",
+                "result": "pass"
+              },
+              {
+                "title": "a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 493,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "de069d56d76eaacd",
+    "storyId": "s1",
+    "createdAt": "2026-10-14T19:18:11.574Z",
+    "updatedAt": "2026-10-14T19:18:11.574Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-14T19:16:10.679Z",
+    "epicSlug": "keep-chat-s-progress-widget-when",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "768ee8d4ddcb806d383d5dc34adf6a3ae952e65c23fd937171b517ad05a3db25",
+        "at": "2026-10-14T19:18:11.574Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "dfba2056",
+        "ranAt": "2026-10-14T19:18:11.574Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 849,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              },
+              {
+                "title": "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+                "result": "pass"
+              },
+              {
+                "title": "a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+                "result": "pass"
+              },
+              {
+                "title": "every failed turn's cause and error text are logged",
+                "result": "pass"
+              },
+              {
+                "title": "a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI",
+                "result": "pass"
+              },
+              {
+                "title": "a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text",
+                "result": "pass"
+              },
+              {
+                "title": "an auth failure stores and posts a sign-in line in the chat",
+                "result": "pass"
+              },
+              {
+                "title": "a normal turn still pushes and echoes its user row exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "the worker give-up note is shown live and is not stored in the transcript",
+                "result": "pass"
+              },
+              {
+                "title": "a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

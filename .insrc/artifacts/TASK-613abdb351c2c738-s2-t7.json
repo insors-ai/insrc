@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56e1aa57-76a7-4d40-b233-9ca49022160b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.470Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Run the suites and check by hand",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fa9fd796fd971eeb9d883a9cc38563c33773dc6cec4a854c8db535a3620b5c6a",
+        "at": "2026-10-22T12:43:37.470Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.471Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the suites and check by hand",
+    "summary": "Run the plugin's suite and typecheck, build, package and install the plugin, and have the user check the outbox in VS Code.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "The plugin's suite and typecheck pass apart from failures that existed before this Story",
+      "By hand: messages sent mid-turn show in the outbox with their places and leave it as they run; cancel removes one; a stopped message shows failed and Resend runs it; a reload keeps the outbox; the hint shows while a turn runs; with two windows, a waiting approval in one is named in the other's outbox"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "The plugin's whole test suite and typecheck pass apart from failures that existed before this Story"
+      },
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code: messages sent mid-turn show in the outbox with their places and leave it as they run; cancel removes one; a stopped message shows failed and Resend runs it; a reload keeps the outbox; the hint shows while a turn runs; with two windows, a waiting approval in one is named in the other's outbox"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,454 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792133798955-lq35ja",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T06:59:03.923Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 144964,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1485159578d9c257",
+    "epicSlug": "add-smallest-complete-change-ladder-build",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792133798955-lq35ja",
+    "hldEffectiveHash": "1485159578d9c257c6783aa2bc1ba0c4ba35138834656f8be39e69236c7d1d6c",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story with a clear approach: add a short shared 'smallest complete change' section to prompts the daemon already renders (implement-task.md, renderStandaloneImplementPrompt, the design.story alternatives prompt) plus the tests that pin them. No new subsystem, contract, schema or storage change.",
+    "authoredBy": "controller",
+    "rangeBase": "00618f286a560e7a80972f27bdd90df10ef6ee26",
+    "epicCreatedAt": "2026-10-16T06:59:03.923Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "860989900833811c1fe8ce6dd2a2e0abaaa5176d749da7bb479b9a7edfb56dcc",
+        "at": "2026-10-16T06:59:03.923Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T07:04:10.581Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 12
+        },
+        "at": "2026-10-16T07:02:27.149Z",
+        "report": {
+          "entityId": "LLD-1485159578d9c257-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1485159578d9c257-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The prompts that tell a model to implement a Task, or to enumerate design alternatives for a Story, now also tell it to prefer the smallest complete change: take the first option that fully works, from not building it at all, through reusing what the codebase already has, to the minimum new code. The 'already in the codebase' step points the model at the insrc analyzer, and the rule keeps insrc's own limits: the Task or LLD is the spec, the Task's named tests are still required, and validation, error handling, data-loss handling and security are never cut. The wording is defined once and used at every prompt site, with credit to Ponytail (MIT) in a third-party notice file at the repository root and in a comment at the source.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Add a smallest-complete-change ladder to the build and design prompts"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "SMALLEST_CHANGE_RULE",
+          "signature": "export const SMALLEST_CHANGE_RULE: string  // new, in src/workflow/runners/scope-prompts.ts",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "the build-side rule text, to be placed in an implement prompt as its own section: take the first option that fully works (does it need to exist at all; is it already in this codebase, asking the insrc analyzer 'does the codebase already do X?' through insrc_analyze_step before writing a helper; the standard library or a platform feature; an installed dependency; one line; otherwise the minimum code), be lazy about the solution and never about the change, add nothing nobody asked for, name anything deliberately left out; and the limits: the Task or LLD is the spec, the tests the Task names are still required, and validation at trust boundaries, error handling that prevents data loss, security and accessibility are never cut"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "defined once and interpolated at every build prompt site, so the wording cannot drift",
+            "carries the source credit as a comment at the constant, not in the rendered text; the repository's THIRD_PARTY_NOTICES.md names Ponytail, its link and its MIT licence text"
+          ]
+        },
+        {
+          "name": "SMALLEST_SHAPE_RULE",
+          "signature": "export const SMALLEST_SHAPE_RULE: string  // new, in src/workflow/runners/scope-prompts.ts",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "the design-side rule text for the alternatives step: prefer shapes that reuse what the codebase already has (checked through the analyzer), make at least one alternative the smallest that fully meets the Story, add no option, abstraction or flexibility nobody asked for, and never drop validation, error handling, security or accessibility to look small"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "interpolated into the alternatives.enumerate prompt next to ANTI_OVERREACH_RULE"
+          ]
+        },
+        {
+          "name": "renderImplementPrompt",
+          "signature": "function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resolvedDecisions: string): string  // unchanged signature",
+          "parameters": [
+            {
+              "name": "resolvedDecisions",
+              "type": "string",
+              "purpose": "as today",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "the plan-driven implement prompt, now with a 'The smallest complete change' section holding SMALLEST_CHANGE_RULE, filled into the template through a new smallestChangeRule placeholder"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the placeholder is always filled; no '{{smallestChangeRule}}' reaches the prompt",
+            "every other section and placeholder renders exactly as before"
+          ]
+        },
+        {
+          "name": "renderStandaloneImplementPrompt",
+          "signature": "function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): string  // unchanged signature",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "StandaloneBuildSpec",
+              "purpose": "as today",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "the standalone implement prompt, now with the same 'The smallest complete change' section holding SMALLEST_CHANGE_RULE, for a Small and a Trivial build"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the Definition of done, the Submitting the tests section (Small) and the Merging upstream section are unchanged"
+          ]
+        },
+        {
+          "name": "alternatives.enumerate",
+          "signature": "step prompt of the design.story runner  // text change only",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "the existing prompt with SMALLEST_SHAPE_RULE added to its HARD RULES, before ANTI_OVERREACH_RULE"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the step's schema, its other rules and its other prompts (judge, contract.detail) are unchanged"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "implement and alternatives prompts",
+        "change": "field-add",
+        "details": "SMALLEST_CHANGE_RULE and SMALLEST_SHAPE_RULE are added beside ANTI_OVERREACH_RULE in src/workflow/runners/scope-prompts.ts, the existing home of shared prompt fragments. The implement template src/prompts/build/implement-task.md gains a 'The smallest complete change' section with a smallestChangeRule placeholder, filled by renderImplementPrompt the way mergeRule is. renderStandaloneImplementPrompt adds the same section in code before its Definition of done. The design.story alternatives.enumerate prompt adds SMALLEST_SHAPE_RULE. The validate prompts, the review prompts, the steering block and every schema are unchanged. A comment at the constants credits Ponytail (MIT, copyright 2026 DietrichGebert, github.com/DietrichGebert/ponytail) as the source of the ladder, and a new THIRD_PARTY_NOTICES.md at the repository root credits it too: it names Ponytail, links its repository, says which prompts the ladder was adapted into, and reproduces its MIT licence text with the copyright line. Existing tests that pin the rendered prompts are extended, not loosened.",
+        "callSites": [
+          "src/workflow/runners/scope-prompts.ts",
+          "src/prompts/build/implement-task.md",
+          "src/daemon/steps/build-step/render.ts",
+          "src/workflow/runners/design-story/index.ts",
+          "src/daemon/steps/build-step/__tests__/render.test.ts",
+          "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+          "THIRD_PARTY_NOTICES.md",
+          "src/workflow/__tests__/third-party-notice.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The new template placeholder is left unfilled and reaches an implement prompt as literal braces",
+          "detection": "A test renders every implement prompt and checks that no '{{smallestChangeRule}}' (or any '{{') remains, as the merge rule's placeholder is already checked",
+          "response": "The build fails on the test; the placeholder is filled in renderImplementPrompt next to mergeRule",
+          "userImpact": "None in use: the defect is caught before it ships",
+          "recoverable": true
+        },
+        {
+          "scenario": "A prompt site is added or edited and drops the shared rule, so the wording drifts or one prompt loses it",
+          "detection": "A test reads the runner and renderer sources and checks that each site references the shared constants, the way the adjacent-scope test checks ANTI_OVERREACH_RULE",
+          "response": "The build fails on the test",
+          "userImpact": "None in use: the defect is caught before it ships",
+          "recoverable": true
+        },
+        {
+          "scenario": "The rule text loses a limit when it is edited later (the spec wins, the named tests stay required, validation and security are never cut)",
+          "detection": "A test checks that the rendered rule still contains each limit's key phrase",
+          "response": "The build fails on the test",
+          "userImpact": "None in use: the defect is caught before it ships",
+          "recoverable": true
+        },
+        {
+          "scenario": "The notice file is removed, or edited so that it no longer names Ponytail or carries its licence text",
+          "detection": "A test reads THIRD_PARTY_NOTICES.md from the repository root and checks for the name, the link, the copyright line and the licence text",
+          "response": "The build fails on the test",
+          "userImpact": "None in use: the defect is caught before it ships",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "a plan-driven Task whose acceptance checks and named tests call for more than the smallest possible code",
+          "expected": "The Task is the spec: the rule says to build what the Task and its named tests require and to prefer the smallest way of doing that, never to skip a required part"
+        },
+        {
+          "input": "a Trivial standalone build, which has no LLD",
+          "expected": "It gets the same section; the scope statement is the spec, and the existing 'smallest correct edit' wording is unchanged"
+        },
+        {
+          "input": "the repo has no analyzer index yet, or the analyzer returns nothing",
+          "expected": "The rule asks for the analyzer check, not for its result: the implementer falls back to searching and reading the code, as the steering already says"
+        },
+        {
+          "input": "the design step enumerates alternatives for a Story whose request is large",
+          "expected": "The rule asks that at least one alternative be the smallest that fully meets the Story; it does not remove larger alternatives the Story needs"
+        },
+        {
+          "input": "an implement prompt is rendered for a repo that is not insrc",
+          "expected": "The section is repo-neutral: it names the insrc analyzer as the way to ask the codebase, which the implementer has in any repo registered with the daemon"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The implement prompts keep every existing section and rule: the Task or LLD as the spec, the named-tests submission rule, the repo-wide sweep and typecheck citations, the merge rule and the guardrails; the new section is added, nothing is replaced",
+          "source": "c1"
+        },
+        {
+          "text": "The validate prompts and the judge's rules are unchanged, so a smaller change is judged against the same acceptance checks and named tests",
+          "source": "c3"
+        },
+        {
+          "text": "The alternatives step keeps its other HARD RULES, its schema and ANTI_OVERREACH_RULE; the judge and contract steps are unchanged",
+          "source": "c2"
+        },
+        {
+          "text": "Shared prompt wording is defined once and interpolated at every site, as ANTI_OVERREACH_RULE is",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), as the existing render and scope-gate tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The rendered implement prompts and the alternatives prompt carry the rules, and keep what they had",
+          "subjects": [
+            "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+            "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+            "the implement prompts keep every section and rule they had before the new section was added",
+            "the alternatives prompt carries the design rule next to the scope rule and keeps its other rules"
+          ],
+          "fixturesNeeded": [
+            "the TASK and spec fixtures the existing render tests already use"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Every prompt site uses the shared wording",
+          "subjects": [
+            "each prompt site references the shared rule constants instead of carrying its own copy of the wording",
+            "the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used"
+          ],
+          "fixturesNeeded": [
+            "the runner and renderer sources, as the adjacent-scope test reads them"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "the alternatives prompt carries the design rule next to the scope rule and keeps its other rules"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+            "the implement prompts keep every section and rule they had before the new section was added"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "each prompt site references the shared rule constants instead of carrying its own copy of the wording"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The implement prompts tell the model to implement exactly the Task or LLD and to keep the edit minimal and matching the surrounding conventions, but give no guidance on choosing the smallest complete way; the design.story alternatives prompt lists its HARD RULES and the scope rule without any preference for reusing what exists or for a smallest alternative (render.ts, implement-task.md, design-story/index.ts and scope-prompts.ts from the s1 bundles).",
+      "stateAfter": "The implement prompts carry a 'The smallest complete change' section, and the alternatives prompt carries the design counterpart, both with wording defined once beside the existing shared scope rule and keeping insrc's limits (the spec wins, named tests are required, validation, error handling, security and accessibility are never cut). Everything else renders as before. The repository also carries a third-party notice crediting Ponytail.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the two rule texts to the shared prompt-fragment module, with the credit to Ponytail (MIT) as a comment, and add THIRD_PARTY_NOTICES.md at the repository root with the credit, the link and the MIT licence text",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the section and its placeholder to the implement template and fill it in the plan-driven renderer; add the same section to the standalone renderer",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the design rule to the alternatives prompt next to the scope rule",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend the prompt tests: the section and no leftover placeholder in every implement prompt, the rule's key phrases and limits, the unchanged sections, the alternatives prompt, and that each site references the shared constants",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive text in prompts the daemon renders; no tool schema, IPC, artifact format or setting changes. The new wording reaches users only after the daemon is updated; until then the prompts are as they are. Removing the section and the two constants restores the old prompts.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Two shared rule texts, one for building and one for designing",
+        "oneLineSummary": "Define the ladder once as exported constants beside the existing shared prompt fragment, and interpolate them at every prompt site.",
+        "approach": "Add two exported strings to src/workflow/runners/scope-prompts.ts, where ANTI_OVERREACH_RULE already lives. SMALLEST_CHANGE_RULE is the build ladder: take the first option that fully works (does it need to exist, is it already in the codebase, the standard library or a platform feature, an installed dependency, one line, otherwise the minimum), be lazy about the solution and never about the change, and never cut validation at trust boundaries, error handling that prevents data loss, security or accessibility. Its 'already in the codebase' rung tells the implementer to ask the insrc analyzer (insrc_analyze_step) 'does the codebase already do X?' before writing a helper. The text states that the Task or LLD is the spec and that the named tests of the Task are still required. SMALLEST_SHAPE_RULE is the design counterpart for alternatives.enumerate: reuse what exists, one alternative is the smallest that fully meets the Story, nothing nobody asked for. The build text is filled into the implement template through a new placeholder and added as a section in renderStandaloneImplementPrompt; the design text is added to the alternatives.enumerate prompt next to ANTI_OVERREACH_RULE. A comment at the constants credits Ponytail (MIT, copyright 2026 DietrichGebert) with its link. Tests extend the existing prompt tests.",
+        "pros": [
+          "One wording per concern, defined once like ANTI_OVERREACH_RULE, so the three build prompts and the design prompt cannot drift",
+          "Small: two constants, one template placeholder, two prompt edits, and tests that follow existing patterns",
+          "Nothing external runs and no plugin is installed"
+        ],
+        "cons": [
+          "Every implement prompt grows by a short section",
+          "The rule only steers the model; it does not enforce smallness, which the code review does not check either"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Build prompts only",
+        "oneLineSummary": "Add the ladder to the implement prompts and leave the design step as it is.",
+        "approach": "As a1 for the build side only: SMALLEST_CHANGE_RULE is filled into the implement template and the standalone implement prompt. The design.story alternatives.enumerate prompt is not touched, so alternatives are enumerated as today.",
+        "pros": [
+          "Smallest edit, with no change to the design workflow",
+          "The build step is where code is actually written"
+        ],
+        "cons": [
+          "The design step is where a larger-than-needed shape gets chosen, and the build then has to implement it; the request names both",
+          "Leaves the design prompts without the 'reuse what exists' rung"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Smaller, but leaves out the design step the request names."
+      },
+      {
+        "id": "a3",
+        "name": "Put it in the steering text the controller reads",
+        "oneLineSummary": "Add the ladder to the insrc steering block in CLAUDE.md and AGENTS.md instead of the daemon's prompts.",
+        "approach": "Add a short section to src/prompts/steering-block.md, which the daemon refreshes into every registered repo's CLAUDE.md and AGENTS.md, telling the controller to prefer the smallest complete change. The daemon's own prompts are unchanged.",
+        "pros": [
+          "Reaches the controller in every turn, not only the prompts the daemon renders",
+          "No code change, only text and its copy test"
+        ],
+        "cons": [
+          "The steering block is kept deliberately small; this adds weight to every session of every repo",
+          "The daemon's implement and design prompts, which are what the request names, would be unchanged",
+          "A reply-level rule would also affect non-coding turns"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Does not change the prompts the request names and adds weight to every session."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The Story has no acceptance criteria; ac1-ac5 were derived from its stated need and from the request to credit the source.",
+      "The Ponytail credit lives in two places, a comment at the constants and a new THIRD_PARTY_NOTICES.md at the repository root; the README is not changed. Add a README acknowledgement if one is wanted.",
+      "The rules only steer the model. Nothing checks that a change is the smallest one, and the code review's four dimensions do not cover it; a lean check in the review is a possible later step."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: The build implement prompts (render.ts and the implement template)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: The design.story prompts and the shared prompt fragment pattern"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: Tests that pin the rendered implement prompts"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1: The source material and its licence"
+    }
+  ]
+}

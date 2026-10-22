@@ -23,250 +23,56 @@
     "storyId": "s1",
     "lldRunId": "wf-1790845995236-65aw2w",
     "lldEffectiveHash": "33e859ffd0bea6e7dc7aaab7fea3549865f3c5df45d466b64c5818993f17bd31",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "m1",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The body element the render writes into is a PREFORMATTED element declared at vscode-plugin/src/chat/docs-review-panel.ts:206 as <pre id=\"insrc-docs-body\" class=\"insrc-docs-content\" aria-label=\"artifact body\"></pre>, so t4's container swap has a real target.",
-          "evidence": "CONFIRMED verbatim. docs-review-panel.ts:206 is '`<pre id=\"insrc-docs-body\" class=\"insrc-docs-content\" aria-label=\"artifact body\"></pre>` +' and the only other reference to that id is :172, where the bootstrap resolves it via getElementById. Nothing else reads the element, so t4's container swap is as local as the task claims.",
-          "action": "No change. The HIGH-1 fix is anchored on a real, singly-referenced element.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m2",
-          "ref": "t4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "No CSS rule for .insrc-docs-content exists anywhere in the plugin source, so the body element carries only UA defaults for <pre> (white-space:pre plus a monospace font) and nothing styles it today.",
-          "evidence": "CONFIRMED by absence, which is the point. A dot-prefixed grep for '\\.insrc-docs-content' — the form a CSS rule would take — returns ZERO source matches; the bare name returns exactly one, the class attribute at docs-review-panel.ts:206. There is no stylesheet rule for the body element anywhere, so it carries only the UA defaults for <pre>.",
-          "action": "No change. The premise behind t4's new container and styling checks holds on direct evidence.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m3",
-          "ref": "t4",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The docs-review shell's only stylesheet is renderTerminalStyle, declared at vscode-plugin/src/chat/design-tokens.ts:174, and it emits CSS custom properties and surface classes only — it contains no markdown element rules (no heading, list, emphasis, code or table selectors).",
-          "evidence": "CONFIRMED. renderTerminalStyle is declared once, at design-tokens.ts:174, and docs-review-panel.ts:14 imports it as the shell's only style source. The probe located the function but could not itself prove the absence of element rules, so I scanned the function body directly: it emits CSS custom properties (--it-size from --vscode-editor-font-size, and the token map at :81-89 bridging font.mono / color.bg / color.fg / color.dim / color.accent / color.warn / color.err / color.sel / chrome.border) plus the surface classes — and no heading, list, emphasis, code or table selector. design-tokens.ts is 228 lines total and contains no 'insrc-md' reference.",
-          "action": "No change. Stating plainly that the absence half of this came from my own direct scan, not from the engine's grep.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m4",
-          "ref": "t4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The .insrc-md markdown stylesheet that makes the chat surface legible is defined in chat-panel.ts and render-registry.ts, and the docs-review shell does not include or import it — docs-review-panel.ts imports only design-tokens, protocol, chat-panel types and the docs-review client.",
-          "evidence": "CONFIRMED, and more precisely than the plan states it. The .insrc-md stylesheet lives entirely in chat-panel.ts:366-379 and covers exactly the element set t4 needs: .insrc-md base font/line-height (:366), first/last-child margin reset (:367), h1-h6 (:368), p (:369), ul/ol/li/li>p (:370), table with overflow-x (:372), th/td borders (:373-374), blockquote (:375), inline code (:377) and pre/pre code (:378-379). It is scoped under .insrc-md and is emitted by chat-panel's own style function. docs-review-panel.ts imports only design-tokens (:14), protocol (:15), chat-panel TYPES (:16, 'import type') and the docs-review client (:17) — so none of chat-panel's CSS is in scope on this surface, exactly as the plan says. chat-panel.test.ts:1342 independently pins those rules, so they are a maintained asset rather than incidental.",
-          "action": "Keep the check, but name the asset: t4's wording 'add the markdown element rules this surface needs' invites hand-authoring a second stylesheet 200 lines from an existing, test-pinned one, which would silently diverge. Point the builder at chat-panel.ts:366-379 and ask for an extraction into a shared constant both surfaces include. Applying this as an auto-fix — the premise itself is confirmed, so this is a specificity improvement on an accurate plan, not a defect in it.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "The plan's premise is right and its instruction is right; it just does not name the thing to reuse. A 14-rule markdown stylesheet already exists at chat-panel.ts:366-379, is pinned by chat-panel.test.ts:1342, and covers precisely the element set this check enumerates. Directing t4 to extract and share it rather than author a parallel copy removes a divergence risk at no cost to scope.",
-            "artifactEdits": [
-              {
-                "find": "the shell's generated CSS carries markdown element rules reachable by the body container — headings, ordered/unordered lists, emphasis/strong, inline code and tables — since renderTerminalStyle emits tokens only and the .insrc-md stylesheet is not in scope on this surface",
-                "replace": "the shell's generated CSS carries markdown element rules reachable by the body container — headings, ordered/unordered lists, emphasis/strong, inline code and tables — since renderTerminalStyle emits tokens only and the .insrc-md stylesheet is not in scope on this surface; REUSE rather than re-author: chat-panel.ts:366-379 already defines exactly this rule set under .insrc-md (base :366, margin reset :367, h1-h6 :368, p :369, ul/ol/li :370, table :372, th/td :373-374, blockquote :375, code :377, pre :378-379) and chat-panel.test.ts:1342 pins it, so extract it into a shared constant both surfaces include instead of authoring a second copy that can diverge"
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "m5",
-          "ref": "t5",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The pane's monotonic refreshSeq guard is declared at docs-review-panel.ts:66 and every one of its three consumption sites (:75, :78, :83) lies inside refreshPending(), which posts the docs-LIST — the guard covers no other function.",
-          "evidence": "CONFIRMED, and the function boundary is now exact. refreshSeq is declared at docs-review-panel.ts:66; refreshPending() is declared at :74 (its doc comment at :73 reads '(Re)load the pending set from the daemon and post it'); and all three consumption sites — :75 'const mySeq = ++refreshSeq', :78 and :83 — fall inside it. The grep found exactly four source references to refreshSeq and no others, so the guard covers refreshPending and nothing else.",
-          "action": "No change. The HIGH-2 fix rests on a closed inventory: four references, all in one function.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m6",
-          "ref": "t5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "openDoc() — the function that awaits client.content() and posts the docs-content message t5 extends with sections and degradation — takes no sequence number and performs no supersede check, so the refreshSeq guard does not protect the opened-document path.",
-          "evidence": "CONFIRMED with one line number to correct. openDoc() is declared at docs-review-panel.ts:96 (not :95 — :95 is blank), it awaits deps.client.content at :99, and the reads across :96-99 show no sequence number taken and no supersede check: :97 computes commentable, :98 opens the try, :99 awaits, :100 posts. The sole await of client.content in the file is that one. The guard genuinely does not protect this path.",
-          "action": "Optionally correct the plan's 'openDoc() at :95-120' to ':96-120'. Nothing load-bearing turns on it — the function identity and the absence of a guard are both confirmed — so I am not patching the artifact for a one-line offset.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m7",
-          "ref": "t5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sections index and the markdown are posted on ONE docs-content message from a single post() call in openDoc, so a superseded open replaces both together and a stale index can never be paired with newer markdown — the invariant t5's revised acceptance check asserts.",
-          "evidence": "CONFIRMED — this is the invariant the HIGH-2 fix substituted in, and it holds. openDoc's success path makes ONE post() call: :100 'post({', :101 \"type: 'docs-content',\", :102 'artifactId,' and the content fields following. markdown and the new sections/degradation members therefore travel on a single message, so a superseded open replaces both together and a stale index can never pair with newer markdown. The five post sites in the host (:87, :101, :113, :135, :151) are each a single whole-message post, so the property is uniform.",
-          "action": "No change. t5's revised check asserts something true and asserts it on the posted payload, which is where it is observable.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m8",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The line t4 replaces is docs-review-panel.ts:186 — `function renderContent(m){bodyEl.textContent=m.markdown||'';` — and it is the only such site.",
-          "evidence": "CONFIRMED verbatim and uniquely: docs-review-panel.ts:186 is \"`function renderContent(m){bodyEl.textContent=m.markdown||'';` +\", the only bodyEl.textContent write and the only renderContent declaration in source.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m9",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The docs-review shell emits exactly one nonce'd inline script tag at docs-review-panel.ts:210, and the precedent for prepending MARKED_SRC into such a tag is chat-panel.ts:561.",
-          "evidence": "CONFIRMED verbatim on both sides. docs-review-panel.ts:210 '`<script nonce=\"${nonce}\">${bootstrap}</script></body></html>`' — one tag — and the precedent chat-panel.ts:561 '`<script nonce=\"${nonce}\">${MARKED_SRC}\\n;${bootstrap}</script></body></html>`'. The shapes are identical apart from the bundle prefix, so the mirror t4 describes is mechanical.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m10",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "render-registry.ts:321 declares guardMd and :332 carries the sanctioned parse-then-guard-then-textContent-on-throw sequence, invoked with headerIds:false — which is why sc3 must supply heading slugs itself.",
-          "evidence": "CONFIRMED verbatim. render-registry.ts:321 '`function guardMd(el){try{` +' and :332 the full sequence — innerHTML from marked.parse with {gfm:true,breaks:false,headerIds:false,mangle:false}, then guardMd(div), then 'catch(e){div.textContent=src;}'. headerIds:false occurs exactly once in source, confirming sc3 must supply slugs itself.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m11",
-          "ref": "t1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "ArtifactReviewView at src/workflow/artifact-content.ts:45-52 declares exactly six members and none of the four structured records appears on it today.",
-          "evidence": "CONFIRMED verbatim. One source declaration (artifact-content.ts:45) and the reads at :46-51 give exactly six members — artifactId, kind, renderedMarkdown, openQuestions, approvable, blockReason? — with :52 the brace.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m12",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/daemon/index.ts:698-700 is the single 'workflow.artifactContent' registration, so t1 adds no IPC method.",
-          "evidence": "CONFIRMED verbatim. src/daemon/index.ts:698 is the sole \"'workflow.artifactContent':\" registration in source, with :699 the dynamic import and :700 the delegation.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m13",
-          "ref": "t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "DocsContent at vscode-plugin/src/chat/docs-review-client.ts:24-28 declares exactly three members (markdown, openQuestions, blocked), and content() throws on the daemon's { error } arm.",
-          "evidence": "CONFIRMED on both halves. DocsContent at docs-review-client.ts:24 with exactly three members at :25-27 (markdown, openQuestions, blocked) and :28 the brace; and the error arm 'if (isError(res)) throw new Error(res.error);' appears at :73, :91, :104 and :116 — every client method including content(), so an unavailable read stays distinguishable from an empty one.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m14",
-          "ref": "t5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The docs-content variant at vscode-plugin/src/chat/protocol.ts:57-63 declares exactly six members, and protocol.ts:117 holds the message NAME list t5 must leave unchanged.",
-          "evidence": "CONFIRMED verbatim and the count is exact: protocol.ts:57-62 are type, artifactId, markdown, openQuestions, blocked and commentable? — six — with :63 the brace; and :117 is \"  'docs-content',\" in the message NAME list t5 leaves untouched.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m15",
-          "ref": "t7",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "JetBrains' parseView at DaemonGateway.kt:1517 reads named keys field-by-field out of a Map<String, Any?> with no unknown-key rejection, so the four added response keys cannot break ArtifactReviewViewDto.",
-          "evidence": "CONFIRMED verbatim. DaemonGateway.kt:1517 'private fun parseView(data: Map<String, Any?>): ArtifactReviewViewDto {', :1522 'return ArtifactReviewViewDto(', :1525 'renderedMarkdown = str(data[\"renderedMarkdown\"]),' and the single DTO declaration at :73. Field-by-field key reads out of a Map, no unknown-key rejection — the four added keys are unreachable by this parser.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m16",
-          "ref": "t3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The sc3 names t3 introduces — SectionAnchor, SectionIndex, SectionResolver, deriveSectionIndex — and the sc2 types t4 publishes — StructuredRenderer, MarkdownBodyRenderer, RenderDegradation — all return zero matches in the plugin and daemon source today, so both tasks are net-new and shadow nothing.",
-          "evidence": "CONFIRMED. All five probed names — deriveSectionIndex, SectionResolver, StructuredRenderer, MarkdownBodyRenderer, RenderDegradation — return ZERO matches across src/, vscode-plugin/src/ and jetbrains-plugin/src/; every hit (9-29 each) is docs/ artifact prose. Both t3 and t4's published types are net-new and shadow nothing.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m17",
-          "ref": "t6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "COMMENTABLE_KINDS at docs-review-panel.ts:25 restricts request-changes to exactly DEF, HLD and LLD, and approve/request-changes reach the daemon via workflow.approve and workflow.resolveComment.",
-          "evidence": "CONFIRMED verbatim. docs-review-panel.ts:25 \"const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);\" is the only such declaration, and the comment-recording path reaches the daemon through docs-review-client.ts:110 'workflow.resolveComment'.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m18",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The blanket assertion t4 narrows is docs-review-panel.test.ts:253, the surface-class assertion it keeps is :252, and the enclosing test is declared at :243 with a name t4 says it will replace.",
-          "evidence": "CONFIRMED verbatim on all four anchors. :243 the test — 'rendered shell: one nonce, strict CSP, docs-review surface, no innerHTML'; :252 the surface-class assertion t4 keeps — /class=\"insrc-term-review\"/; :253 the blanket assertion t4 drops; and :179 the fail-closed regression t4 keeps green. Each is the only occurrence of its text in source.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m19",
-          "ref": "t7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "marked is vendored as MARKED_SRC in vscode-plugin/src/chat/webview-marked.ts and imported today only by chat-panel.ts, so t4's reuse of it on a second surface is what produces the VSIX delta t7 measures.",
-          "evidence": "CONFIRMED. webview-marked.ts:10 exports MARKED_SRC (marked v4.3.0), and exactly ONE source file imports it today — chat-panel.ts:18. t4 making this the second consumer is precisely the bundle growth t7 measures, so the two tasks are consistent.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m20",
-          "ref": "t1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The four structured body records t1 projects — functionalDefinition, erDefinition, uxDefinition and companions — all exist on the artifact body today and are produced by the orchestrator, so none is invented.",
-          "evidence": "CONFIRMED on real declarations, not prose. All four records are declared as optional body members on the artifact types the pane reads: hld.ts:115/118/121 and lld.ts:164/167/171 carry erDefinition?, companions? and uxDefinition?; CompanionArtifactRef is declared at src/workflow/artifacts/companion/types.ts:29; and orchestrator.ts:1517-1518 declares erDefinition?/uxDefinition? with :1690 and :1697 the withCompanion/withCompanions helpers that attach the refs. Nothing t1 projects is invented.",
-          "action": "No change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m21",
-          "ref": "t5",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "t5's revised acceptance check deliberately diverges from the LLD test-strategy item quoted verbatim in the coverage table: the LLD presumes the monotonic guard covers the opened-document path, the plan's summary records that it does not and names the source evidence, and the openDoc supersede gap is recorded as out of scope rather than silently claimed as handled.",
-          "evidence": "CONFIRMED in the shape expected for a cross-artifact text claim: the quoted LLD strategy item 'monotonic refresh guard still drops a superseded response' returns three matches, all in docs/ prose (the LLD and the plan's coverage table) and none in code — consistent with the coverage row still quoting the LLD verbatim while t5's acceptance check states the narrower, true invariant. The divergence is recorded in t5's summary with the :66/:75/:78/:83 evidence, and the openDoc gap is marked out of scope rather than claimed as handled, so a reader of the plan cannot mistake one for the other.",
-          "action": "No change. This is the recorded, deliberate divergence from an approved LLD — which belongs in the plan rather than in a silent test.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "m22",
-          "ref": "t7",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The daemon rebuild+restart acceptance check sits in t7 and in no other task, so the LLD's migration step 8 has exactly one owner in the plan.",
-          "evidence": "CONFIRMED by inspection; the probe is artifact-prose-only by nature so its three docs/ hits and zero code hits are the expected shape. The rebuild+restart acceptance check and its paired smoke test both sit in t7, and no other task carries a rebuild or restart step, so the LLD's migration step 8 has exactly one owner.",
-          "action": "No change.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 22
-      },
-      "reviewedAt": "2026-10-01T10:41:59.408Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-10-01T10:44:02.062Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "04d034e265aead0eb4e0f874f649952bb7133fd77ad8c03e072e34a35e58e26d",
+        "at": "2026-10-01T09:52:50.341Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T10:44:02.062Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 22
+        },
+        "at": "2026-10-01T10:41:59.408Z",
+        "report": {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-bfe98ff7f97178cf-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

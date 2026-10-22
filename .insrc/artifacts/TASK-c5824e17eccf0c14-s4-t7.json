@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-184ee484-dfff-4718-9dc0-b62d66516096",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.127Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Cross-cutting integration tests: end-to-end UX generation + completion gating",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7cbfcbf1471f355827b17e44de753da8c7b2a01e5992fc67f9d0c89f1410f922",
+        "at": "2026-10-22T12:44:39.127Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:39.128Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Cross-cutting integration tests: end-to-end UX generation + completion gating",
+    "summary": "Integration coverage across the orchestrator finalize seam and the code-review handler: a generated design doc with a valid uxDefinition produces a sibling ux-mock HTML companion + a UX section/link in the core markdown (never inlined); a doc with both an ER and a UX definition emits both companions; a subject requiring uxAcceptance with a missing/mismatched UX design blocks completion while an adhering build passes; a subject with neither uxDefinition nor adherence yields the base four dimensions and byte-identical behaviour.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "orchestrator finalize integration test proves the linked ux-mock companion + UX section for a uxDefinition body, and both companions for an er+ux body",
+      "code-review handler integration test proves a required-but-missing UX design blocks completion and an adhering build passes",
+      "an absent-fields subject yields the base four dimensions and byte-identical output",
+      "full suite green under tsx --test"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "orchestrator finalize: a body with a valid uxDefinition produces a sibling ux-mock HTML companion AND a link + UX section in the core markdown (never inlined); renderUxCompanionForBody runs alongside renderErCompanionForBody so a doc with both an ER and a UX definition emits both companions"
+      },
+      {
+        "level": "integration",
+        "name": "code-review handler: a subject requiring uxAcceptance with an adhering build passes; with a missing/mismatched UX design the ux dimension blocks completion; a subject with neither uxDefinition nor adherence yields the base four dimensions and byte-identical behaviour"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

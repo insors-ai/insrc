@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e85e6d00-dfa0-4b2e-b1b4-e680e7c5e485",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.487Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Plugin tests: CommentBuffer + comment-op applier + anchor model",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6568b33e5bf5454e3dc907e96383ac7789c4fc343c6ab587a9fa9e829f1f8464",
+        "at": "2026-10-22T12:43:18.488Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.488Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin tests: CommentBuffer + comment-op applier + anchor model",
+    "summary": "Add plugin JUnit tests (mirroring ArtifactContentTest) for CommentBuffer (add/edit/remove/snapshot/clear, distinct same-section ids), the comment-op applier (add/edit/remove reflected; malformed/unknown/missing -> no-op; empty anchor/blank body rejected; openQuestionId association), and the anchor model + per-artifact scoping. Verify locally (./gradlew test JDK21). The JS layer (t3/t4) + the JCEF wiring (t5) have no JVM harness — manual + backstopped by the pure cores (the known JS-untested residual, recorded honestly in the CR as in S002).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Every LLD test-strategy subject for ac1/ac2/ac3 has a passing test over the pure Kotlin cores.",
+      "Plugin tests green via ./gradlew test on JDK21; no live socket, no GitHub CI.",
+      "The JS/JCEF residual is recorded honestly (not asserted as covered)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Aggregate: CommentBuffer + comment-op applier + anchor model + per-artifact scoping subjects run green via ./gradlew test JDK21"
+      },
+      {
+        "level": "unit",
+        "name": "CommentAnchor supports section-only, quote-only, openQuestion-only, and combined anchors (all optional)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

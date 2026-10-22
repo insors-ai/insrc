@@ -21,7 +21,27 @@
     "epicSlug": "bug-story-s-code-review-change",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-08T10:09:29.815Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "326ca972b49454aea2c231be29868285ce3f45f13dd9d05d19875d9013d6ee4d",
+        "at": "2026-10-08T10:09:29.815Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "A Story's code review covers commits from other work items made before its end or between its tasks",

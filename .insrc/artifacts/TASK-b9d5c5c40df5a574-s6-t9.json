@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09e2ae7f-073f-4671-a305-1a044918ee51",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.172Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "The free-form lookup receives the request's scope",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b734d2546d869df8a85d7df6d0ac1dee9a83dc13515fa7422bf9c06e22be767",
+        "at": "2026-10-22T12:44:25.172Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.173Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The free-form lookup receives the request's scope",
+    "summary": "Add the resolved scope to the lookup executor's runner context and to executePlan's and stepPlan's arguments. Make the free-form lookup build its intent with the request's own scope and pass the resolved scope to runShaperToolLoop, whose arguments gain it and which takes the loop's path from lookupPath.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "A file-scope request whose plan is replaced by the free-form lookup builds an intent of kind 'file' with the file's path, and the loop's path is the resolved repo",
+      "For a connection the loop's path is the connection's repo, not the working directory",
+      "The existing free-form tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "free-form lookup for a file-scope request builds a file intent and uses the resolved repo as the loop's path"
+      },
+      {
+        "level": "unit",
+        "name": "free-form loop's path for a connection is the connection's repo"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

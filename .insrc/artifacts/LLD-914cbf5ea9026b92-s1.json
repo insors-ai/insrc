@@ -23,133 +23,64 @@
     "hldBaseRunId": "wf-1786031712974-qqqe5k",
     "hldEffectiveHash": "fd544bcd90a023e29bb48b2f6460dacf5dc6eaab956d8dff2bd59eceadab5516",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "data-model/EntityKind",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "EntityKind is a string union declared in src/shared/types.ts (cited around line 515) to which S001 adds 'externalEndpoint'.",
-          "evidence": "Confirmed: src/shared/types.ts:515 `export type EntityKind =`. NOTE the evidence also shows a SECOND declaration at src/db/graph/keys.ts:77 `export type EntityKind = keyof typeof ENTITY_KIND_BYTE;` — keys.ts re-derives EntityKind from a byte map. The citation itself is accurate; the dual-declaration is the subject of cl3-adjacent finding below.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "data-model/RelationKind",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "RelationKind is an intra-code string union declared in src/shared/types.ts (cited around line 529) to which S001 adds CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC.",
-          "evidence": "Confirmed: src/shared/types.ts:529 `export type RelationKind =` and src/db/graph/keys.ts:37 `export type RelationKind = keyof typeof RELATION_KIND_BYTE;`. The LLD correctly cites keys.ts for the RelationKind byte mapping.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "data-model/Entity",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The Entity record is declared in src/shared/types.ts (cited around line 539) carrying id/kind/name and optional fields (signature, isExported), which S001 extends with optional endpoint fields inline.",
-          "evidence": "Confirmed: src/shared/types.ts:539 `export interface Entity`, codec.ts:132 `export interface EntityRow`, and src/shared/types.ts:565 `isExported?: boolean;` — the inline-optional-field pattern the LLD mirrors is real.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "contract/transitiveClosure",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "transitiveClosure is defined in src/db/graph/traversal.ts (cited around line 134) and accepts a kindFilter over RelationKind used by the DEPENDS_ON closure.",
-          "evidence": "Confirmed: transitiveClosure is exported from src/db/graph/traversal.js (imported in traversal.test.ts:23) and kindFilter is a real traversal option (outNeighbors/inNeighbors { kindFilter: [...] } across analyze/explore/*). Signature-level claim holds.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "contract/decodeEntityRow",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The graph codec src/db/graph/codec.ts defines encodeEntityRow/decodeEntityRow (EntityRow around line 133) as pass-through msgpack, and decodeRepoRow (around line 113) uses the additive-decode `?? default` precedent S001 relies on.",
-          "evidence": "Confirmed: encodeEntityRow/decodeEntityRow exported from src/db/graph/codec.ts (codec.test.ts round-trips them), and the additive-decode precedent is real at src/db/graph/codec.ts:117 `kind: raw.kind ?? 'workspace'` (the LLD cited ~113; the pattern is at 117 — within the same decodeRepoRow block).",
-          "action": "None — citation verified (line ~113 vs actual 117 is immaterial).",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "data-model/keys",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "src/db/graph/keys.ts maps each RelationKind to a u8 byte used in the edge key, where S001 appends four new bytes.",
-          "evidence": "keys.ts owns BOTH byte maps: RELATION_KIND_BYTE (keys.ts:37) AND ENTITY_KIND_BYTE (keys.ts:77), each with `export type <Kind> = keyof typeof <MAP>`. The LLD's EntityKind data-model change lists call sites `src/shared/types.ts` + `src/db/graph/codec.ts` but OMITS `src/db/graph/keys.ts` — yet because EntityKind is re-derived as `keyof typeof ENTITY_KIND_BYTE`, adding the 'externalEndpoint' node kind REQUIRES appending it to ENTITY_KIND_BYTE in keys.ts too (exactly parallel to how the LLD already handles the new RelationKind byte). Left unstated, the build could add the member to shared/types.ts only and diverge the two EntityKind unions / miss the entity-kind byte.",
-          "action": "Add src/db/graph/keys.ts (ENTITY_KIND_BYTE append) to the EntityKind data-model change's call sites + schemaDiff, mirroring the RelationKind entry.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "keys.ts:77 shows EntityKind = keyof typeof ENTITY_KIND_BYTE, so a new node kind needs a byte in ENTITY_KIND_BYTE, not just a member in the shared/types.ts union. Make the EntityKind change symmetric with the RelationKind change (which already cites keys.ts).",
-            "artifactEdits": [
-              {
-                "find": "src/shared/types.ts EntityKind: + | 'externalEndpoint'",
-                "replace": "src/shared/types.ts EntityKind: + | 'externalEndpoint'\nsrc/db/graph/keys.ts: append 'externalEndpoint' to the ENTITY_KIND_BYTE map (keys.ts re-derives `EntityKind = keyof typeof ENTITY_KIND_BYTE`, so the node kind needs a stable u8 byte here too, parallel to the new RelationKind bytes)"
-              }
-            ]
-          }
-        },
-        {
-          "claimId": "cl7",
-          "ref": "data-model/ids",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/db/graph/ids.ts allocates internal u64 store ids (allocateEntityId/allocateEntityIdInTxn), distinct from the deterministic SHA256 string Entity.id used for endpoint dedup.",
-          "evidence": "Confirmed: src/db/graph/ids.ts exports allocateEntityId / allocateEntityIdInTxn (ids.test.ts + db/entities.ts:47 import). The u64-vs-deterministic-string-id duality the LLD relies on is real.",
-          "action": "None — citation verified.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "data-model/migrations",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/db/graph/migrations.ts is a forward-migration runner with a Migration registry and a schema_version meta key; S001 requires no data-rewrite migration.",
-          "evidence": "Partially confirmed: the `schema_version` meta key + a forward-migration seam are real (migration-v2-to-v3.test.ts, derived-indices 'v1->v2 migration on env open'). The literal `Migration` type / `run(` method names did not grep in src, so the exact runner shape should be confirmed at build — but the load-bearing claim (an additive schema_version marker seam exists; no data-rewrite migration needed) holds.",
-          "action": "Confirm the migration-runner type name at build time; no design change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "closed-union/boundary-kinds",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The four boundary relation kinds CALLS_HTTP, PUBLISHES_TO, SUBSCRIBES_TO, CALLS_RPC are the complete set added, one per protocol boundary class.",
-          "evidence": "Confirmed absent by design: CALLS_HTTP/PUBLISHES_TO/SUBSCRIBES_TO/CALLS_RPC do not yet exist in src — they are the NEW vocabulary this LLD introduces. Not a defect; the closed set of four is intentional (one per boundary class).",
-          "action": "None — new symbols expected to be absent pre-build.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "cross-artifact/sc1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD (914cbf5ea9026b92) owns sc1 ExternalEndpoint graph vocabulary with ownedByStory s1, which this LLD implements verbatim.",
-          "evidence": "The src-only grep could not read the HLD artifact (evidence engine scoped to src/), so the cross-artifact trace is unverified by this pass. The HLD (docs/designs/HLD-work-framed-approved-spec-proceed-from.md, committed) does declare sc1 ownedByStory s1 — authored + reviewed this session. Low risk.",
-          "action": "None — trace holds per the committed HLD.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 9
-      },
-      "reviewedAt": "2026-08-06T16:59:09.659Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-06T17:09:35.825Z",
-    "reviewOverride": {
-      "reason": "true",
-      "at": "2026-08-06T17:09:35.825Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "117df010cc344bfa4c1b211d1b9fbddc371599f7194cd6d10a6906ed79d0d489",
+        "at": "2026-08-06T16:56:41.124Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T17:09:35.825Z",
+        "override": {
+          "reason": "true"
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 9
+        },
+        "at": "2026-08-06T16:59:09.659Z",
+        "report": {
+          "entityId": "LLD-914cbf5ea9026b92-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-914cbf5ea9026b92-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

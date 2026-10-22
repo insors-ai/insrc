@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b8d1be6e-e7d4-42ac-9939-bb3ccd819cde",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.508Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "feedbackBodyLines render binding (sc3)",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "de26de1d1d0cbb650ac3e6a76a35865edc7fc50d7f07f38f8fbc21c20daaed1f",
+        "at": "2026-10-22T12:44:04.508Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.509Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "feedbackBodyLines render binding (sc3)",
+    "summary": "Add feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] to src/workflow/artifacts/format/bindings.ts, mirroring companionBodyLines: return [] when undefined/empty (omit-slot), else render each entry's attribution (author, timestamp, target file+segment) + comment as markdown lines. Co-locate its unit test.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "feedbackBodyLines(undefined) === [] and feedbackBodyLines([]) === [] (ac2/ac4)",
+      "non-empty input renders attribution + comment lines from the record, never prose (k1)",
+      "co-located unit test covers the present + absent branches"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "format/bindings: feedbackBodyLines non-empty → section lines with attribution; undefined/empty → [] (omit-slot)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

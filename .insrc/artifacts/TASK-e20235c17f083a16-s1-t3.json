@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa2f4df9-599f-4099-ba3c-ec40c5578e45",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.167Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Inherit the label in finalizeStandaloneLld instead of re-deriving it",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ff80cd0f91e692d045bda5b3f737b997dd1daa34da4e09beaad784524154cf0",
+        "at": "2026-10-22T12:44:47.167Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.168Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Inherit the label in finalizeStandaloneLld instead of re-deriving it",
+    "summary": "Change the one unconditional slug derivation that re-derives for a work item which already has a label, replacing it with the inherit-then-fallback form its three sibling finalizers already use. A one-line change at a single site. The three OTHER unconditional derivations are deliberate non-targets and must not be touched: they belong to the SPEC, ISSUE and DEF definition heads, which must mint a label because nothing precedes them.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "CRITIQUE APPLIED — dependsOn now includes t2, so the LLD's reasoned ordering (anchor before label, because a label-first fix leaves a defect same-day fixtures cannot see) is ENCODED rather than merely documented. order is advisory where dependsOn is binding, and a build in this session already followed id digits over the order field",
+      "A standalone LLD's persisted epicSlug EQUALS its definition artifact's, the direct inversion of the live defect where the ISSUE said one thing and the LLD coined another",
+      "The three definition-head derivations are UNEDITED — asserted by diff against the pre-change baseline",
+      "The fallback still applies when no definition artifact supplies a label, so a work item without one behaves as it does today",
+      "An empty-string label on the definition artifact is treated as ABSENT and never composes a folder name beginning with a separator",
+      "MUTATION PROOF, run and recorded: restoring the unconditional derivation turns the slug-equality test red"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a standalone LLD's persisted meta.epicSlug EQUALS its ISSUE's — the direct inversion of the live defect"
+      },
+      {
+        "level": "integration",
+        "name": "the work item's one folder sits under docs/standalone and its label equals the ISSUE's epicSlug, not a later stage's focus prose"
+      },
+      {
+        "level": "unit",
+        "name": "an empty-string epicSlug on the definition artifact is treated as ABSENT and never composes a folder name beginning with a separator"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF: restoring the unconditional derivation reds the slug-equality test"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

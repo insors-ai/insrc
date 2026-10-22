@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a92d9e94-d197-449a-80eb-dcb9134bedff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.419Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Controller answers by callId, frame tokens and the MCP schema",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1fe8fbdd64369e2bbb77ebcbf4adc9a57e7a4c1577d271ea4446c81f75349628",
+        "at": "2026-10-22T12:44:15.419Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.420Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Controller answers by callId, frame tokens and the MCP schema",
+    "summary": "The judgements phase accepts answers [{ callId, output }] for an emit_calls frame; applyAnswer advances each job; a fresh token per frame with the previous released; a wrong callId is bad-judgements and a replayed token state-not-found; the insrc_code_review_step MCP input schema accepts answers, forwarded unchanged; the last answers drive the runner.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "An over-budget review completes through the registered MCP tool frame by frame and writes the same record as the daemon path.",
+      "A wrong callId is bad-judgements and a replayed frame token is state-not-found."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'an over-budget review is answered frame by frame by callId through the registered MCP tool and writes the same record as the daemon path'"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a wrong callId is bad-judgements and a replayed frame token is state-not-found'"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a degraded review with no symbols and an oversized record completes frame by frame and reports the missing promised test'"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

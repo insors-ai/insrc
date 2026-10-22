@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9c3d2622-954d-4138-834c-eec56ea97645",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.077Z",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Chat host feeds declarations and shows the outcome",
+      "parent": {
+        "entityId": "STORY-067b05b6892cb212-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-067b05b6892cb212-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-067b05b6892cb212-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee8a44ffc9ad657337494f14fd8ac0119c5120e5b419027a0d0b3b5095efbd23",
+        "at": "2026-10-22T12:43:11.079Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.080Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chat host feeds declarations and shows the outcome",
+    "summary": "In chat-panel.ts pass each tool-call event's present list to the presented turn's declared() on both feed paths (the followed live turn and the hosted run) with the existing guarded helpers, and show the DeclaredOutcome as chat information lines (a name that is not pending, an unreadable pending list). extension.ts keeps building the presenter as today.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A tool-call's declared documents reach the presenter on both a followed live turn and a hosted run, and nothing else is passed",
+      "A not-pending name and an unreadable pending list each show an information line in the chat",
+      "The chat opens a declared pending document even when the insrc_present call itself failed"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything"
+      },
+      {
+        "level": "integration",
+        "name": "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome"
+      },
+      {
+        "level": "integration",
+        "name": "the chat host feeds the declaration from both a followed live turn and a hosted run"
+      },
+      {
+        "level": "integration",
+        "name": "the chat opens a declared pending document even when the insrc_present tool call itself failed"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

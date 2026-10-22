@@ -20,7 +20,27 @@
     "issueHash": "149283b0d0455a43",
     "epicSlug": "story-list-readers-do-not-recognise",
     "standalone": true,
-    "magnitude": "sized"
+    "magnitude": "sized",
+    "epicCreatedAt": "2026-10-03T14:09:32.294Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "bb9c1a988efa501aebf321ea36bc02676aa2d3ef04f93cc5e19cb1871232822b",
+        "at": "2026-10-03T14:09:32.294Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Make the story-list readers recognise an ISSUE-anchored work item",

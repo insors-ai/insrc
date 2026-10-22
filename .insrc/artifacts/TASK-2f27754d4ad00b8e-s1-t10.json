@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-60573910-0553-460a-9d29-0d27783ec5d7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.175Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the exact-token title lookup to the tracker port",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "38e9cb915781a3214926a18911c03bebf58b91df81dee933f32dfa0ed16c539d",
+        "at": "2026-10-22T12:43:20.175Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.176Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the exact-token title lookup to the tracker port",
+    "summary": "Add findIssuesByTitleToken(token) to TrackerPort with a strict gh helper in github.ts, the GitHub adapter implementation and the in-memory fake. Matching is exact: the title equals the token or starts with it followed by an em dash and a space.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "STORY-<h>-s1 matches 'STORY-<h>-s1' and 'STORY-<h>-s1 — title' and not STORY-<h>-s10; TASK -t1 does not match -t10",
+      "a failed gh call is a failed result, never an empty list",
+      "the adapter and fake agree over a stubbed gh boundary"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/title-token.test.ts: the exact-token matcher accepts the token and the token followed by an em dash and not a longer id"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/title-token.test.ts: findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary and in the fake agree and a failed call is a failed result"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-12T08:36:52.747Z",
     "parentRef": {
       "slug": "type-check-plugin-project-build-gate"
+    },
+    "epicCreatedAt": "2026-10-12T08:20:37.247Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2446a0b0a709817c9fd8857a0604c30a84a7f23bd6c37a60d625b1d660820651",
+        "at": "2026-10-12T08:20:37.247Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-12T08:36:52.747Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

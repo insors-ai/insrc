@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6c834b45-ee47-44b1-892b-f1ce827fd51e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.268Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "View-model types, the show-more intent and the wider item mirror",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "569f3e04d58d46ea46bc1a88691282fafbef76147dfdaa26a8f176095ce2a964",
+        "at": "2026-10-22T12:43:41.268Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.269Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "View-model types, the show-more intent and the wider item mirror",
+    "summary": "Declare BadgeView, CardView, ColumnView and BoardViewModel in board-protocol.ts in place of unknown, add the 'show-more' { stage } up-message (AMD-6a1315585c38c41c-2) to BoardUpMessage and parseBoardUpMessage, and widen DeliveryItemView with standalone, sourceIds, validation, conflict and correctsRef.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "BoardViewModel, ColumnView, CardView and BadgeView match the sc5 sketch, and the 'board' down-message carries a BoardViewModel.",
+      "parseBoardUpMessage accepts show-more whose stage is one of STAGE_ORDER and rejects any other stage or a missing one.",
+      "DeliveryItemView picks the five added fields and E1's contract test still compiles the mirror; the 'items' variant stays in BoardDownMessage."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-protocol.test.ts: 'show-more is accepted only for one of the six stages'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-b94cf2c9058fd82a-S001 -->
+<!-- insrc:artifact BUILD-b94cf2c9058fd82a-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -25,14 +25,14 @@ DaemonStatus gains optional queueLanes (QueueLanes in src/shared/types.ts); Daem
 - `.insrc/artifacts/AMD-c2ba6fa62a148ed1-8.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/AMD-c2ba6fa62a148ed1-9.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/BUILD-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
-- `.insrc/artifacts/BUILD-bd1c6c9005ff6390-S001.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
-- `.insrc/artifacts/CR-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
-- `.insrc/artifacts/CR-bd1c6c9005ff6390-S001.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
+- `.insrc/artifacts/BUILD-bd1c6c9005ff6390-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
+- `.insrc/artifacts/CR-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
+- `.insrc/artifacts/CR-bd1c6c9005ff6390-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/DEF-c2ba6fa62a148ed1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/EXT-c2ba6fa62a148ed1-s12.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/EXT-c2ba6fa62a148ed1-s13.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/ISSUE-6dbf14435972af7a.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
-- `.insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
+- `.insrc/artifacts/PLAN-b94cf2c9058fd82a-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `.insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `AGENTS.md` — **insrc-build** (2026-10-17T16:39:01.622Z)
 - `CLAUDE.md` — **insrc-build** (2026-10-17T16:39:01.622Z)

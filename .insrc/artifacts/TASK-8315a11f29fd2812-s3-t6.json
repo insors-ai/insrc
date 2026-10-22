@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ce6abf16-f8bd-4dfb-a637-5e78e3331b76",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.462Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Quality's compare and pair stages for cross-chunk duplicates",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7d981fd9765563e3c3a91b5403826611676da4506c77b880eeba9ca94b7d1554",
+        "at": "2026-10-22T12:43:52.462Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.462Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Quality's compare and pair stages for cross-chunk duplicates",
+    "summary": "Quality's adapter adds model stages 'compare' and 'pair' after its chunk stage, onCallFailure 'fail-review', run only when the plan is divided. s1 issues every later stage per chunk, so compare's chunkCalls for chunk i packs the chunk's descriptions (from the chunk stage's output) into batches of at most half the limit and pairs each with the batches of every later chunk; each call returns candidate duplicate pairs. pair's chunkCalls for chunk i judges each candidate pair whose first symbol chunk i holds, on both full rows when they fit together, else full against description in each direction, returning today's quality findings with counterpartRef; validate rejects a counterpart outside the pair. Both stages set countAs: 'relation' (s1's AdapterStage.countAs, added by the stakeholder's decision of 2026-10-20), so their calls are counted under pipelineCalls.relation as the LLD's data-model note says, while keeping role 'chunk' for retry and re-division.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Every two symbols in different chunks are compared through their descriptions, in calls that each fit the limit.",
+      "Two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef.",
+      "A pair answer naming a counterpart outside its two symbols is rejected, re-issued once, then fails the review.",
+      "Under the limit no compare or pair call is made.",
+      "Every compare and pair call, re-issues and re-divisions included, is counted under pipelineCalls.relation (countAs: 'relation'), not under chunk."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'compare and pair calls are counted under pipelineCalls.relation, not chunk'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

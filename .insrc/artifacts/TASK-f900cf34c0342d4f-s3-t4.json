@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e4214eb-d9c8-4ceb-8f34-9857d8cbfcb4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:58.980Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Grow the DaemonSection with the orphan area (multi-select + ConfirmPrompt-gated kill)",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f900cf34c0342d4f-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a4795e15384557e6c95211f7182f5992e98bffee8f0d1a5200763843251b86a1",
+        "at": "2026-10-22T12:44:58.980Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:58.980Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Grow the DaemonSection with the orphan area (multi-select + ConfirmPrompt-gated kill)",
+    "summary": "In src/cli/panes/DaemonSection.tsx add an orphan area below the s2 status card: read scanOrphans() (on mount/refresh), render the recommendation rows (pid + command) with a pane-local multi-select (Set<number>) + a refresh key via a new useInput (gated on !useCaptured() AND not while confirming, so the ConfirmPrompt's own useInput owns keys during confirm); a kill-request opens ConfirmPrompt (only when the selection is non-empty), and only on explicit Yes calls killOrphans(selectedPids) and renders the per-pid outcomes. Non-POSIX (scanOrphans -> {supported:false}) renders a 'not supported on this platform' line with no scan/kill control. Empty scan -> 'no orphan processes found'. Read-only except this one guarded kill.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "POSIX: renders scanOrphans() rows as recommendations; empty -> 'no orphan processes found'",
+      "selecting pids + kill-request opens ConfirmPrompt; No never calls killOrphans; Yes calls killOrphans with EXACTLY the selected pids and shows the per-pid outcomes",
+      "a kill-request with an empty selection is inert (killOrphans not invoked)",
+      "non-POSIX ({supported:false}) shows 'not supported on this platform' with no scan/kill control",
+      "the section's useInput is suspended while the ConfirmPrompt is open (no double key handling); the s2 status card is unchanged; tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DaemonSection orphan area (POSIX): renders scanOrphans() rows (pid + command); empty -> 'no orphan processes found'"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: select pids + kill-request opens ConfirmPrompt; No never calls killOrphans; Yes calls killOrphans with EXACTLY the selected pids + shows per-pid outcomes"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection: kill-request with an empty selection is inert (killOrphans not invoked)"
+      },
+      {
+        "level": "unit",
+        "name": "DaemonSection (non-POSIX, {supported:false}): renders 'not supported on this platform' with no scan/kill control"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

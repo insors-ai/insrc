@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3ab32458-97be-48df-8818-e555f402f8dc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:45.058Z",
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "753e0ed64921d937",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ship the DeployStepProtocol + DeploymentContextBundle type contracts (sc1/sc2)",
+      "parent": {
+        "entityId": "STORY-753e0ed64921d937-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-753e0ed64921d937-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "445cd94895fa5eaf69b78c31d200d8826c29084fcb0fa7d706885535c4f78306",
+        "at": "2026-10-22T12:43:45.058Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:45.059Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship the DeployStepProtocol + DeploymentContextBundle type contracts (sc1/sc2)",
+    "summary": "Create src/mcp/deploy-step/types.ts carrying the flat a1 envelope field-for-field: DeployPhase union, DeployStepRequest, DeployStepResponse, DeployStageRegistrar (sc1) plus the DeploymentEntityRef/DeploymentRelationRef/DeploymentCitation/DeploymentContextBundle quartet (sc2). Joins the analyze-step/build-step/workflow-step envelope family; PascalCase types in a kebab-case file, kept independent of AnalyzeContextBundle's internal layers. This is the root contract every other piece and all of s2–s6 consume verbatim.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/mcp/deploy-step/types.ts exports DeployPhase as exactly 'start'|'discover'|'reuse'|'topology'|'security'|'scale'|'done'.",
+      "Exports DeployStepRequest{phase;repo?;state?;focus?;payload?}, DeployStepResponse{next;guidance;prompt?;schema?;state;markdown?}, and DeployStageRegistrar{stage;register():void} field-for-field per the sc1 interfaceSketch (flat, no per-phase discriminated union).",
+      "Exports DeploymentEntityRef, DeploymentRelationRef, DeploymentCitation (entityId optional), and DeploymentContextBundle{stage;summary;entities[];relations[];citations[]} per the sc2 sketch, with no structural dependency on AnalyzeContextBundle.",
+      "Compiles under strict + exactOptionalPropertyTypes with every optional property typed as `| undefined`, and imports use `.js` extensions / `import type`."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-types.test.ts › DeployStepProtocol envelope (DeployPhase / DeployStepRequest / DeployStepResponse / DeployStageRegistrar) matches the flat a1 interfaceSketch and compiles under strict + exactOptionalPropertyTypes"
+      },
+      {
+        "level": "unit",
+        "name": "src/mcp/deploy-step/__tests__/deploy-step-types.test.ts › DeploymentContextBundle quartet (DeploymentEntityRef / DeploymentRelationRef / DeploymentCitation) is structurally independent of AnalyzeContextBundle and exposes entityId as optional"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

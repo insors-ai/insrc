@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3d5e9ceb-d79a-41b7-95f5-c32e2dfc078a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:49.475Z",
+    "epicCreatedAt": "2026-08-01T09:12:18.048Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add refreshSteeringAcrossRepos walk to steering-inject.ts",
+      "parent": {
+        "entityId": "STORY-ea1b11621c933a2c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ea1b11621c933a2c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ea1b11621c933a2c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "761d652a718c2f25c2c9637e47fd1714a9ee90b7c7e0eb8df8ab327e1a971a97",
+        "at": "2026-10-22T12:44:49.478Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:49.479Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add refreshSteeringAcrossRepos walk to steering-inject.ts",
+    "summary": "Implement refreshSteeringAcrossRepos(deps?): Promise<SteeringRefreshReport> in src/daemon/steering-inject.ts. Walks deps.listRepos() and, for each repo's CLAUDE.md and AGENTS.md independently, reads the file via deps.readFile, runs refreshMarkedSection with the block from deps.readBlock, and writes via deps.writeFile only when action==='replaced'. Any per-file read/write error is caught and recorded as a skipped SteeringFileOutcome with a note; the walk continues rather than aborting. When deps (or any of its four members) is omitted, construct production defaults for all of listRepos (global registry), readBlock (readSteeringBlock over the fresh out/prompts), readFile, and writeFile (node fs) — not listRepos alone.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "refreshSteeringAcrossRepos(deps) calls deps.listRepos() and, per repo, checks CLAUDE.md and AGENTS.md independently",
+      "For each file it calls refreshMarkedSection with the fresh block and calls deps.writeFile only when the result action is 'replaced'",
+      "A per-file read or write error is caught and recorded as {action:'skipped', note} in the report; the walk continues to the remaining repos/files rather than throwing",
+      "A repo whose files are absent or lack markers (opted out) is left untouched across the whole walk — never gains a new block",
+      "A repo with CLAUDE.md markers present but AGENTS.md absent refreshes CLAUDE.md and records AGENTS.md as skipped, independently",
+      "Zero registered repos (empty listRepos result) yields an empty SteeringRefreshReport and triggers no writes",
+      "The walk performs no LMDB repo-row upsert and issues no re-index call — it only reads the registry and touches repo markdown files",
+      "refreshSteeringAcrossRepos() called with no arguments constructs valid production defaults for all four dependencies (listRepos, readBlock, readFile, writeFile), not just listRepos"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: mixed repo list — stale written, opted-out skipped-not-created, malformed untouched"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: per-file read rejection recorded skipped+note, walk continues to remaining repos"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: per-file write rejection recorded skipped+note, other repos still refreshed"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: CLAUDE.md refreshed while sibling AGENTS.md skipped independently"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: zero registered repos yields empty report, no writes"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: writeFile invoked only when action is 'replaced'"
+      },
+      {
+        "level": "unit",
+        "name": "refreshSteeringAcrossRepos: called with no deps constructs valid production defaults for all four members"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

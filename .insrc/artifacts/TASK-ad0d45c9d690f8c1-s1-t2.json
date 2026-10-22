@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-391c4a4d-1572-47aa-963e-73e27b8737f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.293Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scaffold the vscode-plugin/ package + activation entry",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "38eb3aa51cfbca2b2b7cdbb0cc999ef303e48816d1ed9f8bb213aa101c23be9c",
+        "at": "2026-10-22T12:44:12.293Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.294Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scaffold the vscode-plugin/ package + activation entry",
+    "summary": "Create the NEW top-level vscode-plugin/ package (sibling to jetbrains-plugin/): its own tsconfig (strict/ESM/NodeNext) + a MINIMAL package.json with only what s1 needs to compile and declare the activation entry + status-bar contribution (the Marketplace listing metadata / full contributes / .vsix packaging is s6's boundary, deferred). Add the extension entry module exporting activate(context)/deactivate() stubs the later tasks fill in. Wire it to import the shared ipc-client.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "vscode-plugin/ exists with tsconfig.json + a minimal package.json declaring the activation entry (no Marketplace listing metadata — that is s6)",
+      "the package builds and exports activate/deactivate",
+      "no reasoning/LLM/analysis/graph code is present in the extension (k2/lc2)"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "vscode-plugin/ builds (tsc) and its entry module exports activate + deactivate"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the extension bundle imports only src/shared/ipc-client (no daemon internals/indexer/storage/cloud path) — k2/lc2/k5"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

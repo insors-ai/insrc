@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-054f9e80-77a4-4645-9eb4-e5e4bcfd7be9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.580Z",
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Several windows, whole-file writes, failing writes and the session cap",
+      "parent": {
+        "entityId": "STORY-c96a97a204fac22b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c96a97a204fac22b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c96a97a204fac22b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9df4bd10863a2cb920b639c5e698d3b761722e0795b81c79cf37c0c13401d41e",
+        "at": "2026-10-22T12:44:40.580Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.581Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Several windows, whole-file writes, failing writes and the session cap",
+    "summary": "Complete the store's save rules. Per id, record the rows file's size as the store last left or read it, including after its own cut-back of a torn last line. When the file has grown, another writer appended: still append this object's new rows, keep the object tracked, drop only the id's cached object so the next get reads the files. Write the rows file whole (temporary file and rename) in exactly three cases: an object never tracked for an id whose files exist; a tracked object whose transcript is shorter than its count; and (review finding accepted by override) a tracked object whose rows file is missing or smaller than the recorded size, or whose head is gone, as after an eviction, so the session comes back complete. That last save counts as creating a new head, so the cap is applied. A failing append or head write throws and leaves the count where the rows on disk are. With maxSessions, a save that creates a new head removes the oldest heads by savedAt with their rows files and calls onEvict, never the session being saved; a failing remove is logged.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "After another writer appended, the same held object saved three times (new row, head change only, after a get of its id) only ever appends; the rows file is never replaced and holds both writers' rows in save order; the get returns a fresh object with all of them",
+      "A held object saved after its files were removed (evicted) writes its whole transcript and its head, get then returns every row, and the cap is applied without removing it",
+      "A save after the store cut back a torn last line appends and does not replace the rows file",
+      "A never-tracked object saved for an id whose files exist, and a tracked object whose transcript is shorter than its count, each replace the rows file whole through a temporary file and a rename",
+      "A failing append or head write makes save throw; the next save writes the missing rows once and none twice",
+      "With maxSessions set, a save that creates a new session removes the oldest sessions' files and calls onEvict for each, never the one being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "after another writer has appended to the rows file, the same held session object is saved three times (with a new row, with only a head change, and after a get of its id): every save only appends, the rows file is never replaced, it holds both writers' rows in save order, and the get returns a fresh object with all of them (mutation: untrack the object when the cached copy is dropped)"
+      },
+      {
+        "level": "unit",
+        "name": "an object the store has never tracked, saved for an id whose files exist, replaces the rows file whole through a temporary file and a rename; so does a tracked object whose transcript is shorter than its count"
+      },
+      {
+        "level": "unit",
+        "name": "a failing append or head write makes save throw and leaves the object's count where the rows on disk are, so the next save writes the missing rows once and none twice"
+      },
+      {
+        "level": "unit",
+        "name": "with maxSessions set, a save that creates a new session removes the sessions with the oldest savedAt and their rows files and calls onEvict for each, never the session being saved; a failing remove is logged and the save succeeds; a cap of 0 or less is no cap"
+      },
+      {
+        "level": "unit",
+        "name": "a held session object saved after its files were removed is written whole with its head, get then returns every row, and the cap is applied without removing it (mutation: append only the rows beyond its count)"
+      },
+      {
+        "level": "unit",
+        "name": "a save after the store cut back a torn last line appends and does not replace the rows file"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

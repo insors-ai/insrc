@@ -24,120 +24,61 @@
     "hldBaseRunId": "wf-1790165706650-c3lbx6",
     "hldEffectiveHash": "3fb0b2204d884534004431928d86df688607742e1aa556119172742624bc5e9a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon registers 'providers.listModels' as an offlineRpc stub in src/daemon/index.ts (now :1519 after S001's boot edit), the entry S002 revives into a real handler.",
-          "evidence": "src/daemon/index.ts:1519 read ok; grep confirms `'providers.listModels': offlineRpc(...)` — the offline stub S002 revives is real and at the cited (post-S001-shift) line.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "RpcHandler is the type (params: unknown) => Promise<unknown> defined in src/daemon/server.ts, the contract the revived handler satisfies.",
-          "evidence": "src/daemon/server.ts:38 read ok; grep confirms `type RpcHandler = (params: unknown) => Promise<unknown>` verbatim — the transport contract the revived handler satisfies.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "offlineRpc(method): RpcHandler is the stub factory in src/daemon/index.ts returning an async handler that yields a backend-offline error.",
-          "evidence": "src/daemon/index.ts:94 read ok; grep confirms `function offlineRpc(method: string): RpcHandler` — the stub factory.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A pre-existing 'claude.models' handler using the Anthropic SDK (client.models.list()) exists in src/daemon/index.ts — the forbidden direct-cloud-REST path S002 deliberately does NOT reuse.",
-          "evidence": "src/daemon/index.ts:1290 read ok; grep confirms `'claude.models':` + `.models.list()` — the Anthropic-SDK cloud path exists and is correctly excluded as the forbidden route (k1/ac4).",
-          "action": "None — forbidden-path citation confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "OllamaProvider (src/agent/providers/ollama.ts) wraps the ollama package's Ollama client with host resolution; it is the existing provider S002 adds the bounded listLocalModels method to.",
-          "evidence": "src/agent/providers/ollama.ts:136 read ok; grep confirms `class OllamaProvider implements LLMProvider` + `new Ollama(` — the existing provider S002 extends with the bounded listLocalModels is real.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c4",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "The ollama package's Ollama client exposes list(): Promise<ListResponse> where ListResponse.models is ModelResponse[] (each with .name) — the live /api/tags query listLocalModels wraps.",
-          "evidence": "The two greps returned 0 ONLY because the review engine greps src/ (not node_modules); the node_modules/ollama .d.ts:359 read succeeded (ok). Independently verified earlier by direct read: `list(): Promise<ListResponse>` (:359) and `models: ModelResponse[]` (:244) — the Ollama.list() /api/tags contract holds. This is an external-package contract, appropriately treated as an assumption.",
-          "action": "None — the ollama-package list() contract is confirmed by the .d.ts read; grep-scope (src/ only) explains the 0 matches.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The ollama host is a config option 'ollama.host' with default http://localhost:11434 (config-catalog.ts), the host OllamaProvider resolves.",
-          "evidence": "src/config/config-catalog.ts:80 read ok; grep confirms `'ollama.host'` + `http://localhost:11434` — the host config the ollama query resolves.",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "c2",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S001 (shipped) exposes getCuratedCatalog(): CuratedCatalog with modelsFor(provider) in src/daemon/model-catalog.ts — the sc1 accessor S002's cloud branch consumes.",
-          "evidence": "src/daemon/model-catalog.ts read ok; grep confirms `export function getCuratedCatalog(): CuratedCatalog` + `modelsFor(provider: CloudProvider)` — the shipped S001 sc1 accessor the cloud branch consumes exists exactly as described.",
-          "action": "None — cross-artifact sc1 consumption confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The runner enum AnalyzeShaperProviderKind = 'ollama'|'cli-claude'|'cli-codex' (src/config/analyze.ts:88) is exactly the three ModelProvider values, reused unchanged (k3).",
-          "evidence": "src/config/analyze.ts:88 read ok; grep confirms AnalyzeShaperProviderKind + the 'ollama'|'cli-claude'|'cli-codex' union — ModelProvider is exactly the reused runner enum (k3).",
-          "action": "None — confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The sc2 contract this LLD implements (listModels(params): Promise<ModelListResult> over ModelProvider/ModelInfo/ModelListResult/ListModelsParams) matches the HLD sc2 interfaceSketch S002 owns.",
-          "evidence": "The epic HLD read ok; the LLD's sc2 surface (listModels(params): Promise<ModelListResult> over ModelProvider/ModelInfo/ModelListResult/ListModelsParams) reproduces the HLD sc2 interfaceSketch S002 owns without deviation.",
-          "action": "None — sc2 contract matches the HLD.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-23T13:45:06.838Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-23T13:47:13.579Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "70601dffbc2a000538d095ab6653cface6ab3076120d3b324e22b97b86d3638a",
+        "at": "2026-09-23T13:43:45.658Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T13:47:13.579Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-23T13:45:06.838Z",
+        "report": {
+          "entityId": "LLD-ba132c185fe45860-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ba132c185fe45860-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

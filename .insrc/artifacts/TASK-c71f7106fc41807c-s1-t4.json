@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a5ef486-c920-4153-a2ce-6f7b758f3378",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:39.568Z",
+    "epicCreatedAt": "2026-09-29T19:27:37.375Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c71f7106fc41807c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify review-step + code-review-step stay leak-free (NO edit; regression assertions land in t5)",
+      "parent": {
+        "entityId": "STORY-c71f7106fc41807c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c71f7106fc41807c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "06f33b5c2f31b97e96fdb8196671a27b62a67f6a61a0f335e61074e8247c5afd",
+        "at": "2026-10-22T12:44:39.572Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.114Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify review-step + code-review-step stay leak-free (NO edit; regression assertions land in t5)",
+    "summary": "Confirm the two already-correct peer stores are LEFT UNCHANGED: review-step holds one token per run via updateState in-place (claims.ts:36); code-review-step releases the incoming token per transition (releaseState(step.state!) at handler.ts:228/276/283) + release-on-consume at :493. This is a verification/decision task — no source edit. The regression assertions that pin their bounded-store behaviour are IMPLEMENTED in t5 (which dependsOn t4).",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "review-step/state-store.ts + its phases remain unedited (confirmed by diff)",
+      "code-review-step/handler.ts + state-store.ts remain unedited; its release-on-consume (handler.ts:493) semantics are unchanged",
+      "the decision that these two stores are out-of-scope-for-edit is recorded for t5's regression coverage"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "peer regression — a multi-turn review-step run keeps _reviewStateStoreSize bounded (updateState in-place); code-review-step keeps _codeReviewStateStoreSize bounded and a resend of a consumed token still fails loadState (handler.ts:493 property intact)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

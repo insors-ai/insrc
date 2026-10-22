@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8779fd1-ad51-4422-a554-e3d3785a072c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.463Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "envelope": {
+      "description": "The outbox projection and its protocol messages",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3e382ff2e3f849cf31d3ccb78f38a141986d4717b61c8a1be14f7a153fdf18a2",
+        "at": "2026-10-22T12:43:37.463Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.464Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The outbox projection and its protocol messages",
+    "summary": "New vscode-free module chat-outbox.ts (sc5): OutboxRow, OutboxView (with runningChat and blockedBy), OutboxAction and projectOutbox(rows, sessionId, ctx), a pure function. protocol.ts gains the host->webview 'outbox' message and the four outbox-* actions, added to HOST_TO_WEBVIEW_TYPES and WEBVIEW_TO_HOST_TYPES.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Processing rows are never outbox rows; positions are 1-based among all waiting rows; failed and not-delivered rows have no position",
+      "aheadFromOtherChats counts only other chats' waiting rows ahead of this chat's first waiting row",
+      "runningChat names another chat's processing row (here when it is this window's); blockedBy comes from that row's waitingOn",
+      "The protocol lists include 'outbox' and the four actions, and the protocol tests' exhaustive lists are updated to match"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named"
+      },
+      {
+        "level": "unit",
+        "name": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried"
+      },
+      {
+        "level": "unit",
+        "name": "protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

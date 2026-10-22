@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ce1256dd-974e-4bbe-a232-0e77c732bda3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.191Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "vscode.d.ts shim: Webview + QuickPick additive declarations",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "70f57fbb767550a67d5b62725cd23f35b96e927311fa296ac282580b10f46204",
+        "at": "2026-10-22T12:43:30.191Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.192Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "vscode.d.ts shim: Webview + QuickPick additive declarations",
+    "summary": "Additively extend the compile-only vscode.d.ts shim (no @types/vscode) with the net-new API the panels need: window.createWebviewPanel + WebviewPanel { webview{html,postMessage,onDidReceiveMessage}, reveal, onDidDispose, dispose, active, visible } + ViewColumn, and window.showQuickPick + QuickPickItem. Leave the existing StatusBarItem.command (and every other member) unchanged.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "vscode.d.ts declares createWebviewPanel/WebviewPanel/Webview/ViewColumn + showQuickPick/QuickPickItem",
+      "No existing shim member is modified or removed (StatusBarItem.command still present)",
+      "extension.ts's real vscode usage of these APIs type-checks against the shim"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tsc --noEmit compile gate proves extension.ts's createWebviewPanel/showQuickPick usage type-checks against the extended shim (and StatusBarItem.command still resolves)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

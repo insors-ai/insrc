@@ -13,7 +13,26 @@
     "reviewedBy": "daemon",
     "epicSlug": "defect-vscode-plugin-src-chat-chat",
     "epicCreatedAt": "2026-10-10T16:38:40.063Z",
-    "standalone": true
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "cc90117121967f35c7532044718956312575392f145438973497ee3cc33d37ae",
+        "at": "2026-10-11T06:19:13.207Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

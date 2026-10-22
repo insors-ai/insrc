@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-32e7fdf1-5d14-44aa-8837-db7a8224414f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.758Z",
+    "epicCreatedAt": "2026-10-01T11:57:40.327Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply the two resolved LLD text corrections",
+      "parent": {
+        "entityId": "STORY-85e6a58693579b6d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-85e6a58693579b6d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d26756c38cea7f30bed04d8f176c04ebeafbb50b35be47920770b5d88bb1d3c",
+        "at": "2026-10-22T12:43:52.758Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.759Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply the two resolved LLD text corrections",
+    "summary": "MOVED TO FIRST per critique — it has no dependencies, touches no code, and doing it first means the build reads an already-corrected LLD rather than consuming an artifact it is also scheduled to amend. Two of the five resolved open questions are edits to the approved LLD rather than to code. (1) renderUxCompanion's `errors` entry becomes an empty array, with the explanation of why no error is raised — DiagramGenerationError becoming unreachable once assembleShell leaves the path — moved into postconditions, so the field carries types rather than a sentence. (2) Each of the seven invariantsToPreserve names its source analyze bundle inline, so a reader can resolve 'c6' from the artifact alone. Textual clarification only: no contract, acceptance criterion or decision changes, which is why it does not require re-approval.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "renderUxCompanion's errors array is empty and the unreachability explanation appears in postconditions, with no content lost",
+      "All seven invariantsToPreserve entries name the s1 bundle they were drawn from, inline in the invariant's own text so the annotation survives being quoted in isolation",
+      "Both the canonical JSON and the rendered markdown are updated through the production writer so they stay in sync",
+      "The appended review report is PRESERVED — regenerating markdown through the production writer drops it unless deliberately restored, which has happened twice in this session",
+      "meta.approvedAt and meta.review both survive the edit UNCHANGED, so the artifact remains an approved LLD with its review intact rather than silently reverting to pending"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: the LLD JSON's renderUxCompanion errors array is empty and its postconditions carry the unreachability explanation"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: all seven invariantsToPreserve entries name their source bundle inline"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: meta.approvedAt and meta.review are unchanged, and the rendered markdown still carries its appended Review section"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

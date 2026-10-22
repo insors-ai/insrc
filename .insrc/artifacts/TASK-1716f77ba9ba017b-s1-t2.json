@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e6d58687-227a-448a-8f64-3ff1db85666c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.810Z",
+    "epicCreatedAt": "2026-10-04T14:44:49.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1716f77ba9ba017b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp the author on artifacts and BUILD records",
+      "parent": {
+        "entityId": "STORY-1716f77ba9ba017b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1716f77ba9ba017b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1716f77ba9ba017b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee59c8383cb54e71330bd1d186125119c6f75909652708d9aa8810b6df299b63",
+        "at": "2026-10-22T12:43:14.810Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.810Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp the author on artifacts and BUILD records",
+    "summary": "finalizeArtifact takes an optional authoredBy and writes it into the meta it builds for every workflow. The MCP synthesize phase passes controller; the daemon workflow run passes daemon on its first finalize and on its correction retry. The two build-step writers, the validate phase and the Trivial implement write, stamp controller on the BUILD record. The approval-time writer stamps nothing, and the existing merge keeps a value already on the record.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "An artifact finalized through the MCP synthesize phase carries authoredBy controller; one finalized by the daemon run, including its correction retry, carries daemon",
+      "Calling finalizeArtifact without the argument writes the same output as before",
+      "A BUILD record written by either build-step writer carries authoredBy controller and keeps it across a later write that omits it; the approval-time writer adds none"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "T2 finalizeArtifact stamps the authoredBy it is given and writes the same output as before when given none"
+      },
+      {
+        "level": "unit",
+        "name": "T2 the synthesize phase stamps controller; the daemon run stamps daemon on first finalize and on the correction retry"
+      },
+      {
+        "level": "unit",
+        "name": "T3 a BUILD record written by each build-step writer carries controller and keeps it across a later write that omits it"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

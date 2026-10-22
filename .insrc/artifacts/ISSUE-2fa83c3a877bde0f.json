@@ -21,7 +21,27 @@
     "epicSlug": "diff-grounded-degraded-code-review-reviews",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-06T06:28:25.470Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "6340b8b590e6dd6dd02658196b6730576c86cd1c7025800a7dee0f12f89e1893",
+        "at": "2026-10-06T06:28:25.470Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "A diff-grounded code review reviews unrelated uncommitted files instead of the Story's commits",
@@ -51,7 +71,7 @@
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": "CR-1716f77ba9ba017b-S001"
+      "ref": "CR-1716f77ba9ba017b-s1"
     }
   ]
 }

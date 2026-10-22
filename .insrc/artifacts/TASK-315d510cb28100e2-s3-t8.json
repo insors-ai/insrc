@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1c7f9ccf-7ab9-4186-ab64-b125fadf5612",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.271Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "VS Code client: snapshot, renderer, webview message and fixtures",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "460d6e0d87018e1c518ecef83dc24dfd837c95183aabe150da1a258477060cc2",
+        "at": "2026-10-22T12:43:25.271Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.271Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "VS Code client: snapshot, renderer, webview message and fixtures",
+    "summary": "Build in this order so the tests that break are updated in the same task: gateway and types first, then the renderer and write-handler dependencies, then the repoTrackerWrite webview message and its consent-gated route with the extension wiring, then the fixtures: seam test allowed set, the FakeGateway tests, model-tier-picker, repo-config, detail-renderers and activation tests.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "catalog keeps repoFields (empty when the daemon omits it) and the tracker section renders with local rows editable and policy and status rows read-only",
+      "repo-config.test.ts renderRepoConfig calls and makeWriteDeps supply the new dependencies, model-tier assertions pass unchanged, and tracker routing, refusal and error-message cases are added",
+      "detail-renderers.test.ts allows repoTrackerWrite and a new test shows the ghHost edit posts it; seam test allows exactly the five daemon calls; activation.test.ts passes",
+      "The three FakeGateway tests and the model-tier-picker test pass with the new fields"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/config/__tests__/gateway.test.ts: catalog keeps repoFields and the gateway calls repo.settings.get and repo.settings.set"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts: FakeGateway returns repoFields and the test passes unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: the stub catalog returns repoFields and the test passes unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts: tracker section, routing through the consent gate, refusal and error message"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/workspace/__tests__/activation.test.ts: extension wiring patterns still match with the added dependencies"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts: closed message set includes repoTrackerWrite and the ghHost edit posts it"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/config/__tests__/seam.test.ts: exactly the five daemon calls are allowed"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/panels/__tests__/webview-host.test.ts: repoTrackerWrite is accepted and routed, errors become refusals, models.byRepo is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts: the sign-in row is rendered read-only with status and reason"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

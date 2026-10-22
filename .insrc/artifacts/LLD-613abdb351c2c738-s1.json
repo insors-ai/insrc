@@ -25,216 +25,61 @@
     "hldEffectiveHash": "e1a7250f3a6ddaa96975cbfbe8ef9268fa78412430804b83447e10d03a26a6e9",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "warn",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S001's acceptance criteria ac1–ac4 (a message sent mid-turn waits and the running turn keeps showing; turns across chats and windows run in order; only one window takes the head; Stop ends the turn and the next runs) are each designed and mapped to tests, and the outbox UI, takeover, retry and pane routing that belong to s2–s5 are not built here.",
-          "evidence": "DEF.md:112-115 gives S001 ac1–ac4. LLD §2.1–2.5 designs the queue, lease, in-order run and Stop→stopped. §7's acceptance mapping covers ac1–ac4. §1 lists s2–s5 as adjacent scope, and §2.1 says takeOver/reclaim 'return false until s3' and that the retrying state is left to s4. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The turn lifecycle's start() currently uses newest-wins: it aborts a turn still waiting for the session lease and bumps the generation so the previous turn stops reporting.",
-          "evidence": "turn-lifecycle.ts:242-249: \"Single-in-flight: the newest message wins. A turn still waiting for the lock is dropped, and the generation bump stops the previous loop reporting\"; waitCtl?.abort(); const myGen = ++generation. [files: vscode-plugin/src/chat/turn-lifecycle.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Typed and attachment submits call supersedeQueuedApprovals and then runTurn directly (chat-panel.ts:1432/1439 and :1506/1507). Cancel-turn is at :1509-1514. The grant re-run (:578) and the selection continuation (:1671) call runTurn with suppressEcho. drainExternal (:697-704) is a third direct start.",
-          "evidence": "chat-panel.ts:1432 supersedeQueuedApprovals(); :1439 void runTurn(text, undefined, { attachments: files }); :1506-1507 supersede + runTurn(msg.text); :1509 case 'cancel-turn' … :1514 turns.stop().then(drainExternal…); :578 void runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); :1671 runTurn(`Selected: …`, undefined, { suppressEcho: true }); :697-703 drainExternal → void runTurn(next.text). [files: vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The extension's chat folder is the first workspace folder, falling back to process.cwd(), and git is already invoked through execFile in extension.ts.",
-          "evidence": "extension.ts:481 const chatCwd = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(); extension.ts:10/171 execFile('git', ['-C', root, …]). [files: vscode-plugin/src/extension.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The plugin has no existing node:sqlite or cross-window chat queue store, so chat-queue-store.ts and chat-queue-worker.ts are genuinely new.",
-          "evidence": "Grep for 'node:sqlite|chat-queue' under vscode-plugin/src found no matches. [files: vscode-plugin/src]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The reused helpers exist with the stated shapes: session-lock.ts's defaultIsAlive(pid) and defaultProcessStartTime(pid), async-util.ts's Timers, a TurnProcess with pid: number | undefined and an exit promise, and protocol.ts's HOST_TO_WEBVIEW_TYPES.",
-          "evidence": "session-lock.ts:292 export function defaultIsAlive(pid: number): boolean; :322 export function defaultProcessStartTime(pid: number): number | undefined; async-util.ts:7 export interface Timers; cli-adapter.ts:74 readonly pid: number | undefined; turn-lifecycle.ts:280 proc.exit.then(...); protocol.ts:306 export const HOST_TO_WEBVIEW_TYPES. [files: vscode-plugin/src/chat/session-lock.ts, vscode-plugin/src/chat/async-util.ts, vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/protocol.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "VS Code 1.141's runtime (Electron 43, Node 24.21) can load node:sqlite's DatabaseSync in the extension host.",
-          "evidence": "This depends on the external VS Code/Electron runtime, which is not in the repo. Nothing local can confirm the version mapping. The design falls back to the direct path with a notice if loading fails (§2.6), so a wrong premise degrades the feature rather than breaking the chat. [files: vscode-plugin/package.json]",
-          "action": "Confirm by hand during the step-6 check in VS Code 1.141 that the store opens and the 'unsupported' notice does not appear.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The turn-lifecycle tests that pin the supersede behaviour are at turn-lifecycle.test.ts:205, :229, :252, :728, :766 and :984.",
-          "evidence": "turn-lifecycle.test.ts:205 'a second start drops a turn still waiting for its lease'; :229 'a superseded turn reports nothing…'; :252 'a lease granted after the turn stopped being current…'; :728 'a turn superseded or stopped while beforeRun runs…'; :766 'a superseded turn's end saves…'; :984 busy '…a superseding turn keeps it true'. [files: vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The chat-panel tests to update are the ones the HLD lists, which the LLD includes by reference.",
-          "evidence": "HLD.md:204 lists chat-panel.test.ts:138, :1318, :2854, :4745, :5018, :5302 and :5455 as changing. LLD migration step 4 says 'update the chat-panel tests the HLD lists', and the §7 smoke test requires those tests updated. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/HLD.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The package.json engines change: engines.vscode is ^1.75.0 today with no node engine, and the design raises it to ^1.141.0 and adds node >=22.13.",
-          "evidence": "vscode-plugin/package.json:23 \"vscode\": \"^1.75.0\". Grep found no \"node\" engine. [files: vscode-plugin/package.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The new per-repository SQLite file carries schema_version in meta: an older schema is migrated in one transaction, and a newer one raises StoreUnavailable and falls back to the direct path. No existing stored record is rewritten.",
-          "evidence": "LLD §2.1 says 'schema version 1 created or migrated in one transaction', and StoreUnavailable is thrown 'when … the schema version is newer'. §6's first error case and §8 say 'Data rewrite: no'. The session file store and attachment store are not changed in s1 (their eviction keep is s5's). [files: vscode-plugin/src/extension.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "PRAGMA data_version does not change for a connection's own commits, so a local write counter is needed for onChange to fire after this window's own writes.",
-          "evidence": "This matches documented SQLite behaviour: data_version changes only for commits made on other connections. LLD §2.2 adds a store-local version bumped by every write, and the worker compares both.",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s1 leaves submitExternal/drainExternal, the review-host result type, the attachment sweep keep set and session eviction to s5, and the takeover and retry rules to s3 and s4.",
-          "evidence": "LLD §2.5: 'submitExternal and drainExternal are left to s5'. s1 only holds drainExternal back while this window's worker runs. extension.ts:712 notifyChat → chatHost.submitExternal and :459-476 (store and sweep) are not in s1's change list (§3 call sites). takeOver and reclaim are stubs returning false. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A queued turn dropped before it spawns (an aborted lease wait or a beforeRun abort) is detectable because start() settles with no terminal event, no onError and no onSpawn.",
-          "evidence": "turn-lifecycle.ts:266-267: if the lease is undefined, run returns without sink calls. :321: if setup is aborted or the turn is no longer current, it returns before adapter.run, so onSpawn is never called. start()'s finally then settles its promise. LLD §2.3 resolves stopped 'the turn was dropped before it started' on exactly that signal. [files: vscode-plugin/src/chat/turn-lifecycle.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Stop's user cancel produces a CLI terminal error ('the CLI ended without finishing the turn') that the stop flag must override to 'stopped'.",
-          "evidence": "turn-lifecycle.ts:339-351: when the output ends with no done/error it emits { kind:'error', message:'the CLI ended without finishing the turn' } through onEvent/onTerminal. LLD §2.3 gives the stop flag precedence over that error, so a Stop is never a retryable failure. [files: vscode-plugin/src/chat/turn-lifecycle.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each S001 acceptance criterion maps to at least one automated test, and the cross-process guarantee (ac3) has a two-process test.",
-          "evidence": "LLD §7's acceptance mapping covers ac1 (chat-host integration), ac2 (worker unit), ac3 (store unit, the two-process fork test and the worker) and ac4 (chat-host Stop integration). Each also has the hand check where relevant. The cross-window parts of ac2 rest on the worker test's 'submit in one window is seen by another within one poll', not only on the manual check.",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 16,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-14T09:17:38.911Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-14T10:50:39.672Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "22b40af7bbb25a0f12829133ca0f2541c9343c23e2320d633924e5144ab425ef",
+        "at": "2026-10-14T09:17:38.714Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T10:50:39.672Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 16
+        },
+        "at": "2026-10-14T09:17:38.911Z",
+        "report": {
+          "entityId": "LLD-613abdb351c2c738-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-613abdb351c2c738-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

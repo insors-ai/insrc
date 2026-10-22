@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5c2a6769-2b8b-4c79-8f68-6a0008f7ecc9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.936Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Add the codeReview.freshnessTimeoutMs config key",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "acbb67a5c6af0e6a4d23f7b67795d9a37df17afb49df4415ef46aac320305bc2",
+        "at": "2026-10-22T12:43:48.937Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.937Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the codeReview.freshnessTimeoutMs config key",
+    "summary": "Add an additive CONFIG_CATALOG entry { path:'codeReview.freshnessTimeoutMs', type:'number', default:120000, desc:'max ms the code-review freshness gate block-and-polls before re-prompting' } beside codeReview.enforce in src/config/config-catalog.ts. No existing config migrates; reconcileConfig carries it forward with the baked-in default.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "config-catalog.ts has a codeReview.freshnessTimeoutMs entry (type number, sensible baked-in default) beside codeReview.enforce",
+      "reconcileConfig surfaces the key with its default and honours a per-repo/global override, with no migration of existing config"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "reconcileConfig carries codeReview.freshnessTimeoutMs with its baked-in default and honours a per-repo/global override"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

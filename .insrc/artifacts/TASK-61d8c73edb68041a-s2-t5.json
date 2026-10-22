@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-89626a35-207e-44f7-9bac-474e3494371b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.306Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Project-open wiring: write the insrc-mcp registration into each detected host",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6538d82ec77c3582f917b396717e66cc8344d15349994e190d69474fac42d324",
+        "at": "2026-10-22T12:43:39.306Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.307Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Project-open wiring: write the insrc-mcp registration into each detected host",
+    "summary": "Wire the sc1 onProjectOpened lifecycle (S001 seam) to the adapter: on project open, for each host from detectPresent(), compose the InsrcMcpRegistration (t4) and writeBlock(host,'mcp',block) (t2); empty detection = silent no-op. Each host wired independently so one host's HostFileAccessException does not block the other. Runs off the UI/EDT thread and is bounded so project opening is never blocked. Only the 'mcp' file is written — 'rules' is left to S004, removeBlock invocation to S005.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "on project open with one host present, a marker-delimited insrc-mcp registration is written into that host's mcp config (ac1)",
+      "with both hosts present, each host's mcp config independently receives the registration (ac3)",
+      "with no host present, nothing is written (no-op)",
+      "a write failure on one host is surfaced/logged but the other present host is still wired; S002 writes only the 'mcp' file (no 'rules' write, no removeBlock call)",
+      "the on-project-open wiring runs off the UI/EDT thread and does not block project opening (HLD performance invariant)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "ProjectOpenWiringTest#oneHostPresent_writesRegistrationIntoItsMcpConfig (IntelliJ Platform fixture, ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "ProjectOpenWiringTest#bothHostsPresent_eachConfigReceivesRegistration (ac3)"
+      },
+      {
+        "level": "integration",
+        "name": "ProjectOpenWiringTest#noHostPresent_nothingWritten_noop"
+      },
+      {
+        "level": "integration",
+        "name": "ProjectOpenWiringTest#oneHostWriteFails_otherHostStillWired_onlyMcpFileWritten"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

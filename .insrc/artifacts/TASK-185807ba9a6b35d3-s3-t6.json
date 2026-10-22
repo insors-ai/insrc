@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0fd114f-30d1-4184-8aaa-b3036be4e499",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.477Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Implement the private verdict-driven sequencer over the injected verifier seam",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1782497a07564dd62a011296018b2f5fc64e852b808546e6e35dc8e3385d4cc6",
+        "at": "2026-10-22T12:43:15.477Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.477Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the private verdict-driven sequencer over the injected verifier seam",
+    "summary": "Implement the private sequencer that materializes the pre-validated PlanTask[] work list ONLY when the run is admitted (sc3 BuildAdmissionResult.admitted === true — consumed from s2), walks it topologically with a serial for...of (never Promise.all, even where dependencies would permit parallelism), gates each Task on its dependsOn (emitting BuildTaskUnreached 'blocked' without invoking the adapter when a dependency did not complete), applies the bounded per-Task maxAttempts repair budget, and computes every terminal BuildTaskOutcome from the injected t5 verifier seam (test run + working-tree diff) rather than the advisory report. Types and drives against the TaskImplementerAdapter INTERFACE (t3), not the concrete CliProvider adapter (t4) — no compile or runtime dependency on t4, so it proceeds in parallel with it. Exposes a per-Task-boundary checkpoint hook the wiring Task (t7) drives for durability. Handles the error/edge cases: exhausted budget with a failing verdict → BuildTaskReached 'failed' and the run halts; empty/absent stated test command → failed/not-reached; zero/single/no-op-edit Tasks (former t5 sequencing half after the verifier split; boundary.internal; invariants c1/c3).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "The work list is materialized verbatim from the approved plan's PlanTask[] (same ids, order, and dependsOn, nothing added/dropped/reordered) and only when BuildAdmissionResult.admitted === true; the walk is a serial for...of with exactly one Task in flight at any moment.",
+      "The sequencer depends only on the TaskImplementerAdapter interface (t3) and the injected verifier seam (t5) — it constructs no concrete CliProvider and has no compile or runtime dependency on t4; each terminal outcome's status/testVerdict/filesTouched comes from the injected verifier, never from the advisory report, and a Task whose dependency ended failed/blocked/not-reached is emitted BuildTaskUnreached 'blocked' with the adapter never invoked.",
+      "The per-Task repair budget bounds retries: on exhaustion with a still-failing verdict the Task is BuildTaskReached 'failed' and the run halts on it; an empty/absent stated test command yields failed/not-reached (never completed); zero-Task and single-Task admitted plans finalize correctly; and the sequencer invokes a per-Task-boundary checkpoint hook so t7 can persist incrementally."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sequencer: over deterministic in-memory PlanTask[] it materializes the work list verbatim (only when admitted===true), walks it serially topologically, gates dependents to BuildTaskUnreached 'blocked' without invoking the adapter, computes each outcome from the injected verifier seam, and halts on a budget-exhausted failing verdict"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2cac31b2-030d-482b-911b-b569263f55de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.162Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Land the definition-artifact accessor, DEF-then-ISSUE, wired to nothing",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "558a522179d1ac5e2a5a22547dbd62a09d12d276add7b7523ffc2d84138b9ec9",
+        "at": "2026-10-22T12:44:47.162Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Land the definition-artifact accessor, DEF-then-ISSUE, wired to nothing",
+    "summary": "Add the single reader that resolves a work item's definition artifact and returns its epic-level properties, and widen readArtifactCore's private return shape with an optional standalone field. Resolution is DEF first then ISSUE, copied from the tracker resolver's existing order rather than newly decided, and it is first-READABLE-wins: because readArtifactCore swallows a parse failure into an empty result, a corrupt DEF falls through to the ISSUE instead of poisoning the read. Deliberately consumed by nothing in this task, so its order and degradation contract can be falsified before anything depends on them. Its own task rather than folded into a consumer, because the sibling Story widens it from three metadata fields to the whole definition and needs something clean to widen.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A DEF present and readable wins outright, and the ISSUE is never consulted",
+      "A DEF absent with an ISSUE present yields the ISSUE's values",
+      "A DEF present but CORRUPT falls through to a valid ISSUE — first-READABLE-wins, not first-PRESENT-wins",
+      "Neither readable yields an empty result and does NOT throw",
+      "readArtifactCore's added standalone field is reported when boolean and omitted when absent or non-boolean, with its two pre-existing fields unaffected",
+      "CRITIQUE APPLIED — restated as an OUTCOME comparison rather than a count: no previously-passing test changes outcome, and the only new passes are the ones this task adds by name. Any count quoted must come from actual output and from a stable repeat run, because a sweep in this session read 4204 where 4232 was expected and needed two further runs to settle",
+      "MUTATION PROOF, run and recorded: reversing the read order turns the order test red, and switching to first-PRESENT-wins turns the corrupt-DEF test red"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DEF present and readable wins outright; the ISSUE is never consulted"
+      },
+      {
+        "level": "unit",
+        "name": "DEF absent with an ISSUE present yields the ISSUE's values"
+      },
+      {
+        "level": "unit",
+        "name": "a CORRUPT DEF alongside a valid ISSUE falls through — first-READABLE-wins, not first-PRESENT-wins"
+      },
+      {
+        "level": "unit",
+        "name": "neither artifact readable yields an empty result and does not throw"
+      },
+      {
+        "level": "unit",
+        "name": "a hash carrying BOTH artifacts resolves to the DEF and never consults the ISSUE"
+      },
+      {
+        "level": "unit",
+        "name": "readArtifactCore reports the added standalone field only when boolean, with its two pre-existing fields unaffected"
+      },
+      {
+        "level": "integration",
+        "name": "DEGRADATION: a work item with neither DEF nor ISSUE behaves exactly as today and nothing throws"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF: reversing the read order reds the order test; first-PRESENT-wins reds the corrupt-DEF test"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

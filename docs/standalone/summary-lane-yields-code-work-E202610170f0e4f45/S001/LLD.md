@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-0f0e4f45f698aeb6-S001 -->
+<!-- insrc:artifact LLD-0f0e4f45f698aeb6-s1 -->
 
 # LLD: E202610170f0e4f45:S001
 
@@ -209,4 +209,4 @@ _None._
 
 | Check item | Premise | What was tried and what was missing | Action |
 | --- | --- | --- | --- |
-| coverage-of-intent | The three derived acceptance criteria exhaust the original stakeholder decision and its non-goals. | Searched repository docs and .insrc artifacts for the epic hash, slug, and workflow run. Found the LLD and its triage metadata, but no independent record of stakeholder decision 2, option A or an upstream acceptance-criteria list. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json, docs/standalone/summary-lane-yields-code-work-E202610170f0e4f45/S001/LLD.md] | Attach the original decision or explicitly confirm the three derived criteria as the authoritative scope. |
+| coverage-of-intent | The three derived acceptance criteria exhaust the original stakeholder decision and its non-goals. | Searched repository docs and .insrc artifacts for the epic hash, slug, and workflow run. Found the LLD and its triage metadata, but no independent record of stakeholder decision 2, option A or an upstream acceptance-criteria list. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-s1.json, docs/standalone/summary-lane-yields-code-work-E202610170f0e4f45/S001/LLD.md] | Attach the original decision or explicitly confirm the three derived criteria as the authoritative scope. |

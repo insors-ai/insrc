@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-b47dadc7cf0cccb1-S001 -->
+<!-- insrc:artifact TESTS-b47dadc7cf0cccb1-s1 -->
 
 # Tests: b47dadc7cf0cccb1 S001
 
@@ -280,4 +280,4 @@ the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md: 'Trailer check' (t1-t8 all carry Insrc-Story: b47dadc7cf0cccb1/S001), 'Re-review of ISSUE-ae864466' (first-parent-range, 0 coverage findings vs 6 Markdown/test HIGHs before), 'This Story's own review' (story-trailer, 26 own files); records .insrc/artifacts/CR-b47dadc7cf0cccb1-S001.json and /tmp/CR-ae864466-rereview.json
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md: 'Trailer check' (t1-t8 all carry Insrc-Story: b47dadc7cf0cccb1/S001), 'Re-review of ISSUE-ae864466' (first-parent-range, 0 coverage findings vs 6 Markdown/test HIGHs before), 'This Story's own review' (story-trailer, 26 own files); records .insrc/artifacts/CR-b47dadc7cf0cccb1-s1.json and /tmp/CR-ae864466-rereview.json

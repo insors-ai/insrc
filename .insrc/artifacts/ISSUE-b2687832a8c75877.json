@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-09T16:24:52.873Z",
     "parentRef": {
       "slug": "defect-against-epic-e2-6a131558-vs"
+    },
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5edf3860e03933cd09910645edf5d317875dfadbe79b8e915fdc2e942d8183e9",
+        "at": "2026-10-09T16:21:30.736Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T16:24:52.873Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

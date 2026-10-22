@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-740246e8-dd98-447d-9f14-17596c80e2f5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:15.408Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Adherence and functional-coverage strategies",
+      "parent": {
+        "entityId": "STORY-aef82b034d7209fa-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-aef82b034d7209fa-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-aef82b034d7209fa-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b89a7e9e3101d8b0286b7e5f3ebccf25e84d65b4df35d1d4e13fac18a201aabd",
+        "at": "2026-10-22T12:44:15.408Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:15.409Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Adherence and functional-coverage strategies",
+    "summary": "DimensionStrategy for adherence (LLD clauses and PLAN tasks as context atoms, per-clause evidence notes, clause adjudication, no-contract short circuit kept) and functional-coverage (FR atoms, per-FR evidence, FR adjudication).",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A clause or FR implemented by symbols in different parts is not reported unrealized; one with no evidence is.",
+      "An approved design larger than the budget is split by clause and every clause adjudicated."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'adherence, functional-coverage and coverage adjudicate each requirement on evidence from every part, with or without a test record'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'an approved design larger than the budget is split by clause and every clause adjudicated'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a symbol and a clause that each fit alone but not together are judged through the joint-fit chain and every call fits'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'every clause, FR and promised test reaches adjudication, and one no part shows evidence for is reported missing'"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

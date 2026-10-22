@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-31ed66c0-5ad0-43ae-929f-11913cd4ec30",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:18.258Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The diff review is attributed per commit",
+      "parent": {
+        "entityId": "STORY-b47dadc7cf0cccb1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b47dadc7cf0cccb1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b47dadc7cf0cccb1-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0489557834be3ed801f54b34c917e5e100687719a98002bfb5c830f1f983c104",
+        "at": "2026-10-22T12:44:18.258Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:18.258Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The diff review is attributed per commit",
+    "summary": "Thread storyKey through assembleDiffCodeReviewGrounding from both callers (src/daemon/code-review-rpc.ts:146, src/daemon/steps/code-review-step/handler.ts:401) into realDiffGroundingDeps.rangeDiff (src/workflow/code-review/grounding.ts:430-433); with 'story-trailer' attribution storyRangeDiff (:363-393) builds every path's hunks from the kept units' own diffs; the diff grounding returns changeSetAttribution and sharedWithExcluded, which replace the subject's with its changedFiles.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A diff review of a trailered Story shows only its own hunks, also in a file another Story edited in the same window.",
+      "Without storyKey the diff is today's.",
+      "Both diff callers record the attribution on the subject."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a diff review of a trailered Story shows only its own hunks in a file another Story also edited'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'without a story key the diff is today's, and both diff callers record the attribution on the subject'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

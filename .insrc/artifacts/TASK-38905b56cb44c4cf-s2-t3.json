@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35aba095-32b9-4217-b384-07486ff4fb7c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:27.273Z",
+    "epicCreatedAt": "2026-09-24T10:32:18.030Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38905b56cb44c4cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Thin insrc_guide MCP tool + registration",
+      "parent": {
+        "entityId": "STORY-38905b56cb44c4cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-38905b56cb44c4cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-38905b56cb44c4cf-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a2559d3b12fd62aa6a000b4a89ee70f574a30b679d984683aba32ba6f3f2e9dc",
+        "at": "2026-10-22T12:43:27.273Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:27.274Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Thin insrc_guide MCP tool + registration",
+    "summary": "Add src/mcp/guide/schema.ts (GUIDE_INPUT = { workflow: z.string().optional() } — workflow optional so an omitted workflow is the ac2 structured path; re-export InsrcGuideInput) and src/mcp/guide/handler.ts (handleInsrcGuide(args, deps?): forwards a present workflow to guideGet and wraps the InsrcGuideResult as { content:[{type:'text',text}] }; an omitted workflow calls guideList and returns a structured InsrcGuideError { error, validWorkflows } envelope; never throws for a miss). Register insrc_guide in src/mcp/server.ts via the s1 registerAndRecord recorder (readOnlyHint:true, phaseless) so it also lands in the insrc_schema registry.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/mcp/guide/handler.ts exports handleInsrcGuide importing ONLY the daemon guide clients (guideGet/guideList) + resolveRepoPath — no direct file/DB access.",
+      "insrc_guide is registered via registerAndRecord (phaseless) and appears in buildInsrcMcpServerWithRegistry()'s registry; GUIDE_INPUT.workflow is optional.",
+      "handleInsrcGuide never throws for a miss — an omitted/unknown workflow yields a structured InsrcGuideError envelope (k3, ac2).",
+      "tsc clean; full MCP suite green (the schema-registry key-set test updated for the added tool)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "guide-handler.test.ts: handleInsrcGuide({workflow}) forwards to guideGet and wraps InsrcGuideOk in {content:[{type:'text',text}]} (ac1) over an injected UnaryRpc dep; handleInsrcGuide({}) forwards to guideList and returns a structured InsrcGuideError {error,validWorkflows} envelope, never throws (ac2)"
+      },
+      {
+        "level": "integration",
+        "name": "schema-registry.test.ts (extended): buildInsrcMcpServerWithRegistry() registry includes 'insrc_guide' (phaseless, no phases) and the EXPECTED_TOOLS key-set is updated to include it; readWorkflowGuide over the REAL shipped steering asset returns null for each WorkflowKey in Phase A and does not throw"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

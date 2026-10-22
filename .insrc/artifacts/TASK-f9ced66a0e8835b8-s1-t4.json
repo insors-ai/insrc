@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-01400d4d-577a-4805-855e-21452c0c6923",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.544Z",
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9ced66a0e8835b8",
+    "storyId": "s1",
+    "envelope": {
+      "description": "storyChangeSet and mergeInProgress helpers",
+      "parent": {
+        "entityId": "STORY-f9ced66a0e8835b8-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9ced66a0e8835b8-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "009a53826b44227445f2632bf220451f918ef7110aecbe6f179194cc3a33addf",
+        "at": "2026-10-22T12:45:03.544Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.545Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "storyChangeSet and mergeInProgress helpers",
+    "summary": "New src/workflow/runners/build/story-commits.ts exporting StoryChangeUnit, StoryChangeSet, storyChangeSet(repoPath, base) and mergeInProgress(repoPath), as the LLD specifies: commit units from `git rev-list --first-parent --no-merges`, merge-edit units from `git merge-tree --write-tree M^1 M^2` vs M, sharedPaths and foldedPaths, an octopus merge as one whole-change merge-edit unit with a warn log, NoBuildChangesError on git failure; mergeInProgress true on MERGE_HEAD or an existing SQUASH_MSG, false (with a warn) on other git failures.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Files only a merge's merged-in side changed are absent from storyChangeSet.paths.",
+      "Edits folded into a merge commit and hand-resolved conflicts form merge-edit units and are in foldedPaths.",
+      "A deleted file and a root commit's files are included.",
+      "An octopus merge yields one merge-edit unit over M^1..M instead of an error.",
+      "An unresolvable base throws NoBuildChangesError.",
+      "mergeInProgress is true while MERGE_HEAD exists or SQUASH_MSG exists, false otherwise.",
+      "Neither helper changes refs, the index or the working tree.",
+      "The known limits are pinned: upstream commits brought in by fast-forward or a committed squash merge are counted as Story work."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet records Story edits folded into a merge commit as a merge-edit unit'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet records a hand-resolved conflict as a merge-edit unit'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet includes a file the Story deleted and a root commit's files'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet is empty when the range holds only a clean merge'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'storyChangeSet throws NoBuildChangesError for an unresolvable base'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work'"
+      },
+      {
+        "level": "unit",
+        "name": "story-commits.test.ts: 'an octopus merge becomes one merge-edit unit over its whole change instead of a failure'"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

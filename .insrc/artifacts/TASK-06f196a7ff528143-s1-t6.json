@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8c36432d-d19a-4457-abf0-640cb3d7a059",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:11.340Z",
+    "epicCreatedAt": "2026-10-21T05:02:26.565Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "06f196a7ff528143",
+    "storyId": "s1",
+    "envelope": {
+      "description": "BUILD records: Story-scoped changeLog that replaces a prior one",
+      "parent": {
+        "entityId": "STORY-06f196a7ff528143-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-06f196a7ff528143-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-06f196a7ff528143-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec003a4fab48d810fecbd35fd0a982cc2b00b85cdd0871c2998e306c483f37fe",
+        "at": "2026-10-22T12:43:11.342Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:11.343Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "BUILD records: Story-scoped changeLog that replaces a prior one",
+    "summary": "src/workflow/runners/build/completion-record.ts and src/daemon/steps/build-step/phases/validate.ts pass storyKey to collectBuildChangeLog and write changeLog whenever they pass it, even empty, so a re-write replaces a contaminated prior changeLog.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "A BUILD record's changeLog holds the Story's files and none of an unrelated uncommitted change.",
+      "Re-writing a record whose changeLog held unrelated files replaces it."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

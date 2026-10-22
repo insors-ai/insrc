@@ -6,7 +6,27 @@
     "createdAt": "2026-10-10T17:37:33.094Z",
     "updatedAt": "2026-10-10T17:57:34.617Z",
     "standalone": true,
-    "epicSlug": "vs-code-plugin-chat-cli-turn"
+    "epicSlug": "vs-code-plugin-chat-cli-turn",
+    "epicCreatedAt": "2026-10-10T14:59:06.102Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "19a43c14b3c2cedc7d605bd40aaefa8eee7b8d74f93798a46f66b90b5f814f7c",
+        "at": "2026-10-10T17:37:33.094Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

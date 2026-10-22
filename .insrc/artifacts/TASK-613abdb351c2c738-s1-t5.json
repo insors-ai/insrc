@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd184077-96c0-4ef7-bc33-964189ae30e9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.184Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Route the chat's messages through the queue",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "11c103f131b952fd7e7f5db7374c2ab47ed187c75acbfeb730acce5cf73376ff",
+        "at": "2026-10-22T12:43:37.185Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.185Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route the chat's messages through the queue",
+    "summary": "chat-panel.ts: typed and attachment submits call worker.submit and no longer call supersedeQueuedApprovals; a refused submit shows the queue's note; drainExternal is held back while the worker runs a message; the chat-panel tests the HLD and LLD list are updated (:138, :1318, :2854, :4745, :5018, :5302, :5455).",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "A message sent mid-turn waits, the running turn keeps reporting, and the message runs when the turn ends",
+      "A typed message no longer denies the running turn's waiting approval",
+      "After Stop the next waiting message runs",
+      "The listed chat-panel tests are updated and the rest pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval"
+      },
+      {
+        "level": "integration",
+        "name": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7d6e7ca3-d139-44a4-b3e6-7bcfdd2b4679",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.362Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the runners/issue/ step set (issue.capture + checklist.verify) + registerIssueRunners",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5fc8bfbaaf7e5dda21a6b60c4773551bdf6f4bd17327a252ad7f6e7f3761eb24",
+        "at": "2026-10-22T12:43:13.362Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.363Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the runners/issue/ step set (issue.capture + checklist.verify) + registerIssueRunners",
+    "summary": "Create src/workflow/runners/issue/index.ts (+ schemas.ts) mirroring runners/define/index.ts: two StepRunners — `issue.capture` (llm-pause: assemble reproduction/root-cause/fix-intent, grounded via insrc_analyze_step over the defect, seeded from intent.focus + the bugfix magnitude; schema = the issue body shape) and `checklist.verify` (audit: concrete repro, cited, no over-reach into the fix implementation) — plus `registerIssueRunners()` calling registerRunner(issueCapture)/registerRunner(checklistVerify) behind a `registered` guard.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Two StepRunners with ids 'issue.capture' and 'checklist.verify', both workflow:'issue', each {run(ctx)->llm-pause{prompt,userTurn,schema}, finalize}.",
+      "registerIssueRunners is idempotent (a `registered` guard) and, after calling, executor can look up both runner ids.",
+      "issue.capture's prompt instructs grounding via insrc_analyze_step + seeds from focus+magnitude; checklist.verify audits (cited/no-solution-leak). tsc compiles."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "registerIssueRunners registers issue.capture + checklist.verify (idempotent; second call no-ops) and executor can look them up"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

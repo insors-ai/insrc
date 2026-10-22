@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-71a31581-a037-4342-a5de-4f050f4e7f15",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.141Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the enabling 'issue' literal to WORKFLOW_NAMES",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ba5e16fe44af2156ae5b8948887fe4306eb4170f97680b5354cf39efb19e4d83",
+        "at": "2026-10-22T12:43:13.141Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.142Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the enabling 'issue' literal to WORKFLOW_NAMES",
+    "summary": "Append the string literal 'issue' to the `export const WORKFLOW_NAMES = [...] as const` array in src/workflow/types.ts (line ~73) so `WorkflowName` (typeof WORKFLOW_NAMES[number]) admits 'issue' and TriageRoute.startStage can reference it. NAME only — no runner/synthesizer/artifact (that machinery stays s2/sc2). This is the approved Phase-A enabling amendment (additive, non-breaking).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "WORKFLOW_NAMES includes 'issue' and `WorkflowName` type resolves 'issue' as a valid member.",
+      "No existing WORKFLOW_NAMES member is removed or reordered in a way that changes behaviour; the addition is purely additive.",
+      "tsc compiles with the new member (no runner registration or stage machinery added — out of scope for s1)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WORKFLOW_NAMES/ WorkflowName includes 'issue' (type-admits + array-contains)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

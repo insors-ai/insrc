@@ -19,75 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "599a9b506f22b896",
     "epicSlug": "restructure-docs-artifact-markdown-from-flat",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts defines the canonical WorkflowId with both-way converters toCanonical/toSlug/parseWorkflowId and an epic segment E<date><hash8>.",
-          "evidence": "src/workflow/id.ts exports toCanonical, toSlug, parseWorkflowId (3/3 present); epic segment E${date}${hash8}. Canonical WorkflowId spine confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/id.ts storyIdToOrdinal uses the lowercase-only regex /^s(\\d+)$/ so uppercase S001 fails to canonicalize (the gap S001 of this Epic closes).",
-          "evidence": "id.ts:101 storyIdToOrdinal; the lowercase-only /^s(\\d+)$/ was confirmed earlier at :102 — uppercase S001 fails to canonicalize. The gap S001 closes is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/workflow/storage.ts defines DOCS_ARTIFACT_DIRS as the six flat docs/ artifact folders and exposes the per-type *ArtifactPaths helpers.",
-          "evidence": "storage.ts defines DOCS_ARTIFACT_DIRS (the six flat dirs) and 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend; the DEF says 8 core, stub aside). Inventory confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The persisted artifact markdown files carry identity as an in-file '<!-- insrc:artifact ... -->' marker (rendered by artifactIdMarker), not as YAML frontmatter.",
-          "evidence": "storage.ts:188 artifactIdMarker renders the '<!-- insrc:artifact ... -->' first line; the SPEC review already proved these md files have zero YAML frontmatter. The metadata-authoritative-not-frontmatter assumption (DEF assumption 2 / k5) is grounded.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Roughly 200 artifact markdown files exist across the six flat docs/ artifact directories.",
-          "evidence": "191 files carry the insrc:artifact marker across the six flat dirs; 217 raw .md files total. The 'roughly 200' claim holds. The ~26 unmarked md files (e.g. the dated docs/reviews/2026-07-20-*.md audits) are exactly the legacy pre-ID-scheme oddballs that S003's fail-loud (k3) is designed to surface for manual mapping.",
-          "action": "none — verified sound; note the 191-vs-217 gap gives S003 a concrete count of legacy files to hand-map during migration.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The *ArtifactPaths helpers + artifact-prefix finders/markers are consumed by many modules (~10 path-helper consumers, ~20 finder/marker modules) that must be re-pointed in the cutover.",
-          "evidence": "Confirmed earlier: the *ArtifactPaths helpers feed ~10 non-test modules and artifact-prefix finders/markers span ~20 modules (gates, orchestrator, code-review/runner, tracker/resolve, daemon/backup, mcp/build-step/validate, …); id converters feed 6. The blast-radius that makes this Epic-sized is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-09-15T16:43:44.319Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-15T16:52:14.360Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5209956017df43bcff7e89d001503d2a5bbc0958b956dbcf036e421adf470d1d",
+        "at": "2026-09-15T16:42:33.441Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-15T16:52:14.360Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-09-15T16:43:44.319Z",
+        "report": {
+          "entityId": "DEF-599a9b506f22b896",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-599a9b506f22b896-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

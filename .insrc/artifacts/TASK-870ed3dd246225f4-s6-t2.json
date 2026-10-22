@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aa4813b1-a596-4e15-9385-3b8eeebaa7e3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.950Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add registry-derived input-schema builder helper",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bac3cb42a76702faabbe2da45f6c019087c7fd5310d4d35c6d38031b0fab9073",
+        "at": "2026-10-22T12:43:54.950Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.951Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add registry-derived input-schema builder helper",
+    "summary": "Add a shared helper (in src/docgen/schema.ts) that derives a JSON-schema-shaped input descriptor from listDocTypes() — {docType} plus the union of each registration's extractorInputSchema properties (repo required, path optional, plus per-type fields like symbol/base/question/maxDepth) — so no surface hand-maintains its own doc-type list. This is the single derivation point tool.ts (t3) and the new MCP tool (t5) both call.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the helper's output enumerates exactly the docTypes returned by listDocTypes(), with no hard-coded doc-type list in the helper itself",
+      "the union schema keeps repo required and path optional for doc types whose extractorInputSchema only declares those two fields (backward-compat shape)",
+      "a doc type registered later in docgenRegistry appears in the helper's output with zero edits to the helper",
+      "the union schema surfaces maxDepth alongside symbol/base/question for doc types whose extractorInputSchema declares it, matching the full per-type field set in the contract"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schema-builder helper output enumerates exactly listDocTypes()'s docTypes with the union of extractorInputSchema fields (repo required, path optional, symbol/base/question/maxDepth included)"
+      },
+      {
+        "level": "unit",
+        "name": "a docType registered later in docgenRegistry appears in the helper's output with zero edits to the helper"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

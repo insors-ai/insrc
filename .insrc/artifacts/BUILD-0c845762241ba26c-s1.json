@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "0c845762241ba26c",
+    "storyId": "s1",
+    "createdAt": "2026-10-14T04:32:59.324Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix/small: runShaper's checkScopeState runs the not-indexed check for code only; the run's own rule (ensureScopeQueryable) treats code and docs as graph families. One source file plus a test.",
+    "epicCreatedAt": "2026-10-13T17:14:15.800Z",
+    "epicSlug": "refuse-docs-request-scope-index-does",
+    "updatedAt": "2026-10-14T04:46:53.809Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3c81621de8c11d0320b18fffc91b5ea1d2d72fc8671a6734b1e9c73a34962c27",
+        "at": "2026-10-14T04:32:59.324Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T04:46:53.900Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Make the context builder's run-mode check (runShaper, src/analyze/context/driver.ts) use the analyze run's per-source rule (ensureScopeQueryable in src/analyze/runtimes/shared/task-scope.ts) on a cache hit and a miss alike: for a code or docs request, a scope no registered repository contains (or a registered repository with no stored entities) is refused as not indexed; data and infra only for a repository under index; generic not checked. The refusal comes before any lookup or model call, with code 'scope-not-indexed' and the run's message, through analyze.context.buildRun, analyze.plan, the one-shot insrc_analyze and workflow grounding. A caller that checked already (scopeChecked) still skips it; the run's leniency is kept (ISSUE-0c845762241ba26c).",
+    "producesLld": false,
+    "commit": "4e4a7378",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "runShaper's index-state check (checkScopeState, on a cache hit and a miss alike) now calls the analyze run's own per-source rule, ensureScopeQueryable, instead of a code-only copy: a docs request on a scope the index does not hold is refused with 'scope-not-indexed' and the run's message before any lookup or model call, through every run entry point. New run-shaper-wiring test (cold and warm, unregistered and empty repository, scopeChecked skip); a falsifying mutation restoring the code-only check fails it.",
+    "testRecord": {
+      "md": "docs/standalone/refuse-docs-request-scope-index-does-E202610130c845762/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-0c845762241ba26c-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T04:46:53.809Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-0c845762241ba26c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T04:46:53.809Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/refuse-docs-request-scope-index-does-E202610130c845762/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T04:46:53.809Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T04:46:53.809Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T04:46:53.809Z"
+      }
+    ]
+  }
+}

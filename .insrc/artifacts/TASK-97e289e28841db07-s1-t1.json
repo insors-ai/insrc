@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d37b12e5-70e7-49b8-893d-2e5f38be9360",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.287Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add additive optional narrated.sourceLink to DocumentIR",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b2bbc75cc7137e3b26a021a79928f8357b6abc1ee121c0b52da762b323a45956",
+        "at": "2026-10-22T12:44:01.290Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.290Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add additive optional narrated.sourceLink to DocumentIR",
+    "summary": "In src/docgen/types.ts, add `readonly sourceLink?: { readonly label: string; readonly href: string } | undefined` to the NarratedContent interface. Additive-only; no field removed or renamed.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "NarratedContent declares the optional sourceLink field with the {label, href} shape.",
+      "tsc --noEmit passes with no changes required at any existing IR construction site (field is optional)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a DocumentIR whose narrated omits sourceLink is still a valid NarratedContent (type/compile smoke)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

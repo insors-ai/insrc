@@ -28,182 +28,61 @@
       "AMD-6a1315585c38c41c-2"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "ac2: standalone stories and standalone issues are shown in their own group and are never counted towards any epic, by grouping every match whose epicOf is null into 'Not in an epic'.",
-          "evidence": "The rollup groups on s2's epicOf, not on the item's standalone flag. epicOf (board-model.ts:58-68) returns an epic for an issue through its correctsRef: 'if (target.kind === 'epic') return target; ... return targetParent?.kind === 'epic' ? targetParent : null'. The issue's standalone flag is set separately (graph.ts:228 'standalone: head.meta['standalone'] === true'), and issue artifacts are written with standalone: true (issue-artifact.test.ts:57, 132). So a standalone issue that corrects an epic's story has standalone=true, and the board's 'standalone' scope includes it (inScope: 'case 'standalone': return item.standalone'), and its card reads 'Standalone.' (cardOf). Yet the rollup puts it in that epic's group and issueCount, and the LLD's edge-case table says so explicitly. Under scope 'standalone', the rollup would then list epic groups. That breaks ac2 ('standalone issues ... not counted towards any epic'). [files: vscode-plugin/src/delivery/board-model.ts, src/workflow/delivery/graph.ts]",
-          "action": "Decide the rollup's grouping key against ac2: either group standalone-flagged items under the standalone group whatever epicOf says, or record in the LLD that an issue correcting epic work counts in that epic's issueCount even when flagged standalone, with a reason. Then add a test with a standalone issue that corrects an epic story.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "ac1, ac3, ac4 and ac5 are each designed: 'N of M stories complete' with stories grouped by stage; a followable parent link or an unresolved-parent notice; each fix story listed with its own stage; one shared selection across views.",
-          "evidence": "DEF.md:147-151 lists ac1-ac5. They map to §2.2 (completionLabel, stages in STAGE_ORDER), §2.3 (parent LinkView, parentNotice, fixStories) and §2.4 (selection.view chooses the view, and set-view keeps the selection). No non-goal, such as details or evidence (s4) or narrow layout or keyboard (s5), is built. [files: docs/epics/e2-delivery-board-vs-code-goal-E202610086a131558/DEF.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A fix story's parent is its issue, so s2's epicOf puts it in 'Not in an epic' on the board and in the rollup.",
-          "evidence": "graph.ts:315-316: '// A DEF's stories are its members; an issue's are its fix stories. parentId: headDraft?.id'. epicOf returns the parent only when parent.kind === 'epic' and follows correctsRef only for kind 'issue', so a fix story gets null. [files: src/workflow/delivery/graph.ts, vscode-plugin/src/delivery/board-model.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "apply() derives the messages before it keeps the new state, and a throw while handling an intent is logged through error() with the intent's type, leaving the view as it was.",
-          "evidence": "board-host.ts:152-157: 'const messages = boardDownMessages(next, ...); state = next; paging = nextPaging;'. Lines 280-285: 'try { handle(msg); } catch (err) { deps.logger.error(`delivery board: ${msg.type} could not be shown: ...`) }'. [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "selectMatches is new: the matching (scope, search, attention, known stage, epicOf, cardOf) is private inside buildBoardViewModel today, and epicOf is already exported.",
-          "evidence": "board-model.ts:179-195 inlines the match loop in buildBoardViewModel. inScope, matchesSearch and cardOf are module-private, and 'export function epicOf' is at :58. No selectMatches exists anywhere under vscode-plugin/src/delivery. [files: vscode-plugin/src/delivery/board-model.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The snapshot item exposes correctsRef.resolvedItemId, childIds, kind 'epic'|'story'|'task'|'issue' and notices with an 'unresolved-parent' code, so the issue view can read every link and notice without deriving it.",
-          "evidence": "types.ts:73 'DeliveryItemKind = 'epic' | 'story' | 'task' | 'issue''; :79 'resolvedItemId: string | null'; :94 childIds; :120 ''unresolved-parent' // an issue's corrected parent ... is not in the store'. delivery-contract.ts:59-61 DeliveryItemView picks childIds, correctsRef and notices. [files: src/workflow/delivery/types.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The change sites are complete: board-protocol.ts (types), board-state.ts (boardDownMessages builds by selection.view), board-host.ts (webview script tabs and rendering), board-model.ts (selectMatches) and the new board-views.ts.",
-          "evidence": "boardDownMessages is in board-state.ts:158-165 and posts only 'board' today. BOARD_WEBVIEW_SCRIPT is in board-host.ts:67, so the webview change lands in a listed file. set-view already reaches select() at board-host.ts:238. The §3.2 caller list omits board-views.ts, but the same section names it as a new module. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "Optionally add board-views.ts to selectMatches' call-site list.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Replacing the 'unknown' placeholders for EpicRollupViewModel and IssueViewModel is an additive fill of messages sc3 already declares; nothing is stored or migrated.",
-          "evidence": "board-protocol.ts:79-81: '/** Declared by their owning stories: EpicRollupViewModel and IssueViewModel (s3) ... */ export type EpicRollupViewModel = unknown; export type IssueViewModel = unknown;'. Lines 89-90 already declare the 'epics' and 'issues' down-messages. Everything is host memory, and the webview ships in the same bundle (board-host.ts:67). [files: vscode-plugin/src/delivery/board-protocol.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "s3 does not redesign sc5 (s2) or sc2/sc3 (s1): it only exports s2's existing matching step unchanged and fills s3-owned protocol types.",
-          "evidence": "The protocol comment at :79 assigns these types to s3. The board-model change is an extract-and-export with the postcondition that buildBoardViewModel's output is unchanged and s2's tests keep passing. No up-message or BoardSelection field is added: set-view and select-item already exist (board-protocol.ts:102, 131). [files: vscode-plugin/src/delivery/board-model.ts, vscode-plugin/src/delivery/board-protocol.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "A follow link to an item a refresh has removed is detected because 'the host's selection-changed reduction already clears a selectedItemId that is not in the snapshot and sets selectionNotice (s1)'.",
-          "evidence": "reduceBoardState handles selection-changed as 'case 'selection-changed': return { ...state, selection: event.selection };' (board-state.ts:109-110), with no membership check. Only applySnapshot (:93-100) clears a missing selectedItemId and sets selectionNotice, and only when a snapshot arrives. board-host.ts:248 'case 'select-item': select({ ...sel, selectedItemId: msg.itemId })' passes any id through. So a stale link clicked after a refresh sets a selectedItemId that is not in the snapshot, with no notice. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "Either validate the id in the host's select-item handler (as knownScope does for set-scope), clearing it with s1's notice, or restate the detection and response so they match what the code does. Add a test for a select-item naming an absent id.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Building a view throws on a malformed item: the previous state is kept, nothing is posted, and the error is logged with the intent's type.",
-          "evidence": "board-host.ts:152-157 builds the messages before assigning state, and :280-285 catches and logs '${msg.type} could not be shown'. On the refresh path, :197-211 turns the throw into a failed refresh over the previous board, which matches 'as for the board'. [files: vscode-plugin/src/delivery/board-host.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each of ac1-ac5 maps to a named test, and the integration fixtures it relies on (openWith, lastBoard, the runScript fake DOM whose innerHTML throws, board-fixtures.ts) exist.",
-          "evidence": "§6's acceptance mapping names tests for ac1-ac5 and covers both parts of ac3 (link and notice) and ac5 (counts agree, and the selection and page are kept on switch). The fixtures exist: board-host.test.ts:79 'const lastBoard', :207-232 the fake element whose 'innerHTML' throws, :241 'function runScript', and __tests__/board-fixtures.ts. [files: vscode-plugin/src/delivery/__tests__/board-host.test.ts, vscode-plugin/src/delivery/__tests__/board-fixtures.ts]",
-          "action": "None. If the ac2 grouping is changed, extend the ac2 test with a standalone issue that corrects epic work.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 10,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-09T08:49:26.307Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "coverage-of-intent.1": {
-        "findingId": "coverage-of-intent.1",
-        "status": "resolved",
-        "note": "Applied: the rollup groups a standalone-flagged match under 'Not in an epic' whatever its epic is (EpicRollupViewModel postcondition), the edge cases record the standalone issue that corrects an epic story, and a fixture covers it.",
-        "resolvedAt": "2026-10-09T08:53:32.091Z"
-      },
-      "error-paths.1": {
-        "findingId": "error-paths.1",
-        "status": "resolved",
-        "note": "Applied: the host's select-item handler checks the id against the shown snapshot, as knownScope does, and ignores and logs an absent one (IssueViewModel postcondition and error case 2), with a board-host test.",
-        "resolvedAt": "2026-10-09T08:53:32.092Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s3",
+        "type": "STORY",
+        "relation": "derived-from"
       }
     },
-    "approvedAt": "2026-10-09T08:57:46.311Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d6a183d5646fc308e83e97ca6f314fab40aa1cbf01e5f8a9f07aa6afca8f0c0f",
+        "at": "2026-10-09T08:49:20.201Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-09T08:57:46.311Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 10
+        },
+        "at": "2026-10-09T08:49:26.307Z",
+        "report": {
+          "entityId": "LLD-6a1315585c38c41c-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-6a1315585c38c41c-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

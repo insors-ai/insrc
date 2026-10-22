@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-359091f4-b0f9-4d90-81d3-d1ebcf26f95c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.113Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s4",
+    "envelope": {
+      "description": "sc2 types: ApprovalRequestEvent union member + PermissionMode + markerFor null case",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d35230af5299a99f110b0a5559effa84bd0f1d7cd0f7633ac4f85c3ab1b3594",
+        "at": "2026-10-22T12:45:03.113Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.114Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc2 types: ApprovalRequestEvent union member + PermissionMode + markerFor null case",
+    "summary": "In stream-events.ts add the ApprovalRequestEvent union member to TurnEvent (kind:'approval-request',turnId,requestId,title,detail,toolName?) — 'approval-request' is already in TURN_EVENT_KINDS. Declare the shared PermissionMode = 'review'|'auto' type with its canonical home in protocol.ts (the sc2 module both the adapter and webview already import), so t2/t4/t7 import one type. In markers.ts add the 'approval-request'->null case to BOTH markerFor (:43, keeping the never-check at :76 compiling) AND its single-sourced webview mirror markerWebviewSource (:84) — review finding cl2. Additive only (k2), live-only so no marker persisted (k4).",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "ApprovalRequestEvent is a valid TurnEvent member and tsc compiles with the markerFor exhaustiveness never-check intact.",
+      "markerFor(approval-request) and the markerWebviewSource mirror both return null; no transcript marker persisted (k4).",
+      "PermissionMode is declared once in protocol.ts and imported by the adapter/webview; TURN_EVENT_KINDS unchanged; existing stream-events + markers tests stay green."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stream-events.test.ts: ApprovalRequestEvent valid; TURN_EVENT_KINDS unchanged; markerFor null + never-check compiles."
+      },
+      {
+        "level": "unit",
+        "name": "markers.test.ts: markerFor(approval-request) and the markerWebviewSource mirror both return null."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

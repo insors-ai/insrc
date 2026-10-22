@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a60951a6-0086-41ad-a5b0-286156a01e57",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:29.021Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the per-role engine unit suite, the manifest<->taxonomy contract test, and the seam scans",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8457b0d46b049f5c1e6e3851c4dacf88b05bef76a7ca79d7b83dd5665ce17df2",
+        "at": "2026-10-22T12:43:29.021Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:29.022Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the per-role engine unit suite, the manifest<->taxonomy contract test, and the seam scans",
+    "summary": "New node:test (tsx --test) coverage: (a) buildPerRoleKeyMap unit tests (30 entries, dotted-id segments, merged-map no-collision); (b) engine per-role unit tests over the fakes (writeKeyPath-once, invalid-tier reject, {ok:false}/reject no-advance, rawConfig pull incl. default-for-absent, rawConfig-reject no-op, idempotent no-op); (c) a manifest<->reasoningRoleTaxonomy contract test (30 keys, enum, default=defaultTier, scope:'machine'); (d) seam source-scans (per-role modules import no 'vscode'; gateway references only config.show + config.write). Extend the S001 fakes with writeKeyPath/rawConfig.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "the per-role unit + contract + seam suites pass under tsx --test; the fake ConfigGateway records writeKeyPath segments + serves a scripted rawConfig",
+      "the contract test fails on any manifest<->taxonomy drift (missing/extra role key, wrong enum/default, non-machine scope) and passes on the generated manifest",
+      "the full vscode-plugin suite (S001 + S002) is green and tsc is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the full S002 per-role suite (key-map + engine + manifest-taxonomy contract + seam scans) passes green under tsx --test alongside S001"
+      },
+      {
+        "level": "unit",
+        "name": "seam source-scan: per-role key-map + engine import no 'vscode'; the gateway references only config.show + config.write (k1/k2/k3)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

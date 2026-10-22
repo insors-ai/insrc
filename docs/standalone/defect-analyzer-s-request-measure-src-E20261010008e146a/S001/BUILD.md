@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-008e146ad1475ef9-S001 -->
+<!-- insrc:artifact BUILD-008e146ad1475ef9-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -21,8 +21,8 @@ docs/daemon.md has three new parts under 'How a request's size is measured': the
 
 ## Changes
 
-- `.insrc/artifacts/CR-008e146ad1475ef9-S001.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
-- `.insrc/artifacts/PLAN-008e146ad1475ef9-S001.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `.insrc/artifacts/CR-008e146ad1475ef9-s1.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
+- `.insrc/artifacts/PLAN-008e146ad1475ef9-s1.json` — **insrc-build** (2026-10-10T14:34:18.162Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-10T14:34:18.162Z)
 - `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/CR.md` — **insrc-build** (2026-10-10T14:34:18.162Z)
 - `docs/standalone/defect-analyzer-s-request-measure-src-E20261010008e146a/S001/measurements/suites-after-d7380e11.tap` — **insrc-build** (2026-10-10T14:34:18.162Z)

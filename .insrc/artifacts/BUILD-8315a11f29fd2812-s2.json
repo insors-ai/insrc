@@ -8,7 +8,34 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review",
-    "approvedAt": "2026-10-20T16:13:51.522Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0878c8d5eba112dc0401cab59859a96dd907822deac5a7e70c0e9b9604e4fd67",
+        "at": "2026-10-20T13:26:20.493Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T16:13:51.522Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

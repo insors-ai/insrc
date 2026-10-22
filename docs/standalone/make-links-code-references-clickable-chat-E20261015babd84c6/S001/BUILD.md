@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-babd84c6e2fb480a-S001 -->
+<!-- insrc:artifact BUILD-babd84c6e2fb480a-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -23,8 +23,8 @@ Links and code references are clickable in the chat and the review pane. A share
 
 ## Changes
 
-- `.insrc/artifacts/CR-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
-- `.insrc/artifacts/PLAN-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `.insrc/artifacts/CR-babd84c6e2fb480a-s1.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `.insrc/artifacts/PLAN-babd84c6e2fb480a-s1.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
 - `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/CR.md` — **insrc-build** (2026-10-15T08:21:38.056Z)
 - `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/PLAN.md` — **insrc-build** (2026-10-15T08:21:38.056Z)
 - `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)

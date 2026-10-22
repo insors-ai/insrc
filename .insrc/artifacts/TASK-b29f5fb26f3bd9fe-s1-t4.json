@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-17f17f66-91be-4caa-afac-32607c79e15d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.983Z",
+    "epicCreatedAt": "2026-09-25T10:30:55.043Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b29f5fb26f3bd9fe",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Tests: extend the freshness suites in both plugins",
+      "parent": {
+        "entityId": "STORY-b29f5fb26f3bd9fe-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b29f5fb26f3bd9fe-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b29f5fb26f3bd9fe-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b29f5fb26f3bd9fe-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b29f5fb26f3bd9fe-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a94460cdcff3b5948edbe397f5845db14d8ff530f2128f884e3ba4d9640a1a7c",
+        "at": "2026-10-22T12:44:16.987Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.988Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: extend the freshness suites in both plugins",
+    "summary": "VS Code: extend the daemon-freshness unit suite (nudge message + 'Reload Window' action; choice->reloadWindow() once; dismiss->not called; seam omitted->notification-only; rejection swallowed; no nudge on no-op/failed) + the extension-wiring source-scan (reloadWindow wired to workbench.action.reloadWindow). JetBrains: extend the DaemonFreshnessFlow unit tests (success->INFO nudge msg + null action; no nudge on no-op/failed; once-per-version).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "VS Code freshness unit + extension-wiring tests cover all s6 subjects and pass",
+      "JetBrains DaemonFreshnessFlow tests cover the nudge subjects and pass",
+      "full VS Code + JetBrains freshness suites green (JDK21 for JetBrains)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "VS Code freshness suite green: all nudge/reload/gating subjects (t1) pass under tsx --test"
+      },
+      {
+        "level": "integration",
+        "name": "VS Code extension-wiring suite green: reloadWindow production wiring (t2) passes"
+      },
+      {
+        "level": "unit",
+        "name": "JetBrains DaemonFreshnessFlow suite green: nudge/gating subjects (t3) pass under JUnit5/JDK21"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

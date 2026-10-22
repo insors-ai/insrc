@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7db2d25f-2512-4714-aab5-c55758be3ee5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.078Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Locate the document's functional-requirements section from the posted index",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "786db5e681475377a79520fa2f9f56fb6d9751603b04902fdca3c6400bc077a0",
+        "at": "2026-10-22T12:44:31.078Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.079Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Locate the document's functional-requirements section from the posted index",
+    "summary": "Add `frAnchorSlug(sections)` to `DOCS_FR_SOURCE`: it scans the posted `SectionIndex` for the anchor whose TITLE ends with the format spine's heading text and returns that anchor's slug. Tail-matching rather than equality because the format engine prefixes a document-position-dependent number (`## 2. Functional requirements` on a DEF). It CONSUMES sc3's identity and mints none of its own — the returned value is a slug `deriveSectionIndex` already produced and `stampSlugs` has already written onto a heading element. A missing index, an empty index, an anchor without a title, or a renamed heading all return `undefined`, which is a SAFE no-match that routes the caller to the fallback placement rather than to a wrong substitution.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "An anchor titled `2. Functional requirements` matches, proving tail-matching under the engine's numeric prefix.",
+      "Matching ignores case and surrounding whitespace.",
+      "With two anchors whose titles both end in the heading text, the FIRST in document order is returned — never an ambiguous target.",
+      "An undefined index, an index with no anchors, and an index whose anchors lack titles each return `undefined` without throwing.",
+      "A document whose markdown contains the heading text inside a FENCED CODE BLOCK yields no match, because the posted index carries no anchor for it — confirming this task adds no second markdown scanner of its own.",
+      "docs-sections.ts is byte-identical to its pre-task state — this Story reads section identity and never edits its source.",
+      "CLOSING CONDITION (s3/t7): this task's mutation is run here — changing the match from title-tail to exact equality must turn the `2. Functional requirements` check red."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "t3: frAnchorSlug matches the numeric-prefixed title by tail, ignores case and whitespace, returns the first of two matches, and returns undefined for undefined/empty/renamed"
+      },
+      {
+        "level": "unit",
+        "name": "t3: a heading inside a fenced code block produces no anchor in the posted index and therefore no match"
+      },
+      {
+        "level": "unit",
+        "name": "t3 (contract): docs-sections.ts is unchanged and still has zero imports"
+      },
+      {
+        "level": "unit",
+        "name": "t3 (mutation): match on exact equality instead of the title tail -> the numbered-heading test fails"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1c4032ae-3019-4680-bb8c-57a9c93b4acf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.615Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Render the body through the guarded markdown path, publish StructuredRenderer, and narrow the shell contract test — one atomic change",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f387edd628eba522669ba520484534e0ec70806c211cf7898dd2db99424c66c1",
+        "at": "2026-10-22T12:44:30.615Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.616Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render the body through the guarded markdown path, publish StructuredRenderer, and narrow the shell contract test — one atomic change",
+    "summary": "Replace `bodyEl.textContent=m.markdown||''` at docs-review-panel.ts:186 with the guarded render: prepend MARKED_SRC into the EXISTING single nonce'd script tag at :210 (mirroring chat-panel.ts:561, which interpolates `${MARKED_SRC}\\n;${bootstrap}`), then run parse, then guardMd, then textContent-on-throw. MarkdownBodyRenderer returns { el, degradation } per the ratified widening, not the HLD sketch's bare HTMLElement. ALSO publish StructuredRenderer here — the sc2 type s2/s3/s4 build their renderers against; s1 declares it and implements none. In the SAME task, narrow the shell contract test: drop the blanket assert.doesNotMatch at docs-review-panel.test.ts:253, add an assert-the-guard-is-present assertion per the chat-panel.test.ts precedent, keep the one-script / CSP / surface-class assertions, add no-remote-origin, and RENAME the test to describe what it now checks. REVISED per critique: slug stamping moved out to t6 (nothing before t6 reads the slugs), which drops this task from M to S. The render and the test narrowing stay together because splitting them leaves either a red suite or an unguarded surface. REVISED per the plan review (HIGH-1): this task also owns the container and the stylesheet the rendered markup needs, because without them the render swap is invisible as an improvement. The body element today is `<pre id=\"insrc-docs-body\" class=\"insrc-docs-content\">` at docs-review-panel.ts:206 and NO CSS rule for .insrc-docs-content exists anywhere, so it carries the UA default white-space:pre and a monospace font; marked emits newline-separated block elements, so parsed markdown would render with a literal blank line between every block and monospace headings. Swap the <pre> for a non-preformatted container (nothing but bodyEl reads it, so the change is local) and add the markdown element rules this surface needs. The shell's only stylesheet is renderTerminalStyle (design-tokens.ts:174), which emits CSS custom properties and surface classes and NO element rules; the .insrc-md stylesheet that makes the chat surface legible lives in chat-panel.ts / render-registry.ts, which this shell does not include — so the rules must be added here rather than imported.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "the document body renders through the vendored parse AND reads as visually distinct — headings, lists and emphasis are both distinct elements and distinctly styled, not merely distinct nodes in an unstyled block",
+      "the body container is NOT a preformatted element — the <pre> at docs-review-panel.ts:206 is replaced, so marked's inter-block newlines do not render as literal blank lines",
+      "the shell's generated CSS carries markdown element rules reachable by the body container — headings, ordered/unordered lists, emphasis/strong, inline code and tables — since renderTerminalStyle emits tokens only and the .insrc-md stylesheet is not in scope on this surface; REUSE rather than re-author: chat-panel.ts:366-379 already defines exactly this rule set under .insrc-md (base :366, margin reset :367, h1-h6 :368, p :369, ul/ol/li :370, table :372, th/td :373-374, blockquote :375, code :377, pre :378-379) and chat-panel.test.ts:1342 pins it, so extract it into a shared constant both surfaces include instead of authoring a second copy that can diverge",
+      "the rendered shell still emits EXACTLY ONE inline script tag after MARKED_SRC is injected, matched with `<script\\b`",
+      "the CSP still pins script-src to the one generated nonce and is NOT widened",
+      "the shell still renders the class=\"insrc-term-review\" surface",
+      "the shell contains a guardMd call — the narrowed assertion checks the scrub is PRESENT, so it cannot pass if the guard is removed",
+      "no remote resource is referenced by the shell (no src/href http(s) origin)",
+      "the narrowed test is RENAMED to describe what it asserts, so it does not inherit the chat-panel precedent's stale-name drift",
+      "a parse failure falls back to textContent with the FULL body text still present and degradation { degraded: true, notice }",
+      "a missing vendored global takes the same fallback path as a parse throw — one code path, one message",
+      "StructuredRenderer is exported from the surface and nothing in s1 implements it",
+      "the existing fail-closed regression at docs-review-panel.test.ts:179 passes unchanged — checked here because this task is already editing that file",
+      "the docs-review host and client modules remain vscode-free"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "RENAMED shell contract test: one nonce, unwidened CSP, insrc-term-review surface, and a guardMd call present"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the body container is not a <pre> and the shell's style block carries heading/list/emphasis/code rules for it"
+      },
+      {
+        "level": "unit",
+        "name": "the shell emits exactly one inline script tag after MARKED_SRC is injected, matched with `<script\\b`"
+      },
+      {
+        "level": "unit",
+        "name": "the shell references no remote resource (no src/href http(s) origin)"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: StructuredRenderer is exported and nothing in s1 implements it"
+      },
+      {
+        "level": "integration",
+        "name": "a parse failure falls back to textContent with the full body present and degradation { degraded: true, notice }"
+      },
+      {
+        "level": "integration",
+        "name": "a missing vendored global takes the same fallback path as a parse throw — one code path, one message"
+      },
+      {
+        "level": "integration",
+        "name": "the existing fail-closed regression still passes — a content-fetch failure posts blocked:true and suppresses approve"
+      },
+      {
+        "level": "unit",
+        "name": "module-purity: the docs-review host and client remain vscode-free (existing test, unchanged)"
+      },
+      {
+        "level": "smoke",
+        "name": "manual: render the real shell with a representative body, screenshot it and read it back — headings, lists and emphasis read as visually distinct, with no doubled blank lines between blocks"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

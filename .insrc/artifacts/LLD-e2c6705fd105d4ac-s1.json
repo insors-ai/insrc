@@ -24,81 +24,61 @@
     "hldBaseRunId": "wf-1790696212238-iuz6vo",
     "hldEffectiveHash": "35f2a2c76e97400c9aa521427a38dfe21bdef17dd1556ae696936902971fd34c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "l1",
-          "ref": "2.2/2.3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ER_CONTENT_GATE_RULE is spliced as a bare array element in the two orchestrator.ts synthesizer prompts (designEpicSynthesizer ~:1424 HLD, designStorySynthesizer ~:1801 LLD), the sites S1 adds UX_CONTENT_GATE_RULE adjacent to.",
-          "evidence": "READ confirms orchestrator.ts:1424 = `\\t\\tER_CONTENT_GATE_RULE,` and grep confirms :1801 too (defined er-schema.ts:71, imported :121). The two synthesizer injection sites S1 targets are accurate.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "l2",
-          "ref": "2.4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ER_CONTENT_GATE_RULE is spliced in the two runner step prompts: design-story/index.ts:297 (contract.detail s4) and design-epic/index.ts:268 (framework.write s4).",
-          "evidence": "READ confirms design-story/index.ts:297 and design-epic/index.ts:268 both = `ER_CONTENT_GATE_RULE,` (imported at :31 / :39). The two runner s4-step injection sites are accurate.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "l3",
-          "ref": "2.1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "UX_CONTENT_GATE_RULE is exported from src/workflow/artifacts/companion/ux-schema.ts and currently has no injection usage (dead gate S1 wires).",
-          "evidence": "READ confirms ux-schema.ts:39 = `export const UX_CONTENT_GATE_RULE =`; the only src/ occurrence is this definition, confirming the dead-gate premise.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "l4",
-          "ref": "migration",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "UX_DEFINITION_PROPERTY_SCHEMA is admitted into the synth body as `uxDefinition: UX_DEFINITION_PROPERTY_SCHEMA` at the two synthesizer sites (orchestrator.ts:1467 HLD, :1863 LLD), so the slot the gate governs already exists.",
-          "evidence": "grep `uxDefinition:\\s*UX_DEFINITION_PROPERTY_SCHEMA` returns exactly the two admission sites orchestrator.ts:1467 (HLD) + :1863 (LLD). The slot the gate governs already exists.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "l5",
-          "ref": "5/test-strategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The guard test S1 mirrors exists at src/workflow/__tests__/feedback-synth-schema.test.ts (source-scan pattern via readFileSync of orchestrator.ts).",
-          "evidence": "READ confirms feedback-synth-schema.test.ts:58 = the source-scan test 'all four synthesizer schemas wire feedback + carry the NEVER-author rule (source-scan)' — the exact guard pattern S1 mirrors.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "l6",
-          "ref": "3/ac3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The pre-shipped downstream S1 consumes unchanged exists: renderUxCompanion (render.ts) and the 'ux' review dimension judge judgeUx (code-review/dimensions/ux/index.ts, wired in runner.ts).",
-          "evidence": "grep confirms renderUxCompanion at render.ts:106 (already imported into orchestrator.ts:119) and judgeUx at code-review/dimensions/ux/index.ts:94 (wired into runner.ts:124). The pre-shipped downstream S1 consumes unchanged exists as cited.",
-          "action": "Confirmed — no change.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-09-29T16:02:16.144Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-e2c6705fd105d4ac-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-29T16:18:54.007Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "32bab88cfab9be6170ef9f52672d63ad609d55812aad6430c77fe6f02e8b6c20",
+        "at": "2026-09-29T16:01:23.166Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-29T16:18:54.007Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-09-29T16:02:16.144Z",
+        "report": {
+          "entityId": "LLD-e2c6705fd105d4ac-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-e2c6705fd105d4ac-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

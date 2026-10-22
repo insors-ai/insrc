@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d1911e84-3d3d-40bb-bb25-9cd553652b25",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:01.303Z",
+    "epicCreatedAt": "2026-09-30T09:10:51.827Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "97e289e28841db07",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Thread the optional sourceLink through the 4 renderXCompanion opts",
+      "parent": {
+        "entityId": "STORY-97e289e28841db07-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-97e289e28841db07-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-97e289e28841db07-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fcd209a4ae811ad80063cfee630d705da5cfd06472e2658bf13624bdc3665580",
+        "at": "2026-10-22T12:44:01.306Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:01.307Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Thread the optional sourceLink through the 4 renderXCompanion opts",
+    "summary": "Add `sourceLink?: { label: string; href: string }` to RenderErCompanionOpts (and the 3 sibling opts) in render.ts; when present, set it onto ir.narrated.sourceLink before assembleShell. repoPath/ofSectionId unchanged; non-ok outcome still throws DiagramGenerationError.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "Each renderXCompanion accepts opts.sourceLink and sets ir.narrated.sourceLink before assembleShell.",
+      "Without sourceLink the renderer still writes HTML (backward-safe) and returns the unchanged CompanionArtifactRef shape.",
+      "A non-ok DocGenOutcome still throws DiagramGenerationError and writes no file."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "renderErCompanion with opts.sourceLink writes escaped link (+ 3 siblings)"
+      },
+      {
+        "level": "unit",
+        "name": "renderErCompanion without sourceLink still writes HTML (backward-safe)"
+      },
+      {
+        "level": "unit",
+        "name": "non-ok DocGenOutcome still throws DiagramGenerationError + no file"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

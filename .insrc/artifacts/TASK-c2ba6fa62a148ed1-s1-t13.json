@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e4fc41d-038d-4021-97f4-1e0ecd2b193b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.558Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "CLI Repos pane shows completeness",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e79b4f401dbd60ae70836fe1ace60d2f654babd660d24b515b13636d950f9555",
+        "at": "2026-10-22T12:44:34.559Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.559Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "CLI Repos pane shows completeness",
+    "summary": "src/cli/panes/ReposPane.tsx RepoRow shows 'incomplete' with the count and the first reason beside the status for an incomplete repository, nothing extra for a complete one, and treats an absent field as unknown. Anchors: the per-repository row is the RepoRow component in src/cli/panes/ReposPane.tsx:201 (rendered at :193), not the db codec's RepoRow interface (src/db/graph/codec.ts:90). Depends on t12 for the field in daemon.status.",
+    "size": "S",
+    "order": 13,
+    "acceptanceChecks": [
+      "Rendered rows (ink test) show the incomplete marker and count, and none for a complete repository"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/cli/panes/__tests__/ReposPane-completeness.test.ts: ink render of complete, incomplete and field-less rows"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf9c060e-a17b-4e8a-a0d6-26cca2b102b2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.249Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Add the pure Task diff, row validation, edit check and number allocation",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4f1336d130b9204c757d54b9f3bf9b3abde5df2d02d19d1562dbd750a00154d2",
+        "at": "2026-10-22T12:43:22.249Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.250Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pure Task diff, row validation, edit check and number allocation",
+    "summary": "Add src/workflow/tasks/pure.ts: map a plan row to a TaskPayload, diff a Task against a row, validate the plan rows (size S/M/L, unique ids, contiguous order, plus checkPlanTaskGraph with the plan's citations), check an edit patch against the editable fields and the Task's status with a pointer to a re-plan, and allocate the next number from a TasksPayload so it only grows.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A patch naming order or a dependency, or a Task that is completed, withdrawn or superseded, is refused with a message that points to a re-plan",
+      "Row validation rejects a bad size, a duplicate id and an order gap and passes the plan's own citations to checkPlanTaskGraph",
+      "Number allocation only grows and never returns the number of a withdrawn Task",
+      "The diff reports a Task as unchanged when its payload equals the row"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "task-diff.test.ts: a plan row maps to a Task payload, the diff reports an equal Task as unchanged, and row validation rejects a bad size, a duplicate id and an order gap"
+      },
+      {
+        "level": "unit",
+        "name": "task-edit-check.test.ts: a patch that names order or a dependency, or a Task that is completed or withdrawn, is refused with a pointer to a re-plan"
+      },
+      {
+        "level": "unit",
+        "name": "task-numbers.test.ts: the next number only grows and never takes a withdrawn Task's id"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

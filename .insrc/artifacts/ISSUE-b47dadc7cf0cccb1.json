@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T20:08:56.711Z",
     "parentRef": {
       "slug": "scope-code-review-story-s-own"
+    },
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0f8fd23a0040e7866c5dec8640416bec5587512fb3f6acd9bc1d723f5ba8f3db",
+        "at": "2026-10-17T20:08:20.612Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T20:08:56.711Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -79,19 +107,19 @@
     {
       "id": "c8",
       "kind": "prior-artifact",
-      "ref": "CR-ae864466e7f1f4ea-S001",
+      "ref": "CR-ae864466e7f1f4ea-s1",
       "quotedText": "changedFiles: AGENTS.md, CLAUDE.md, src/daemon/__tests__/queue-lanes.test.ts, src/daemon/queue.ts, src/indexer/__tests__/doc-summary-sweep.test.ts, src/indexer/__tests__/method-calls-cross-file.test.ts, src/indexer/__tests__/summary-sweep-progress.test.ts, src/indexer/doc-summary-sweep.ts, src/indexer/index.ts, src/indexer/parser/typescript.ts"
     },
     {
       "id": "c9",
       "kind": "prior-artifact",
-      "ref": "CR-0f0e4f45f698aeb6-S001",
+      "ref": "CR-0f0e4f45f698aeb6-s1",
       "quotedText": "HIGH | AGENTS.md | All supplied changed file and section symbols have empty testsReaching edges"
     },
     {
       "id": "c10",
       "kind": "prior-artifact",
-      "ref": "CR-487ad7a67474d321-S001",
+      "ref": "CR-487ad7a67474d321-s1",
       "quotedText": "HIGH | package-lock.json:33 | The changed entity has empty testsReaching edges; groundingMode degraded (freshness-timeout)"
     }
   ]

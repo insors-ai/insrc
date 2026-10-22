@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5611db6f-db01-4086-bdd6-aa7f535f7613",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.501Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s6",
+    "envelope": {
+      "description": "The runner runCodeReview (serial loop + verdict fold + validate-then-write)",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d119750dd28e13370817342f18b1d74b4b768fc79302b86c297022a8632eb18",
+        "at": "2026-10-22T12:43:47.501Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.502Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The runner runCodeReview (serial loop + verdict fold + validate-then-write)",
+    "summary": "Add src/workflow/code-review/runner.ts exporting runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeReviewOpts, deps = DEFAULT_DEPS): Promise<CodeReviewOutcome>, plus the sc5 types RunCodeReviewOpts {runId, modelLabel, signal?, onProgress?}, CodeReviewProgress {phase: 'grounding'|'dimension-start'|'dimension-done'|'finalize'|'done'|'error', dimension?, detail?}, and CodeReviewRunnerDeps {judges: readonly {dimension: ReviewDimension; judge: (s,g,p)=>Promise<DimensionResult>}[]; assembleGrounding; write}. DEFAULT_DEPS wires the four shipped judges in fixed order [adherence, conventions, coverage, quality], assembleCodeReviewGrounding (S001, grounding.ts:61), and writeAtomic (storage.ts:73). Flow, ALL inside one try/catch that converts throws to {ok:false, error} BEFORE any write: (1) emit 'grounding'; assembleGrounding(subject.repoPath, subject.changedFiles) — on throw return {ok:false}; (2) SERIAL for-of the judges (never Promise.all, k4): check opts.signal?.aborted at each iteration boundary (return {ok:false,'aborted'} if set), emit 'dimension-start', await judge(subject, grounding, provider) collecting DimensionResult[], emit 'dimension-done' — a throwing judge propagates to the catch => {ok:false} with NO write (ac5); (3) fold verdict: flatten all findings, count severities => counts:{high,med,low}, verdict = counts.high>0 ? 'block' : counts.med>0 ? 'warn' : 'pass'; (4) build the CodeReviewArtifact (meta stamped with runId/modelLabel/epicHash/storyId/kind; body{kind:'code-review', epicHash, storyId, subject:{changedFiles}, dimensions, verdict, counts}); (5) VALIDATE in memory (verdict ∈ {'pass','warn','block'}, counts consistent, dimensions length===judges.length) — on failure return {ok:false} WITHOUT writing; (6) emit 'finalize'; write BOTH files from codeReviewArtifactPaths — deps.write(paths.json, JSON.stringify(artifact,null,2)+'\\n') and deps.write(paths.md, renderCodeReviewMd(artifact)) where renderCodeReviewMd is a private minimal markdown summary (the insrc:artifact marker + verdict + counts + per-dimension findings, like the sibling artifacts); emit 'done'; return {ok:true, artifact}. Read-only over source; imports .js + import type; getLogger not console.log; no Promise.all.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "src/workflow/code-review/runner.ts exports runCodeReview + the sc5 types (RunCodeReviewOpts, CodeReviewProgress, CodeReviewRunnerDeps) + DEFAULT_DEPS wiring the four shipped judges (fixed order) + assembleCodeReviewGrounding + writeAtomic",
+      "the four judges run in a SERIAL for-of loop (no Promise.all over the provider); opts.signal.aborted is checked at each iteration boundary",
+      "verdict fold: any HIGH=>block, else any MED=>warn, else pass; counts:{high,med,low} are the true totals over all four dimensions' findings",
+      "a throwing judge / grounding failure / in-memory validation failure / aborted signal returns {ok:false, error} and calls deps.write ZERO times (ac5 — no partial/pass record)",
+      "on success exactly one CodeReviewArtifact is built + validated in memory THEN BOTH files written via deps.write at codeReviewArtifactPaths (.json = JSON.stringify(artifact,null,2)+newline; .md = private renderCodeReviewMd summary with the insrc:artifact marker); body.dimensions has all four, body.verdict+counts mirror ReviewReport",
+      "tsc --noEmit clean; imports .js + import type; no console.log; no Promise.all"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runCodeReview serial for-of over the four injected judges in [adherence,conventions,coverage,quality] order (ac4, no overlap)"
+      },
+      {
+        "level": "unit",
+        "name": "runCodeReview folds verdict (any HIGH=>block, else any MED=>warn, else pass) + counts over aggregated findings (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "runCodeReview builds+validates in memory THEN writes both .json+.md at codeReviewArtifactPaths (ac1/ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "runCodeReview returns CodeReviewOutcome {ok:false} + writes nothing on throwing-judge / validation-failure / aborted-signal (ac5)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

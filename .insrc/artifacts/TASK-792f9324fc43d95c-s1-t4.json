@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2a8b3da3-f8a9-498c-93a5-c8858c16b9ed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.225Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Assert the resolveByIssue no-op instead of assuming it",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5859f1411f575db90eebe241ab0f9c173b6e520f1e61da362cf75e92271ac1ec",
+        "at": "2026-10-22T12:43:49.225Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.226Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Assert the resolveByIssue no-op instead of assuming it",
+    "summary": "CRITIQUE APPLIED — moved to order 4, directly after t3 and BEFORE the label switch and the test rewrites. The resolveByIssue no-op is the claim that bounds the entire blast radius to two paths; if t3 broke it, that must surface immediately rather than after the riskiest edits have landed. The LLD reasons from code that resolveByIssue is unaffected — its three passes each reach buildRef with the story already evidenced by the real PLAN, LLD or DEF that carried the matched ref, and its epic-level sub-case passes no storyId — and 'unaffected' is cheap to assert and expensive to be wrong about.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Issue-number resolution at TASK level behaves exactly as before",
+      "Issue-number resolution at STORY level behaves exactly as before",
+      "Issue-number resolution at EPIC level behaves exactly as before — the sub-case that passes no storyId",
+      "resolveByIssue's DEF-only third pass at resolve.ts:294 is NOT modified — confirmed by diff, since it is owned by item 5 of ISSUE-b955fa759c3c4309"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "resolveByIssue is a NO-OP: issue-number resolution at task, story and epic levels behaves exactly as before"
+      },
+      {
+        "level": "smoke",
+        "name": "resolve.ts:294's DEF-only third pass is unmodified — diff-asserted, since item 5 of ISSUE-b955fa759c3c4309 owns it"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

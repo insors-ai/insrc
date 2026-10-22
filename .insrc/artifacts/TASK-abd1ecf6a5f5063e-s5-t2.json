@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-338c6955-d2c4-46fb-b243-5a10760ab73b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:09.169Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add decode-error taxonomy + resume-parity tests",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c81ac42cc849566254fbcabc013024543db3f57eed4bbb6161db9482c837b1cc",
+        "at": "2026-10-22T12:44:09.169Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:09.170Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add decode-error taxonomy + resume-parity tests",
+    "summary": "Extend src/mcp/workflow-step/__tests__/state-store.test.ts with the decodeState taxonomy cases (ac2): an unknown/released token -> 'not-found' with the plain message; a garbage-shaped token -> 'malformed'; a valid token at the wrong stage -> 'wrong-stage'. Extend src/workflow/runners/brainstorm/__tests__/elicit.test.ts with the resume-parity cases (ac1/ac3): a brainstorm run paused mid-convergence round-trips through encodeState/decodeState with the folded workingStatement/answered/openItems + stepOutputs intact and resumeRun continues from the same openItems; and an uninterrupted vs interrupted-then-resumed run with identical answers produces a byte-identical converged step output. node:test + assert/strict; no new harness.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "state-store.test.ts asserts decodeState -> 'not-found' (distinct from 'malformed') for an unknown/released token, 'malformed' for a garbage-shaped token, and 'wrong-stage' for a valid token at the wrong stage",
+      "elicit.test.ts asserts a paused mid-convergence run round-trips through encodeState/decodeState preserving workingStatement/answered/openItems + stepOutputs, and resumeRun continues from the same openItems",
+      "elicit.test.ts asserts an uninterrupted run and an interrupted-then-resumed run with identical answers produce a byte-identical converged step output (ac3)",
+      "the full brainstorm + workflow-step sweep passes and tsc is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a brainstorm run paused mid-convergence (confirmed:false) is saved via encodeState, then decodeState rehydrates the identical WorkflowStepStatePayload (workingStatement/answered/openItems + executor stepOutputs intact)"
+      },
+      {
+        "level": "unit",
+        "name": "resumeRun on the rehydrated executor state continues from the same openItems and finalizes correctly — no answer is dropped or re-asked"
+      },
+      {
+        "level": "unit",
+        "name": "running a brainstorm to convergence uninterrupted vs interrupting-then-resuming (via encodeState->decodeState->resumeRun) with the same answers yields a byte-identical converged step output"
+      },
+      {
+        "level": "integration",
+        "name": "insrc_workflow_step phase='step' with an unknown/expired token returns {next:'error', isError:true} carrying the plain not-found message and does NOT begin a fresh conversation (ac2)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

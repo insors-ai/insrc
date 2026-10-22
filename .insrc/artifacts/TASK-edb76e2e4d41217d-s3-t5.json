@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9d06d25-1a02-407c-a0d2-81efe3be09e3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:51.536Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Test suites (unit + contract + extension-wiring scan)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-edb76e2e4d41217d-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "50bc5f0c275d8817156be6938092672cd541ad227b503d526d5e4769840d6000",
+        "at": "2026-10-22T12:44:51.537Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:51.537Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Test suites (unit + contract + extension-wiring scan)",
+    "summary": "Add node:test suites under vscode-plugin/src/chat/__tests__/: a FakePanel-driven unit suite for the host (incremental streaming, error/dispose/corrupt-store/malformed-message/double-submit, passthrough) + the store round-trip; a contract suite for the rendered shell CSP/nonce + sc1 consumption + sc3 exhaustiveness; an extension-wiring source-scan for the flag gate + injected seams + vscode-free host. Run the scoped src/chat suite then tsc + the full plugin sweep.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Unit suite proves incremental posting, the error/dispose/corrupt/malformed/double-submit paths, passthrough (no workflow-tool call), and the store round-trip/degrade.",
+      "Contract suite proves the shell CSP/nonce invariants + renderTerminalStyle/surfaceClass('chat') consumption + sc3 exhaustiveness; extension-wiring scan proves the insrc.chat.enabled gate + injected seams + a vscode-free chat host.",
+      "npx tsc --noEmit clean; scoped src/chat suite green; full vscode-plugin sweep passes with no regressions."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "authors + runs the host + store unit suites green"
+      },
+      {
+        "level": "integration",
+        "name": "authors + runs the shell-contract + extension-wiring scan suites green"
+      },
+      {
+        "level": "smoke",
+        "name": "full vscode-plugin tsc + test sweep passes with no regressions"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

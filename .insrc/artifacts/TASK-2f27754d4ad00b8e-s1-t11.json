@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-54494b60-9cb2-4600-a7d4-f746f558eafc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.177Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Write artifact-id titles and markers",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2f53096afd7db9d28a5080819e14eacf0bc0ffae93d9783aaf83a96c502ddd19",
+        "at": "2026-10-22T12:43:20.177Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.177Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write artifact-id titles and markers",
+    "summary": "Switch the Epic, Story and Task titles in unit-issue.ts and the issue-body marker (idMarker, parseIdMarker and the three body renderers) in conventions.ts to the artifact id; the old marker is no longer read.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "a new Epic, Story and Task issue title and body marker start with the artifact id",
+      "an issue created earlier keeps its title and is still found by its unit label",
+      "the unit-issue and conventions tests pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/issue-title.test.ts: unit-issue and the conventions bodies write an Epic, Story and Task title and marker that start with the artifact id"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

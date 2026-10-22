@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-567054d9-43e0-4162-b841-d765e3cd454f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.807Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "tasks-sync, daemon index and the workflow-step end-to-end tests",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t26",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "05c857e58c1e93e3f8cd2904a72930ff5ae899621c9fb65a6530dcfaaf3ec627",
+        "at": "2026-10-22T12:43:22.807Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.808Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "tasks-sync, daemon index and the workflow-step end-to-end tests",
+    "summary": "Move src/daemon/tasks-sync.ts and the stamp uses in src/daemon/index.ts to the lifecycle. Update src/workflow/tasks/__tests__/task-set-approve.test.ts, src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts, define-extend-e2e.test.ts, src/daemon/steps/triage-step/__tests__/handler.test.ts and src/workflow/team/__tests__/handoff-resume-check.test.ts and snapshot-upstream.test.ts.",
+    "size": "M",
+    "order": 34,
+    "acceptanceChecks": [
+      "Plan approval syncs Task heads from the lifecycle approval",
+      "The daemon index stamps nothing"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval"
+      }
+    ],
+    "planTaskId": "t34"
+  },
+  "citations": []
+}

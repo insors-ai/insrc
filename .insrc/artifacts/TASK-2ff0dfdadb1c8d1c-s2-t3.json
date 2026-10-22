@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-54cf54b4-8af0-445a-bf73-7322888475cd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:23.321Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Stage pass for issues and the pass's notices",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "676dbbf61093c6429b7b9189ccadb1d90dad992a289bb985bc9625148338bddf",
+        "at": "2026-10-22T12:43:23.321Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:23.321Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stage pass for issues and the pass's notices",
+    "summary": "Extend deriveStages: an issue with fix stories takes the least advanced child's stage, an issue with none uses its own ISSUE (small-bugfix approved is ready-design-approved, sized approved is design-plan); raise unknown-route for every story or issue with an unknown route and review-without-build for a story with a CR and no BUILD; sort the notices; never throw on missing records or wrongly typed fields.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A small story with an approved LLD and a small-bugfix issue with an approved ISSUE are both ready-design-approved, with no plan-related notice.",
+      "An issue's stage is its least advanced fix story's.",
+      "A CR with no BUILD leaves the stage unchanged and raises one review-without-build notice naming the CR.",
+      "An unknown route keeps the records' stage and raises one unknown-route notice.",
+      "Missing evidence records and wrongly typed fields never throw, and every story and issue gets exactly one stage, deterministically."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'a code review with no build leaves the stage and raises review-without-build'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'an item with no recorded route keeps its records' stage and raises unknown-route'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'a story or issue with no design, plan or build is scoped'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'an issue takes the least advanced stage of its fix stories'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'missing evidence records and wrongly typed fields never throw'"
+      },
+      {
+        "level": "unit",
+        "name": "stage.test.ts: 'every story and issue in the real-shape fixtures gets exactly one stage, deterministically'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

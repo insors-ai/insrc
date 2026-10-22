@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e32565bd-0bc2-4e85-9340-3bf547297500",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.349Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Unit tests + end-to-end verification",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "696d2ac0182750c3e2ed73529b927412b8fc279c18cf36b12d3bf5412aeb3f24",
+        "at": "2026-10-22T12:43:53.349Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.350Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit tests + end-to-end verification",
+    "summary": "Create src/docgen/extract/__tests__/component-dependency.test.ts (9 node:test cases: componentKey, cross-module edge, intra-component drop, out-of-scope drop, isolated-node, dedupe, determinism deep-equal, flowchart render, makeExtract outcomes via injected fake reader). Run the full docgen suite (which includes s1's shell tests as the t3 regression backstop) + npm run build + a live-graph smoke to close the green-unit/broken-integration gap.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the 9 unit tests pass; full docgen suite green (43)",
+      "npm run build clean",
+      "live smoke: generateDocument('component-dependency',{repo,path:'src'}) yields 15 components + 44 depends-on edges and offline HTML (no <script src=)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "full component-dependency.test.ts suite (9 cases) green + full docgen suite (43) green"
+      },
+      {
+        "level": "smoke",
+        "name": "live-graph generateDocument smoke: 15 components + 44 depends-on edges, offline HTML"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

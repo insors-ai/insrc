@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f8323a68-c8fc-47c3-9d30-320ced62f0f3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.183Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the chat host the queued turn runner",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2e14e14b0c38666104baa33709b137766319afda56dab41ed4dff1a86efbbb1",
+        "at": "2026-10-22T12:43:37.183Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.184Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the chat host the queued turn runner",
+    "summary": "chat-panel.ts: runQueued as the QueuedTurnRunner: show the message's chat (opening the panel when closed) with a note, post 'turn-running' (protocol.ts gains it; the webview enters its running state), push the user row and echo at run time, start the turn, and resolve the outcome: done, failed with the error, stopped by the stop flag set on cancel-turn, detached-ended after a detached CLI exits, stopped for a pipe turn or a turn dropped before it started, failed for a missing chat; continuations (the grant re-run, the selection continuation) run under the lease and the message resolves after the last one, a waiting card ending at an answer, Stop, a chat switch, the panel closing or CONTINUATION_WAIT_MS.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A queued turn that starts on its own puts the webview in its running state so Stop is offered",
+      "Stop leaves the message failed 'stopped by the user' even though the stopped CLI reports a terminal error",
+      "The runner resolves for every way a turn ends, including detached, pipe, dropped before start and a missing chat, and only after continuations end"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

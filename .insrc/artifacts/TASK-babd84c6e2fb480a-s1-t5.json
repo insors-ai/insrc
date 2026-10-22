@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5a8f1f0b-8960-459a-abc4-98c83eb8be2d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.090Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Linkify and click handling in the review pane",
+      "parent": {
+        "entityId": "STORY-babd84c6e2fb480a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-babd84c6e2fb480a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "984fd383d0a50c8f849e5a4caeac5d3f5c5d0577d03e0d1617db2e7f61c69fd0",
+        "at": "2026-10-22T12:44:28.093Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.094Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Linkify and click handling in the review pane",
+    "summary": "Inline the same exported linkify string once into the review shell inside DOCS_BODY_RENDERER_SOURCE, add the click handler posting through the pane's message channel, rewrite docs-review-panel.test.ts t4 for the new scrub, extend its stub DOM, and update the SHELL_BASELINE pins as the last step, once the shell source has stopped changing.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the renderer source run against a stub DOM links a code reference, strips the href of an http link and posts open-code-ref and open-link on click",
+      "t4 asserts no href, a data-url and the unchanged non-http and image scrub",
+      "the shell-baseline tests hold with the new pins and the inlines-once test still passes",
+      "open-companion handling is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click"
+      },
+      {
+        "level": "integration",
+        "name": "the chat page and the review pane both include the linkify and click wiring"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

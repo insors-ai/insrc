@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea40ec7f-44e3-4e1d-af72-0579dc9822d2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:24.274Z",
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b94cf2c9058fd82a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The summary sweep yields to edits, stops on shutdown and reports progress",
+      "parent": {
+        "entityId": "STORY-b94cf2c9058fd82a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b94cf2c9058fd82a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b94cf2c9058fd82a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b94cf2c9058fd82a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf9f8e14a51a3b42edd81564a495cf254966f2c70af8224bf450ab70618dbeb2",
+        "at": "2026-10-22T12:44:24.277Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:24.278Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The summary sweep yields to edits, stops on shutdown and reports progress",
+    "summary": "Adds runDocSummarySweep (shouldStop check, queued single-document jobs first, re-read each entity, result classification, onProgress) and makes docSummariseRepo call it with the queue's takeDocSummaryEdit and isStopping, owning summarySweepProgress (set, updated, cleared in finally).",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Queued single-document jobs run before each entity.",
+      "A deleted entity is counted as gone; results are classified as the LLD states; a throw is failed and the sweep continues.",
+      "The sweep returns stopped after the summary in progress once shouldStop is true.",
+      "summarySweepProgress is set during a sweep and cleared when it completes, stops or throws."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true"
+      },
+      {
+        "level": "unit",
+        "name": "src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

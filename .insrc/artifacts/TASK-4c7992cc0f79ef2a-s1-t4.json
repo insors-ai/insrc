@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-193d52b8-7228-4f8d-85fc-dca7f15316e2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.286Z",
+    "epicCreatedAt": "2026-09-20T17:12:59.449Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4c7992cc0f79ef2a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add ShowOrRegisterRepoAction + first plugin.xml <actions> block",
+      "parent": {
+        "entityId": "STORY-4c7992cc0f79ef2a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4c7992cc0f79ef2a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4c7992cc0f79ef2a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-4c7992cc0f79ef2a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f3c9c9f902ed65bd9e263fc13dac07ef1b57df65f8a6842e159c02430bdb442a",
+        "at": "2026-10-22T12:43:31.288Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.288Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add ShowOrRegisterRepoAction + first plugin.xml <actions> block",
+    "summary": "Add ShowOrRegisterRepoAction (package ai.insors.insrc.jetbrains.actions) extending AnAction: getActionUpdateThread()=ActionUpdateThread.BGT; update() reads e.project?.basePath (null/blank → isEnabledAndVisible=false) then isProjectRegistered(root) in try/catch → 'Show Repo status' vs 'Register Repo' (DaemonUnavailableException → 'Register Repo', enabled); actionPerformed(e) opens RepoStatusDialog or RegisterRepoDialog. Register it in the FIRST plugin.xml <actions> block with <add-to-group group-id=ProjectViewPopupMenu anchor=last>, keeping <depends> platform-only.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "ShowOrRegisterRepoAction overrides getActionUpdateThread()=BGT and sets the dynamic label from isProjectRegistered, disabling on null/blank basePath, catching DaemonUnavailableException.",
+      "plugin.xml has an <actions> block with the action added to ProjectViewPopupMenu and still <depends> only com.intellij.modules.platform."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: plugin.xml registers <action> class=...ShowOrRegisterRepoAction with <add-to-group group-id=ProjectViewPopupMenu>; still <depends> only com.intellij.modules.platform"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: ShowOrRegisterRepoAction source shows getActionUpdateThread=BGT, basePath null/blank disable, 'Show Repo status'/'Register Repo' labels, try/catch around the probe"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

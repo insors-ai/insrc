@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5adde636-3ee4-4081-b467-805c3328b726",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.517Z",
+    "epicCreatedAt": "2026-10-11T10:31:49.465Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d9f85b3cc8cc966b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Shared pan/zoom runtime asset",
+      "parent": {
+        "entityId": "STORY-d9f85b3cc8cc966b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d9f85b3cc8cc966b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2f9925f960620e76d2ec41f3ffdd29de502fa36408dc461d4daaecefdbe2f312",
+        "at": "2026-10-22T12:44:44.521Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.521Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shared pan/zoom runtime asset",
+    "summary": "Add src/assets/artifacts/companion/panzoom.js: a dependency-free, transform-based pan/zoom bound to a view panel and toolbar (zoom out, zoom %, zoom in, Fit, 1:1), with drag-pan, wheel zoom at the cursor, double-click zoom and an exposed fit() for fit-on-load. Works on any child (SVG or HTML).",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "The script has no external references and is shipped by copy-assets (src/assets is copied wholesale).",
+      "It exposes an init entry the shell can call with the panel/stage/toolbar ids and a fit() hook."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "panzoom asset: no http(s)/import references; exposes init + fit entry points"
+      },
+      {
+        "level": "smoke",
+        "name": "headless Chrome: each generated page draws, fit-on-load applied, no console error"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

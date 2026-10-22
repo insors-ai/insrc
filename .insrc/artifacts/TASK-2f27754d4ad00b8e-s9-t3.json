@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f8b360e-a250-40ae-85a0-e0d184d64cdc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.762Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Conversion types, migrated entry ids and legacyDeliveryView",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7b12a8916eb33a68f45058bd94d7e925076113f847dbb90341bf5404e0f60711",
+        "at": "2026-10-22T12:43:22.762Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.762Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Conversion types, migrated entry ids and legacyDeliveryView",
+    "summary": "Add src/workflow/convert/types.ts (ConversionPlan, ConversionChange, ConvertedHead, ConversionDeps, ConversionResult, ConversionReport, errors ConversionRefused, ConversionUnreadable, ConversionIncomplete), src/workflow/convert/entry-ids.ts (migratedEntryId) and src/workflow/convert/legacy-view.ts (legacyDeliveryView over raw legacy heads: status, revision number, approval, review verdict and blocking, open feedback count, reproducing the old delivery reader's rules). Tests src/workflow/convert/__tests__/entry-ids.test.ts and legacy-view.test.ts.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "migratedEntryId is stable and distinct per part",
+      "legacyDeliveryView gives the old approval, review and blocking state for approved, rejected, pending and blocked heads",
+      "legacyDeliveryView reads no file"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "entry-ids.test.ts: migrated entry ids are stable and distinct per part"
+      },
+      {
+        "level": "unit",
+        "name": "legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

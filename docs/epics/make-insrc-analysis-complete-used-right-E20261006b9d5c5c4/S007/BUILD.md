@@ -34,16 +34,16 @@ docs/daemon.md gains a section on what a plan-tree run does about scope, failed 
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
-- `.insrc/artifacts/CR-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
+- `.insrc/artifacts/BUILD-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
+- `.insrc/artifacts/CR-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/artifacts/CR-b9d5c5c40df5a574-s7.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/artifacts/HLD-b9d5c5c40df5a574.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
-- `.insrc/artifacts/LLD-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
+- `.insrc/artifacts/LLD-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/artifacts/LLD-b9d5c5c40df5a574-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/artifacts/LLD-b9d5c5c40df5a574-s6.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/artifacts/LLD-b9d5c5c40df5a574-s7.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
-- `.insrc/artifacts/PLAN-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
-- `.insrc/artifacts/TESTS-9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
+- `.insrc/artifacts/PLAN-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
+- `.insrc/artifacts/TESTS-9b4a74dcdf47852a-s1.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `.insrc/build-start/9b4a74dcdf47852a-S001.json` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `docs/daemon.md` — **insrc-build** (2026-10-09T10:41:54.380Z)
 - `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md` — **insrc-build** (2026-10-09T10:41:54.380Z)

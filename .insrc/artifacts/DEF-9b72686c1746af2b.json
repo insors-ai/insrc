@@ -19,111 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "9b72686c1746af2b",
     "epicSlug": "harden-insrc-artifact-creation-flows-two",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1/S002",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "build-step validate.ts resolves its target via resolveTaskRef (the plan-driven resolver with no standalone branch) and returns early on failure, before reaching persistBuildRecord.",
-          "evidence": "Confirmed: validate.ts:64 `const resolved = resolveTaskRef(repoPath, input.target, input.epicHash)` (the plan-driven resolver) and :102 `persistBuildRecord(...)` sits after it; on an unresolved target validate returns before reaching :102.",
-          "action": "Accept — citation resolves; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1/S002",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "build-step implement.ts persists a standalone BUILD record only on the trivial (no-LLD) branch, not for a Small standalone story.",
-          "evidence": "Confirmed: implement.ts:133 `persistStandaloneBuildRecord(repoPath, {...})` sits inside the else (trivial, !producesLld) branch; a Small standalone (producesLld=true) does not persist here.",
-          "action": "Accept — citation resolves; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1/S003",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The BuildRecord body type already carries changeLog and feedback fields but has no narrative summary field.",
-          "evidence": "Confirmed by direct read of standalone-record.ts body (lines 61-75): fields are focus/producesLld/tasks/commit/changeLog/feedback — changeLog + feedback present, NO summary field. (The repo-wide `summary` grep hits are unrelated contexts.)",
-          "action": "Accept — semantic claim holds; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c2/S001",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderUxCompanionForBody validates the authored uxDefinition and, on a HIGH finding, swallows it (returns undefined, logs a warn) instead of surfacing the error.",
-          "evidence": "Confirmed: orchestrator.ts:1548 renderUxCompanionForBody, :1557 `validateUxDefinition(uxDef, body.functionalDefinition)`; the 'leaving it in-body without a companion' warn confirms the HIGH-finding swallow.",
-          "action": "Accept — citation resolves; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2/S001",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderDiagramCompanionsForBody applies the same validate-then-swallow behaviour for the sequence + component-dependency companions.",
-          "evidence": "Confirmed: orchestrator.ts:1587 renderDiagramCompanionsForBody with validateSequenceDefinition + validateComponentDependencyDefinition — same validate-then-swallow for sequence/component.",
-          "action": "Accept — citation resolves; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c2/S001",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The synth emit-schema UX_DEFINITION_PROPERTY_SCHEMA keeps body.items loose ({type:'object'}), so a strict Adaptive Cards shape is not enforced at emit time.",
-          "evidence": "Confirmed: ux-schema.ts:33 `items: { type: 'object' }` inside UX_DEFINITION_PROPERTY_SCHEMA — the emit-schema is loose, strict shape not enforced at emit.",
-          "action": "Accept — semantic claim holds; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c6/S001",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The client-driven insrc_workflow_step synthesize phase calls finalizeArtifact (the same finalize that renders + attaches companions).",
-          "evidence": "Confirmed: synthesize.ts:46 `const result = await finalizeArtifact(...)` — the client-driven synthesize phase routes through the same finalize.",
-          "action": "Accept — citation resolves; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "lc1/S001",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The authored companion definition kinds finalize renders are exactly four: ER, UX, sequence, and component-dependency (the set the surface-and-retry behaviour must cover).",
-          "evidence": "Confirmed: all four renderers exist — renderErCompanionForBody, renderUxCompanionForBody, renderSequenceCompanion, renderComponentCompanion — so the authored companion kinds are exactly ER/UX/sequence/component.",
-          "action": "Accept — closed union holds; no change needed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "c4+c5",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The two prior epics this Epic builds on exist as DEF artifacts: companion-wiring e2c6705fd105d4ac and provenance/feedback a0f4c1cfe262a497.",
-          "evidence": "Confirmed: both prior-epic hashes resolve in the tree (e2c6705fd105d4ac 25 hits, a0f4c1cfe262a497 11 hits) — the cross-artifact references are real.",
-          "action": "Accept — cross-artifact refs resolve; no change needed.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-30T06:19:13.562Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-30T06:19:18.391Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "55904cb7c55d7c3dac284db37e192ae6b9f78894127c0cae39965cac4cc41ede",
+        "at": "2026-09-30T06:15:53.378Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T06:19:18.391Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-30T06:19:13.562Z",
+        "report": {
+          "entityId": "DEF-9b72686c1746af2b",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-9b72686c1746af2b-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

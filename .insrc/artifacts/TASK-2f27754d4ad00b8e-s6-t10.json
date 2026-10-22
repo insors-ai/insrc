@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42fdd667-347a-40d8-9506-5329116325ee",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.519Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Record the s9 and s7 hand-offs",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s6-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c85c6f761fe6f06671b6c2cd34158fd463456b5e280362bc3e642b47adbf8eb8",
+        "at": "2026-10-22T12:43:21.519Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.520Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the s9 and s7 hand-offs",
+    "summary": "Add a section to docs/plans/core-data-model.md recording what s6 leaves: the Epic and Story bindings sit on the Define and the LLD until s9 moves each onto the Epic and Story artifact it creates and removes the epicRef, storyRef, storyRefs and taskRefs fallback and the renderers' use of them; the Task record accessor and the Plan record that s7 moves onto the Task artifact's binding; the binding bookkeeping carve-out from the change log; the cross-process lost-update window and its reconciliation; the pre-s6 comments without markers that may post once more; and the carryBinding rule.",
+    "size": "S",
+    "order": 10,
+    "acceptanceChecks": [
+      "the plans document has a section that names each hand-off: Epic and Story bindings to s9 with the fallback removal, the Task accessor and Plan record to s7, the change-log carve-out, the lost-update window with its recovery, the unmarked pre-s6 comments, and the carryBinding rule",
+      "no code changes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "s6-handoffs.test.ts: the plans document names each s6 hand-off to s7 and s9 and each carve-out this Story chose"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-374abd46-990c-499c-bea4-3a6fca966139",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.522Z",
+    "epicCreatedAt": "2026-09-15T12:14:06.342Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "55229bde990589c9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "adjacentBoundaries on HldContextSlice + extractor + render section",
+      "parent": {
+        "entityId": "STORY-55229bde990589c9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-55229bde990589c9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "046cbc0fafab7ded8dc000446545b6b232e8bec1756cf5b7f2dfa74fd504b687",
+        "at": "2026-10-22T12:43:32.524Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.529Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "adjacentBoundaries on HldContextSlice + extractor + render section",
+    "summary": "In src/workflow/artifacts/lld.ts: add `readonly adjacentBoundaries: readonly StoryBoundary[]` to the HldContextSlice interface (:31); populate it in extractHldContextSlice (:194) as hld.body.storyBoundaries.filter(sb => sb.storyId !== storyId), leaving all existing fields + the throw-on-missing-boundary behaviour unchanged; and in renderLldMarkdown (:220) emit an 'Adjacent scope (owned by other stories — do NOT implement here)' subsection after Owns/Consumes, guarded so it renders ONLY when adjacentBoundaries is non-empty. StoryBoundary reused from hld.ts.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "extractHldContextSlice(hld, storyId).adjacentBoundaries deep-equals the storyBoundaries with the current story excluded (order preserved); single-story HLD => []",
+      "the current story's own boundary is NOT in adjacentBoundaries and IS still returned as `boundary`; all existing slice fields unchanged",
+      "renderLldMarkdown emits the adjacent-scope subsection when non-empty and NOTHING when empty (byte-compatible for single-story/standalone)",
+      "tsc clean; the additive field does not break the verbatim slice injection or any existing caller"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "extractHldContextSlice populates adjacentBoundaries = siblings, excluding the current story (order preserved)"
+      },
+      {
+        "level": "unit",
+        "name": "the current story's own boundary is excluded from adjacentBoundaries and still returned as `boundary`; existing owned/consumed/boundary/phase fields unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "single-story HLD => adjacentBoundaries === []"
+      },
+      {
+        "level": "unit",
+        "name": "renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries non-empty and nothing when empty (byte-compatible)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e28fe201-4a45-4d4b-91aa-ffb320efa49e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.809Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add colocated node:test tests for the dispatch + listLocalModels + handler wiring",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "329b743ab8d9b0853f5195695531bde371faa3dfc5b66f07ba691640906b0b5d",
+        "at": "2026-10-22T12:44:26.809Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.810Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add colocated node:test tests for the dispatch + listLocalModels + handler wiring",
+    "summary": "Add colocated tests: (a) src/daemon/__tests__ for the list-models dispatch (cloud / ollama success/unreachable/timeout/malformed / reachable-zero / invalid provider / read-only / no-cloud-REST source-scan) via injected fake lister + stub catalog, mirroring model-catalog.test.ts; (b) a listLocalModels test beside src/agent/providers/ via a fake ollama client (success/reject/slow/malformed); (c) a handler-map integration check that 'providers.listModels' is no longer offlineRpc. node:test (tsx --test).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "dispatch tests cover cloud, ollama success/unreachable/timeout/malformed, reachable-zero (available:true+[]), invalid provider, and read-only — all via injected fakes, no live daemon/ollama",
+      "a listLocalModels unit test drives the mapping + timeout + rejection via the t1 seam (fake ollama client), no live ollama",
+      "a source-scan test asserts the list-models module + listLocalModels construct no cloud-REST/provider-SDK client (ac4)",
+      "a handler-map integration test asserts 'providers.listModels' is a real handler (not offlineRpc) returning a ModelListResult",
+      "the full local test sweep passes (npx tsx --test) with no network access"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "invoking the registered handler with {provider:'cli-claude'} returns a ModelListResult sourced from the real getCuratedCatalog() (post-boot)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-26f80040-f884-465e-9779-441fb1177f6e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.946Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Explicitly override a High requirement with a durable commit record",
+      "parent": {
+        "entityId": "EPIC-670419c4ad8bea8e",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f706023dfb4c2260d1f3240f7b67a5baf7391e6e820541d9d33a175d29c69c04",
+        "at": "2026-10-22T12:43:06.946Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

@@ -12,7 +12,27 @@
     "storyId": "s1",
     "reviewedBy": "daemon",
     "epicSlug": "defect-delivery-board-shipped-issue-348d4663",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "44b6d199fe557c62ba949d70ad6f5ae13ea74961498c3bf1cac561aebdc222f4",
+        "at": "2026-10-10T10:22:47.680Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

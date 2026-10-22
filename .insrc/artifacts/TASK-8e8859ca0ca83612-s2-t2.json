@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aa920c88-1b7c-4343-bb19-7ff1b9ea1458",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:57.160Z",
+    "epicCreatedAt": "2026-09-29T09:57:17.792Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8e8859ca0ca83612",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire the '>' control to doSubmit / cancel-turn and relocate the setRunning send/stop indicator",
+      "parent": {
+        "entityId": "STORY-8e8859ca0ca83612-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8e8859ca0ca83612-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8e8859ca0ca83612-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cace21a4da34d573fbac33fc0050cbb505593423e33867f510ed988b08308f4c",
+        "at": "2026-10-22T12:43:57.160Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:57.160Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the '>' control to doSubmit / cancel-turn and relocate the setRunning send/stop indicator",
+    "summary": "Wire the leading '>' control's click to the EXISTING doSubmit() when idle (send) and to cancel-turn while a turn is running (stop), and relocate the setRunning send/stop state indicator from #insrc-send onto the '>' control. Leave doSubmit, the submit-turn message/payload, and the Cmd/Ctrl+Enter keydown path untouched.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Clicking the '>' control with non-empty input calls the existing doSubmit() and posts exactly one {type:'submit-turn', text} identical to the old send button.",
+      "Clicking the '>' control while a turn is running posts cancel-turn (the existing stop path).",
+      "setRunning(r) toggles the '>' control's send/stop state (send at rest, stop while running); doSubmit and the Cmd/Ctrl+Enter path are unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "clicking '>' with non-empty input posts exactly one {type:'submit-turn', text} identical to the old send button"
+      },
+      {
+        "level": "unit",
+        "name": "clicking '>' with empty/whitespace input posts nothing (reused doSubmit guard)"
+      },
+      {
+        "level": "unit",
+        "name": "Cmd/Ctrl+Enter in the textarea still sends via the unchanged keydown path"
+      },
+      {
+        "level": "unit",
+        "name": "while running, activating '>' posts cancel-turn and setRunning toggles the one control's send/stop state"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

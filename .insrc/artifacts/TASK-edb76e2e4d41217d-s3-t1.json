@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ba817e3a-24cd-4168-8bed-930b1b942015",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:51.528Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "sc4 session-store.ts (types + memento + in-memory double)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dda1ec69dc9d609f2861f35926a4f99aacbf86e29a65e375348cfa61c21dd6da",
+        "at": "2026-10-22T12:44:51.528Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:51.530Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc4 session-store.ts (types + memento + in-memory double)",
+    "summary": "Add vscode-plugin/src/chat/session-store.ts: the ChatSession/TranscriptEntry/ChatSummary types + the ChatSessionStore interface (create/get/list/append/save), a createMementoChatSessionStore(deps:{memento,now?,genId?}) real binding (chat sessions under an insrc.chat.* key prefix, JSON-serializable, graceful-degrade on corrupt/missing), and a createInMemoryChatSessionStore() volatile double. vscode-free (Memento typed via the plugin's vscode.d.ts). Mirrors the OnboardingStore/PromptStore seam.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exports ChatSession/TranscriptEntry/ChatSummary/ChatSessionStore + createMementoChatSessionStore + createInMemoryChatSessionStore; imports nothing from 'vscode'; tsc clean.",
+      "create(provider) returns a fresh id + createdAt=now() + editMode 'auto' + empty transcript; append/save persist via memento.update; get/list reflect prior writes.",
+      "A missing or corrupt memento entry degrades to get->undefined / list->[] (no throw); nothing is written outside the injected memento (k3)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "createMementoChatSessionStore round-trip over a fake Memento (create/append/save then get/list) + corrupt/missing degrade + in-memory parity"
+      },
+      {
+        "level": "unit",
+        "name": "store writes only to the injected memento (no daemon/other write) — k3"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

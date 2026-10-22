@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-584b0da1-2f8b-409c-9b40-68e6f47f80ff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.781Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify story acceptance and publish consumer fixtures",
+      "parent": {
+        "entityId": "STORY-670419c4ad8bea8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-670419c4ad8bea8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-670419c4ad8bea8e-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f16054e71d01caddd3e33787906f5f0f98c2d8827cd7d2a6e21382d50cd400b6",
+        "at": "2026-10-22T12:43:40.781Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.781Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify story acceptance and publish consumer fixtures",
+    "summary": "Run cross-task integration and regression checks after task-local tests; supply versioned result/event fixtures for s5 and document adapter findings and sibling seams.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "All three story ACs proven against temporary isolated LMDB and sockets",
+      "Real crash/reopen/concurrency/delete and delivery-nonmutation evidence",
+      "Build and affected storage/server/shutdown/role tests pass; no live learner data or cloud calls"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "All three ACs: durability, unchanged delivery and no false pass"
+      },
+      {
+        "level": "smoke",
+        "name": "Build and affected storage, server, shutdown and role regression suites"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

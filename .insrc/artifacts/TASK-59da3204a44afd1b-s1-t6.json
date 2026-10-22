@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fa454bc-6eec-47d3-9c92-462d1b05dcda",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.429Z",
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Host: sending attachments with a message",
+      "parent": {
+        "entityId": "STORY-59da3204a44afd1b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-59da3204a44afd1b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "43f28806424ebe1823f25bcb12c5cbaab66e8b2ea77e72bb35959a24a74c5015",
+        "at": "2026-10-22T12:43:36.432Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host: sending attachments with a message",
+    "summary": "chat-panel.ts. Only the submit-turn caller takes the pending attachments: runTurn gains an explicit attachments argument that the submit-turn case fills, and the grant re-run and the selection continuation pass none (review finding). The submit-turn case supersedes queued approvals when the text is non-blank OR attachments are pending (review finding). The session and its pending list are captured before waiting for in-flight attachment writes; if the active session changed or the panel closed during the wait the submit is dropped and the attachments stay pending on their session; a second submit waits its turn behind the first (review finding). The user row stores the user's text with the attachments and user-row echoes them; the prompt sent to the CLI ends with the attached-files block of absolute paths; readDirs carries the session's attachments directory on this turn and on every later turn of a session whose transcript holds an attachment, including grant re-runs and selection continuations; a first message with blank text names the chat from its first attachment.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A submit stores the text with the attachments on the row, echoes them on user-row, sends a prompt ending with the attached-files block, passes readDirs, clears the pending list and posts an attachments-pending with no items",
+      "A submit with blank text and an attachment runs a turn, supersedes queued approvals and names the chat from the attachment; with blank text and none it is a no-op",
+      "A grant re-run and a selection continuation leave the pending list untouched and attach nothing, but pass readDirs when the session has an attachment",
+      "A submit waits for an attachment still being written and carries every chip in order; a chat switch during the wait drops the submit and keeps the chips on their session; a second submit runs after the first",
+      "A session with no attachment passes no readDirs and stores rows exactly as today"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list"
+      },
+      {
+        "level": "integration",
+        "name": "host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op"
+      },
+      {
+        "level": "integration",
+        "name": "host: a submit waits for an attachment still being written, and the message carries every chip in order"
+      },
+      {
+        "level": "integration",
+        "name": "host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it"
+      },
+      {
+        "level": "integration",
+        "name": "host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing"
+      },
+      {
+        "level": "integration",
+        "name": "host: a submit with blank text and an attachment supersedes queued approvals"
+      },
+      {
+        "level": "integration",
+        "name": "host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

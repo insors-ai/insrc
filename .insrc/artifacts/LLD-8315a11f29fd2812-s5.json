@@ -25,159 +25,63 @@
     "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S005 covers controller chunk traversal, identifier matching, and under-limit parity without changing review criteria.",
-          "evidence": "DEF §6.5 specifies these three acceptance criteria. The design supplies emit_calls/answers, callId recovery, and existing result folding; DEF §3 excludes changes to review criteria and verdict rules. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/code-review/runner.ts]",
-          "action": "Preserve these constraints during implementation.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Controller code review currently emits dimension prompts together, including conditional diagram and ux prompts, and preserves degraded fallback metadata.",
-          "evidence": "emitJudgementsResult builds the base prompts plus conditional functional-coverage, diagram and ux prompts. Decline, freshness timeout and hollow grounding all call beginDiffOnlyReview, which saves groundingMode:'degraded' and fallbackReason. driveRunner passes capVerdictAtWarn:true. [files: src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Retain all these branches and finalization options.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Controller premise review uses extraction followed by deterministic probing and one batched verification prompt; template review uses one findings prompt.",
-          "evidence": "handleStart returns emit_claims or emit_findings according to isDesignStage. handleClaims awaits gatherEvidence, saves claims/evidence, and calls buildBatchedVerifyPrompt over all claims before returning emit_verdicts. [files: src/daemon/steps/review-step/phases/start.ts, src/daemon/steps/review-step/phases/claims.ts]",
-          "action": "Use these prompt builders and schemas as parity fixtures.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The consumed shared pipeline APIs and adapters are available with the proposed signatures.",
-          "evidence": "Tool discovery for insrc analyze failed, so inspection continued through repository reads. No src/workflow/review-pipeline implementation exists in this checkout. S001 documents the required APIs, but the implemented createReviewJob takes (strategy: DimensionStrategy, providerBudget: number | undefined), and nextCalls takes only a ReviewJob. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/review-job.ts]",
-          "action": "Verify S001–S004 implementations and exported contracts before building S005; treat these as planned dependencies, not verified runtime capabilities.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today's code-review runner can persist controller-supplied dimension results through injected judges.",
-          "evidence": "handleJudgements injects judges returning supplied results and an assembleGrounding function returning saved grounding. runCodeReview awaits those judges serially, folds their results, validates the artifact and writes the JSON and Markdown records. [files: src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts]",
-          "action": "Preserve this finalization seam and its validation when integrating pipeline results.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Updating handlers, state types, MCP schemas and tool descriptions covers the controller protocol's change sites.",
-          "evidence": "The inventory omits the canonical workflow guides. src/prompts/steering-block.md instructs: \"Your review loop ... phase:'start' → claims → verdicts\" and \"start returns emit_judgements\" for code review. guideGetResult returns these sections through insrc_guide, independently of server.ts tool descriptions. Following those guides on new pipeline states would select rejected legacy phases. [files: src/prompts/steering-block.md, src/daemon/guide-sections.ts, src/mcp/guide/handler.ts, src/mcp/__tests__/schema-registry.test.ts]",
-          "action": "Add the review and code-review guide sections to the change inventory, document emit_calls/answers and legacy-only continuation, and test the served guidance.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Both existing state stores are memory-only, capped at 100 entries, with opportunistic one-hour idle sweeping on save.",
-          "evidence": "Both stores use a module-local Map, MAX_ENTRIES = 100 and TTL_MS = 60 * 60 * 1_000. saveState calls sweep before insertion; loadState only checks membership and refreshes touchedAt. Neither persists state across restart. [files: src/daemon/steps/code-review-step/state-store.ts, src/daemon/steps/review-step/state-store.ts]",
-          "action": "Keep the optional pipeline discriminator and explicitly retain the restart limitation.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S005 owns controller frames and consumes pipeline planning, validation, retries and adapter stage plans from other stories.",
-          "evidence": "HLD §4.7 assigns sc7 to s5, while §§4.1–4.6 assign sc1–sc6 to s1. S001 §2.3 defines nextCalls/applyAnswer/applyFailure/result and §2.17 defines runStage. The proposed controller delegates those operations rather than implementing another retry or chunking engine. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
-          "action": "Keep frame packing and answer classification local; leave job transitions and refusal replanning with the shared driver.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Unknown review-step state tokens currently become internal errors, unlike code-review-step tokens.",
-          "evidence": "Both loadState implementations throw StateTokenNotFound. Code-review dispatch explicitly maps that class to 'state-not-found'; review dispatch maps only SamePartyReviewError specially and otherwise returns 'internal'. [files: src/daemon/steps/review-step/handler.ts, src/daemon/steps/review-step/state-store.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Implement the proposed explicit StateTokenNotFound mapping in review dispatch.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Permissive array entries at the MCP boundary are necessary for malformed individual answers to reach handler-level recovery.",
-          "evidence": "The installed SDK's validateToolInput runs safeParseAsync and throws McpError(ErrorCode.InvalidParams) when parsing fails, before invoking the tool handler. The current server registers actual Zod input shapes; therefore strict per-entry validation would reject the entire turn. [files: node_modules/@modelcontextprotocol/sdk/dist/esm/server/mcp.js, src/mcp/server.ts]",
-          "action": "Use z.array(z.unknown()) as proposed and test recovery through an actual MCP invocation.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each upstream S005 acceptance criterion has a proposed test mapping.",
-          "evidence": "DEF §6.5 defines ac1 chunk traversal/result parity, ac2 missing or wrong identifier recovery, and ac3 under-limit behavior. The supplied test strategy maps these to divided-review integration tests, identifier recovery and MCP boundary tests, and under-limit parity tests. It also proposes legacy continuation tests for all existing controller paths. These are planned tests, not verified passing tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/mcp/__tests__/schema-registry.test.ts, src/mcp/__tests__/schema-handler.test.ts]",
-          "action": "Implement the mapped tests; use the existing schema-registry integration harness for real schemas, and add MCP transport coverage rather than relying solely on schema-handler's hand-built registry fixtures.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 10,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-20T07:51:24.125Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-10-20T07:59:54.634Z",
-    "reviewOverride": {
-      "reason": "Round-3 MED fixed without re-review: the review and code-review guide sections in src/prompts/steering-block.md (served by insrc_guide, stamped into CLAUDE.md by the steering refresh) added to the change inventory, with a guide-handler test. Inventory addition only; the protocol was checked in rounds 1-2. User approved the override in chat 2026-10-20.",
-      "at": "2026-10-20T07:59:54.628Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "86294eb3db442d75e9cfa9d8f5440b81fea2492fe88fa7a877ff59e1bcdfadc3",
+        "at": "2026-10-20T07:45:29.969Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-20T07:59:54.634Z",
+        "override": {
+          "reason": "Round-3 MED fixed without re-review: the review and code-review guide sections in src/prompts/steering-block.md (served by insrc_guide, stamped into CLAUDE.md by the steering refresh) added to the change inventory, with a guide-handler test. Inventory addition only; the protocol was checked in rounds 1-2. User approved the override in chat 2026-10-20."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 10
+        },
+        "at": "2026-10-20T07:51:24.125Z",
+        "report": {
+          "entityId": "LLD-8315a11f29fd2812-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-8315a11f29fd2812-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-09a6b8b1-3294-42d9-b87f-828c79ef18e8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.074Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the open-link and open-code-ref messages to the protocol and the shim",
+      "parent": {
+        "entityId": "STORY-babd84c6e2fb480a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-babd84c6e2fb480a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7d91b4b2120590cf5fc6aa76d12f650305f1e1b66b95fbb46358c9a5b83b0dde",
+        "at": "2026-10-22T12:44:28.077Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.077Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the open-link and open-code-ref messages to the protocol and the shim",
+    "summary": "Add the two webview-to-host message variants and their allowlist entries in protocol.ts, and add env.openExternal, Range and Position to the vscode.d.ts shim.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "protocol.ts accepts open-link {url} and open-code-ref {path, line?} and rejects other shapes",
+      "the shim compiles a call to env.openExternal and a Range selection"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "protocol allowlist includes open-link and open-code-ref"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

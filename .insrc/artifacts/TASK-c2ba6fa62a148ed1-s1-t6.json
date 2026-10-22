@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0b23cd6c-f63b-495a-a4df-9e6370496e95",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.546Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "TypeScript parser emits pending EXPORTS rows for re-exports",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "14335969939e5c37d4a8c5b24858d79688930deb4d0c821075b1ffa609bb46bb",
+        "at": "2026-10-22T12:44:34.546Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.547Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "TypeScript parser emits pending EXPORTS rows for re-exports",
+    "summary": "In src/indexer/parser/typescript.ts the export_statement branch emits, for `export { a, b as c } from './y.js'`, a pending EXPORTS row per name from the file entity (rawTo = local name, meta { specifier, exportedAs, file, repo }), and for `export * from './y.js'` one row with rawTo '*'. src/db/graph/keys.ts is read-only (EXPORTS keeps byte 7). Anchors: the export_statement branch of the TypeScript parser recurses only into a declaration (src/indexer/parser/typescript.ts:189-196) and emits nothing for a re-export; EXPORTS is byte 7 (src/db/graph/keys.ts:29, read-only). Depends on t3 for pending rows being stored and counted.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "The three re-export forms produce the expected pending rows (new src/indexer/parser/__tests__/typescript-reexports.test.ts)",
+      "Files without re-exports parse to the same entities and relations as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/indexer/parser/__tests__/typescript-reexports.test.ts: the three re-export forms produce pending EXPORTS rows; other files unchanged"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

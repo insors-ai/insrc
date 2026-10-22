@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-91640defac1b5816-S001 -->
+<!-- insrc:artifact BUILD-91640defac1b5816-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,5 +26,5 @@ bugfix/small: one function and its caller, reuses the existing range-base resolv
 
 ## Changes
 
-- `.insrc/artifacts/CR-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T05:24:47.364Z)
+- `.insrc/artifacts/CR-91640defac1b5816-s1.json` — **insrc-build** (2026-10-17T05:24:47.364Z)
 - `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md` — **insrc-build** (2026-10-17T05:24:47.364Z)

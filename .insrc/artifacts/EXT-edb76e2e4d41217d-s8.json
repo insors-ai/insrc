@@ -21,7 +21,34 @@
     "epicHash": "edb76e2e4d41217d",
     "epicSlug": "work-framed-approved-spec-proceed-from",
     "storyId": "s8",
-    "approvedAt": "2026-09-26T04:45:31.819Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bd3920ebb1faff01a9638298aa106f6ed63747674e683409ada33f0b07b87c3c",
+        "at": "2026-09-26T04:44:50.295Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T04:45:31.819Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "S",

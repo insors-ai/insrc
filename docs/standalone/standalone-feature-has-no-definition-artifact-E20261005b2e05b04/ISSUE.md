@@ -8,8 +8,8 @@ Observed on 2026-10-05 with the standalone feature f2f08ccf89f8ab25 (structured 
 
 1. Brainstorm a feature and approve its SPEC (SPEC-1bb064e8e2a1edd1).
 2. Run triage. It sizes the request as a feature and routes it to a standalone design.story, then plan, then build.
-3. Run design.story with `standalone: true`. It mints its own epic hash (f2f08ccf89f8ab25) and writes LLD-f2f08ccf89f8ab25-S001. Approve it.
-4. Run plan. It writes PLAN-f2f08ccf89f8ab25-S001 with seven tasks. Approve it.
+3. Run design.story with `standalone: true`. It mints its own epic hash (f2f08ccf89f8ab25) and writes LLD-f2f08ccf89f8ab25-s1. Approve it.
+4. Run plan. It writes PLAN-f2f08ccf89f8ab25-s1 with seven tasks. Approve it.
 5. Call insrc_build_step with phase `implement`, target `S001/t1` and epicHash `f2f08ccf89f8ab25`.
 
 Expected: the build tool admits task t1 of the approved plan and returns its prompt, as it does for a Story under an Epic or for a bugfix.
@@ -45,5 +45,5 @@ Whether the definition is a new artifact kind, a DEF with one Story, or the appr
 - **[[c1]]** `code` `src/workflow/tracker/resolve.ts` — "function listEpicHashes(dir: string): readonly string[] {"
 - **[[c2]]** `code` `src/workflow/tracker/resolve.ts` — "for (const name of [`DEF-${epicHash}.json`, `ISSUE-${epicHash}.json`]) {"
 - **[[c3]]** `code` `src/mcp/build-step/render.ts` — "`insrc_build_step: could not resolve target '${target}'. Pass a task issue ` +"
-- **[[c4]]** `prior-artifact` `PLAN-f2f08ccf89f8ab25-S001`
+- **[[c4]]** `prior-artifact` `PLAN-f2f08ccf89f8ab25-s1`
 - **[[c5]]** `stakeholder` `user, 2026-10-05` — "a standalone should also have a DEF/ISSUE equvalent. We will fix this later"

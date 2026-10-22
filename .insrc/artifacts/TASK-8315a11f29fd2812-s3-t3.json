@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ac75a91b-333e-4d1f-9936-efe384f5d31e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.453Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Chunk stage for coverage and quality",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee1fc877bbb67dbeaacf9335ea747762fc71297451b0fb7f06b51ec3839e6f9c",
+        "at": "2026-10-22T12:43:52.453Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.454Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chunk stage for coverage and quality",
+    "summary": "Coverage's 'judge' stage gets chunkCalls returning symbol-coverage findings only (findingKind 'symbol-coverage', each with a symbolId the call carries) plus notes per promised test; quality's returns today's findings plus descriptions [{ atomId, description }], one per carried atom. validate(answer, call) rejects a coverage finding that is not symbol coverage of a carried symbol, a note key or atom outside the call, and a quality description set not equal to the carried atoms (missing, repeated or foreign ids named in the reasons); withCorrection re-issues with the reasons. The single path keeps today's prompts and schemas.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A coverage chunk finding that is not symbol coverage of a carried symbol is rejected and re-issued once with a correction note, then fails the review; promised-test findings come only from gather.",
+      "A quality chunk answer carries exactly one description for every atom the call carries, and no other; a missing, repeated or foreign description is rejected, re-issued once, then fails the review.",
+      "Under the limit s1's single path sends today's coverage and quality prompts and schemas unchanged."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note'"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review'"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

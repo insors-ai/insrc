@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T12:07:30.899Z",
     "parentRef": {
       "slug": "delivery-board-vs-code-plugin-group"
+    },
+    "epicCreatedAt": "2026-10-10T12:02:55.839Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "87b930c7f22b01528024c842f5525b1910adf035d133e98fea01a8a2b00002e5",
+        "at": "2026-10-10T12:02:55.839Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T12:07:30.899Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

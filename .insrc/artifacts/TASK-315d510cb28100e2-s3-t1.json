@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b74f1eab-1e5a-4241-8610-50a108202f3c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.261Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Split resolveGithubConfig and add the GithubEntry fields",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8162585dba5e631d9a69d90a585bd9c869751b83d281530079df8bd63c7789e2",
+        "at": "2026-10-22T12:43:25.261Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.262Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Split resolveGithubConfig and add the GithubEntry fields",
+    "summary": "In src/workflow/config/github.ts split resolveGithubConfig into loadGithubConfigFile plus a new exported resolveGithubConfigFromFile with the selection and resolution logic moved unchanged, and add optional ghPath, ghHost and branchPattern to GithubEntry (ignored by the resolvers). Before the move, record the current behaviour for loader-rejected inputs and for a null own entry and a null default as characterization tests.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "Every existing resolveGithubConfig test passes without edits",
+      "resolveGithubConfig returns none for a missing file, an unreadable file, invalid JSON and a non-object top level",
+      "Characterization tests pin today's result or TypeError for a null own entry and for a null default and pass before and after the split",
+      "resolveStrictTrackerTarget and the other callers are unaffected by the new optional fields"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-split.test.ts: resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/config/__tests__/github-split.test.ts: characterization of a null own entry and a null default is unchanged by the split"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

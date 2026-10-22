@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5c6a1c86-306f-42f7-a8e3-cc9efc4aa8a3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:35.280Z",
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599a9b506f22b896",
+    "storyId": "s2",
+    "envelope": {
+      "description": "New sc2 path-scheme module (resolveArtifactMdPath + listWorkItems + listArtifactMdPaths)",
+      "parent": {
+        "entityId": "STORY-599a9b506f22b896-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599a9b506f22b896-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8c22ad2f161832a0d8b1ad347b17046876a57c103ecacf0a31773be3ff0637d6",
+        "at": "2026-10-22T12:43:35.280Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:35.281Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "New sc2 path-scheme module (resolveArtifactMdPath + listWorkItems + listArtifactMdPaths)",
+    "summary": "Add src/workflow/path-scheme.ts: ArtifactKind + WorkItemKind + WorkItemLocation types, the internal STORY_SCOPED set ({LLD,PLAN,BUILD,CR,EXT}; item-root {SPEC,DEF,HLD}), resolveArtifactMdPath (pure construction over a sc1 WorkItemIdentity — docs/{epics|standalone}/<fileSeg(slug)>-<epicSegment>/[S<nnn>/]<KIND>.md, throwing when a story-scoped kind gets an epic-level identity), and listWorkItems/listArtifactMdPaths (bounded, sorted, missing-dir-tolerant walks). Built on sc1's deriveWorkItemIdentity (id.ts) and reusing storage.ts fileSeg. Purely additive — no consumer yet, tree still compiles.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/workflow/path-scheme.ts exports resolveArtifactMdPath, listWorkItems, listArtifactMdPaths + the ArtifactKind/WorkItemKind/WorkItemLocation types",
+      "resolveArtifactMdPath places SPEC/DEF/HLD at the item root and LLD/PLAN/BUILD/CR/EXT under S<nnn>/, with bare <KIND>.md filenames keyed off identity.epicSegment (not the filename)",
+      "resolveArtifactMdPath throws when kind is story-scoped but identity.story is undefined",
+      "listWorkItems/listArtifactMdPaths return deterministic sorted results and an empty list (no throw) when docs/epics or docs/standalone is absent",
+      "tsc clean; no existing consumer references the new module yet"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "resolveArtifactMdPath: SPEC/DEF/HLD at work-item root; LLD/PLAN/BUILD/CR/EXT under S<nnn>/"
+      },
+      {
+        "level": "unit",
+        "name": "resolveArtifactMdPath: bare <KIND>.md, folder key = fileSeg(slug)+'-'+epicSegment (identity supplies the key, not the filename)"
+      },
+      {
+        "level": "unit",
+        "name": "resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone/... vs 'epic' → docs/epics/..., same internal S<nnn> grouping"
+      },
+      {
+        "level": "unit",
+        "name": "resolveArtifactMdPath: throws when a story-scoped kind is given an epic-level identity (identity.story === undefined)"
+      },
+      {
+        "level": "unit",
+        "name": "STORY_SCOPED set membership = {LLD,PLAN,BUILD,CR,EXT}; item-root = {SPEC,DEF,HLD}"
+      },
+      {
+        "level": "unit",
+        "name": "listWorkItems over a seeded docs/epics + docs/standalone tree returns one sorted, kind-tagged entry per work-item folder"
+      },
+      {
+        "level": "unit",
+        "name": "listWorkItems returns an empty list (no throw) when docs/epics or docs/standalone is absent"
+      },
+      {
+        "level": "unit",
+        "name": "listArtifactMdPaths returns every artifact md within one work item (item-root SPEC/DEF/HLD + each S<nnn>/ artifact)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

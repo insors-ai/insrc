@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-376c2fc3-63e2-4d75-b119-4e87164ab1a5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:17.153Z",
+    "epicCreatedAt": "2026-10-03T17:50:31.562Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1f7ade1a889013da",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Assert the guard on the real provider path, both vendors",
+      "parent": {
+        "entityId": "STORY-1f7ade1a889013da-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1f7ade1a889013da-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1f7ade1a889013da-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1d823aaacf26c93824191ebeb9dd0cdbf446dc37a31e254f9023c9ab187ca3b5",
+        "at": "2026-10-22T12:43:17.153Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:17.154Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Assert the guard on the real provider path, both vendors",
+    "summary": "REORDERED PER CRITIQUE — this now precedes the falsifying mutation, which had depended on an assertion that did not yet exist. Add the integration assertions to the new hermetic file, driving the REAL `CliProvider.completeStructured` with `binPath` pointed at an impossible absolute path — no stubbing and no spawn interception needed, because `CliProviderOpts.binPath` is injectable (cli-provider.ts:80) and the constructor honours it (:104, `opts.binPath ?? opts.kind`). Critically it must NOT be the bare name 'claude'/'codex', since `resolveBin` would then find the user's real installed binary and the negative control would make a billed call. This task's completion is 'the assertions are written and pass' — it does NOT claim the assertions are proven non-vacuous; t7 owns that.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "GUARD FIRES for kind:'claude' with a root-union schema — rejects with a message naming the keyword, both vendor flags, and the remedy.",
+      "GUARD FIRES identically for kind:'codex', proving one guard site covers both vendors rather than assuming it.",
+      "ADDED PER CRITIQUE: the message is asserted to convey the local-validation-versus-provider-request asymmetry, so t5's new check is verified rather than merely intended.",
+      "REWORKED PER CRITIQUE: the no-subprocess evidence is a SET DIFFERENCE, not an existence check — snapshot the `codex-schema-*` entries in tmpdir immediately before the call and again after, and assert the two sets are equal. An existence check would pass or fail on leftover directories from other runs, and this repo demonstrably accumulates them (1580 stale insrc-* fixture dirs). If the set-difference proves awkward, DROP the check rather than keep a flaky one — the guard-fires and negative-control assertions already carry the load.",
+      "NEGATIVE CONTROL, a first-class assertion rather than a clause inside a positive one: a plain `{ type:'object' }` schema against the SAME impossible-binPath provider fails with something that does NOT contain the guard's wording. A guard that rejected everything would satisfy every positive assertion above and fail only this one.",
+      "NON-RETRYABILITY asserted two ways: `isTransientCliError(<the guard's actual message>) === false`, AND the rejection arrives in under 1500ms (below the 2s+4s backoff three retries would cost). The direct assertion is the one that survives a refactor; the timing bound must not be the only proof.",
+      "binPath is an impossible ABSOLUTE path in every case — verified by inspection, since a bare kind name would reach the user's real binary and bill a call."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "GUARD FIRES, claude kind: impossible binPath + root-union schema rejects naming the keyword, both vendor flags, and the envelope remedy"
+      },
+      {
+        "level": "integration",
+        "name": "GUARD FIRES, codex kind: the identical rejection, proving one guard site covers both vendors"
+      },
+      {
+        "level": "integration",
+        "name": "the guard message conveys the local-ajv-validates-but-provider-refuses asymmetry"
+      },
+      {
+        "level": "integration",
+        "name": "no subprocess reached: the set of `codex-schema-*` tmpdir entries is identical before and after the rejected call (set difference, not an existence check)"
+      },
+      {
+        "level": "integration",
+        "name": "NEGATIVE CONTROL: a plain `{type:'object'}` schema on the same impossible-binPath provider fails WITHOUT the guard's wording"
+      },
+      {
+        "level": "integration",
+        "name": "NON-RETRYABILITY, direct: isTransientCliError(<the guard's actual message>) === false"
+      },
+      {
+        "level": "integration",
+        "name": "NON-RETRYABILITY, structural: the rejection returns in < 1500ms, below the 2s+4s backoff three retries would cost"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

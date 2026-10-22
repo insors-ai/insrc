@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-765de3f648ba09ee-S001 -->
+<!-- insrc:artifact BUILD-765de3f648ba09ee-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -22,7 +22,7 @@ A behaviour-preserving extraction inside one file.
 
 ## Changes
 
-- `.insrc/artifacts/CR-765de3f648ba09ee-S001.json` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `.insrc/artifacts/CR-765de3f648ba09ee-s1.json` — **insrc-build** (2026-10-19T05:15:14.501Z)
 - `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S004/PLAN.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
 - `docs/plans/s4-open-issues.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
 - `docs/plans/s5-open-issues.md` — **insrc-build** (2026-10-19T05:15:14.501Z)

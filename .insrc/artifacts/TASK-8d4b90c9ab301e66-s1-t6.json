@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3359fbf0-1ca9-4ecb-9f7a-f85ccc700189",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.553Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Let another pane hand the chat a message that waits its turn",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "703ac178eed89327ce1b2c074392871aaf21fc06a5e5b5406283d2c231e019e1",
+        "at": "2026-10-22T12:43:56.556Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.559Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Let another pane hand the chat a message that waits its turn",
+    "summary": "Add the ready flag, submitExternal, the waiting list and the drain to the chat host. A waiting message is run only when the webview is ready, no turn is in progress, no runTurn is starting and no permission request is unanswered. The host drains at the points the design lists, at a follow's end on either path, and when the last waiting permission request has been decided and its batch handled: at once if no follow-up turn was started, otherwise when that turn ends.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A message handed to a closed panel opens it, is reported as queued and is run when the webview posts ready, not before",
+      "A message waits behind a running turn, a followed turn and an approval follow-up, and waiting messages run one per turn end, in order",
+      "A message waits while a permission request is unanswered and is run after the last one is decided, with or without a follow-up turn; no waiting request is rejected by it",
+      "A message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message behaves as before",
+      "The list drains after Stop and after a chat switch, keeps waiting across a second ready while a turn runs, and is dropped with a warning on dispose"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat host: submitExternal on a closed panel opens it, answers queued although the session exists, and the message is run when the webview posts ready, not before"
+      },
+      {
+        "level": "unit",
+        "name": "chat host: submitExternal runs the message at once when the webview is ready and nothing is in progress, and queues it behind a running turn, a followed turn and an approval follow-up; waiting messages run one per turn end, in order"
+      },
+      {
+        "level": "unit",
+        "name": "chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn"
+      },
+      {
+        "level": "unit",
+        "name": "chat host: submitExternal answers unavailable with no CLI or blank text, drains after Stop and after a chat switch into the session then active, keeps waiting across a second ready while a turn runs, and drops its list on dispose with a warning"
+      },
+      {
+        "level": "unit",
+        "name": "chat host: a pane message waits while a permission request is unanswered, rejects none, and is run after the last one is decided: at once when all were denied, after the follow-up turn when one was approved"
+      },
+      {
+        "level": "unit",
+        "name": "chat host: a pane message waiting behind a followed turn is run when the follow fails as well as when it ends"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

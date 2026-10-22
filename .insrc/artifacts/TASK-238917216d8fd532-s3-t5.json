@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e2825b44-5a50-419f-8472-9311d49bbf0a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.486Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Plugin: wire ArtifactCommentLayer into ArtifactContentPane (JBCefJSQuery bridge + native-fallback notice)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2b7874a365bc9822fe12fb40c0190d6e0bc16fd63139424e39c77b676333d35c",
+        "at": "2026-10-22T12:43:18.486Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.487Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: wire ArtifactCommentLayer into ArtifactContentPane (JBCefJSQuery bridge + native-fallback notice)",
+    "summary": "Add ArtifactCommentLayer(buffer, browser, parentDisposable) hosted in the S002 ArtifactContentPane: create the JBCefJSQuery(ies) at page-build time (guarded by the S002 @Volatile disposed flag + browser.isDisposed — the proven S002 pattern), addHandler delegating to the pure t2 applyCommentOp, inject the query into the page (composeHtml), and on each content (re-)load re-attach + re-push the buffer so un-submitted comments survive a re-render; per-artifact buffer scoping. A malformed payload is ignored (logged), never throwing into the EDT. On the native-editor fallback the layer is inert and the pane shows a one-line 'annotation requires a JCEF-capable JBR' notice (JCEF-only, resolved). No content re-fetch (s2), no daemon write (s4), no approve wiring (s5). Only the JBCefJSQuery+inject+re-render slice is manual-verified; validation + mutation are the tested t2 core.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Selecting a part / an open-question marker in the JCEF view adds an anchored comment thread (ac1); several comments are each distinctly associated (ac2).",
+      "Edit/remove of an un-submitted comment is reflected before any submit; a page re-render (poll refresh/re-open) preserves the comments from the Kotlin buffer (ac3).",
+      "JBCefJSQuery create/inject/re-render are guarded by disposed/isDisposed + try/catch (no AlreadyDisposedException); handlers disposed with parentDisposable.",
+      "On the native fallback annotation is inert with a one-line notice; no daemon write / approve wiring is added; S001 list + S002 fetch/render are untouched."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "per-artifact scoping: the buffer/layer is keyed to the open artifactId so switching artifacts shows only that artifact's comments (the Kotlin-side scoping check; JBCefJSQuery wiring itself is manual-verified)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

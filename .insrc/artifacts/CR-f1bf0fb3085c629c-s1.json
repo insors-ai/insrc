@@ -13,7 +13,26 @@
     "reviewedBy": "daemon",
     "epicSlug": "insrc-build-step-validate-s-verdict",
     "epicCreatedAt": "2026-10-07T12:59:03.938Z",
-    "standalone": true
+    "standalone": true,
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "6a292ed67b247549c92feeced305853fd4ec9c87b2ec23eaf9a1cbf4cff2cfc7",
+        "at": "2026-10-08T07:04:27.368Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

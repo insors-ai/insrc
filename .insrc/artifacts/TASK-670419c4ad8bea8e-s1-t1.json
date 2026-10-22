@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-35b5480a-448a-42be-a041-82ccc6f34d2b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:40.771Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve learner identity and verify adapter sources",
+      "parent": {
+        "entityId": "STORY-670419c4ad8bea8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-670419c4ad8bea8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "577a01645a068ced20ae3ae4c1a167efdf1c4353bc66022c7e81de62249c400d",
+        "at": "2026-10-22T12:43:40.771Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:40.772Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve learner identity and verify adapter sources",
+    "summary": "Implement approved identity resolver and local principal binding; document each GitHub/GitLab/Jira adapter's actual module, authenticated metadata source, stable-ID field and unavailable behavior. Reuse existing connections; no login flow or account inference from remote ownership.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Single connected identity wins; multiple use repository Git email; no usable provider/Git identity falls back to OS",
+      "No automatic identity merge, case folding, agent/commit-author substitution or raw identity logging",
+      "Missing adapter is explicit; an available authenticated identity is discovered rather than silently ignored",
+      "Add and pass focused tests for this task before proceeding.",
+      "Source matrix names actual module/source/stable-ID field per provider, or evidence of missing integration; fixtures distinguish disconnected, unavailable lookup and missing adapter."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Identity source precedence, authority separation and no automatic merge"
+      },
+      {
+        "level": "integration",
+        "name": "Provider source matrix and available/disconnected/missing/failed adapters; Git/OS fallback"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

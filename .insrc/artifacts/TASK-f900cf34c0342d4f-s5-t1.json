@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f34c6a3-b847-4f07-8a26-bf9d5a1a1235",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:00.445Z",
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f900cf34c0342d4f",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the LogCategory/LogLine/LogFilter types + widen the DebugService interface",
+      "parent": {
+        "entityId": "STORY-f900cf34c0342d4f-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f900cf34c0342d4f-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "61de2ef3cf18f53493b22539a7e9c499943c6118437c8cbf20183f2319ae46fa",
+        "at": "2026-10-22T12:45:00.445Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:00.446Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the LogCategory/LogLine/LogFilter types + widen the DebugService interface",
+    "summary": "In src/cli/services/debug-types.ts add the new CLI-side view-model types: LogCategoryId = 'daemon'|'agent'; LogCategory { id; title; stem }; LogLine { raw; time?; level?; module?; msg? }; LogFilter { minLevel?; module?; text? }. Widen the DebugService interface with logCategories(): readonly LogCategory[] + tailLog(categoryId: LogCategoryId, onLines: (lines: readonly LogLine[]) => void): () => void. Additive; existing members unchanged. Build note: land WITH t3 (the fakes) since the interface widening breaks them.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "LogCategoryId is the closed union 'daemon'|'agent'; LogCategory/LogLine/LogFilter are exported with the stated fields (LogLine.raw required, the rest optional)",
+      "DebugService interface gains logCategories() + tailLog(); existing members unchanged",
+      "tsc compiles"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "debug-types: LogCategory/LogCategoryId/LogLine/LogFilter round-trip (closed union + required raw + optional fields) and the widened DebugService compiles"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c480de56-e78a-4cfd-bbec-37e8ca7371ea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.975Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s11",
+    "envelope": {
+      "description": "Turn the MCP tools into forwarders",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s11",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s11",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s11-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ae81140dca44497c6cb5866a0ff6531a19e69b8670f75a718c52c6820303cf2",
+        "at": "2026-10-22T12:44:34.975Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.976Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Turn the MCP tools into forwarders",
+    "summary": "The seven tools forward over step.call with the MCP process's cwd, INSRC_REPO and the converted client; DaemonUnreachableError and DaemonTooOldError as isError envelopes; progress relayed only with a progress token. runInsrcMcpStdio stops registering the builtins, data drivers and workflow runners. Add the import-graph test of the MCP server.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "the MCP server's import graph, apart from ipc-client.ts and daemon-stream.ts, reaches nothing under src/db, src/analyze or src/daemon/steps, and a fixture import makes the test fail",
+      "with no daemon every moved tool returns DaemonUnreachableError; against a daemon without step.call, DaemonTooOldError",
+      "the twelve tools keep their names, descriptions and input schemas"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs"
+      },
+      {
+        "level": "unit",
+        "name": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "import graph (ac4): the MCP server's modules reach nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail"
+      },
+      {
+        "level": "unit",
+        "name": "MCP tool surface: the twelve tools keep their names, descriptions and input schemas"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

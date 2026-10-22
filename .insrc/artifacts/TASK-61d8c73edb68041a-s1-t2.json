@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b8e8ff7f-9e33-4709-b3e6-6cd4d27e673f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.032Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement sc1: IdeKind/ProjectContext types + project-open & uninstall lifecycle",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4fd362576aaa8756fc9bbe0f19ecd6b2cae560ef34781f31677b24c90d63b041",
+        "at": "2026-10-22T12:43:39.032Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.032Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement sc1: IdeKind/ProjectContext types + project-open & uninstall lifecycle",
+    "summary": "Add the IdeKind closed union and immutable ProjectContext, resolve IdeKind from the running product identity for each of the four IDEs, and hook the platform lifecycle: a project-open listener that constructs a ProjectContext (absolute root + IdeKind) and broadcasts onProjectOpened once per opened project (skipping rootless windows), plus a teardown hook that fires onPluginUninstalled only on true uninstall, not on disable. The hooks are non-throwing and run off the UI thread. Ships with its own unit tests for the product-to-IdeKind mapping and the disable-vs-uninstall distinction.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "ProjectContext is constructed with the opened project's absolute basePath and the IdeKind resolved for each of idea/pycharm/goland/webstorm, verified by unit tests.",
+      "onProjectOpened fires exactly once per opened project window and is skipped (no bogus ProjectContext) for a rootless/light project.",
+      "onPluginUninstalled fires only on uninstall and not on a mere disable, verified by a unit test."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Unit: product-identity-to-IdeKind resolves each of idea/pycharm/goland/webstorm"
+      },
+      {
+        "level": "unit",
+        "name": "Unit: ProjectContext carries the opened project's absolute root; a rootless window is skipped (no bogus ProjectContext)"
+      },
+      {
+        "level": "unit",
+        "name": "Unit: onPluginUninstalled fires on uninstall but not on a mere disable"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

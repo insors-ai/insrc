@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-399c50a4-a60b-4c3c-9668-264957196170",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:34.560Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "JetBrains status dialog shows completeness",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e87c01cc90095e0aac71ec78df92f3f33b26989deefd32813f1e6622a594bc60",
+        "at": "2026-10-22T12:44:34.560Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:34.561Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "JetBrains status dialog shows completeness",
+    "summary": "RepoStatsDto (DaemonGateway.kt) gains the completeness field (absent decodes as unknown); RepoStatusDialog.kt shows complete/incomplete with the reasons and counts. Anchors: RepoStatsDto in jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt (around :344-357) and the dialog's rendering in actions/RepoStatusDialog.kt (around :99-114). Depends on t12 for the field in repo.stats.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "RepoStatsGatewayTest decodes a recorded repo.stats reply with one complete and one incomplete repository, and one without the field",
+      "The dialog layout test shows the reasons for the incomplete repository"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin RepoStatsGatewayTest.kt: decode a recorded repo.stats reply (complete, incomplete, no field)"
+      },
+      {
+        "level": "unit",
+        "name": "jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

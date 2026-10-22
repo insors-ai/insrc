@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-372e38e3-2700-4aa2-b717-5400e04abe74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.726Z",
+    "epicCreatedAt": "2026-10-04T09:55:12.152Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a811b8acca60ac5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Decide only the head and relay in-turn decisions",
+      "parent": {
+        "entityId": "STORY-6a811b8acca60ac5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a811b8acca60ac5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a811b8acca60ac5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb21c2d27e2d5950ad789f79ef84de055f96e81d370719a254d05c1b75197340",
+        "at": "2026-10-22T12:43:42.726Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.727Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Decide only the head and relay in-turn decisions",
+    "summary": "Rewrite the permission-decision handler's queue branch: a decision for a queued id that is not the head is ignored (debug log); the head's decision is recorded once (recordPermissionOutcome, in decision order); an in-turn request is relayed with decide(live.turnId, requestId, decision) (try/catch, a throw is logged and the queue still advances) before the next card is posted; a turn-ended request's decision joins its batch (an approved tool-gate joins the grant chain; an approved dir-block posts today's informational message). The next head is then posted. Ids not in the queue still fall through to decide() as today.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A decision on a waiting card's id does nothing; the head's decision records exactly one outcome chip/row",
+      "The second card is posted only after the first is decided",
+      "An in-turn request (even one carrying a toolName) is relayed with decide() before the next card is posted and never starts a follow-up; a throwing decide() is logged and the queue advances",
+      "An id not in the queue still reaches the live adapter's decide()"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the second card is posted only after the first is decided; a decision on a waiting card's id does nothing"
+      },
+      {
+        "level": "integration",
+        "name": "live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started"
+      },
+      {
+        "level": "integration",
+        "name": "an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

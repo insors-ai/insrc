@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e50b4dd9-0edd-4c56-aedd-0cd07e8b6dda",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.503Z",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f17539c98aa78ee",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The check finds its constraints: inline list, then stored ids, then the topic; distinct failures; what it judged against in its output",
+      "parent": {
+        "entityId": "STORY-0f17539c98aa78ee-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0f17539c98aa78ee-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0f17539c98aa78ee-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a8e59eb7705a62022b7774377019c5fa848fa993c4d594806f5b88b902e99237",
+        "at": "2026-10-22T12:43:12.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.504Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The check finds its constraints: inline list, then stored ids, then the topic; distinct failures; what it judged against in its output",
+    "summary": "Change src/analyze/runtimes/shared/adherence.ts. runAdherenceCheck resolves the repository once through adherenceRepoPath, before the constraints, and passes it to resolveConstraints, which passes it to the ids route and the topic route. resolveConstraints returns { constraints, source } and reads, in order: a non-empty inline list (an empty one now counts as not given), non-empty stored-document ids, the topic through constraintsForTopic; it no longer reads constraintsSource or the upstream outputs, so from this task on a constraintsSource in a task's params is ignored by the check (the validator refuses it from t3 on). Failures have their own reasons: the enumeration could not be made (with the cause), the documents state no constraint on the topic (with the number of sections read, or that none matched), an override that yields nothing (naming it, with no fall back to the topic), none of the three given. ConstraintSourceFacts gains skipped; the enumeration's limited, partly read and skipped items are folded into the check's completeness record, which is built with all three. AdherenceResult gains constraints and constraintSource, and the three family runtimes copy both into the adherence-report. The seam _resolveConstraintsForTest returns the new shape; the existing tests in adherence-constraints.test.ts are updated to read it, the two tests of constraintsSource and the 'returns empty' test are replaced, and scope-sources.test.ts expects one call of adherenceRepoPath. The task is an L and is kept whole: the new return shape of resolveConstraints changes runAdherenceCheck, the seam, the three family runtimes and the existing tests in one compile unit, and the design's first integration test spans the source order and the output fields together.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "A check with a topic and no override judges against the constraints enumerated from the repository's documents; its output carries those constraints with their citations, constraintSource of kind 'documents' with the topic, the repository, the number of sections retrieved and the record's path.",
+      "Four checks with one topic in one run make one enumeration and carry the same constraints.",
+      "The enumeration's reached limit, partly read section and skipped search by meaning are in the completeness record of the check that enumerated and of a check that read the record.",
+      "A non-empty inline list, or non-empty ids, is used alone with a topic also present and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic; an override that yields nothing fails naming the override.",
+      "A task whose params carry constraintsSource beside a usable override runs on the override; the check does not read the parameter.",
+      "No constraint found, a failed enumeration and a failed judging call each fail with their own reason; after a failed judging the record is still there.",
+      "A data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository; a code check scoped to one file reads the whole repository's documents.",
+      "adherence.ts calls adherenceRepoPath once and has no other source of a repository path; it does not read upstreamOutputs.",
+      "The suites that mention adherence (adherence-constraints, partly-read-plan-tasks, completeness-all-runtimes, dropped-or-failed, aggregate-absent-inputs, scope-sources) pass; `npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path"
+      },
+      {
+        "level": "integration",
+        "name": "four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not"
+      },
+      {
+        "level": "integration",
+        "name": "the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record"
+      },
+      {
+        "level": "integration",
+        "name": "an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic"
+      },
+      {
+        "level": "integration",
+        "name": "a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents"
+      },
+      {
+        "level": "integration",
+        "name": "when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration"
+      },
+      {
+        "level": "integration",
+        "name": "when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays"
+      },
+      {
+        "level": "integration",
+        "name": "an override that yields no constraint fails naming the override and does not fall back to the topic"
+      },
+      {
+        "level": "unit",
+        "name": "the existing tests of constraintIds and inline constraints keep their assertions, read through the new result shape of the seam; the two tests of constraintsSource are replaced, and the test that no source returns an empty list is replaced by one that asserts the throw naming constraintTopic, constraints and constraintIds"
+      },
+      {
+        "level": "unit",
+        "name": "the adherence check resolves its repository once and reads neither constraintsSource nor upstreamOutputs"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

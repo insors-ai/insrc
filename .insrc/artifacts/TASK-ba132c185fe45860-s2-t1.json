@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c51dbc3f-30d2-4fd4-aa22-61c590c9bfa4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:26.804Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add bounded OllamaProvider.listLocalModels()",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ab4b7b94f940b296df7120c7f2103e21370efd7440bdae6e4dbb24e037bf8af1",
+        "at": "2026-10-22T12:44:26.805Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:26.805Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add bounded OllamaProvider.listLocalModels()",
+    "summary": "Add a public listLocalModels(opts?: {timeoutMs?}) method to OllamaProvider (src/agent/providers/ollama.ts) that wraps its private this.client.list() (/api/tags) in a short Promise.race timeout, maps ModelResponse.name -> ModelInfo.id (displayName omitted), and rejects on failure/timeout. It must NOT use the 300s completion header-timeout. Provide the lightest testability seam consistent with strict TS + the OllamaProvider surface (an optional injected list-fn param or a small protected hook, matching the S001 inject-the-dependency style) so client.list() can be faked without a live ollama. Additive to the existing class; nothing calls it yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "listLocalModels() maps a successful client.list() ({models:[{name}...]}) to readonly ModelInfo[] with id = name and no displayName",
+      "listLocalModels({timeoutMs}) settles as a failure (rejects/throws) when the underlying list() exceeds the bound — it does NOT hang and does NOT use the 300s header-timeout",
+      "a client.list() rejection (ollama unreachable) surfaces as a rejection the caller can map to available:false",
+      "the ollama client.list() is fakeable via the chosen seam without a live ollama (drives the t4 unit test)",
+      "the method is read-only against ollama (only /api/tags list; no pull/mutation) and constructs no cloud/Anthropic client"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "listLocalModels() with a fake client.list() returning {models:[{name:'llama3'},{name:'qwen'}]} -> [{id:'llama3'},{id:'qwen'}]"
+      },
+      {
+        "level": "unit",
+        "name": "listLocalModels() maps only .name -> id, omits displayName (no fabricated label)"
+      },
+      {
+        "level": "unit",
+        "name": "listLocalModels({timeoutMs}) rejects/settles as failure when the fake list() exceeds the bound (does NOT hang; does NOT use the 300s header-timeout)"
+      },
+      {
+        "level": "unit",
+        "name": "listLocalModels() surfaces a client.list() rejection (unreachable) as a rejection the caller maps to available:false"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7a03c715-a92d-40b1-a7f7-0600cc8bec77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:53.047Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement DocGenOutcome map/flatMap combinators",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b13f6328f5866dc97981de7130264971578ac2155b716f333ae67baa726f6f6f",
+        "at": "2026-10-22T12:43:53.047Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:53.047Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement DocGenOutcome map/flatMap combinators",
+    "summary": "Implement the generic map/flatMap helpers so downstream stages can short-circuit non-ok outcomes without re-implementing envelope handling.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "map(outcome, f) transforms only the ok arm's value and returns non-ok variants unchanged, field for field",
+      "flatMap(outcome, f) invokes f only for the ok arm and returns f's outcome; for non-ok input it returns the original variant untouched"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DocGenOutcome.map: transforms ok arm's value, leaves each non-ok variant's fields unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "DocGenOutcome.flatMap: invokes f only on ok arm and returns f's outcome; passes non-ok input through untouched"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

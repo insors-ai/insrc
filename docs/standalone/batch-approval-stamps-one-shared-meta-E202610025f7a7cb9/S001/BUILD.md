@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-5f7a7cb95b643ae5-S001 -->
+<!-- insrc:artifact BUILD-5f7a7cb95b643ae5-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -22,8 +22,8 @@ Each Story now gets its own range base, stamped in a non-approvable build-start 
 
 ## Changes
 
-- `.insrc/artifacts/CR-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
-- `.insrc/artifacts/PLAN-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `.insrc/artifacts/CR-5f7a7cb95b643ae5-s1.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
+- `.insrc/artifacts/PLAN-5f7a7cb95b643ae5-s1.json` — **insrc-build** (2026-10-04T16:26:51.747Z)
 - `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/CR.md` — **insrc-build** (2026-10-04T16:26:51.747Z)
 - `src/daemon/tools/builtins/git/__tests__/diff.test.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)
 - `src/daemon/tools/builtins/git/diff.ts` — **insrc-build** (2026-10-04T16:26:51.747Z)

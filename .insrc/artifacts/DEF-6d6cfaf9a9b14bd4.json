@@ -10,7 +10,6 @@
     "schemaVersion": 1,
     "epicHash": "6d6cfaf9a9b14bd4",
     "epicSlug": "stream-incremental-progress-from-daemon-calling",
-    "approvedAt": "2026-07-19T15:52:54.827Z",
     "tracker": {
       "adapter": "github",
       "epicRef": "insors-ai/insrc#41",
@@ -20,6 +19,35 @@
         "s2": "insors-ai/insrc#43",
         "s3": "insors-ai/insrc#44"
       }
+    },
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "1e0ff088899226e1d478dc4b96e0154d0611bcf1b0d8dc89d19031b870897ac1",
+        "at": "2026-07-19T15:51:03.713Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-19T15:52:54.827Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5b3c56dc-cb22-463f-aeea-e03a978bb7a0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.057Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add the DaemonLifecycleCommandRunner (daemon-ctl.sh start/restart/update)",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ab92a8bf6577d8143caa9ac7de09bb98bb7bef56e1289df93751027b02a2a997",
+        "at": "2026-10-22T12:43:33.057Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.058Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the DaemonLifecycleCommandRunner (daemon-ctl.sh start/restart/update)",
+    "summary": "Add class DaemonLifecycleCommandRunner(runner: SubprocessRunner, scriptLocator: DaemonScriptLocator, nodeResolver: ()->NodeRuntime?, baseEnv) that resolves daemon-ctl.sh via the existing locator and runs `bash <script> <subcommand>` through the reused SubprocessRunner with node on PATH; maps exit 0->Ok, 2/3/4->Failed(reason) (daemon-ctl.sh semantics), null/absent script->Failed('tooling unavailable'), IOException->Failed; never throws. Reuses ProcessBuilderRunner()+DefaultDaemonScriptLocator()+DefaultNodeRuntimeResolver in production; never extends ProvisionKind.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "run(START/RESTART/UPDATE) invokes `bash <daemon-ctl.sh path> <subcommand>` via the injected SubprocessRunner with the resolved Node prepended to PATH",
+      "exit 0->Ok; 2/3/4->Failed with mapped reasons; null script path->Failed; IOException->Failed; never throws",
+      "the class reuses the existing SubprocessRunner/DaemonScriptLocator/NodeRuntimeResolver seams and does NOT reference or extend ProvisionKind"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "run(START/RESTART/UPDATE) invokes `bash <daemon-ctl.sh> <subcommand>` (recorded Subprocess.command) with the resolved Node on PATH"
+      },
+      {
+        "level": "unit",
+        "name": "exit 0->Ok; 2/3/4->Failed(reason) with daemon-ctl.sh's mapped semantics; a null script path -> Failed('tooling unavailable'); an IOException -> Failed; never throws"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

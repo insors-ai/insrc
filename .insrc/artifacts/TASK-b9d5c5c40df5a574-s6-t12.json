@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dc0a1fd1-a63b-4445-b75f-a123e4f28b61",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.177Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Live checks and the mirrored contract",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "53018940887662bf19ad92a3398db775785e91f89100de0c5c93bb5cae63db0c",
+        "at": "2026-10-22T12:44:25.177Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.178Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live checks and the mirrored contract",
+    "summary": "Add the live tests gated by INSRC_LIVE_TESTS. They start the context build in process from this working tree, with the real model and the real stores read through the running daemon's index, so they do not depend on the installed daemon having the new code. Run them: an unfocused code request, a file scope and a symbol scope return a bundle; the real planning call follows the recipe; failures carry the right code. Record the three new codes for the IDE repository.",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "An unfocused code request on this repository returns a bundle whose focus layer says there is no focus and names the scope, with no 'undefined' and no '<intent.focus>'",
+      "The real planning call for an unfocused code request on a module returns the recipe's lookups on that module's path",
+      "A scope that does not resolve fails with 'scope-ref-unresolved' while the model is running",
+      "The full unit sweep of src/analyze, src/mcp and src/daemon passes under Node 22"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "unfocused code request on this repository returns a bundle with a no-focus focus layer"
+      },
+      {
+        "level": "live",
+        "name": "file scope and symbol scope return a bundle"
+      },
+      {
+        "level": "live",
+        "name": "real planning call follows the no-focus recipe for code and returns a free-form lookup for docs"
+      },
+      {
+        "level": "live",
+        "name": "failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b77dcb13-5a5a-483e-a4ec-6512d4910cc9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.919Z",
+    "epicCreatedAt": "2026-09-20T15:58:45.676Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "be438ed37a36f5fc",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Create src/daemon/repo-stats.ts (pure buildRepoStats + thin collectRepoStats)",
+      "parent": {
+        "entityId": "STORY-be438ed37a36f5fc-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-be438ed37a36f5fc-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-be438ed37a36f5fc-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-be438ed37a36f5fc-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0508ed3fec862735f6c594060bd5f76f4708b41702511cfe97937784b93956ed",
+        "at": "2026-10-22T12:44:28.923Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.924Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Create src/daemon/repo-stats.ts (pure buildRepoStats + thin collectRepoStats)",
+    "summary": "New module: pure buildRepoStats(entities, relationSourceRepos, registeredRepos, sizeOf, pendingFor) that groups entity rows per repo (fileCount = distinct files; filesByLanguage = distinct (file,language) pairs; entityCount; entityCountByKind), counts relationSourceRepos per repo, and fills registry + sizeOf + pendingFor — ignoring rows for unregistered repos, emitting one RepoStats per registered repo. Plus the thin collectRepoStats(store, registeredRepos, queue) that does one store.entity.getRange() scan (building the u64→repo map) + one store.outEdge.getRange() scan (resolving each source u64→repo, skipping danglers) + best-effort fs.statSync sizing (missing file → 0) + queue.depthForRepo, then delegates to buildRepoStats. The two symbols share the file + accumulator shape; the acceptanceChecks keep the pure-vs-I/O concerns separated.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "buildRepoStats is PURE (no store/fs/queue access; sizeOf/pendingFor injected), deterministic, and emits one RepoStats per registeredRepos entry with correct counts/breakdowns; a mixed-language file counts once in fileCount but in each language bucket; a cross-repo edge is attributed to its SOURCE repo; unregistered-repo rows and dangling edges are ignored",
+      "collectRepoStats reuses store.entity.getRange()+decodeEntityRow + store.outEdge.getRange() + listRepos-provided rows + queue.depthForRepo, sizes via fs.statSync with best-effort 0 on a missing file, and is read-only (no store/queue mutation)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "buildRepoStats: fileCount = distinct file paths per repo; filesByLanguage = distinct (file,language) pairs (a mixed-language file counts once in fileCount but in each language bucket)"
+      },
+      {
+        "level": "unit",
+        "name": "buildRepoStats: entityCount = total rows for the repo; entityCountByKind groups by EntityKind"
+      },
+      {
+        "level": "unit",
+        "name": "buildRepoStats: relationCount = count of relationSourceRepos per repo (source-repo attribution); a source-repo not in registeredRepos and a dangling source are ignored"
+      },
+      {
+        "level": "unit",
+        "name": "buildRepoStats: registry fields copied verbatim from the RegisteredRepo row; a registered repo with zero entities yields a zero-count RepoStats (present, not omitted)"
+      },
+      {
+        "level": "unit",
+        "name": "buildRepoStats: sizeBytes = the injected sizeOf value for the repo's distinct file set; pendingJobs = the injected pendingFor(repoPath)"
+      },
+      {
+        "level": "unit",
+        "name": "buildRepoStats: an entity row whose repo is not a registered repo is ignored (never invents a repo); an empty entities/relations input yields all-zero RepoStats per registered repo"
+      },
+      {
+        "level": "integration",
+        "name": "collectRepoStats over a tmpdir store: seeded entities across two repos + out-edges (incl. a cross-repo edge) yield the expected per-repo fileCount/filesByLanguage/entityCount/entityCountByKind/relationCount"
+      },
+      {
+        "level": "integration",
+        "name": "collectRepoStats: sizeBytes reflects the summed on-disk bytes of the seeded files; a seeded entity whose file was NOT written to disk contributes 0 without throwing"
+      },
+      {
+        "level": "integration",
+        "name": "collectRepoStats: a cross-repo edge is counted under its source repo only"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

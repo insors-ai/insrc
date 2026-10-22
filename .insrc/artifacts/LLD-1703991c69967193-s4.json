@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1789726188697-irhvw2",
     "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-18T14:34:48.899Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-18T14:39:46.853Z",
     "questionResolutions": {
       "qde8da9d2": {
         "question": "Post-build parent re-confirm (the a2 accuracy edge): the issue-approval locate has empty touchedPaths so it cannot use sc3's graph code-ownership tier; a future enhancement could re-run locateParent after the build with the real touched paths to upgrade a standalone/low-confidence early attach. Deferred (not built in s4); the fix still resolves a parent before proceeding per the HLD gate.",
@@ -45,6 +31,61 @@
         "choice": "Defer as-is (tracked follow-up)",
         "resolvedAt": "2026-09-18T14:40:57.408Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "44f8cad3c3f74e1ea22c85bdf3aa006311f12225c1021c87dbf8557bbd068e1f",
+        "at": "2026-09-18T14:33:32.256Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T14:39:46.853Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-18T14:34:48.899Z",
+        "report": {
+          "entityId": "LLD-1703991c69967193-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1703991c69967193-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

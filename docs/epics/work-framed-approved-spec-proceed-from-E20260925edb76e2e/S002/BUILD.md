@@ -16,7 +16,7 @@ adapter (sc2 `stream-events.ts` + sc5 `cli-adapter.ts`) and its test suites.
 
 - `tsc --noEmit` clean.
 - Full plugin sweep: **287 pass / 0 fail / 2 live-skip** (24 new chat tests).
-- Code review (CR-edb76e2e4d41217d-S002): **warn**, 0 HIGH / 0 MED / 1 LOW.
+- Code review (CR-edb76e2e4d41217d-s2): **warn**, 0 HIGH / 0 MED / 1 LOW.
 - Opposite-actor cold review: 4 findings (terminal-event guard, uncaught stdout
   error, subprocess leak, dead session-id capture) — all fixed with regression
   tests before completion.

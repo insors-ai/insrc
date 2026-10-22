@@ -30,216 +30,6 @@
       "AMD-613abdb351c2c738-8"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Every S004 acceptance criterion (ac1-ac5) and FR001-FR003 is designed: retry for spawn/rate-limit/overloaded/network/timeout before acting at 10 s / 1 min / 5 min up to 3 times; the head keeps its place with attempt, countdown, retry-now and cancel; failed with a resend after the last attempt, after acting, for a model refusal or error, for Stop, or for an auth failure; auth is not retried and gets a sign-in line.",
-          "evidence": "DEF.md:60-62 (FR001-FR003) and :158-162 (ac1-ac5) match LLD 2.1/2.3/2.4/2.6 and 5. Stop already ends failed: chat-queue-store.ts:450-451 writes `state = 'failed'` for a 'stopped' outcome, and finish keeps that branch. Nothing in the design builds a non-goal: review-pane decisions, the lease rules and the outbox markup are left to s5, s3 and s2. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md, vscode-plugin/src/chat/chat-queue-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "coverage-of-intent.2",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "FR004 (a momentary conflict on the queue's store is waited out; a persistent one is refused with a note) is covered: enqueue already refuses a busy store with a note, and S004 bounds the busy retry of an outcome write at 60 s with a chat note.",
-          "evidence": "DEF.md:63 FR004. chat-queue-worker.ts:379 already answers a StoreBusy with BUSY_NOTE for actions, and chat-panel.ts:2122 posts a refused enqueue's note. The unbounded pendingFinish retry exists today (worker:205, 290-292), and the LLD's BUSY_GIVE_UP_MS bound (2.10) closes it. The owner resolved this reading in LLD §10. [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today a claude/codex result with is_error is mapped to done ok:false and its text is dropped. onTerminal records an error only for an 'error' event, so settleQueued resolves the message as done and it is deleted.",
-          "evidence": "cli-adapter.ts:656 `return [{ kind: 'done', turnId, ok: obj['is_error'] !== true }]` has no text. Codex at :781 is the same. The doneEvent wrappers at :900-901 and :1059-1060 carry only ok and sessionId. chat-panel.ts:1592-1596 onTerminal sets `q.error = ev.message` only `if (ev.kind === 'error')`. settleQueued :676-677 then calls `endQueued({ kind: 'done' })`, and store finish :446-448 DELETEs on done. The defect is real as stated. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/chat-queue-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "settleQueued always reports acted:true with no cause. The only acted:false failure is 'the chat no longer exists'. finish() writes failed for every failed outcome, and nothing writes retrying, attempts or next_attempt_at today.",
-          "evidence": "chat-panel.ts:676 `endQueued({ kind: 'failed', error: q.error ?? 'the turn ended with an error', acted: true })`. :2076 `resolve({ kind: 'failed', error: 'the chat no longer exists', acted: false })`. :2088 and worker:199 also use acted:true. chat-queue-store.ts:453-455 `case 'failed': UPDATE messages SET state = 'failed'`. A grep for retrying/attempts finds only readers (LIVE_HEAD :285, acknowledge :427/436, rowToMessage :247/261, outbox :74-75). The only INSERT (:364) writes the default attempts. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-outbox.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "suppressEcho guards only the live user-row echo, while startTurn still pushes the user row to the stored transcript, runs the title check and saves. So a new skipUserRow option is needed to keep one user row across retries.",
-          "evidence": "chat-panel.ts:1449 `s.transcript.push(...{ role: 'user', ...})` runs unconditionally. Only the `post({ type: 'user-row' ...})` at :1457-1465 is inside `if (opts?.suppressEcho !== true)`. The title check (:1469) and `trySave(s)` (:1476) are also unconditional. The prompt is built separately (:1447) and sent through req (:1500-1502), so it can be kept while the row is skipped. [files: vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.4",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The existing postInfo is live-only: it posts to the webview and does not store the line, so a stored retry or sign-in line needs a new persistInfo helper.",
-          "evidence": "chat-panel.ts:685-688: postInfo only calls `post({ type: 'turn-event', ... })` twice and never calls appendEvent. The stored path is appendEvent(s, ev) (:1677), used with a row index at :810 and :1547, as the LLD says. [files: vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Reused as is: InfraCause and the failed outcome's acted and cause fields already exist on sc3, so S004 adds no outcome kind.",
-          "evidence": "chat-queue-store.ts:81 `export type InfraCause = 'spawn' | 'rate-limit' | 'overloaded' | 'network' | 'timeout' | 'auth' | 'other';` and :87 `{ readonly kind: 'failed'; readonly error: string; readonly acted: boolean; readonly cause?: InfraCause | undefined }`. [files: vscode-plugin/src/chat/chat-queue-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The webview-to-host 'outbox-retry-now' message type and the OutboxRow fields attempt and nextAttemptAt already exist. The new work is the host handling, the worker action, the store's retryNow and the webview drawing. retryNow and the 'retry-now' QueueAction do not exist yet.",
-          "evidence": "chat-outbox.ts:43 OutboxAction includes 'outbox-retry-now'. protocol.ts:353 lists it, and protocol.test.ts:223 checks it. chat-outbox.ts:74-75 project attempt and nextAttemptAt. chat-queue-worker.ts:47 is `QueueAction = 'cancel' | 'dismiss' | 'resend'`, with no retry-now. No retryNow exists in chat-queue-store.ts. The webview at chat-panel.ts:1158 draws only cancel for a retrying row. A grep found no classifier in the plugin, so chat-failure.ts is new. [files: vscode-plugin/src/chat/chat-outbox.ts, vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/chat-queue-worker.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The listed change sites are complete for carrying the error text on done: both result mappers (claude, codex) and both doneEvent wrappers (live and resumed turn) in cli-adapter.ts, the done TurnEvent in stream-events.ts, and onTerminal in chat-panel.ts.",
-          "evidence": "cli-adapter.ts has exactly two done-producing mapper branches (:656 claude, :781 codex) and two doneEvent wrappers (:900 live, :1059 resumed). They pass only `ev.ok` (:948, :1071), so both must forward the message as the LLD says. The signal-kill done (:960) and the clean-exit done (:970) need no text. stream-events.ts:65 holds the single done shape. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/stream-events.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Adding 'retry-now' to act needs both the QueueAction union and a new branch in act. The host's outbox message switch needs a new case. protocol.ts needs no change.",
-          "evidence": "chat-queue-worker.ts:369-376: act routes resend, then cancel, then sends every other action to `store.dismiss(seq)`. A 'retry-now' must therefore get its own branch, or it would fall into dismiss. The LLD lists chat-queue-worker.ts and 'the host's outbox action switch' (chat-panel.ts:1740-1748, which has outbox-cancel and outbox-resend cases), so both sites are named. protocol.ts already lists the type (:353). [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The queued-turn runner can see message.attempts to decide skipUserRow and the retry line, because the worker passes the stored head row to the runner.",
-          "evidence": "chat-queue-worker.ts:297-300: `const head = store.head(); ... void runMessage({ ...head, state: 'processing' })`. runMessage passes m to `deps.runner.run(m, ...)` (:182), and chat-panel.ts:2067 run(message, ...) receives it. QueuedMessage carries `attempts: number` (store:49). [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No schema change is needed. attempts and next_attempt_at already exist and are read by rowToMessage, LIVE_HEAD, acknowledge and the outbox. A previous-plugin worker reads a retrying row written by a new window, waits until it is due, and runs it, so mixed versions interoperate.",
-          "evidence": "chat-queue-store.ts:213-214 has the columns `attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER`. rowToMessage reads them (:247, :261-262). LIVE_HEAD (:285) includes 'retrying'. acknowledge refuses a retrying head that is not yet due (:427) and moves queued or retrying to processing (:436). The worker's due check (worker:298) honours nextAttemptAt. The skipUserRow duplicate row under a mixed-version run is disclosed in Backward compat. [files: vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-queue-worker.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S004 does not redesign S003's lease rules. The reload recovery after the busy give-up reuses S003's existing rule: same windowKey, old pid and CLI gone, takeOver frees the lease and fails the processing message with a resend.",
-          "evidence": "chat-queue-worker.ts:232-243: for a lease with the same windowKey whose holder pid is gone and whose CLI is not alive, `store.takeOver(claim, at, holderGone)` runs. chat-queue-store.ts:551-564 takeOver UPDATEs the message to failed ('the window closed during the turn') where `state = 'processing'` and deletes the lease. S004 adds only retryNow, the act branch and the finish retrying branch. It does not touch takeOver, reclaim, markNotDeliveredIfHead or the bound on stored records. [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-queue-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Busy give-up: after BUSY_GIVE_UP_MS the message stays processing with its lease, and the window takes nothing new until a reload frees it. In the meantime the worker's own lease blocks applyLeaseRules and acknowledge, so nothing is run twice.",
-          "evidence": "After runMessage the heartbeat is cleared (worker:201) and current is undefined. With pendingFinish dropped at give-up, applyLeaseRules returns early for this window's own lease (:227-230: same windowKey and pid, and reclaimedSeq is not this seq). acknowledge refuses while any lease row exists (store:428 `if (leaseRow() !== undefined) return false`). So the queue is held, not double-run, until the reload path above. Another window can take over only after LEASE_TAKEOVER_MS with this process gone (:245), which matches the stated recovery. [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-queue-store.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The acted flag must survive continuations: startTurn resets the queued message's error and terminal state on every turn it starts (an approval re-run, a selection continuation). The LLD says acted is never cleared, so the reset does not hide an earlier tool call or edit.",
-          "evidence": "chat-panel.ts:1490-1494: for a queued session each startTurn does `q.turns += 1; q.terminal = undefined; q.error = undefined;`. That is where acted must be left alone. LLD §5 says 'never clears it, including across an approval re-run'. The acting events reach sink.onEvent (:1528), where they can be observed. A done(false) without text, such as a CLI killed by a signal outside Stop (cli-adapter.ts:960), takes the stated fallback 'the turn ended with an error', is classified 'other' and ends failed. That is safe, though §5 does not list it as its own case. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/cli-adapter.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each S004 acceptance criterion (ac1-ac5) maps to at least one named test at a runnable level, and the existing harnesses the strategy names (fakeTime and gatedRunner in chat-queue-worker.test.ts, runShell in chat-shell.test.ts, the chat-queue-runner host harness) exist.",
-          "evidence": "The LLD §6 Acceptance mapping covers ac1-ac5, each with integration or unit tests and ac4 also with a live check. Each test names an observable: the due time, attempts, the failed state, the sign-in line stored in the transcript. The harness files exist under vscode-plugin/src/chat/__tests__/: chat-shell.test.ts (seen at :558 with outbox actions) and chat-queue-outbox-host.test.ts (:152-217). The FR004 busy bound has its own worker test, and logging every failed turn has a runner test. [files: vscode-plugin/src/chat/__tests__/chat-shell.test.ts, vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 16,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-14T17:02:45.193Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-14T17:14:24.313Z",
     "questionResolutions": {
       "q80e30701": {
         "question": "RESOLVED by the owner: a turn that streamed text but made no tool call, command or edit before an infrastructure failure is retried; anything the agent did with a tool call, command or edit is never retried. The partial text stays in the transcript with a stored 'retrying' line before the retried output.",
@@ -297,6 +87,61 @@
         "rationale": "Owner decision (option A).",
         "resolvedAt": "2026-10-14T17:21:25.852Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5375f2ddcfad559c7715467b36095578305f0e86e331ba12991db10f7e9ba325",
+        "at": "2026-10-14T16:26:19.425Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T17:14:24.313Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 16
+        },
+        "at": "2026-10-14T17:02:45.193Z",
+        "report": {
+          "entityId": "LLD-613abdb351c2c738-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-613abdb351c2c738-s4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

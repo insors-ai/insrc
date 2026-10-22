@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-64a0f5df-a8e7-4a21-a7af-770e1700ee54",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.408Z",
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Attachment store",
+      "parent": {
+        "entityId": "STORY-59da3204a44afd1b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-59da3204a44afd1b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0ac80cac2b21c091358e8256474f4a1fdd5b3cb2f6c4b876c095453fcff18105",
+        "at": "2026-10-22T12:43:36.411Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.412Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Attachment store",
+    "summary": "New vscode-plugin/src/chat/attachment-store.ts: AttachmentRef, the AttachmentFs seam with its node implementation, AttachmentRefused, createAttachmentStore (dirOf, addBytes, addFile, remove, removeSession, sweep) and the three limits as recorded by the user: MAX_ATTACHMENT_BYTES 20 MiB, MAX_ATTACHMENTS_PER_MESSAGE 10, PASTE_IMAGE_MIMES png/jpeg/gif/webp. Files go to `<root>/<sessionFileName(id)>/<n>-<safe name>`; a picked document is copied. Nothing uses it yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
+      "An oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written; a failed write leaves no partial file",
+      "remove ignores an id that is not a plain file name in the session's directory; remove and removeSession succeed when the target is gone",
+      "sweep removes only directories of sessions not kept whose files are all older than the age",
+      "The limits are the recorded constants"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path"
+      },
+      {
+        "level": "unit",
+        "name": "attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written"
+      },
+      {
+        "level": "unit",
+        "name": "attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone"
+      },
+      {
+        "level": "unit",
+        "name": "attachment store: sweep removes only directories of sessions not kept whose files are all older than the age"
+      },
+      {
+        "level": "unit",
+        "name": "attachment store: a failed write leaves no partial file"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

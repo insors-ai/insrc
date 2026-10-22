@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-43aa0e17-4611-4528-ba94-c959b14032d5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:52.761Z",
+    "epicCreatedAt": "2026-10-01T11:57:40.327Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "85e6a58693579b6d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Switch renderUxCompanion onto the emitter and pin the ref kind",
+      "parent": {
+        "entityId": "STORY-85e6a58693579b6d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-85e6a58693579b6d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-85e6a58693579b6d-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f6d1f637b95c0de6ada78ac57f754bd2930a827c1ea2e5413eb57843700c7caa",
+        "at": "2026-10-22T12:43:52.762Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:52.762Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Switch renderUxCompanion onto the emitter and pin the ref kind",
+    "summary": "The single behavioural flip: replace renderUxCompanion's `withSourceLink(uxDefinitionToIr(uxDef), ...)` + `assembleShell(ir)` pipeline (render.ts:137-138) with a call to the new emitter, keeping the write and the ref return exactly as they are. Also add the assertion pinning kind:'ux-mock' — the resolved correction to the issue's triage signal, turning a fact that had to be read off render.ts:151 by hand into one the suite defends. The narrated prose sections continue to be produced through uxDefinitionToIr and are consumed by the emitter, so the prose contract survives without duplication.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "renderUxCompanion no longer calls assembleShell; the emitter is the terminal renderer for this companion",
+      "The returned CompanionArtifactRef is byte-equivalent to today's for the same inputs — same kind:'ux-mock', relPath, title and ofSectionId",
+      "A regression assertion pins that the returned kind is 'ux-mock', so the triage signal's wrong claim cannot quietly become true later",
+      "The narrated prose sections appear in the written document ALONGSIDE the rendered mock, not instead of it",
+      "uxDefinitionToIr still exists and still returns the same DocumentIR shape — it is off the visual path, not removed",
+      "src/docgen/render/shell.ts is NOT modified — the ER, sequence and component companions are untouched",
+      "The written file no longer contains the mermaid or svg-pan-zoom runtimes"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "renderUxCompanion returns a ref byte-equivalent to today's, still kind:'ux-mock'"
+      },
+      {
+        "level": "integration",
+        "name": "the document no longer contains the mermaid or svg-pan-zoom runtimes and is dramatically smaller than ~3.37MB — asserted as a bound, not a fixed number"
+      },
+      {
+        "level": "integration",
+        "name": "the written document fetches NOTHING: no external stylesheet, script src, remote image or http(s) origin anywhere"
+      },
+      {
+        "level": "integration",
+        "name": "DETERMINISM: rendering the same definition twice produces byte-identical files"
+      },
+      {
+        "level": "integration",
+        "name": "the narrated prose sections appear ALONGSIDE the mock, not instead of it"
+      },
+      {
+        "level": "integration",
+        "name": "an empty card body yields an openable document with title and narrated prose, not a blank file"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -10,7 +10,27 @@
     "schemaVersion": 1,
     "epicHash": "e2c6705fd105d4ac",
     "storyId": "s1",
-    "epicSlug": "complete-generated-artifact-companion-wiring-across"
+    "epicSlug": "complete-generated-artifact-companion-wiring-across",
+    "epicCreatedAt": "2026-09-29T15:34:34.423Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "be68675b0e0f7e34426611e92c879318c1d7142a4cf25defb87075fd499ca404",
+        "at": "2026-09-29T16:30:21.527Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

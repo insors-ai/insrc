@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T18:20:43.376Z",
     "parentRef": {
       "slug": "defect-vscode-plugin-src-chat-chat"
+    },
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "5b50e81b787509b18666653a1ca11363656a1dc2976ed227ce18077a2058e510",
+        "at": "2026-10-10T16:38:40.063Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T18:20:43.376Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

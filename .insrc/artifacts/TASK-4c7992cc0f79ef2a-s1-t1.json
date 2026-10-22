@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1d818176-e8db-4631-be12-30bb5a1611bf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.273Z",
+    "epicCreatedAt": "2026-09-20T17:12:59.449Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4c7992cc0f79ef2a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add value types + companion constants",
+      "parent": {
+        "entityId": "STORY-4c7992cc0f79ef2a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4c7992cc0f79ef2a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8eb2c55cf3269900638b912f6eb4b845320f55606e05745d44352c1ce9b1d7ea",
+        "at": "2026-10-22T12:43:31.276Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.277Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add value types + companion constants",
+    "summary": "Add to the daemon package: RepoStatsDto (data class mirroring RepoStats 1:1 — repoPath/status:String, lastIndexed?/errorMsg?:String?, addedAt:String, fileCount/entityCount/relationCount/pendingJobs:Int, sizeBytes:Long, filesByLanguage/entityCountByKind:Map<String,Int>); the sealed interface RepoStatsResult { Loaded(stats) | Unavailable(reason) }; the plugin-side SteeringSelection(claude:Boolean, agents:Boolean); and the companion constants METHOD_REPO_STATS=\"repo.stats\", PARAM_REPO_PATH=\"repoPath\" (the repo.stats request key — the daemon handler reads params.repoPath, NOT the existing PARAM_REPO=\"repo\"), and PARAM_STEERING=\"steering\". Purely additive, no existing type touched.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "RepoStatsDto declares every RepoStats field with Int/Long/Map<String,Int>/String? types matching the LLD.",
+      "RepoStatsResult is a sealed interface with exactly Loaded(stats: RepoStatsDto) and Unavailable(reason: String).",
+      "SteeringSelection(claude:Boolean, agents:Boolean) exists plugin-side.",
+      "METHOD_REPO_STATS=\"repo.stats\", PARAM_REPO_PATH=\"repoPath\", and PARAM_STEERING=\"steering\" constants are declared in the DaemonGatewayImpl companion."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "RepoStatsResult is a sealed two-state (Loaded/Unavailable) and RepoStatsDto/SteeringSelection compile with the LLD field types (covered indirectly by the t6 gateway/parse tests that construct them)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

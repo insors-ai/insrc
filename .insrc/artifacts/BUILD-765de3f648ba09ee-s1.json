@@ -1,0 +1,121 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "765de3f648ba09ee",
+    "storyId": "s1",
+    "createdAt": "2026-10-19T04:53:15.800Z",
+    "authoredBy": "controller",
+    "triageRationale": "A behaviour-preserving extraction inside one file.",
+    "epicCreatedAt": "2026-10-19T04:53:15.800Z",
+    "updatedAt": "2026-10-19T05:15:14.501Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c3bbcd2d745823d4f3255a70e80614639bba94879f57d61a19ed9c5e6c2a6e53",
+        "at": "2026-10-19T04:53:15.800Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-19T05:15:17.627Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "S5-1: in src/workflow/team/gate.ts, claim() and teamGate() repeat the holder comparison, the add-only addAssignee call, its failure handling and the contested check. Extract one private helper used by both, keeping each path's exact refusal wording and outcomes. No behaviour change.",
+    "producesLld": false,
+    "commit": "dbf14678",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/765de3f648ba09ee-E20261019765de3f6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-765de3f648ba09ee-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S004/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s4-open-issues.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/s5-open-issues.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-signoff-issues-inventory.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-workflow.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/765de3f648ba09ee-E20261019765de3f6/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T05:15:14.501Z"
+      }
+    ]
+  }
+}

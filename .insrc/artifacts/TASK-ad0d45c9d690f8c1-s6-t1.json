@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4bbb53a7-a0dc-4d52-b332-d95b8aacabc4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.880Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6",
+    "envelope": {
+      "description": "esbuild bundle step + explicit esbuild devDependency",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "94b559296f59757d03da1ddecd08dd2505b4b185e22cd466338b9f3932b681cd",
+        "at": "2026-10-22T12:44:14.880Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.881Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "esbuild bundle step + explicit esbuild devDependency",
+    "summary": "Add an esbuild bundle (esbuild.mjs or npm script) that bundles src/extension.ts + src/uninstall.ts → out/extension.js + out/uninstall.js with --bundle --platform=node --format=cjs --external:vscode --outdir=out, inlining the cross-package ../../src/shared/ipc-client.js. Add esbuild as an explicit devDependency in vscode-plugin/package.json (review LOW: do not rest on the transitive) and wire the `bundle` script. tsc --noEmit stays the typecheck gate.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "`npm run bundle` in vscode-plugin/ produces out/extension.js + out/uninstall.js as CommonJS (module.exports present), with 'vscode' left as an external require (not inlined)",
+      "out/extension.js contains the inlined ipc-client (no unresolved ../../src import) and NO daemon internals/indexer/storage references (k5)",
+      "esbuild is listed in vscode-plugin/package.json devDependencies (not relied on transitively)"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "bundle-smoke: npm run bundle emits out/extension.js + out/uninstall.js as CJS with 'vscode' left external"
+      },
+      {
+        "level": "smoke",
+        "name": "bundle-smoke: out/extension.js requires with a fake vscode + exposes activate/deactivate (ipc-client inlined, no ../../src)"
+      },
+      {
+        "level": "smoke",
+        "name": "bundle-smoke: out/*.js contain no daemon-internal/indexer/storage reference (k5)"
+      },
+      {
+        "level": "unit",
+        "name": "manifest: esbuild is a declared devDependency in vscode-plugin/package.json"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

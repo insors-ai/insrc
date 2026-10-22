@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5d22ff6c-d6ab-42dc-80a7-3a0469227f35",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.468Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "A refused scope is a coded failure on the task record",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0fcb5a822e789504de38d2431b5fec3681a9e082fdace35d3cdffe7214e1435a",
+        "at": "2026-10-22T12:44:25.468Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.469Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A refused scope is a coded failure on the task record",
+    "summary": "Add one exported function beside the three scope error classes that maps each to its code, with the data { scopePath, registeredAs } for ScopeNotIndexedError. The plan tree's and the daemon's mapping functions call it. Add the optional code to TaskExecutionRecord and to the entries of tasksFailed, and have the plan walk set it, with the message and no 'runtime-threw:' prefix, when a runtime throws one of the three classes.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Both mapping functions return, through the shared function, exactly what they returned before for the three classes, the 'scope-not-indexed' data included",
+      "A runtime that throws each of the three classes is recorded as failed with that class's code and a message without the 'runtime-threw:' prefix; any other error has no code and keeps the prefix",
+      "The plan's and the run's tasksFailed entries, and the daemon's response, carry the code, and the daemon's response type for a run declares the optional code on those entries",
+      "The plan walk imports nothing from the run driver"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)"
+      },
+      {
+        "level": "integration",
+        "name": "a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)"
+      },
+      {
+        "level": "integration",
+        "name": "the plan's and the run's tasksFailed and the daemon's response carry the code"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

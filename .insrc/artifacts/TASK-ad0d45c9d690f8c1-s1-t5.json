@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ec65b10c-2d2f-4740-abd1-d9b8699bc97f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.297Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement sc4 ConsentGate",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b18facf6ed6147c392ba91b65c3a675d870217c56ebacc8ff87997cc582be651",
+        "at": "2026-10-22T12:44:12.297Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.298Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement sc4 ConsentGate",
+    "summary": "Add the ConsentGate interface (ask(request: ConsentRequest): Promise<ConsentOutcome>) with ConsentRequest {title, detail, acceptLabel, items?} + ConsentOutcome = accepted|declined|dismissed, and a default impl over an INJECTED modal message fn (window.showInformationMessage modal:true) mapping the selection to the outcome. s1 performs NO invasive action — it only supplies the gate.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "ask() maps the injected modal fn's return to accepted/declined/dismissed",
+      "no side effect occurs in s1 — the gate performs nothing itself"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ConsentGate.ask() maps the fake modal fn's return to accepted/declined/dismissed and performs no side effect"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

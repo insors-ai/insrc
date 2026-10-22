@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6f4d6ef4-225f-4e88-ad14-5f0930875a80",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.664Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Reconcile meta.lifecycle inside prepareArtifactWrite",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1d310860cb5e09c3d13c171fe294a334754c072bf86ff2b8d85ce553ab987f0b",
+        "at": "2026-10-22T12:43:20.664Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.665Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile meta.lifecycle inside prepareArtifactWrite",
+    "summary": "Make prepareArtifactWrite call reconcileLifecycle for a head that carries meta.lifecycle, taking the actor and time from new optional opts (defaulting to insrc:system and the clock). For such a head the canonical description/body/citations hash decides whether a content write mints a revision, so metadata, lifecycle fields and key order cannot; a head without meta.lifecycle keeps the legacy comparison. Binding requirements 3 and 4.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a content write to a head with meta.lifecycle reconciles hash, number and the fall-back to draft, and a meta-only write leaves them",
+      "a metadata-only or key-order-only change to a lifecycle-bearing head, written as content, does not mint a revision",
+      "a head without meta.lifecycle is prepared byte for byte as before and the existing storage, artifact-writer and prepare-artifact-write tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/prepare-lifecycle.test.ts: prepareArtifactWrite reconciles meta.lifecycle for a content write, leaves it for a meta-only write, mints no revision for a metadata-only or key-order-only change, and prepares a head without meta.lifecycle as before"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

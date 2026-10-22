@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-946cde94-326c-428e-9b3f-9efe134aa9a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.043Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Default-branch resolution and pin verification",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd0de4b2bcc46d97eacd5cecb0545dd1c5d3637782c8b8e903e62d53c03a118e",
+        "at": "2026-10-22T12:43:25.043Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.043Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Default-branch resolution and pin verification",
+    "summary": "Implement the refresh's branch decision: parse git ls-remote --symref output (the remote's answer wins over any pin), fall back to the branch recorded in a valid sighting, then to a supplied --branch name verified with git ls-remote --heads (non-empty output) and recorded with source user, otherwise refuse with the instruction to re-run with --branch; an unreachable remote or a missing branch records nothing.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The remote's named default branch is used and overrides an earlier user pin; the supplied name is ignored.",
+      "With a dangling remote HEAD and no pin the result is a refusal asking for --branch.",
+      "A supplied branch is accepted only when ls-remote --heads prints it; a missing branch or an unreachable remote returns a reason and records nothing."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/branch-resolution.test.ts: the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a dangling remote HEAD is refused without --branch and a real branch is recorded with source user"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a missing branch name or an unreachable remote records nothing"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

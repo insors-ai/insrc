@@ -24,34 +24,6 @@
     "hldBaseRunId": "wf-1789726188697-irhvw2",
     "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl3",
-          "ref": "c4",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "There is NO close-issue wrapper (ghCloseIssue / gh issue close) anywhere in src/workflow/tracker/ today — s5 must add the one thin ghCloseIssue verb.",
-          "evidence": "Probe confirms NO close-issue wrapper exists in src/workflow/tracker/ (the only 'issue close' hit is plans/tools.md:230 `gh:issue:close`, a BUILT-IN tool-registry capability, not a tracker gh-wrapper). So the LLD's premise 'no close wrapper exists; sync.ts is read-only' holds for the tracker module. Observation, not a defect: a built-in gh:issue:close tool DOES exist in the tool registry — but the tracker's github.ts deliberately uses its own injectable execFileSync `_exec` wrappers (for determinism + fake-gh testability, github.ts:9/30), NOT the tool registry, so adding a native ghCloseIssue sibling (mirroring ghEditIssueBody) is the correct, consistent choice for s5. The design is sound; recorded only for transparency that an alternative close surface exists.",
-          "action": "None required — the tracker-native ghCloseIssue is the right choice (the tool-registry surface is not injectable/used by github.ts). Optionally note in the implementation comment that gh:issue:close exists as a built-in but the tracker uses its own wrapper family.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Transparency only: confirm the reader knows a built-in gh:issue:close exists but is intentionally not used by the tracker's deterministic path."
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 1
-      },
-      "reviewedAt": "2026-09-18T15:22:32.696Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-18T15:22:58.537Z",
     "questionResolutions": {
       "q12a87841": {
         "question": "Lost-recorded-ref recovery (the a2 label-dedup): a1's idempotency + close both key on the meta.tracker ref, so if recordRef fails exactly after create (rare), the GH issue is unclosable/duplicable. A future enhancement could add ghFindIssueByLabels-based dedup (a unique per-bugfix label) as a recovery when the local ref is missing. Deferred — not built in s5; the normal path is correct and cheaper without the per-create GitHub query.",
@@ -59,6 +31,61 @@
         "choice": "Prompt the user with next-step options when a recorded ref is lost/missing",
         "resolvedAt": "2026-09-18T15:27:56.554Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "e38777a2e96f5f615ac8ea28968d82d1a489e1101aa652946a7a663751a8e081",
+        "at": "2026-09-18T15:21:08.440Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T15:22:58.537Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 1
+        },
+        "at": "2026-09-18T15:22:32.696Z",
+        "report": {
+          "entityId": "LLD-1703991c69967193-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1703991c69967193-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

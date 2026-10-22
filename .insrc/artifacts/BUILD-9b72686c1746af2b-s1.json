@@ -6,8 +6,36 @@
     "storyId": "s1",
     "createdAt": "2026-09-30T07:46:01.886Z",
     "updatedAt": "2026-09-30T07:46:05.203Z",
-    "approvedAt": "2026-09-30T07:46:05.244Z",
-    "epicSlug": "harden-insrc-artifact-creation-flows-two"
+    "epicSlug": "harden-insrc-artifact-creation-flows-two",
+    "epicCreatedAt": "2026-09-30T06:15:53.378Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7f02e9e7b623e98217ef55451a37b720e86568a199a8cdc732cb475438052d71",
+        "at": "2026-09-30T07:46:01.886Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T07:46:05.244Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

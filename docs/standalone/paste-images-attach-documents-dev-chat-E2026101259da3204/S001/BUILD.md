@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-59da3204a44afd1b-S001 -->
+<!-- insrc:artifact BUILD-59da3204a44afd1b-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -26,5 +26,5 @@ Pasted images and picked documents are copied to the chat's own folder under ~/.
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-2284d9b47fc9c35e-S001.json` — **insrc-build** (2026-10-13T06:09:34.817Z)
+- `.insrc/artifacts/BUILD-2284d9b47fc9c35e-s1.json` — **insrc-build** (2026-10-13T06:09:34.817Z)
 - `docs/standalone/codex-chat-turns-hang-because-cli-E202610122284d9b4/S001/BUILD.md` — **insrc-build** (2026-10-13T06:09:34.817Z)

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f0158e70-2376-4d1c-91bb-d5a6a5038bb3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:44.831Z",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7405471c72bd3e88",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Port the mocks' stylesheet into BOARD_STYLE",
+      "parent": {
+        "entityId": "STORY-7405471c72bd3e88-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7405471c72bd3e88-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "811ea866bb34dcdf89a07ba6607abcd4447dc32adad22c38595a82566297efb2",
+        "at": "2026-10-22T12:43:44.831Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:44.832Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Port the mocks' stylesheet into BOARD_STYLE",
+    "summary": "Replace BOARD_STYLE with the mocks' product rules (.appbar to .center, without the gallery chrome) mapped to --vscode-* colours, plus the board's page rules (body min-width 320px, a div.page wrapper as the inline-size container, density custom properties, data-tone pill tones, .stage-pill, the footer). Replace the three hiding rules: list-style:none on the summary, '.seg a' retargeted to '.seg button' with first/last child radii instead of overflow:hidden, and no wordmark hiding rule.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "BOARD_STYLE carries the mocks' selectors (.acc, .cards, .row, .issue-row, .seg, .toggle, .search, .count-line, .pill, .stage-pill, .head, .subtabs, .cols, .label, .chain, .warnbox, .item, .between, table.records, .panel) and the 760/480 container rules.",
+      "No colour other than var(--vscode-*) or transparent; no display:none, visibility:hidden, clip, overflow:hidden, height:0 or text-overflow; no '.seg a' selector.",
+      "The minimums hold: body 320px, cards minmax(min(240px,100%),1fr), rows minmax(220px,1fr), cols minmax(340px,1.45fr) minmax(280px,1fr), records 620px in .table-wrap."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: BOARD_STYLE carries the mocks' product rules with theme colours and no hiding rule"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the narrow layout applies the mocks' container rules to the body"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

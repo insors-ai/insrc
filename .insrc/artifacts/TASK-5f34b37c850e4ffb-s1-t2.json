@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-57558b5f-cb74-4cf8-8197-03e6314859f9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.703Z",
+    "epicCreatedAt": "2026-09-25T08:09:03.338Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f34b37c850e4ffb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the boot hook into the daemon boot sequence in index.ts",
+      "parent": {
+        "entityId": "STORY-5f34b37c850e4ffb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f34b37c850e4ffb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f34b37c850e4ffb-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ef97e57fc869d7d7399d5b7049f6fd451964309ad6146deb89be4d87646569e",
+        "at": "2026-10-22T12:43:36.706Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.707Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the boot hook into the daemon boot sequence in index.ts",
+    "summary": "Extend the src/daemon/index.ts:16 import from './steering-inject.js' with runBootSteeringRefresh, and add an awaited-but-guarded call to it immediately AFTER the config-reconcile block (locate by content: the reconcileConfigFile() call at ~:204 and its defensive catch ending ~:241). Log the per-file report summary like the reconcile does. Guard so a fault cannot abort boot.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "src/daemon/index.ts imports runBootSteeringRefresh from './steering-inject.js'",
+      "runBootSteeringRefresh is called in the boot sequence AFTER the reconcileConfigFile block, guarded so it cannot abort boot",
+      "The call logs a concise per-file refresh summary (refreshed/skipped counts) mirroring the reconcile log",
+      "tsc --noEmit is clean; the daemon boot path still compiles"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "index.ts imports and calls runBootSteeringRefresh AFTER the reconcile block (source-scan)"
+      },
+      {
+        "level": "integration",
+        "name": "the boot-hook call is guarded best-effort so a fault cannot abort daemon boot (source-scan)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

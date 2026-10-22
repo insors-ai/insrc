@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ede5052-d96f-4cdd-a2fe-b34df0808f81",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:23.203Z",
+    "epicCreatedAt": "2026-09-26T18:18:44.131Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b846171f48d26a25",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extend vscode.d.ts stub with the WebviewPanelSerializer API",
+      "parent": {
+        "entityId": "STORY-b846171f48d26a25-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b846171f48d26a25-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6274264788949ea77c908721b90cc5d1afefe86d88f542991bf895d1cbfa07b7",
+        "at": "2026-10-22T12:44:23.203Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:23.204Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extend vscode.d.ts stub with the WebviewPanelSerializer API",
+    "summary": "Add to src/vscode.d.ts: `interface WebviewPanelSerializer { deserializeWebviewPanel(panel: WebviewPanel, state: unknown): Thenable<void> | void }` and `window.registerWebviewPanelSerializer(viewType: string, serializer: WebviewPanelSerializer): Disposable`; ensure the Webview interface's `html` is a settable field (already used by the createPanel adapter). Type-only, no runtime effect.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "src/vscode.d.ts declares registerWebviewPanelSerializer + WebviewPanelSerializer + a settable Webview.html; tsc --noEmit stays clean.",
+      "The additions match the real VS Code API shape (viewType, serializer, Disposable return)."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "tsc --noEmit clean with the new WebviewPanelSerializer + registerWebviewPanelSerializer stub types."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

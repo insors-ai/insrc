@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-852a7f07-a6e7-42ed-a29c-dc4322480764",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.180Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the per-window queue worker",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "25f2813f3fe9b5a6fb6ee0471cf918857720d7f3bb3e85cc3a7fbcd2e133a8e2",
+        "at": "2026-10-22T12:43:37.181Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.181Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the per-window queue worker",
+    "summary": "New chat-queue-worker.ts: presence and lease heartbeats every 5 s, polling data_version and the store's own-write counter (500 ms active, 5 s idle), onChange, acknowledging this window's head, calling the runner with onSpawn recording the CLI, finish and release with a pending retry on failure, submit, liveSessionIds, and dispose releasing a lease whose CLI has exited.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The window whose message is at the front takes the lease, runs it, heartbeats while it runs, finishes and releases",
+      "Another window's message at the front is left alone",
+      "onChange fires after this window's own writes and after another window's commit",
+      "A finish that fails is retried before any new message is taken",
+      "dispose releases a lease whose CLI exited and leaves one whose CLI still runs"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

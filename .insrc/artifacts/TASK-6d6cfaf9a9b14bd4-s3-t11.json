@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-aefab752-48ec-49e7-8715-ff44367a1a27",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.439Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the terminal, error-branch and late-attach unit suite",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c383aa1c6b57a33fe21dbd1734f6664a10037a4d46db5ee6e6d027d038750849",
+        "at": "2026-10-22T12:43:43.439Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.440Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the terminal, error-branch and late-attach unit suite",
+    "summary": "Extend the t10 file with the suite proving t9's terminal semantics, reusing the t10 fixture harness rather than rebuilding it. Cover: onComplete fires exactly once on the terminal signal; a duplicate terminal frame does not re-fire it; post-terminal stage/token/terminal frames invoke nothing and mutate neither currentStage nor tokensTotal; the 'error'-stream branch sets done true without firing onComplete, matching the t1-decided branch shape; snapshot reads stay valid and done stays true after every terminal path; late registration after detach returns void, never throws, and the handler is never invoked. If t2 identified a usable transport close signal, also cover abnormal close while not done (detach, done true, no onComplete) with the fake client; otherwise record that subject as deferred with the t2 finding as the reason rather than silently omitting it.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Tests assert the ac2 set: onComplete fires exactly once, duplicate terminal does not re-fire, post-terminal frames mutate nothing and invoke nothing, error termination sets done without onComplete, late attach is inert.",
+      "The error-branch assertions match the t1-decided branch shape rather than assuming silent detach.",
+      "Snapshot reads after each terminal path return done true and remain readable.",
+      "The abnormal-close subject is either covered with the fake client or explicitly recorded as deferred with the t2 finding as the reason.",
+      "The suite reuses the t10 fixture harness — the frame-builder and fake client are not duplicated.",
+      "The suite passes under `npx tsx --test` alongside t10's."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "onComplete fires exactly once on the terminal done-derived frame, then the reader detaches"
+      },
+      {
+        "level": "unit",
+        "name": "a duplicate terminal frame does not re-fire onComplete"
+      },
+      {
+        "level": "unit",
+        "name": "post-terminal stage/token/duplicate-done frames invoke no handler and mutate neither currentStage nor tokensTotal"
+      },
+      {
+        "level": "unit",
+        "name": "an 'error'-stream frame detaches and sets done true WITHOUT firing onComplete, matching the t1-decided branch shape"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot.done is true after every terminal path, remains true, and the snapshot stays readable"
+      },
+      {
+        "level": "unit",
+        "name": "late attach after the terminal signal returns void, never throws, and the handler is never invoked"
+      },
+      {
+        "level": "unit",
+        "name": "abnormal transport close while not done detaches with done true and no onComplete, via the t2 fake-client close signal (or recorded deferred)"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

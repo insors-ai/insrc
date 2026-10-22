@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ea6d3102-981e-468c-a0dc-dc397c864b4e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.759Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Tests: debug renderer/controller + log-tail + orphan-kill + host lifecycle/action + extension consent-kill + source-scans",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bc9052825c2a974b199856220917041bad03a25186b9ce0b4c35cff423dc9d99",
+        "at": "2026-10-22T12:43:30.759Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.760Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: debug renderer/controller + log-tail + orphan-kill + host lifecycle/action + extension consent-kill + source-scans",
+    "summary": "Add vscode-plugin/src/panels/__tests__/{debug-renderer,log-tail,orphan-kill}.test.ts + extend webview-host.test.ts (+ an extension onDetailAction test). Aggregates the per-task suites above; adds the cross-cutting source-scans (3 new files no vscode/no cloud; log-tail not importing src/cli debug.ts) and the full-sweep smoke. node:test (tsx --test) over injected fakes — no VS Code host, no live daemon, fake watch/kill/clock.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "all three seams + the debug renderer/controller + the host lifecycle/action + the extension consent-kill orchestration are covered (ac1/ac2/ac3), incl. the no-kill-without-consent + managed-exclusion + one-ticker-live assertions",
+      "source-scans prove the 3 new files import no 'vscode'/no cloud, log-tail.ts does not import src/cli/services/debug.ts, and the sc9 amendment is additive (no member removed)",
+      "full node:test (tsx --test) sweep is green locally; tsc clean; bundle stays thin"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: debug-renderer.ts + log-tail.ts + orphan-kill.ts import no 'vscode' and use no cloud/HTTP (extension.ts stays the sole vscode importer)"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: log-tail.ts does NOT import the daemon-side src/cli/services/debug.ts (k5 bundle stays thin)"
+      },
+      {
+        "level": "smoke",
+        "name": "full node:test (tsx --test) sweep green + tsc clean + the k5 bundle allowlist (node:* + vscode only) still holds"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

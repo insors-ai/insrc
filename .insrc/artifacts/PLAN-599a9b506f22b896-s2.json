@@ -22,102 +22,57 @@
     "storyId": "s2",
     "lldRunId": "wf-1789535029092-mupr13",
     "lldEffectiveHash": "196ad617cc5c57e05ae4510a97285972ebb19d3ed29b7e1b5e93a92b161bd920",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "storage.ts defines exactly 9 *ArtifactPaths helpers to widen (stub/define/spec/hld/lld/plan/build/codeReview/extend).",
-          "evidence": "storage.ts:201-345 defines exactly 9 *ArtifactPaths helpers (stub/define/spec/hld/lld/plan/build/codeReview/extend) — matches t2.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t2",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "storage.ts defines exactly 6 *MdRel builders (defineMdRel/hldMdRel/lldMdRel/planMdRel/buildMdRel/specMdRel) plus planFilenamePrefix + buildFilenamePrefix (md-side, retired in t5).",
-          "evidence": "storage.ts:365-370 defines the 6 *MdRel builders (define/hld/lld/plan/build/spec); planFilenamePrefix:292 + buildFilenamePrefix:317 present (md-side, retired in t5); amendment/lldFilenamePrefix retained for the JSON store.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t3",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly 14 non-test modules call a *ArtifactPaths helper and must be re-threaded.",
-          "evidence": "grep *ArtifactPaths( over src/ excl tests + storage.ts yields exactly 14 distinct modules, matching t3's list one-for-one.",
-          "action": "None — count exact.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "gates.ts holds the docs-md finders to re-point: readdirSync :133/:593, startsWith('BUILD-') :650, DOCS_ARTIFACT_DIRS sweeps :789/:810.",
-          "evidence": "gates.ts confirmed: readdirSync :133/:593, basename(jsonPath).startsWith('BUILD-') :650, [...DOCS_ARTIFACT_DIRS,STUB_DIR] :789, DOCS_ARTIFACT_DIRS :810 — every t4 line cite resolves.",
-          "action": "None — citations exact.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The two cli sites the plan says NOT to re-point are correctly out of scope: cli/services/workflow.ts:122 scans ARTIFACTS_DIR (JSON store) and cli/services/debug.ts:481 lists log segments.",
-          "evidence": "cli/services/workflow.ts:122 has its only readdirSync over join(repoPath, ARTIFACTS_DIR) (listEpics); cli/services/debug.ts:481 has its only readdirSync over rotated *.log segments. Both correctly flagged out-of-scope (the cl7 correction), so the plan's scope guard is sound.",
-          "action": "None — the not-re-pointed scope is correct.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p6",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "storage.ts declares DOCS_ARTIFACT_DIRS (the 6 flat consts) to delete while keeping STUB_DIR + ARTIFACTS_DIR + the JSON-store-only amendment/lld FilenamePrefix helpers.",
-          "evidence": "storage.ts:69 declares DOCS_ARTIFACT_DIRS = [DEFINES,DESIGNS,PLANS,BUILDS,SPECS,REVIEWS]; STUB_DIR:57 + ARTIFACTS_DIR:50 + amendmentFilenamePrefix:389 + lldFilenamePrefix:394 all present to retain — t5's delete/keep split is accurate.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p7",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "sc1 (deriveWorkItemIdentity) exists in id.ts as the dependency t1 builds on.",
-          "evidence": "id.ts:202 exports deriveWorkItemIdentity (sc1) — the t1 dependency is available.",
-          "action": "None — accurate.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "p8",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Task dependsOn is a linear acyclic chain t1←t2←t3←t4←t5←t6 with order 1..6 a valid topological order.",
-          "evidence": "Task dependsOn: t1[], t2[t1], t3[t2], t4[t3], t5[t4], t6[t5] — a linear acyclic chain; order 1..6 is a valid topological order (no Task precedes one it depends on).",
-          "action": "None — ordering valid.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-16T05:59:15.360Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-15T16:42:33.441Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-16T06:09:54.093Z",
-    "epicCreatedAt": "2026-09-15T16:42:33.441Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c10f55dd7dfada5270ec3c9b01e151207d469ac831c354449d9772d93b84372d",
+        "at": "2026-09-16T05:58:10.124Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-16T06:09:54.093Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-16T05:59:15.360Z",
+        "report": {
+          "entityId": "PLAN-599a9b506f22b896-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-599a9b506f22b896-s2-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

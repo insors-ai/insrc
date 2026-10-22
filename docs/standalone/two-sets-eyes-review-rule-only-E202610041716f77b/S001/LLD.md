@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-1716f77ba9ba017b-S001 -->
+<!-- insrc:artifact LLD-1716f77ba9ba017b-s1 -->
 
 # LLD: E202610041716f77b:S001
 
@@ -322,7 +322,7 @@ State the rule in both directions in the steering and tool descriptions and rely
 - **[[c11]]** `code` `src/cli/services/workflow.ts:158` — "const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);"
 - **[[c12]]** `code` `src/daemon/server.ts:201` — "this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });"
 - **[[c13]]** `code` `src/mcp/daemon-stream.ts:163` — "// Unknown stream kind — ignore (forward-compatible)."
-- **[[c14]]** `prior-artifact` `LLD-f2f08ccf89f8ab25-S001`
+- **[[c14]]** `prior-artifact` `LLD-f2f08ccf89f8ab25-s1`
 - **[[c15]]** `stakeholder` `user, 2026-10-05` — "1. yes. works as designed."
 - **[[c16]]** `code` `src/daemon/workflow-rpc.ts:346` — "const res = await reviewArtifactFile({"
 - **[[c17]]** `code` `src/mcp/code-review-step/handler.ts:312` — "if (g.grounding.symbols.length === 0) {"
@@ -353,7 +353,7 @@ State the rule in both directions in the steering and tool descriptions and rely
 - **[[c11]]** `code` `src/cli/services/workflow.ts:158` — "const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);"
 - **[[c12]]** `code` `src/daemon/server.ts:201` — "this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });"
 - **[[c13]]** `code` `src/mcp/daemon-stream.ts:163` — "// Unknown stream kind — ignore (forward-compatible)."
-- **[[c14]]** `prior-artifact` `LLD-f2f08ccf89f8ab25-S001`
+- **[[c14]]** `prior-artifact` `LLD-f2f08ccf89f8ab25-s1`
 - **[[c15]]** `stakeholder` `user, 2026-10-05` — "1. yes. works as designed."
 - **[[c16]]** `code` `src/daemon/workflow-rpc.ts:346` — "const res = await reviewArtifactFile({"
 - **[[c17]]** `code` `src/mcp/code-review-step/handler.ts:312` — "if (g.grounding.symbols.length === 0) {"

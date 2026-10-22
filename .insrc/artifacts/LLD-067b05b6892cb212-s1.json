@@ -26,204 +26,6 @@
     "standalone": true,
     "sizeClass": "feature",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design covers every stated need of the Story: the declaration is read from the tool-call input rather than the tool-result output, the output-parsing path and the end-of-turn guess are removed, a name that is not pending has defined handling, and the steering text is updated.",
-          "evidence": "The Story's recorded need (memory turn-declares-documents.md) reads: 'a structured declaration read from the turn's tool-call INPUT …; remove the output-parsing path and the end-of-turn guess; decide what happens when a named document is not pending; update the steering text (src/prompts/steering-block.md)'. The LLD maps these to ac1–ac4. Section 2.1 drops toolResult and end-of-turn opening, 2.2 removes presentedPathOf, section 4 reports a not-pending name in the chat and in notPending, and migration step 4 rewrites steering-block.md. Rejected alternative a3 (a daemon ledger) is not built. [files: vscode-plugin/src/chat/review-presenter.ts, src/prompts/steering-block.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today the presenter JSON-parses each tool result for a top-level pendingApproval.artifactPath, and at the end of a turn it opens whatever became pending since the turn began.",
-          "evidence": "review-presenter.ts:55-68: presentedPathOf calls JSON.parse(output) and reads parsed['pendingApproval']['artifactPath']. Lines 137-147: end() opens every doc for which `!state.before.has(doc.id)`. A non-JSON preview makes JSON.parse throw, and the function then returns undefined. [files: vscode-plugin/src/chat/review-presenter.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The Codex mapper handles only command_execution and tool_call items on item.completed, so an mcp_tool_call item falls through unmapped; the tool-call event carries no input.",
-          "evidence": "cli-adapter.ts:752 has `if (itemType === 'command_execution' || itemType === 'tool_call')`. Any other item type reaches `emitAssistantText(turnId, text, state)` with an empty text (lines 779-781). The tool-call variant in stream-events.ts:33-49 has only tool, mcp, command and callId. The Codex branch never sets mcp. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/stream-events.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The chat host feeds the presenter from two paths: the followed live turn and the hosted run.",
-          "evidence": "chat-panel.ts:838-841: followLiveTurn calls beginPresented() on its first event, then presentResult(shown, ev). chat-panel.ts:1508 and 1551: runTurn calls `const shown = beginPresented()`, and the sink's onEvent calls presentResult(shown, ev). presentResult (line 813-820) currently passes only non-error tool-result events. [files: vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "No workflow.pending wrapper exists in daemon-stream.ts, so a new one is needed. The MCP-side handler pattern (resolve the repo, then call a unary IPC) already exists and can be followed.",
-          "evidence": "daemon-stream.ts exports runWorkflowStream, startRun, pollRun, resolveRepoForCwd, approveWorkflow, abortRun, fetchCodeReview*, docgen*, guide* and review streams, but nothing for workflow.pending. server.ts:1099-1126 handleWorkflowApprove calls resolveRepoPath(args.repo) and then approveWorkflow(..., deps), which is the same shape the design proposes. [files: src/mcp/daemon-stream.ts, src/mcp/server.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The chat's pending lookup in docs-review-client.ts is reused as it is and already drops records with no document file.",
-          "evidence": "docs-review-client.ts:133-140: pendingDocuments() calls 'workflow.pending' and returns `res.artifacts.filter((a) => typeof a.mdPath === 'string' && a.mdPath !== '')`. extension.ts:580-581 wires it into createReviewPresenter. [files: vscode-plugin/src/chat/docs-review-client.ts, vscode-plugin/src/extension.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.3",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The real Codex capture pins the shape: mcp_tool_call with a bare tool name and an arguments object, emitted on both item.started and item.completed, with the completed item status failed.",
-          "evidence": "codex-mcp-tool-call.jsonl lines 4-5: {\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"mcp_tool_call\",\"server\":\"stub\",\"tool\":\"insrc_present\",\"arguments\":{\"documents\":[...]},...\"status\":\"in_progress\"}}, then item.completed with the same arguments and \"status\":\"failed\" (error 'MCP tool call requires approval, but approval policy is never'). The item type has no 'approval' in it, so the approval branch at cli-adapter.ts:730 does not take it. [files: vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl, vscode-plugin/src/chat/cli-adapter.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The golden tool-surface fixture holds twelve tools compared index by index after a name sort, so insrc_present belongs between insrc_guide and insrc_review_step, and the count and the test title change to thirteen.",
-          "evidence": "forward-step.test.ts:176-189 has the title 'the twelve tools …', `assert.equal(golden.length, 12)`, the surface sorted by localeCompare, and a per-index JSON compare. In tool-surface.golden.json, insrc_guide (line 426) is followed directly by insrc_review_step (line 441). [files: src/mcp/__tests__/forward-step.test.ts, src/mcp/__tests__/fixtures/tool-surface.golden.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "schema-registry.test.ts pins EXPECTED_TOOLS and PHASELESS_TOOLS, and asserts that the steering skeleton catalog names every tool, so the new tool must be added to both lists and to the catalog.",
-          "evidence": "schema-registry.test.ts:25 defines EXPECTED_TOOLS and line 54 defines PHASELESS_TOOLS. Line 58 asserts `[...schemaRegistry.keys()].sort()` equals EXPECTED_TOOLS. Line 134 asserts `skeleton.includes(tool)` for every expected tool, with the message 'the skeleton catalog should still name …'. [files: src/mcp/__tests__/schema-registry.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "steering-template.md only points at steering-block.md, so the approval text changes in steering-block.md, where the guide sections also live.",
-          "evidence": "steering-template.md:12 says 'The canonical block content lives in src/prompts/steering-block.md'. It contains no approval procedure. schema-registry.test.ts:110-120 shows readWorkflowGuide reads its per-workflow guide sections from that same steering asset. [files: src/mcp/steering-template.md, src/prompts/steering-block.md]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The new present field is live-only. A tool-call event persists only as a marker row, so stored transcripts and old sessions are unchanged.",
-          "evidence": "chat-panel.ts:1700-1733 appendEvent: a tool-call event is written only as `{ role: 'marker', text: marker.label, cssClass: marker.cssClass, at }` through markerFor. No event field other than the label is stored. The existing callId field is documented the same way ('Live-only: never persisted into the transcript', stream-events.ts:44-47). [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/stream-events.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An artifact id must be matched without regard to the case of its story part, because the daemon lists both -s1 and -S001 forms.",
-          "evidence": "The working tree has .insrc/artifacts/LLD-067b05b6892cb212-s1.json and LLD-370be5a6c8eee9c3-S001.json, so both casings exist on disk. [files: .insrc/artifacts/LLD-067b05b6892cb212-s1.json, .insrc/artifacts/LLD-370be5a6c8eee9c3-S001.json]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A not-pending name and an unreadable pending list can be shown as a line through the chat's existing information-line output.",
-          "evidence": "chat-panel.ts:710 defines `const postInfo = (turnId: string, text: string): void`, which is used for live-only notes (lines 741, 2095, 2109, 2160). The presenter already catches read and open failures and logs them without throwing (review-presenter.ts:81-105), which matches the 'swallowed' error contract. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/review-presenter.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "A declared repo-relative path resolves to the same pending document as an artifact id.",
-          "evidence": "The design states this as an edge case and has a unit test for it ('a declared artifact id and a declared path each open the matching pending document once'). The current samePath helper (review-presenter.ts:71-72) checks `presented.endsWith('/' + listed)`, where listed is the absolute mdPath, so it would not match a relative declared path. The rewrite must reverse that check (absolute listed path ends with '/' + declared path). The design leaves the matching rule to the implementation, and the named test covers it. The builder should note that the existing helper cannot be reused unchanged. [files: vscode-plugin/src/chat/review-presenter.ts]",
-          "action": "At build time, write the path matcher so that a repo-relative declaration matches the tail of the absolute mdPath; do not reuse samePath as it is.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion ac1–ac4 maps to named tests. The suites the design rewrites (the presenter and chat-panel tests that pin toolResult and the end-of-turn open) exist and use node:test through tsx.",
-          "evidence": "Section 5's acceptance mapping lists proving tests for ac1, ac2, ac3 and ac4. The live behaviour (VS Code and Codex) is marked as live tests. chat-panel.ts:813-828 is the toolResult/end path those tests pin. The MCP-side tests (forward-step.test.ts, schema-registry.test.ts) are node:test files, as stated. [files: src/mcp/__tests__/forward-step.test.ts, src/mcp/__tests__/schema-registry.test.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 15,
-        "unverified": 0
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-15T10:09:48.402Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-15T10:12:22.774Z",
     "rangeBase": "8f3e094f7f50d0b16908a82af1df5836d5abfebe",
     "questionResolutions": {
       "qd09e2042": {
@@ -261,6 +63,57 @@
         "rationale": "User chose option 1.",
         "resolvedAt": "2026-10-15T10:33:49.957Z"
       }
+    },
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cc35f8a666b0442474cdbd228ea871632eebd6e8c181fb52c16e2a112cc5a61b",
+        "at": "2026-10-15T10:06:05.580Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T10:12:22.774Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 15
+        },
+        "at": "2026-10-15T10:09:48.402Z",
+        "report": {
+          "entityId": "LLD-067b05b6892cb212-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-067b05b6892cb212-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -752,21 +605,6 @@
       "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
       "The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.",
       "The Codex shape is verified against codex-cli 0.162.1 only; a newer Codex that changes the item type, the tool naming or the arguments shape would open nothing until the mapper and the pinned fixture are updated."
-    ],
-    "feedback": [
-      {
-        "id": "fd46e1ea",
-        "author": "Subho Ghosh",
-        "timestamp": "2026-10-15T10:36:55.030Z",
-        "target": {
-          "file": "docs/standalone/declare-documents-turn-presents-instead-parsing-E20261015067b05b6/S001/LLD.md",
-          "version": "1e29e2c4c3fcb69c"
-        },
-        "comment": "approved",
-        "kind": "comment",
-        "decision": "feedback",
-        "batchId": "acf58f88"
-      }
     ]
   },
   "citations": [

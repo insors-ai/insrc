@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b6cd4d0b-9625-44b3-a209-3479fe9306ec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:35.435Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Catch a failing read where requests and jobs are served, and probe on the periodic check",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f66458f54c63bf6109efa205ec15af740d594917f1fd0ae3d4db357d568152a9",
+        "at": "2026-10-22T12:44:35.435Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:35.436Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Catch a failing read where requests and jobs are served, and probe on the periodic check",
+    "summary": "At the three catch sites of the request server and at the queue's job runner, read the error's code before it is reduced to a message, record locks-lost for -30775 and answer with the named error. Make the daemon's periodic reader check also do the probe read and record a failure.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A handler that throws an error with code -30775 leaves the record locks-lost and the caller receives the named error, at each of the three server sites and in the queue runner",
+      "With the locks removed and no request or write made, the periodic check records locks-lost at its next run (interval shortened for the test)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner"
+      },
+      {
+        "level": "integration",
+        "name": "detection through the real wrappers: a read through the dispatcher records at once"
+      },
+      {
+        "level": "integration",
+        "name": "periodic check records locks-lost when no request or write has met the failure"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

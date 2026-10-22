@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-970a64ef-3106-4cc7-a92a-d83e22bec0db",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.224Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify story existence inside buildRef, only when a storyId is supplied",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-792f9324fc43d95c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cb6b52f9b6ed9e7cc2dce95f48adf9090fa99c5841c591025f73991c3899c898",
+        "at": "2026-10-22T12:43:49.224Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.224Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify story existence inside buildRef, only when a storyId is supplied",
+    "summary": "The dummy-ref fix, applying to EVERY entry point. buildRef returns a story- or task-level reference only when that story exists — either a story-scoped artifact resolves for (epic, ordinal) via the existing storyArtifactPath, or the epic's definition artifact declares it (a DEF via body.stories, an ISSUE as exactly one story at ordinal 1). Applied ONLY when storyId is supplied, so epic-level calls stay untouched and resolveByIssue's epic sub-case keeps working. NOT extended to tasks: `task` stays absent for an unknown id. Kept separate from t4 because this task alone closes the dummy-ref defect on all paths and t4 alone closes the reported label defect — either can be reverted without losing the other.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "buildRef returns null when a supplied storyId names a story with neither a story-scoped artifact nor a declaration on the definition artifact",
+      "t1's (b), (c) and (d) turn GREEN — the nonexistent story, the scoped-label narrowing, the hierarchical-id narrowing",
+      "An EPIC-level call (no storyId) behaves exactly as before — asserted, not assumed",
+      "A story declared in a DEF's body.stories with no LLD and no PLAN still resolves — the define-to-design window",
+      "An ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2",
+      "s1 / S1 / S001 behave identically, via the existing storyIdToOrdinal rather than a reimplementation",
+      "Task-level behaviour unchanged: a story that exists with an unknown taskId still resolves with `task` absent",
+      "CRITIQUE APPLIED — error path: an unparseable story label REFUSES and does not throw, exercised through buildRef, since the module never throws and no external consumer has a handler",
+      "CRITIQUE APPLIED — error path: an epic whose DEF body is unreadable but whose LLD for the story is intact STILL RESOLVES — degrade per-clause, never per-call",
+      "MUTATION PROOF, run and recorded: removing the verification turns t1's (b), (c) and (d) red again",
+      "t1's (a) and (e) are still RED — this task does not touch the label count rule"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a storyId with an LLD resolves; with a PLAN resolves; with neither artifact nor declaration refuses"
+      },
+      {
+        "level": "unit",
+        "name": "the declaration clause alone suffices — a story declared in a DEF's body.stories with no LLD and no PLAN resolves"
+      },
+      {
+        "level": "unit",
+        "name": "an ISSUE-anchored epic yields a reference for ordinal 1 and REFUSES for ordinal 2 — the boundary of the one convention"
+      },
+      {
+        "level": "unit",
+        "name": "s1 / S1 / S001 behave identically, inherited from storyIdToOrdinal"
+      },
+      {
+        "level": "unit",
+        "name": "an EPIC-level call (no storyId) is entirely unverified and unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "task-level non-extension: a story that exists with a taskId absent from the PLAN still resolves with `task` undefined"
+      },
+      {
+        "level": "unit",
+        "name": "never-throws through buildRef: an unparseable label and a malformed definition artifact each yield a refusal"
+      },
+      {
+        "level": "unit",
+        "name": "per-clause degradation: a corrupt DEF does not disqualify its epic when an LLD for the story is intact"
+      },
+      {
+        "level": "integration",
+        "name": "the define-to-design window resolves — a DEF-declared story with no LLD and no PLAN"
+      },
+      {
+        "level": "integration",
+        "name": "a just-approved bugfix with no LLD yet — `S001` resolves against its ISSUE epic"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION PROOF: removing the verification turns t1's (b), (c) and (d) red again"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

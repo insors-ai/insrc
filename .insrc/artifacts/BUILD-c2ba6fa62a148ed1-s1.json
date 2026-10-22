@@ -8,10 +8,36 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one",
-    "approvedAt": "2026-10-18T14:08:32.261Z",
-    "reviewOverride": {
-      "reason": "Stakeholder decision 2026-10-18 (option A). No code review is recorded: the daemon review of s1 could not run because its single prompt per dimension (1,247,701 characters) exceeds the codex CLI's 1,048,576-character input limit; filed as ISSUE-aef82b034d7209fa, after which the review is to be run as a record. Validate gates that fail literally, each a stakeholder decision recorded on the s1 LLD: t8 the JSON.parse check is met by outcome (feedback 60830321; meta.targetFile decision 79b127bb); t11 scope (the search guard refuses unstored entities while a repository indexes, and the settle test seam; feedback 4b37ae56); t14 the gate cannot run Kotlin unit tests nor accept reported unit results (built and verified with Gradle); t17 the document-summary sweep's completion is not awaited (summaries restored by ISSUE-dced4385, 10,996 of 11,412 with the difference explained in S001/smoke.md; feedback 7d710d42). Each task's own validate gate read its code; the full sweeps and the live smoke (S001/smoke.md) passed.",
-      "at": "2026-10-18T14:08:32.261Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8d2dc63c465b2f4b85b893f5225ff7831eea869dd1f1a21fa50422a0c86a2169",
+        "at": "2026-10-16T13:00:16.421Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T14:08:32.261Z",
+        "override": {
+          "reason": "Stakeholder decision 2026-10-18 (option A). No code review is recorded: the daemon review of s1 could not run because its single prompt per dimension (1,247,701 characters) exceeds the codex CLI's 1,048,576-character input limit; filed as ISSUE-aef82b034d7209fa, after which the review is to be run as a record. Validate gates that fail literally, each a stakeholder decision recorded on the s1 LLD: t8 the JSON.parse check is met by outcome (feedback 60830321; meta.targetFile decision 79b127bb); t11 scope (the search guard refuses unstored entities while a repository indexes, and the settle test seam; feedback 4b37ae56); t14 the gate cannot run Kotlin unit tests nor accept reported unit results (built and verified with Gradle); t17 the document-summary sweep's completion is not awaited (summaries restored by ISSUE-dced4385, 10,996 of 11,412 with the difference explained in S001/smoke.md; feedback 7d710d42). Each task's own validate gate read its code; the full sweeps and the live smoke (S001/smoke.md) passed."
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -120,28 +146,28 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-0f0e4f45f698aeb6-S001.json"
+          "file": ".insrc/artifacts/BUILD-0f0e4f45f698aeb6-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-1102dc7125ad0c07-S001.json"
+          "file": ".insrc/artifacts/BUILD-1102dc7125ad0c07-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-487ad7a67474d321-S001.json"
+          "file": ".insrc/artifacts/BUILD-487ad7a67474d321-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-5437d6e54c9e7d48-S001.json"
+          "file": ".insrc/artifacts/BUILD-5437d6e54c9e7d48-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -155,126 +181,126 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-91640defac1b5816-S001.json"
+          "file": ".insrc/artifacts/BUILD-91640defac1b5816-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-ae2d83c6ab06c595-S001.json"
+          "file": ".insrc/artifacts/BUILD-ae2d83c6ab06c595-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-ae864466e7f1f4ea-S001.json"
+          "file": ".insrc/artifacts/BUILD-ae864466e7f1f4ea-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-b94cf2c9058fd82a-S001.json"
+          "file": ".insrc/artifacts/BUILD-b94cf2c9058fd82a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-bd1c6c9005ff6390-S001.json"
+          "file": ".insrc/artifacts/BUILD-bd1c6c9005ff6390-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-dced43851723554f-S001.json"
+          "file": ".insrc/artifacts/BUILD-dced43851723554f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/BUILD-e48e33ae6af03720-S001.json"
+          "file": ".insrc/artifacts/BUILD-e48e33ae6af03720-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-0f0e4f45f698aeb6-S001.json"
+          "file": ".insrc/artifacts/CR-0f0e4f45f698aeb6-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-1102dc7125ad0c07-S001.json"
+          "file": ".insrc/artifacts/CR-1102dc7125ad0c07-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-487ad7a67474d321-S001.json"
+          "file": ".insrc/artifacts/CR-487ad7a67474d321-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-5437d6e54c9e7d48-S001.json"
+          "file": ".insrc/artifacts/CR-5437d6e54c9e7d48-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-91640defac1b5816-S001.json"
+          "file": ".insrc/artifacts/CR-91640defac1b5816-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-ae2d83c6ab06c595-S001.json"
+          "file": ".insrc/artifacts/CR-ae2d83c6ab06c595-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-ae864466e7f1f4ea-S001.json"
+          "file": ".insrc/artifacts/CR-ae864466e7f1f4ea-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-b94cf2c9058fd82a-S001.json"
+          "file": ".insrc/artifacts/CR-b94cf2c9058fd82a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-bd1c6c9005ff6390-S001.json"
+          "file": ".insrc/artifacts/CR-bd1c6c9005ff6390-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-dced43851723554f-S001.json"
+          "file": ".insrc/artifacts/CR-dced43851723554f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/CR-e48e33ae6af03720-S001.json"
+          "file": ".insrc/artifacts/CR-e48e33ae6af03720-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -414,21 +440,21 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json"
+          "file": ".insrc/artifacts/LLD-0f0e4f45f698aeb6-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-1102dc7125ad0c07-S001.json"
+          "file": ".insrc/artifacts/LLD-1102dc7125ad0c07-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-5437d6e54c9e7d48-S001.json"
+          "file": ".insrc/artifacts/LLD-5437d6e54c9e7d48-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -442,14 +468,14 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json"
+          "file": ".insrc/artifacts/LLD-b94cf2c9058fd82a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-bd1c6c9005ff6390-S001.json"
+          "file": ".insrc/artifacts/LLD-bd1c6c9005ff6390-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -463,21 +489,21 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-dced43851723554f-S001.json"
+          "file": ".insrc/artifacts/LLD-dced43851723554f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-1102dc7125ad0c07-S001.json"
+          "file": ".insrc/artifacts/PLAN-1102dc7125ad0c07-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-5437d6e54c9e7d48-S001.json"
+          "file": ".insrc/artifacts/PLAN-5437d6e54c9e7d48-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -491,49 +517,49 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json"
+          "file": ".insrc/artifacts/PLAN-b94cf2c9058fd82a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-bd1c6c9005ff6390-S001.json"
+          "file": ".insrc/artifacts/PLAN-bd1c6c9005ff6390-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-dced43851723554f-S001.json"
+          "file": ".insrc/artifacts/PLAN-dced43851723554f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-0f0e4f45f698aeb6-S001.json"
+          "file": ".insrc/artifacts/TESTS-0f0e4f45f698aeb6-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-1102dc7125ad0c07-S001.json"
+          "file": ".insrc/artifacts/TESTS-1102dc7125ad0c07-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-487ad7a67474d321-S001.json"
+          "file": ".insrc/artifacts/TESTS-487ad7a67474d321-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-5437d6e54c9e7d48-S001.json"
+          "file": ".insrc/artifacts/TESTS-5437d6e54c9e7d48-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
@@ -547,49 +573,49 @@
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-91640defac1b5816-S001.json"
+          "file": ".insrc/artifacts/TESTS-91640defac1b5816-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-ae2d83c6ab06c595-S001.json"
+          "file": ".insrc/artifacts/TESTS-ae2d83c6ab06c595-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-ae864466e7f1f4ea-S001.json"
+          "file": ".insrc/artifacts/TESTS-ae864466e7f1f4ea-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-b94cf2c9058fd82a-S001.json"
+          "file": ".insrc/artifacts/TESTS-b94cf2c9058fd82a-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-bd1c6c9005ff6390-S001.json"
+          "file": ".insrc/artifacts/TESTS-bd1c6c9005ff6390-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-dced43851723554f-S001.json"
+          "file": ".insrc/artifacts/TESTS-dced43851723554f-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/TESTS-e48e33ae6af03720-S001.json"
+          "file": ".insrc/artifacts/TESTS-e48e33ae6af03720-s1.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-10-18T14:08:30.635Z"

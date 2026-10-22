@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ca97bc47-2cd6-4b20-a46d-86ec35f15cc1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:32.250Z",
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5437d6e54c9e7d48",
+    "storyId": "s1",
+    "envelope": {
+      "description": "withWriteTxn runs its synchronous callback as an lmdb child transaction",
+      "parent": {
+        "entityId": "STORY-5437d6e54c9e7d48-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5437d6e54c9e7d48-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d17c00b9cf07aa522cdd4d4b6250d92d5dd3700ba239a7a3bf625bb9045853fd",
+        "at": "2026-10-22T12:43:32.250Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:32.251Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "withWriteTxn runs its synchronous callback as an lmdb child transaction",
+    "summary": "In src/db/graph/store.ts:882-910, withWriteTxn calls `store.root.childTransaction(() => fn(store))` in place of `store.root.transaction(...)` at :886, wrapped in Promise.resolve (a nested child returns a plain value); its callback type no longer allows a Promise result, and a thenable result is refused by throwing 'withWriteTxn callbacks must be synchronous' inside the child (aborting it). The race against the probe timer, confirmLockLoss and recordLocksLost stay as they are. src/db/graph/__tests__/store-health.test.ts: the locks-lost test (:84-107) also counts childTransaction; the slow-healthy-write test (:145-165) uses a synchronous callback with store.root.childTransaction wrapped to resolve after a delay past the bound.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen",
+      "Of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept",
+      "An async callback is refused with 'withWriteTxn callbacks must be synchronous' and keeps nothing; the type rejects it (@ts-expect-error)",
+      "store-health.test.ts passes with childTransaction counted and the slow write probed at each bound",
+      "All existing db and graph suites pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/db/graph/__tests__/write-txn-atomic.test.ts: a throwing callback leaves nothing (in-process and after a reopen); a throwing and a succeeding caller queued together; an async callback refused and keeping nothing"
+      },
+      {
+        "level": "unit",
+        "name": "src/db/graph/__tests__/store-health.test.ts: no library transaction (childTransaction counted) after locks-lost; the slow healthy write probed at each bound with a synchronous callback"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

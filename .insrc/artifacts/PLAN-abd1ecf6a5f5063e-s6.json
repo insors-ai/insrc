@@ -22,82 +22,57 @@
     "storyId": "s6",
     "lldRunId": "wf-1785664607438-ogsjgd",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "tasks",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The plan enumerates exactly four tasks t1/t2/t3/t4 with the linear DAG t1 -> t2 -> t3 -> t4.",
-          "evidence": "The plan Tasks table enumerates t1/t2/t3/t4 with DAG t1<-t2<-t3<-t4. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The artifact record+renderer template t1 mirrors (define.ts importing artifactIdMarker + WorkflowArtifact) exists, and no artifacts/spec.ts exists yet.",
-          "evidence": "src/workflow/artifacts/define.ts:20/:23 import artifactIdMarker + WorkflowArtifact (the record+renderer template); no artifacts/spec.ts exists in src yet — exactly what t1 creates. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "storage.ts holds defineArtifactId/defineArtifactPaths/defineMdRel + ARTIFACTS_DIR + writeAtomic (the peers t2 mirrors); no specArtifactId/specArtifactPaths/SPECS_DIR exists yet.",
-          "evidence": "src/workflow/storage.ts:147 defineArtifactId, :194 defineArtifactPaths, :50 ARTIFACTS_DIR present; no specArtifactId/SPECS_DIR in src yet — the additive peers t2 adds. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "orchestrator.ts prepareSynthesize + finalizeArtifact throw 'not yet supported' for brainstorm (the arms t3 replaces), and finalizeDefine is the pattern; category at :137 already routes brainstorm in prepareDecompose.",
-          "evidence": "src/workflow/orchestrator.ts routes brainstorm (case :137) and defines finalizeDefine (:649); prepareSynthesize/finalizeArtifact throw 'not yet supported' for brainstorm (the arms t3 replaces, mirroring finalizeDefine). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "BrainstormCategory (reused for SpecArtifactBody.category) is defined in src/shared/brainstorm-classes.ts.",
-          "evidence": "src/shared/brainstorm-classes.ts:12 `export type BrainstormCategory` — the union reused for SpecArtifactBody.category. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The workflow artifact test home exists (src/workflow/__tests__/ with define-artifact.test.ts) where t4's spec-artifact.test.ts lands.",
-          "evidence": "src/workflow/__tests__/define-artifact.test.ts imports from ../artifacts/define.js — the artifact-test home t4's spec-artifact.test.ts joins. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-02T11:14:47.788Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-02T11:17:36.003Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "15a50c09ce92d3de15bc2889501eedb6d6e182cf36f64b3fd77f5f221e1aa7f6",
+        "at": "2026-08-02T11:13:47.746Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T11:17:36.003Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-02T11:14:47.788Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s6-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

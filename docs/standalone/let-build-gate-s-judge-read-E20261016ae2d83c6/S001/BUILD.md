@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-ae2d83c6ab06c595-S001 -->
+<!-- insrc:artifact BUILD-ae2d83c6ab06c595-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,10 +26,10 @@ Commit 687395c8: both judge prompts allow read-only commands (cat, rg, ls, git d
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-e48e33ae6af03720-S001.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
+- `.insrc/artifacts/BUILD-e48e33ae6af03720-s1.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
 - `.insrc/artifacts/ISSUE-ae2d83c6ab06c595.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
 - `.insrc/artifacts/TESTS-c2ba6fa62a148ed1-s1.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
-- `.insrc/artifacts/TESTS-e48e33ae6af03720-S001.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
+- `.insrc/artifacts/TESTS-e48e33ae6af03720-s1.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
 - `.insrc/build-start/e48e33ae6af03720-S001.json` — **insrc-build** (2026-10-16T19:01:40.987Z)
 - `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/TESTS.md` — **insrc-build** (2026-10-16T19:01:40.987Z)
 - `docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/ISSUE.md` — **insrc-build** (2026-10-16T19:01:40.987Z)

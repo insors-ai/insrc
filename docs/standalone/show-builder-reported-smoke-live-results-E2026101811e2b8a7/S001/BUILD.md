@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-11e2b8a74bdff8c8-S001 -->
+<!-- insrc:artifact BUILD-11e2b8a74bdff8c8-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -22,7 +22,7 @@ testRecordView lists reportedTests (latest per name, a fail winning a tie, malfo
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
-- `.insrc/artifacts/BUILD-b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
+- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-s1.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
+- `.insrc/artifacts/BUILD-b5a62f289cbcdaee-s1.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
 - `docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/S001/BUILD.md` — **insrc-build** (2026-10-18T17:02:40.350Z)
 - `docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md` — **insrc-build** (2026-10-18T17:02:40.350Z)

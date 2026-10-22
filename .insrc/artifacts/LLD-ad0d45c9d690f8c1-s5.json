@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1790009331473-c5to0q",
     "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-22T06:40:48.210Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-22T06:47:49.709Z",
     "questionResolutions": {
       "q8d382450": {
         "question": "The vscode:uninstall hook's actual EXECUTION depends on S006 adding emit + packaging the .vsix (v1 is noEmit today); s5 authors src/uninstall.ts + unwireAllHosts + declares scripts['vscode:uninstall'], all unit-tested now over a fake fs, and S006 completes ac3 end-to-end.",
@@ -45,6 +31,61 @@
         "choice": "Split: s5 authors + unit-tests, S006 closes ac3",
         "resolvedAt": "2026-09-22T06:48:46.952Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a81184a6fcab0e1131545cf7d217e3fe3302f0ebea699f725488a90ea9f16681",
+        "at": "2026-09-22T06:39:42.342Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T06:47:49.709Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-22T06:40:48.210Z",
+        "report": {
+          "entityId": "LLD-ad0d45c9d690f8c1-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ad0d45c9d690f8c1-s5-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

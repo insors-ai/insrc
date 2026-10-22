@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1789726188697-irhvw2",
     "hldEffectiveHash": "e08e0c0d9f7b0edafe2979944fb169368ad12f61bc842d0ebec3a3ec979632fa",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-18T11:54:46.216Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-18T11:55:47.294Z",
     "questionResolutions": {
       "q9399e594": {
         "question": "HLD amendment (pending approval): s1's bugfix route must return startStage:'issue', but the 'issue' WorkflowName literal is bundled into sc2 (owned by s2, Phase B) while s1 lands alone in Phase A. Proposed fix: move ONLY the bare 'issue' union-member literal into s1/Phase A (storyBoundary.reassignOwnership, additive/non-breaking); sc2 keeps all issue-stage machinery. Alternative: rollout.reorder so s2's union addition precedes s1. Decision needed before build.",
@@ -46,6 +32,61 @@
         "rationale": "User-approved (in-chat): apply the pending HLD amendment (storyBoundary.reassignOwnership) so s1/Phase A gains only the bare 'issue' WorkflowName literal (additive, non-breaking); sc2/s2 keeps all issue-stage machinery. Keeps Phase A self-contained.",
         "resolvedAt": "2026-09-18T11:56:27.736Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f4d91ac1bf2a2d715eaa8517b531696ecce3e268a011ff8579f0b8e5c29d955f",
+        "at": "2026-09-18T11:53:45.659Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-18T11:55:47.294Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-18T11:54:46.216Z",
+        "report": {
+          "entityId": "LLD-1703991c69967193-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1703991c69967193-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-df5c815a-6d7b-451c-b47b-caef4c526cfc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:42.964Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Declare the sc1 ProgressEvent contract in src/shared/types.ts",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cb856b78db8dcecbe9823dcad4a6ee088272f958e2be9c4bafd5dad38e214e22",
+        "at": "2026-10-22T12:43:42.964Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:42.965Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the sc1 ProgressEvent contract in src/shared/types.ts",
+    "summary": "First, discharge LLD migration step 1 for real: re-run the producer sweep untruncated over ALL of src/ (search: `send: (msg: IpcStreamMessage) => void` plus the looser `IpcStreamMessage` reference sweep, scoped to src/**, not the root slice), and record the resulting producer inventory in the task's PR description. The prior sweep returned four producers (analyze-rpc.ts:481, server.ts:19, tools/types.ts:56, todos-rpc.ts:1146) but was flagged truncated:true, so that count is NOT yet verified. Step 1's stop-and-widen clause is live: if the untruncated sweep surfaces a fifth in-scope producer, STOP and re-scope the plan before writing any type — ProgressOperation's closed union and the k1 uniformity claim both depend on the inventory.\n\nThen add the net-new type declarations adjacent to IpcStreamMessage (src/shared/types.ts:734), matching the sc1 interfaceSketch structurally: `ProgressOperation = 'workflow.run' | 'analyze.run'` (closed union), `StageProgressEvent` (kind:'stage', operation, stageId, stageLabel, index, total: number|null), `TokenProgressEvent` (kind:'token', operation, stageId: string|null, tokensDelta, tokensTotal), and `ProgressEvent` as the union. All fields `readonly` and non-optional within their variant, per exactOptionalPropertyTypes — the only permitted deviation from the sketch. PascalCase types per the unanimous local convention. Purely additive: nothing references them yet, IpcStreamKind at :732 gains no member (it already contains both 'delta' and 'progress'), and IpcStreamMessage is byte-for-byte unchanged (k2 held literally). Add a comment at the IpcStreamKind/IpcStreamMessage declarations recording the new documented-not-type-enforced payload pairing (stream==='progress' => StageProgressEvent, stream==='delta' from a ProgressOperation => TokenProgressEvent) and the deliberate exclusion of the non-operation producers from ProgressOperation, citing the completed untruncated sweep. No new file is created, so the src/daemon file-naming split verdict does not arise. No `seq` field — drop detection is the recorded cost of a1 over a3, revisitable additively.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "A recorded untruncated sweep over all of src/ (not the root slice) lists the complete IpcStreamMessage producer inventory, and its output is attached to the change; if it lists any in-scope producer beyond the four previously known, the plan is re-scoped before any type is written.",
+      "`npm run build` (tsc strict + exactOptionalPropertyTypes) passes with the four new declarations exported from src/shared/types.ts and no other file changed.",
+      "IpcStreamKind (src/shared/types.ts:732) and IpcStreamMessage (:734-738) are diff-clean — no member added, no field added or retyped.",
+      "A compile-only fixture assigns a StageProgressEvent and a TokenProgressEvent literal to ProgressEvent and exhaustively switches on `kind` with a `never` check on the default arm.",
+      "Every field on both variants is readonly and non-optional; no consumer must handle `| undefined` for stage or token fields.",
+      "The exclusion of todos-rpc.ts:1146 and tools/types.ts:56 from ProgressOperation is stated in a comment that cites the untruncated sweep as its evidence."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "progress-event-types: compile-only fixture assigns StageProgressEvent and TokenProgressEvent literals to ProgressEvent and exhaustively switches on `kind` with a never-check on the default arm"
+      },
+      {
+        "level": "unit",
+        "name": "progress-event-types: tsc under strict + exactOptionalPropertyTypes rejects a variant literal missing any field and rejects mutation of a readonly field, proving non-optional readonly shape"
+      },
+      {
+        "level": "unit",
+        "name": "progress-event-types: assigning an operation value outside the closed ProgressOperation union is a compile error"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

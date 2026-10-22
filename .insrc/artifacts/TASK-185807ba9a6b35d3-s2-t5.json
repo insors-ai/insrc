@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1fd09b4a-08ba-431e-b847-6e9c88a47e3f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.265Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire admitBuild into the build phase handler as the start-turn gate",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6da5d6c6e84a61190b753df2476c7404fb6453a8de7af0d20c2763f9dbf61b07",
+        "at": "2026-10-22T12:43:15.265Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.266Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire admitBuild into the build phase handler as the start-turn gate",
+    "summary": "Wire src/mcp/workflow-step/phases/build.ts (the s1-owned driving surface) to invoke admitBuild at the start turn and translate admitted:false into next:'refused', carrying the serializable BuildAdmissionRefusal in WorkflowStepOutputBuild.refusal — mirroring phases/plan.ts::handlePlan. admitted:true lets the stage proceed with no next:'refused'. Consumes s1's sc1 (registerBuildRunners) and sc2 (WorkflowStepInputBuild/OutputBuild + types.ts additions), which must already be landed — this task is ordered after them per storyDependsOn:[s1]. s2 adds no bespoke command, IPC method, or UI; the turn shape is s1's. The refusal payload must survive JSON serialization across the insrc_workflow_step turn boundary intact.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The build phase handler invokes admitBuild at the start turn and emits next:'refused' carrying BuildAdmissionRefusal in WorkflowStepOutputBuild.refusal when admitted is false",
+      "admitted:true lets the stage proceed with no next:'refused'",
+      "The refusal payload (including reason, message, and any staleness detail) survives JSON serialization across the insrc_workflow_step turn boundary intact",
+      "The handler mirrors phases/plan.ts::handlePlan and consumes s1's sc1/sc2 without adding a bespoke command, IPC method, or UI; no sibling stage's behaviour changes",
+      "Reverting only this handler wiring restores the pre-gate behaviour without touching any other stage"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build phase handler invokes admitBuild at the start turn and emits next:'refused' carrying the BuildAdmissionRefusal (plan-missing / plan-unapproved / plan-stale) in WorkflowStepOutputBuild.refusal when admitted is false"
+      },
+      {
+        "level": "integration",
+        "name": "build phase handler lets the stage proceed with no next:'refused' when admitBuild returns admitted:true"
+      },
+      {
+        "level": "integration",
+        "name": "WorkflowStepOutputBuild.refusal (reason, message, and inline staleness) survives JSON serialization across the insrc_workflow_step turn boundary intact"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

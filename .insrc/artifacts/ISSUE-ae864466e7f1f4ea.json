@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T16:44:16.451Z",
     "parentRef": {
       "slug": "resolve-calls-methods-class-defined-another"
+    },
+    "epicCreatedAt": "2026-10-17T16:43:29.367Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "51a368357377c0d5a00183dad26695634b6cbfbfb58d1c8aa469fcc7619c422d",
+        "at": "2026-10-17T16:43:29.367Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T16:44:16.451Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -55,7 +83,7 @@
     {
       "id": "c4",
       "kind": "prior-artifact",
-      "ref": ".insrc/artifacts/CR-b94cf2c9058fd82a-S001.json (round 1, 2026-10-17): empty testsReaching for IndexQueue and IndexerService methods"
+      "ref": ".insrc/artifacts/CR-b94cf2c9058fd82a-s1.json (round 1, 2026-10-17): empty testsReaching for IndexQueue and IndexerService methods"
     }
   ]
 }

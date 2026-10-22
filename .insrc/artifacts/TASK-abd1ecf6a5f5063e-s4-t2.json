@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f7ca20ae-46a6-433c-9ec5-a7cbe83add23",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:08.812Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add fork presentation to buildPrompt and the ruled-out-not-recorded finalize gate",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "defca956371a14435145ff74afcc5fda6bf5c7d1fca7a82342d665d63c25ccae",
+        "at": "2026-10-22T12:44:08.812Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:08.813Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add fork presentation to buildPrompt and the ruled-out-not-recorded finalize gate",
+    "summary": "In src/workflow/runners/brainstorm/index.ts, augment the elicit buildPrompt so that at a fork (>1 plausible scope) it presents the options WITH tradeoffs and asks the user to choose rather than silently picking, folds the chosen direction/ruled-out/reason into decisions[], records each ruled-out direction as a nonGoal, and leaves an unanswerable question in openItems. Extend finalizeElicit with an ADDITIVE check: on a confirmed:true payload, compute the set difference of every decisions[].ruledOut entry against nonGoals; if any is missing, return a retryable StepRunnerError code 'ruled-out-not-recorded' (leaving the run paused). The s3 'convergence-incomplete' check (confirmed:true requires empty openItems) is unchanged and both gates compose. Runner id, workflow, registration, and workflow/index.ts wiring stay byte-identical (sc2/sc3 boundary).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "buildPrompt text instructs presenting options with tradeoffs at a fork, not silently picking; folding chosen/ruledOut/reason into decisions; recording ruled-out as nonGoals; leaving unanswerable items in openItems",
+      "finalizeElicit returns retryable code 'ruled-out-not-recorded' when a confirmed:true payload has a decisions[].ruledOut direction absent from nonGoals",
+      "finalizeElicit still returns 'convergence-incomplete' for confirmed:true with non-empty openItems, and accepts a clean confirmed:true (openItems empty, all ruledOut recorded as nonGoals)",
+      "the runner id 'elicit', workflow 'brainstorm', registerBrainstormRunners, and the workflow/index.ts registration are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "finalize REJECTS a confirmed:true payload whose decisions[].ruledOut names a direction absent from nonGoals as a retryable 'ruled-out-not-recorded' error, leaving the run paused"
+      },
+      {
+        "level": "unit",
+        "name": "finalize ACCEPTS a confirmed:true payload where every ruledOut direction also appears in nonGoals (and openItems is empty)"
+      },
+      {
+        "level": "unit",
+        "name": "finalize still REJECTS confirmed:true with non-empty openItems ('convergence-incomplete') and a confirmed:false intermediate turn passes through"
+      },
+      {
+        "level": "unit",
+        "name": "buildPrompt embeds the fork rule (present options + tradeoffs, do not silently pick) and the decisions/nonGoals capture instructions"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-525ebba5-91d9-48f5-a663-d52e760d2528",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:57.101Z",
+    "epicCreatedAt": "2026-07-27T06:54:16.093Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5a6e60ccefd9be4",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Surface pruned in both reconcile call sites + MaintenanceResult",
+      "parent": {
+        "entityId": "STORY-f5a6e60ccefd9be4-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f5a6e60ccefd9be4-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f5a6e60ccefd9be4-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c5b6f07041804eefd0cf8aa5bc8ae2714861eebf07407bf9397efabf21f00842",
+        "at": "2026-10-22T12:44:57.104Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:57.105Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Surface pruned in both reconcile call sites + MaintenanceResult",
+    "summary": "Add readonly pruned:number to MaintenanceResult.configReconcile (maintenance.ts) + pin it in the compile-time contract fixture; extend summarizeReconcile to emit the pruned count + one onLog detail line per pruned path; extend the daemon-boot 'written' arm to log the pruned count. reconcile-io needs no logic change (write-once keys off result.changed).",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "MaintenanceResult.configReconcile has readonly pruned:number (optional field intact under exactOptionalPropertyTypes) and the contract fixture pins it",
+      "maintenance.update reports configReconcile.pruned + one onLog detail line per pruned path naming the dot-path",
+      "daemon boot logs the pruned count in the 'written' arm; reconcile-io still writes at most once"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "contract: MaintenanceResult.configReconcile compile-time fixture pins the new readonly pruned:number field (optional, exactOptionalPropertyTypes)"
+      },
+      {
+        "level": "integration",
+        "name": "integration: maintenance.update runUpdateReconcile reports configReconcile.pruned + one onLog detail line per pruned path (naming the dot-path); no-change emits an explicit no-change line"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

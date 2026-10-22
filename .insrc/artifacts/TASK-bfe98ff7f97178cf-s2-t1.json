@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-19e818b6-a386-4250-9956-bb30047dc0b5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:31.071Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Carry the functional record from the host onto the existing docs-content message",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c800e4347dd0daeae1fcaf066743c37817b4b0632fbb9825dbf0a8244e1fd216",
+        "at": "2026-10-22T12:44:31.071Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:31.073Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Carry the functional record from the host onto the existing docs-content message",
+    "summary": "Append one optional field, `functionalDefinition`, to the docs-content variant of `HostToWebview` in protocol.ts, typed by INDEXING off `DocsContent['functionalDefinition']` rather than restating the record shape — so protocol → client → daemon stay one declaration deep and cannot drift. Then forward it in `openDoc` with a conditional spread placed beside the identical `degradation` spread already there, so an absent record stays an ABSENT KEY across the postMessage boundary rather than a key holding undefined. No new message type; this mirrors exactly how S001/t5 added `sections` and `degradation` to this same variant. Behaviour is unchanged after this task: the webview has no code that reads the field yet, and that is asserted rather than assumed.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The docs-content variant in protocol.ts declares `functionalDefinition` as an indexed type off `DocsContent`, NOT as a restated record shape — a source assertion on the annotation form, so a future hand-copied shape fails the check.",
+      "Opening a document whose content carries a record posts a docs-content message whose `functionalDefinition` is the SAME object reference the client returned (no clone, no reshaping, no defaulting).",
+      "Opening a document whose content carries NO record posts a message where `'functionalDefinition' in payload` is false — an absent key, not an undefined value.",
+      "The fail-closed arm is unchanged: a content-fetch rejection still posts `blocked:true` and carries no record.",
+      "REPLACES the prior vacuous shell check (s3/t1): capture the emitted shell for a FIXED nonce before the change and assert the post-change shell is byte-identical to that captured baseline — a check that actually fails if t1 accidentally edits renderShell, the bootstrap or the mdStyle block.",
+      "Assert the webview bootstrap contains no reference to `functionalDefinition` after t1, so 'this task is data-only' is proved rather than assumed."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "t1: a client returning a record posts docs-content carrying functionalDefinition as the SAME reference, unreshaped"
+      },
+      {
+        "level": "integration",
+        "name": "t1: a client returning no record posts a message with NO functionalDefinition key ('functionalDefinition' in payload === false)"
+      },
+      {
+        "level": "integration",
+        "name": "t1: a content() rejection still posts blocked:true and carries no record"
+      },
+      {
+        "level": "unit",
+        "name": "t1 (contract): protocol.ts types functionalDefinition by indexing off DocsContent, not as a restated shape"
+      },
+      {
+        "level": "unit",
+        "name": "t1: the emitted shell is byte-identical to the captured fixed-nonce baseline, and the bootstrap references functionalDefinition nowhere"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

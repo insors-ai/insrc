@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3e473dea-9cb3-472b-a61e-3c483154e7b9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.542Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Freshness line and state panels in StatusView",
+      "parent": {
+        "entityId": "STORY-b2687832a8c75877-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2687832a8c75877-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "faca7cbbf96795c08b013d8bdf18c6d85249330e0cb3100e97d9140c504aed90",
+        "at": "2026-10-22T12:44:16.542Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.543Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Freshness line and state panels in StatusView",
+    "summary": "Add freshnessLabel and panel to StatusView; change statusView(status, now) and boardDownMessages(..., now); thread deps.now() through the host's apply() and announceRefresh; update the existing three-argument test calls.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "freshnessLabel: null with no snapshot; 'Updated just now' under a minute; 'Updated N minutes ago' under an hour; 'Updated <takenAt>' otherwise; raw takenAt when either time is unparseable, with no throw",
+      "panel kinds: empty for an empty store; unavailable / refresh-failed with action retry and stale true when a snapshot is still shown; partial with affected entries from store notices and the unreadable count; null otherwise",
+      "Every boardDownMessages and statusView call passes now, including board-state.test.ts:29/:36 and announceRefresh, and the plugin typechecks",
+      "The refresh announcement text is unchanged; down-message order and kinds are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: statusView panel kinds — empty, unavailable, refresh-failed (stale with a shown snapshot, retry action), partial with affected entries from store notices and the unreadable count; freshnessLabel phrasing and NaN fallback"
+      },
+      {
+        "level": "unit",
+        "name": "board-state.test.ts: boardDownMessages with now keeps status first and the selected view's model second"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: the refresh announcement text is unchanged after statusView takes now"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

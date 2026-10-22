@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ba319da-3658-4450-b777-51409df33972",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.297Z",
+    "epicCreatedAt": "2026-09-20T17:12:59.449Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "4c7992cc0f79ef2a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify locally (gradlew test buildPlugin)",
+      "parent": {
+        "entityId": "STORY-4c7992cc0f79ef2a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-4c7992cc0f79ef2a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-4c7992cc0f79ef2a-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f4046ede51ced8a6668c47206d31824d64a43331b4e54ca5ecef0b00ef693468",
+        "at": "2026-10-22T12:43:31.299Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.300Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify locally (gradlew test buildPlugin)",
+    "summary": "Run cd jetbrains-plugin && JAVA_HOME=<corretto-21> ./gradlew test buildPlugin --console=plain --no-build-cache --no-configuration-cache (cache OFF because the registerProject signature + RepoStatsDto ctor changed — stale cache → NoSuchMethodError). All tests green + the plugin ZIP builds. NO GitHub CI.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "gradlew test buildPlugin runs with --no-build-cache and reports all tests green.",
+      "buildPlugin produces the plugin distribution ZIP without error."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "gradlew test buildPlugin (JDK21, --no-build-cache) is green and produces the plugin ZIP"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,378 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792257944235-ukxphq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T17:25:52.230Z",
+    "epicCreatedAt": "2026-10-17T17:23:55.789Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 7976,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f0e4f45f698aeb6",
+    "epicSlug": "summary-lane-yields-code-work",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792257944235-ukxphq",
+    "hldEffectiveHash": "2da4d7bb1c559a0ecdcd093de8a254dff21e4795992414aa066d6a02acb23e99",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One minor change with one obvious approach in one module, on top of the just-shipped lanes: IndexQueue's summary-lane drain waits for an idle index lane before each job (src/daemon/queue.ts), and the sweep runner waits the same way before each document (src/indexer/doc-summary-sweep.ts, wired from src/indexer/index.ts docSummariseRepo), plus a sentence in CLAUDE.md and AGENTS.md. No new contract or storage change; the waiting must still end on shutdown. Grounding is from direct reads of these files written today (Story b94cf2c9), not from an analyze bundle.",
+    "authoredBy": "controller",
+    "rangeBase": "4ef6b571494916c7e1c46ba5778a758f213f42e0",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "be49f3a26b731d2bca4393b8c1617fed42395fdbf837434e191d97c905a2e862",
+        "at": "2026-10-17T17:25:52.230Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-17T17:32:33.407Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-10-17T17:25:53.096Z",
+        "report": {
+          "entityId": "LLD-0f0e4f45f698aeb6-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-0f0e4f45f698aeb6-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The summary lane stops competing with code indexing for the local model. Before it starts a summary, it waits until the index lane has nothing running and nothing queued, and a running sweep does the same before each document and each edited document. Code therefore waits at most for the one summary already in progress; summaries pick up again when the code work is done, and shutdown still ends both lanes.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "The summary lane yields to code work"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "IndexQueue.waitForIndexIdle",
+          "signature": "waitForIndexIdle(): Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the index lane has no job running and none queued, or once stop() has been called."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Resolves at once when the index lane is already idle or the queue is stopping.",
+            "Every waiter is released when the index lane next becomes idle (its in-flight job finished and its queue empty) and when stop() is called."
+          ]
+        },
+        {
+          "name": "IndexQueue summary-lane drain",
+          "signature": "private drain(lane, processor): Promise<void>  // the summary lane awaits waitForIndexIdle() before taking each job",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The summary lane takes its next job only when the index lane is idle; a job already running is not interrupted.",
+            "After the wait the loop re-checks stopped and ends if the queue is stopping.",
+            "The index lane never waits for the summary lane."
+          ]
+        },
+        {
+          "name": "runDocSummarySweep",
+          "signature": "runDocSummarySweep(entityIds, deps: DocSummarySweepDeps & { waitForCodeIdle(): Promise<void> }): Promise<DocSummarySweepCounts>",
+          "parameters": [
+            {
+              "name": "deps.waitForCodeIdle",
+              "type": "() => Promise<void>",
+              "purpose": "Waits until code work is done (the queue's waitForIndexIdle).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DocSummarySweepCounts>",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Before each document the sweep repeats, until no single-document job is queued: await waitForCodeIdle, check shouldStop (return stopped if true), take the next queued single-document job and run it. Only then does it read and summarise the document; so an edit queued while the sweep is paused runs before the next sweep document.",
+            "Everything else as today: re-read, classification, progress, stopped."
+          ]
+        },
+        {
+          "name": "docSummariseRepo wiring",
+          "signature": "waitForCodeIdle: () => this.queue.waitForIndexIdle()",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Wiring only."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The sweep the indexer runs yields to the index lane."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "IndexQueue state",
+        "change": "invariant-change",
+        "details": "The two lanes no longer start model work at the same time: the summary lane starts a summary only while the index lane is idle. Only the one summary in progress can overlap code work.",
+        "callSites": [
+          "src/daemon/queue.ts",
+          "src/indexer/doc-summary-sweep.ts",
+          "src/indexer/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Shutdown while the summary lane or a sweep is waiting for code work.",
+          "detection": "stop() releases every waiter of waitForIndexIdle.",
+          "response": "The summary lane loop and the sweep re-check stopped / shouldStop after the wait and end.",
+          "userImpact": "Shutdown is not delayed by the wait.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Code work never ends (a steady stream of file events).",
+          "detection": "The wait does not resolve.",
+          "response": "Summaries stay postponed until the index lane is idle; this is the intended priority.",
+          "userImpact": "Summaries lag behind code work; code indexing runs at full speed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An index job is enqueued while a summary is running.",
+          "expected": "The index job starts at once; the running summary finishes; the next summary waits until the index lane is idle."
+        },
+        {
+          "input": "A summary-lane job is enqueued while the index lane is idle.",
+          "expected": "It starts at once."
+        },
+        {
+          "input": "A sweep of many documents while file jobs keep arriving.",
+          "expected": "The sweep pauses before each document until the index lane is idle, then continues."
+        },
+        {
+          "input": "An edited document is queued during a paused sweep.",
+          "expected": "It runs first once code work is done, as before."
+        },
+        {
+          "input": "An edit is queued while a sweep is paused waiting for code work.",
+          "expected": "When code work ends, the edit runs before the next sweep document."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The index lane never waits for the summary lane.",
+          "source": "c1"
+        },
+        {
+          "text": "stop() ends both lanes after their current jobs.",
+          "source": "c1"
+        },
+        {
+          "text": "Single-document jobs go ahead of sweeps.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The summary lane and a running sweep yield to code work and still end on shutdown.",
+          "subjects": [
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait",
+            "src/indexer/__tests__/summary-sweep-progress.test.ts: the indexer's sweep pauses while the queue's index lane has work and continues when it is idle"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/summary-sweep-progress.test.ts: the indexer's sweep pauses while the queue's index lane has work and continues when it is idle"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test (assert/strict), run under Node 22"
+    },
+    "migration": {
+      "stateBefore": "Per s1: the index and summary lanes run at the same time (src/daemon/queue.ts); a summary and code embeddings reach Ollama together.",
+      "stateAfter": "The summary lane starts a summary only while the index lane is idle; a running sweep pauses before each document while code work runs.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add waitForIndexIdle, make the summary lane await it before each job, and revise the two queue-lane tests that assumed pre-queued overlap.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add waitForCodeIdle to the sweep runner and wire it in docSummariseRepo.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Update the exception in CLAUDE.md and AGENTS.md.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Update and restart the installed daemon.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data or status field changes; laneStatus and the queue readers keep their meaning.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Wait for an idle index lane before each summary",
+        "oneLineSummary": "The queue exposes waitForIndexIdle(); the summary lane awaits it before each job, and a running sweep awaits it before each document and each single-document job.",
+        "approach": "IndexQueue.waitForIndexIdle() resolves when the index lane has no job running and none queued, or once stop() has been called. The summary lane's drain loop awaits it before shifting its next job. runDocSummarySweep gains a deps.waitForCodeIdle() it awaits before each single-document job and each document, re-checking shouldStop after it; docSummariseRepo wires it to the queue.",
+        "pros": [
+          "Code waits at most for the summary in progress.",
+          "No polling; the lanes and their counters are unchanged."
+        ],
+        "cons": [
+          "A long code burst postpones summaries until it ends (intended)."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Back to one worker with the index lane first",
+        "oneLineSummary": "Replace the two loops with one that serves the index lane first.",
+        "approach": "One drain loop takes from the index lane while it has jobs, else from the summary lane; the sweep checks the index lane between documents.",
+        "pros": [
+          "Strictly serial."
+        ],
+        "cons": [
+          "Undoes the shipped lanes and their tests; same behaviour as a1 with more change."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Undoes the shipped lanes and their tests for the same behaviour as a1."
+      },
+      {
+        "id": "a3",
+        "name": "Poll a pause flag",
+        "oneLineSummary": "The summary lane polls laneStatus every second and sleeps while the index lane is busy.",
+        "approach": "A timer-based check before each summary.",
+        "pros": [
+          "Smallest code."
+        ],
+        "cons": [
+          "Latency of up to a poll interval and timers in tests."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Partial on the request: polling adds up to a poll interval of waiting and timers in tests."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the request (ac1 code work waits at most for the summary in progress, ac2 summaries resume afterwards with edits first, ac3 shutdown still ends both lanes) [c4]."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1 context.assemble bundle 1: the lanes and the sweep (src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/indexer/index.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "step-output",
+      "ref": "s1 context.assemble bundle 2: measured contention (CLAUDE.md, AGENTS.md)"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "s1 context.assemble bundle 3: tests (src/daemon/__tests__/queue-lanes.test.ts, src/indexer/__tests__/doc-summary-sweep.test.ts, src/indexer/__tests__/summary-sweep-progress.test.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "Stakeholder decision 2026-10-17 (decision 2, option A): the summary lane yields while the index lane has work"
+    }
+  ]
+}

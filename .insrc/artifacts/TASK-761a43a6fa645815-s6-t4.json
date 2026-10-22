@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2f172b5-bbfb-4343-851a-6420619bf949",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:47.503Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Fake-provider unit tests for the runner",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-761a43a6fa645815-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ac196352f22f975b8eead7cb6cf00877ce5ff426b56fe0893c5c86c00e93c0c",
+        "at": "2026-10-22T12:43:47.503Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:47.504Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fake-provider unit tests for the runner",
+    "summary": "Add src/workflow/code-review/__tests__/runner.test.ts: inject a fake CodeReviewRunnerDeps — judges = ordered stub fns that push their dimension to a shared call-order array (with an await tick + an in-flight flag to prove no overlap) and return scripted DimensionResults; assembleGrounding = stub returning a canned CodeReviewGrounding; write = a spy capturing (path, content). Plus a fake LLMProvider (cast as unknown) passed through, a subject(changedFiles, epicHash, storyId) factory, and RunCodeReviewOpts with an onProgress spy. Cover: (ac1) all-four-return-findings => ONE record with body.dimensions length 4 + folded verdict + counts; (ac2) verdict-fold table (any-HIGH=>block, any-MED-no-HIGH=>warn, only-LOW/empty=>pass) + counts totals; (ac3) the write spy's json basename is codeReviewArtifactId(...) (starts 'CR-') and body.kind==='code-review'; (ac4) the four judges ran serially in [adherence,conventions,coverage,quality] order, no overlap; (ac5) a throwing 2nd judge => {ok:false} + write spy NEVER called + judges 3-4 not run; an in-memory validation failure => {ok:false} + no write; a pre-aborted signal => {ok:false} + no write. Also assert BOTH .json and .md are written on success (two write-spy calls). No live model.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "src/workflow/code-review/__tests__/runner.test.ts runs under `npx tsx --test` with node:test + node:assert/strict and injected fakes (no live daemon/Ollama)",
+      "tests cover ac1-ac5: single-record aggregation, verdict-fold table + counts, CR- id + kind, serial order, and the three no-write-on-failure paths (throwing judge / validation failure / aborted signal); plus both .json+.md written on success",
+      "the full `npx tsx --test 'src/workflow/code-review/**/*.test.ts'` sweep passes (S001-S006 green; any live test skips cleanly when INSRC_LIVE_TESTS unset)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "ac1: all-four-return-findings => ONE record with body.dimensions length 4 + folded verdict + counts"
+      },
+      {
+        "level": "unit",
+        "name": "ac2: verdict-fold table (HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) + counts totals; verdict∈{'pass','warn','block'}"
+      },
+      {
+        "level": "unit",
+        "name": "ac3: write spy json basename is codeReviewArtifactId(...) ('CR-' prefix) and body.kind==='code-review'"
+      },
+      {
+        "level": "unit",
+        "name": "ac4: the four judges ran serially in [adherence,conventions,coverage,quality] order with no overlap"
+      },
+      {
+        "level": "unit",
+        "name": "ac5: throwing 2nd judge => {ok:false}, write spy NEVER called, judges 3-4 not run"
+      },
+      {
+        "level": "unit",
+        "name": "ac5: in-memory validation failure => {ok:false} + no write"
+      },
+      {
+        "level": "unit",
+        "name": "ac5: pre-aborted opts.signal => {ok:false} + no write"
+      },
+      {
+        "level": "unit",
+        "name": "success writes BOTH .json and .md (two write-spy calls)"
+      },
+      {
+        "level": "live",
+        "name": "runCodeReview with DEFAULT_DEPS against a real buildShaperProvider on a fixture Story writes a real CR-<epic>-<story> record (INSRC_LIVE_TESTS-gated, skips when unset)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

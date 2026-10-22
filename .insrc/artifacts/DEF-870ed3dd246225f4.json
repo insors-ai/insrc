@@ -49,113 +49,6 @@
     "schemaVersion": 1,
     "epicHash": "870ed3dd246225f4",
     "epicSlug": "documentation-generation-framework-docgen-produces-self",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c3/k10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A Mermaid-CDN metadata primitive named loadMermaidCdnMeta exists in src/daemon/artifacts-rpc.ts and is one of only two existing entities touching Mermaid/rendered-HTML (k10 says it must be reused/extended before new Mermaid plumbing).",
-          "evidence": "Confirmed: src/daemon/artifacts-rpc.ts:308 `async function loadMermaidCdnMeta()` + 3 call sites (:193,:229,:281). The Mermaid primitive k10 mandates reusing exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c4/k10",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A self-contained rendered-artifact HTML type named RenderedArtifactHtml exists in src/shared/artifacts.ts (k10 says it must be inspected/reused before new artifact-HTML plumbing).",
-          "evidence": "Confirmed: src/shared/artifacts.ts:67 `export interface RenderedArtifactHtml` (used :79,:107). The self-contained rendered-HTML type k10 mandates inspecting exists.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c11",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "An existing artifact-render path exists at src/mcp/build-step/render.ts (cited as a structurally-consistent integration point for document emission).",
-          "evidence": "Confirmed: src/mcp/build-step/render.ts exists (license header at :1). The cited artifact-render integration point is real.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c9/k8",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The graph substrate for deterministic structural diagrams exists: EntityRow + edge-property codecs (EdgeProps/CallsEdgeProps/ImportsEdgeProps) in src/db/graph/codec.ts, and the graph carries CALLS and DEPENDS_ON relations used for call-sequence and component/dependency content.",
-          "evidence": "Confirmed: src/db/graph/codec.ts:132 `EntityRow`; :177-185 CallsEdgeProps/ImportsEdgeProps/EdgeProps union; DEPENDS_ON + CALLS both present as real relation kinds. The deterministic-graph substrate (k8) is real.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "k4/c6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "A daemon tool registry with a registerTool registration function exists at src/daemon/tools/registry.ts — the surface k4 says the docgen tool must register against.",
-          "evidence": "Confirmed: registerTool imported from '../../../registry.js' across builtin tools (cloud/aws/index.ts:5, az/index.ts:5); symbol lives in src/daemon/tools/registry.ts. The k4 registration surface is real.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "k7/c15",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "Non-TS runtime resources ship via copy-assets.mjs from src/assets (the asset-shipping path k7 requires for the inlined renderer runtime).",
-          "evidence": "Confirmed: copy-assets.mjs:28 `const DIRS = ['prompts', 'assets']`; package.json:15 build runs it. The k7 asset-shipping path is real.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "c1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "No existing module produces developer documentation with diagrams (net-new): there is no docgen/doc-generation subsystem directory under src/.",
-          "evidence": "Confirmed net-new: 0 matches for DocGenerator/DocumentGenerator/generateDoc; all `docgen` hits are the DEF itself (docs/defines), none under src/; `mermaid` hits are the existing artifact-render plumbing, not a doc subsystem.",
-          "action": "none — verified sound.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "s1c",
-          "kind": "ordering",
-          "severity": "MED",
-          "premise": "S001's acceptance criteria ac2 (renders offline with inlined runtime) and ac5 (non-daemon caller receives finished document) presuppose S007's asset-shipping and S006's surface work, yet S006 and S007 both declare dependsOn s1 — a reverse/circular ordering that means S001 cannot be delivered or tested standalone.",
-          "evidence": "Confirmed by inspection (no probe needed): S001 ac2 (renders offline with inlined runtime) presupposes S007's asset-shipping, and ac5 (non-daemon caller receives finished document) presupposes S006's surface — yet both S006 and S007 declare `Depends on: s1`. S001 therefore cannot be delivered or independently tested against its own ac2/ac5 without slices of its dependents. Matches the DEF's self-flagged open question s1c.",
-          "action": "Resolve the S001↔S006/S007 ordering before/at the HLD: re-scope so S001 is independently shippable + testable. Carry into design.epic as a rollout-order decision.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The circular dependency is a story-decomposition/rollout-order flaw, not a citation error; it needs a scoping decision, best recorded in the HLD's rollout phase.",
-            "options": [
-              "Walking-skeleton S001: fold the MINIMUM asset-ship (from S007) + one IPC/tool surface (from S006) needed for an offline-render into S001; re-scope S006 to full surface parity across all doc types and S007 to the full installed-build guarantee.",
-              "Narrow S001: move the offline-inlined guarantee (ac2) into S007 and the non-daemon-caller guarantee (ac5) into S006; S001 delivers the class-diagram content rendered in a dev checkout, and S006/S007 drop `dependsOn s1` to a partial dependency.",
-              "Keep the decomposition but record in the HLD rollout that S001 is not independently releasable — it ships together with a minimal S006+S007 slice as the first increment."
-            ]
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 7
-      },
-      "reviewedAt": "2026-07-30T14:22:54.602Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-07-30T14:26:47.147Z",
-    "reviewOverride": {
-      "reason": "s1c (MED, the only blocking finding) resolved by user decision: re-scope to a WALKING-SKELETON S001 — fold the minimum asset-ship + one IPC/tool surface needed for an offline render into S001 so it is independently shippable+testable; S006 = full tool/IPC/MCP surface parity across all doc types, S007 = full installed-build asset guarantee. The HLD rollout encodes this sequencing. The 7 LOW findings are all verified-sound citations. Remaining DEF open questions (a2 low-confidence assumptions, ac3 S006 deployment-consumer clause) carried to the design.epic resolve-question gate.",
-      "at": "2026-07-30T14:26:47.147Z"
-    },
     "questionResolutions": {
       "q756f0dda": {
         "question": "Item s1c: s1–s5 are clean vertical slices. s6 (surface exposure) and s7 (installed-build asset delivery) are cross-cutting rather than independent: s1/ac2 already requires a document that 'renders on its own … with no request made off the machine', which cannot hold without s7's asset-shipping work, and s1/ac5 already requires a non-daemon caller to receive a finished document, which presumes part of s6's surface. So s1 cannot be delivered and tested without absorbing slices of its own dependents (both s6 and s7 declare dependsOn s1, i.e. the reverse order). Either narrow s1's ac2/ac5, or fold the asset/surface minimum into s1 and re-scope s6/s7 to the remaining breadth.",
@@ -178,6 +71,60 @@
         "rationale": "The deployment-design consumer is a separate approved Epic; making its end-to-end consumption an S006 acceptance criterion would couple docgen's acceptance to another Epic's path (that Epic tests its own consumption). Keep the \"why now\" as clearly-labeled motivation on S006 so the rationale survives, while the acceptance criteria stay co-extensive with what docgen S006 actually delivers — surface parity, daemon-side reads, unregistered-repo failure, discoverability (7/7 clean ac↔value mapping).",
         "resolvedAt": "2026-07-30T14:31:09.891Z"
       }
+    },
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d4fb6443c8171dda72a12f75ea13164cdad98ac19bf9dd8cf6602dcc4b97027d",
+        "at": "2026-07-30T14:17:44.765Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-30T14:26:47.147Z",
+        "override": {
+          "reason": "s1c (MED, the only blocking finding) resolved by user decision: re-scope to a WALKING-SKELETON S001 — fold the minimum asset-ship + one IPC/tool surface needed for an offline render into S001 so it is independently shippable+testable; S006 = full tool/IPC/MCP surface parity across all doc types, S007 = full installed-build asset guarantee. The HLD rollout encodes this sequencing. The 7 LOW findings are all verified-sound citations. Remaining DEF open questions (a2 low-confidence assumptions, ac3 S006 deployment-consumer clause) carried to the design.epic resolve-question gate."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 7
+        },
+        "at": "2026-07-30T14:22:54.602Z",
+        "report": {
+          "entityId": "DEF-870ed3dd246225f4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-870ed3dd246225f4-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

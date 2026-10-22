@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c68d9683-3c04-4c88-80e4-9d5b6b1f139b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.757Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Amend the sc9 host (webview-host.ts): tab-controller lifecycle + action route + appendLog bootstrap",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "11eae9f2097fb134d7ea20edaf2816848fae18c9abbb187c4c8f352c5b2b833f",
+        "at": "2026-10-22T12:43:30.757Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.757Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Amend the sc9 host (webview-host.ts): tab-controller lifecycle + action route + appendLog bootstrap",
+    "summary": "Amend vscode-plugin/src/panels/webview-host.ts (ONE atomic host change — the pieces share the panel closure): (1) a per-panel active-controller lifecycle — activateTab(tab) disposes the previous controller then calls deps.tabControllers?.[tab]?.onActivate({ postMessage: (m)=>panel.postMessage(m) }) caching its dispose; invoked from openDetailedStatus (initial active tab) + handleDetailMessage (switchTab) + on panel onDidDispose (dispose the live controller). Exactly one controller live; none survives dispose. (2) handleDetailMessage += a {type:'action', action:string} branch -> deps.onDetailAction?.(action) (validated; unknown/malformed rejected; wrapped in the never-throw guard). (3) the host BOOTSTRAP += a window 'message' listener that on {type:'appendLog', lines} appends each line to #insrc-log via textContent (inherently XSS-safe). Stays VS-Code-free + never-throw; S004/S005 detailRenderers/switchTab/refresh behaviour unchanged.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "activating a tab with a controller calls onActivate({postMessage}); switching away / re-activating / disposing the panel calls the previous controller's dispose exactly once (one live at a time, none survives dispose)",
+      "a {type:'action',action} message forwards to onDetailAction; an unknown action / malformed message is a silent no-op; the appendLog bootstrap appends lines to #insrc-log via textContent",
+      "the host stays never-throw (onActivate/dispose/onDetailAction try/caught) + XSS-safe (CSP/nonce unchanged); detailRenderers/switchTab/refresh + daemon/workflows on-demand behaviour is preserved"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "host: activating the debug tab (open or switchTab-to 'debug') calls tabControllers.debug.onActivate; switch-away/dispose calls the returned dispose EXACTLY once (one live)"
+      },
+      {
+        "level": "unit",
+        "name": "host: a {type:'appendLog',lines} message appends the escaped lines to #insrc-log via the bootstrap (rendered-shell + append protocol)"
+      },
+      {
+        "level": "unit",
+        "name": "host: a {type:'action','cleanupOrphans'} message is forwarded to onDetailAction; an unknown action / malformed message is a silent no-op"
+      },
+      {
+        "level": "unit",
+        "name": "host: onActivate/dispose/onDetailAction throwing is caught (never-throw); S004/S005 detailRenderers/switchTab/refresh + daemon/workflows on-demand unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

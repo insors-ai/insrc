@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e94ac3a-cbca-4570-9853-8acac65924b5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.402Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the whole suite, install the plugin and check by hand",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d08038132a42b79004a5c8437d705034574fdd15524730dece4125b12f214187",
+        "at": "2026-10-22T12:44:17.405Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.406Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the whole suite, install the plugin and check by hand",
+    "summary": "Run the plugin's typecheck and whole test suite, build, package and install the plugin, and check a claude turn and a codex turn in VS Code, including a window reload.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change",
+      "In VS Code a claude turn and a codex turn show one widget per section, folded to 8 lines, updated in place, and still there after a reload"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "By hand in VS Code: a claude turn and a codex turn that each change two places in one file, change one of them again and add a file show one widget per section, folded to 8 lines, with the changed one updated in place, and the widgets show in their latest form after a window reload"
+      },
+      {
+        "level": "smoke",
+        "name": "The whole plugin suite passes apart from the two manifest-catalog tests that fail before this change"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

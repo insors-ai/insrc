@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7d3d07df-a9dc-4b7d-871e-2533beb20356",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.925Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Ensure the merge rules and the journal ignore entry",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c736c68f79475b430bd8a515aae859e0e37e93088ce878294fe661273a2ec232",
+        "at": "2026-10-22T12:43:20.925Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.925Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ensure the merge rules and the journal ignore entry",
+    "summary": "Add the idempotent ensure step that adds the two merge=union rules from mergeAttributes to the repository's .gitattributes and the .insrc/journal/ entry to its ignore file, adding only missing lines and logging a warning when a file cannot be written; call it when the file sidecar store is created; commit the two files for this repository.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "a repository with no .gitattributes gets the two rules, one with other rules keeps them and gains only the missing lines, and a second call writes nothing",
+      "an unwritable file is a warning and the store still works",
+      "this repository's .gitattributes and .gitignore carry the new lines"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sidecar-files.test.ts: the ensure step adds only the missing lines to .gitattributes and .gitignore, is idempotent, and an unwritable file is a warning"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

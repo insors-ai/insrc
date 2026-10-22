@@ -14,77 +14,64 @@
     "hldBaseRunId": "wf-1784647600994-s00igj",
     "hldEffectiveHash": "a2de43f19a1d0fce52faa114440e6cf7ffc2a4baf16486954b0be586deff977c",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "c-mirror-tests",
-          "ref": "s1/test-strategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The four existing test files the new deploy tests mirror all resolve in the source tree: analyze-step-handler.test.ts, build-step.test.ts, workflow-rpc.test.ts, and setup.test.ts.",
-          "evidence": "All four cited test files are confirmed present on disk: analyze-step-handler.test.ts at src/mcp/__tests__/, build-step.test.ts at src/mcp/build-step/__tests__/, workflow-rpc.test.ts at src/daemon/__tests__/, and setup.test.ts at src/workflow/tracker/__tests__/ (each surfaced by the filename-existence check). The premise holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-mcp-step-loops",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The analyze-step and workflow-step MCP multi-turn loops exist and are the envelope idiom sc1 DeployStepProtocol parallels.",
-          "evidence": "handleAnalyzeStep exists at src/mcp/analyze-step/handler.ts:56 and handleWorkflowStep at src/mcp/workflow-step/handler.ts:31 — both multi-turn step loops present, confirming the envelope idiom sc1 parallels.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-runner-idiom",
-          "ref": "sc1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The workflow runners use an index.ts registrar + schemas.ts contract idiom that the deploy runner idiom mirrors, e.g. the design-epic runner.",
-          "evidence": "src/workflow/runners/design-epic/schemas.ts exists (alongside build/define/design-story/plan runners) and runners/design-epic is registered via src/workflow/index.ts:13 (registerDesignEpicRunners). The index.ts + schemas.ts runner idiom is real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-deploy-rpc-netnew",
-          "ref": "framework",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "src/daemon/deploy-rpc.ts is net-new: no deploy-rpc handler exists in the daemon today, so the seam is additive and does not modify existing IPC.",
-          "evidence": "Both greps (deploy-rpc, deployRpc) return 0 matches under src/ — no deploy-rpc handler exists in the daemon today, confirming the seam is genuinely net-new and additive to existing IPC.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-daemon-owns-db",
-          "ref": "k4",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The daemon owns all DB access (CLIs/MCP/IDE go through IPC only), so deploy runners reading the graph over deploy-rpc rather than opening LMDB/Lance directly is consistent with the existing rule.",
-          "evidence": "Both greps returned 0 matches, but the probe searches src/ only while this premise's anchor is CLAUDE.md (project-rules doc), outside the searched scope — so the evidence neither confirms nor refutes it. Unverifiable from the gathered evidence.",
-          "action": "Re-probe against CLAUDE.md/docs; the daemon-owns-all-DB rule is stated in CLAUDE.md rule 1, so the claim is sound but the src-scoped probe cannot see it.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The probe is src-scoped; a doc-anchored claim needs a docs/CLAUDE.md search to verify."
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 4
-      },
-      "reviewedAt": "2026-07-21T20:36:32.756Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-21T15:05:36.824Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-753e0ed64921d937-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-21T16:21:06.416Z",
-    "reviewOverride": {
-      "reason": "controller review (2nd eyes) OVERTURNS the daem3 HIGH as a FALSE POSITIVE: analyze-step-handler.test.ts DOES exist at src/mcp/__tests__/analyze-step-handler.test.ts (verified via find). The probe content-greps and cannot see a file that exists but is not referenced in any file body. 6 MED are grounded design claims. LLD sound.",
-      "at": "2026-07-21T16:21:06.415Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "75d43df368333e52be8ca7f5ccf15aa3146d2ed7118fd1bea2a8a7cedb74f369",
+        "at": "2026-07-21T16:07:18.291Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-21T16:21:06.416Z",
+        "override": {
+          "reason": "controller review (2nd eyes) OVERTURNS the daem3 HIGH as a FALSE POSITIVE: analyze-step-handler.test.ts DOES exist at src/mcp/__tests__/analyze-step-handler.test.ts (verified via find). The probe content-greps and cannot see a file that exists but is not referenced in any file body. 6 MED are grounded design claims. LLD sound."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 4
+        },
+        "at": "2026-07-21T20:36:32.756Z",
+        "report": {
+          "entityId": "LLD-753e0ed64921d937-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-753e0ed64921d937-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

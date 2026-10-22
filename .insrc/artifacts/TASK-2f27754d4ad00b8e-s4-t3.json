@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5eb6ca9-0692-4510-8384-ad87dcad2dd2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.922Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the durable journal and stage the head a write started from",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "62dcb970bc4c1172bd42d37e19040a12eb97b4de777c661d07c10938ca38b355",
+        "at": "2026-10-22T12:43:20.922Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.923Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the durable journal and stage the head a write started from",
+    "summary": "Add the file WriteJournal (.insrc/journal/<id>.json, atomic replace, clear removes it, an invalid file is an error) and add priorHeadHash to StagedOperation. In ArtifactStore.write stage priorHeadHash, validate the serialised entry size before staging, and make completePending finish an operation only when the head still hashes to priorHeadHash or already equals the staged bytes, otherwise throw LifecycleConflictError, keep the journal file and log the three hashes; discard a staged entry that is invalid.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "the journal stages, reports and clears one file per artifact and refuses a file that is not a staged operation",
+      "a staged write is finished at each crash point (before the append, after the append, after the replace) exactly once",
+      "a head that moved on after the stage is never overwritten and the write is refused with LifecycleConflictError",
+      "an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+      "the existing store, journal and recovery tests pass unchanged against the memory journal"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "journal-durable.test.ts: the journal stages, reports and clears one file per artifact and refuses an invalid file"
+      },
+      {
+        "level": "unit",
+        "name": "journal-recovery-durable.test.ts: a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten"
+      },
+      {
+        "level": "unit",
+        "name": "journal-recovery-durable.test.ts: an oversized entry is rejected before it is staged and a later valid write of the artifact goes through"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

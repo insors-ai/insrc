@@ -21,7 +21,27 @@
     "epicSlug": "vscode-plugin-package-lock-json-states",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-10T14:50:57.854Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "14097cc18a067e04617f18e43758a7a1c0e77295d989e203ce6283d5837956fd",
+        "at": "2026-10-10T14:50:57.854Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "The extension's lock file states a version its manifest left behind",

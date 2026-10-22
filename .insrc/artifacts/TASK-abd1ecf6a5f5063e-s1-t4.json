@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8b64f122-71c6-425f-9cb1-d7029500c99d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.719Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Brainstorm runner registration scaffold (index.ts)",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "62836d5a909c98ae1d5ac55f9c0ed3fc8ec874545b425a38df94a3623c92dbc2",
+        "at": "2026-10-22T12:44:06.719Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.720Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Brainstorm runner registration scaffold (index.ts)",
+    "summary": "Create src/workflow/runners/brainstorm/index.ts exporting registerBrainstormRunners(), with a module-level `registered` idempotent guard mirroring design-story/index.ts:541-552, that registers the stage's placeholder step runner(s) for workflow id 'brainstorm' via the existing executor.registerRunner, importing types from standalone.ts and schemas.ts.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "calling registerBrainstormRunners() twice does not throw and registers each runner exactly once (registered guard, mirrors design-story:541-552)",
+      "after registerBrainstormRunners(), executor.getRunner('brainstorm', <runnerId>) resolves each registered placeholder runner",
+      "registering a duplicate runnerId under workflow 'brainstorm' without the guard reproduces executor.ts's 'registerRunner: duplicate runner' throw (fail-fast at boot, not swallowed)",
+      "index.ts imports nothing from the shared/chat-agent brainstorm.addIdea offlineRpc path (k10 separateness)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registerBrainstormRunners is idempotent — a second call is a no-op (registered guard), no duplicate-runner throw"
+      },
+      {
+        "level": "unit",
+        "name": "after registerBrainstormRunners(), getRunner('brainstorm', <runnerId>) resolves each brainstorm step runner"
+      },
+      {
+        "level": "unit",
+        "name": "brainstorm runner module imports nothing from the chat-agent brainstorm.addIdea offlineRpc path (k10 import-guard)"
+      },
+      {
+        "level": "unit",
+        "name": "registering a duplicate runnerId under workflow 'brainstorm' without the guard reproduces executor.ts's duplicate-runner throw"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

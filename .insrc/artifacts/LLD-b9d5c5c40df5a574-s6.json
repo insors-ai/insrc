@@ -25,13 +25,43 @@
     "hldEffectiveHash": "7d17654ecfd1a3484ded200ea4aa2ee9023be8f88cc250726510be0496c2d011",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "approvedAt": "2026-10-07T09:01:35.361Z",
-    "reviewOverride": {
-      "reason": "User-approved override, 2026-10-07. Nine daemon reviews; the last four had one or two MED findings each and no HIGH. Every finding through the ninth is applied; the revisions after the ninth review (its two findings, and the user's two decisions on the open questions: keep 'no-plan-for-request' behind a guard, move all eight copies of the model-failure test to one shared function) were not sent back for a tenth review.",
-      "at": "2026-10-07T09:01:35.361Z"
+    "staleAckedReason": "In-place wording edit of the HLD for Story s7 task t16 (commit ae1b8831), approved by the stakeholder by override on 2026-10-09: the framework text on run records and Story s7's boundary now say a count of runs per id and two rewriting readers, where they said a set of run ids and three readers. No contract, no Story boundary's scope and no other Story's text changed, so this design stands as approved.",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "staleAckedAt": "2026-10-09T09:50:19.983Z",
-    "staleAckedReason": "In-place wording edit of the HLD for Story s7 task t16 (commit ae1b8831), approved by the stakeholder by override on 2026-10-09: the framework text on run records and Story s7's boundary now say a count of runs per id and two rewriting readers, where they said a set of run ids and three readers. No contract, no Story boundary's scope and no other Story's text changed, so this design stands as approved."
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b46242cd7de16a80832badf19cf8722d926aa3fa35e4ebb2172fd6e95ebc39eb",
+        "at": "2026-10-07T08:09:27.240Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-07T09:01:35.361Z",
+        "override": {
+          "reason": "User-approved override, 2026-10-07. Nine daemon reviews; the last four had one or two MED findings each and no HIGH. Every finding through the ninth is applied; the revisions after the ninth review (its two findings, and the user's two decisions on the open questions: keep 'no-plan-for-request' behind a guard, move all eight copies of the model-failure test to one shared function) were not sent back for a tenth review."
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

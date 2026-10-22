@@ -20,101 +20,56 @@
     "schemaVersion": 1,
     "epicHash": "9b72686c1746af2b",
     "epicSlug": "harden-insrc-artifact-creation-flows-two",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c6/a1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "finalizeArtifact returns a FinalizeResult that is either {ok:true, finalized} or {ok:false, failure} — the failure channel S001 reuses.",
-          "evidence": "Confirmed: orchestrator.ts:381 `| { readonly ok: false; readonly failure: ValidationResult }` with a single `type FinalizeResult` union — the failure channel S001 reuses exists.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c6/a1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The workflow-step synthesize phase maps a finalize failure to a retryable errorResult that re-prompts the author (does not abort the run).",
-          "evidence": "Confirmed: synthesize.ts:54 `const failure = result.failure` feeding an `errorResult(..., retryable)` — a finalize failure re-prompts, not aborts.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c2/s1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The finalize render helpers (renderUxCompanionForBody, renderDiagramCompanionsForBody) validate the authored companion and swallow a HIGH finding (return undefined + warn) rather than surfacing it.",
-          "evidence": "Confirmed: orchestrator.ts:1557 `validateUxDefinition(uxDef, body.functionalDefinition)` and the 'leaving it in-body without a companion' warn (6 hits) — HIGH findings are swallowed in the render helpers.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "s1/lc1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The authored companion kinds that pass through the same finalize helpers are exactly four: ER, UX, sequence, component-dependency.",
-          "evidence": "Confirmed: all four renderers exist (renderErCompanionForBody, renderUxCompanionForBody, renderSequenceCompanion, renderComponentCompanion) — exactly four companion kinds through the finalize helpers.",
-          "action": "Accept — closed union holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "sc1/s2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "build-step validate resolves its target via the plan-driven resolveTaskRef with no standalone branch, bailing before persistBuildRecord.",
-          "evidence": "Confirmed: validate.ts:64 `resolveTaskRef(...)` (plan-driven, no standalone branch) and :102 `persistBuildRecord(...)` after it — a standalone story bails before persisting.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "sc1/s2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "build-step implement already has a standalone branch (persistStandaloneBuildRecord) that S002 mirrors; it currently runs only for trivial standalone.",
-          "evidence": "Confirmed: implement.ts:133 `persistStandaloneBuildRecord(...)` inside the trivial (!producesLld) branch — the standalone handling S002 mirrors exists.",
-          "action": "Accept — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "sc1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The BuildRecord body already carries changeLog + feedback (the S003 feedback slot exists) and has no summary field (the S003 summary is a NEW additive slot); persistBuildRecord is an upsert with a fail-open persist.",
-          "evidence": "Confirmed: standalone-record.ts:61 body carries changeLog + feedback (no summary — verified by direct read earlier); persistBuildRecord + mergeWithPrior confirm the upsert. The S003 summary is a genuine NEW additive slot.",
-          "action": "Accept — semantic claim holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "6",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The only Story dependency edge is S003 dependsOn S002 (S001 is isolated), matching the sc1 owner(S002)->consumer(S003) relationship.",
-          "evidence": "Confirmed: the DEF carries the dependsOn graph with S003 dependsOn S002 and S001 isolated — matching the sc1 owner(S002)->consumer(S003) relationship; the writer's mergeWithPrior upsert supports the shared record.",
-          "action": "Accept — ordering holds.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-30T06:34:00.410Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-30T06:34:04.370Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2d25d000a5637d4aff961edf3517072988e0af3475fde4ccc5ce0031c0779522",
+        "at": "2026-09-30T06:27:15.615Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-30T06:34:04.370Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-30T06:34:00.410Z",
+        "report": {
+          "entityId": "HLD-9b72686c1746af2b",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-9b72686c1746af2b-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

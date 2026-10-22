@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-84ad5afb-9c0e-4922-8a27-913816caa5e0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.590Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the pane to the chat and to the companion files, and check the real shell in a browser",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe7fa62b908cf7521d454bc09dd23d2ca3a7d81ac178e5d60b29cd294fb133aa",
+        "at": "2026-10-22T12:43:56.592Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.593Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the pane to the chat and to the companion files, and check the real shell in a browser",
+    "summary": "In extension.ts pass notifyChat (the chat host's submitExternal) and readCompanion (an .html file under the workspace's docs/ folder, at most 8 MB) to the review host. Render the real shell with a long document in headless Chrome and compare it with the approved mock.",
+    "size": "S",
+    "order": 13,
+    "acceptanceChecks": [
+      "The review host is given notifyChat and readCompanion, and the two hosts do not import each other",
+      "readCompanion refuses a path that is not an .html file under docs/ or is over the size limit",
+      "In headless Chrome the comment panel is in view at the top and at the bottom of a long document"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other"
+      },
+      {
+        "level": "unit",
+        "name": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB"
+      },
+      {
+        "level": "smoke",
+        "name": "Headless Chrome render of the real shell with a long document: the comment panel stays in view at the top and at the bottom of the scroll, and a screenshot matches the approved mock's layout"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

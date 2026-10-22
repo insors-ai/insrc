@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8e5ee7aa-d4ce-4d86-bdb8-ca8881dd8de9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.365Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Register the issue stage in registerWorkflowRunners",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f776a69b55b3f0970c52268379451a9a7a9cb938b7c3f4e0322df80279d7896d",
+        "at": "2026-10-22T12:43:13.365Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.366Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the issue stage in registerWorkflowRunners",
+    "summary": "In src/workflow/index.ts add `import { registerIssueRunners } from './runners/issue/index.js'` and a `registerIssueRunners()` call inside registerWorkflowRunners, alongside the existing per-stage registrations — the single line that makes the `issue` stage dispatchable.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "registerWorkflowRunners calls registerIssueRunners; the existing seven registrations are unchanged and the function stays idempotent.",
+      "After registerWorkflowRunners runs, a workflow:'issue' run resolves its runners AND dispatches through the wired orchestrator arms (t4); tsc compiles."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "registerWorkflowRunners wires the issue stage so a workflow:'issue' run resolves its runners + dispatches through the orchestrator arms (existing seven registrations unchanged)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f58e0b6-d1ce-4a0d-84dd-696e65694e75",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:09.551Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Wire the brainstorm synthesize/finalize in orchestrator.ts",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "32b4c9c4f0f4c89ca2ee7134770527932334d103b988ab381d2c634c97d44c44",
+        "at": "2026-10-22T12:44:09.551Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.129Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the brainstorm synthesize/finalize in orchestrator.ts",
+    "summary": "In src/workflow/orchestrator.ts replace the brainstorm 'not yet supported' throws: add a brainstormSynthesizer (prepareSynthesize case 'brainstorm') that emits a synth prompt+schema instructing the LLM to structure the converged elicit stepOutputs (workingStatement -> distinct intent + scopeBoundary; decisions/nonGoals/openItems 1:1) into a SpecArtifactBody; and finalizeBrainstorm (finalizeArtifact case 'brainstorm') that validates the body, computes specHash, builds the SpecArtifact (meta.createdAt + attribution, approvedAt unset), and writes {md,json} via specArtifactPaths + writeAtomic + renderSpecMarkdown — mirroring defineSynthesizer/finalizeDefine. The other workflows' arms are untouched.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "prepareSynthesize('brainstorm', stepOutputs) no longer throws and returns a synth prompt+schema targeting the SpecArtifactBody",
+      "finalizeArtifact 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json under ARTIFACTS_DIR + md under SPECS_DIR) with meta.approvedAt unset",
+      "finalizeArtifact 'brainstorm' rejects (retryable, writes nothing) a body missing a required field (e.g. empty scopeBoundary)",
+      "the stub/define/design.epic/design.story/plan synth+finalize arms are unchanged; tsc clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "orchestrator prepareSynthesize(intent 'brainstorm', stepOutputs) no longer throws 'not yet supported' and returns a synth prompt/schema targeting the SpecArtifactBody"
+      },
+      {
+        "level": "integration",
+        "name": "finalizeArtifact for 'brainstorm' with a valid synthesized body writes exactly one SpecArtifact (json+md), body carrying intent/scopeBoundary/nonGoals/decisions/openItems, meta.approvedAt unset"
+      },
+      {
+        "level": "integration",
+        "name": "finalizeArtifact rejects (retryable, writes nothing) a synthesized body missing a required field (e.g. empty scopeBoundary)"
+      },
+      {
+        "level": "integration",
+        "name": "the other workflows' synth/finalize arms are unaffected (a stub/define finalize still works)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

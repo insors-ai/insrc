@@ -6,7 +6,26 @@
     "createdAt": "2026-10-14T18:51:21.474Z",
     "updatedAt": "2026-10-14T18:56:34.438Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
-    "epicSlug": "per-repo-chat-turn-queue-outbox"
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "3995a398df5954bb61dafa40b828110d2b7aa7b2f4e52ced7e98b9999d97a42f",
+        "at": "2026-10-14T18:51:21.474Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

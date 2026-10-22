@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f0e569b-dfa7-47c8-9b3e-f4198a2ee907",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:23.089Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Graph builder, part 1: grouping, identity, membership and evidence",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-2ff0dfdadb1c8d1c-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4aa2cb967ae85f97060026b3c748a07340d68d5136bb9f1d591fecdced1e611d",
+        "at": "2026-10-22T12:43:23.089Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:23.089Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Graph builder, part 1: grouping, identity, membership and evidence",
+    "summary": "Create src/workflow/delivery/graph.ts with groupRecordsByWorkItem and the first half of buildWorkItemGraph. Group records by work-item hash and key (ordinal, R(<raw>) for an unparseable id, empty for epic-level records, SPECs omitted, pending or rejected EXT at epic level). Create epic and issue nodes from DEF and ISSUE heads and story nodes from story groups; pick each anchor as buildRecordFolderArgs does (epic story: DEF createdAt; standalone: LLD workItemAnchorCreatedAt, else ISSUE createdAt, else earliest BUILD); mint every id through safeCanonical with the H-form and :R(<raw>) fallbacks; take standalone from the head, else the LLD, else (trivial route only) the BUILD; derive epic membership from DEF stories, approved EXT addedStory and non-EXT story groups; attach evidence per kind; raise identity-ambiguous, identity-anchor-missing and unresolved-parent (head-less records) notices.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "s1 and S001 records of one story form one item whose sourceIds keep both raw ids.",
+      "A story's LLD, PLAN, BUILD and CR are all in that item's evidenceArtifactIds.",
+      "Story ids equal deriveWorkItemIdentity's canonical form over the anchor inputs and the existing folder segment.",
+      "Disagreeing standalone flags between an LLD and its BUILD do not split the story or raise a notice.",
+      "A trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice.",
+      "A pending or rejected EXT creates no story item and no story key, and is in its epic's evidence.",
+      "No call throws for a malformed createdAt, a non-hex hash or an unparseable storyId."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'a story with LLD, PLAN, BUILD and CR is one item with all four as evidence'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 's1 and S001 records join one story and both raw ids are kept in sourceIds'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'the real S001/s001 pair from epic dfc0371b yields one story'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'a standalone story with no head is a root with no invented epic, dated from its own LLD'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'pending and rejected EXT records create no story item and appear as epic evidence'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'a rejected EXT whose story nothing else names is keyed epic-level and creates no story key'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'records with an invalid createdAt or a non-hex hash get the H-form id and an identity-anchor-missing notice'"
+      },
+      {
+        "level": "unit",
+        "name": "graph.test.ts: 'groupRecordsByWorkItem keys an unparseable storyId as <hash>|R(x), omits SPECs, and a head-less HLD key carries an unresolved-parent notice'"
+      },
+      {
+        "level": "unit",
+        "name": "identity-contract.test.ts: 'epic, standalone and issue ids equal deriveWorkItemIdentity over the anchor inputs and pinned folder segments, including a sized-bugfix LLD dated a different day from its ISSUE'"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -20,8 +20,35 @@
     "epicHash": "abd1ecf6a5f5063e",
     "epicSlug": "frame-epic-new-pre-workflow-brainstorm",
     "storyId": "s10",
-    "approvedAt": "2026-08-04T14:37:01.753Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "9d1cff15e6ce9ae389804549783837dc9a37849160d95ad1a93fbaa3be3e0ba1",
+        "at": "2026-08-04T14:35:19.278Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-04T14:37:01.753Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "L",

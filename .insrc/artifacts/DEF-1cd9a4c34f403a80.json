@@ -10,7 +10,35 @@
     "schemaVersion": 1,
     "epicHash": "1cd9a4c34f403a80",
     "epicSlug": "add-plan-workflow-insrc-framework-4th",
-    "approvedAt": "2026-07-15T13:20:56.895Z"
+    "epicCreatedAt": "2026-07-15T13:13:12.159Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "db0c203c21061200b323cd47b44d0aa756c39094453d9f5b9f15e24bd89852ff",
+        "at": "2026-07-15T13:13:12.159Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-15T13:20:56.895Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

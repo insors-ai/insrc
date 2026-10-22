@@ -9,7 +9,34 @@
     "standalone": true,
     "epicCreatedAt": "2026-10-15T10:06:05.580Z",
     "epicSlug": "declare-documents-turn-presents-instead-parsing",
-    "approvedAt": "2026-10-16T05:54:07.762Z"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "bda0e84631ad2655235c6b20db7256718eb0cbae78c844791a635d4bed164225",
+        "at": "2026-10-15T11:32:13.593Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T05:54:07.762Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

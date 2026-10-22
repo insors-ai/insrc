@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6697581f-e7de-4faf-ad35-26274028c484",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.433Z",
+    "epicCreatedAt": "2026-10-12T10:10:09.226Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "59da3204a44afd1b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Shell: attach button, chips and paste",
+      "parent": {
+        "entityId": "STORY-59da3204a44afd1b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-59da3204a44afd1b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-59da3204a44afd1b-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ff8ae2948b4023bf512e7eee7318af9fee16227b457eff45b6e30f9b1890cf8",
+        "at": "2026-10-22T12:43:36.436Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.437Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Shell: attach button, chips and paste",
+    "summary": "renderShell in chat-panel.ts, only when the seams are present: the icon-only `#insrc-attach` button as the first item of `.statusbar` posting pick-attachments; the chip row `#insrc-attachments` between `.inputbar` and `.statusbar`, hidden while empty, built with textContent, each chip with a remove control and, for a just-pasted image, a thumbnail from the data: URL the webview holds, matched by clientId; the error line; a paste on `#insrc-input` with image items posts attach-image per image and is prevented while a text paste is untouched; doSubmit also submits when the box is blank and chips are shown; the registry's onAttachmentOpen wired to post open-attachment. The content security policy is unchanged. Drag-and-drop and image previews in the transcript are out of scope, as recorded.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The attach button posts pick-attachments and has no text, only an icon with an aria-label and title",
+      "An image paste posts attach-image with its base64 and mime and is prevented; a text paste is untouched",
+      "Chips render from attachments-pending with a remove control that posts remove-attachment; the error sentence is shown; an empty list hides the row",
+      "A blank box with chips submits; a blank box with none does not",
+      "The shell is still one nonce'd inline script under the same policy, with no innerHTML outside the guarded markdown path; without the seams it has no attach button or chip row"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits"
+      },
+      {
+        "level": "integration",
+        "name": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

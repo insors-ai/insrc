@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-1f74c81f507dbe78-S001 -->
+<!-- insrc:artifact LLD-1f74c81f507dbe78-s1 -->
 
 # LLD: E202610131f74c81f:S001
 
@@ -282,7 +282,7 @@ The host compares the content version the daemon returns with the one it last po
 - **[[c8]]** `code` `src/workflow/pending.ts` — "readonly openQuestionCount: number;"
 - **[[c9]]** `stakeholder` `The user in chat on 2026-10-13, after the hand check of Story 8d4b90c9ab301e66/S001` — "the doc review selection shouldn't be a dropdown, should be a paginated table, also should have a search with type selection dropdown and autocomplete"
 - **[[c10]]** `stakeholder` `The user in chat on 2026-10-13` — "the modification did not get reflected in the open view. still showing old text; need to create an insrc icon for doc review, something in line with the delivery board icon"
-- **[[c11]]** `prior-artifact` `LLD-8d4b90c9ab301e66-S001 (the review pane rework this Story follows)`
+- **[[c11]]** `prior-artifact` `LLD-8d4b90c9ab301e66-s1 (the review pane rework this Story follows)`
 - **[[c12]]** `prior-artifact` `The daemon review of revision 1 of this LLD, 2026-10-13: block, 5 medium (a change during a failed decision lost; the watch kept after a failed open clears the record; a failed list read not visible on the list view; the decision result line overwritten; a re-post pulling the reviewer off the list)`
 - **[[c13]]** `prior-artifact` `The daemon review of revision 2 of this LLD, 2026-10-13: block, 2 medium (the draft writer overwrites the whole saved state; the failure of an asked-for open not visible), and the acceptance criteria not stated`
 

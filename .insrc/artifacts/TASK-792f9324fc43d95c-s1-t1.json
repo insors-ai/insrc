@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b00907b-5ac6-458f-a133-4722f0066fbe",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:49.220Z",
+    "epicCreatedAt": "2026-10-02T18:19:50.067Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "792f9324fc43d95c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Write five RED-FIRST acceptance tests for the genuinely-absent cases, committed red",
+      "parent": {
+        "entityId": "STORY-792f9324fc43d95c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-792f9324fc43d95c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "337f319c67c9a7fbbf1ec31c1285403337ae23a453301877dbfba37f2f95f73d",
+        "at": "2026-10-22T12:43:49.220Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:49.221Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write five RED-FIRST acceptance tests for the genuinely-absent cases, committed red",
+    "summary": "CRITIQUE APPLIED — these are RED-FIRST ACCEPTANCE TESTS, not characterisations. The distinction is load-bearing in this repo: the immediately-preceding Story used 'characterisation' for a test that PASSES while asserting today's WRONG behaviour and is inverted later. These do the opposite — they assert the DESIRED behaviour and FAIL now. Writing them the other way would assert the defect as desired, which is exactly the mis-asserted test that produced this Story's blocking review finding. Five cases: (a) the MIRROR direction of the reported defect — the label lives in the DEF-anchored epic with an unrelated ISSUE-anchored epic on a different hash; (b) a single-epic repo asked for a story that does not exist; (c) an explicitly scoped label for a story the scoped epic lacks; (d) a hierarchical id naming a nonexistent story ordinal; (e) CRITIQUE APPLIED, moved from t4 — two feature epics where only ONE contains the label. CRITICAL: do NOT write a test for the id-resolve.test.ts:459 arrangement; it is already covered there asserting the regressed expectation and is INVERTED at t5, not duplicated. Extend setupRepo / setupBugfixRepo (the latter already takes a withIssue flag) rather than adding a parallel helper.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "Five new tests exist and FAIL on unmodified HEAD, each naming the task that turns it green",
+      "Each test name or comment states it asserts DESIRED behaviour and currently fails — so no reader mistakes it for a characterisation of today's behaviour",
+      "(a) the mirror direction resolves — label in the DEF epic, unrelated ISSUE epic on a different hash — goes green at t4",
+      "(b) a single-epic repo refuses a nonexistent story, where today it returns a well-formed ref — goes green at t3",
+      "(c) an explicitly scoped label for a missing story refuses — APPROVED narrowing one — goes green at t3",
+      "(d) a hierarchical id naming a nonexistent ordinal refuses — APPROVED narrowing two — goes green at t3",
+      "(e) two feature epics, only one containing the label, resolves — the additive gain — goes green at t4",
+      "NO test is added for the id-resolve.test.ts:459 arrangement; confirmable by diff that :459 is untouched here",
+      "Fixtures reuse setupRepo / setupBugfixRepo rather than introducing a parallel helper"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "RED-FIRST (a), green at t4: the mirror direction — a DEF-anchored epic containing s1 plus an UNRELATED ISSUE-anchored epic on a different hash resolves `s1`"
+      },
+      {
+        "level": "integration",
+        "name": "RED-FIRST (b), green at t3: a single-epic repo asked for nonexistent `s9` refuses instead of minting a well-formed ref"
+      },
+      {
+        "level": "integration",
+        "name": "RED-FIRST (c), green at t3: an explicitly scoped label for a story the scoped epic lacks refuses — a scope asserts WHICH epic, not that the story exists"
+      },
+      {
+        "level": "integration",
+        "name": "RED-FIRST (d), green at t3: a hierarchical id naming a nonexistent story ordinal refuses"
+      },
+      {
+        "level": "integration",
+        "name": "RED-FIRST (e), green at t4: two feature epics where only ONE contains `s1` resolves — the additive gain, proved red-to-green rather than claimed"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

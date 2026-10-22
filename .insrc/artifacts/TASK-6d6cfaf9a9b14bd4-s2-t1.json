@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-11087e47-e7be-4a42-aea8-ba6fcfaba3bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.198Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Re-resolve the unverified insertion points and invariants (read-only gate)",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ac14947530d670cad65e800514d10dbcada27a3ef2c0198914e14a5aacb87d79",
+        "at": "2026-10-22T12:43:43.198Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.199Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Re-resolve the unverified insertion points and invariants (read-only gate)",
+    "summary": "Blocking discovery Task, no code changes. Resolve the real parameter lists of buildInsrcMcpServer and runInsrcMcpStdio with symbol.locate and record where the three long-running tools are registered — s1's module.profile returned exports: [] / entrypoints: [] for src/mcp/workflow-step and symbol.locate found no entity for insrc_workflow_step, so no downstream Task may assume a known registration file. Open src/daemon/workflow-rpc.ts firsthand and confirm the onProgress declaration (~line 75) and the transport binding (~line 238, send({ id: 0, stream: 'progress', data: f })) — the LLD asserts this seam from s1 but the discovery pass did not re-ground it. Run a targeted search.text over src/daemon/analyze-rpc.ts to establish whether analyze.run frames reach the wire through the same stream:'progress' binding; if they do not, record the deviation and narrow the t8 rollout to workflow.run only. Enumerate src/mcp/workflow-step/__tests__ — the directory exists per module.profile but its contents were never listed, so the 'no test file to extend' premise must be checked, not assumed. Finally, retire the LLD's own open question: five of nine invariantsToPreserve (2, 3, 4, 5, 8) are grounded only in HLD text and the alternative judgment, never in a bundle showing the invariant holds in code today — and those are exactly what t3 and t7 are checked against. Confirming them here, while src/mcp/ and src/daemon/workflow-rpc.ts are already open, is nearly free; discovering one is false at t7 is not. Trap: runWorkflow at src/cli/command.ts:126 is the CLI dispatcher, not the workflow runner entry — do not target it.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The actual signatures of buildInsrcMcpServer and runInsrcMcpStdio (and the shape of BuildInsrcMcpServerOpts) are recorded verbatim from source, replacing the LLD's 'UNVERIFIED SHAPE' placeholder.",
+      "The file and line where each of the three long-running tools (workflow-step, analyze-step, build-step) is registered, and where its request envelope first becomes observable, is recorded.",
+      "The onProgress declaration and the send({ id: 0, stream: 'progress', data: f }) binding in src/daemon/workflow-rpc.ts are confirmed present with their current line numbers, or the discrepancy is recorded.",
+      "A written verdict on whether src/daemon/analyze-rpc.ts emits through the same stream:'progress' binding: confirmed / differs / absent — with the rollout narrowing decision for t8 stated explicitly.",
+      "The contents of src/mcp/workflow-step/__tests__ are enumerated and the target location for the new test file is fixed (src/mcp/__tests__/ per the LLD, or a stated deviation).",
+      "Each of invariantsToPreserve 2, 3, 4, 5 and 8 is either confirmed against current source or recorded as unverified with the affected downstream Task named explicitly.",
+      "No source file is modified by this Task."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "read-only gate: `npm run build` and the full existing test sweep stay green, confirming no source file was modified by the discovery pass"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

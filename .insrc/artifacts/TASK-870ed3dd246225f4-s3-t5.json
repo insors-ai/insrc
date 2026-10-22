@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bdfc2cf9-ffba-42fb-8cc4-3e666f9884df",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.104Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Unit tests (traversal-specific) + end-to-end verification",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7c2631b27c766a04c905fc54543063fed0e2651af2926bc95831790ae39a644",
+        "at": "2026-10-22T12:43:54.105Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.105Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit tests (traversal-specific) + end-to-end verification",
+    "summary": "Create src/docgen/extract/__tests__/call-sequence.test.ts: pure-core buildCallSequenceIR fixtures (linear chain, cycle, depth-truncated frame, leaf, double-call, determinism); makeExtract against a fake CallGraphReader with cyclic/deep/dangling adjacency exercising cycle-termination (ac2), depth-cap (ac3), not-found (ac4), source-not-ready/empty-scope; the sequenceDiagram render + a byte-identical s1/s2 regression assertion (the t3 backstop). Then run the full docgen suite + npm run build + a live-graph smoke on a real entry-point symbol.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the new call-sequence tests pass; full docgen suite green (43 + new cases)",
+      "npm run build clean",
+      "live smoke: generateDocument('call-sequence',{repo, symbol:<real fn>, maxDepth}) -> ok sequenceDiagram, entity-cited, single self-contained file (no <script src=), truncation stated when the cap is hit"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "full call-sequence.test.ts suite green + full docgen suite (43 + new) green"
+      },
+      {
+        "level": "smoke",
+        "name": "live-graph call-sequence smoke on a real entry-point symbol: sequenceDiagram, entity-cited, offline HTML, truncation stated at the cap"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

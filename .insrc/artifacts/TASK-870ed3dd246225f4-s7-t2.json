@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-04f5a0f2-9276-4c82-bd8a-3a7cf7f51a7c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.232Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Implement validateDocgenAssets + DocgenAssetValidationError/DocgenAssetFailure",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "509279a35072d7867f3d0429d772cc1b727216259f35bff0ccbd6cd469470adb",
+        "at": "2026-10-22T12:43:55.232Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.232Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement validateDocgenAssets + DocgenAssetValidationError/DocgenAssetFailure",
+    "summary": "Add validateDocgenAssets(): void, mirroring validateAnalyzePrompts in src/analyze/context/boot-validator.ts, that calls the shared resolveDocgenRuntimeManifest() helper (from t1) to obtain the parsed runtime.json manifest from DOCGEN_ASSET_DIR, then stat+non-empty-checks manifest.mermaidAsset and manifest.svgPanZoomAsset. Introduce DocgenAssetFailure {componentId, path, reason} and DocgenAssetValidationError, which collects every failure (missing runtime.json, missing bundle(s), empty bundle, malformed manifest JSON) into one throw carrying a single actionable Fix: line naming the copy-assets ship step. Read-only: stat + readFile only, no mutation, no network call, no new asset-shipping path.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "validateDocgenAssets() returns silently when runtime.json and both referenced bundles are present and non-empty under DOCGEN_ASSET_DIR",
+      "validateDocgenAssets() throws a single DocgenAssetValidationError listing every failing component (not just the first) when runtime.json is missing, a bundle is missing, a bundle is empty, or the manifest is malformed JSON — each DocgenAssetFailure entry carries componentId/path/reason, and the thrown error's message contains exactly one Fix: line naming copy-assets for the whole collected error, not one per entry",
+      "validateDocgenAssets() obtains the manifest via the shared resolveDocgenRuntimeManifest() helper rather than an independent runtime.json read, and performs only read-only stat/readFile calls (no writes, no fetches), introducing no second asset-shipping path"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validateDocgenAssets returns silently when all assets present and non-empty"
+      },
+      {
+        "level": "unit",
+        "name": "validateDocgenAssets collects every missing/empty/malformed-manifest failure into one DocgenAssetValidationError throw with one Fix: line"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

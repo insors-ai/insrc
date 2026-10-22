@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-c96a97a204fac22b-S001 -->
+<!-- insrc:artifact TESTS-c96a97a204fac22b-s1 -->
 
 # Tests: c96a97a204fac22b S001
 

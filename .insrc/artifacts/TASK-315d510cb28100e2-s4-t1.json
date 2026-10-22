@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a4127aca-05fb-4bba-9af9-e42375374bf2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.492Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the single artifact writer, the revision field and the widened tracker record",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d8508e9894fa1c45b7cbe391dbf035fd2389bc12217740a94799edee9febe5b2",
+        "at": "2026-10-22T12:43:25.492Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.493Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the single artifact writer, the revision field and the widened tracker record",
+    "summary": "Add writeArtifact(path, next, kind) and readRevision beside writeAtomic in src/workflow/storage.ts: a content write mints meta.revision (prior + 1, first draft 1) and carries the whole prior meta.tracker block (legacy fields, units, extrasDone) with next winning per key; a meta-only write keeps the on-disk revision; a value without meta throws TypeError. Add the optional revision to ArtifactMetaBase, the optional units to TrackerMeta, UnitRef and UnitIssue types, and widen TrackerMeta.adapter from 'github' to the port's TrackerKind with patchTrackerMeta preserving the actual kind. patchTrackerMeta writes through writeArtifact as meta-only and merges units key by key.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "writeArtifact mints revision 1 then +1 on content writes, keeps the revision on meta-only writes, and throws TypeError (file untouched) for a value without meta.",
+      "A content write over an existing file keeps every prior tracker field, units and extrasDone, does not carry approvedAt or review, and an artifact with no revision reads as 0.",
+      "TrackerMeta.adapter accepts the port's TrackerKind and patchTrackerMeta preserves the kind it is given; every existing tracker field is unchanged.",
+      "npx tsc --noEmit passes."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-writer.test.ts: writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-writer.test.ts: readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

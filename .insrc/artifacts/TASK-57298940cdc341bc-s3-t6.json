@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ff302350-9f49-44e6-adc0-1388256073c2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:33.343Z",
+    "epicCreatedAt": "2026-09-21T05:46:35.262Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57298940cdc341bc",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add reader + page tests and scope the NestedOpsPagesTest placeholder guard",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-57298940cdc341bc-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-57298940cdc341bc-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4cb145aa4108e9d627c0b4eee5dbbf6f092aa0bc2a5d1ea4474037fe499ec7ad",
+        "at": "2026-10-22T12:43:33.343Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:33.345Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add reader + page tests and scope the NestedOpsPagesTest placeholder guard",
+    "summary": "Add WorkflowChainReaderTest.kt (JUnit5 temp-dir fixtures: DEF/HLD/LLD/AMD JSON — existence/approval, matching vs mismatching hldEffectiveHash staleness, amendment counts, empty-dir empty, malformed-file swallow, HLD-missing) + WorkflowsPageTest.kt (source-scan: extends base, calls WorkflowChainReader, renders via InsrcCollapsible, no approve/reject/amend token, empty-state label, parent page untouched). Edit NestedOpsPagesTest to exclude WorkflowsConfigurable from the placeholder-only guard (`cls != \"WorkflowsConfigurable\"`, as S002 did for DaemonConfigurable). Verify locally: gradlew test buildPlugin (JDK21, --no-build-cache after the new data classes).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "WorkflowChainReaderTest covers matching/mismatching staleness, amendment counts, empty-dir, malformed-file swallow, HLD-missing",
+      "WorkflowsPageTest source-scan asserts sc1 consumption, InsrcCollapsible render, no approve/reject/amend control, empty state, parent untouched",
+      "NestedOpsPagesTest placeholder guard excludes WorkflowsConfigurable and still passes for the remaining placeholder(s)",
+      "Full jetbrains-plugin test + buildPlugin green locally on JDK21"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "WorkflowsPageTest source-scan (k6/ac2): WorkflowsConfigurable contains no approve/reject/amend/JButton-action control and no gateway/daemon IPC call"
+      },
+      {
+        "level": "unit",
+        "name": "WorkflowsPageTest source-scan (k4): InsrcSettingsConfigurable is not repointed at WorkflowsConfigurable; parent page untouched"
+      },
+      {
+        "level": "unit",
+        "name": "NestedOpsPagesTest: the placeholder-only guard excludes WorkflowsConfigurable and still passes for the remaining placeholder page(s)"
+      },
+      {
+        "level": "smoke",
+        "name": "Local gate: gradlew test buildPlugin green on JDK21 (--no-build-cache after the new data classes)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

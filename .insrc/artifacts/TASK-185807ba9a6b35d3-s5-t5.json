@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da678ddf-f799-4818-b5d1-4177c85479bb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.447Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Grow-in-place incremental checkpoint persistence at each Task boundary",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "756e407621026f46b2df27c404773cbc13ec19718d70e2857bc88c73047abe1d",
+        "at": "2026-10-22T12:43:16.447Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.448Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Grow-in-place incremental checkpoint persistence at each Task boundary",
+    "summary": "Persist the flat BuildArtifact shape incrementally at each Task boundary (grow-in-place) through the t2 storage helpers, so a run in flight always has a readable, independently-reloadable checkpoint rather than an untracked partial — the durability guarantee that naming what landed on the tree survives before finalize. Cover the complete, halted (populating the optional halt/BuildHaltInfo field), and empty paths in the same flat shape. Depends on t2 (storage helpers); no dependency on the finalize handler.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the flat BuildArtifact shape is persisted incrementally at each Task boundary (grow-in-place) via storage.ts through the same envelope as sibling kinds",
+      "a checkpoint persisted at a Task boundary is independently reloadable from storage before finalize (durability during the run)",
+      "the halted path persists the identical flat shape with runState='halted' and the BuildHaltInfo block populated",
+      "unit tests over complete-run, halted-run, and empty-run checkpoint fixtures pass"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "grow-in-place checkpoint persisted at a Task boundary through storage.ts is independently reloadable before finalize, over complete-run, halted-run (runState='halted' + BuildHaltInfo), and empty-run fixtures"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-611a933c-d891-4295-8417-8a3fe1da5074",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:15.472Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the sc5 seam types (TaskImplementerRequest / Report / Adapter)",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-185807ba9a6b35d3-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6d5f1985efe8024e213a5c716a3c93d1d4eee11adb7836d368498e1d365188f8",
+        "at": "2026-10-22T12:43:15.472Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:15.473Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the sc5 seam types (TaskImplementerRequest / Report / Adapter)",
+    "summary": "Add the three sc5 interfaces to schemas.ts: TaskImplementerRequest (task bound to the WORKFLOW PlanTask at src/workflow/artifacts/plan.ts — NOT the same-named analyze-types interface — plus storyDesignMarkdown, planMarkdown, completedDependencies: readonly BuildTaskOutcome[], repoRoot, and the bounded maxAttempts repair budget), the deliberately two-field advisory TaskImplementerReport ({ claimedComplete, narrative }), and the TaskImplementerAdapter interface with a single implement(req): Promise<TaskImplementerReport>. Types only, no implementation (migration step 3).",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "schemas.ts exports TaskImplementerRequest, TaskImplementerReport ({ claimedComplete, narrative }), and TaskImplementerAdapter with one method implement(req: TaskImplementerRequest): Promise<TaskImplementerReport>.",
+      "TaskImplementerRequest.task is typed against the WORKFLOW PlanTask from src/workflow/artifacts/plan.ts and completedDependencies is readonly BuildTaskOutcome[]; the report is documented and used as advisory-only."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "schemas: TaskImplementerRequest.task binds to the WORKFLOW PlanTask (src/workflow/artifacts/plan.ts) with completedDependencies typed readonly BuildTaskOutcome[], and TaskImplementerReport exposes only the two advisory fields { claimedComplete, narrative }"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

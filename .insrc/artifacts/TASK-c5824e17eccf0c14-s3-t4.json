@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-41bf0030-7c25-4292-bb1d-4cf677fe9365",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:38.656Z",
+    "epicCreatedAt": "2026-09-27T14:36:39.039Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5824e17eccf0c14",
+    "storyId": "s3",
+    "envelope": {
+      "description": "validateErDefinition (ajv metamodel + referential integrity + FR-consistency)",
+      "parent": {
+        "entityId": "STORY-c5824e17eccf0c14-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c5824e17eccf0c14-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c5824e17eccf0c14-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "317e27da2aacf5622defd8361589a18a3800dcf9a8170d47b8122e2696fa0a3b",
+        "at": "2026-10-22T12:44:38.656Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:38.657Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "validateErDefinition (ajv metamodel + referential integrity + FR-consistency)",
+    "summary": "In companion/er.ts, add validateErDefinition(erDef, fnDef?) returning DimensionFinding[]: (1) validateAgainstSchema vs the vendored metamodel; (2) referential integrity (relationship slot ranges resolve to defined classes; identifiers present); (3) FR/data-model consistency using the consumed sc1 FunctionalDefinition. Operates on the JSON element only — never reads a rendered file.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "metamodel-invalid erDef -> HIGH breach; sound erDef -> no findings",
+      "dangling relationship range -> HIGH referential-integrity breach",
+      "ER<->FR mismatch -> finding when a FunctionalDefinition is supplied",
+      "no filesystem read of any companion occurs during validation"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "validateErDefinition: metamodel-valid -> no findings; shape/cardinality violation -> HIGH breach (ajv vs vendored metamodel)"
+      },
+      {
+        "level": "unit",
+        "name": "validateErDefinition: dangling relationship range -> HIGH referential-integrity breach"
+      },
+      {
+        "level": "unit",
+        "name": "validateErDefinition: ER<->FR mismatch -> finding when FunctionalDefinition supplied"
+      },
+      {
+        "level": "unit",
+        "name": "validateErDefinition never reads a rendered file (assert no companion fs read)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

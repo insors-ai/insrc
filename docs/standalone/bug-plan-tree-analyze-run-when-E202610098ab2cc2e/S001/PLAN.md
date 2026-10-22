@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-8ab2cc2edb3743df-S001 -->
+<!-- insrc:artifact PLAN-8ab2cc2edb3743df-s1 -->
 
 # Plan: E202610108ab2cc2e:S001
 

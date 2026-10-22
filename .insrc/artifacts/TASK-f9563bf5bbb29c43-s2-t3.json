@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-42ebe43a-1c45-44f9-a3cf-51c0776c166e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:01.409Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s2",
+    "envelope": {
+      "description": "renderShell: icon-only Send/Stop button + fixed-region layout refined to the mock (ac1/ac2)",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3808180e42c945d69b9e76da7db7baafcc8b2b7f3ef212cd250b25bc342a1f54",
+        "at": "2026-10-22T12:45:01.409Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:01.410Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "renderShell: icon-only Send/Stop button + fixed-region layout refined to the mock (ac1/ac2)",
+    "summary": "In renderShell add an icon-only #insrc-send button in the input area toggling ▶ (green Send) / ■ (red Stop) driven by a webview-local `running` flag (set on submit, cleared on done/error); Send posts submit-turn, Stop posts cancel-turn. Retain the Cmd/Ctrl+Enter submit path (converges on submit-turn). Refine the header/input fixed-region CSS to the mock so #insrc-term stays the only scroll region. Inline under the CSP, className/textContent only; every existing element id preserved.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "the html contains an icon-only #insrc-send button (▶/■, no text label) inside the input area",
+      "a Send click posts submit-turn; while running the button is Stop (■) and its click posts cancel-turn",
+      "the fixed-region layout holds: #insrc-term is the only overflow-y:auto region, header + input stay flex:0 (ac1)",
+      "all pre-existing element ids remain (#insrc-term/#insrc-input/#insrc-provider/#insrc-history/#insrc-editmode/#insrc-sesstitle); still one nonce'd inline <script>; no innerHTML; no remote origin (k1)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the html contains an icon-only Send/Stop button #insrc-send (▶/■) inside the input area"
+      },
+      {
+        "level": "unit",
+        "name": "the fixed-region layout holds: #insrc-term is the only overflow-y:auto region; header + input stay flex:0"
+      },
+      {
+        "level": "unit",
+        "name": "all pre-existing element ids are still present (#insrc-term/#insrc-input/#insrc-provider/#insrc-history/#insrc-editmode/#insrc-sesstitle)"
+      },
+      {
+        "level": "unit",
+        "name": "still exactly one nonce'd inline <script>; no innerHTML; no remote origin (k1)"
+      },
+      {
+        "level": "integration",
+        "name": "the host still no-ops an empty submit (button Send with blank input starts no turn)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

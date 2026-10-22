@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bb2d7ea1-bbaf-4c01-86c1-056db3637f68",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.507Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Append writer + production key-preserving artifact-JSON writer (sc2 core)",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1613e25d1ff67b1bd3d18f149578ed0465a83d3c060ae9f6ffbccf2450a522cb",
+        "at": "2026-10-22T12:44:04.507Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.507Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Append writer + production key-preserving artifact-JSON writer (sc2 core)",
+    "summary": "Create src/workflow/artifacts/provenance/writer.ts with appendFeedback(req): read the artifact JSON (JSON.parse, readArtifact-style), guard the path is under the repo artifact root, validate non-empty author+comment, mint id+timestamp, append to body.feedback, and writeArtifactJson (JSON.stringify(...,null,2)) key-preservingly; ArtifactFeedbackError for out-of-tree/missing/malformed/blank-field. No render or daemon wiring here. Co-locate the writer's unit tests (round-trip + rejections) with this task.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "appendFeedback appends exactly one entry, mints id + (missing) timestamp, returns {artifactPath,entryId,total} (ac3/lc1)",
+      "writeArtifactJson preserves every meta/citations/other-body key; only body.feedback grows (k5)",
+      "out-of-tree path, missing/malformed JSON, and blank author/comment each throw ArtifactFeedbackError before any write",
+      "co-located unit tests for the round-trip + all three rejection paths are added with this task"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "provenance/writer: appendFeedback mints id + timestamp, appends one entry, returns {entryId,total}; blank author/comment rejected; out-of-tree path rejected; malformed JSON rejected"
+      },
+      {
+        "level": "unit",
+        "name": "provenance/writer: writeArtifactJson round-trip preserves every meta/citations/body key and only grows body.feedback"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

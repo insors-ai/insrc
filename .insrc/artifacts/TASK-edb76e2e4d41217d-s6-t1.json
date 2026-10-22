@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3e398c23-56e4-4963-8369-d60d8dcc991e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:53.459Z",
+    "epicCreatedAt": "2026-09-25T13:25:32.966Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "edb76e2e4d41217d",
+    "storyId": "s6",
+    "envelope": {
+      "description": "New edit-governor.ts module (createEditGovernor + types + computeDiff)",
+      "parent": {
+        "entityId": "STORY-edb76e2e4d41217d-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-edb76e2e4d41217d-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59a4373817ffdeca465e4059254a59f4d10624faaf4c23c8c9ca53eb269d5131",
+        "at": "2026-10-22T12:44:53.459Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:53.460Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "New edit-governor.ts module (createEditGovernor + types + computeDiff)",
+    "summary": "Add vscode-plugin/src/chat/edit-governor.ts: createEditGovernor(deps) returning an EditGovernor with beginTurn/observe/resolveTurn/decide over injected seams (WorkspaceBaseline, FsSeam, EditRenderSeam, diffView accessor), plus the EditGovernorState in-memory type and a small pure computeDiff(before,after,path)->UnifiedDiff. Pure/vscode-free; total (seam failures caught -> degrade). Nothing wired yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "edit-governor.ts exports createEditGovernor + the EditGovernor/EditGovernorDeps/EditRenderSeam/WorkspaceBaseline/FsSeam types; imports no vscode",
+      "beginTurn captures a baseline handle (or no-baseline flag) + resets the edits map; observe computes a diff via computeDiff and calls render; decide reject restores baseline, accept keeps; resolveTurn clears state",
+      "computeDiff produces a UnifiedDiff from two strings independent of any sc2 payload (handles new-file baseline undefined + binary/non-text)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "edit-governor: beginTurn snapshots once; observe computes+renders a diff (auto = visualize-only, no tracking)"
+      },
+      {
+        "level": "unit",
+        "name": "edit-governor: review decide(reject) restores baseline via fake fs; decide(accept) keeps disk"
+      },
+      {
+        "level": "unit",
+        "name": "edit-governor: same path observed twice keeps the first baseline; new-file baseline undefined -> all-additions, reject removes it; provider-agnostic diff from before/after"
+      },
+      {
+        "level": "unit",
+        "name": "edit-governor: non-git -> no-baseline visualize-only, reject no-op with note, never throws"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

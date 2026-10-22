@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6efe25d2-5b1f-4548-8bb5-7ca78146e3c7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.472Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s7",
+    "envelope": {
+      "description": "The docs tasks take their scope from the scope function",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s7-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "980af6b66e6a09c978d137b22309d2eb6ad01cda53f561b14f2ee22d9d168d4e",
+        "at": "2026-10-22T12:44:25.472Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.472Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The docs tasks take their scope from the scope function",
+    "summary": "Move the docs inventory, family-summary, constraint and decision tasks to resolveTaskScope. The family-summary task keeps only the document summaries whose file lies in the area of a module or file scope. The constraint and decision tasks do not yet narrow what they retrieve; that is the next Task.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A docs task accepts repo, module, file and workspace and refuses a symbol scope with 'scope-ref-kind-target-mismatch'",
+      "With a repo scope each of the four docs tasks returns what it returned before the change",
+      "The family-summary task with a module scope keeps only summaries of documents under that directory",
+      "No docs runtime uses the scope's value as a repo path"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code"
+      },
+      {
+        "level": "integration",
+        "name": "the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's"
+      },
+      {
+        "level": "unit",
+        "name": "no docs runtime uses the scope's value as a repo path"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

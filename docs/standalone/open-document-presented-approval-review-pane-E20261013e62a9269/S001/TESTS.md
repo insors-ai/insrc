@@ -1,4 +1,4 @@
-<!-- insrc:artifact TESTS-e62a9269a7cb9550-S001 -->
+<!-- insrc:artifact TESTS-e62a9269a7cb9550-s1 -->
 
 # Tests: e62a9269a7cb9550 S001
 

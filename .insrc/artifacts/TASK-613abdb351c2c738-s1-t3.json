@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5f25975-37ad-42ee-8f82-e4fd01d0efc6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:37.182Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Chain starts in the turn lifecycle and report the CLI process",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "983d2deda86fcfe7352b3b4d1478dba59ab7be030be8d2e51e9c1d96e54596ff",
+        "at": "2026-10-22T12:43:37.182Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:37.182Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Chain starts in the turn lifecycle and report the CLI process",
+    "summary": "turn-lifecycle.ts: remove the newest-wins supersede (a start made while a turn is in progress waits for it, then takes its generation), drop a chained start on stop/detach/invalidate through a chain epoch, and add onSpawn (pid optional, start time, exited promise surviving detach) to TurnSink and FollowSink for live and followed turns; update the lifecycle tests the HLD lists.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A second start runs after the first instead of superseding it",
+      "A chained start is dropped by Stop and by detach and never spawns",
+      "onSpawn reports every spawned process, with or without a pid, and its exit also after detach, for live and followed turns",
+      "The listed lifecycle tests are updated and the rest pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

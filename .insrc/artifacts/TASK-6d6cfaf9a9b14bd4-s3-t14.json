@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0c7a1d67-bae3-4fc7-abf7-596067f53fcc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.444Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the onError() member and a named failure payload type",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1821ac1543829828399fe794352754d6f54023b3158c95ee7c7d4a78c557eb71",
+        "at": "2026-10-22T12:43:43.444Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.444Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the onError() member and a named failure payload type",
+    "summary": "CONTINGENT on t1: run only if the sharedContract.methodAdd amendment for `onError()` was approved; if rejected, this Task does not run and t9's silent-detach behaviour stands. Add `onError(handler: (error: NamedFailureType) => void): void` and give the daemon's `{ error: string; recoverable: boolean }` payload a named exported type, closing the open question that no throwable/failure type is pinned anywhere in the contract. This makes a failed run representable: without it the reader must not fire onComplete on failure, leaving the consumer unable to distinguish failure from a stalled operation — and silence carries no signal, since token frames arrive at irregular batch cadence. Wire it to the existing error branch from t9 (which already detaches and sets done without firing onComplete); the 'error' stream kind already exists and is already produced, so no wire change is involved.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "The `{ error: string; recoverable: boolean }` failure payload has a named exported type, satisfying the open question that no error type was pinned.",
+      "onError fires on the 'error'-stream branch and on no other path; onComplete still does not fire for a failed run.",
+      "onError and onComplete are mutually exclusive for a given operation — a unit test asserts a failed run fires exactly one and never both.",
+      "No existing sc3 member changes signature, sc1 is untouched, and no IpcStreamKind member or wire literal is added.",
+      "Tests reuse the t10 fixture harness rather than rebuilding the frame-builder."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "onError-fires-on-error-branch-only: an 'error'-stream frame dispatches the named failure payload and no other path fires onError"
+      },
+      {
+        "level": "unit",
+        "name": "onError-and-onComplete-mutually-exclusive: a failed run fires exactly one of the two and never both"
+      },
+      {
+        "level": "unit",
+        "name": "named-failure-type-exported: the `{ error: string; recoverable: boolean }` payload has a named exported type that type-checks clean"
+      },
+      {
+        "level": "unit",
+        "name": "onError-is-additive: no existing sc3 member signature changes, sc1 untouched, no IpcStreamKind member or wire literal added"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

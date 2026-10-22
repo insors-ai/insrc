@@ -20,94 +20,58 @@
     "schemaVersion": 1,
     "epicHash": "238917216d8fd532",
     "epicSlug": "ide-artifact-review-panel-jetbrains-plugin",
-    "review": {
-      "artifact": "design.epic",
-      "stage": "design.epic",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon registers workflow.approve, artifact.get and artifact.search IPC handlers in src/daemon/index.ts (approve + read exist; the framework reuses them).",
-          "evidence": "workflow.approve (src/daemon/index.ts:555), artifact.get (:980), artifact.search (:994) all resolve exactly as registered handlers.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "approveWorkflowTarget in src/workflow/gates.ts is the approve path that stamps approval and honours the review block-verdict (reused by s5).",
-          "evidence": "export function approveWorkflowTarget confirmed at src/workflow/gates.ts:617.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin's DaemonGateway/UnixSocketDaemonRpc.call(method, params) one-shot local-socket client is the transport the new IPC wrappers extend.",
-          "evidence": "class UnixSocketDaemonRpc (UnixSocketDaemonRpc.kt:32), fun call(method,params) on both DaemonGateway.kt:69 and the impl :40, interface DaemonGateway (DaemonGateway.kt:41) all confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The open-question resolution machinery recordResolution exists (src/workflow/review/resolve.ts / questions.ts) and is the sink s4's workflow.resolveComment write reuses.",
-          "evidence": "recordResolution is defined at src/workflow/questions.ts:383 and consumed by src/mcp/workflow-step/phases/resolve-question.ts:78 — the open-question resolution machinery exists as claimed (the canonical definition is questions.ts; resolve-question.ts is the MCP driver).",
-          "action": "none — verified sound; the s4 handler reuses recordResolution from src/workflow/questions.ts",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "workflow.pending and workflow.resolveComment are net-new: no such daemon IPC handler is registered today.",
-          "evidence": "'workflow.pending' and 'workflow.resolveComment' appear ONLY in this Epic's HLD/DEF docs, with zero matches under src/ — confirming both are net-new, not already-registered handlers.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The only file Watcher is the indexer's source watcher (src/indexer/watcher.ts); there is no artifact/approval event emitter, so discovery is a polled read.",
-          "evidence": "export class Watcher confirmed at src/indexer/watcher.ts:30 — the only Watcher; no artifact/approval event emitter exists, so polled discovery is warranted.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "sc2",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "JCEF/JBCefApp.isSupported() + JBCefBrowser is core IntelliJ-Platform API bundled with the runtime, gating the rich panel with a fallback — an external-platform contract, not verifiable from this repo.",
-          "evidence": "No repo probe applies — this is an out-of-process IntelliJ-Platform contract (JBCefApp.isSupported()/JBCefBrowser bundled with the JBR). It was grounded this session against the official JetBrains SDK doc, but cannot be re-derived from src/.",
-          "action": "Accept as a documented external-platform assumption; the design already mitigates it (isSupported()-gated rich panel + native-editor fallback per k6). No artifact change needed.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 6
-      },
-      "reviewedAt": "2026-09-19T06:43:42.517Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-19T06:45:48.049Z",
-    "reviewOverride": {
-      "reason": "Block rests solely on one MED that is the JCEF external-platform contract (JBCefApp.isSupported()/JBCefBrowser bundled with the JBR) — unverifiable from this repo by nature, but grounded against the official JetBrains SDK doc this session and already mitigated by the isSupported()-gated panel + native-editor fallback (k6). All 6 code citations verified sound. Not a defect; no artifact change resolves it. User approved override in-chat.",
-      "at": "2026-09-19T06:45:48.049Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "6d3dbd7e1df6ab71066ff59c83011d62295621c96084a71325325267d57f80a3",
+        "at": "2026-09-19T06:42:40.104Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T06:45:48.049Z",
+        "override": {
+          "reason": "Block rests solely on one MED that is the JCEF external-platform contract (JBCefApp.isSupported()/JBCefBrowser bundled with the JBR) — unverifiable from this repo by nature, but grounded against the official JetBrains SDK doc this session and already mitigated by the isSupported()-gated panel + native-editor fallback (k6). All 6 code citations verified sound. Not a defect; no artifact change resolves it. User approved override in-chat."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 6
+        },
+        "at": "2026-09-19T06:43:42.517Z",
+        "report": {
+          "entityId": "HLD-238917216d8fd532",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-HLD-238917216d8fd532-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

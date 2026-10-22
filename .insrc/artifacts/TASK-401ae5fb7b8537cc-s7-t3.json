@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-acba7bd3-ef6d-4f8e-9555-bfc6c42d0bd3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:31.007Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Amend the sc9 host (webview-host.ts): repoRenderer render + repo-config message route + {ready}-gated first render + bootstrap posts",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s7-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b9104369d85323000777d61a13350ac30500f96c2126d77c10dd4c06d8eaee0",
+        "at": "2026-10-22T12:43:31.007Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:31.007Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Amend the sc9 host (webview-host.ts): repoRenderer render + repo-config message route + {ready}-gated first render + bootstrap posts",
+    "summary": "Amend vscode-plugin/src/panels/webview-host.ts (ONE atomic host change over the panel closure). Per the s3 refinement the host is a PURE DISPATCHER that calls deps.repoRenderer(selectedRepo) — it does NOT read config itself. (1) openRepoConfiguration renders deps.repoRenderer(selectedRepo) inside the existing shellHtml (CSP + per-render nonce, enableScripts:true) with the S004 REPO_PLACEHOLDER preserved as the fallback when no repoRenderer is wired; the repo panel uses the {type:'ready'} handshake to gate its first render (mirroring the S006 debug panel). (2) a repo-config message route in the panel's handleMessage: a {type:'selectRepo',repoPath:string} sets the panel's selectedRepo + re-renders via repoRenderer(selectedRepo); a {type:'repoWrite',repoPath:string,segments:string[],value} is validated then forwarded to deps.onRepoConfigWrite; a malformed/unknown message is a silent no-op; wrapped in the never-throw guard. (3) BOOTSTRAP += the repo <select> change posting {type:'selectRepo',...} + the form-field posting {type:'repoWrite',...}, keeping the closed message set {switchTab,refresh,action,ready,selectRepo,repoWrite}. Stays VS-Code-free + never-throw; S004/S005/S006 behaviour unchanged.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "openRepoConfiguration renders deps.repoRenderer(selectedRepo)'s body (picker) when wired, and the exact S004 placeholder when not (S004 tests preserved); the first render is {ready}-gated; the host reads no config itself (pure dispatcher)",
+      "a {selectRepo} message updates selectedRepo + re-renders via repoRenderer(selectedRepo); a {repoWrite} message forwards a validated RepoConfigWrite to onRepoConfigWrite; a malformed/unknown message is a silent no-op",
+      "the host stays never-throw (repoRenderer/onRepoConfigWrite try/caught) + XSS-safe (CSP/nonce unchanged); the bootstrap posts only {switchTab,refresh,action,ready,selectRepo,repoWrite}; detailRenderers/tabControllers/onDetailAction behaviour is preserved"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "host: openRepoConfiguration renders the wired repoRenderer(selected) body; with no repoRenderer renders the S004 placeholder unchanged (S004 preserved)"
+      },
+      {
+        "level": "unit",
+        "name": "host: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} message forwards a validated RepoConfigWrite to onRepoConfigWrite"
+      },
+      {
+        "level": "unit",
+        "name": "host: a malformed selectRepo/repoWrite (missing repoPath, non-array segments, unknown type) is a silent no-op (no re-render, no forward, no throw)"
+      },
+      {
+        "level": "unit",
+        "name": "host: the repo panel is {ready}-gated on first render; the bootstrap posts only {switchTab,refresh,action,ready,selectRepo,repoWrite}"
+      },
+      {
+        "level": "unit",
+        "name": "host: a repoRenderer / onRepoConfigWrite throw is caught + logged (never-throw preserved)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact LLD-e20235c17f083a16-S001 -->
+<!-- insrc:artifact LLD-e20235c17f083a16-s1 -->
 
 # LLD: E20261003e20235c1:S001
 
@@ -213,7 +213,7 @@ Carries `standalone` and an inherited `epicSlug`, so it stops being the stage at
 
 ### 3.4 `BuildRecord.meta` — field-add
 
-Carries `standalone`, `epicSlug` and `epicCreatedAt` inherited from the definition artifact. Today all three are absent on BUILD-792f9324fc43d95c-S001.json, which produces the raw-hash folder, the docs/epics placement and the 'Build (plan-driven)' heading with 'Standalone: no' on a standalone story. A prior fix deliberately stopped writing `standalone: false` here so that mergeWithPrior could carry a prior value forward; that remains correct, and this Story supplies the TRUE value rather than reinstating a false one.
+Carries `standalone`, `epicSlug` and `epicCreatedAt` inherited from the definition artifact. Today all three are absent on BUILD-792f9324fc43d95c-s1.json, which produces the raw-hash folder, the docs/epics placement and the 'Build (plan-driven)' heading with 'Standalone: no' on a standalone story. A prior fix deliberately stopped writing `standalone: false` here so that mergeWithPrior could carry a prior value forward; that remains correct, and this Story supplies the TRUE value rather than reinstating a false one.
 
 **Call sites:**
 - `src/workflow/runners/build/standalone-record.ts`
@@ -372,7 +372,7 @@ Change the folder naming authority so a work-item folder is named by its identit
 - **[[c7]]** `code` `src/workflow/id.ts:210` — "epicSegment: `E${wfid.date}${wfid.hash8}`,"
 - **[[c8]]** `code` `src/workflow/runners/build/standalone-record.ts:241` — "const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone === true, merged.meta.createdAt);"
 - **[[c9]]** `prior-artifact` `.insrc/artifacts/ISSUE-e20235c17f083a16.json` — "The approved ISSUE this Story implements: epicSlug 'artifact-docs-folders-fork-per-stage', standalone true, magnitude sized."
-- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-S001.json` — "epicSlug, standalone and sizeClass all absent — the live record that produced the raw-hash folder under docs/epics."
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-s1.json` — "epicSlug, standalone and sizeClass all absent — the live record that produced the raw-hash folder under docs/epics."
 
 ## 10. Open questions
 
@@ -409,4 +409,4 @@ Change the folder naming authority so a work-item folder is named by its identit
 - **[[c7]]** `code` `src/workflow/id.ts:210` — "epicSegment: `E${wfid.date}${wfid.hash8}`,"
 - **[[c8]]** `code` `src/workflow/runners/build/standalone-record.ts:241` — "const fa = buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, merged.meta.standalone === true, merged.meta.createdAt);"
 - **[[c9]]** `prior-artifact` `.insrc/artifacts/ISSUE-e20235c17f083a16.json` — "The approved ISSUE this Story implements: epicSlug 'artifact-docs-folders-fork-per-stage', standalone true, magnitude sized."
-- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-S001.json` — "epicSlug, standalone and sizeClass all absent — the live record that produced the raw-hash folder under docs/epics."
+- **[[c10]]** `prior-artifact` `.insrc/artifacts/BUILD-792f9324fc43d95c-s1.json` — "epicSlug, standalone and sizeClass all absent — the live record that produced the raw-hash folder under docs/epics."

@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3ac407c6-20c8-46be-8991-687d528fdb71",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:25.169Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Resolve the scope for every mode inside the context builder",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8dda2c958ab9c490eff329c11aa93ecc5ec921f600ef9e5110df56a7a45f98b",
+        "at": "2026-10-22T12:44:25.169Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:25.170Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve the scope for every mode inside the context builder",
+    "summary": "In runShaper, make the pairing check for run mode, then call resolveScope for every mode. Move the readers inside the context builder to the resolved scope: the cache freshness read, the tool loop's path at both call sites, the pipeline's lookup path and freshness read, and the indexed check, whose signature changes to take the resolved scope. Delete resolveRepoPath, inferRepoPath and inferScopePath with the test export. Remove the pipeline's gate on the kind of scope.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "The pipeline returns a bundle for a file, a symbol, a manifest directory and a connection scope with the resolved path given to the lookups; restoring the gate on the kind of scope makes this test fail",
+      "A module scope gives the lookups the module's own directory and the same lookup cache key as before",
+      "runShaper in run mode refuses a pairing the table does not allow, with ScopeKindTargetMismatchError, before resolving the scope",
+      "The rewritten tests of the indexed check (eight calls) and of scope-path inference keep every case they had, and add the symbol exception",
+      "A generic request and a classification-mode request on a symbol in a repo with no stored entities fail as not indexed; the same on a module proceed",
+      "The tests are run under Node 22 and pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path"
+      },
+      {
+        "level": "unit",
+        "name": "module scope: lookup path and cache key unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "runShaper refuses a pairing the table does not allow before resolving the scope"
+      },
+      {
+        "level": "unit",
+        "name": "indexed check takes a resolved scope: eight rewritten cases plus the symbol exception"
+      },
+      {
+        "level": "unit",
+        "name": "scope-path inference cases rewritten against resolveScope"
+      },
+      {
+        "level": "unit",
+        "name": "tool loop's path for classification and task modes is the resolved lookupPath"
+      },
+      {
+        "level": "unit",
+        "name": "generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

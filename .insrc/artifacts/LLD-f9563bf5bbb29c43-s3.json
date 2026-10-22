@@ -24,111 +24,61 @@
     "hldBaseRunId": "wf-1790428640052-v7rbx8",
     "hldEffectiveHash": "8417b84c742c5ddc9d83aac376221e673a606e0580ca2a1ef720fab1b05dedd7",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "contractDetails/renderRegistryWebviewSource",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "render-registry.ts exposes renderRegistryWebviewSource() whose factory provides register + renderRow + collapsible (the sc1 registry S003 registers into).",
-          "evidence": "grep confirms renderRegistryWebviewSource (src) + `function renderRow` + `function collapsible` in render-registry.ts — the sc1 registry/collapse seam S003 registers into exists as cited.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "migration/stateBefore",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "S001 pre-registered the 'user' and 'assistant-text' renderers as plain line() rows (no role differentiation, no collapse) — the placeholder bodies S003 replaces.",
-          "evidence": "grep matches the exact placeholder bodies `register('user',function(vm){return line(vm.text)` and `register('assistant-text',function(vm){return line(vm.text)` (1 src hit each) — the plain-line renderers S003 replaces.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "invariants/k6d",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The 'tool-command' renderer renders inline via line() with the tool tone and does not use collapsible — S003 must leave it inline (k6 d).",
-          "evidence": "grep matches `register('tool-command',function(vm){return line(vm.text,'insrc-term__marker--tool')` (1 src hit) — tool-command renders inline via line(), no collapsible (k6 d).",
-          "action": "None — confirmed; S003 must leave it inline.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "contractDetails/RenderHost.collapsible",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc1 collapse primitive + its 3-line clamp already exist (RENDER_REGISTRY_STYLE with -webkit-line-clamp:3 + the icon-only chevron), so S003 reuses rather than re-implements collapse.",
-          "evidence": "grep confirms `-webkit-line-clamp:3` (2 src) + `insrc-collapse__chevron` (7 src) + RENDER_REGISTRY_STYLE (7 src) — the sc1 collapse primitive + 3-line clamp exist; S003 reuses them (k5/k6 a/b single-sourced).",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "errorCases/renderer-throw",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "renderRow wraps each renderer in a try/catch that falls back to line(), so a throwing S003 widget cannot blank the transcript (per-row isolation).",
-          "evidence": "grep matches `try{return r.render` + `REG.fallback.render` (1 src each) — renderRow's per-row try/catch fallback exists, so a throwing S003 widget falls back to line() (per-row isolation).",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "interactionWithShared",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "toViewModel maps an assistant message to kind 'assistant-text' (no markdown/JSON classification), so S003's assistant renderer must content-type-detect at render time; S003 does not edit toViewModel.",
-          "evidence": "grep confirms `function toViewModel` (2 src) mapping assistant→'assistant-text'; 'assistant-markdown' appears only in the RowKind type (1 src), not as a toViewModel output — so S003's render-time content-type detection is the right approach and toViewModel is not edited.",
-          "action": "None — confirmed; toViewModel untouched.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "search.text/tool-result",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The TurnEvent union has no 'tool-result' producer (kinds: assistant-delta/tool-call/file-edit/status/done/error), so a 'tool-result' renderer is registered-but-dormant and k2 forbids adding a new event.",
-          "evidence": "stream-events.ts:30 read found; grep shows the TurnEvent kinds (assistant-delta/tool-call/file-edit/status/done/error, 40 src) and 'tool-result' only as the RowKind type (1 src) with NO event producer — so the tool-result renderer is correctly dormant and no new event is added (k2).",
-          "action": "None — confirmed dormant/reserved.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "testStrategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "render-registry.test.ts evals renderRegistryWebviewSource() against a fake document + fake line — the harness S003's renderer unit tests extend.",
-          "evidence": "render-registry.test.ts read found; grep confirms the eval'd-factory harness (makeRegistry/fakeDocument, 18 hits) — the pattern S003's renderer unit tests extend.",
-          "action": "None — confirmed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "boundary",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "sc1 is owned by S001 and consumed by S003 per the approved HLD, so S003 registering renderers (not editing toViewModel) is in-boundary.",
-          "evidence": "The bare-path HLD read returned found:false (no line anchor), but grep matched ownedByStory/sc1/consumedByStories and the LLD's embedded HLD slice records sc1 ownedByStory=s1 / consumedByStories includes s3 — the consumer trace holds (design.story ran on the approved HLD).",
-          "action": "None — ownership/consumer trace confirmed via the approved HLD slice.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-26T15:37:31.480Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-26T15:38:53.367Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8d8c41ea05f218e6d14bbbaa8a43d790bccbec9753cec6913536f5ccfdb51cf1",
+        "at": "2026-09-26T15:35:58.726Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-26T15:38:53.367Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-26T15:37:31.480Z",
+        "report": {
+          "entityId": "LLD-f9563bf5bbb29c43-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-f9563bf5bbb29c43-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

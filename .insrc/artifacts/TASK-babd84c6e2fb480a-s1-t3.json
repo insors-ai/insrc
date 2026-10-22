@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1e0f89b6-9b7d-4474-80b3-d95cb4b04231",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:28.082Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Host handlers for open-link and open-code-ref, injected from extension.ts",
+      "parent": {
+        "entityId": "STORY-babd84c6e2fb480a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-babd84c6e2fb480a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-babd84c6e2fb480a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0476866200b549bd243eb68cfc610ae62fc67e61da9406786deebde40f374ff0",
+        "at": "2026-10-22T12:44:28.084Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:28.085Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host handlers for open-link and open-code-ref, injected from extension.ts",
+    "summary": "Add the validating handlers to the chat host and the review-pane host, and inject the open-external and open-file-at-line dependencies and the workspace folder from extension.ts. The open-file-at-line dependency takes its viewColumn from the reviewColumn closure and falls back to Beside.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a valid http(s) url is opened externally and any other scheme is refused",
+      "an existing in-workspace file opens with the line selected in the column chooseReviewColumn picks, and Beside when it picks none",
+      "an absolute path, a .. path, a missing file, a symlink escape and a missing workspace folder are refused and logged",
+      "an open that rejects or resolves false is logged and does not throw"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the host opens a valid http url externally and refuses a non-http url"
+      },
+      {
+        "level": "integration",
+        "name": "the host opens an existing in-workspace path with the line selected"
+      },
+      {
+        "level": "integration",
+        "name": "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder"
+      },
+      {
+        "level": "integration",
+        "name": "the host refuses a symlink inside the workspace that points outside it"
+      },
+      {
+        "level": "integration",
+        "name": "the host logs and survives an open that rejects or resolves false"
+      },
+      {
+        "level": "integration",
+        "name": "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

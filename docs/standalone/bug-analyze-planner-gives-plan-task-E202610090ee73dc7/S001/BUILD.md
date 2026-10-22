@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-0ee73dc7a00c0f11-S001 -->
+<!-- insrc:artifact BUILD-0ee73dc7a00c0f11-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,7 +26,7 @@ Each template's scopeRef schema is now built from its family's row of the one ta
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-4fb22dc28697cc14-S001.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
-- `.insrc/artifacts/BUILD-8f90988572f4d5b2-S001.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
+- `.insrc/artifacts/BUILD-4fb22dc28697cc14-s1.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
+- `.insrc/artifacts/BUILD-8f90988572f4d5b2-s1.json` — **insrc-build** (2026-10-10T06:34:15.036Z)
 - `docs/standalone/bug-analyzer-s-plan-tree-child-E202610108f909885/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:15.036Z)
 - `docs/standalone/bug-data-plan-task-names-connection-E202610094fb22dc2/S001/BUILD.md` — **insrc-build** (2026-10-10T06:34:15.036Z)

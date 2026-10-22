@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0aed79bd-c715-4f3f-ad25-f50f069c2076",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:27.342Z",
+    "epicCreatedAt": "2026-09-23T11:52:34.345Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ba132c185fe45860",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the ModelTiersSection (Swing) over the pure model",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ba132c185fe45860-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ba132c185fe45860-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aef92f436d6bdd8406897edba522f58ec31a569737546f3d34f7dc96414e5d59",
+        "at": "2026-10-22T12:44:27.342Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:27.343Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the ModelTiersSection (Swing) over the pure model",
+    "summary": "Add ModelTiersSection(model: ModelTiersModel, gateway: DaemonGateway) : SettingsSection rendering the pure model over the PerRoleSection combo idiom: per tier a runner JComboBox (enum, reused) + a NON-editable model JComboBox (dropdown-only, k4) + a shared Refresh button. suppressEdits guard + rowRefreshers; addActionListener routes to model.selectRunner/selectModel; Refresh re-invokes gateway.listModels off the EDT (ProgressManager) and re-seeds the combos; apply() fans model.collectWrites() → gateway.writeSetting/clearSetting, throwing ConfigurationException naming failures. Additive; not registered yet.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "ModelTiersSection implements SettingsSection (title/component/isModified/apply/reset)",
+      "The model JComboBox is constructed NON-editable (no setEditable(true))",
+      "Refresh re-invokes gateway.listModels off the EDT (ProgressManager/executeOnPooledThread), not inline on the EDT, and re-seeds the combos under the suppressEdits guard",
+      "apply() fans collectWrites → writeSetting/clearSetting and throws ConfigurationException naming the failed tier(s); ModelTiersSection imports no cloud/HTTP client (reaches the daemon only via the injected DaemonGateway)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "source-scan: the model combo is constructed NON-editable (no setEditable(true)) — dropdown-only (k4)"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the Refresh action runs off the EDT (ProgressManager/executeOnPooledThread); ModelTiersSection imports no cloud/HTTP client"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da328345-9817-4ea9-93e8-a80c82595ac5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:22.782Z",
+    "epicCreatedAt": "2026-09-23T17:38:50.877Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b6c90b3e0240d36c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "App-scoped freshness consumer wiring (off-EDT, real seams)",
+      "parent": {
+        "entityId": "STORY-b6c90b3e0240d36c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b6c90b3e0240d36c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b6c90b3e0240d36c-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "db7a18c9c259b10e8fdf4189549c633f120d663079f6726f8c56fd4fff801407",
+        "at": "2026-10-22T12:44:22.782Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:22.783Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "App-scoped freshness consumer wiring (off-EDT, real seams)",
+    "summary": "Add InstalledCommitFreshnessConsumer (a new app-scoped consumer) registered in AppScopedConsumers.ensureRegistered() alongside DaemonLifecycleService; onProjectOpened schedules DaemonFreshnessFlow.check(realSeams) fire-and-forget off-EDT via AppExecutorUtil.getAppExecutorService() and returns immediately (never blocks project-open, k6). Supply the real seams: gateway view = service<DaemonGatewayService>(); notify = the insrc NotificationGroup balloon (two NotificationAction.createSimple buttons Update/Dismiss for the prompt, a plain info notify, a single failure balloon — mirroring showOfferSetupNotification, k7); versionState = PluginManagerCore.getPlugin(PLUGIN_ID)?.version (?? '') + the t1 last-seen store; gitLsRemote = a ProcessBuilder git ls-remote origin <branch> runner (returns '' on any failure, never throws). Deps t2.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "InstalledCommitFreshnessConsumer registered in AppScopedConsumers.ensureRegistered() alongside DaemonLifecycleService; onProjectOpened schedules check() off-EDT via AppExecutorUtil.getAppExecutorService() and returns immediately (fire-and-forget)",
+      "real seams wired: gateway view over service<DaemonGatewayService>(); notify = insrc NotificationGroup balloon with Update/Dismiss (k7); versionState = PluginManagerCore version + the last-seen store; gitLsRemote = a ProcessBuilder git ls-remote returning '' on failure",
+      "no controller.run / daemon-ctl.sh shell-out is added for the freshness update (k2)",
+      "a unit test drives onProjectOpened with a synchronous test executor to assert check() is scheduled fire-and-forget; ./gradlew test green (JDK21)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "consumer onProjectOpened schedules check() via the injected executor (fire-and-forget, returns immediately) — driven with a synchronous test executor"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the freshness consumer wiring adds NO controller.run / daemon-ctl.sh shell-out for the update (k2)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

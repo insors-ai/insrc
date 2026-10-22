@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b4ba8f53-0013-4609-9904-375146ad1816",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:28.528Z",
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add PATH_FORM_RULE and describe the path-valued schema fields with it",
+      "parent": {
+        "entityId": "STORY-3c6a109dffcde0c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c6a109dffcde0c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d86fb0b1e46508726dcb898f4a8fbccb1134958ff7281d7a51cb50a04ae37d35",
+        "at": "2026-10-22T12:43:28.531Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:28.536Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add PATH_FORM_RULE and describe the path-valued schema fields with it",
+    "summary": "Add the PATH_FORM_RULE string constant to src/workflow/runners/scope-prompts.ts, stating the form (project file relative to the root, optional :N, :N-M or :N:C and #anchor, no prose in the span, never shortened; external file written in full; a path copied from a step output that is not in this form is corrected rather than copied). Add a description carrying that wording to the callSites and pathsCited fields in the design-story, define, design-epic and plan schemas, without adding a pattern.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "PATH_FORM_RULE is exported from src/workflow/runners/scope-prompts.ts and nowhere else defines the wording",
+      "The callSites field in the design-story schema and the pathsCited field in the design-story, define, design-epic and plan schemas have a description that carries the rule wording",
+      "No schema gains a pattern or a new required field, and the existing schema tests still pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

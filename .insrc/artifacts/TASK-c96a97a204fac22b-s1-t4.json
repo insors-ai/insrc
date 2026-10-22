@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c36a25ba-09d1-45ad-828f-f8f565f84e3e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.582Z",
+    "epicCreatedAt": "2026-10-12T07:26:48.214Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c96a97a204fac22b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate sessions out of globalState",
+      "parent": {
+        "entityId": "STORY-c96a97a204fac22b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c96a97a204fac22b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c96a97a204fac22b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe38110db9e68ecd4cc48a0719160551084d6216b4c9152883ccbc25fe346950",
+        "at": "2026-10-22T12:44:40.582Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:40.583Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate sessions out of globalState",
+    "summary": "In session-file-store.ts add migrateChatSessionsFromMemento: for each indexed session isSession accepts, write its files when no head exists (rows then head, through temporary files), append the missing rows when the files hold a prefix, write nothing when the memento holds a prefix of the files; read the files back and compare every row and head field; remove the memento key only then. A session that fails, disagrees or is rejected is left untouched, logged and returned in kept. Rewrite or remove the index. Never throws.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each indexed session is written, read back equal, and only then removed from the memento with the index; the file store then lists and returns every session as the memento store did",
+      "A session whose write or read-back fails is left in the memento untouched, stays in the index and is in kept, and the others are still migrated",
+      "Files holding a prefix of the memento's rows get the missing rows and the key is removed; files holding more rows are left and the key removed; a disagreeing session is changed in neither place and is in kept",
+      "With no index, or on a second run, nothing is read or written and kept is empty; an entry isSession rejects is kept and logged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the migration writes each indexed session's files, reads them back equal, then removes its memento key and the index; the store then lists and returns every session as the memento store did"
+      },
+      {
+        "level": "unit",
+        "name": "a session whose write or read-back fails is left in the memento untouched, stays in the index and is returned in kept, and the others are still migrated"
+      },
+      {
+        "level": "unit",
+        "name": "a session whose files already hold a prefix of the memento's rows gets the missing rows appended and its memento key removed; one whose files hold more rows than the memento is left as it is on disk and its key removed; one that disagrees is changed in neither place and returned in kept"
+      },
+      {
+        "level": "unit",
+        "name": "the migration with no index, or run a second time, reads no session, writes nothing and returns no kept id; an entry isSession rejects is kept and logged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

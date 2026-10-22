@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf7ec186-0767-44bd-99aa-32bb86327df0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.760Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Store the review report in the review log entry and read it back",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44e8aec048c893795c70e019053d9c9257eb7d695a3ee2b297a579932031e6bb",
+        "at": "2026-10-22T12:43:22.760Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.761Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Store the review report in the review log entry and read it back",
+    "summary": "Add src/workflow/review/report-log.ts with reviewEntryOf (the 'review' ChangeLogEntry whose outcome.data holds { kind: 'review', report, resolutions }), resolutionEntryOf (a 'review' entry with outcome.data.kind 'review-resolution'), reviewReference (the Reference { entityId, type: 'change-log-entry', relation: 'reviews', fragment }) and readReviewReport(history, artifactId, review), which returns the report with the resolutions applied in order. Test src/workflow/review/__tests__/report-log.test.ts, including that effectiveReviewVerdict computed from the read-back report equals the verdict the old stamp gave.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "readReviewReport returns the full report from the entry the lifecycle Reference names, and undefined when the Reference or entry is absent",
+      "Later resolution entries are applied in order",
+      "effectiveReviewVerdict over the read-back report equals the verdict computed from meta.review and reviewResolutions"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "report-log.test.ts: the review report and its resolutions are read back from the review entry and give the verdict the old stamp gave"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

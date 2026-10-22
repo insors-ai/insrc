@@ -1,29 +1,52 @@
 {
-  "id": "AMD-315d510cb28100e2-2",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc2",
-    "field": {
-      "name": "PolicyOutcome.unavailable",
-      "type": "{ kind: 'unavailable'; reason: string }",
-      "optional": false,
-      "purpose": "A third reader outcome for a repo that was seen carrying a policy but cannot supply it now, so that refusal (ac9) is a value and a solo, offline, remote-less or non-git repo (none) is never refused (ac7, k4)."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-17T05:11:37.017Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "rejected",
+      "revision": {
+        "number": 0,
+        "contentHash": "7342d32c6e6f4691de0359da5e15309587cf6e34df292be219c1113e7e891eda",
+        "at": "2026-10-17T05:11:37.017Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "The approved HLD's PolicyResult<TeamPolicy | 'none'> with a separate { ok: false } cannot tell a solo repo that is offline or remote-less, which must read as none, from a known team repo whose policy cannot be refreshed, which must use the cache or refuse. The HLD review left this open and deferred it to this LLD. No consumer Story has been designed yet, so the addition breaks nothing.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792213570346-pdxpg7",
-    "storyId": "s2",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-2",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc2",
+      "field": {
+        "name": "PolicyOutcome.unavailable",
+        "type": "{ kind: 'unavailable'; reason: string }",
+        "optional": false,
+        "purpose": "A third reader outcome for a repo that was seen carrying a policy but cannot supply it now, so that refusal (ac9) is a value and a solo, offline, remote-less or non-git repo (none) is never refused (ac7, k4)."
+      },
+      "breaking": false
+    },
+    "rationale": "The approved HLD's PolicyResult<TeamPolicy | 'none'> with a separate { ok: false } cannot tell a solo repo that is offline or remote-less, which must read as none, from a known team repo whose policy cannot be refreshed, which must use the cache or refuse. The HLD review left this open and deferred it to this LLD. No consumer Story has been designed yet, so the addition breaks nothing.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792213570346-pdxpg7",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-17T05:11:37.017Z"
   },
-  "proposedAt": "2026-10-17T05:11:37.017Z",
-  "status": "rejected",
-  "rejectedAt": "2026-10-17T06:07:25.975Z",
-  "rejectedReason": "Superseded: PolicyOutcome.unavailable belonged to an earlier s2 design; the approved LLD keeps the HLD PolicyResult envelope unchanged."
+  "citations": []
 }

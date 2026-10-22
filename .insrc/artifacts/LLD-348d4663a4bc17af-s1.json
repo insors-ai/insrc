@@ -27,122 +27,6 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "fix-targets-defect.1",
-          "ref": "fix-targets-defect",
-          "item": "fix-targets-defect",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The host-owned trail fixes the stated root cause. Selection now lives per screen, and set-view resets the trail to one root. As a result the item screen and its details memory are dropped on every context change, which is the ISSUE's 'details outlive every context change' cause.",
-          "evidence": "ISSUE.md root cause: 'keeps selectedItemId across set-view, set-scope, set-search, set-attention and clear-filters; only close-details, Escape, or a refresh that removes the item clears it'. Today's board-host.ts:573-584 confirms this: `select({ ...sel, view: msg.view })` and the other filter cases spread `sel`, so `selectedItemId` carries over, and board-host.ts:436 keeps `memory.kept(..., next.selection.selectedItemId)`. In the LLD, set-view resets the trail to a single list root, filter intents are ignored on item screens, and the memory is told the current item screen id or null. Every fix-intent bullet is covered by a design element: screens with breadcrumb and Back, five filters, <details> stage sections, the item screen, placement for the four state situations, and min widths with container queries. [files: docs/standalone/defect-against-e2-6a131558-issue-b2687832-E20261010348d4663/ISSUE.md, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Migration 'State before' says BoardSelection holds view/scope/search/attention/selectedItemId/density. It also says the host posts the chosen view's model plus a separate 'details' message, and that paging is a host-level variable.",
-          "evidence": "board-state.ts:43-50 shows `interface BoardSelection { view; scope; search; needsAttentionOnly; selectedItemId; density }`. board-state.ts:210-224 shows boardDownMessages posting status and then one of board/epics/issues. board-host.ts:397 has `let paging: BoardPaging = {};` and board-host.ts:408-413 has detailsMessage posting `{ type: 'details', model: memory.model(...) }`. [files: vscode-plugin/src/delivery/board-state.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "buildItemDetails can add correctedBy (issues whose correctsRef resolves to the item) and approvedAt (from approval.at) using only published read-model fields.",
-          "evidence": "delivery-contract.ts:61 shows that DeliveryItemView picks 'correctsRef', and board-model.ts:66 reads `item.correctsRef.resolvedItemId`. The evidence entries carry `approval: { state, at }`, for example the board-fixtures.ts:36 fixture `approval: { state: 'approved', at: null }`. Both fields already exist, so nothing has to be inferred. [files: vscode-plugin/src/delivery/delivery-contract.ts, vscode-plugin/src/delivery/board-model.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The listed change sites are complete for the selection and paging rewrite. They cover board-state, board-host, board-model (selectMatches/buildBoardViewModel take BoardSelection), board-views (buildEpicRollup/buildIssueView take BoardSelection), board-protocol, board-details, labels, and the tests including board-perf.",
-          "evidence": "A grep for selectedItemId and BoardSelection consumers finds only board-state.ts, board-host.ts, board-model.ts:238 and 275 (`selection: BoardSelection`), board-views.ts:67 and 118, and the tests. details-memory.ts keeps its `kept(snapshot, id)` signature, so it needs no API change. board-perf.test.ts:78 uses `set-scope`, and the test strategy rewrites it to use open-epic. No other writer of the selection was found. [files: vscode-plugin/src/delivery/board-model.ts, vscode-plugin/src/delivery/board-views.ts, vscode-plugin/src/delivery/__tests__/board-perf.test.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "preserved-behaviour.1",
-          "ref": "preserved-behaviour",
-          "item": "preserved-behaviour",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "selectMatches/buildEpicRollup postconditions: 'The same rule feeds the stage screens, the epic header, the epics rows and the issues list, so their counts agree', and 'An epic row's numbers equal the epic screen's header for the same snapshot.'",
-          "evidence": "With epic scope, the stage screen's matches come from inScope at board-model.ts:82: `case 'epic': return epic !== null && epic.id === selection.scope.epicItemId;`. That includes standalone items whose epicOf resolves to the epic, for example a standalone issue whose correctsRef points at E1:S001 (board-model.ts:66). buildEpicRollup at board-views.ts:72 instead sends `if (m.item.standalone || m.epic === null) { notInEpic.push(m); ... }`, so those items never count in the epic's row. An epic with a standalone correcting issue therefore gets a smaller Epics row count than its epic board's totals. The LLD does not say which rule wins (whether to exclude standalone items from the epic scope, or count them in the row), so building it as written gives counts that disagree. [files: vscode-plugin/src/delivery/board-model.ts, vscode-plugin/src/delivery/board-views.ts]",
-          "action": "Pick one membership rule for 'in epic X' and state it in the LLD: either exclude `item.standalone` in inScope's epic case, or stop routing standalone matches away from the epic row. Then add a test where a standalone issue corrects a story in the epic and assert that the row equals the epic header.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "preserved-behaviour.2",
-          "ref": "preserved-behaviour",
-          "item": "preserved-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "apply() derives every message before keeping state, and tells the details memory before assigning, so a throwing derive leaves state as it was. Moving details into boardDownMessages through detailsOf keeps this.",
-          "evidence": "board-host.ts:429-440 derives `details` and `boardDownMessages(...)` first, then calls `memory.kept(...)`, then assigns `state = next; paging = nextPaging;`. memory.model (details-memory.ts:136-142) is pure with respect to the memory's state: it only reads the plans and opened record. Calling it through detailsOf inside boardDownMessages therefore has the same ordering and the same no-side-effect-on-throw property. Moving paging into the trail entry removes the separate `paging` assignment without weakening the rule. [files: vscode-plugin/src/delivery/board-host.ts, vscode-plugin/src/delivery/details-memory.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Each acceptance criterion ac1–ac7 maps to at least one test that fails on today's code. Examples are ac4 'set-view from a story screen resets the trail' and 'the memory is told null once the item screen is left', and ac7 perf on the new drill-down.",
-          "evidence": "Today's handler (board-host.ts:573) keeps selectedItemId across set-view, so a test asserting that the memory is told null after a view change fails without the fix. There is no 'screen' down-message or breadcrumb today (board-state.ts:217-221 posts only board/epics/issues), so the ac1, ac2 and ac5 host assertions fail. ac3/ac6 assert <details> sections and narrow folding, and neither exists in today's six-column grid. board-perf.test.ts:25-26 already pins FIRST_RENDER_MS=1000 and FILTER_CHANGE_MS=150, and ac7 extends it to open-epic. The one gap is that no listed test pins the epic-row count against the epic-header count across standalone items (see preserved-behaviour). [files: vscode-plugin/src/delivery/__tests__/board-perf.test.ts, vscode-plugin/src/delivery/board-host.ts]",
-          "action": "Add an ac2/ac3 case where an Epics row's counts equal the epic board header when a standalone issue corrects one of the epic's stories.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 1,
-        "low": 6,
-        "unverified": 0
-      },
-      "template": "design-issue",
-      "reviewedAt": "2026-10-10T05:20:12.995Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "preserved-behaviour.1": {
-        "findingId": "preserved-behaviour.1",
-        "status": "resolved",
-        "note": "Applied in the LLD: one epic membership rule (not standalone and epicOf is the epic), stated on selectMatches and buildEpicRollup; inScope's epic case excludes standalone items; a new edge case, and a board-views test asserting a standalone correcting issue counts towards no epic and the Epics row equals the board header.",
-        "resolvedAt": "2026-10-10T05:21:52.836Z"
-      },
-      "tests.1": {
-        "findingId": "tests.1",
-        "status": "resolved",
-        "note": "Applied in the LLD: one epic membership rule (not standalone and epicOf is the epic), stated on selectMatches and buildEpicRollup; inScope's epic case excludes standalone items; a new edge case, and a board-views test asserting a standalone correcting issue counts towards no epic and the Epics row equals the board header.",
-        "resolvedAt": "2026-10-10T05:21:52.838Z"
-      }
-    },
-    "approvedAt": "2026-10-10T05:31:46.097Z",
     "rangeBase": "e2a4bb2be70cbf2670e02546af06d1b6a28cdf09",
     "questionResolutions": {
       "q2134e31a": {
@@ -166,6 +50,56 @@
         "rationale": "The user asked for accordions and approved the LLD with this exception stated; the summaries always carry the label, count and attention hint.",
         "resolvedAt": "2026-10-10T05:33:12.675Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "d8296e92bcbbbd73ecff9be250058bcc130f2cbd2214eba7b874cd8349b89f2b",
+        "at": "2026-10-10T05:19:57.369Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T05:31:46.097Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 6
+        },
+        "at": "2026-10-10T05:20:12.995Z",
+        "report": {
+          "entityId": "LLD-348d4663a4bc17af-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-348d4663a4bc17af-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

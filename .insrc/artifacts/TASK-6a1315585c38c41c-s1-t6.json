@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-526d5b5b-3299-4c61-be5a-8db45dc28ce2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:41.018Z",
+    "epicCreatedAt": "2026-10-08T18:04:18.693Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6a1315585c38c41c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Extension wiring, command and placement record",
+      "parent": {
+        "entityId": "STORY-6a1315585c38c41c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6a1315585c38c41c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6a1315585c38c41c-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c0a73b4ac368c8d67eba4668419d932fc9f28820d7be4106f3a4897304f1941",
+        "at": "2026-10-22T12:43:41.019Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:41.019Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Extension wiring, command and placement record",
+    "summary": "Add insrc.delivery.openBoard to package.json, the InsrcCommandId union and the command tests; wire the client, logger and host in extension.ts outside the chat gate; and record the editor-tab versus sidebar placement decision in the s1 BUILD record's summary.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "package.json contributes insrc.delivery.openBoard ('Open delivery board', category insrc), InsrcCommandId includes it, and packaging.test.ts and truthful-sync.test.ts expect it.",
+      "extension.ts builds the logger as { warn: panelLog.warn, error: console.error wrapper }, the client from createIpcClient().rpc with workspaceFolders[0] and 30 s / 15 s deadlines, and registers the command outside the insrc.chat.enabled gate.",
+      "`npx tsc -p vscode-plugin` passes and the plugin's existing tests still pass.",
+      "The comparison of the editor tab against a sidebar entry point, and the decision with its reason, are given as the validate summary so they land in the s1 BUILD record."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "packaging.test.ts: 'the 7 durable ad0d45c9 contributes.commands are preserved + the config/panel-track additions (S003 refresh, S004 panel commands)'"
+      },
+      {
+        "level": "integration",
+        "name": "truthful-sync.test.ts: 'package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands'"
+      },
+      {
+        "level": "integration",
+        "name": "board-wiring.test.ts: 'extension.ts registers insrc.delivery.openBoard outside the chat gate with a warn-and-error logger and a repo-scoped delivery client'"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

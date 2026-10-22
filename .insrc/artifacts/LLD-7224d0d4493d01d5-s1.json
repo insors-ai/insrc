@@ -27,122 +27,6 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "fix-targets-defect.1",
-          "ref": "fix-targets-defect",
-          "item": "fix-targets-defect",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The design publishes all four value groups the ISSUE's fix intent names (story purpose + size, epic problem/summary, issue reproduction/rootCause/fixIntent, recorded feedback read-only), additively in schemaVersion 1, distinguishing recorded / not-recorded / not-applicable, and updates the plugin mirror — addressing the stated root cause that itemOf (snapshot.ts:112) reads no descriptive body field.",
-          "evidence": "ISSUE.md Fix intent lists exactly these four groups plus three-state distinction and the plugin contract mirror. snapshot.ts itemOf (lines 112-148) builds DeliveryItem only from node/stages/gates/currency and reads no body field; the design adds description (kind-tagged union, not-applicable structural) and feedback in that function. The ISSUE's optional 'reachable through the evidence request if too large' fallback is covered by choosing to inline and pinning the 500 ms budget test. [files: docs/standalone/defect-against-epic-e1-2ff0dfda-delivery-E202610097224d0d4/ISSUE.md, src/workflow/delivery/snapshot.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Source fields exist as the design reads them: DefineBody.problem, DefineBody.summary.prose, DefineStory.userValue / sizeEstimate ('S'|'M'|'L'|'XL'), and body.feedback (FeedbackEntry { id, author, timestamp, comment, target{file, version?, segment?}, kind? }) on DEF/HLD/LLD/PLAN bodies.",
-          "evidence": "define.ts:67-92: userValue: string, sizeEstimate?: 'S'|'M'|'L'|'XL', problem: string, summary?: DocumentSummary (rendered via body.summary.prose at :117), feedback?: FeedbackRecord. lld.ts:185, plan.ts:97, hld.ts:135 also declare feedback?: FeedbackRecord. provenance/types.ts:24-42 matches the DeliveryFeedback field set (kind optional, version/segment optional → null). [files: src/workflow/artifacts/define.ts, src/workflow/artifacts/provenance/types.ts, src/workflow/artifacts/lld.ts, src/workflow/artifacts/plan.ts, src/workflow/artifacts/hld.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "Error path 'Two DEF records share a work-item hash': 'The graph already uses the first DEF of the hash as the head and raises identity-ambiguous.'",
-          "evidence": "graph.ts:209 `const def = epicLevel.find(r => r.kind === 'DEF') ?? null;` picks the first DEF silently; the only identity-ambiguous raised for a head (graph.ts:232-236) is when a hash has both a DEF and an ISSUE (\"has both a Define and an issue record\"). Two DEFs under one hash raise no notice. The design's 'the existing notice explains the ambiguity' user-impact is therefore false; values still come from the first DEF (sorted by artifactId), so the snapshot is not broken, but the design should either drop the notice claim or add a notice. [files: src/workflow/delivery/graph.ts]",
-          "action": "Correct the error-path text: the graph picks the first DEF by artifactId with no notice; either state that, or add an identity-ambiguous notice for duplicate DEFs as an explicit (scoped) change.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The plugin mirror DeliveryItemView (vscode-plugin/src/delivery/delivery-contract.ts) pins exactly the 17 fields the design lists and re-exports types by an explicit list, so adding 'description' | 'feedback' to the Pick and the three new types to the import/export lists is the complete plugin-side change.",
-          "evidence": "delivery-contract.ts:59-61 Pick<DeliveryItem, 'id'|'kind'|'title'|'standalone'|'sourceIds'|'parentId'|'childIds'|'stage'|'evidence'|'tasks'|'validation'|'storyLevelResult'|'conflict'|'correctsRef'|'needsAttention'|'attentionReasons'|'notices'> — 17 fields, matching the design's pre-change list; types are imported/re-exported via explicit lists at :16-50. [files: vscode-plugin/src/delivery/delivery-contract.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Feedback-malformation notices can be produced inside assembleSnapshot and attached to the item: the item's notices come from noticesByItem built from allNotices before itemOf runs.",
-          "evidence": "snapshot.ts:80-91 builds allNotices (graph/stages/gates/currency + completenessNotices) and noticesByItem before itemOf (112). A new incomplete-evidence notice must be computed in that pre-pass (like completenessNotices) rather than inside itemOf, or it will miss item.notices and snapshot.notices ordering. The design's step 2 is compatible with this; the implementer must add it to the allNotices list. incomplete-evidence is attention:false (notice.ts:27), so malformed feedback won't flip needsAttention. [files: src/workflow/delivery/snapshot.ts, src/workflow/delivery/notice.ts]",
-          "action": "Make explicit in the LLD that the feedback-notice pass feeds allNotices (alongside completenessNotices) before noticesByItem is built.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "preserved-behaviour.1",
-          "ref": "preserved-behaviour",
-          "item": "preserved-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The values can be read 'beside' the graph without changing it: an epic node's evidence holds its epic-level records (DEF, HLD) and a story node's evidence holds its own story-keyed records (LLD, PLAN, approved EXT), while a DEF story entry's userValue is reachable through the story's parent head DEF.",
-          "evidence": "graph.ts:229 epic evidenceArtifactIds = epicLevel (records with storyIdRaw null, plus pending/rejected EXT, groupKeyOf:42-50); story evidence = records of `${hash}|${storyKey}` (graph.ts:272,317) which include approved EXT with addedStory (graph.ts:261). Story DEF entries are keyed by storyOrdinalOf(id) (graph.ts:252-256) so the ordinal mapping the design uses matches the graph's. No graph change is needed, preserving invariant c6. [files: src/workflow/delivery/graph.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "ac4's proving test, contract.test.ts 'the VS Code plugin type-checks against the published delivery types', would fail without the fix.",
-          "evidence": "contract.test.ts:56 runs the plugin typecheck. DeliveryItemView is a Pick of DeliveryItem; if the daemon added the fields but the plugin Pick were left unchanged (or the whole fix absent), the typecheck still passes — a Pick of a subset never errors. Only a test that asserts the Pick includes 'description' and 'feedback' (e.g. a type-level assertion in the plugin, or board-fixtures typed as DeliveryItemView requiring those keys) would fail without the fix. Similarly ac5's handlers.test.ts budget test passes today without the fix (regression guard only). [files: src/workflow/delivery/__tests__/contract.test.ts, vscode-plugin/src/delivery/delivery-contract.ts]",
-          "action": "Add a type-level assertion (e.g. an exhaustive key-list check on DeliveryItemView, or fixtures that must supply description/feedback) so ac4 fails when the plugin mirror omits the new fields.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 5,
-        "unverified": 0
-      },
-      "template": "design-issue",
-      "reviewedAt": "2026-10-10T12:37:20.097Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "current-behaviour.2": {
-        "findingId": "current-behaviour.2",
-        "status": "resolved",
-        "note": "Applied: the duplicate-DEF error path now states that the graph takes the first DEF by artifactId with no notice; no notice is added by this Story.",
-        "resolvedAt": "2026-10-10T12:38:43.525Z"
-      },
-      "tests.1": {
-        "findingId": "tests.1",
-        "status": "resolved",
-        "note": "Applied: the test strategy adds a type-level assertion in delivery-contract.ts that DeliveryItemView includes description and feedback, so ac4 fails when the mirror omits them; the budget test is marked a regression guard.",
-        "resolvedAt": "2026-10-10T12:38:43.527Z"
-      }
-    },
-    "approvedAt": "2026-10-10T12:41:15.197Z",
     "rangeBase": "19effad1bc25731b2158756ced5c298f0d7e5a9b",
     "questionResolutions": {
       "q7fc55c12": {
@@ -152,6 +36,56 @@
         "rationale": "Grounded in code: vscode-plugin/src/delivery has no filesystem access (no fs import or readFile outside tests) and reads data only through delivery-client.ts's two daemon calls, workflow.delivery and workflow.deliveryEvidence (delivery-client.ts:93,112,124). The invariant holds today; the PRD (c10) stays as the source of intent.",
         "resolvedAt": "2026-10-10T12:41:57.723Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "73384ba46a484ee515ae4010fa7fdce64273ea6cf81336f9c480acd16c9c7dc0",
+        "at": "2026-10-10T12:37:12.891Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T12:41:15.197Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 5
+        },
+        "at": "2026-10-10T12:37:20.097Z",
+        "report": {
+          "entityId": "LLD-7224d0d4493d01d5-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-7224d0d4493d01d5-s1-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

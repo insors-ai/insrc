@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fa03d30e-dcfb-4b49-9c6d-4acb7e8e87c6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:25.042Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "envelope": {
+      "description": "PolicyReader",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "00586b2652306efb1f866bc278ecb3e4885fc2bb7c94330eef4878f23082a88d",
+        "at": "2026-10-22T12:43:25.042Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:25.042Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "PolicyReader",
+    "summary": "Implement the synchronous, network-free reader in the HLD envelope: sighting checked first and taking precedence over every solo shortcut; branch from the sighting, else the remote HEAD, else unknown (remote is origin, else the sole remote, a sighting's recorded remote stays authoritative); read the policy from the tracking ref or the recorded commit; refuse with the team refresh --branch instruction only when a fetched tracking ref (symbolic HEAD skipped) carries the policy file while the branch is unknown; none when no sighting and no evidence; create-only sighting write on first observation; fill the derived source block including the anchor.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "The policy is read from the default branch tracking ref and working-tree or feature-branch edits have no effect.",
+      "Non-git, no-commit and no-remote directories without a sighting read as none with no write.",
+      "A known team repo whose remote was removed is refused or read from the recorded commit, never none.",
+      "An unknown default branch with a policy on a fetched ref is refused with the --branch instruction and no policy is applied; with no policy on any fetched ref it reads as none.",
+      "A never-fetched repo with no sighting reads as none.",
+      "The remote is origin when present, else the sole remote; several remotes without origin are not guessed (none without a sighting); a sighting's recorded remote stays authoritative.",
+      "The first observation creates the sighting create-only and a failed write never changes the result."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: reads the policy from the remote default branch's tracking ref"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a working-tree edit has no effect"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a feature-branch edit has no effect"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a policy on an unlabelled tracking ref is never applied"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: an unknown default branch with a fetched policy is refused with the --branch instruction"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a remote without a remote HEAD and with no policy on any fetched ref reads as none"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a repo with no policy and no sighting reads as none and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: non-git, no-commit and no-remote directories without a sighting read as none"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a never-fetched repo with no sighting reads as none"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo with no fetched policy is refused with the reason"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo whose remote was removed is refused or read from the recorded commit, never none"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/policy-reader.test.ts: first observation creates the sighting create-only and a failed write does not change the result"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

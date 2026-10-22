@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-52caaec4-2d04-4e3a-b47d-e20a093fc169",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.251Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Implement createFromPlan",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff14095acb2e4c93f10844a9d6aa9ad29de432ba81b004bd9b91b5901824e6a4",
+        "at": "2026-10-22T12:43:22.251Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.251Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement createFromPlan",
+    "summary": "Add src/workflow/tasks/task-set.ts with createFromPlan: validate the rows, write one TASK head per row (parent the Story, a depends-on reference per dependsOn and a derived-from reference to the approved PLAN at its revision), approve each through LifecycleService.apply as the plan's approving actor, move a Task record found on the Plan onto the head's binding, and write the TASKS head last; a repeat for the same plan revision writes nothing.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "createFromPlan writes the TASKS head and one approved TASK head per plan Task, each with parent, depends-on and derived-from references",
+      "A repeat for the same plan revision writes nothing and returns the same set",
+      "A plan with no Tasks writes a TASKS head with no ids and nextNumber 1",
+      "A Task record already on the Plan is moved onto its TASK head's binding"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "task-set-create.test.ts: createFromPlan writes the Tasks file and one approved Task head per plan Task with parent, dependencies and a derived-from reference, and a repeat writes nothing"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

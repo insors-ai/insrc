@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "store-cad01a46-1c07-4c34-95c5-57a5e001fc5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:06.976Z",
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "820cc07b9c74195c",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Guarantee a minimum capability floor for critical roles",
+      "parent": {
+        "entityId": "EPIC-820cc07b9c74195c",
+        "type": "EPIC",
+        "relation": "derived-from"
+      },
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b32ba64419b89b5891e233c3784f071ed40ec5aa31ab258557f8ba2b77f8978d",
+        "at": "2026-10-22T12:43:06.976Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {},
+  "citations": []
+}

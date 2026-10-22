@@ -19,8 +19,36 @@
     "schemaVersion": 1,
     "specHash": "46b20c2f0459e807",
     "epicSlug": "make-workflow-s-generated-artifact-documents",
-    "approvedAt": "2026-09-27T14:22:52.145Z",
-    "standalone": true
+    "standalone": true,
+    "epicCreatedAt": "2026-09-27T14:20:43.560Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "26f7976cbb1684387cf4f97c80ba657ce40fb3a56148e83af0729009f91d75d1",
+        "at": "2026-09-27T14:20:43.560Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-27T14:22:52.145Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "category": "requirements",

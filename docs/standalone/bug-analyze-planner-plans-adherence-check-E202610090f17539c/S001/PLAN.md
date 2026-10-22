@@ -1,4 +1,4 @@
-<!-- insrc:artifact PLAN-0f17539c98aa78ee-S001 -->
+<!-- insrc:artifact PLAN-0f17539c98aa78ee-s1 -->
 
 # Plan: E202610100f17539c:S001
 
@@ -97,8 +97,8 @@ Add the test that runs the real adherence runtime through the plan walk: a check
 
 ## 3. References
 
-- **[[c1]]** `prior-artifact` `LLD S001 contractDetails (LLD-0f17539c98aa78ee-S001): runAdherenceCheck, resolveConstraints, runSharedDocConstraintEnumerate, validatePlan`
-- **[[c2]]** `prior-artifact` `LLD S001 dataModelChanges (LLD-0f17539c98aa78ee-S001): the templates' inputSchema, AdherenceResult and the adherence-report, the enumeration record, which documents the topic route reads`
-- **[[c3]]** `prior-artifact` `LLD S001 errorPaths (LLD-0f17539c98aa78ee-S001): error cases, edge cases and invariants to preserve`
-- **[[c4]]** `prior-artifact` `LLD S001 testStrategy (LLD-0f17539c98aa78ee-S001): the four test levels and the acceptance mapping`
-- **[[c5]]** `prior-artifact` `LLD S001 migration (LLD-0f17539c98aa78ee-S001): the four steps and backward compatibility`
+- **[[c1]]** `prior-artifact` `LLD S001 contractDetails (LLD-0f17539c98aa78ee-s1): runAdherenceCheck, resolveConstraints, runSharedDocConstraintEnumerate, validatePlan`
+- **[[c2]]** `prior-artifact` `LLD S001 dataModelChanges (LLD-0f17539c98aa78ee-s1): the templates' inputSchema, AdherenceResult and the adherence-report, the enumeration record, which documents the topic route reads`
+- **[[c3]]** `prior-artifact` `LLD S001 errorPaths (LLD-0f17539c98aa78ee-s1): error cases, edge cases and invariants to preserve`
+- **[[c4]]** `prior-artifact` `LLD S001 testStrategy (LLD-0f17539c98aa78ee-s1): the four test levels and the acceptance mapping`
+- **[[c5]]** `prior-artifact` `LLD S001 migration (LLD-0f17539c98aa78ee-s1): the four steps and backward compatibility`

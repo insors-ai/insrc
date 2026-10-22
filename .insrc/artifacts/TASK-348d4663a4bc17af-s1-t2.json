@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-24d86ede-4977-4d73-ae57-5df70ac1b8d8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.769Z",
+    "epicCreatedAt": "2026-10-10T05:07:43.607Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "348d4663a4bc17af",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Screen bodies from the match pipeline, with one epic membership rule",
+      "parent": {
+        "entityId": "STORY-348d4663a4bc17af-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-348d4663a4bc17af-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-348d4663a4bc17af-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ef03c1aae2bf7ebb0085503532aa59a2572a7b6ac92d00cda2682a54537c701b",
+        "at": "2026-10-22T12:43:26.769Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.769Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Screen bodies from the match pipeline, with one epic membership rule",
+    "summary": "selectMatches takes a MatchFilter {scope, search, needsAttentionOnly}; inScope's epic case excludes items flagged standalone. buildBoardViewModel returns a StagesBody (six StageSectionView with attentionCount, defaultOpen, emptyText, hint; totalsLabel; showAll; fold; emptyPanel); buildEpicRollup returns an EpicsBody (rows for every epic counted over the epic's whole scope, filtered by epic title or id and by attention; no 'Not in an epic' row); buildIssueView returns an IssuesBody in stage order. buildItemDetails adds correctedBy and approvedAt. The board/epics/issues down-messages carry the new bodies until t3 replaces them with the screen message. Validation: this task's unit tests (board-model, board-views, board-details) and the typecheck; board-host.test.ts is rewritten in t4-t6, and the full suite is back at baseline from t6 and proved in t8.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "A non-empty stage section starts open except Complete, which starts closed with hint attentionLabel(n) when n > 0, unless Needs attention is on; an empty section starts closed with emptyText 'nothing at this stage'; fold.always is true exactly when Needs attention is on and fold.text names the empty stages.",
+      "totalsLabel reads 'N items · M need attention', or 'M of N items need attention' with showAll true when the toggle is on.",
+      "A standalone issue whose correctsRef resolves to a story of epic X is not on X's board and does not count in X's Epics row, and X's row equals the header built for X's board.",
+      "The Epics body lists epics whose title or id contains the search and, with attention on, only epics with attentionCount > 0; a search matching no epic gives the no-matches panel.",
+      "Issues rows are ordered by stage, then snapshot order; an issue with an unresolved parent keeps its parentNotice.",
+      "correctedBy lists the issues whose correctsRef resolves to the item, in snapshot order; approvedAt is 'YYYY-MM-DD HH:MM UTC' or null.",
+      "The plugin typechecks."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'stage sections start open when they hold matches, closed when empty, and Complete closed with its attention hint unless Needs attention is on'"
+      },
+      {
+        "level": "unit",
+        "name": "board-model.test.ts: 'totals read N items · M need attention, or M of N with Show all under Needs attention, and empty stages fold under Needs attention'"
+      },
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: 'a standalone issue correcting a story of an epic counts towards no epic, and the epic's Epics row equals its board header'"
+      },
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: 'the Epics body filters rows by epic title or id and by attention, with whole-epic counts, and a search matching no epic gives the no-matches panel'"
+      },
+      {
+        "level": "unit",
+        "name": "board-views.test.ts: 'the Issues body lists issues in stage order with their parent, parent notice and fix stories'"
+      },
+      {
+        "level": "unit",
+        "name": "board-details.test.ts: 'correctedBy lists the issues correcting the item and approvedAt reads the approval time'"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

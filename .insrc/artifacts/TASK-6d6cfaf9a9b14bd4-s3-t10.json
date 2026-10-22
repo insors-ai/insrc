@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d78fcc9b-baa4-4222-a844-c6a275c2e914",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:43.438Z",
+    "epicCreatedAt": "2026-07-19T15:51:03.713Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6d6cfaf9a9b14bd4",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Build the test fixture harness and the dispatch, filtering and resilience suite",
+      "parent": {
+        "entityId": "STORY-6d6cfaf9a9b14bd4-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-6d6cfaf9a9b14bd4-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-6d6cfaf9a9b14bd4-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "214bb1c47c904fbcd7f0bb430a5042e6f3a65de8f2cd110e97b5a098154aa351",
+        "at": "2026-10-22T12:43:43.438Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:43.438Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the test fixture harness and the dispatch, filtering and resilience suite",
+    "summary": "Create the net-new unit test file in the __tests__/ directory beside the module path pinned by t2, with the *.test.ts suffix (convention.detect reports `testFiles: none` for this path, so this is file creation, not an edit), using node:test via tsx. Build the fixtures the LLD names, shared by this Task and t11: a frame-builder producing `{ id, stream, data }` envelopes for 'progress' / 'delta' / 'error' with `id` deliberately varied (including the producer's literal 0) so no test can accidentally depend on it as a correlator; canonical sc1 payload fixtures covering each of the eight observed phases plus an unknown-phase fallback; TokenProgressEvents including tokensDelta === 0 and a token-before-first-stage with null stageId; a fake RPC client stand-in shaped to the surface mapped in t2; and a log spy over getLogger. Cover the t6/t7/t8 subjects: verbatim stage/token dispatch (ac1), tokensTotal never derived by accumulation, snapshot reads across the pre-terminal lifecycle, operation filtering with two concurrent readers bound to 'workflow.run' and 'analyze.run', decode-miss drop, opaque stageId pass-through, non-monotonic synthesize-attempt/retry indices with no dedup, handler-throw isolation, multiple handlers in registration order with no replay, and no raw-envelope leakage to consumers (ac3).",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "A new test file exists in the __tests__/ directory beside the t2-pinned module path, with the *.test.ts suffix, using node:test and passing under `npx tsx --test`.",
+      "The frame-builder varies IpcStreamMessage.id across cases (including 0) and at least one test would fail if the reader correlated by id.",
+      "Fixtures cover all eight observed phases, an unknown-phase stage event, tokensDelta === 0, and a token event with null stageId arriving before any stage event.",
+      "Tests assert dispatch of stageId/stageLabel/index/total verbatim and that tokensTotal comes from the frame rather than accumulated tokensDelta.",
+      "Two concurrent readers bound to different ProgressOperations each see only their own frames.",
+      "Tests assert the ac3 set: no object bearing `stream`/`data` envelope keys reaches a consumer callback, non-decoding 'progress' bodies are dropped inside the reader, and WorkflowProgress is absent from every consumer-visible type.",
+      "The log spy asserts a warn on decode-miss and on handler-throw without asserting exact message text.",
+      "Test file follows camelCase free functions / PascalCase types with no class introduced."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "onStage dispatches a decoded StageProgressEvent with stageId/stageLabel/index/total verbatim"
+      },
+      {
+        "level": "unit",
+        "name": "onToken dispatches TokenProgressEvent with tokensDelta/tokensTotal and nullable owning stageId, including tokensDelta === 0 and token-before-first-stage"
+      },
+      {
+        "level": "unit",
+        "name": "tokensTotal is taken from the frame and never derived by accumulating tokensDelta"
+      },
+      {
+        "level": "unit",
+        "name": "snapshot pre-terminal lifecycle: currentStage null before the first stage frame, then tracks the most recent stage event; reads are side-effect free"
+      },
+      {
+        "level": "unit",
+        "name": "operation filtering: two concurrent readers bound to 'workflow.run' and 'analyze.run' each see only their own frames"
+      },
+      {
+        "level": "unit",
+        "name": "frame-id is never a correlator: varied ids including the producer's literal 0 change no routing"
+      },
+      {
+        "level": "unit",
+        "name": "decode-miss: a raw-shaped 'progress' body is dropped, warn-logged via the getLogger spy, reader stays attached"
+      },
+      {
+        "level": "unit",
+        "name": "opaque stageId outside the eight observed phases dispatches normally via its raw stageLabel"
+      },
+      {
+        "level": "unit",
+        "name": "non-monotonic synthesize-attempt/synthesize-retry indices both dispatch with no dedup"
+      },
+      {
+        "level": "unit",
+        "name": "handler isolation: a throwing handler is caught and warn-logged, siblings still run, snapshot is not rolled back"
+      },
+      {
+        "level": "unit",
+        "name": "multiple handlers per event fire in registration order and past events are not replayed to a late-registered handler"
+      },
+      {
+        "level": "unit",
+        "name": "no raw frame leakage: handlers receive only typed sc1 events, no `stream`/`data`-keyed object, and WorkflowProgress appears in no consumer-visible type"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

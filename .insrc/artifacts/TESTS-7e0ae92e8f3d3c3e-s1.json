@@ -5,7 +5,27 @@
     "storyId": "s1",
     "createdAt": "2026-10-11T16:19:17.663Z",
     "updatedAt": "2026-10-11T19:03:47.398Z",
-    "epicSlug": "di1-open-source-design-corpus-retrieval"
+    "epicSlug": "di1-open-source-design-corpus-retrieval",
+    "epicCreatedAt": "2026-10-11T14:48:29.528Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "39d0245ab3a8dd98970bd8f77ee5ecdfb46b46be63b52e77f069b4b0c1720dd3",
+        "at": "2026-10-11T16:19:17.663Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

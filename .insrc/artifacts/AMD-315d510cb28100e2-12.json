@@ -1,27 +1,60 @@
 {
-  "id": "AMD-315d510cb28100e2-12",
-  "epicHash": "315d510cb28100e2",
-  "epicSlug": "team-signoff-claim-based-workflow",
-  "hldBaseRunId": "wf-1792177279312-j27596",
-  "amendment": {
-    "type": "sharedContract.methodAdd",
-    "contractId": "sc1",
-    "method": {
-      "name": "addAssignee",
-      "signature": "addAssignee(issue: IssueRef, who: string): PortResult<string[]>",
-      "purpose": "Adds who to the issue's assignees without removing anyone, and returns the assignees read back afterwards, so a claim on an unassigned issue never removes another claimant and a contested claim (more than one assignee) is visible to the caller. setAssignee, which removes every other assignee, stays for release. The GitHub adapter test is s1's to add."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "createdAt": "2026-10-18T13:47:51.323Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "899bf3572f6e6441ebccc34f8330e80318f08ff63f4b563572183796dd5d5d64",
+        "at": "2026-10-18T13:47:51.323Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T14:23:31.925Z"
+      },
+      "signoffs": []
     }
   },
-  "rationale": "A claim may only take an unassigned issue and must never remove another assignee. setAssignee removes others before it adds, so it cannot be the claim primitive. GitHub has no atomic assign-if-unassigned; the add-only operation plus the read-back is the strongest claim the tracker allows (see docs/plans/team-workflow.md, s5 claim atomicity).",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792297318763-1dp38i",
-    "storyId": "s4",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-315d510cb28100e2-12",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc1",
+      "method": {
+        "name": "addAssignee",
+        "signature": "addAssignee(issue: IssueRef, who: string): PortResult<string[]>",
+        "purpose": "Adds who to the issue's assignees without removing anyone, and returns the assignees read back afterwards, so a claim on an unassigned issue never removes another claimant and a contested claim (more than one assignee) is visible to the caller. setAssignee, which removes every other assignee, stays for release. The GitHub adapter test is s1's to add."
+      }
+    },
+    "rationale": "A claim may only take an unassigned issue and must never remove another assignee. setAssignee removes others before it adds, so it cannot be the claim primitive. GitHub has no atomic assign-if-unassigned; the add-only operation plus the read-back is the strongest claim the tracker allows (see docs/plans/team-workflow.md, s5 claim atomicity).",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792297318763-1dp38i",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-18T13:47:51.323Z",
+    "approvedBy": "Subho Ghosh"
   },
-  "proposedAt": "2026-10-18T13:47:51.323Z",
-  "status": "approved",
-  "approvedAt": "2026-10-18T14:23:31.925Z",
-  "approvedBy": "Subho Ghosh"
+  "citations": []
 }

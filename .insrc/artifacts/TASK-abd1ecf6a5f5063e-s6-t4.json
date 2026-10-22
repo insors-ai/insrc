@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-47afed20-f0bb-4349-a1b5-5bd4d51fc123",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.130Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add the SpecArtifact record/storage + orchestrator-seam tests",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "30444ed17a0a10c59a23d20939109f5512bb5437f51faa9acef6c999399be77e",
+        "at": "2026-10-22T12:44:10.130Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.131Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the SpecArtifact record/storage + orchestrator-seam tests",
+    "summary": "Add src/workflow/__tests__/spec-artifact.test.ts (node:test + assert/strict): render + field-set unit cases, specArtifactId/specArtifactPaths path cases, and a writeAtomic round-trip (write json -> read back deep-equal, idempotent on same specHash). Add an orchestrator wiring test: brainstorm prepareSynthesize/finalizeArtifact no longer throw and a converged elicit stepOutputs fixture yields exactly one SpecArtifact carrying intent/scopeBoundary/nonGoals/decisions/openItems (approvedAt unset), plus a rejects-under-structured-body case. Run the workflow sweep + tsc.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "spec-artifact.test.ts covers render (sections + marker), paths (ARTIFACTS_DIR json + SPECS_DIR md), and writeAtomic round-trip deep-equal + idempotent re-write",
+      "an orchestrator test proves brainstorm synth/finalize no longer throw and produce exactly one SpecArtifact from a converged stepOutputs, plus the under-structured-body rejection",
+      "the full workflow + workflow-step sweep passes and tsc is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "writing the SpecArtifact json via writeAtomic to specArtifactPaths(...).json and reading it back parses to a deep-equal record"
+      },
+      {
+        "level": "unit",
+        "name": "writing the same body twice (deterministic specHash) overwrites idempotently and reads back identical content"
+      },
+      {
+        "level": "live",
+        "name": "a full brainstorm run to convergence produces a SpecArtifact whose intent + scopeBoundary read as a genuine structured statement (not a restatement of the raw idea) and whose decisions/nonGoals reflect the conversation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

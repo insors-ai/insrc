@@ -1,0 +1,1100 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "s1",
+    "createdAt": "2026-10-18T14:39:57.345Z",
+    "updatedAt": "2026-10-18T15:51:16.396Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "epicSlug": "scope-code-review-story-s-own",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "5cbf6a9af7d6b5733b2a63507917ae12e60a01e8c68d81cb01d02bf1dc7954e8",
+        "at": "2026-10-18T14:39:57.345Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "4dba12cc",
+        "ranAt": "2026-10-18T14:40:48.627Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts",
+                "title": "the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts",
+                "title": "the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render.test.ts (existing, still passes)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "trivial standalone build without a focus is an error (no-scope)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+                "title": "Small standalone build without an epicHash is an error (no-identity)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 598,
+            "titles": [
+              {
+                "title": "the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId",
+                "result": "pass"
+              },
+              {
+                "title": "the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 611,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              },
+              {
+                "title": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone validate prompt carries the build's stated scope; a small one points at its LLD instead",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/standalone-implement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 576,
+            "titles": [
+              {
+                "title": "admitStandaloneBuild: trivial (no LLD) is admitted directly",
+                "result": "pass"
+              },
+              {
+                "title": "admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build: admits, renders a scope-driven prompt, and persists a BUILD record",
+                "result": "pass"
+              },
+              {
+                "title": "trivial standalone build without a focus is an error (no-scope)",
+                "result": "pass"
+              },
+              {
+                "title": "Small standalone build without an epicHash is an error (no-identity)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8d526792",
+        "ranAt": "2026-10-18T14:43:51.782Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'two standalone Stories both S001 are told apart by the trailer's epicHash'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits.test.ts (existing, still passes)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet records Story edits folded into a merge commit as a merge-edit unit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet records a hand-resolved conflict as a merge-edit unit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet includes a file the Story deleted and a root commit's files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet is empty when the range holds only a clean merge",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "storyChangeSet throws NoBuildChangesError for an unresolvable base",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+                "title": "an octopus merge becomes one merge-edit unit over its whole change instead of a failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1350,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3122,
+            "titles": [
+              {
+                "title": "storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in",
+                "result": "pass"
+              },
+              {
+                "title": "storyChangeSet records Story edits folded into a merge commit as a merge-edit unit",
+                "result": "pass"
+              },
+              {
+                "title": "storyChangeSet records a hand-resolved conflict as a merge-edit unit",
+                "result": "pass"
+              },
+              {
+                "title": "storyChangeSet includes a file the Story deleted and a root commit's files",
+                "result": "pass"
+              },
+              {
+                "title": "storyChangeSet is empty when the range holds only a clean merge",
+                "result": "pass"
+              },
+              {
+                "title": "storyChangeSet throws NoBuildChangesError for an unresolvable base",
+                "result": "pass"
+              },
+              {
+                "title": "mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed",
+                "result": "pass"
+              },
+              {
+                "title": "mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG",
+                "result": "pass"
+              },
+              {
+                "title": "known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work",
+                "result": "pass"
+              },
+              {
+                "title": "an octopus merge becomes one merge-edit unit over its whole change instead of a failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "163b6dfd",
+        "ranAt": "2026-10-18T14:49:34.452Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'the review subject holds only the Story's own files and records attribution story-trailer'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "the review subject holds only the Story's own files and records attribution story-trailer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a file one Story changed and another Story reverted stays in the first Story's subject and diff'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a dirty tree gives attribution working-tree and the step-down order is unchanged'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "a dirty tree gives attribution working-tree and the step-down order is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/subject.test.ts",
+                "title": "T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attempt is called with no options and its result is returned",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1234,
+            "titles": [
+              {
+                "title": "the review subject holds only the Story's own files and records attribution story-trailer",
+                "result": "pass"
+              },
+              {
+                "title": "a dirty tree gives attribution working-tree and the step-down order is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1473,
+            "titles": [
+              {
+                "title": "resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: empty diff is a valid trivial subject (not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: git derivation failure -> no-build-record",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: read-only — only the injected read seams are called",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either",
+                "result": "pass"
+              },
+              {
+                "title": "T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "T41: a base naming a commit that does not exist -> ok, the same set today's call returns, and exactly one warning",
+                "result": "pass"
+              },
+              {
+                "title": "T41: with NO resolvable base the first attempt is the ledger-exclusion one — no base is invented",
+                "result": "pass"
+              },
+              {
+                "title": "the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam",
+                "result": "pass"
+              },
+              {
+                "title": "T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attempt is called with no options and its result is returned",
+                "result": "pass"
+              },
+              {
+                "title": "T43: a seam that ALWAYS throws -> no-build-record, after all three attempts",
+                "result": "pass"
+              },
+              {
+                "title": "T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback",
+                "result": "pass"
+              },
+              {
+                "title": "the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1905,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              },
+              {
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "814f773f",
+        "ranAt": "2026-10-18T14:53:25.157Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: 'a BUILD record persisted after another Story's commits names the Story's newest trailered commit'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts",
+                "title": "a BUILD record persisted after another Story's commits names the Story's newest trailered commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: 'with no trailered commit the record names HEAD, and an explicit commit wins'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts",
+                "title": "with no trailered commit the record names HEAD, and an explicit commit wins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 855,
+            "titles": [
+              {
+                "title": "a BUILD record persisted after another Story's commits names the Story's newest trailered commit",
+                "result": "pass"
+              },
+              {
+                "title": "with no trailered commit the record names HEAD, and an explicit commit wins",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1582,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              },
+              {
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "edb8aafe",
+        "ranAt": "2026-10-18T14:58:03.094Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a diff review of a trailered Story shows only its own hunks in a file another Story also edited'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'without a story key the diff is today's, and both diff callers record the attribution on the subject'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+                "title": "without a story key the diff is today's, and both diff callers record the attribution on the subject",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1121,
+            "titles": [
+              {
+                "title": "a diff review of a trailered Story shows only its own hunks in a file another Story also edited",
+                "result": "pass"
+              },
+              {
+                "title": "without a story key the diff is today's, and both diff callers record the attribution on the subject",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "7ddfc7eb",
+        "ranAt": "2026-10-18T15:00:53.124Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: 'sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+                "title": "sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: 'every judge slot receives the run's groundingMode and the non-coverage judges see every symbol'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+                "title": "every judge slot receives the run's groundingMode and the non-coverage judges see every symbol",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 647,
+            "titles": [
+              {
+                "title": "sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are",
+                "result": "pass"
+              },
+              {
+                "title": "every judge slot receives the run's groundingMode and the non-coverage judges see every symbol",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "440e3c1a",
+        "ranAt": "2026-10-18T15:19:24.395Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'evidence classes follow testsReaching and the test record'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "evidence classes follow testsReaching and the test record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'the coverage prompt lists only eligible symbols'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "the coverage prompt lists only eligible symbols",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a diff review lists no symbols and grades only the promised tests'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+                "title": "a diff review lists no symbols and grades only the promised tests",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts (existing, updated only where it asserts the old empty-edge rule)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 947,
+            "titles": [
+              {
+                "title": "evidence classes follow testsReaching and the test record",
+                "result": "pass"
+              },
+              {
+                "title": "with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept",
+                "result": "pass"
+              },
+              {
+                "title": "a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered",
+                "result": "pass"
+              },
+              {
+                "title": "the coverage prompt lists only eligible symbols",
+                "result": "pass"
+              },
+              {
+                "title": "a diff review lists no symbols and grades only the promised tests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 599,
+            "titles": [
+              {
+                "title": "judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: serializes the approvedPlan promised tests into the trailing payload (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: charge distinguishes present-failing from no-test and forbids an unsupported pass-state (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: charge instructs excluding pre-existing gaps in touched-but-unchanged neighbours (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: issues exactly ONE completeStructured call, no other provider method (k3/k4)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: all-covered => empty findings, no manufactured finding (edge)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: runs and returns a valid result with subject.buildRecord===null",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)",
+                "result": "pass"
+              },
+              {
+                "title": "the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "32dfd033",
+        "ranAt": "2026-10-18T15:22:31.209Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts: 'on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+                "title": "on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts: 'the daemon diff path reaches the coverage judge as degraded, also with an empty grounding'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+                "title": "the daemon diff path reaches the coverage judge as degraded, also with an empty grounding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 679,
+            "titles": [
+              {
+                "title": "on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon diff path reaches the coverage judge as degraded, also with an empty grounding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "b7ad69db",
+        "ranAt": "2026-10-18T15:51:16.396Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md: 'Trailer check' (t1-t8 all carry Insrc-Story: b47dadc7cf0cccb1/S001), 'Re-review of ISSUE-ae864466' (first-parent-range, 0 coverage findings vs 6 Markdown/test HIGHs before), 'This Story's own review' (story-trailer, 26 own files); records .insrc/artifacts/CR-b47dadc7cf0cccb1-s1.json and /tmp/CR-ae864466-rereview.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

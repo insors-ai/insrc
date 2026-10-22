@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e0f8518b-666e-44f9-b93a-4bbf77974f29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.782Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Delivery reader: load and types read the lifecycle",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "17d3897138982d444ea15c41b189fd885d40369a26d0b7b5a7b5fdcc311b8623",
+        "at": "2026-10-22T12:43:22.782Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.783Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Delivery reader: load and types read the lifecycle",
+    "summary": "In src/workflow/delivery/load.ts (approvalOf) and src/workflow/delivery/types.ts read approval, rejection and status from meta.lifecycle only. Update src/workflow/delivery/__tests__/load.test.ts, types.test.ts, fixtures.test.ts and contract.test.ts to the lifecycle helper.",
+    "size": "M",
+    "order": 17,
+    "acceptanceChecks": [
+      "Approval state comes from the lifecycle",
+      "No file under delivery load or types names approvedAt or rejectedAt"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "load.test.ts: approval state comes from the lifecycle"
+      }
+    ],
+    "planTaskId": "t19"
+  },
+  "citations": []
+}

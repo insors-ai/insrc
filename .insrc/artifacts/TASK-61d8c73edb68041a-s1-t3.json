@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fde084a-7bde-431c-b04d-ede5fd30f397",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.033Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement sc2: application-scoped DaemonGateway over the daemon socket",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8dd5b1cdfc51a1f3a3b14180300e61d61c514737177c11d629a9f0efdf471a4e",
+        "at": "2026-10-22T12:43:39.033Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.034Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement sc2: application-scoped DaemonGateway over the daemon socket",
+    "summary": "Add DaemonState and RegistrationResult, and implement DaemonGateway as one application-scoped service holding a single JSON-RPC client to ~/.insrc/daemon.sock. probe() returns absent/stale/current (absent when the socket is unreachable, conservative when freshness is unknown, never throwing). isProjectRegistered(projectRootPath) and registerProject(projectRootPath) front the strict repo.add registry: read-only paths never allocate, registerProject is idempotent and returns a reason on rejection, and a DaemonUnavailable error is surfaced (not swallowed) when the socket is down. Every method takes projectRootPath explicitly (k3); the socket wire format stays private to S001. Ships with its own unit tests driving a fake daemon socket.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "probe() returns 'absent' when no socket file is present and never throws; a reachable daemon yields current/stale, verified by unit tests against a fake socket.",
+      "isProjectRegistered() is read-only and surfaces DaemonUnavailable when the daemon is unreachable, never auto-allocating (k2, c3).",
+      "registerProject() routes repo.add for exactly that one project, is idempotent for an already-registered project, returns RegistrationResult{registered:false,reason} on backend rejection, and opens only the local socket — no cloud path (c7)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Unit: probe() maps reachable/unreachable/unknown-freshness to current/stale/absent and never throws"
+      },
+      {
+        "level": "unit",
+        "name": "Unit: isProjectRegistered() is read-only, surfaces DaemonUnavailable, and never auto-allocates"
+      },
+      {
+        "level": "unit",
+        "name": "Unit: registerProject() routes repo.add, is idempotent, returns reason on rejection, and never auto-allocates other repos"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

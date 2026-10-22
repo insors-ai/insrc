@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-51795e6a-6dd6-4acc-8f4e-33ebfa00608b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.050Z",
+    "epicCreatedAt": "2026-08-07T14:35:19.818Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0a116120820e903f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Python proven-receiver dataflow recall",
+      "parent": {
+        "entityId": "STORY-0a116120820e903f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0a116120820e903f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0a116120820e903f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "12e442421064ab3787034c5ce5add3c5d4cc261f060ffce4443f03e7dc5c79f7",
+        "at": "2026-10-22T12:43:12.052Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.053Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Python proven-receiver dataflow recall",
+    "summary": "In src/indexer/parser/python.ts, build a per-scope Set of receivers PROVEN to be HTTP clients from assignments `x = requests.Session()` / `x = httpx.Client()` (RHS is a call whose function text is the exact factory). In walkPythonForHttpCalls, a `<receiver>.<verb>(url)` call whose receiver is in the Set AND verb is an HTTP verb emits CALLS_HTTP (reuse emitCallsHttp + the shared HTTP-verb list from http-client-shapes.ts introduced in t3). Unproven receivers (e.g. dict.get) never match; module-rooted matches (requests.get) unchanged.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "`s = requests.Session(); s.get(url)` => one CALLS_HTTP with the raw URL; `c = httpx.Client(); c.post(url)` => one CALLS_HTTP.",
+      "PRECISION: `d.get('key')` on a dict (no Session/Client proof) emits ZERO CALLS_HTTP.",
+      "Existing module-rooted matches (requests.get/httpx.get) unchanged; a no-HTTP file yields a byte-identical ParseResult.",
+      "Reuses the shared HTTP-verb set from http-client-shapes.ts (no duplicated verb list)."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Python: requests.Session s.get + httpx.Client c.post each emit one CALLS_HTTP with the raw URL"
+      },
+      {
+        "level": "unit",
+        "name": "Python PRECISION: dict d.get('key') (no Session/Client proof) emits zero CALLS_HTTP"
+      },
+      {
+        "level": "unit",
+        "name": "Python: module-rooted matches (requests.get) unchanged; no-HTTP file byte-identical"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

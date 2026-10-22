@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c3fa6822-615a-49ad-82f6-d96dd2a308ca",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:45:03.120Z",
+    "epicCreatedAt": "2026-09-26T12:35:53.222Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f9563bf5bbb29c43",
+    "storyId": "s4",
+    "envelope": {
+      "description": "mapLine permission-request branch + pending-request registry + StreamAdapter.decide",
+      "parent": {
+        "entityId": "STORY-f9563bf5bbb29c43-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f9563bf5bbb29c43-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f9563bf5bbb29c43-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6373c961034183174af8db870987040eabb2d5c746c107737be815cd7e7be25c",
+        "at": "2026-10-22T12:45:03.120Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:45:03.120Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "mapLine permission-request branch + pending-request registry + StreamAdapter.decide",
+    "summary": "Add a permission-request branch to each ProviderMapper.mapLine via a per-provider normalizing adapter over field aliases (q1) that maps a native permission/approval line onto one internal ApprovalRequest{requestId,title,detail,toolName?} -> ApprovalRequestEvent; a parseable-but-idless line yields [] and an unparseable line throws (as today). Add the adapter-side pending-request registry (register on emit) and StreamAdapter.decide(turnId,requestId,decision): look up the live entry, format+write the provider control response via write(), resolve+clear; no-op on unknown/stale; auto-clean outstanding entries on cancel()/exit in the run() loop. Kept as one task (the registry is the shared state decide() reads and mapLine writes; splitting would leave a half-wired commit) — within the build, land the fixtures + normalizing-adapter parser first, then the registry+decide. Capture claude/codex permission-line fixtures for the adapter + live suite.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "A scripted permission line maps to exactly one ApprovalRequestEvent with a provider-stable requestId; non-permission lines map exactly as before (k2).",
+      "decide() writes the correct provider control response for a live requestId and no-ops for unknown/stale/dead ids (at most one write per requestId).",
+      "Pending entries are auto-cleaned on cancel()/exit so no card is left dangling; scope is accepted-but-inert 'once'-only.",
+      "The provider difference lives only inside each mapper/normalizing adapter."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: mapLine maps scripted permission line (both providers, via normalizing adapter over field aliases) to one ApprovalRequestEvent; idless line -> []; unparseable -> throws."
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter.test.ts: decide records correct control write for a live requestId, no-ops stale/unknown, at most one write per id; pending cleaned on cancel/exit."
+      },
+      {
+        "level": "live",
+        "name": "live-cli.test.ts: INSRC_LIVE_TESTS-gated claude --permission-prompts host + written decision; auto bypass; codex exec --json equivalent (validates captured fixtures against installed CLIs)."
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-6a811b8acca60ac5-S001 -->
+<!-- insrc:artifact BUILD-6a811b8acca60ac5-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -24,12 +24,12 @@ The approval card shows '1 of N' beside its title when more requests are waiting
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
-- `.insrc/artifacts/CR-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
-- `.insrc/artifacts/CR-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/BUILD-7ba8cf154db36204-s1.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/CR-6a811b8acca60ac5-s1.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/CR-7ba8cf154db36204-s1.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
 - `.insrc/artifacts/ISSUE-7ba8cf154db36204.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
-- `.insrc/artifacts/PLAN-6a811b8acca60ac5-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
-- `.insrc/artifacts/TESTS-7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/PLAN-6a811b8acca60ac5-s1.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
+- `.insrc/artifacts/TESTS-7ba8cf154db36204-s1.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
 - `.insrc/build-start/7ba8cf154db36204-S001.json` — **insrc-build** (2026-10-12T06:57:09.310Z)
 - `docs/standalone/bug-vs-code-dev-chat-approvals-E202610046a811b8a/S001/CR.md` — **insrc-build** (2026-10-12T06:57:09.310Z)
 - `docs/standalone/build-gate-s-test-report-cut-E202610127ba8cf15/ISSUE.md` — **insrc-build** (2026-10-12T06:57:09.310Z)

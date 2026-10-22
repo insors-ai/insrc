@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ece50acd-9f69-45fa-95cf-8e6270fed59e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.230Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add the IdentityService and the identity file",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afabd30c1bc7e80a83b45d9681ab7f830a0c5e924b44e65626a1a50acec32073",
+        "at": "2026-10-22T12:43:21.230Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.231Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the IdentityService and the identity file",
+    "summary": "Add the identity module (src/workflow/identity/) with IdentityService.currentActor(repoPath), declare and show, and the ~/.insrc/identity.json file ({ primary, aliases[] }, atomic replace, ids namespaced and lower-case, no duplicates, at most 20 aliases, IdentityError). currentActor wraps resolveLearner and localIdentityDeps from src/understanding/identity.ts and TrackerPort.whoAmI as the github source, maps the result to a namespaced person Actor (github:<login>, git:<email>, os:<user>@<host>), copies the declared aliases into properties.aliases only onto the declared primary or an alias, never throws, and reports an invalid file without blocking attribution.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "currentActor returns github:<login> when the tracker answers, else git:<email>, else os:<user>@<host>, always lower-case and namespaced",
+      "the same inputs give the same identity through resolveLearner and through IdentityService",
+      "declared aliases are copied onto the declared primary or an alias and onto no other actor",
+      "declare rejects non-namespaced or upper-case ids, duplicates and more than 20 aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+      "an invalid identity file leaves currentActor working without aliases and logs the problem"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "identity-service.test.ts: IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias"
+      },
+      {
+        "level": "unit",
+        "name": "identity-service.test.ts: IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1786eeec-159e-490a-850a-aa32300dd19e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:20.421Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Split writeArtifact into a pure prepare step and a write",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee051ce0beabff1509e199e909aa520fff5867d36a292f8e232b2a03d147258a",
+        "at": "2026-10-22T12:43:20.421Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:20.422Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Split writeArtifact into a pure prepare step and a write",
+    "summary": "In src/workflow/storage.ts add prepareArtifactWrite returning the exact bytes, the revision and whether content changed, and rewrite writeArtifact as prepare then writeAtomic with an identical signature and results.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes",
+      "every existing writeArtifact and storage test passes unchanged",
+      "prepareArtifactWrite writes nothing"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/prepare-artifact-write.test.ts: prepareArtifactWrite returns the bytes and revision writeArtifact writes for content, meta-only, identical and first writes, and writes nothing"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

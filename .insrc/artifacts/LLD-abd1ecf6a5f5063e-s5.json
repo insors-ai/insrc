@@ -23,82 +23,62 @@
     "hldBaseRunId": "wf-1785587820064-46kctq",
     "hldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "r1",
-          "ref": "contract/decodeState",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "decodeState(token): WorkflowStepStatePayload is exported from src/mcp/workflow-step/state.ts and calls loadState, catching StateTokenNotFound.",
-          "evidence": "src/mcp/workflow-step/state.ts:91 `export function decodeState(token): WorkflowStepStatePayload` calls loadState and catches StateTokenNotFound (state.ts:103). Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "r2",
-          "ref": "dataModel/WorkflowStateDecodeError",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "WorkflowStateDecodeError in src/mcp/workflow-step/state.ts currently has code union 'malformed' | 'wrong-version' | 'wrong-stage' (s5 adds 'not-found'); it does not yet contain 'not-found'.",
-          "evidence": "src/mcp/workflow-step/state.ts:72 `export class WorkflowStateDecodeError`; its code union is 'malformed'|'wrong-version'|'wrong-stage' and contains NO 'not-found' (all 'not-found' grep hits are in unrelated files) — exactly the additive change s5 makes. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "r3",
-          "ref": "contract/state-store",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "loadState throws StateTokenNotFound on an unknown token, and the store exposes _clearWorkflowStateStoreForTests + releaseState, in src/mcp/workflow-step/state-store.ts.",
-          "evidence": "src/mcp/workflow-step/state-store.ts exports loadState (throws StateTokenNotFound), releaseState, and _clearWorkflowStateStoreForTests. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "r4",
-          "ref": "errorPaths",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The step phase calls decodeState + assertStage, and the top-level dispatch (handler.ts) wraps phases in try/catch surfacing a thrown error as {next:'error', isError:true} without falling back to phase='start'.",
-          "evidence": "phases/step.ts calls decodeState + assertStage; handler.ts wraps dispatch in try/catch returning errorResult with isError — no phase='start' fallback. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "r5",
-          "ref": "contract/decodeState",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The full folded state (BrainstormElicitState + executor stepOutputs) rides inside WorkflowStepStatePayload, so decodeState rehydrates the identical payload saved by encodeState (ac1/ac3).",
-          "evidence": "src/mcp/workflow-step/state.ts:50 interface WorkflowStepStatePayload with executor?: (:61), brainstorm?: BrainstormElicitState (:68), and stepOutputs — the full folded state rides inside, so decodeState rehydrates the identical saved payload. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "r6",
-          "ref": "testStrategy",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The test suites s5 extends exist: src/mcp/workflow-step/__tests__/state-store.test.ts and src/workflow/runners/brainstorm/__tests__/elicit.test.ts.",
-          "evidence": "src/mcp/workflow-step/__tests__/state-store.test.ts (imports _workflowStateStoreSize) and the brainstorm elicit.test.ts (resumeRun) both exist — the suites s5 extends. Confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-02T04:46:22.858Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-08-02T04:51:01.696Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "85770371db7529ae53a0b4b992541367342943916e01ec5eb27648c5402721d4",
+        "at": "2026-08-02T04:45:21.410Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T04:51:01.696Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-02T04:46:22.858Z",
+        "report": {
+          "entityId": "LLD-abd1ecf6a5f5063e-s5",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-abd1ecf6a5f5063e-s5-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

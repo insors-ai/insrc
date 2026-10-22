@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1a46f2c9-f686-44bc-a6ec-9bce2c047f9e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.561Z",
+    "epicCreatedAt": "2026-10-13T11:21:58.998Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8d4b90c9ab301e66",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the pane's client one decide call and add the new messages to the protocol",
+      "parent": {
+        "entityId": "STORY-8d4b90c9ab301e66-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8d4b90c9ab301e66-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8d4b90c9ab301e66-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "080398ae7954584bdbeda5ee3f75a4974e34314fb96e58497c51ae439671e65a",
+        "at": "2026-10-22T12:43:56.564Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.564Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the pane's client one decide call and add the new messages to the protocol",
+    "summary": "Replace approve and comment in the review client with decide over 'workflow.reviewDecision', and forward the view's new fields. Change the 'docs-decision' message and add 'docs-decision-result', 'open-companion' and 'docs-companion' to the protocol and its kind lists.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "decide calls the daemon once with the given path and throws on the error arm",
+      "content forwards docPath, contentVersion, feedback, reviewer and state",
+      "The three new kinds are listed and 'docs-decision' carries a decision and a comments list"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields"
+      },
+      {
+        "level": "unit",
+        "name": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

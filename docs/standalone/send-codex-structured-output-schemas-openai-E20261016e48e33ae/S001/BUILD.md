@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-e48e33ae6af03720-S001 -->
+<!-- insrc:artifact BUILD-e48e33ae6af03720-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -26,15 +26,15 @@ This Story's own change is dd771653 only: both codex paths of CliProvider write 
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
-- `.insrc/artifacts/BUILD-ae2d83c6ab06c595-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
-- `.insrc/artifacts/CR-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
-- `.insrc/artifacts/CR-ae2d83c6ab06c595-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/BUILD-91640defac1b5816-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/BUILD-ae2d83c6ab06c595-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/CR-91640defac1b5816-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/CR-ae2d83c6ab06c595-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/artifacts/ISSUE-91640defac1b5816.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/artifacts/ISSUE-ae2d83c6ab06c595.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/artifacts/ISSUE-e48e33ae6af03720.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
-- `.insrc/artifacts/TESTS-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
-- `.insrc/artifacts/TESTS-ae2d83c6ab06c595-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/TESTS-91640defac1b5816-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
+- `.insrc/artifacts/TESTS-ae2d83c6ab06c595-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/artifacts/TESTS-c2ba6fa62a148ed1-s1.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/build-start/91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)
 - `.insrc/build-start/ae2d83c6ab06c595-S001.json` — **insrc-build** (2026-10-17T06:01:57.191Z)

@@ -24,111 +24,61 @@
     "hldBaseRunId": "wf-1790165706650-c3lbx6",
     "hldEffectiveHash": "3fb0b2204d884534004431928d86df688607742e1aa556119172742624bc5e9a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc2 handler 'providers.listModels' is registered in the daemon handler map at src/daemon/index.ts:1520.",
-          "evidence": "Read of src/daemon/index.ts:1520 EXACT: `'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002)`. The revived sc2 handler is registered at the cited line.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The sc2 ModelListResult shape { provider, available, models: {id, displayName?}[] } is defined in src/daemon/list-models.ts around line 46.",
-          "evidence": "Read of src/daemon/list-models.ts:46 = `export interface ModelListResult {`; grep confirms :48 `readonly available: boolean;` and :49 `readonly models: readonly ModelInfo[]`. The sc2 result shape is exactly as cited.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The sc2 provider domain is exactly 'ollama' | 'cli-claude' | 'cli-codex' — the same three literals as the reused runner enum — so a tier's runner value maps 1:1 to the provider param.",
-          "evidence": "list-models.ts:30 = `export type ModelProvider = 'ollama' | 'cli-claude' | 'cli-codex';`; config-catalog.ts:96 runner enumValues ['ollama','cli-claude','cli-codex']. The provider domain is exactly the three runner literals — the 1:1 runner→provider mapping holds.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "datamodel/config-key",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The global model-tier keys models.tiers.<core|mid|cheap>.{runner,model} are defined in src/config/config-catalog.ts around line 96, with the per-tier defaults core/mid runner 'cli-claude', cheap 'ollama', model core '' / mid 'sonnet' / cheap 'qwen3.6:27b'; S004 writes them unchanged via config.write.",
-          "evidence": "config-catalog.ts:96 confirms the models.tiers.* keys + the cited defaults (core/mid runner 'cli-claude', mid.model 'sonnet', cheap.model 'qwen3.6:27b', cheap.runner 'ollama'). S004 writes them unchanged.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "contract/DaemonGateway.listModels",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The JetBrains DaemonGateway interface (DaemonGateway.kt:470) with its settingsCatalog() Loaded/Unavailable worked example (:881) and DaemonRpc.call/DaemonResult(ok,data,error,list) transport (:677/:689) exists and is the surface S004 extends with listModels.",
-          "evidence": "DaemonGateway.kt:470 = `interface DaemonGateway {`; grep confirms :689 `data class DaemonResult(` and :881 `override fun settingsCatalog(): SettingsCatalogResult =` (the worked-example impl the premise cites). All three anchors resolve; the interface decl of settingsCatalog is at :565 (not cited as :881, so no mismatch).",
-          "action": "None — verified sound; the gateway surface S004 extends is confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "invariant/parse-framing",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "UnixSocketDaemonRpc.parse frames a {provider,available,models} object into DaemonResult.data (ok=true) even when available:false, and a structured result.error into ok=false — the load-bearing available:false-≠-Unavailable distinction (UnixSocketDaemonRpc.kt:105/123/130).",
-          "evidence": "UnixSocketDaemonRpc.kt:105 = `internal fun parse(reply: String): DaemonResult {`; grep confirms :123 the isJsonArray branch. The parse framing (object→data ok=true even when available:false; structured error→ok=false) is confirmed at the cited lines — the load-bearing available:false-≠-Unavailable distinction.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "section-seam",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The SettingsSection seam (SettingsView.kt:55) and the PerRoleSection combo idiom (PerRoleSection.kt:29, suppressEdits/rowRefreshers/collectWrites) and PerRepoSection (:38) exist and are the patterns ModelTiersSection mirrors.",
-          "evidence": "Direct verification: `interface SettingsSection` IS at SettingsView.kt:55 (the review's grep had only doc-path hits, but a direct grep confirms it exactly). PerRoleSection.kt:29 (class PerRoleSection) + PerRepoSection.kt:38 (class PerRepoSection) + PerRepoSection suppressEdits also confirmed. All three section-seam anchors resolve.",
-          "action": "None — verified sound; the SettingsView.kt:55 anchor the engine's truncated grep missed is confirmed by direct read.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "settings-surface",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "InsrcSettingsConfigurable renders via an off-EDT pooled read in createComponent (:88), writes off-EDT in apply (:131), and the current model field is a free-text JTextField cell in the per-cell SettingsValueCellEditor (:491/:505) whose CHOOSER branch is the runner combo — the behaviour S004 changes.",
-          "evidence": "InsrcSettingsConfigurable.kt:88 = the executeOnPooledThread off-EDT read; grep confirms :485 `class SettingsValueCellEditor` and :491 `getTableCellEditorComponent`. The current per-cell free-text model editing + the off-EDT read/write discipline S004 changes/preserves are confirmed.",
-          "action": "None — verified sound.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "boundary/consumes-sc2-only",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "S004 consumes sc2 only (no new shared contract, no new daemon capability), mirroring S003 for cross-plugin parity; the JetBrains plugin has NO providers.listModels call today, so S004 adds the gateway method plugin-side.",
-          "evidence": "The review engine's grep truncated at 50 matches entirely within docs/ (path-sorted before jetbrains-plugin/), so it never probed the plugin — an inconclusive result, NOT a contradiction. Direct verification resolves it: `grep -rn 'listModels' jetbrains-plugin/src/main/kotlin/` returns ZERO matches, confirming the plugin has no providers.listModels call today. The boundary claim (consumes sc2 only, adds the gateway method plugin-side, parity with S003) holds.",
-          "action": "None actionable — the absence claim is confirmed by direct grep; the empty engine-evidence was a truncation artifact, not a real gap. Not fabricating a finding from it.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 9
-      },
-      "reviewedAt": "2026-09-23T15:40:54.119Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ba132c185fe45860-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-23T15:58:11.772Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c039666ad084a0956ade6e1f827594c98658be98431c86988b652113ee9a1cac",
+        "at": "2026-09-23T15:35:41.273Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-23T15:58:11.772Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 9
+        },
+        "at": "2026-09-23T15:40:54.119Z",
+        "report": {
+          "entityId": "LLD-ba132c185fe45860-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ba132c185fe45860-s4-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

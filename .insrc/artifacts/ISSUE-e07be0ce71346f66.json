@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-14T12:49:04.583Z",
     "parentRef": {
       "slug": "treat-vs-code-folder-inside-registered"
+    },
+    "epicCreatedAt": "2026-10-14T12:26:29.701Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ece6801ed3e3c289cab763fec2bfcce2a2e9779702c2951a32943fbe42207e4d",
+        "at": "2026-10-14T12:26:29.701Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T12:49:04.583Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

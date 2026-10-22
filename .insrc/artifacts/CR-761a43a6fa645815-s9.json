@@ -11,7 +11,26 @@
     "epicHash": "761a43a6fa645815",
     "storyId": "s9",
     "epicSlug": "add-daemon-driven-code-review-stage",
-    "epicCreatedAt": "2026-08-03T06:51:25.695Z"
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "9384245b10231f4d715312763e55a6307ef521a13ece13797bb6e4a849ea5ec7",
+        "at": "2026-08-05T06:33:57.176Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "kind": "code-review",

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-417f750a-a219-405d-8050-6ae37f2352db",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:12.299Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the activation shell (never-throws, off-UI probe → status)",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "277242b2512a0fe583feeed65a531994ae61a79d9993c575d4aca39c11957598",
+        "at": "2026-10-22T12:44:12.299Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:12.300Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the activation shell (never-throws, off-UI probe → status)",
+    "summary": "Fill activate(context): construct the ipc client (t1) + sc2/sc3/sc4 (t3/t4/t5), register the status-bar item into context.subscriptions, and kick off a BOUNDED off-the-UI-path reachability probe whose derived DaemonUiState is pushed into StatusSurface.set; a failed/timed-out probe degrades to stopped/errored and activation never throws / never modifies the editor. deactivate() disposes the status-bar item + registered Disposables so a re-activate leaves no duplicate.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "activate() constructs client + surfaces, registers the status-bar item, runs the reachability probe OFF the activation critical path (activate() returns without awaiting/blocking on it) and pushes the derived state to sc2 (ac1/ac2)",
+      "activate() never throws and never modifies the editor even when the probe fails/times out (degrades to stopped/errored within a bounded deadline)",
+      "deactivate() disposes the status-bar item + command Disposables (re-activate leaves no duplicate)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "activate(context) constructs client + sc2/sc3/sc4, registers the status-bar item into context.subscriptions, runs the reachability probe off the UI path and calls StatusSurface.set with the derived state"
+      },
+      {
+        "level": "unit",
+        "name": "activate(context): a probe that throws/times out degrades to 'stopped'/'errored' and activation still returns (never throws)"
+      },
+      {
+        "level": "unit",
+        "name": "deactivate() disposes status-bar + command Disposables (re-activate leaves no duplicate item)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

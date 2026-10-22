@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-52317c4a-fd3d-4e70-b209-df54955ec5da",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:04.515Z",
+    "epicCreatedAt": "2026-09-28T09:23:41.149Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0f4c1cfe262a497",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Cross-cutting tests (renderer byte-identity + IPC contract + integration)",
+      "parent": {
+        "entityId": "STORY-a0f4c1cfe262a497-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a0f4c1cfe262a497-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a0f4c1cfe262a497-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3c3a9ce9c4e9bc0e99c4f177dddbc8da8cbcac37f985358c654c04f67ff4ce02",
+        "at": "2026-10-22T12:44:04.515Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:04.516Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Cross-cutting tests (renderer byte-identity + IPC contract + integration)",
+    "summary": "With per-task unit tests already co-located (t1-t4/t7), add the CROSS-CUTTING tests: renderer byte-identity present-vs-absent per doc type; a source-scan contract test for the IPC handler (repo-stats mould); and an integration append→read→render + legacy forward-only test. Confirm ac1-ac5 all map to a passing test and the full sweep is green (tsc clean).",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "ac1-ac5 each have ≥1 passing proving test (unit co-located + cross-cutting here)",
+      "renderer byte-identity present-vs-absent asserted per type; IPC contract test pins registration+delegation+append-only; integration append→read→render + legacy forward-only pass",
+      "the full sweep passes (tsc clean; no regression in existing renderer output)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "append a feedback entry to a written DEF/HLD/LLD/PLAN JSON, re-read, assert the entry is present with full attribution and renders in the doc (ac1)"
+      },
+      {
+        "level": "integration",
+        "name": "a legacy artifact (no feedback field) reads + re-renders unchanged, then accepts a first append that initialises the record (ac4)"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

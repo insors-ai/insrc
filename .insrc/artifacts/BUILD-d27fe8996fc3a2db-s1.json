@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "d27fe8996fc3a2db",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T04:54:23.764Z",
+    "updatedAt": "2026-10-15T08:21:41.032Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Small: one module plus a new vscode-free placement function.",
+    "epicCreatedAt": "2026-10-14T19:23:57.366Z",
+    "epicSlug": "open-review-pane-existing-editor-group",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "fe5d4f59c0b2c557c93a56072d18414b2f555778d0dbcf4eb2856cb50f3f3967",
+        "at": "2026-10-15T04:54:23.764Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T08:21:41.159Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "A new review pane opens in an editor group that is already open and holds no chat tab; with none it opens where it did (beside the chat without focus when quiet, the active group otherwise). New vscode-free chat/review-column.ts: chooseReviewColumn(groups, chatViewType) leaves out every group with a tab satisfying group-lock.ts's isChatTabInput, then returns the active group's column, else the lowest, else undefined. extension.ts's review host createPanel reads vscode.window.tabGroups.all in a try (a throw is logged and gives today's placement) and passes the column, or today's placement. The compile-only vscode.d.ts shim gained TabGroups.all and TabGroup.viewColumn, isActive and tabs. Tests: review-column.test.ts (fake groups), and the two existing source scans in review-wiring.test.ts rewritten for the new wiring (the iconPath test and the presenter-wiring test, whose title now states the new placement). Tests run file by file: 1357 tests, 2 failures (the manifest-catalog tests that were already failing). NOT SEEN IN A REAL VS CODE: whether VS Code puts the pane into the chosen group, and what the 'active group' is when the chat group is locked, are untested; extension.ts cannot run outside VS Code.",
+    "testRecord": {
+      "md": "docs/standalone/open-review-pane-existing-editor-group-E20261014d27fe899/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-babd84c6e2fb480a-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:41.032Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-de069d56d76eaacd-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:41.032Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-chat-s-progress-widget-when-E20261014de069d56/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:41.032Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:41.032Z"
+      }
+    ],
+    "commit": "4ba749de"
+  }
+}

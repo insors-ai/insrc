@@ -6,9 +6,36 @@
     "epicHash": "914cbf5ea9026b92",
     "storyId": "s4",
     "createdAt": "2026-08-07T16:21:49.770Z",
-    "approvedAt": "2026-08-07T16:42:16.304Z",
     "epicSlug": "work-framed-approved-spec-proceed-from",
-    "epicCreatedAt": "2026-08-06T15:51:10.850Z"
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ac6db121bb77dccf8a899cb00ccde5e9b21f9aff3dcead975c2f5bab50cf7c1c",
+        "at": "2026-08-07T16:21:49.770Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-07T16:42:16.304Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "S004 outbound messaging detector (PUBLISHES_TO/SUBSCRIBES_TO): messaging-client-shapes.ts (shape tables + matchMessagingClient + emitMessaging + all-language import-gating), wired into 5 parsers; messaging-endpoints.ts resolveMessagingEndpoints + protocol-scoped gcOrphanEndpoints refactor (shared by both passes) + settle-pass/fullIndex wiring. 22 new tests; tsc clean; 192 indexer tests pass; S003 external-endpoints regression gate green.",

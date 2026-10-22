@@ -23,71 +23,56 @@
     "storyId": "s1",
     "lldRunId": "wf-1789971334172-d6d5rr",
     "lldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "t6",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "There are exactly 6 DaemonGateway implementations that each override every interface method (so all 6 must gain daemonStatus()): DaemonGatewayImpl + DaemonGatewayService (production) and 4 test fakes (DaemonLifecycleServiceTest, OnboardingLifecycleTest, OnboardingWiringTest, OnboardingCleanupIntegrationTest) — i.e. t5 covers DaemonGatewayImpl and t6 covers the other 5.",
-          "evidence": "grep 'override fun repoStats(projectRootPath: String): RepoStatsResult' returns EXACTLY 6 source matches: DaemonGateway.kt:605 (DaemonGatewayImpl, t5) + DaemonGatewayService.kt:27 + the 4 test fakes (DaemonLifecycleServiceTest:41, OnboardingCleanupIntegrationTest:61, OnboardingLifecycleTest:64, OnboardingWiringTest:57). read DaemonGatewayService.kt:27 found:true. The t6 fanout count (5 others) is exact.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "t6",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The 4 test fakes that implement DaemonGateway and will need the daemonStatus() stub are in DaemonLifecycleServiceTest.kt, OnboardingLifecycleTest.kt, OnboardingWiringTest.kt, and OnboardingCleanupIntegrationTest.kt.",
-          "evidence": "The 4 named test-fake files each carry an override fun repoStats( at the cited lines (read OnboardingWiringTest.kt:57 found:true); the extra grep hit is this LLD's own doc table, not a 5th fake.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "t5",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "DaemonGatewayImpl.repoStats() (the classification template t5 clones) and METHOD_STATUS='daemon.status' both exist in DaemonGateway.kt, and daemonStatus() is not yet present.",
-          "evidence": "read DaemonGateway.kt:605 found:true (repoStats template); grep confirms const val METHOD_STATUS = \"daemon.status\" at :872; fun daemonStatus( appears only in the HLD/LLD docs — confirming t5 adds a genuinely new method cloning the repoStats() classification.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The parent applicationConfigurable id=ai.insors.insrc.settings exists in plugin.xml, so t3 appends three child entries under it without editing the parent.",
-          "evidence": "read plugin.xml:289 found:true = '<applicationConfigurable'; the source descriptor (src/main/resources/META-INF/plugin.xml:291) carries id=ai.insors.insrc.settings under parentId=tools — the parent t3 appends children to without editing.",
-          "action": "",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The off-EDT createComponent() idiom (executeOnPooledThread + invokeLater) t1 generalizes lives in InsrcSettingsConfigurable.kt, and ui/InsrcCollapsible.kt provides the ScrollableColumn the base wraps.",
-          "evidence": "read InsrcSettingsConfigurable.kt:72 found:true (createComponent); grep confirms executeOnPooledThread there and class ScrollableColumn in ui/InsrcCollapsible.kt — the off-EDT idiom + scroll primitive t1 generalizes both exist.",
-          "action": "",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-21T08:04:37.467Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-21T08:14:00.913Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "219cfb26d3d5b2b3ea5941c54759f625e8d802a3e26c5e1ee526a67f0e83367f",
+        "at": "2026-09-21T08:03:37.408Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T08:14:00.913Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-21T08:04:37.467Z",
+        "report": {
+          "entityId": "PLAN-57298940cdc341bc-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-57298940cdc341bc-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

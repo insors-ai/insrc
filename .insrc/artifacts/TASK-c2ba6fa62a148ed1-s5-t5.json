@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-988078f2-6ee3-49f1-8e6e-98760f89310e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.723Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The registry row carries the last full index's figures (lastRun)",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "79e7723350719e4d53f82b1f87c5ef5bbd3b0ccbfd832f6e8634492b6fd0f2c0",
+        "at": "2026-10-22T12:44:36.724Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.724Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The registry row carries the last full index's figures (lastRun)",
+    "summary": "RepoLastRun type and optional lastRun on RepoRow (src/db/graph/codec.ts) and RegisteredRepo (src/shared/types.ts); encodeRepoRow writes it, decodeRepoRow copies it explicitly; updateRepoStatus (src/db/repos.ts) takes an optional lastRun argument and keeps the stored one when omitted; rowToRepo maps it. Grounding: RepoRow at src/db/graph/codec.ts:89, encodeRepoRow :105 and decodeRepoRow :114-127 (a const arrow that builds the row field by field, so lastRun must be copied explicitly); updateRepoStatus src/db/repos.ts:243, rowToRepo :340; RegisteredRepo src/shared/types.ts:678. decodeRepoRow copies lastRun only when present (...(raw.lastRun !== undefined ? { lastRun: raw.lastRun } : {})), so the strict round-trip tests in src/db/graph/__tests__/codec.test.ts (:40, :50) still hold for a row without it.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A row with lastRun round-trips through the codec; an older row decodes with lastRun undefined.",
+      "A status write without lastRun keeps the stored lastRun; a write with it replaces it; rowToRepo exposes it."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "registry codec: a row with lastRun round-trips; an older row without it decodes with lastRun undefined"
+      },
+      {
+        "level": "unit",
+        "name": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

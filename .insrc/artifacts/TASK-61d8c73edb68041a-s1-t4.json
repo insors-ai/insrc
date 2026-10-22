@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b18a1597-6e68-49f3-9c24-9c52b7374793",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.035Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Acceptance tests: integration (plugin activation) + contract (single-artifact / common-platform)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e538bbd5e55ec78947d548b8ee0bc8fa34bcb2351b7dac88517788e7625dc399",
+        "at": "2026-10-22T12:43:39.035Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.035Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Acceptance tests: integration (plugin activation) + contract (single-artifact / common-platform)",
+    "summary": "With sc1 and sc2 assembled, add the acceptance-level suites that require the whole plugin: an integration test that activates the plugin in the IntelliJ Platform test fixture and asserts onProjectOpened fires for an opened project (including multi-window per-project scoping, k3); and a contract test over the built descriptor/artifact asserting a single versioned artifact that depends only on the common platform module. Per-task unit tests for the gateway and IdeKind mapping live with t2/t3, not here.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "An integration test activates the plugin in the platform fixture and asserts onProjectOpened fires for an opened project with its absolute root (ac1), including multi-window per-project scoping (k3).",
+      "A contract test asserts the build emits one versioned artifact depending only on the common platform module (ac2/ac3, lc1)."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Integration: plugin activates in the platform fixture and fires onProjectOpened for an opened project, with multi-window per-project scoping (k3)"
+      },
+      {
+        "level": "smoke",
+        "name": "Contract: the build emits one versioned artifact depending only on the common platform module (no IDE-specific module)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

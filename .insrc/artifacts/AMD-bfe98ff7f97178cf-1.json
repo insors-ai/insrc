@@ -1,20 +1,63 @@
 {
-  "id": "AMD-bfe98ff7f97178cf-1",
-  "epicHash": "bfe98ff7f97178cf",
-  "epicSlug": "build-vs-code-plugin-ui-integration",
-  "hldBaseRunId": "wf-1790840477406-bic923",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc1",
-    "field": {
-      "name": "sequenceDefinition",
-      "type": "SequenceDefinition | undefined",
-      "optional": true,
-      "purpose": "body.sequenceDefinition, projected verbatim like its four siblings, so the review pane can DRAW a call-sequence companion from its source record instead of declaring it unshowable"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "bfe98ff7f97178cf",
+    "epicSlug": "build-vs-code-plugin-ui-integration",
+    "createdAt": "2026-10-01T16:10:49.786Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "53804fb9c946d28160d0c7ff09ef548af83d9d052ddcf0e59f9d084422f381db",
+        "at": "2026-10-01T16:10:49.786Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T16:16:27.386Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "THREE daemon renderers stamp kind:'diagram-mermaid' — ER (render.ts:104), sequence (:205), component (:243) — but sc1 projects only the ER source record, so a ref's CompanionKind cannot identify which record drew it and the pane cannot draw two of the three. A ledger recount found 5 diagram-mermaid refs against 2 erDefinition bodies and 3 sequenceDefinition bodies, so WITHOUT this field S003 renders 'referenced but could not be shown' on the MAJORITY of documents that carry a diagram — including this Epic's own S002 LLD, whose 'Sequence diagram' companion ref and whose sequenceDefinition sit in the same body, unprojected. ADOPTED IN NARROWED FORM at the S003 approval gate: componentDependencyDefinition was proposed alongside this field and DEFERRED, because the same recount found it in ZERO artifact bodies — projecting it would buy a third derivation, fixtures and visual check for a record no producer has ever emitted. It stays purely additive to add when one first appears. Additive and absent-safe: optional, absence stays an absent key, no existing field changes meaning, no new IPC method, no extra round trip (k2/k7). backwardCompat is symmetric — an older extension ignores the field, and this extension reads it as absent against an un-amended daemon — so no coordinated release is required. sc1 is owned by s1, which is why this is filed as a typed amendment rather than built silently from s3.",
+  "body": {
+    "id": "AMD-bfe98ff7f97178cf-1",
+    "hldBaseRunId": "wf-1790840477406-bic923",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc1",
+      "field": {
+        "name": "sequenceDefinition",
+        "type": "SequenceDefinition | undefined",
+        "optional": true,
+        "purpose": "body.sequenceDefinition, projected verbatim like its four siblings, so the review pane can DRAW a call-sequence companion from its source record instead of declaring it unshowable"
+      },
+      "breaking": false
+    },
+    "rationale": "THREE daemon renderers stamp kind:'diagram-mermaid' — ER (render.ts:104), sequence (:205), component (:243) — but sc1 projects only the ER source record, so a ref's CompanionKind cannot identify which record drew it and the pane cannot draw two of the three. A ledger recount found 5 diagram-mermaid refs against 2 erDefinition bodies and 3 sequenceDefinition bodies, so WITHOUT this field S003 renders 'referenced but could not be shown' on the MAJORITY of documents that carry a diagram — including this Epic's own S002 LLD, whose 'Sequence diagram' companion ref and whose sequenceDefinition sit in the same body, unprojected. ADOPTED IN NARROWED FORM at the S003 approval gate: componentDependencyDefinition was proposed alongside this field and DEFERRED, because the same recount found it in ZERO artifact bodies — projecting it would buy a third derivation, fixtures and visual check for a record no producer has ever emitted. It stays purely additive to add when one first appears. Additive and absent-safe: optional, absence stays an absent key, no existing field changes meaning, no new IPC method, no extra round trip (k2/k7). backwardCompat is symmetric — an older extension ignores the field, and this extension reads it as absent against an un-amended daemon — so no coordinated release is required. sc1 is owned by s1, which is why this is filed as a typed amendment rather than built silently from s3.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1790868424979-tkzzkx",
+      "storyId": "s3",
+      "stepId": "synthesize"
+    },
+    "proposedAt": "2026-10-01T16:10:49.786Z",
+    "approvedBy": "user:in-chat-approval"
+  },
   "citations": [
     {
       "id": "c1",
@@ -36,15 +79,5 @@
       "kind": "prior-artifact",
       "ref": ".insrc/artifacts/LLD-bfe98ff7f97178cf-s2.json"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1790868424979-tkzzkx",
-    "storyId": "s3",
-    "stepId": "synthesize"
-  },
-  "proposedAt": "2026-10-01T16:10:49.786Z",
-  "status": "approved",
-  "approvedAt": "2026-10-01T16:16:27.386Z",
-  "approvedBy": "user:in-chat-approval"
+  ]
 }

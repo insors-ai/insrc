@@ -21,9 +21,37 @@
     "epicSlug": "assistant-llm-responses-still-render-default",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-01T05:52:07.710Z",
     "parentRef": {
       "slug": "assistant-llm-responses-still-render-default"
+    },
+    "epicCreatedAt": "2026-10-01T05:50:55.357Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "beebb2ace870d2a77d9a4b259f78d4cef967bc26143381dc3ee733226f5e86fc",
+        "at": "2026-10-01T05:50:55.357Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-01T05:52:07.710Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

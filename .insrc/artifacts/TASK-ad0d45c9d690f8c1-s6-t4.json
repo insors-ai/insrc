@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2324e90d-6a82-44aa-b968-d39e8c60fb9a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:14.887Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s6",
+    "envelope": {
+      "description": ".vscodeignore — the .vsix content boundary",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "94dc02e998dae8da98f738802f64fea5378f2b368e09c3000f8dbfd9594e4614",
+        "at": "2026-10-22T12:44:14.887Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:14.888Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": ".vscodeignore — the .vsix content boundary",
+    "summary": "Add vscode-plugin/.vscodeignore that EXCLUDES src/, **/__tests__/**, *.test.ts, tsconfig.json, .github, esbuild config, and the raw repo src, while KEEPING package.json + out/ + assets/ (the bundled installer + steering-block.md) + README.md + icon.png + LICENSE. Keeps daemon internals out of the package (k5) and the .vsix minimal.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      ".vscodeignore excludes src/, **/__tests__/**, *.test.ts, tsconfig.json, .github, and the raw repo src",
+      ".vscodeignore does NOT exclude assets/ or out/",
+      "a `npx @vscode/vsce ls` dry-run (or an equivalent content assertion) shows only package.json + out/ + assets/ + README + icon + LICENSE"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscodeignore: excludes src/ + **/__tests__/** + *.test.ts + tsconfig.json + .github + raw repo src, but keeps assets/ and out/"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

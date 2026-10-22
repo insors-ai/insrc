@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6bfe2a31-e781-45d6-90ce-8c16fcde7637",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:33.381Z",
+    "epicCreatedAt": "2026-10-11T12:21:57.024Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c00559b7e38bb6ce",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Teach the docs migrator about LLD-headed work items",
+      "parent": {
+        "entityId": "STORY-c00559b7e38bb6ce-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c00559b7e38bb6ce-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "143fe5f251e0f04e9a9419cf77504752ec5a98378373948dd1ecd7d657c26dd8",
+        "at": "2026-10-22T12:44:33.381Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:33.381Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Teach the docs migrator about LLD-headed work items",
+    "summary": "In planMigration: label precedence DEF -> ISSUE -> LLD -> other members; a group with an LLD and no DEF/ISSUE is grouped as standalone even when no member is flagged.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "An anchorless split item's PLAN/BUILD/CR/TESTS md are planned into the LLD's folder.",
+      "An unflagged LLD-headed group plans into docs/standalone.",
+      "Existing migrate-docs-tree tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "planMigration consolidates an anchorless split item into the LLD folder"
+      },
+      {
+        "level": "unit",
+        "name": "planMigration groups an unflagged LLD-headed item as standalone"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

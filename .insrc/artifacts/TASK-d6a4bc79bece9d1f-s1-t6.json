@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4d8f3aad-a098-4600-ae7e-d5b07141370d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:42.869Z",
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d6a4bc79bece9d1f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Declare the setting and wire the file-backed registry",
+      "parent": {
+        "entityId": "STORY-d6a4bc79bece9d1f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d6a4bc79bece9d1f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d6a4bc79bece9d1f-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d6a4bc79bece9d1f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e28791579a66c1e24c57ccab520f3675a2668c07b824cb5e3897f89a54c7d13c",
+        "at": "2026-10-22T12:44:42.869Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:42.870Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the setting and wire the file-backed registry",
+    "summary": "package.json: declare insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000) beside the other insrc.chat.* settings. extension.ts: build the file-backed SessionLocks on ~/.insrc/chat-locks and pass it with a live read of the setting into createChatPanelHost.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "package.json contributes insrc.chat.turnLockTimeoutMs with type number, default 600000 and minimum 1000.",
+      "extension.ts passes a file-backed sessionLocks and a turnLockTimeoutMs reader into createChatPanelHost (wiring test).",
+      "The plugin's full suite and typecheck pass apart from the known manifest-catalog baseline."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: the extension passes a file-backed lock registry and the turnLockTimeoutMs setting"
+      },
+      {
+        "level": "integration",
+        "name": "extension-chat-wiring.test.ts: package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

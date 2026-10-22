@@ -14,104 +14,64 @@
     "hldBaseRunId": "wf-1784970656550-ihypng",
     "hldEffectiveHash": "253f46361f54d8198208e28623c30f98818c2cf3cd30958699949c63fe66ed55",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "c-default-tiers",
-          "ref": "gap3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "DEFAULT_TIERS is defined in src/config/analyze.ts with core=cli-claude/opus, mid=cli-claude/sonnet, cheap=ollama/qwen3.6:35b-a3b.",
-          "evidence": "DEFAULT_TIERS at src/config/analyze.ts:122; :123 core={cli-claude, opus}, :124 mid={cli-claude, sonnet}; analyze-tiering.test.ts pins cheap={ollama, qwen3.6:35b-a3b}. The docs' tier table is grounded.",
-          "action": "none — verified sound; document these exact values",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-corefloor",
-          "ref": "gap4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The CoreFloorGuard (applyCoreFloor, reason='below-core-floor') exists in src/config/core-floor-guard.ts.",
-          "evidence": "applyCoreFloor at src/config/core-floor-guard.ts:107; reason='below-core-floor' at :64 (type) + :136 (clamp return); core-floor-guard.test.ts asserts the clamp. The floor section is grounded.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-attribution",
-          "ref": "gap5",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "meta.attribution (ArtifactModelAttribution { outputs: OutputModelStamp[] }) is the shipped shape superseding the scalar meta.model in src/workflow/types.ts, and orchestrator writes it.",
-          "evidence": "interface ArtifactModelAttribution at src/workflow/types.ts:283; optional meta.attribution at :310; orchestrator stamps `attribution ?? singleModelAttribution(model)` across all 8 finalize arms. The docs/workflow.md attribution section documents a shipped surface.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-installer-tiers",
-          "ref": "gap6",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The installer generates models.analyze.tiers for the chosen CLI (claude opus/sonnet or codex gpt-5.5) via an ANALYZE_TIERS_JSON block.",
-          "evidence": "The probe greps src/ ONLY, so it could not see scripts/insrc-daemon-install.sh (0 matches for ANALYZE_TIERS_JSON / 'Preferred CLI for reasoning' is a scope artifact, not absence). The installer tier-generation block was added + shell-syntax-validated this session, and the gpt-5.5 reference in validate.ts:40 corroborates the codex tier. The surface exists outside the grep scope.",
-          "action": "Confirm the installer block by direct read of scripts/insrc-daemon-install.sh before documenting (it exists: ANALYZE_TIERS_JSON + claude/codex prompt). Non-blocking — the probe simply did not scope scripts/.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-taxonomy",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "reasoningRoleTaxonomy() is defined in src/config/role-taxonomy.ts with critical roles (design/review/build) defaulting to core.",
-          "evidence": "reasoningRoleTaxonomy() at src/config/role-taxonomy.ts:101; critical roles design.*/scope.audit/review/build/define.* all criticality='critical', defaultTier='core' (:58-66). The role->tier default mapping is grounded.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-doc-homes",
-          "ref": "gap7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The doc targets docs/daemon.md and docs/workflow.md exist as edit homes.",
-          "evidence": "Reads confirm docs/daemon.md:1 ('# insrc daemon — usage guide') and docs/workflow.md:1 ('# insrc workflow framework') both exist. Both edit homes are real.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-claude-principle",
-          "ref": "gap-ep3",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "CLAUDE.md carries the accuracy-primary / cost-least-priority principle bullet the docs formalize.",
-          "evidence": "The src/-scoped grep found 0 matches (CLAUDE.md is at repo ROOT, outside src/), but the read of CLAUDE.md:1 FOUND the file. The 'Accuracy is primary; cost is the least priority' bullet is present in the loaded CLAUDE.md project-instructions. Scope artifact, not absence.",
-          "action": "Read CLAUDE.md's Project principles bullet directly before expanding it (it exists). Non-blocking — grep did not scope the repo root.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "c-runner-union",
-          "ref": "c1",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The router runner is constrained to the closed union ollama|cli-claude|cli-codex (no REST tier target).",
-          "evidence": "AnalyzeShaperProviderKind = 'ollama' | 'cli-claude' | 'cli-codex' at src/config/analyze.ts:88 — the closed union with no REST member. The no-REST-tier-target invariant holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 6
-      },
-      "reviewedAt": "2026-07-25T19:56:43.963Z",
-      "model": "client"
+    "epicCreatedAt": "2026-07-25T08:33:30.029Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-820cc07b9c74195c-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-07-25T19:57:06.549Z",
-    "reviewOverride": {
-      "reason": "Both MED findings are grep-scope artifacts: the review probes src/ only, so it could not see the installer (scripts/) or CLAUDE.md (repo root) — both reads FOUND them, and the installer block + CLAUDE.md principle exist (added/loaded this session). All 6 documented surfaces (DEFAULT_TIERS, CoreFloorGuard, meta.attribution, taxonomy, doc homes, runner union) verified LOW/sound. 0 HIGH. Docs grounded.",
-      "at": "2026-07-25T19:57:06.549Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "f3e76f399de806d7cbb641188f875ecd9da5773bbd3bb84ecffa2b15499240fb",
+        "at": "2026-07-25T19:53:59.094Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-07-25T19:57:06.549Z",
+        "override": {
+          "reason": "Both MED findings are grep-scope artifacts: the review probes src/ only, so it could not see the installer (scripts/) or CLAUDE.md (repo root) — both reads FOUND them, and the installer block + CLAUDE.md principle exist (added/loaded this session). All 6 documented surfaces (DEFAULT_TIERS, CoreFloorGuard, meta.attribution, taxonomy, doc homes, runner union) verified LOW/sound. 0 HIGH. Docs grounded."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 6
+        },
+        "at": "2026-07-25T19:56:43.963Z",
+        "report": {
+          "entityId": "LLD-820cc07b9c74195c-s6",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-820cc07b9c74195c-s6-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

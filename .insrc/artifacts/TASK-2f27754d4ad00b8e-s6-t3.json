@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-59ae12e6-90ed-4f57-ba1c-e64a26bba83a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:21.510Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add the binding module with the staged-write check",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d7165e9664fa26dc5c68cc351bc0c10d94168aa1922dacee7d9b7c690a4a1c64",
+        "at": "2026-10-22T12:43:21.510Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:21.511Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the binding module with the staged-write check",
+    "summary": "Add src/workflow/tracker/binding.ts with readBinding, bindArtifact, recordPosted and setPendingLink as synchronous meta-only patches of meta.envelope.binding, each refusing while the artifact has a pending journal file (.insrc/journal/<id>.json); bindArtifact writes { reference: { entityId: issue, type: 'github:issue', relation: 'tracked-by' }, createdAtRevision, posted: [] }, is idempotent for the same issue and refuses a different one; record the module in ARTIFACT_WRITE_INVENTORY as a meta-only writer.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "bindArtifact writes the typed binding with createdAtRevision and leaves the revision number and content hash unchanged, is idempotent for the same issue and refuses a different issue",
+      "readBinding returns undefined for an unbound or missing artifact and reports a malformed binding",
+      "recordPosted records a kind once and setPendingLink keeps a child ref or a child id and clears on undefined",
+      "every writer refuses while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict; the test stages a write with the durable-kit store's journal (fail after stage), patches, then completes the staged write",
+      "the write inventory has an entry for the module and its test passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "binding.test.ts: bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact"
+      },
+      {
+        "level": "unit",
+        "name": "binding.test.ts: recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision"
+      },
+      {
+        "level": "integration",
+        "name": "binding-staged.test.ts: a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict"
+      },
+      {
+        "level": "integration",
+        "name": "artifact-write-inventory.test.ts: the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e915ae08-73a3-4e64-a13d-17b0fed62a15",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:17.396Z",
+    "epicCreatedAt": "2026-10-13T07:52:45.476Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2e8109f42afc0dd",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Hold back the path line, settle it, and end the diff state on every exit",
+      "parent": {
+        "entityId": "STORY-b2e8109f42afc0dd-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2e8109f42afc0dd-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2e8109f42afc0dd-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b25405933f0803418f8bd3c9d2b175e252508c462eddc2a78463545e5e7e255",
+        "at": "2026-10-22T12:44:17.400Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:17.401Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Hold back the path line, settle it, and end the diff state on every exit",
+    "summary": "While a turn's diff state is open the host writes no marker row for 'file-edit' and no row for a successful edit result, writes the path marker before a failed edit's error, and settles a held path after the check that follows its edit. The diff state is also ended, with its held paths settled at once and governor.abandonTurn called, before every turns.detach() and turns.stop(), in the sink's onError and at the top of the next turn's beforeRun. A followed turn is untouched.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A successful edit shows widgets and no path or result line; a failed edit shows its path and error",
+      "An edit whose path has no section gets its path line after its check, for claude, for codex and at the end of the turn",
+      "A chat switch, the Stop control, a newer turn, a sink error and closing the panel each settle the held paths and abandon the governor's turn",
+      "A followed turn writes and posts its rows as today while the governor still holds a snapshot"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths"
+      },
+      {
+        "level": "integration",
+        "name": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

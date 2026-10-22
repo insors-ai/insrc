@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "8c46dd22df74e445",
+    "storyId": "s1",
+    "createdAt": "2026-10-07T10:38:10.314Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix (small): one production driver class plus test fixtures; one obvious approach.",
+    "epicSlug": "replace-better-sqlite3-native-dependency-node",
+    "epicCreatedAt": "2026-10-07T10:31:55.507Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2bbfef035a50b3910f5e9317cd83c5981116f426852180d45a1ccbe320e2b4b9",
+        "at": "2026-10-07T10:38:10.314Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "Fix ISSUE-8c46dd22df74e445: replace better-sqlite3 with Node's built-in node:sqlite (DatabaseSync) in src/daemon/db/drivers/sqlite.ts (keep read-only, query_only, fileMustExist semantics and the driver contract), in the tests that import better-sqlite3 (src/daemon/db/__tests__/sqlite-driver.test.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts, src/analyze/context/__tests__/data-shaper.live.test.ts) and in the analyze fixtures that shell out to the sqlite3 CLI (src/analyze/context/__tests__/fixtures/setup.ts, src/analyze/context/__tests__/fixtures.test.ts); drop better-sqlite3 and @types/better-sqlite3 from package.json; raise engines.node to >=22.13.0.",
+    "producesLld": false,
+    "commit": "88910a74"
+  }
+}

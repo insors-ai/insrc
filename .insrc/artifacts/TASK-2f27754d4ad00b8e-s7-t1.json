@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf4c946e-f222-4e2f-838b-4d420a3b731e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.247Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Type the TASK and TASKS payload codecs",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b8c10223730bd1afb5ac076731ddf70724d9b6c7073b6688c31aa9478788bd9",
+        "at": "2026-10-22T12:43:22.248Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Type the TASK and TASKS payload codecs",
+    "summary": "Add src/workflow/tasks/types.ts with TaskPayload (title, summary, size, order, acceptanceChecks, tests, planTaskId), TasksPayload (planRevision, taskIds, nextNumber), TaskSetError and TaskStructureError, and replace the pass-through bodies of the TASK and TASKS codecs in src/workflow/artifact-core/codecs.ts with decoders that refuse a malformed body.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "The TASK and TASKS codecs round-trip a typed payload and refuse a body with a missing or wrongly typed field",
+      "TaskPayload carries planTaskId and TasksPayload carries planRevision, taskIds and nextNumber",
+      "No other kind's codec changes behaviour"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tasks-codec.test.ts: the TASK and TASKS codecs round-trip a Task payload and a Tasks payload and refuse a malformed body"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d87648ab-a7a9-46fe-8e1e-056a5ee5b997",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:56.269Z",
+    "epicCreatedAt": "2026-10-10T16:38:40.063Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ca7382b0952a539",
+    "storyId": "s1",
+    "envelope": {
+      "description": "turn-lifecycle.ts: start, invalidate and live",
+      "parent": {
+        "entityId": "STORY-8ca7382b0952a539-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ca7382b0952a539-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29ea1fd0182416c9b4dc63597e561d0905c153caabd8ef4d2723b733e11a161b",
+        "at": "2026-10-22T12:43:56.270Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:56.270Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "turn-lifecycle.ts: start, invalidate and live",
+    "summary": "Create vscode-plugin/src/chat/turn-lifecycle.ts with createTurnLifecycle(deps), TurnLifecycleDeps, TurnSink, CURSOR_SAVE_MS and DEFAULT_TURN_LOCK_TIMEOUT_MS. Move into it the turn state (activeTurnId, activeProvider, activeIterator, generation, runningTurns, detachLive, waitCtl, liveProc), acquireSessionLease and the runLeased block of runTurn as start(session, req, sink), plus invalidate() and live, with sink calls only while current. Add turn-lifecycle.test.ts covering these rules. The panel is not changed yet.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "start waits for the lease (onWaiting while current), runs, and the lease is released when the process exits, not at done",
+      "a second start drops a waiting turn; a reading turn is superseded, stops reporting, reads to its end and clears its cursor",
+      "a lease granted after the turn stopped being current is released and nothing runs",
+      "a lock failure gives onError('could not lock chat session: ...', 'none'); a beforeRun throw gives onError and a save, and the lease is released",
+      "no adapter for the provider gives onError('no adapter for provider <p>', 'none'); an adapter that never attaches a process has its lease released on return",
+      "liveTurn is saved on spawn, progress saves are throttled to CURSOR_SAVE_MS, and the cursor is cleared before onTerminal; nativeSessionId is set on done",
+      "invalidate and isOpen()=false suppress all sink calls; live is defined after the first event",
+      "plugin tsc --noEmit is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits"
+      },
+      {
+        "level": "unit",
+        "name": "a second start drops a turn still waiting for its lease"
+      },
+      {
+        "level": "unit",
+        "name": "a superseded turn reports nothing, reads to its end and clears its cursor"
+      },
+      {
+        "level": "unit",
+        "name": "a lease granted after the turn stopped being current is released"
+      },
+      {
+        "level": "unit",
+        "name": "a lock failure and a missing adapter are reported through onError"
+      },
+      {
+        "level": "unit",
+        "name": "a beforeRun failure is reported, the session saved and the lease released"
+      },
+      {
+        "level": "unit",
+        "name": "the cursor is saved on spawn, throttled on progress and cleared before onTerminal"
+      },
+      {
+        "level": "unit",
+        "name": "invalidate and a closed panel suppress all sink calls; live names the turn being read"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

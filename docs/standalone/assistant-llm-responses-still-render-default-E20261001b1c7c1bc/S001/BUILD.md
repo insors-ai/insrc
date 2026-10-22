@@ -16,4 +16,4 @@ bugfix / small. One role guard in one function plus the test that should have ca
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-bd2d6b6a98f48dc6-S001.json` — **insrc-build** (2026-10-01T06:19:06.662Z)
+- `.insrc/artifacts/BUILD-bd2d6b6a98f48dc6-s1.json` — **insrc-build** (2026-10-01T06:19:06.662Z)

@@ -6,7 +6,26 @@
     "createdAt": "2026-10-21T12:07:40.117Z",
     "updatedAt": "2026-10-21T12:52:38.863Z",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
-    "epicSlug": "one-common-model-every-artifact"
+    "epicSlug": "one-common-model-every-artifact",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "2a24bea0fbab9305e9ea28b95ff8b7ec8c1eb155db8ec4cef3f273b8bf4cc8c2",
+        "at": "2026-10-21T12:07:40.117Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

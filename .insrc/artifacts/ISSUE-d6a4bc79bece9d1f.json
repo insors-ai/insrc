@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-10T15:00:55.800Z",
     "parentRef": {
       "slug": "vs-code-plugin-chat-panel-concurrent"
+    },
+    "epicCreatedAt": "2026-10-10T14:57:56.710Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ee2b8ecfeb3a95cfa1e0b821075cd84f658a7a5e5c1663e5789dc485f1d8e2bc",
+        "at": "2026-10-10T14:57:56.710Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T15:00:55.800Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

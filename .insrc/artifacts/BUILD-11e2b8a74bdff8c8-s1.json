@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "11e2b8a74bdff8c8",
+    "storyId": "s1",
+    "createdAt": "2026-10-18T16:49:19.050Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-18T16:46:30.180Z",
+    "epicSlug": "show-builder-reported-smoke-live-results",
+    "updatedAt": "2026-10-18T17:02:40.350Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "40feb5e123ee73def11036dde73f8781fcd975c5eb3110baca3eea6a435b1375",
+        "at": "2026-10-18T16:49:19.050Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-18T17:02:40.419Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "focus": "ISSUE-11e2b8a7: testRecordView (src/workflow/code-review/dimensions/test-record-view.ts) also lists each named test with a builder-reported result (name, result, evidence, marked reported by the builder, from the latest run that reported it); the coverage prompt (src/workflow/code-review/dimensions/coverage.ts) tells the judge to grade a promised smoke/live test against it. With no reported results the view and prompt are unchanged. Tests for the view and the prompt.",
+    "producesLld": false,
+    "commit": "bf6c8922",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "testRecordView lists reportedTests (latest per name, a fail winning a tie, malformed entries skipped, key omitted when none) and the coverage prompt grades a promised smoke/live test against it only when one is listed. New reported-tests-view.test.ts; code-review suites 294 pass, 1 live-gated skip.",
+    "testRecord": {
+      "md": "docs/standalone/show-builder-reported-smoke-live-results-E2026101811e2b8a7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b47dadc7cf0cccb1-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:02:40.350Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b5a62f289cbcdaee-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:02:40.350Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:02:40.350Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:02:40.350Z"
+      }
+    ]
+  }
+}

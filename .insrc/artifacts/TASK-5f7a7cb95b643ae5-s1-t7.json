@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-55585c01-7688-4844-b91a-109a2b84a4f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:36.951Z",
+    "epicCreatedAt": "2026-10-02T18:38:27.860Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5f7a7cb95b643ae5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the degraded review the same base, exclusions and fallback",
+      "parent": {
+        "entityId": "STORY-5f7a7cb95b643ae5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-5f7a7cb95b643ae5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-5f7a7cb95b643ae5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-5f7a7cb95b643ae5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c90e49650c856a6c926d72d1189b0ad847da7a6be4febd7a636d8098a6bdf61",
+        "at": "2026-10-22T12:43:36.951Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:36.952Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the degraded review the same base, exclusions and fallback",
+    "summary": "Add the opts parameter to assembleDiffCodeReviewGrounding and the rangeDiff dep and optional excludeGlobs parameters to DiffGroundingDeps; sequence working tree, then base..HEAD (its result stands even when empty), then the last-commit fallback, with the same three-step fallback on failure. Pass the Story's base and the ledger globs from beginDiffOnlyReview.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Over a range whose ledger hunks exceed 256 KB and sort first, every source file has non-empty diff text and no ledger path appears; without excludeGlobs the same fixture loses source text",
+      "A base with only ledger changes gives an empty result and does not call the last-commit fallback",
+      "A failing range diff retries without the base, and failing exclusions run today's sequence with no excludeGlobs argument",
+      "With no opts the calls on the deps equal today's and existing diff-grounding tests pass unchanged",
+      "beginDiffOnlyReview passes the resolved base and LEDGER_EXCLUDE_GLOBS",
+      "Each new test was seen to fail with the production change reverted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "T44 source hunks survive a ledger diff larger than the cap"
+      },
+      {
+        "level": "integration",
+        "name": "T45 a ledger-only range is empty and does not use the last-commit fallback"
+      },
+      {
+        "level": "integration",
+        "name": "T46 failing range and failing exclusions step down to today's sequence"
+      },
+      {
+        "level": "integration",
+        "name": "T47 no opts makes today's calls on the deps"
+      },
+      {
+        "level": "integration",
+        "name": "T48 the degraded review passes the Story's base and the ledger globs"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

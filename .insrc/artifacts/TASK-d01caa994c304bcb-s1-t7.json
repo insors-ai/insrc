@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-abfb7857-c1c0-4228-80af-c14a637f1108",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:41.023Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the shared read/reconcile/write-once I/O wrapper and record the two LLD deviations",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "58fe9d87fca072214bd9606a18322749af6fde12821f00fd0533dbc84f425511",
+        "at": "2026-10-22T12:44:41.028Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.029Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the shared read/reconcile/write-once I/O wrapper and record the two LLD deviations",
+    "summary": "Add the I/O side alongside the pure reconciler in src/config (a plain module function, NOT a ConfigStore method — src/config/store.ts is a deprecated LMDB row store with no fs access at all and is not the config.json owner, so the a3 wrapper resolves to no). It resolves the file through PATHS.config from src/shared/paths.js; reads the whole document once; stats mtimeMs+size at read time; calls reconcileConfig; and writes at most once and only when `changed`, via write-temp-then-rename after re-statting to detect concurrent modification. The write unit is defined precisely: exactly one writeFile targeting the temp config document plus one rename per reconcile that reports changed, and zero of both when changed is false. Error paths: ENOENT degrades to reconcileConfig(undefined); any other read errno aborts with the errno reported and nothing written; a JSON SyntaxError aborts with message plus byte offset and explicitly does NOT fall back to the undefined path (default-filling over a corrupt document would destroy the dynamic namespaces); a ConfigCatalogError propagates as a distinct structured outcome kind so callers can flag a shipped-catalog bug rather than a user-config problem; a write failure unlinks the temp file; a concurrent-modification detection abandons the write. Every failure is returned as a structured non-fatal outcome, never thrown at the caller. Ship a deviation note as a deliverable — a comment block at the wrapper (and mirrored in the Story/LLD amendment) recording (a) that `globalConfigDirs` returns [templates, feedback, conventions] and is NOT the config.json resolver, so PATHS.config supersedes the LLD contract entry `globalConfigDirs` and invariant c7, with the evidence (src/daemon/index.ts:179/1118/1129/1144), and (b) the open question s8-sbdry3 deviation: the CLI update path writes ~/.insrc/config.json directly, in tension with the daemon-owns-on-disk-state rule, why alternative a4 was rejected, and that the approver must confirm it.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "The wrapper resolves the config path solely through PATHS.config from src/shared/paths.js; no '~/.insrc' or 'config.json' string literal appears in the reconciler or the wrapper",
+      "The wrapper does not call writeConfig / config.write IPC (src/cli/services/config.ts:19) and performs exactly one writeFile of the config document (to the temp path) plus one rename when changed === true, and zero writeFile and zero rename when changed === false",
+      "On write failure the temp file is unlinked and no partial or half-renamed document exists",
+      "ENOENT is treated as the first-boot path; every other read errno and any JSON parse failure abort with nothing written and a structured error carrying the errno or the parse message and offset",
+      "A ConfigCatalogError from the reconciler is returned as a structurally distinct outcome kind from user-config and I/O failures",
+      "A config file mutated between the read stat and the pre-rename re-stat causes the write to be abandoned with a non-fatal 'config changed during reconcile' outcome and the newer document intact",
+      "No ConfigStore method is added and src/config/store.ts is unmodified",
+      "The deviation note exists and states both deviations — PATHS.config superseding the globalConfigDirs contract entry and invariant c7 with its file:line evidence, and the s8-sbdry3 CLI-writes-config-directly question with the a4 rejection rationale"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "wrapper write unit — exactly one writeFile of the temp config plus one rename when changed, zero of both when unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "wrapper source constraints — path resolved solely via PATHS.config, no '~/.insrc' or 'config.json' literal in reconciler or wrapper, no writeConfig/config.write IPC call, no ConfigStore method added and src/config/store.ts unmodified"
+      },
+      {
+        "level": "unit",
+        "name": "deviation note present — PATHS.config supersedes the globalConfigDirs contract entry and invariant c7 with file:line evidence, and the s8-sbdry3 CLI-writes-config-directly question with the a4 rejection rationale"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

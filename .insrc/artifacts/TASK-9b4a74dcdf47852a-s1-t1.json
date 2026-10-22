@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-efc0b928-2dcf-45a1-973e-031d025aff44",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:02.692Z",
+    "epicCreatedAt": "2026-10-08T14:53:30.889Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b4a74dcdf47852a",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A reader of the test runner's TAP output",
+      "parent": {
+        "entityId": "STORY-9b4a74dcdf47852a-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b4a74dcdf47852a-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "07fcf094fa5c3b90a94f54d593b7654c6d2cec96da4d69a4e9212091e45ef1a5",
+        "at": "2026-10-22T12:44:02.696Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:02.697Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A reader of the test runner's TAP output",
+    "summary": "Record the baseline first: the results of the mcp and workflow suites and of the VS Code plugin's tests at the commit before this Story's first change. Then add a module in the build step that turns the output of one test file's run into a result per test title: pass, fail or skipped, at any depth, with the runner's two escapes reversed, and a combined result for a title that occurs more than once. Its fixtures are the capture stored beside the design. Nothing calls it yet.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The baseline of the mcp and workflow suites and of the VS Code plugin's tests is recorded in the Story's folder with the commit it was taken on, before any change of this Story",
+      "The captured run in the Story's tap-sample folder gives the result of each of its titles, with ' # SKIP' (with and without a reason) and ' # TODO' read as skipped",
+      "A title nested in a suite or a subtest is found by its own title, and a suite's own line is a title like any other",
+      "A title declared with '#' and a backslash matches what the runner printed; quotes are left as they are",
+      "A title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped",
+      "Output with no TAP version line and no result line is reported as not understood, with no titles"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "tap-results.test.ts: the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' # SKIP' with and without a reason, and skipped for ' # TODO'"
+      },
+      {
+        "level": "unit",
+        "name": "tap-results.test.ts: a title nested in a suite or a subtest is found at its depth by its own title"
+      },
+      {
+        "level": "unit",
+        "name": "tap-results.test.ts: TAP's escaping of '#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)"
+      },
+      {
+        "level": "unit",
+        "name": "tap-results.test.ts: a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped"
+      },
+      {
+        "level": "unit",
+        "name": "tap-results.test.ts: output with no TAP version line and no result line is reported as not understood, with no titles"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

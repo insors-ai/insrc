@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6822590e-d6a0-4705-af33-5c0eb2915f53",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:10.539Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s7",
+    "envelope": {
+      "description": "Tests: SPEC flows through review + approve unchanged; IPC error-mapper maps codes",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s7",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s7",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s7-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-abd1ecf6a5f5063e-s7-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1a222f217d9ef7a47931181fdc1b08d64bc188b864af5474137b2ab3a27f762e",
+        "at": "2026-10-22T12:44:10.539Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:10.540Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Tests: SPEC flows through review + approve unchanged; IPC error-mapper maps codes",
+    "summary": "Add tests proving the workflow-agnostic seams + the IPC mapper handle a SPEC artifact: (ac2) approveArtifactByJsonPath on a SPEC-*.md whose meta.review verdict is block, with no reviewOverride, refuses (skipped[] carries the reason) and with an override approves; (ac1) a SPEC md is accepted by the run-artifact review path (stage=meta.workflow='brainstorm') without a per-type branch; (ac4) the pure error->{error,code} mapper (from t2) returns code 'not-approved' for SpecNotApprovedError and { spec } on success — exercised directly, NOT via a live daemon socket (per s3 critique). Reuse the t3 fixtures pattern.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "ac2: approve refuses a block-verdict SPEC without override (skipped[]+reason) and approves with override",
+      "ac1: a SPEC md is reviewed by run-artifact without a per-type branch",
+      "ac4: the error-mapper returns { error, code:'not-approved' } for an unapproved spec and { spec } on success (direct call, no live socket)",
+      "full workflow + daemon test sweep + tsc --noEmit clean"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "spec-review-approve.test.ts: approveArtifactByJsonPath on a block-verdict SPEC refuses without override (skipped[]+reason) + approves with override (ac2); a SPEC md reviews via run-artifact stage=meta.workflow (ac1)"
+      },
+      {
+        "level": "unit",
+        "name": "spec-review-approve.test.ts: the 'spec.resolveApproved' error-mapper returns { error, code:'not-approved' } unapproved and { spec } approved (ac4)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

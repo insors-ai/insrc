@@ -6,7 +6,27 @@
     "createdAt": "2026-10-10T07:45:01.489Z",
     "updatedAt": "2026-10-10T08:06:54.451Z",
     "standalone": true,
-    "epicSlug": "defect-delivery-board-shipped-issue-348d4663"
+    "epicSlug": "defect-delivery-board-shipped-issue-348d4663",
+    "epicCreatedAt": "2026-10-10T07:10:07.093Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "1759010ad404c16cb748c1f09813e3f88db0beccbdc8794acb52d91c69f168d4",
+        "at": "2026-10-10T07:45:01.489Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

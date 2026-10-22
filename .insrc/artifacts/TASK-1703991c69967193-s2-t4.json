@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bb6522b8-8d2e-4a39-89cb-abf1cf228bb7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:13.363Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Wire the three orchestrator `case 'issue'` arms (decomposer/synthesizer/finalize)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "21494d700438c4743bb0db6bab19035efab004ece0f2d02b22ca0af43df06013",
+        "at": "2026-10-22T12:43:13.364Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:13.364Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the three orchestrator `case 'issue'` arms (decomposer/synthesizer/finalize)",
+    "summary": "In src/workflow/orchestrator.ts add a `case 'issue'` arm to each of the three per-workflow switches, mirroring the brainstorm arms: issueDecomposer(intent) (emits the 2-step issue plan) in buildDecomposerPrompt (~146); issueSynthesizer(intent, stepOutputs) (the synthesize-turn prompt for { body, citations }) in buildSynthesizerPrompt (~263); and finalizeIssue(...) in finalizeArtifact (~375) — builds the IssueArtifact ({ workflow:'issue', meta incl. magnitude+issueHash, body, citations }) after isIssueBody/isCitationArray guards (schemaFailure on failure, mirroring finalizeBrainstorm), renders via renderIssueMarkdown, and writes md+json through storage. ALL THREE arms land together (one atomic 'make the workflow dispatch' unit — no half-wired switch). The four existing arms are untouched.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "ALL THREE arms present: buildDecomposerPrompt('issue') returns the issue decomposer prompt; buildSynthesizerPrompt('issue') returns the issue synthesize prompt; finalizeArtifact handles workflow 'issue'.",
+      "finalizeArtifact for workflow 'issue' builds+renders+persists exactly ONE IssueArtifact (meta.workflow==='issue', magnitude from the seed carried onto meta), md+json under the docs/ tree.",
+      "finalizeIssue returns a schemaFailure (no write) when the body fails isIssueBody or citations fail isCitationArray — the same path as finalizeBrainstorm.",
+      "The brainstorm/define/design.epic/design.story/plan/stub/tracker arms return byte-for-byte identical output; tsc compiles."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "buildDecomposerPrompt('issue') / buildSynthesizerPrompt('issue') return the issue stage prompts (the three orchestrator `case 'issue'` arms are wired)"
+      },
+      {
+        "level": "integration",
+        "name": "finalizeIssue turns a converged capture+synthesize output into exactly ONE persisted IssueArtifact (meta.workflow==='issue', magnitude carried from the seed) written md+json under the docs/ tree"
+      },
+      {
+        "level": "integration",
+        "name": "finalizeIssue rejects a body failing isIssueBody / malformed citations with a schemaFailure (no partial write)"
+      },
+      {
+        "level": "integration",
+        "name": "the four existing workflows' decomposer/synthesizer/finalize arms are unaffected by the new `case 'issue'`"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

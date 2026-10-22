@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c771e5d8-0ef7-4c18-8671-c58ef961fe8b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.806Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Give the shared fake DOM a textOf helper that reads descendants' text",
+      "parent": {
+        "entityId": "STORY-00d80121c593053c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-00d80121c593053c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1c64cbc38579387137293d1908c942223e03de3ee6528db85c7c76f402a1daa",
+        "at": "2026-10-22T12:43:10.808Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.809Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Give the shared fake DOM a textOf helper that reads descendants' text",
+    "summary": "Add an exported textOf(node) helper to fake-dom.ts that joins the text of a node's descendants as the real textContent does, and wire createTextNode into the chat-shell document stub. The fake's own textContent getter is NOT changed: making it join children changed 11 docs-review-panel tests, which collect textContent over every element and rely on it being a node's own text. Tests that read a highlighted diff line's text read it through textOf. This replaces the LLD's wording that the getter joins children.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "textOf joins the text of a node's text-node and element descendants, and returns a childless node's own text",
+      "an element's textContent is still its own text, and setting textContent still clears the children as fake-dom.test.ts asserts",
+      "every suite that uses fake-dom.ts passes unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

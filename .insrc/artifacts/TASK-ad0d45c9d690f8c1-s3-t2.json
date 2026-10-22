@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c683b5a1-56a7-4da6-9630-9c171192bc6d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:13.065Z",
+    "epicCreatedAt": "2026-09-21T16:32:40.301Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ad0d45c9d690f8c1",
+    "storyId": "s3",
+    "envelope": {
+      "description": "sc5 types + createHostAdapter factory + HostSpec registry over an injectable HostEnv",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ad0d45c9d690f8c1-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-ad0d45c9d690f8c1-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "20f7de280e470edd57e8f7034f2965cfca1d14ee97e854607ff8f77f7d8adeea",
+        "at": "2026-10-22T12:44:13.065Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:13.066Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc5 types + createHostAdapter factory + HostSpec registry over an injectable HostEnv",
+    "summary": "Add the sc5 contract types (HostDetection, HostDescriptor, AiHostAdapter, AiHostRegistry) + a HostEnv seam { getExtension(id): boolean; appName: string; uriScheme: string } (default over vscode.extensions/vscode.env). Add createHostAdapter(spec, deps) whose detectPresent runs spec.detect over HostEnv (never throws→false) and whose wire/unwire delegate to the t1 writers (wire writes the mcp entry via composeMcpEntry+McpConfigWriter AND the steering block via SteeringWriter; skips the mcp entry when the launch target is absent; unwire removes exactly both). Add a SMALL data-only HostSpec starter list scoped to hosts with a genuinely known/stable config location — at least one 'by-extension-id' and one 'by-editor-env' so both detection kinds + ac3 are exercised — each HostSpec.resolveConfig isolated so an evolving path is a one-line fix. Add createHostRegistry(specs, deps) implementing adapters() (all) + detectPresent() (present subset, omitting any adapter whose detectPresent throws). A new host = one HostSpec (ac3).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "AiHostAdapter.detectPresent: 'by-extension-id'→HostEnv.getExtension(id); 'by-editor-env'→appName/uriScheme match; never throws (indeterminate→false)",
+      "AiHostAdapter.wire writes BOTH the mcp entry + the steering block via the t1 writers (steering-only when the launch target is absent); unwire removes exactly both (reversible)",
+      "AiHostRegistry.detectPresent returns only present adapters and omits an adapter whose detectPresent throws; adapters() returns the full pluggable set",
+      "createHostAdapter builds an adapter from a data-only HostSpec — adding a HostSpec needs no change to existing adapters (ac3); the starter list has ≥1 by-extension-id + ≥1 by-editor-env with an isolated resolveConfig each"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "AiHostAdapter.detectPresent: 'by-extension-id'→getExtension(id) truthiness; 'by-editor-env'→appName/uriScheme match; never throws (indeterminate→false)"
+      },
+      {
+        "level": "unit",
+        "name": "AiHostAdapter.wire writes BOTH the mcpServers.insrc entry + the steering block via the shared writers; wire() skips the mcp entry (steering only) when the launch target is absent"
+      },
+      {
+        "level": "unit",
+        "name": "AiHostAdapter.unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)"
+      },
+      {
+        "level": "unit",
+        "name": "AiHostRegistry.detectPresent returns only present adapters and omits an adapter whose detectPresent throws (never-throws); adapters() returns the full pluggable set"
+      },
+      {
+        "level": "unit",
+        "name": "createHostAdapter builds an adapter from a data-only HostSpec (ac3 pluggability: a new HostSpec needs no existing-adapter change); the starter list has ≥1 by-extension-id + ≥1 by-editor-env"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

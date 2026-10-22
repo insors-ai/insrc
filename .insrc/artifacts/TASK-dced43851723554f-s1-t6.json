@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9a1900a8-8934-43a0-b38a-b6a06852778f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:44.987Z",
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dced43851723554f",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Ship and restore on the installed daemon",
+      "parent": {
+        "entityId": "STORY-dced43851723554f-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dced43851723554f-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dced43851723554f-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee74f35eec67771b45cb72a8ae97f49f9fc70382766c1073a96ebb8152027b3c",
+        "at": "2026-10-22T12:44:44.987Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:44.988Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Ship and restore on the installed daemon",
+    "summary": "Update and restart the installed daemon, wait until every repository's full index has finished, run docSummary.restoreFromBackup with /Users/subhagho/.insrc/backup/graph.lmdb.schema-v4.2026-10-16T16-59-39-955Z, then reindex this repository; record per-outcome counts and per-repository summary counts before and after in docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "smoke.md records the restore's six counts and each repository's summary count before and after the restore.",
+      "smoke.md records this repository's summary count before and after a reindex, and the difference equals the documents changed or deleted in between.",
+      "A second restore on the installed daemon writes 0."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

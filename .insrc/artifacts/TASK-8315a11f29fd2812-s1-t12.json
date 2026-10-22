@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-de4f82b1-7981-4452-af9b-450659ea7e21",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:51.245Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Live envelope and Ollama probes",
+      "parent": {
+        "entityId": "STORY-8315a11f29fd2812-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8315a11f29fd2812-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-8315a11f29fd2812-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5f6619b59c7dd5af802658599de7dd9cf6f7ad3a63d5d065502832f31973fd2b",
+        "at": "2026-10-22T12:43:51.245Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:51.246Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Live envelope and Ollama probes",
+    "summary": "Add the INSRC_LIVE_TESTS-gated tests: claude and codex accept the envelope around every review answer schema and echo the callId, and a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline.",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "The live envelope test passes on claude and codex.",
+      "The live Ollama review completes."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'claude and codex accept the envelope around every review answer schema and echo the callId'"
+      },
+      {
+        "level": "live",
+        "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

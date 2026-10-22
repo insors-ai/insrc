@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7fdbeab9-319f-4750-a294-69d483d1b415",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.480Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Amend the sc9 host (webview-host.ts): renderer dispatch + tab-strip buttons + CSP/nonce bridge + on-demand re-render",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-401ae5fb7b8537cc-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ca2bc703f4f4f1dd27e8422abb226f096f9164c4e6cedbdddb092d6672febf9",
+        "at": "2026-10-22T12:43:30.480Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.481Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Amend the sc9 host (webview-host.ts): renderer dispatch + tab-strip buttons + CSP/nonce bridge + on-demand re-render",
+    "summary": "Amend vscode-plugin/src/panels/webview-host.ts (kept as ONE atomic L task per s3 — the four sub-concerns mutate the same host closure + share the nonce): (1) renderDetail dispatches to deps.detailRenderers?.[tab] (await) with the existing 'coming soon' placeholder fallback, REUSING the current never-throw outer try/catch (degraded body + logger.warn on reject/setHtml throw preserved); (2) track the per-panel active tab alongside the cached detailPanel ref; (3) rebuild detailHtml's tab strip as real buttons + add a Refresh control, and have shellHtml inject a per-render node-crypto NONCE'd <script> (posts {type:'switchTab',tab}/{type:'refresh'}) + a strict CSP <meta> limiting script-src to that nonce — the CSP meta lives in the SHARED shell so it also covers the repo-config placeholder; (4) subscribe via panel.onMessage(handler) where handler validates msg.type∈{switchTab,refresh} + msg.tab∈DETAIL_TABS, updates the active tab, and re-invokes renderDetail — on-demand ONLY, NO timer/interval; a late message after dispose is skipped (cached-ref guard). Stays VS-Code-free (nonce via node:crypto).",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "The daemon/workflows tab body comes from detailRenderers[tab]; an unregistered tab (debug) falls back to the 'coming soon' placeholder",
+      "The tab strip is interactive (buttons post switchTab) + a Refresh control posts refresh; a switchTab/refresh message re-invokes the active renderer exactly once (fresh read), with NO timer/interval armed",
+      "The rendered shell carries a strict CSP meta + a per-render nonce on the only inline script (shared shell, covers both panels); an unknown message type / invalid tab is a silent no-op; the host never throws (reuses the S004 setHtml guard) and the core imports no 'vscode'"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "openDetailedStatus renders the daemon tab body from detailRenderers.daemon (ac1); switching to workflows renders detailRenderers.workflows (ac2)"
+      },
+      {
+        "level": "unit",
+        "name": "A {type:'switchTab', tab:'workflows'} message (driven through the fake PanelHandle.onMessage) re-invokes the workflows renderer exactly once and re-sets the html (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "A {type:'refresh'} message re-invokes the ACTIVE tab's renderer exactly once (a fresh gateway read at that moment) (ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "NO timer/interval is armed for the daemon/workflows views — the fake gateway call-count stays flat with no message (no background poll, ac3)"
+      },
+      {
+        "level": "unit",
+        "name": "An unknown message type, or switchTab with an invalid tab, is a silent no-op (no re-render, no throw)"
+      },
+      {
+        "level": "unit",
+        "name": "A tab with no renderer (debug) falls back to the S004 'coming soon' placeholder (shipped behaviour preserved)"
+      },
+      {
+        "level": "unit",
+        "name": "A renderer rejection degrades the tab body in-panel (+warn) and never throws; a setHtml throw after an async render is a logged no-op (never-throw preserved)"
+      },
+      {
+        "level": "unit",
+        "name": "A late switchTab/refresh after the panel was disposed is skipped (no setHtml on a dead panel)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

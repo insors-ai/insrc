@@ -19,40 +19,57 @@
     "schemaVersion": 1,
     "epicHash": "b5f333f8d7ba421b",
     "epicSlug": "expose-all-daemon-config-settings-via",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl2",
-          "ref": "c1",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "CONFIG_CATALOG contains 28 static typed option entries.",
-          "evidence": "Counting the entries inside the CONFIG_CATALOG array in src/config/config-catalog.ts (between `export const CONFIG_CATALOG` and its closing `];`) yields 31 `{ path: ... }` ConfigOption entries, not 28. The other `{ path:` occurrences in the file belong to RETIRED_PATHS (6) and are correctly excluded. So the DEF's citation c1 quote 'SINGLE DEFINITION SITE of 28 typed options' undercounts by 3.",
-          "action": "Correct the count from 28 to 31 in citation c1's quotedText (and treat the DEF's implied '28 static settings' framing as 31). This is non-load-bearing: k1 and every Story's lc1 require the settings list to be derived dynamically from the catalog and never hardcoded, so no design, story, or acceptance criterion depends on the literal number — only the citation text is inaccurate.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "The catalog currently holds 31 ConfigOption entries; the '28' was carried in from the initial scoping estimate. Correcting the citation keeps the DEF factually accurate without affecting any Story or constraint, which are all count-agnostic by design.",
-            "artifactEdits": [
-              {
-                "find": "SINGLE DEFINITION SITE of 28 typed options",
-                "replace": "SINGLE DEFINITION SITE of 31 typed options"
-              }
-            ]
-          }
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 1
-      },
-      "reviewedAt": "2026-09-19T14:59:47.562Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-19T18:03:57.315Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c3349bd4d38c17bec542ab1611c7c1cad78a225d2d96d0069386045e335428fd",
+        "at": "2026-09-19T14:57:29.012Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T18:03:57.315Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 1
+        },
+        "at": "2026-09-19T14:59:47.562Z",
+        "report": {
+          "entityId": "DEF-b5f333f8d7ba421b",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-b5f333f8d7ba421b-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "enhancement",

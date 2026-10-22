@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ad1b266-e6c2-445e-865c-ecddc98ddcf9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:48.938Z",
+    "epicCreatedAt": "2026-08-03T06:51:25.695Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "761a43a6fa645815",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Add the read-only codeReview.freshness daemon IPC handler + freshness compute",
+      "parent": {
+        "entityId": "STORY-761a43a6fa645815-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-761a43a6fa645815-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a329c06dc9bb8d269045ec47ba75523ad748a0a801e4a4dd5f3b1cbc3461f452",
+        "at": "2026-10-22T12:43:48.938Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:48.939Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the read-only codeReview.freshness daemon IPC handler + freshness compute",
+    "summary": "Register an additive 'codeReview.freshness' handler in the daemon handler map (src/daemon/index.ts) beside codeReview.grounding, validating repo/epicHash/storyId like its peer. It computes { isProcessing: queue.isProcessing, staleFiles } where staleFiles is the subset of changedFiles whose per-file indexedAt watermark (src/db/graph/codec.ts:159 / entities.ts:101) predates the file's mtime; a changed path with no indexable entity is excluded (repo-level lastIndexed fallback), a never-indexed indexable file is stale. Strictly read-only — never calls repo.reindex, mutates no store.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "'codeReview.freshness' is a registered daemon IPC handler beside codeReview.grounding; missing repo/epicHash/storyId returns { error }",
+      "isProcessing mirrors queue.isProcessing; the handler never triggers repo.reindex and mutates no store",
+      "a changed file whose per-file indexedAt predates its mtime is in staleFiles; watermark>=mtime is NOT; a non-indexable path is excluded; a never-indexed indexable file is stale"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "freshness compute: a changed file whose per-file indexedAt predates its mtime -> in staleFiles"
+      },
+      {
+        "level": "unit",
+        "name": "freshness compute: a changed file whose watermark is >= mtime -> NOT in staleFiles"
+      },
+      {
+        "level": "unit",
+        "name": "freshness compute: a changed path with no indexable graph entity -> excluded from staleFiles (does not block forever)"
+      },
+      {
+        "level": "unit",
+        "name": "freshness compute: a never-indexed changed file (watermark 0) -> stale"
+      },
+      {
+        "level": "unit",
+        "name": "freshness compute: isProcessing mirrors queue.isProcessing and the handler never triggers repo.reindex (assert no reindex call on the injected queue/graph fakes)"
+      },
+      {
+        "level": "unit",
+        "name": "codeReview.freshness handler: missing repo/epicHash/storyId -> { error } (parity with codeReview.grounding validation)"
+      },
+      {
+        "level": "integration",
+        "name": "the 'codeReview.freshness' IPC handler returns { isProcessing, staleFiles } over the Unix socket for a fixture repo (peer of the existing codeReview.grounding IPC integration test)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79a41a34-4565-4e48-bc4e-948931690770",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:30.608Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Project the four structured body records through ArtifactReviewView",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "824918404981293e26cb3e9c4c09ab8f6f076d62eea463d2962f67ffb08f83c5",
+        "at": "2026-10-22T12:44:30.608Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:30.609Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Project the four structured body records through ArtifactReviewView",
+    "summary": "Append functionalDefinition, erDefinition, uxDefinition and companions to ArtifactReviewView in src/workflow/artifact-content.ts (currently six members at :45-52) and populate them inside the existing handleArtifactContent from the body it already parses. Absent stays absent — no null, no empty-object default, no backfill, no validation beyond shape. No new IPC method: the existing 'workflow.artifactContent' registration at src/daemon/index.ts:698-700 is untouched. This is the Epic's only daemon-side change, and it needs a daemon rebuild to take effect.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "handleArtifactContent projects all four records verbatim when the body carries them",
+      "an absent body field projects as an ABSENT view field — not null, not an empty object — so `=== undefined` is the single absence test",
+      "a DEF body (functionalDefinition only, never companions) projects exactly what it has and nothing more",
+      "a PLAN body's functionalDefinition projects too — the field is not gated on artifact kind",
+      "the six pre-existing members keep their names, types and meanings and the existing artifact-content tests pass unchanged",
+      "the daemon handler map gains no entry: 'workflow.artifactContent' is still the only read path",
+      "a structured record whose shape is invalid still travels through rather than failing the read"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handleArtifactContent projects all four structured records verbatim from an HLD body carrying them"
+      },
+      {
+        "level": "unit",
+        "name": "an absent body field projects as absent — not null, not an empty object"
+      },
+      {
+        "level": "unit",
+        "name": "a DEF body projects functionalDefinition only and never companions"
+      },
+      {
+        "level": "unit",
+        "name": "a PLAN body's functionalDefinition projects — the field is not gated on kind"
+      },
+      {
+        "level": "unit",
+        "name": "the six pre-existing ArtifactReviewView members keep their names, types and meanings"
+      },
+      {
+        "level": "unit",
+        "name": "source-scan: the daemon handler map registers no new method — workflow.artifactContent remains the single read path"
+      },
+      {
+        "level": "unit",
+        "name": "a malformed structured record travels through rather than failing the read"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

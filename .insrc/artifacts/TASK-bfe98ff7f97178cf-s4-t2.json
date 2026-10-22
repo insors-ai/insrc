@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5c2355a1-77fa-4aee-a392-f255dcf6d7a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.978Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add DOCS_UX_SOURCE — the element dispatch and card renderer, with the cross-process parity harness (INERT)",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "403e09f10e29d8e7573740545282fbb190251504aeef0b77e1d571508faedb3b",
+        "at": "2026-10-22T12:44:32.979Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.980Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add DOCS_UX_SOURCE — the element dispatch and card renderer, with the cross-process parity harness (INERT)",
+    "summary": "Add the FIFTH member of the DOCS_*_SOURCE family and inline it into the single nonce'd script after its four siblings. SCOPED BY THE CRITIQUE to the sc2 content half: the recursive element walk with ONE BRANCH PER UNION MEMBER (TextBlock, Container, ColumnSet, Column, Image, Input.Text, Input.ChoiceSet, ActionSet), the card renderer, its theme-derived CSS fragment, and the structural-parity harness that tests them. The sc4 slot factory moved to t5 — a different seam, and the Story's one novel piece should not review alongside its most boilerplate piece. Structure and the `ux-*` class vocabulary MIRROR renderUxMockDocument; its METHOD is refused — the daemon emits HTML strings, so the same tree is built with createElement and textContent. The depth bound is a NAMED PARAMETER with no committed value yet; t4 sets it. The shell bookkeeping lands HERE because the baseline must move in the commit that adds the fifth source string. INERT: nothing calls these functions.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "One branch per union member, each asserted individually — the four real records between them use ALL eight plus Action.Submit and Action.OpenUrl, so a subset would fail on three of the four",
+      "Every element is created via document.createElement and every string written via textContent, proved by a recording stub that captures property writes — 'no markup' is EXECUTED, not grepped",
+      "An IMAGE creates NO `img` element and sets NO `src`; the url is written as TEXT. This is what makes ac5 structural rather than a promise",
+      "An element whose `type` is outside the union renders a VISIBLE ux-unknown naming the type — not a bare `default` returning nothing, which is the silent fall-through this Epic has already shipped once",
+      "TextBlock modifiers map to the daemon's classes (weight -> ux-bolder/ux-lighter, size -> ux-size-*, color -> ux-color-*, isSubtle -> ux-subtle) — 23 isSubtle and 41 size/weight occurrences across the real records, so ignoring them would flatten the authored emphasis",
+      "A ColumnSet lays its columns SIDE BY SIDE honouring relative `width` where numeric or a known keyword, falling back to equal division — rendering it as a vertical stack would misrepresent the most layout-dependent thing a card expresses",
+      "A malformed element, a missing `text` and a non-array `items`/`columns` each degrade IN PLACE and leave their siblings rendered",
+      "THEME DISCIPLINE (critique): the CSS fragment contains NO literal colour value — no hex, no rgb()/hsl(), no CSS named colour — scanned mechanically with comments stripped first, every colour, border and background derived from the shipped `--it-*` variables exactly as the diagram fragment does. renderUxMockDocument is a STANDALONE document and may legitimately carry its own literal palette; copying that palette into a themed pane is the natural move and the wrong one",
+      "STRUCTURAL PARITY: the daemon's renderUxMockDocument output and the client's rendered tree are normalised to (tag, class, child-order) shapes over SHARED fixtures and compared, so ARRANGEMENT drift fails exactly. The normalisation is NARROW and STATED — tag, class and child order, nothing else — because a harness that normalises away too much is how a test starts passing on anything",
+      "The parity harness carries its own POSITIVE CONTROL: a deliberately re-nested variant of one fixture must make the diff FAIL, committed as a test that asserts the failure. A comparison that has never been seen to fail is not an instrument",
+      "A guard test asserting the output contains NO node/edge construct — the regression guard against reusing uxDefinitionToIr, the bug this Epic already corrected",
+      "DOCS_UX_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write, scanned with COMMENTS STRIPPED FIRST",
+      "The emitted shell still contains EXACTLY ONE `.innerHTML=` and it is still the guarded vendored body parse, after a FIFTH source string joins",
+      "The committed parse-coexistence test is EXTENDED TO FIVE strings in this commit — the guard exists because S003 hit a real `dgEl` collision between a const and a function in one shared scope, a SyntaxError that breaks the entire webview and that tsc cannot see inside a template literal",
+      "The shell baseline is UPDATED IN THIS COMMIT with sha256 + char + byte COMPUTED at the fixed nonce, never typed",
+      "The surface is otherwise unchanged — nothing calls the new functions yet"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "TextBlock renders with the daemon's class and its text via textContent"
+      },
+      {
+        "level": "unit",
+        "name": "Container renders as ux-container and recurses over items"
+      },
+      {
+        "level": "unit",
+        "name": "ColumnSet renders as ux-columnset with its Columns as side-by-side children"
+      },
+      {
+        "level": "unit",
+        "name": "Column renders as ux-column and recurses over items"
+      },
+      {
+        "level": "unit",
+        "name": "Image renders the url as TEXT — no img element, no src attribute (recording stub)"
+      },
+      {
+        "level": "unit",
+        "name": "Input.Text renders as a non-interactive field affordance with its placeholder as text"
+      },
+      {
+        "level": "unit",
+        "name": "Input.ChoiceSet renders each choice as text with no select/option element"
+      },
+      {
+        "level": "unit",
+        "name": "ActionSet renders Action.Submit and Action.OpenUrl as non-interactive chips, OpenUrl's url shown and no anchor href created"
+      },
+      {
+        "level": "unit",
+        "name": "every TextBlock modifier maps to the daemon's class (weight/size/color/isSubtle)"
+      },
+      {
+        "level": "unit",
+        "name": "a ColumnSet honours numeric and keyword relative width, falling back to equal division"
+      },
+      {
+        "level": "unit",
+        "name": "each of the FOUR real ledger uxDefinitions renders completely — every element in the record appears in the output tree"
+      },
+      {
+        "level": "unit",
+        "name": "an unknown element type renders a visible ux-unknown NAMING the type"
+      },
+      {
+        "level": "unit",
+        "name": "a non-object element, a missing text and a non-array items/columns each degrade in place leaving siblings rendered"
+      },
+      {
+        "level": "unit",
+        "name": "hostile text (<script>, &, backticks, angle brackets) renders character-for-character and creates no element and no attribute"
+      },
+      {
+        "level": "unit",
+        "name": "no attribute value is built from record text"
+      },
+      {
+        "level": "unit",
+        "name": "every element via createElement and every string via textContent, proved by a property-write recording stub"
+      },
+      {
+        "level": "unit",
+        "name": "parity of vocabulary: every ux-* class the client emits is one the daemon's UX_MOCK_STYLE defines (both sets extracted)"
+      },
+      {
+        "level": "unit",
+        "name": "parity of coverage: the client's dispatch handles exactly the union members the daemon's elementHtml handles (both derived from source)"
+      },
+      {
+        "level": "unit",
+        "name": "parity of degradation: the client renders ux-unknown for the same inputs the daemon does"
+      },
+      {
+        "level": "unit",
+        "name": "STRUCTURAL PARITY: daemon HTML and client tree normalise to identical (tag, class, child-order) shapes over the shared fixtures"
+      },
+      {
+        "level": "unit",
+        "name": "parity POSITIVE CONTROL: a deliberately re-nested fixture variant makes the structural diff FAIL"
+      },
+      {
+        "level": "unit",
+        "name": "no-node-graph guard: the client output contains no node/edge construct from uxDefinitionToIr"
+      },
+      {
+        "level": "unit",
+        "name": "THEME: the CSS fragment contains no hex, rgb()/hsl() or CSS named colour, scanned with comments stripped first"
+      },
+      {
+        "level": "unit",
+        "name": "DOCS_UX_SOURCE contains no innerHTML/outerHTML/insertAdjacentHTML/document.write (comments stripped first)"
+      },
+      {
+        "level": "unit",
+        "name": "the emitted shell still contains EXACTLY ONE .innerHTML= and it is the guarded vendored body parse"
+      },
+      {
+        "level": "unit",
+        "name": "all FIVE source strings parse together in one scope — the dgEl-collision guard extended"
+      },
+      {
+        "level": "unit",
+        "name": "the shell baseline sha256/chars/bytes match the values COMPUTED at the fixed nonce"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: a bare default in place of the unknown arm turns the degrades-visibly test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: rendering an Image as a real img with src turns the never-fetched test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: emitting the card via innerHTML turns the no-markup and injection-count tests red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: rendering a ColumnSet as a vertical stack turns the side-by-side test red"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: lowering the card through a node/edge shape turns the no-node-graph guard red"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

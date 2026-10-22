@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e5b876cf-cdf1-4ecf-9ffb-111fb7190f89",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:49.469Z",
+    "epicCreatedAt": "2026-08-01T09:12:18.048Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ea1b11621c933a2c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add optional steeringRefresh field to MaintenanceResult",
+      "parent": {
+        "entityId": "STORY-ea1b11621c933a2c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-ea1b11621c933a2c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6fefe0eeef637a4842ba2775d324cab87658933cf6db152c04d57e5b5a1e27ae",
+        "at": "2026-10-22T12:44:49.473Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:49.474Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add optional steeringRefresh field to MaintenanceResult",
+    "summary": "Add an optional steeringRefresh?: SteeringRefreshReport field to the MaintenanceResult type (src/cli/services/type-contracts/maintenance-result.ts), mirroring the existing optional configReconcile field. Purely additive — no existing reader/caller changes required.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "MaintenanceResult declares steeringRefresh?: SteeringRefreshReport, matching the shape/optionality pattern of the existing configReconcile field",
+      "The project type-checks with no changes required at any existing MaintenanceResult call site (field is additive)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "MaintenanceResult type accepts optional steeringRefresh: SteeringRefreshReport mirroring configReconcile shape"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

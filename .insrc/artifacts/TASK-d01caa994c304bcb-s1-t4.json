@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-12ed95e2-9af6-47a3-bdf2-c9435d2e22f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:40.995Z",
+    "epicCreatedAt": "2026-07-26T15:02:58.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d01caa994c304bcb",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement the pure reconcileConfig module with a named catalog-error type",
+      "parent": {
+        "entityId": "STORY-d01caa994c304bcb-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d01caa994c304bcb-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d01caa994c304bcb-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a9a8463e728e39e984341051dddae7aa04d04a8c26bf4f504dbcd5d39b75a09b",
+        "at": "2026-10-22T12:44:40.999Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:41.000Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement the pure reconcileConfig module with a named catalog-error type",
+    "summary": "Add src/config/reconcile.ts exporting `ConfigReconcileResult { config, changed, carried, filled, repaired }` and `reconcileConfig(existing: unknown, catalog: readonly ConfigOption[] = CONFIG_CATALOG): ConfigReconcileResult`. Strictly pure — no fs, IPC, socket or clock — because the daemon-boot caller runs before the socket exists (src/daemon/index.ts:178, DB opens only at :213). Build the output as a MERGE over a deep clone of `existing`, never a rebuild from catalog rows, so catalog-unenumerable keys survive blindly. Own the dot-path get/set walk inside this module (no reusable helper exists); mirror the ancestor-collision rule already inlined in the config.write handler at src/daemon/index.ts:1137-1139, strengthened with `!Array.isArray(...)` in the plain-object predicate, and record the discarded scalar in the repair record so callers can name the loss. The type-match predicate is a 4-arm exhaustive switch over the confirmed closed union 'string'|'number'|'boolean'|'enum'; note explicitly in a comment that 'enum' rows carry no allowed-values field so their predicate degenerates to `typeof === 'string'` (7 of 41 rows). Existence is tested with hasOwnProperty, never truthiness; null is rejected for object/string rows. Settling open question s8-cd3: the two catalog-integrity failures — a catalog row with an out-of-domain `type`, and a catalog row whose own default fails its own predicate — throw a dedicated exported `ConfigCatalogError extends Error` carrying the offending catalog path, distinct from every I/O and parse failure, so downstream callers can report a programmer error in our shipped catalog differently from a user-config or filesystem error. `carried`/`filled`/`repaired` carry dot-paths (repairs also carry the discarded value) so callers can log per-key detail. Derive `changed` from the same comparison that built the document. Land it unwired and inert.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "`reconcileConfig` is exported from src/config/reconcile.ts and the module imports nothing from node:fs, node:net, the daemon IPC layer, or any clock source",
+      "`existing` is never mutated: a deep-frozen input reconciles without throwing and deep-equals itself afterwards",
+      "Catalog keys absent from `existing` land in `filled` with the catalog default written; present-and-type-valid keys land in `carried` with the value referentially preserved; present-but-type-invalid keys land in `repaired` with the default substituted",
+      "filled/carried/repaired entries carry the catalog dot-path, and each repair entry additionally carries the discarded prior value (including the replaced scalar in the ancestor-collision case)",
+      "Non-object `existing` (undefined, null, array, string, number, boolean) is treated as {} — all catalog keys filled, nothing thrown",
+      "changed === (filled.length + repaired.length > 0), and changed === false implies result.config deep-equals existing",
+      "reconcileConfig(reconcileConfig(x).config).changed === false for every fixture document",
+      "An out-of-domain catalog `type`, and a catalog row whose default fails its own declared type, each throw a `ConfigCatalogError` (not a bare Error) naming the offending catalog path; no user-config or I/O condition can produce that class",
+      "The type-match switch is exhaustive over the ConfigOption discriminant (a new member produces a compile error, not a silent pass-through)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "module surface — src/config/reconcile.ts exports reconcileConfig, ConfigReconcileResult and ConfigCatalogError, and its import specifiers include no node:fs, node:net, daemon IPC or clock source"
+      },
+      {
+        "level": "unit",
+        "name": "result shape — filled/carried/repaired entries carry catalog dot-paths and every repair record carries the discarded prior value"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

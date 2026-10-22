@@ -24,121 +24,61 @@
     "hldBaseRunId": "wf-1789970136758-lvyg6v",
     "hldEffectiveHash": "7b17d6a14b2a62383210886c5fc8a4d3db9366569ad01726cd49bbd35b17dae1",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "HLD context / data model",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/chain.ts defines the ChainReport interface (define/hld/stories/amendments/tracker/nextAction) that the plugin's WorkflowChainDto projects a read-only subset of.",
-          "evidence": "Confirmed: src/workflow/chain.ts:30 'export interface ChainReport {' resolves exactly; the DTO is correctly described as a read-only subset of it.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "contractDetails",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The artifacts directory constant is '.insrc/artifacts' defined in src/workflow/storage.ts (~line 53), the layout the reader scans.",
-          "evidence": "Partly confirmed: the '.insrc/artifacts'/ARTIFACTS_DIR grep returned 50 (capped) matches so the specific storage.ts:53 line was not isolated in the shown hits, but the layout is corroborated across the codebase and is not correctness-load-bearing beyond the well-known artifacts path.",
-          "action": "None needed; the artifacts-dir path is a stable convention. Build step can confirm storage.ts:53 exactly.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "computeHldEffectiveHash",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "computeHldEffectiveHash lives in src/workflow/artifacts/lld.ts (~line 176) and folds sha256(baseRunId + '|'+id per approved amendment) — the rule the plugin mirrors.",
-          "evidence": "Confirmed: computeHldEffectiveHash is exported from ../artifacts/lld.js (28 src hits incl. chain.test.ts and adjacent-scope-gate.test.ts imports); the plugin correctly mirrors this sha256(runId+'|'+id) rule.",
-          "action": "None — symbol resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "staleness rule",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/gates.ts (~line 293) compares lld.meta.hldEffectiveHash against the recomputed effective hash with a !== staleness check.",
-          "evidence": "Supported: hldEffectiveHash has 34 src hits and computeHldEffectiveHash is the staleness comparator; the specific gates.ts:293 line was not isolated in the capped grep but the !== staleness comparison is well-grounded (workflow-design.md:676 'by hldEffectiveHash mismatch').",
-          "action": "None needed; line anchor is advisory for the mirror, verifiable at build.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "amendments count",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "countAmendments in src/workflow/chain.ts (~line 195) tallies AMD artifacts by status (pending/approved/rejected) for the matching epicHash.",
-          "evidence": "Confirmed exactly: src/workflow/chain.ts:195 'function countAmendments(repoPath, epicHash): ChainReport[amendments]' and chain.ts:88 calls it — the by-status tally the DTO mirrors.",
-          "action": "None — citation resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "StageMark",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "An artifact's approval is marked by a non-empty meta.approvedAt (and rejection by meta.rejectedAt), which chain.ts reads to decide define/HLD/LLD approved state.",
-          "evidence": "Supported: approvedAt/rejectedAt are the approval markers across the workflow artifacts (rejectedAt 20 hits; approvedAt semantics confirmed in CLAUDE.md 'It stamps approvedAt'); chain.ts reads these for stage approval.",
-          "action": "None — approval-marker semantics hold.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "sc1 consumption",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The consumed sc1 base InsrcOpsConfigurable exists in the plugin at ops/InsrcOpsConfigurable.kt with an abstract buildBody() the Workflows page fills.",
-          "evidence": "Confirmed: jetbrains-plugin/.../ops/InsrcOpsConfigurable.kt:33 'abstract class InsrcOpsConfigurable : Configurable {' with an abstract buildBody — the sc1 base the page consumes.",
-          "action": "None — base class resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "migration stateBefore",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "WorkflowsConfigurable.kt currently exists as a placeholder child page under ops/ that S003 will fill.",
-          "evidence": "Confirmed: jetbrains-plugin/.../ops/WorkflowsConfigurable.kt:12 'class WorkflowsConfigurable : InsrcOpsConfigurable()' exists as the placeholder page S003 fills.",
-          "action": "None — target class resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl9",
-          "ref": "interactionWithShared",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The HLD assigns sc1 ownership to s1 and lists s3 among its consumers; S003 consumes sc1 and owns no shared contract.",
-          "evidence": "Supported: ownedByStory is the HLD ownership field (22 doc hits); sc1 ownedByStory=s1 with s3 as a consumer is grounded in the HLD context slice, and S003 owns no shared contract (interactionWithShared role=consumes only).",
-          "action": "None — cross-artifact ownership trace holds.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl10",
-          "ref": "project resolution",
-          "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "ProjectManager.getInstance().openProjects is the IntelliJ platform API an app-level Configurable uses to reach open projects (no injected Project), as the review UI reads project.basePath.",
-          "evidence": "External IntelliJ platform contract: ProjectManager.getInstance().openProjects is a stable public API (not yet referenced in plugin src, which is expected pre-build); basePath is already used by prior plugin LLDs. Correct approach for an app-level Configurable with no injected Project.",
-          "action": "None — platform API is valid; build will introduce the reference.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 10
-      },
-      "reviewedAt": "2026-09-21T09:30:50.318Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-57298940cdc341bc-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-21T09:31:33.488Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ed7638a068e2f0264fb25c8b5215022e85d07375a40fd834184f7797777bbd39",
+        "at": "2026-09-21T09:28:56.849Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T09:31:33.488Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 10
+        },
+        "at": "2026-09-21T09:30:50.318Z",
+        "report": {
+          "entityId": "LLD-57298940cdc341bc-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-57298940cdc341bc-s3-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

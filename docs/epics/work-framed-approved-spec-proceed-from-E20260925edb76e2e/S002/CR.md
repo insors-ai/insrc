@@ -1,4 +1,4 @@
-<!-- insrc:artifact CR-edb76e2e4d41217d-S002 -->
+<!-- insrc:artifact CR-edb76e2e4d41217d-s2 -->
 
 # Code review: edb76e2e4d41217d:S002
 

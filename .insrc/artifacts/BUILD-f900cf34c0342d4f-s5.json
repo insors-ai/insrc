@@ -5,9 +5,36 @@
     "epicHash": "f900cf34c0342d4f",
     "storyId": "s5",
     "createdAt": "2026-08-06T00:00:00.000Z",
-    "approvedAt": "2026-08-06T11:55:16.094Z",
     "epicSlug": "seed-from-approved-specartifact-spec-bfa1f6c830c53982",
-    "epicCreatedAt": "2026-08-05T11:01:04.586Z"
+    "epicCreatedAt": "2026-08-05T11:01:04.586Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "ba35ddedf856bbf6c77974223c68129eb44e40648574233d3c20eb8ce656024e",
+        "at": "2026-08-06T00:00:00.000Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-06T11:55:16.094Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "focus": "Logs section — live, filterable, rotation-aware fs.watch tail of the daemon + agent logs in the Debug pane",

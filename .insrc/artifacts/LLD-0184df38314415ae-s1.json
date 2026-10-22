@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791707694485-8iesyh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-11T08:38:23.213Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 208726,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0184df38314415ae",
+    "epicSlug": "show-story-s-planned-tasks-delivery",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1791707694485-8iesyh",
+    "hldEffectiveHash": "0184df38314415aefba6f86ef5764cf08320700f2827ca060ddd26bfe8097d52",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in one module (vscode-plugin/src/delivery) with the approach already settled by the approved mock. The task rows are built in board-details.ts (taskRows: dependsOn today maps to full titles), typed by TaskRowView in board-protocol.ts, and rendered by taskList in the BOARD_WEBVIEW_SCRIPT in board-host.ts, whose openOf map already keeps fold state per screen entry. The change gives each row its short id and dependency ids with titles, renders a table with a checks toggle, and updates the tests that pin the old details.task markup (board-host.test.ts, board-details.test.ts). A few files and tasks, but one obvious approach, so small rather than feature. Grounding is code reading plus grep of these files and a live screenshot of the current board.",
+    "authoredBy": "controller",
+    "rangeBase": "6af9c62082c9bb497c19fe699dbb12849ec166b3",
+    "epicCreatedAt": "2026-10-11T08:38:23.213Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "cd3590e33f842979ec2fe83145215f5a6b36a5f75613eb925f70321cc737c8e7",
+        "at": "2026-10-11T08:38:23.213Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-11T09:29:16.097Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 1,
+          "low": 13
+        },
+        "at": "2026-10-11T08:38:29.324Z",
+        "report": {
+          "entityId": "LLD-0184df38314415ae-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-0184df38314415ae-s1-review"
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A story's planned tasks on the Delivery board become a table: one row per task with its short ID, title, result, dependencies as short-ID chips (full title on hover) and a count of acceptance checks that opens them as a plain list under the row. The row model gains the task's short ID and each dependency's short ID and title, so the webview only lays them out. The counts line, the no-plan message and the plan notice stay; the checkbox glyphs that read as unticked go away.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Show a story's planned tasks as a table on the Delivery board"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "TaskRowView",
+          "signature": "interface TaskRowView { readonly taskItemId: string; readonly shortId: string; readonly title: string | null; readonly resultLabel: string; readonly planned: boolean; readonly dependsOn: readonly TaskDependencyView[] | null; readonly acceptanceChecks: readonly string[] | null; readonly resultTone: BadgeView['tone'] } interface TaskDependencyView { readonly shortId: string; readonly title: string }",
+          "parameters": [],
+          "returns": {
+            "type": "TaskRowView",
+            "meaning": "One table row. shortId is new; dependsOn changes from titles to { shortId, title } pairs; every other field keeps its meaning (board-protocol.ts:122-133)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "dependsOn and acceptanceChecks stay null while the story's PLAN is loading or could not be read, as today."
+          ]
+        },
+        {
+          "name": "taskRows",
+          "signature": "function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, labels: DisplayLabels): TaskRowView[]",
+          "parameters": [
+            {
+              "name": "item",
+              "type": "DeliveryItemView",
+              "purpose": "The story whose tasks become rows.",
+              "optional": false
+            },
+            {
+              "name": "plan",
+              "type": "PlanRead",
+              "purpose": "The story's PLAN read: dependencies and acceptance checks come from it.",
+              "optional": false
+            },
+            {
+              "name": "byId",
+              "type": "ItemIndex",
+              "purpose": "Snapshot index to resolve task items.",
+              "optional": false
+            },
+            {
+              "name": "labels",
+              "type": "DisplayLabels",
+              "purpose": "Result and unplanned labels.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TaskRowView[]",
+            "meaning": "One row per story task, in story order (board-details.ts:40-62)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "shortId is the last ':'-separated segment of taskItemId (E1:S001:T002 gives T002; an id with no ':' is itself).",
+            "Each dependency is { shortId, title } from the task item it joins to (the same sourceIds join as today): shortId by the rule above, title by titleOf. A dependency with no task item keeps its raw PLAN id as both shortId and title."
+          ]
+        },
+        {
+          "name": "BOARD_WEBVIEW_SCRIPT taskList",
+          "signature": "taskList(box: HTMLElement, d: ItemDetailsViewModel): void  // inside the webview script string in board-host.ts",
+          "parameters": [
+            {
+              "name": "box",
+              "type": "HTMLElement",
+              "purpose": "The overview column the section is appended to.",
+              "optional": false
+            },
+            {
+              "name": "d",
+              "type": "ItemDetailsViewModel",
+              "purpose": "The selected item's details, carrying tasks, taskCounts and planNotice.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Appends the 'Planned tasks' label, the counts line, then either 'No task plan recorded yet.' or a .table-wrap holding table.records.tasks (aria-label 'Tasks'), then the plan notice (board-host.ts:227-235)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Header row: ID, Task, Result, Depends on, Checks.",
+            "Each task row has data-item-id = taskItemId; ID cell is shortId; Task cell is title, or taskItemId when the title is null; Result is the existing pill with its tone.",
+            "Depends on: one neutral chip per dependency showing shortId with title as its hover title; a muted dash when dependsOn is null or empty.",
+            "Checks: a link-style button '<n> checks' (or '1 check') with aria-expanded; clicking it shows or hides the next row, which spans the remaining columns and lists the checks as a plain list: one line each, with no bullet marks and no checkbox glyphs (list-style none), as in the approved mock. With no checks (null or empty) the cell is a muted dash and there is no checks row.",
+            "The open choice is kept in openOf under model.entryId + ':checks:' + taskItemId, so a re-render (refresh) keeps it."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TaskRowView",
+        "change": "field-modify",
+        "details": "Adds shortId: string; dependsOn changes from readonly string[] | null to readonly TaskDependencyView[] | null. Webview-only protocol; nothing is persisted. The old dependency-pill and checkbox CSS (.task, .checks) is replaced by the table's own rules.",
+        "callSites": [
+          "vscode-plugin/src/delivery/board-protocol.ts",
+          "vscode-plugin/src/delivery/board-details.ts",
+          "vscode-plugin/src/delivery/board-host.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The story's PLAN could not be read.",
+          "detection": "taskRows receives a PlanRead whose state is not 'ok', so no PLAN task joins to a row.",
+          "response": "dependsOn and acceptanceChecks stay null; the table still lists every task with its ID, title and result, the Depends on and Checks cells show a muted dash, and the existing plan notice renders under the table.",
+          "userImpact": "Tasks and results stay visible; only dependencies and checks are missing, with the notice explaining why.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A PLAN dependency names a task id that no task item carries.",
+          "detection": "The sourceIds join in taskRows finds no task item for the dependency id.",
+          "response": "The dependency is { shortId: <raw id>, title: <raw id> }, shown as a chip with the raw id.",
+          "userImpact": "The reader still sees the dependency, by its PLAN id.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A story with no tasks.",
+          "expected": "No table; 'No task plan recorded yet.' as today."
+        },
+        {
+          "input": "A task item missing from the snapshot (title null).",
+          "expected": "The Task cell shows taskItemId, as the old summary did; the ID cell still shows the short id."
+        },
+        {
+          "input": "A task with exactly one acceptance check.",
+          "expected": "The toggle reads '1 check'."
+        },
+        {
+          "input": "A task with an empty check list, or while the PLAN is loading.",
+          "expected": "The Checks cell is a muted dash and no checks row exists."
+        },
+        {
+          "input": "The board re-renders (refresh, snapshot update) while a task's checks are open.",
+          "expected": "The checks stay open: the choice is read back from openOf under the screen entry and task id."
+        },
+        {
+          "input": "Opening another story, then going Back.",
+          "expected": "Each story's open choices are its own (keyed by the screen entry), as for the board's other folds."
+        },
+        {
+          "input": "A task id with no ':' separator.",
+          "expected": "shortId is the whole id."
+        },
+        {
+          "input": "A narrow editor column.",
+          "expected": "The table scrolls horizontally inside .table-wrap, as the Records table does."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Rows follow the story's task order, and a PLAN task with no matching task item is not a row (the sourceIds join in taskRows, board-details.ts:40-62).",
+          "source": "c1"
+        },
+        {
+          "text": "dependsOn and acceptanceChecks are null until the PLAN read arrives, and the counts line, the 'No task plan recorded yet.' message and the plan notice keep their places (taskList, board-host.ts:227-235).",
+          "source": "c2"
+        },
+        {
+          "text": "The webview builds DOM with textContent and attributes only, never innerHTML (the board-webview-harness fake DOM throws on innerHTML).",
+          "source": "c3"
+        },
+        {
+          "text": "Fold choices live in openOf keyed by the screen entry, so they survive re-renders (board-host.ts:103, 161-162, 171).",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via npx tsx --test (vscode-plugin/src/**/__tests__/*.test.ts); the board-webview-harness fake DOM runs the real BOARD_WEBVIEW_SCRIPT",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The row model: short ids and dependency pairs built in taskRows.",
+          "subjects": [
+            "taskRows gives each row its short id (last ':' segment; the whole id when there is none)",
+            "taskRows gives each dependency its task item's short id and title, and the raw PLAN id for both when no task item joins",
+            "dependsOn and acceptanceChecks stay null while the PLAN is loading or failed"
+          ],
+          "fixturesNeeded": [
+            "vscode-plugin/src/delivery/__tests__/board-fixtures.ts (item, snapshot)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The rendered story screen through the real webview script on the fake DOM.",
+          "subjects": [
+            "the Planned tasks section renders table.records.tasks with ID, Task, Result, Depends on and Checks headers and one row per task",
+            "a row shows the short id, the title (or the task item id), the result pill with its tone, and dependency chips with the full title as their hover title, or a dash",
+            "the checks toggle reads '<n> checks' or '1 check', starts closed, opens a row listing the checks as plain lines with no bullet or checkbox glyph, and its aria-expanded follows",
+            "an open checks row stays open across a re-render (openOf under the screen entry)",
+            "no task plan: 'No task plan recorded yet.' and no table; the plan notice still renders",
+            "the evidence tab still shows no task rows"
+          ],
+          "fixturesNeeded": [
+            "vscode-plugin/src/delivery/__tests__/board-webview-harness.ts",
+            "vscode-plugin/src/delivery/__tests__/board-host.test.ts liveBoard/onStory helpers"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "ac1: each task row carries its short id, and each dependency its short id and full title, built from the PLAN-to-task-item join — proven by board-details.test.ts: taskRows short ids and dependency pairs"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "ac2: the story screen shows the tasks as a table with ID, Task, Result, Depends on and Checks columns; dependencies as short-id chips with the title on hover; checks behind a count toggle as a plain list — proven by board-host.test.ts: the story's tasks render as a table with the five columns, chips and checks toggle"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "ac3: a task's open checks stay open across a re-render — proven by board-host.test.ts: an open checks row stays open across a re-render"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "taskRows (board-details.ts:40-62) gives each row dependsOn as dependency titles; taskList (board-host.ts:227-235) renders each task as a <details class='task'> with only the title in its summary, a 'Depends on <titles>' pill and a ballot-box check list (s1 bundles).",
+      "stateAfter": "TaskRowView carries shortId and dependsOn as { shortId, title } pairs; taskList renders a table.records tasks table with ID, Task, Result, Depends on chips and a checks toggle whose open choice is kept in openOf. The .task/.checks CSS is replaced by table rules.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Change TaskRowView and taskRows to the new row shape and update the view-model tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Replace taskList's details blocks with the table, swap the task CSS, and update the host tests that pin the old markup.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "TaskRowView is a webview-only protocol between the extension host and its own webview script, which ship together in one .vsix, so no other consumer sees the shape change. Nothing is persisted: the openOf fold memory lives only in the webview's session.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-built short ids, webview table",
+        "oneLineSummary": "TaskRowView gains shortId, and dependsOn becomes {shortId, title} pairs built in taskRows; the webview renders a table from them.",
+        "approach": "taskRows in board-details.ts computes each row's shortId (the last ':'-separated segment of the task item id, so E1:S001:T002 gives T002) and each dependency as { shortId, title } (the dependency's task item short id and titleOf, or the raw PLAN id for both when no task item matches). TaskRowView in board-protocol.ts carries shortId and the new dependsOn shape. taskList in BOARD_WEBVIEW_SCRIPT draws a table.records tasks table: ID, Task, Result pill, Depends on chips (shortId text, title as the hover title), and a Checks toggle button (aria-expanded) that shows or hides a following row holding the checks as a plain list; the open choice is kept in openOf under the screen entry. The counts line, the empty message and the plan notice stay where they are.",
+        "pros": [
+          "The id and title rules live in the tested, vscode-free view-model code, not in webview string-built JS.",
+          "The webview stays a dumb renderer of the row model, as for every other board view.",
+          "Reuses the Records table styling, the pill helper and openOf."
+        ],
+        "cons": [
+          "Changes the TaskRowView protocol shape, so tests that pin dependsOn as titles need updating."
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Webview derives short ids",
+        "oneLineSummary": "Keep TaskRowView as is (dependsOn titles) and derive short ids in the webview script from taskItemId and by matching titles.",
+        "approach": "Only the BOARD_WEBVIEW_SCRIPT changes: it shortens taskItemId itself and maps each dependency title back to a row by matching titles to get its short id.",
+        "pros": [
+          "No protocol change; view-model tests stay as they are."
+        ],
+        "cons": [
+          "Title matching is wrong when two tasks share a title or a dependency has no task item.",
+          "Puts id logic in string-built webview JS that is harder to test."
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates correct dependency ids: title matching fails on duplicate titles and dependencies without a task item."
+      },
+      {
+        "id": "a3",
+        "name": "Dependencies as task item ids",
+        "oneLineSummary": "dependsOn carries the dependencies' full task item ids; the webview shortens them and looks titles up among the rows.",
+        "approach": "taskRows maps each dependency to its task item id (or the raw PLAN id); the webview shortens ids and finds titles by looking up the rows of the same story.",
+        "pros": [
+          "Keeps one id format on the wire."
+        ],
+        "cons": [
+          "A dependency outside the table has no title to show on hover.",
+          "Splits the display rule between host and webview."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Partial on the mock's hover titles (none for a dependency outside the table) and on testability (rule split across host and webview)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-details.ts",
+      "quotedText": "function taskRows(item: DeliveryItemView, plan: PlanRead, byId: ItemIndex, labels: DisplayLabels): TaskRowView[] {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-host.ts",
+      "quotedText": "`function taskList(box,d){box.appendChild(label('Planned tasks'));`,"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/__tests__/board-webview-harness.ts",
+      "quotedText": "/** A fake DOM element: records text, attributes, children, listeners and form values; innerHTML throws. */"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/delivery/board-protocol.ts",
+      "quotedText": "export interface TaskRowView {"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "/tmp/board-shot/mock.png (the layout the user approved)"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-94392dc5-c97d-498b-a7da-d7f28a282ee7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.544Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "envelope": {
+      "description": "clear-filters up-message",
+      "parent": {
+        "entityId": "STORY-b2687832a8c75877-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2687832a8c75877-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fc78babbe48706d4bcfa5fdbc9835435ece180ae87962ef7adb7387df20b6e86",
+        "at": "2026-10-22T12:44:16.544Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.545Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "clear-filters up-message",
+    "summary": "Add { type: 'clear-filters' } to BoardUpMessage and parseBoardUpMessage, and handle it in createDeliveryBoardHost: reset search and needsAttentionOnly, keep scope and view, reset paging.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra or wrong-typed fields",
+      "After clear-filters the selection has search '' and needsAttentionOnly false, the same scope and view, and paging is reset",
+      "With no snapshot shown, clear-filters keeps the reset selection and posts only the status message"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "board-protocol.test.ts: parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: clear-filters resets search and attention, keeps scope and view, and resets paging"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: clear-filters with no snapshot shown posts only the status message"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

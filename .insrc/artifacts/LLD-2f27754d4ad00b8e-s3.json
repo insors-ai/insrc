@@ -29,149 +29,6 @@
       "AMD-2f27754d4ad00b8e-7"
     ],
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "coverage-of-intent.1",
-          "ref": "coverage-of-intent",
-          "item": "coverage-of-intent",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The proposed completion evidence can recognize a user's code-review override and satisfy ac9.",
-          "evidence": "DEF ac9 explicitly permits completion when the build was 'approved by the user over the review's findings'. enforceCodeReviewGate reads only body.verdict/counts and returns overridden only from opts.overrideReview; it does not read persisted meta.reviewOverride. It also returns advisory warn before inspecting the override when enforcement is off. The proposed storyCodeReview(epicHash, storyId) contract supplies neither override nor enforcement context, so mapping its result cannot preserve the approval request's override. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, src/workflow/code-review/gate.ts, src/workflow/gates.ts]",
-          "action": "Define how revision-bound override evidence reaches roll-up, including enforcement-off behavior. Exercise the real gate through approval and completion with an explicit override.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Current store writes serialize only writes, preserve caller-supplied lifecycle hashes, and record create/update; raw preparation does not reconcile lifecycle.",
-          "evidence": "ArtifactStore.write queues writeUnlocked. That function compares description/body/citations, copies a.lifecycle while replacing revision.number, and logs operation 'create' or 'update' with a.lifecycle.revision.contentHash. prepareArtifactWrite adjusts meta.revision and tracker fields without inspecting meta.lifecycle. [files: src/workflow/artifact-core/store.ts, src/workflow/storage.ts]",
-          "action": "Use this verified baseline when specifying the replacement behavior.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.1",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The five proposed codecs are missing, and the existing codec abstraction supports pass-through payloads with generated identity metadata.",
-          "evidence": "CODECS registers eleven kinds and excludes EPIC, STORY, TASKS, TASK and DIAG. The existing codec helper decodes 'body: head.body, citations: head.citations ?? []' and encodes using identityMeta(key, ctx). codecFor throws UnknownArtifactKindError for unregistered kinds. [files: src/workflow/artifact-core/codecs.ts, src/workflow/artifact-core/decode.ts]",
-          "action": "Extend the existing codec helper and registry as proposed.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The declared ArtifactStore.update callback can perform the complete LifecycleService operation while holding the queue.",
-          "evidence": "The design declares mutate as a synchronous callback returning {next, options} or undefined, but transition and rollUp return Promises, and completion awaits member updates. Existing store reads, history reads and writeUnlocked are asynchronous. The declared callback cannot await these operations within its stated return type. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md]",
-          "action": "Allow an asynchronous mutation callback and explicitly await it while holding the queue. Specify recovery and member-operation ordering within that contract.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Reconciling hashes in prepareArtifactWrite is sufficient to make BUILD-hook and review auto-fix writes compatible with full log-tail integrity checks.",
-          "evidence": "writeArtifact calls prepareArtifactWrite followed by writeAtomic and appends no History entry. persistBuildRecord and reviewArtifactFile use this raw writer for content changes. Only ArtifactStore.writeUnlocked appends the revision-bearing log entry. Consequently, after a tracked head's BUILD-hook rewrite or review auto-fix advances its revision, the proposed service check sees head-ahead-of-log even though the hash was reconciled correctly. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/review/run-artifact.ts]",
-          "action": "Route these content mutations through a history-aware transaction when a LifecycleService is supplied, or specify another atomic head/log synchronization mechanism. Test a real content change on a head with existing history before service approval/review.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.1",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Keeping the existing revision-minting rule and subsequently reconciling lifecycle guarantees that only description/payload changes advance revisions.",
-          "evidence": "prepareArtifactWrite determines unchanged content with sameApartFromRevision, which compares JSON.stringify of the entire head after deleting only meta.revision. Metadata changes, lifecycle fields and key ordering therefore affect this comparison. The store currently avoids metadata bumps by choosing meta-only using its separate canonical comparison. The design removes that comparison but passes an already-minted revisionNumber into reconcileLifecycle; reconciliation cannot undo the incorrectly minted number under its stated contract. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/artifact-core/__tests__/store-write.test.ts]",
-          "action": "For lifecycle-bearing heads, make the canonical description/body/citations comparison determine revision minting inside prepareArtifactWrite itself. Specify how meta-only calls with changed content are handled, while retaining the legacy algorithm for heads without lifecycle.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "boundaries.1",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The handoff requiring s4 to wire LifecycleService is an accepted upstream contract dependency.",
-          "evidence": "The HLD lists s4 as depending on sc1, sc2 and sc3, with physical sidecar storage as its scope. AMD-8 proposes adding s4 as an sc4 consumer and explicitly assigns durable LifecycleService wiring to it, but its stored status is 'pending'. The design also leaves acceptance of the sc2 changes open. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, .insrc/artifacts/AMD-2f27754d4ad00b8e-8.json, src/daemon/index.ts]",
-          "action": "Resolve AMD-8 and the sc2 ownership questions before treating the production wiring and shared-store changes as agreed delivery scope.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
-        },
-        {
-          "claimId": "error-paths.1",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Completing every listed member inside the unit's update lock safely records the unit last.",
-          "evidence": "The proposed member list includes the STORY head when completing that Story and EPIC when completing that Epic. It says each member uses its own ArtifactStore.update while the outer apply holds the unit's update queue. The existing WRITE_QUEUES mechanism chains a same-id operation behind the current operation. Awaiting an update of the unit itself would therefore wait on its own unfinished operation; writing it separately would also contradict unit-last recording. [files: src/workflow/artifact-core/store.ts]",
-          "action": "Exclude the unit itself from dependent-member updates. Record its lifecycle and complete entry only through the outer update, and explicitly prohibit same-id queue re-entry.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "error-paths.2",
-          "ref": "error-paths",
-          "item": "error-paths",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Keeping existing recovery placement permits a failed completion to succeed on retry through update.",
-          "evidence": "writeUnlocked calls completePending before reading the prior head. A failed head replacement can leave the new log entry appended and the old head on disk. The proposed update reads history and performs integrity checks before invoking the existing write implementation. That retry would throw log-ahead-of-head before reaching completePending, preventing the documented automatic recovery. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/journal.ts]",
-          "action": "Recover pending journal operations under the queue before update reads the head/history or invokes mutate. Add a retry test that fails head replacement after append, then retries LifecycleService.apply.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The acceptance mapping explicitly covers all four upstream s3 criteria.",
-          "evidence": "The stored DEF assigns s3 ac7 revision advancement/draft fallback/older decision retention, ac8 unchanged-content revision stability, ac9 once-only Story/Epic completion with dependent records, and ac10 conflict refusal. The proposed test mapping names tests for each, including ac7's retained decision bindings rather than only revision advancement. This verifies planned coverage, not passing implementation. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md, src/workflow/artifact-core/__tests__/store-write.test.ts]",
-          "action": "Retain the mapping and add the concrete override, history synchronization, queue re-entry and journal-retry cases identified above.",
-          "fixability": "manual",
-          "outcome": "holds"
-        }
-      ],
-      "counts": {
-        "high": 6,
-        "med": 0,
-        "low": 4,
-        "unverified": 1
-      },
-      "template": "design-spec",
-      "reviewedAt": "2026-10-21T04:51:00.960Z",
-      "model": "cli-codex:gpt-6-astra",
-      "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-21T04:56:36.239Z",
-    "reviewOverride": {
-      "reason": "Approved by the owner on explicit yes (2026-10-21) over the daemon review block (6 HIGH after two authoring passes; first pass 9 HIGH, 1 MED). The six remaining findings are recorded as binding requirements for the s3 plan and build in docs/plans/core-data-model.md (s3 LLD approved with an override).",
-      "at": "2026-10-21T04:56:36.237Z"
-    },
-    "staleAckedAt": "2026-10-21T04:58:56.533Z",
     "staleAckedReason": "AMD-8 only adds s4 as a consumer of sc4; the s3 LLD does not change",
     "questionResolutions": {
       "q6f07234c": {
@@ -215,6 +72,64 @@
         "rationale": "Covered by the LLD approval override; the plan names the new helpers and the build gives reviewArtifactFile a concrete argument type.",
         "resolvedAt": "2026-10-21T05:14:03.078Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "46248ac9fcbbf6b11edd1838df7bb3688e74bc59cd7f5603af2319c8c5fa183c",
+        "at": "2026-10-21T04:50:52.258Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T04:56:36.239Z",
+        "override": {
+          "reason": "Approved by the owner on explicit yes (2026-10-21) over the daemon review block (6 HIGH after two authoring passes; first pass 9 HIGH, 1 MED). The six remaining findings are recorded as binding requirements for the s3 plan and build in docs/plans/core-data-model.md (s3 LLD approved with an override)."
+        }
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 6,
+          "med": 0,
+          "low": 4
+        },
+        "at": "2026-10-21T04:51:00.960Z",
+        "report": {
+          "entityId": "LLD-2f27754d4ad00b8e-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-2f27754d4ad00b8e-s3-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

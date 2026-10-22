@@ -21,7 +21,26 @@
     "epicHash": "315d510cb28100e2",
     "epicSlug": "team-signoff-claim-based-workflow",
     "storyId": "s9",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "26dac6f33026c75d181d7c28cea2ea7e28477c451e386a127d22c0da81d028f2",
+        "at": "2026-10-16T19:08:59.864Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "scope": "M",

@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-08T07:22:57.072Z",
     "parentRef": {
       "slug": "story-code-review-reviews-wrong-code"
+    },
+    "epicCreatedAt": "2026-10-07T13:50:21.158Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "07bb38901b776a2f8efc144bfdcca95134a2e237681fbfa961fbc72423fdb69e",
+        "at": "2026-10-07T13:50:21.158Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-08T07:22:57.072Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

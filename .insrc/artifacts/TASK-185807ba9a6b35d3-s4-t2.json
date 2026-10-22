@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-64b19792-de87-484f-8521-bca611e91d9e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:16.215Z",
+    "epicCreatedAt": "2026-07-17T07:42:28.275Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "185807ba9a6b35d3",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add the 'running' member to sc4 BuildTaskStatus",
+      "parent": {
+        "entityId": "STORY-185807ba9a6b35d3-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-185807ba9a6b35d3-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2620fd05549914e45fa739ee80bcbaaad67585041d46251addf261f4a8fcd5d8",
+        "at": "2026-10-22T12:43:16.215Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:16.216Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the 'running' member to sc4 BuildTaskStatus",
+    "summary": "Additively extend the s3-owned BuildTaskStatus union from 'completed'|'failed'|'blocked'|'not-reached' to add 'running', so the single in-flight Task is representable in the authoritative BuildTaskOutcome[] the s4 projection folds over. Additive value only — ownership stays with s3, no ownership relocation, and existing outcome rows/consumers remain valid because none produced or matched a 'running' value before. Ordered after s3 lands per storyDependsOn=[s3].",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "BuildTaskStatus includes 'running' alongside 'completed'|'failed'|'blocked'|'not-reached'; the change is strictly additive.",
+      "Existing exhaustive switches over BuildTaskStatus continue to compile via their default/unhandled path; no producer or matcher of the prior members breaks (backwardCompat).",
+      "The amendment lands after s3's sc4 (storyDependsOn=[s3]) and leaves ownership of BuildTaskOutcome/BuildTaskStatus with s3."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "unit: BuildTaskStatus additively includes 'running' alongside the four prior members and existing exhaustive switches still compile via their default path (backwardCompat, ownership stays s3)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

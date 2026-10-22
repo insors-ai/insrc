@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6a0db18c-f9c7-480d-a7d6-2380ca9408d1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.728Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Pure daemon handler handleResolveComment (a1 mapping)",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "23edaf4cac79e0cf2b09caf708279a2a8e8d9121af37be23f09a418c256f7f6c",
+        "at": "2026-10-22T12:43:18.728Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.729Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pure daemon handler handleResolveComment (a1 mapping)",
+    "summary": "In src/workflow/resolve-comment.ts implement handleResolveComment(params, repoEnv): parse artifactId, resolve repo, then per comment fold into recordResolution — openQuestionId-anchored -> resolve that question (status='resolved', choice=anchor summary, rationale=body); section/quote/general -> append a new body.openQuestions entry (read-modify-write the artifact json) then resolve its minted qId (a1). Return {recorded, resolutions[]} or a RETURNED {error} on every failure (malformed id, repo unresolved, artifact not found, empty/blank comments, a mid-batch recordResolution failure with recorded-so-far).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "An openQuestionId-anchored comment writes a resolution into meta.questionResolutions for that qId",
+      "A general/section/quote comment appends a body.openQuestions entry AND records a resolution against its minted qId",
+      "recorded === comments successfully written; resolutions[] reports {openQuestionId?, status}",
+      "Every failure path RETURNS {error} (never throws); nothing outside the target artifact json is written"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handleResolveComment: openQuestionId-anchored comment -> resolution in meta.questionResolutions"
+      },
+      {
+        "level": "unit",
+        "name": "handleResolveComment: general/section/quote comment -> body.openQuestions appended + resolution recorded (a1)"
+      },
+      {
+        "level": "unit",
+        "name": "handleResolveComment: recorded === comments written; resolutions[] shape"
+      },
+      {
+        "level": "unit",
+        "name": "handleResolveComment: every failure path returns {error}, never throws"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

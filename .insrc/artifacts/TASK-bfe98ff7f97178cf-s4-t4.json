@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79e5342b-c41e-4842-a21c-f18ad0c9821e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.983Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Set the depth bound from the t3 measurement and pin it with two tests",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "704432a5e8e52c2afdd5da38c0372d1995ddbc8667c375ec154366cded34cd16",
+        "at": "2026-10-22T12:44:32.983Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.984Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Set the depth bound from the t3 measurement and pin it with two tests",
+    "summary": "Choose the renderer's depth-bound value from what t3's narrow-pane measurement actually recorded, not an invented constant. The bound is a SAFETY limit against malformed or hostile structure — it must sit strictly above the MEASURED real maximum under a NAMED metric — element-nesting depth 4 across the four records, 7 levels of rendered DOM inside the slot — with stated headroom — and the value plus its reasoning go into the BUILD record. Alternative a4 was rejected precisely for making a bound a routine presentation rule that would fire on the majority of real records; this task exists to keep the line between guard and truncation feature on the right side. Gated on t3 because the LLD left this open deliberately: the right value depends on what nesting costs in a narrow pane, which the visual read is the first thing able to answer.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "The chosen value is strictly greater than 9 — retained, but now justified by MEASUREMENT rather than inherited: 9 is more than double the element-nesting maximum of 4 that the walk actually counts, and above the 7 rendered-DOM levels the slot produces. The headroom and its justification are stated in the BUILD record and CITE `S004/evidence/t3-depth-measurement.md`, naming the metric — not a number someone picked",
+      "EVERY one of the four real records renders UNTRUNCATED — the bound is proved never to fire on authored content, which is the distinction that rejected a4",
+      "A synthetic over-deep structure TRIPS the guard, rendering the ux-unknown degradation at the cut point naming depth as the reason, and the walk terminates",
+      "The bound is a single named constant with no second hard-coded copy anywhere in the source string",
+      "MUTATION: removing the bound makes the pathological-structure test hang or fail"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "a structure beyond the bound stops at the cut point and marks it with a depth-named ux-unknown, and the walk terminates"
+      },
+      {
+        "level": "unit",
+        "name": "all four real records render COMPLETELY at the chosen bound — the guard is proved never to fire on authored content"
+      },
+      {
+        "level": "unit",
+        "name": "the bound exists as a single named constant with no second hard-coded copy in the source string"
+      },
+      {
+        "level": "unit",
+        "name": "MUTATION: removing the bound makes the pathological-structure test hang or fail"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

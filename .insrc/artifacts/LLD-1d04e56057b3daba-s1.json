@@ -27,135 +27,57 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "block",
-      "findings": [
-        {
-          "claimId": "fix-targets-defect.1",
-          "ref": "fix-targets-defect",
-          "item": "fix-targets-defect",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Passing the session file (opened in append mode) as the child's stdout/stderr gives the turn a durable output channel that outlives the reader. This is the root cause the ISSUE names: output exists only in the stdout pipe.",
-          "evidence": "The ISSUE's root cause is the pipe-only stdout: `stdio: ['pipe', 'pipe', 'pipe']` at cli-adapter.ts:975, and lines() iterates child.stdout at cli-adapter.ts:1002-1016. The child is spawned `detached` in its own group, so once it writes to a file fd instead of a pipe, it keeps writing even if the extension host goes away. Following that file from a cursor meets the fix intent's 're-read and continue from the last line handled, including after a reload'. [files: vscode-plugin/src/chat/cli-adapter.ts, docs/standalone/vs-code-plugin-chat-cli-turn-E202610101d04e560/ISSUE.md]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "fix-targets-defect.2",
-          "ref": "fix-targets-defect",
-          "item": "fix-targets-defect",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The cleanup the design describes (a per-session rolling file removed with its session or swept when stale) stays consistent everywhere in the LLD, replacing the ISSUE's 'cleaned up once the turn's process has exited and its output has been read'.",
-          "evidence": "Section 3.1 and the rejected alternative a4 say files are removed with the session and never per turn. The edge-case row 'The window reloads after the turn finished but before its output was read' still says the panel '...shows the remaining events including the terminal one, then removes the directory'. That text is left over from the rejected per-turn-directory design a4. It contradicts the chosen design, and the ISSUE's per-turn cleanup intent is replaced without saying so in the edge cases. [files: docs/standalone/vs-code-plugin-chat-cli-turn-E202610101d04e560/S001/LLD.md, docs/standalone/vs-code-plugin-chat-cli-turn-E202610101d04e560/ISSUE.md]",
-          "action": "Fix the edge-case row: nothing is removed at the end of a turn; liveTurn is cleared. State explicitly that the session-scoped removal and sweep replace the ISSUE's per-turn cleanup intent.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "current-behaviour.1",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Today the real spawner pipes stdout and stderr, stderr is an in-memory string, and run() stops yielding at the first terminal event, then drains the rest of the pipe in the background and discards it.",
-          "evidence": "cli-adapter.ts:975 shows `stdio: ['pipe', 'pipe', 'pipe']`. cli-adapter.ts:976-979 show `stderrBuf += d.toString('utf8')`. cli-adapter.ts:784-792 call `void drain(stdout)` and then `return` at the terminal event. drain() at cli-adapter.ts:696-702 'Reads and discards the rest of a stream'. The finally block only kills when `!terminal`. The design's description is accurate, and more accurate than the ISSUE's claim that the finally always kills. [files: vscode-plugin/src/chat/cli-adapter.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.1",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "run() can call beginTurn(sessionId, turnId) 'for the session (it holds the lease)' without any change beyond those listed (SpawnFn opts.output, RunOptions.onProgress, resume, TurnProcess.cursor).",
-          "evidence": "TurnRequest (cli-adapter.ts:42-60) carries only provider, prompt, resume, cwd, permissionMode and allowedTools. It has no chat session id. The adapter never sees the lease either: chat-panel.ts:694-719 acquires it and passes only `{ onSpawn }` to `adapter.run(req, ...)`. The design gives the adapter no way to learn the session id or the session-output instance, and its change list (3.4) adds neither a TurnRequest/RunOptions field nor an AdapterDeps member for SessionOutput. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "Add the missing change sites: a session id on TurnRequest or RunOptions, and the SessionOutput dependency on AdapterDeps or RunOptions. List chat-panel.ts runTurn as their writer.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The callers of cancelActive are Stop (cancel-turn), new-chat, open-chat, onDidDispose, adopt and dispose, so the list in 3.5 is complete.",
-          "evidence": "chat-panel.ts has exactly six `void cancelActive()` calls: line 846 (cancel-turn), line 858 (new-chat), line 878 (open-chat), line 1012 (channel.onDidDispose), line 1034 (adopt) and line 1045 (dispose). This matches 3.5. [files: vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "preserved-behaviour.1",
-          "ref": "preserved-behaviour",
-          "item": "preserved-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "After a reload the per-session lock still names the original CLI process and treats the session as held until that process exits (invariant c2), so a resumed turn needs no lease of its own.",
-          "evidence": "session-lock.ts:255-265: LockFileRecord holds cliPid, hostPid and startedAt. session-lock.ts:399 decides liveness as `rec.cliPid !== null ? isAlive(rec.cliPid) && sameProcess(rec) : isAlive(rec.hostPid)`, so once a CLI pid is recorded, the dead old host does not free the lock; the CLI process's life does. In memory, lease.attach releases on `proc.exit` (session-lock.ts:186). A new message after reload therefore waits for the original process, as the design says. [files: vscode-plugin/src/chat/session-lock.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "tests.1",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The tests the ISSUE asks for (a long turn, a reader that stops and resumes, and a reload) each have a named test in the LLD that would fail without the fix.",
-          "evidence": "The ISSUE's fix intent: 'Tests cover a long turn, a reader that stops and resumes, and a reload.' The LLD maps these to:\n- **Long turn:** cli-adapter.test.ts 'the real spawner ... lines() yields every line including those written after the result line'. This fails today because drain() discards post-terminal output (cli-adapter.ts:788).\n- **Stop and resume:** chat-panel.test.ts 'switching chat or closing the panel stops following ... and showing the session again resumes it'. This fails today because cancelActive stops the process.\n- **Reload:** chat-panel.test.ts 'after a reload (a new host over the same store) ... followed from the saved offset'. This fails today because no resume path exists.\n\nThe partial-line case and the roll-over/bounded-disk case are also covered. One caveat: the ISSUE does not define ac1–ac5 ids, so those mapping ids can only be traced to the ISSUE's prose. [files: docs/standalone/vs-code-plugin-chat-cli-turn-E202610101d04e560/ISSUE.md, vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/chat-panel.ts]",
-          "action": "None. Optionally, cite the ISSUE sentence for each ac id.",
-          "fixability": "manual",
-          "outcome": "holds"
+    "rangeBase": "52a320a5d09dddbd25cf8f62db94084a825d6628",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "8086765cb0cfdc93b8e8c210c11d00f99cb54ac653dab2f4d8083d1996bbb785",
+        "at": "2026-10-10T16:43:48.820Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
         }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 2,
-        "low": 5,
-        "unverified": 0
       },
-      "template": "design-issue",
-      "reviewedAt": "2026-10-10T16:56:12.039Z",
-      "model": "cli-claude:opus",
-      "reviewedBy": "daemon"
-    },
-    "reviewResolutions": {
-      "change-sites.1": {
-        "findingId": "change-sites.1",
-        "status": "resolved",
-        "note": "Applied: RunOptions.sessionId (written by chat-panel runTurn inside runLeased) and AdapterDeps.sessionOutput (built in extension.ts, passed through createProviderRegistry) are added; without either the turn uses the pipe.",
-        "resolvedAt": "2026-10-10T16:58:38.999Z"
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-10T17:08:02.012Z"
       },
-      "preserved-behaviour.1": {
-        "findingId": "preserved-behaviour.1",
-        "status": "resolved",
-        "note": "Applied: resume() takes onAttach and hands over a TurnProcess built from the recorded pid/startedAt; its stop() signals the group only while the start time matches. Stop uses it for a resumed turn; tests added.",
-        "resolvedAt": "2026-10-10T16:46:37.161Z"
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 5
+        },
+        "at": "2026-10-10T16:56:12.039Z",
+        "report": {
+          "entityId": "LLD-1d04e56057b3daba-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-1d04e56057b3daba-s1-review"
+        }
       },
-      "preserved-behaviour.2": {
-        "findingId": "preserved-behaviour.2",
-        "status": "resolved",
-        "note": "Applied: liveTurn records ownerHostPid; a window follows only if it is the owner or the owner host is gone, and takes ownership when it does. Edge case and tests updated.",
-        "resolvedAt": "2026-10-10T16:46:37.162Z"
-      },
-      "fix-targets-defect.2": {
-        "findingId": "fix-targets-defect.2",
-        "status": "resolved",
-        "note": "Applied: the reload-after-finish edge case no longer removes anything at turn end; it clears liveTurn. The LLD now states that session-scoped removal plus roll-over replaces the ISSUE's per-turn cleanup.",
-        "resolvedAt": "2026-10-10T16:58:38.998Z"
-      }
-    },
-    "approvedAt": "2026-10-10T17:08:02.012Z",
-    "rangeBase": "52a320a5d09dddbd25cf8f62db94084a825d6628"
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d707aa95-419b-4079-9610-879079d7330a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:06.717Z",
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "abd1ecf6a5f5063e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "BrainstormElicitState type + WorkflowStepStatePayload wiring",
+      "parent": {
+        "entityId": "STORY-abd1ecf6a5f5063e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b02f2199174859aafe2856338bb389652f91145c8964d12ad6adf9913c2587e9",
+        "at": "2026-10-22T12:44:06.717Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:06.718Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "BrainstormElicitState type + WorkflowStepStatePayload wiring",
+    "summary": "Define BrainstormElicitState { readonly workingStatement: string; readonly answered: readonly string[]; readonly openQuestions: readonly string[] } in src/mcp/workflow-step/state.ts and thread it as an addition inside the existing WorkflowStepStatePayload, without changing the saveState/loadState/releaseState signatures or the opaque continuation-token format.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "BrainstormElicitState is exported from state.ts with exactly the three fields (workingStatement, answered, openQuestions) per sc3's interfaceSketch",
+      "a WorkflowStepStatePayload carrying BrainstormElicitState round-trips unchanged through saveState(payload) -> token -> loadState(token), and releaseState(token) frees it",
+      "state-store.ts's saveState/loadState/releaseState function signatures and the opaque token format are unmodified (k9 — no new store introduced)",
+      "loadState(token) for an unknown or expired token still throws unchanged — no brainstorm-specific code path catches or silently replaces it with a fresh session"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "BrainstormElicitState round-trips through state-store saveState->token->loadState unchanged, and releaseState frees it"
+      },
+      {
+        "level": "unit",
+        "name": "loadState(token) for an unknown or expired token still throws unchanged — no brainstorm-specific catch/silent-replace"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

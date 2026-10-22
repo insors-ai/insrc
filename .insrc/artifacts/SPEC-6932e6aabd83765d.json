@@ -20,7 +20,35 @@
     "specHash": "6932e6aabd83765d",
     "epicSlug": "per-repo-chat-turn-queue-outbox",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-14T07:48:21.010Z"
+    "epicCreatedAt": "2026-10-14T07:45:02.806Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "db42927b40d0cd5e0f8a1aa3f7b3caf8abc19a52c5f3c82310b9f6571c179ff5",
+        "at": "2026-10-14T07:45:02.806Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-14T07:48:21.010Z"
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "title": "Per-repo chat turn queue with outbox",

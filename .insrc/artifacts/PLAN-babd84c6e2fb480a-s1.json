@@ -1,0 +1,422 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792042440145-ffct6f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T05:35:26.076Z",
+    "epicCreatedAt": "2026-10-15T05:12:06.864Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 85926,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "babd84c6e2fb480a",
+    "epicSlug": "make-links-code-references-clickable-chat",
+    "storyId": "s1",
+    "lldRunId": "wf-1792040975761-1c69sj",
+    "lldEffectiveHash": "babd84c6e2fb480aea1773f80e4f6757f2ccc994f07b87e893e4f91f3053e4c1",
+    "authoredBy": "controller",
+    "rangeBase": "49aa957da1d0f2ce25614eb06dc66510c63d59fd",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "10d5c910d70b652e5f39bb5f9bfb39bf56632994abf1f4f4e34865908c32a878",
+        "at": "2026-10-15T05:35:26.076Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-15T05:44:13.472Z"
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The build adds two new page-to-host messages and the host code that validates and opens them, extracts one shared path-containment helper, and adds one shared link step that both the chat page and the review pane inline after guardMd. A final reported live check in a running VS Code confirms what no automated test can: a single browser open, the line reached, and the editor group chosen.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the open-link and open-code-ref messages to the protocol and the shim",
+        "summary": "Add the two webview-to-host message variants and their allowlist entries in protocol.ts, and add env.openExternal, Range and Position to the vscode.d.ts shim.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "protocol.ts accepts open-link {url} and open-code-ref {path, line?} and rejects other shapes",
+          "the shim compiles a call to env.openExternal and a Range selection"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "protocol allowlist includes open-link and open-code-ref"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Extract resolveWithin from companion-reader",
+        "summary": "Move the realpath, containment and regular-file check out of companion-reader.ts into an exported resolveWithin(root, relPath, fs) helper, and rewire createCompanionReader onto it with its docs/ root, .html rule and size cap unchanged.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the existing companion reader tests pass unchanged",
+          "resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "companion-reader behaves as before after the containment helper is extracted"
+          },
+          {
+            "level": "unit",
+            "name": "resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Host handlers for open-link and open-code-ref, injected from extension.ts",
+        "summary": "Add the validating handlers to the chat host and the review-pane host, and inject the open-external and open-file-at-line dependencies and the workspace folder from extension.ts. The open-file-at-line dependency takes its viewColumn from the reviewColumn closure and falls back to Beside.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a valid http(s) url is opened externally and any other scheme is refused",
+          "an existing in-workspace file opens with the line selected in the column chooseReviewColumn picks, and Beside when it picks none",
+          "an absolute path, a .. path, a missing file, a symlink escape and a missing workspace folder are refused and logged",
+          "an open that rejects or resolves false is logged and does not throw"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the host opens a valid http url externally and refuses a non-http url"
+          },
+          {
+            "level": "integration",
+            "name": "the host opens an existing in-workspace path with the line selected"
+          },
+          {
+            "level": "integration",
+            "name": "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder"
+          },
+          {
+            "level": "integration",
+            "name": "the host refuses a symlink inside the workspace that points outside it"
+          },
+          {
+            "level": "integration",
+            "name": "the host logs and survives an open that rejects or resolves false"
+          },
+          {
+            "level": "integration",
+            "name": "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Linkify and click handling in the chat page",
+        "summary": "Define the linkify and click source as one exported string in its own module. In render-registry.ts, inline it after guardMd: wrap code references (including inline code that is wholly a path) in anchors carrying data-path and data-line, strip the href from http(s) anchors and keep data-url, style the handled anchors as links, and add one delegated click handler that prevents the default and posts the message. Keep the innerHTML-then-guardMd pairing. Extend the chat-shell stub DOM with text nodes that support splitting and replacing, and confirm it before writing the linkify tests.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a code reference with a line becomes a link carrying its path and line, in running text and in whole-path inline code",
+          "pre blocks, partial inline code, existing anchors and version numbers are not wrapped",
+          "an http link has no href and carries data-url, and a click posts open-link with the default prevented",
+          "a non-http href is still dropped",
+          "render-registry.test.ts guardMd assertions pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a code reference with a line in running text becomes a link carrying its path and line"
+          },
+          {
+            "level": "unit",
+            "name": "text inside code and pre and existing anchors is not wrapped"
+          },
+          {
+            "level": "unit",
+            "name": "a version number is not treated as a path"
+          },
+          {
+            "level": "unit",
+            "name": "a click on an http link posts open-link and prevents the default"
+          },
+          {
+            "level": "unit",
+            "name": "a click on a code reference posts open-code-ref with path and line"
+          },
+          {
+            "level": "unit",
+            "name": "guardMd still drops a non-http href"
+          },
+          {
+            "level": "unit",
+            "name": "an http link keeps its target in data-url and has no href, so it cannot open by itself"
+          },
+          {
+            "level": "unit",
+            "name": "inline code whose whole text is a code reference becomes a link"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Linkify and click handling in the review pane",
+        "summary": "Inline the same exported linkify string once into the review shell inside DOCS_BODY_RENDERER_SOURCE, add the click handler posting through the pane's message channel, rewrite docs-review-panel.test.ts t4 for the new scrub, extend its stub DOM, and update the SHELL_BASELINE pins as the last step, once the shell source has stopped changing.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the renderer source run against a stub DOM links a code reference, strips the href of an http link and posts open-code-ref and open-link on click",
+          "t4 asserts no href, a data-url and the unchanged non-http and image scrub",
+          "the shell-baseline tests hold with the new pins and the inlines-once test still passes",
+          "open-companion handling is unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click"
+          },
+          {
+            "level": "integration",
+            "name": "the chat page and the review pane both include the linkify and click wiring"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Live checks in a running VS Code",
+        "summary": "Click an http link, a code reference with a line and a code reference while the chat group is the only group, in both the chat and the review pane, and record the results as reported evidence at validate. The gate cannot run these, so the result is the builder's own record and maps to no test file.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "an http link opens in the browser exactly once",
+          "a code reference opens at its line",
+          "the file opens in the chosen editor group, and Beside when only the chat group exists"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "an http link opens in the browser exactly once, in the chat and in the review pane"
+          },
+          {
+            "level": "live",
+            "name": "a code reference opens at its line, in the chosen editor group, and Beside when only the chat group exists"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a code reference with a line in running text becomes a link carrying its path and line",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "text inside code and pre and existing anchors is not wrapped",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a version number is not treated as a path",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a click on an http link posts open-link and prevents the default",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a click on a code reference posts open-code-ref with path and line",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "guardMd still drops a non-http href",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "an http link keeps its target in data-url and has no href, so it cannot open by itself",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "inline code whose whole text is a code reference becomes a link",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host opens a valid http url externally and refuses a non-http url",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host opens an existing in-workspace path with the line selected",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host refuses an absolute path, a .. path, a missing file and a path with no workspace folder",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the chat page and the review pane both include the linkify and click wiring",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "protocol allowlist includes open-link and open-code-ref",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host refuses a symlink inside the workspace that points outside it",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host logs and survives an open that rejects or resolves false",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "companion-reader behaves as before after the containment helper is extracted",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the host opens a clicked code reference in the column chooseReviewColumn picks, and Beside when it picks none",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contract details (guardMd and the open-link / open-code-ref messages; the open-attachment contract entry is an alias for them)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 data model changes (protocol messages, shim, render-registry, docs-review-panel and their pinned tests)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 error paths (refused urls and paths, symlink escape, open failures, placement fallback)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 test strategy and acceptance mapping (ac1-ac3 derived from the three user-value points)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration steps 1-3"
+    }
+  ]
+}

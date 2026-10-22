@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-29dbc444-c2ef-4b0b-8b6c-4b3810c0c66d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:19.391Z",
+    "epicCreatedAt": "2026-09-19T14:57:29.012Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b5f333f8d7ba421b",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the pure SettingsEditModel (validation, dirty, reset, segment mapping)",
+      "parent": {
+        "entityId": "STORY-b5f333f8d7ba421b-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b5f333f8d7ba421b-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e7cc73e233668c8b7284a6cf746dd640a5bf664ec78eabeb13e5244167b0ece",
+        "at": "2026-10-22T12:44:19.391Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:19.392Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the pure SettingsEditModel (validation, dirty, reset, segment mapping)",
+    "summary": "In the settings package add PendingWrite(segments: List<String>, op: WriteOp) + sealed WriteOp { Set(value: Any?) | Clear } and the pure class SettingsEditModel(catalog: SettingsCatalogDto) with a private FieldState per option. Implement editField (parse+validate per type: number parse tolerating Gson Double, enum-membership, boolean, empty-string-valid), validationError, isModified, revertField, markResetToDefault (set→Clear, unset→no-op), onSaved (advance/clear last-saved), and collectDirty()→only dirty, validation-clean fields as PendingWrite with path→segments mapping. Integral-Double equality so a re-typed same number is not dirty. No Swing, no existing-symbol changes. Land the SettingsEditModel unit tests with this task.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "SettingsEditModel + PendingWrite + WriteOp exist in settings/ and are pure (no Swing/IDE imports).",
+      "editField parses+validates per type; validationError non-null for a bad number/enum; empty string is valid for string.",
+      "isModified true only on a real change or reset-of-a-set field; a re-typed integral-Double value is not dirty.",
+      "collectDirty emits only dirty validation-clean fields as PendingWrite(Set|Clear) with correct segments; markResetToDefault set→Clear, unset→no-op; onSaved advances last-saved."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "control-kind per type (enum/boolean/number/string)"
+      },
+      {
+        "level": "unit",
+        "name": "per-type parse/validate: number parse + integral-Double equality, enum-membership, empty-string-valid"
+      },
+      {
+        "level": "unit",
+        "name": "isModified/collectDirty emits only changed fields; a validationError field is excluded"
+      },
+      {
+        "level": "unit",
+        "name": "revertField restores last-saved; markResetToDefault set→Clear, unset→no-op; onSaved advances last-saved"
+      },
+      {
+        "level": "unit",
+        "name": "path→segments mapping verbatim (lc1)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

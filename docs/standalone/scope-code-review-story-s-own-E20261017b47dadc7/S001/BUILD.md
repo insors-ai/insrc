@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-b47dadc7cf0cccb1-S001 -->
+<!-- insrc:artifact BUILD-b47dadc7cf0cccb1-s1 -->
 
 # Build (standalone) — Story S001
 
@@ -26,16 +26,16 @@ Built ISSUE-b47dadc7 S001: every build commit carries Insrc-Story; storyChangeSe
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-11e2b8a74bdff8c8-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/BUILD-b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/CR-11e2b8a74bdff8c8-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/CR-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/CR-b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/BUILD-11e2b8a74bdff8c8-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/BUILD-b5a62f289cbcdaee-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/CR-11e2b8a74bdff8c8-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/CR-b47dadc7cf0cccb1-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/CR-b5a62f289cbcdaee-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
 - `.insrc/artifacts/ISSUE-11e2b8a74bdff8c8.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
 - `.insrc/artifacts/ISSUE-b5a62f289cbcdaee.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/PLAN-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/TESTS-11e2b8a74bdff8c8-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
-- `.insrc/artifacts/TESTS-b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/PLAN-b47dadc7cf0cccb1-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/TESTS-11e2b8a74bdff8c8-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
+- `.insrc/artifacts/TESTS-b5a62f289cbcdaee-s1.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
 - `.insrc/build-start/11e2b8a74bdff8c8-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
 - `.insrc/build-start/b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T16:57:44.390Z)
 - `docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/ISSUE.md` — **insrc-build** (2026-10-18T16:57:44.390Z)

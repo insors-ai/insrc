@@ -24,20 +24,6 @@
     "hldBaseRunId": "wf-1789799576767-kl7v1b",
     "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-19T10:08:07.001Z",
-      "model": "client"
-    },
-    "approvedAt": "2026-09-19T10:17:35.996Z",
     "questionResolutions": {
       "qe66729e4": {
         "question": "The specific markdown->HTML rendering approach inside the JCEF view (a bundled JS renderer loaded into the browser vs a Kotlin markdown->HTML pass before load) is deferred to the plan/build; either keeps renderedMarkdown as the daemon-provided source of truth and authors no second copy.",
@@ -46,6 +32,61 @@
         "rationale": "User's explicit in-chat decision. Ship a vendored markdown renderer (marked/markdown-it) as a plugin resource, load it into the JCEF page, and pass the raw daemon-provided renderedMarkdown across the Kotlin->JS bridge for client-side rendering. renderedMarkdown remains the single source of truth (no second copy authored). Keeps rendering + the later inline-comment/anchor layer (s3) in one JS layer. CSP/offline note for the build: the renderer must be a bundled local resource (no CDN), rendered read-only.",
         "resolvedAt": "2026-09-19T10:18:17.946Z"
       }
+    },
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "a4f354fdc5f8690c78e137938111e8acb519c6ffe9e307208b0992d5c4a05e7c",
+        "at": "2026-09-19T10:06:12.313Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T10:17:35.996Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-19T10:08:07.001Z",
+        "report": {
+          "entityId": "LLD-238917216d8fd532-s2",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-238917216d8fd532-s2-review"
+        }
+      },
+      "signoffs": []
     }
   },
   "body": {

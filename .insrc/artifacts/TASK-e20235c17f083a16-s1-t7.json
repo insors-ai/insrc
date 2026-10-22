@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-115bf4ff-29a8-4c9f-a704-a5644c38ddf4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:47.175Z",
+    "epicCreatedAt": "2026-10-03T04:46:33.875Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e20235c17f083a16",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prove the epic route untouched, then close with measured evidence",
+      "parent": {
+        "entityId": "STORY-e20235c17f083a16-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e20235c17f083a16-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e20235c17f083a16-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6abd324e1038ed85c367a642108f147c17f006d67d777a8b4b2e305cc810a9df",
+        "at": "2026-10-22T12:44:47.175Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:47.176Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove the epic route untouched, then close with measured evidence",
+    "summary": "The guard that the preceding six tasks changed only bugfix-shaped work items, plus the Story's closing evidence. Assert by diff that nothing touched the thirty-five derivation call sites, the fifty-two path-construction sites, or the three definition-head derivations, and that an epic-parented chain produces byte-identical paths to the pre-change baseline. Then run the full sweep with real counts from actual output, re-run every mutation proof from t1 through t6 to confirm no later task neutralised an earlier guard, and record the criteria provenance split.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "An epic-parented chain produces byte-identical paths to the pre-change baseline",
+      "CHANGED FILE SET asserted: no edit appears to the thirty-five derivation call sites, the fifty-two path-construction sites, or the three definition-head slug derivations",
+      "Path construction is still pure: a path composes correctly for a repo directory that does not exist, which is only possible if nothing is read",
+      "Full sweep run with real pass, fail and skip counts from actual output, taken from a stable repeat run, and no new failures beyond the known pre-existing native-ABI one",
+      "CRITIQUE APPLIED — wording now matches reality: all SEVEN mutation proofs, t1 through t6 inclusive of t6's newly-added one, re-run at the end and still inverting. The previous wording promised to re-run a t6 proof that did not exist",
+      "The record states plainly that a clean typecheck is NOT evidence about the tests, because the config excludes them",
+      "The criteria provenance split is recorded: lc1-lc4 user-grounded, lc5-lc8 and ac1-ac10 LLD-authored and provisional per the ruling on this Story",
+      "The ordering dependency on the sibling Story is restated: this Story landed the accessor, and ISSUE-6f31771d060cb412 widens it from three metadata fields to the whole definition"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "REGRESSION GUARD: an epic-parented chain produces byte-identical paths to the pre-change baseline"
+      },
+      {
+        "level": "unit",
+        "name": "workItemKindOf still maps absent and false alike to 'epic'"
+      },
+      {
+        "level": "unit",
+        "name": "readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged"
+      },
+      {
+        "level": "smoke",
+        "name": "PURITY: the markdown path builders perform no filesystem read — a path composes for a nonexistent repo directory"
+      },
+      {
+        "level": "smoke",
+        "name": "the definition artifact is consulted at finalize time only, never during path resolution"
+      },
+      {
+        "level": "smoke",
+        "name": "all seven mutation proofs from t1 to t6 re-run at story end and still invert"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

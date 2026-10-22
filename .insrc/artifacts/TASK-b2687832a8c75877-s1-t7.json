@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1eb8d542-3ad2-4887-b38c-e46fa64a3d8e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:16.547Z",
+    "epicCreatedAt": "2026-10-09T16:21:30.736Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b2687832a8c75877",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Board and epics renderers",
+      "parent": {
+        "entityId": "STORY-b2687832a8c75877-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b2687832a8c75877-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b2687832a8c75877-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf9e270d8e4fd2411c9ce6d977308740bd3aa366ada4a9f15014a1bef44ac4ca",
+        "at": "2026-10-22T12:44:16.547Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:16.548Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Board and epics renderers",
+    "summary": "Rewrite the board and epics builders in BOARD_WEBVIEW_SCRIPT: cards with kicker, title, epic line, task summary and tone pills; every stage heading with a count chip; rollup rows whose title posts set-scope (epic, or standalone for 'Not in an epic') then set-view board, with a labelled meter, task count and attention chip; scope and Needs attention chips posting the existing set-scope / set-attention messages; tabs as role=tab with aria-selected and arrow-key movement.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Every stage heading shows its label and a count chip, empty and non-empty alike",
+      "A card renders kicker '<KIND> · <compactId>', title, epic line, task summary and data-tone pills",
+      "Clicking a rollup row title posts set-scope for that epic (standalone for 'Not in an epic') and then set-view board; the meter exposes completionLabel and aria-valuenow/max",
+      "Scope and attention chips post set-scope / set-attention with aria-pressed reflecting the selection; arrow keys move between tabs",
+      "Text is set only through textContent and only BoardUpMessage envelopes are posted"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: a rendered card shows its kicker, title, epic line, task summary and tone pills (data-tone) in the six-column board"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: every board column heading renders its label and a count chip holding the column total, for empty and non-empty stages alike"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: clicking a rollup row title posts set-scope for that epic (standalone for 'Not in an epic') and then set-view board, and the meter exposes completionLabel and aria-valuenow/max"
+      },
+      {
+        "level": "integration",
+        "name": "board-host.test.ts: scope and attention chips post set-scope / set-attention with aria-pressed; tabs are role=tab with aria-selected and arrow-key movement"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

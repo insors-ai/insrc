@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-0b2faed872727348-S001 -->
+<!-- insrc:artifact BUILD-0b2faed872727348-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -24,5 +24,5 @@ The standalone LLD finalizer now stamps the work item's folder anchor (meta.epic
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-5f7a7cb95b643ae5-S001.json` — **insrc-build** (2026-10-04T16:26:51.846Z)
+- `.insrc/artifacts/BUILD-5f7a7cb95b643ae5-s1.json` — **insrc-build** (2026-10-04T16:26:51.846Z)
 - `docs/standalone/batch-approval-stamps-one-shared-meta-E202610025f7a7cb9/S001/BUILD.md` — **insrc-build** (2026-10-04T16:26:51.846Z)

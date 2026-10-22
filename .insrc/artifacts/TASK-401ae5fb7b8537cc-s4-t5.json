@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-afcec155-3b13-494f-a732-250eec04081d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:30.196Z",
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "401ae5fb7b8537cc",
+    "storyId": "s4",
+    "envelope": {
+      "description": "sc3 InsrcCommandId additive union + package.json palette commands",
+      "parent": {
+        "entityId": "STORY-401ae5fb7b8537cc-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-401ae5fb7b8537cc-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "13be0daf7d715ee3753293e7cf60843c0436d9cc04902d3fb5ea94d5fc538f3f",
+        "at": "2026-10-22T12:43:30.196Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:30.197Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "sc3 InsrcCommandId additive union + package.json palette commands",
+    "summary": "Additively extend the closed InsrcCommandId union in surfaces/command-registry.ts with the three new ids ('insrc.status.menu', 'insrc.status.detailed', 'insrc.status.repoConfig') — no existing member changed (same additive touch S003 made for insrc.settings.refresh). Add the two durable palette commands to package.json contributes.commands: insrc.status.detailed ('insrc: Open Detailed Status') and insrc.status.repoConfig ('insrc: Open Repo Configuration'). insrc.status.menu is the status-bar item's command (set in extension.ts), NOT a palette entry.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "InsrcCommandId includes the 3 new ids additively; no existing member removed/changed",
+      "package.json contributes.commands gains exactly the 2 palette entries (detailed + repoConfig) with their titles; insrc.status.menu is not a palette command",
+      "No new daemon capability (k3)"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "The sc3 InsrcCommandId union additively includes insrc.status.menu/detailed/repoConfig with no existing member removed"
+      },
+      {
+        "level": "unit",
+        "name": "package.json contributes.commands includes insrc.status.detailed + insrc.status.repoConfig with their titles (ac3/k6) and NOT insrc.status.menu"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

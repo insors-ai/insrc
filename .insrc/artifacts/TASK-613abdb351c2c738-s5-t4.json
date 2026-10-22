@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-482fadd5-fa81-4bba-a6e6-c452b1f21d60",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:38.761Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Closing: constraints scored, crosswalk, deferred amendments and the live hand check",
+      "parent": {
+        "entityId": "STORY-613abdb351c2c738-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-613abdb351c2c738-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-613abdb351c2c738-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "effa3d0314bf5349dd99e650f97ec86c6f51e7f12dff046a9b8ded8f8791b319",
+        "at": "2026-10-22T12:43:38.761Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:38.762Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Closing: constraints scored, crosswalk, deferred amendments and the live hand check",
+    "summary": "Score the Epic constraints k1-k5 against the finished change in the BUILD summary; carry the c-id crosswalk (c3 and c12 to read:current-behaviour, c11 to read:queue-surface); list the deferred HLD additions for the Epic-end batch, including that S005 dropped the HLD's cross-repository keep set and session-store keep predicate by owner decision; run the live hand check (send a decision from the review pane while a turn runs and with the chat panel closed; disable the queue and confirm the chat is not offered), or record it as not run with the reason and the labelled fault-injection evidence.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "the BUILD summary scores k1-k5, lists the deferred HLD additions and carries the crosswalk",
+      "the hand check is recorded as a reported live test with its evidence, or as not run with the reason and labelled evidence"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-27507c79-1e6d-4508-897c-22e3d0e6f557",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:18.246Z",
+    "epicCreatedAt": "2026-09-19T06:30:32.186Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "238917216d8fd532",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Plugin: ArtifactReviewView/OpenQuestionRef/ArtifactContentResult + DaemonGateway.artifactReviewView wrapper",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-238917216d8fd532-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-238917216d8fd532-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "093c54797a561aea73fcea02912440b6bdb5299a2ce0d28e2fbab5018ca1a6bf",
+        "at": "2026-10-22T12:43:18.246Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:18.246Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Plugin: ArtifactReviewView/OpenQuestionRef/ArtifactContentResult + DaemonGateway.artifactReviewView wrapper",
+    "summary": "Add the Kotlin mirror types (ArtifactReviewView, OpenQuestionRef data classes; ArtifactContentResult sealed = Loaded(view)|Unavailable(reason)) and a DaemonGateway.artifactReviewView(projectRootPath, mdPath) wrapper over the existing call('workflow.artifactContent', {repo, mdPath}) transport, mapping ok->Loaded(view forwarded verbatim), ok=false/DaemonUnavailableException/RuntimeException->Unavailable(reason); wire it through DaemonGatewayService. Mirrors S001's DaemonGateway.pendingArtifacts + PendingQueryResult + parseArtifacts. Unit-tested against a fake/canned-reply DaemonRpc, so it does not require t2's live handler.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "artifactReviewView maps a fake DaemonRpc ok=true(view) -> Loaded with fields forwarded verbatim (no client classification).",
+      "ok=false / DaemonUnavailableException / malformed reply -> Unavailable(reason), never Loaded-blank.",
+      "Reaches the daemon only over DaemonGateway.call (no file/DB/cloud access). Compiles under JDK21/Gradle 8.10."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "artifactReviewView: fake DaemonRpc ok=true(view) -> Loaded with fields forwarded verbatim (k1)"
+      },
+      {
+        "level": "unit",
+        "name": "artifactReviewView: ok=false / DaemonUnavailableException / malformed -> Unavailable(reason), never Loaded-blank"
+      },
+      {
+        "level": "unit",
+        "name": "UnixSocketDaemonRpc.parse (real): {result:{view}} -> Loaded end-to-end; {result:{error}} -> Unavailable (framing boundary)"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

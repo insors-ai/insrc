@@ -20,20 +20,57 @@
     "epicHash": "401ae5fb7b8537cc",
     "epicSlug": "work-framed-approved-spec-proceed-from",
     "seededFromSpec": "d18668bb33798f21",
-    "review": {
-      "artifact": "define",
-      "stage": "define",
-      "verdict": "pass",
-      "findings": [],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 0
-      },
-      "reviewedAt": "2026-09-22T10:30:14.989Z",
-      "model": "client"
+    "epicCreatedAt": "2026-09-22T10:29:17.310Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-09-22T10:33:17.857Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "b3782372a75e46a2570f23ccb531f9ffef9dac479ab68b4e6784b6f30c06cab4",
+        "at": "2026-09-22T10:29:17.310Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-22T10:33:17.857Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 0
+        },
+        "at": "2026-09-22T10:30:14.989Z",
+        "report": {
+          "entityId": "DEF-401ae5fb7b8537cc",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-DEF-401ae5fb7b8537cc-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "flavor": "new-capability",

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c77b71ff-aebd-4c33-ab52-08c6143e8a21",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.721Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "A failed last-indexed read and a failed lookup are named pipeline causes with their own codes",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad0a64756548edf2a12f2570f80111cde6fc7ebe5a6a1f2315fe867c7e5e76ee",
+        "at": "2026-10-22T12:44:36.721Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.722Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A failed last-indexed read and a failed lookup are named pipeline causes with their own codes",
+    "summary": "PIPELINE_CAUSES gains 'index-state-read-failed' and 'lookup-failed', with ShaperIndexStateReadError and ShaperLookupFailedError and one case each in errorForPipelineCause. tryExplorationPipeline catches the awaited steps.lastIndexedAt and steps.executePlan; runShaper's own freshness reads go through the same injectable reader (PipelineSteps.lastIndexedAt). Both classifyShaperError mappings (src/daemon/analyze-rpc.ts and src/analyze/orchestrator/driver.ts) map them to their codes; AnalyzeRpcErrorCode and RunErrorCode gain the two codes. Grounding: runShaper reads the freshness watermark directly through resolveRepoLastIndexedAt at src/analyze/context/driver.ts:357 (outside the injectable reader); the pipeline reads it through steps.lastIndexedAt at :1471 and awaits executePlan bare at :1473. t4 routes the :357 read through PipelineSteps.lastIndexedAt (REAL_PIPELINE_STEPS declared at :1582; its lastIndexedAt member binds resolveRepoLastIndexedAt at :1587). The two new causes are added to the expected map of src/analyze/context/__tests__/pipeline-outcome.test.ts (asserted at :418)..",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed') at runShaper's freshness read and inside the pipeline.",
+      "An executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); every PIPELINE_CAUSES member has exactly one case in errorForPipelineCause.",
+      "runAnalyze ends with 'index-state-read-failed' / 'lookup-failed' for these causes, never 'internal-error'."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline"
+      },
+      {
+        "level": "unit",
+        "name": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member"
+      },
+      {
+        "level": "unit",
+        "name": "classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings"
+      },
+      {
+        "level": "unit",
+        "name": "runAnalyze: index-state-read-failed and lookup-failed end with their own codes, not internal-error"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

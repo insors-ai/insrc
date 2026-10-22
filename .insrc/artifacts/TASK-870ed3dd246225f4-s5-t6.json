@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3cf0e990-4b6d-4475-b03c-ff93dc8d72b1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:54.669Z",
+    "epicCreatedAt": "2026-07-30T14:17:44.765Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "870ed3dd246225f4",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Add live-gated end-to-end test for oversized-scope fallback rendering",
+      "parent": {
+        "entityId": "STORY-870ed3dd246225f4-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-870ed3dd246225f4-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-870ed3dd246225f4-s5-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6cc1944744159d4dc0e6155f02ca4a37e452be52d4c25faedf44e0e129c5e9c5",
+        "at": "2026-10-22T12:43:54.669Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:54.669Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add live-gated end-to-end test for oversized-scope fallback rendering",
+    "summary": "Write the testStrategy's 'live' test level: a test invoking graphvizSubprocessRenderer.renderSvg against a real dot/d2 binary on PATH, and a test running generateDocument end-to-end for an oversized component-dependency scope, both gated to skip cleanly (not fail) when neither binary is present, per the repo's live-test skip convention.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "a live-gated test invokes graphvizSubprocessRenderer.renderSvg(dot) against a real dot or d2 binary on PATH and asserts {status:'ok'} with svg containing a well-formed <svg> root element",
+      "a live-gated test runs generateDocument for an oversized component-dependency scope end-to-end and asserts an ok DocGenOutcome with backend='fallback-subprocess' is produced",
+      "both live tests skip cleanly (not fail, not error) when neither dot nor d2 is present on PATH, following the repo's live-test env-var skip convention",
+      "the live-gated suite does not run by default in the fast test sweep and requires no network access"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "graphvizSubprocessRenderer.renderSvg(dot) with a real 'dot'/'d2' on PATH -> {status:'ok', svg} containing an <svg root"
+      },
+      {
+        "level": "live",
+        "name": "generateDocument for an oversized component-dependency scope -> ok fallback shell, self-contained offline HTML"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

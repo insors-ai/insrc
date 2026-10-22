@@ -4,7 +4,7 @@
 
 ## Reproduction
 
-In the VS Code dev chat, have a turn call insrc_present with two pending documents in one call, for example a Story's BUILD record and its code review. Observed: the review pane shows only the last one (the code review); the first (the BUILD record) is never shown, though insrc_present answers that both are presented. Expected: the reviewer sees every document the turn presented, so none awaiting a decision is missed. Seen 2026-10-18 with BUILD-dced43851723554f-S001 and CR-dced43851723554f-S001: the user approved the code review and never saw the BUILD record that carried the completion decision.
+In the VS Code dev chat, have a turn call insrc_present with two pending documents in one call, for example a Story's BUILD record and its code review. Observed: the review pane shows only the last one (the code review); the first (the BUILD record) is never shown, though insrc_present answers that both are presented. Expected: the reviewer sees every document the turn presented, so none awaiting a decision is missed. Seen 2026-10-18 with BUILD-dced43851723554f-s1 and CR-dced43851723554f-s1: the user approved the code review and never saw the BUILD record that carried the completion decision.
 
 ## Root cause
 

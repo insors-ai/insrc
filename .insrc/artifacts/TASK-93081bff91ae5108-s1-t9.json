@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d7783f45-9edb-40f6-8e07-8326d7489a28",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.724Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stop the shared validate path asserting a flag it cannot know",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-93081bff91ae5108-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dc56be00c45f4f574a8563dfd9a2b6e3c0e875879692118e2179e8aea8e0a219",
+        "at": "2026-10-22T12:44:00.724Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.725Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stop the shared validate path asserting a flag it cannot know",
+    "summary": "Remove the unconditional `standalone: false` from runValidateSession's meta write (validate.ts:163) so mergeWithPrior's `...rec.meta` spread lets the prior value survive. With t8 the renderer no longer reads the flag, which makes this belt-and-braces BY DESIGN: the two halves fail independently, and leaving a shared code path writing a value it cannot determine is exactly how this defect returns wearing different clothes.",
+    "size": "S",
+    "order": 9,
+    "acceptanceChecks": [
+      "The shared validate persist does NOT write `standalone` at all — asserted on the persisted json, not on an in-memory value",
+      "A standalone build driven through implement then validate keeps meta.standalone true and still renders '## Scope' and '## Triage rationale'",
+      "t1's TEST B (the forced meta.standalone false) is INVERTED in this same change — rewritten to assert the correct behaviour, not deleted and not skipped",
+      "MUTATION PROOF, run and recorded: restoring the unconditional `standalone: false` write turns the Scope-retention test RED",
+      "mergeWithPrior's createdAt preservation and approval stamps are untouched — a re-run still lands in the SAME folder and never un-completes a Story"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the shared validate persist does NOT write `standalone` at all — asserted on the PERSISTED json, not an in-memory value"
+      },
+      {
+        "level": "integration",
+        "name": "INVERTED characterisation B: a standalone build runs implement then validate and the record still renders '## Scope' and '## Triage rationale'"
+      },
+      {
+        "level": "integration",
+        "name": "MUTATION: restoring the unconditional `standalone: false` write turns the Scope-retention test RED"
+      },
+      {
+        "level": "unit",
+        "name": "mergeWithPrior's createdAt preservation and approval stamps are untouched — a re-run lands in the SAME folder and never un-completes a Story"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

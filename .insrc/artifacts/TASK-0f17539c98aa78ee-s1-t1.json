@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b5099ff-ec3b-41d8-bc6b-178449081185",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:12.502Z",
+    "epicCreatedAt": "2026-10-09T14:46:12.867Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f17539c98aa78ee",
+    "storyId": "s1",
+    "envelope": {
+      "description": "The enumeration record: one lookup of constraints per run, repository and topic, kept as a file",
+      "parent": {
+        "entityId": "STORY-0f17539c98aa78ee-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0f17539c98aa78ee-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "de2e47362f837a0997238f5015c0283ca6009e02acf18b728ba6cc6c0fa5d1ff",
+        "at": "2026-10-22T12:43:12.502Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:12.503Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The enumeration record: one lookup of constraints per run, repository and topic, kept as a file",
+    "summary": "Add the path entry for a run's constraint records to PATHS (src/shared/paths.ts) and a new module, src/analyze/runtimes/shared/adherence-topic-constraints.ts, with constraintsForTopic({ runId, taskId, repoPath, topic, maxSources, db }): it returns the stored enumeration when a readable record of schema version 1 for the same repository and normalised topic exists, and otherwise calls runSharedDocConstraintEnumerate for the whole repository (no area), writes the record atomically and returns it with the record's path. The key is made from the repository path, the normalised topic and maxSources. A failed enumeration writes nothing and throws on; a finished one with no constraint is written; an unreadable or mismatched record is treated as absent and overwritten; a record that cannot be written is logged and the enumeration is still returned, with no path. Includes a test seam for the enumeration's stand-in model and purgeConstraintRecords(runId). Nothing calls the module yet. Its tests are in a new file, __tests__/adherence-topic-constraints.test.ts.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A second call for the same run, repository and topic makes no enumeration and returns the same constraints and record path; a topic that differs only in case or spacing reuses the record; a different maxSources, topic or run does not.",
+      "A failed enumeration leaves no record and the next call enumerates again; an enumeration with no constraint is recorded and reused.",
+      "An unreadable record, one of another schema version and one of another topic or repository are each enumerated again and overwritten; a record that cannot be written does not make the call fail.",
+      "The record holds schemaVersion, repoPath, the topic as first written, maxSources, the time, the task that made it and the enumeration's whole output, its completeness included.",
+      "The record's path is <the run's directory>/constraints/<key>.json, and purgeConstraintRecords(runId) removes the run's records.",
+      "`npx tsc --noEmit` is clean."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is"
+      },
+      {
+        "level": "integration",
+        "name": "a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

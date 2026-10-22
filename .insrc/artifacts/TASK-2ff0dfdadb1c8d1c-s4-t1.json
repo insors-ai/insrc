@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-68e4ea4b-c546-403f-801e-0b0c23430fab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:24.304Z",
+    "epicCreatedAt": "2026-10-07T06:48:21.198Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ff0dfdadb1c8d1c",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Currency annotation types",
+      "parent": {
+        "entityId": "STORY-2ff0dfdadb1c8d1c-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2ff0dfdadb1c8d1c-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "15668b228d05a8f3904367cd4ebce76f7353cf58c98a4445f1fe59939b579098",
+        "at": "2026-10-22T12:43:24.304Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:24.305Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Currency annotation types",
+    "summary": "Add ReviewCurrency, ArtifactCurrency, EffectiveAmendment and CurrencyPassResult to src/workflow/delivery/types.ts as the HLD sc6 sketch.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "The sc6 types are exported from types.ts with exactly the sketched members and fields.",
+      "The module compiles under the repo's strict tsconfig."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "types.test.ts: 'the currency types list exactly the sketched members'"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -22,82 +22,57 @@
     "storyId": "s7",
     "lldRunId": "wf-1785670336278-n57y0r",
     "lldEffectiveHash": "688a10691972f5e2069b092dff9d1d20b3da79ca83733140f0918eaac0bc5b46",
-    "review": {
-      "artifact": "plan",
-      "stage": "plan",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "p1",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "gates.ts:326 defines requireApprovedPlan (reads planArtifactPaths json, throws when meta.approvedAt unset) — the exact template t1's requireApprovedSpec mirrors.",
-          "evidence": "CONFIRMED: src/workflow/gates.ts:326 export function requireApprovedPlan(...) — the exact reader-family template t1 mirrors.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p2",
-          "ref": "t2",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "daemon/index.ts registers a 'workflow.approve' IPC handler (resolves repoPath via p.repo||INSRC_REPO, dynamically imports ../workflow/gates.js) — the pattern t2's 'spec.resolveApproved' entry mirrors.",
-          "evidence": "CONFIRMED: src/daemon/index.ts:551 'workflow.approve' handler + :559 `await import('../workflow/gates.js')` — the repoPath-resolution + dynamic-import pattern t2 mirrors.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "t1",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "specArtifactPaths + isSpecBody + SpecArtifact exist (shipped s6) so t1 can import them from './storage.js' and './artifacts/spec.js'.",
-          "evidence": "CONFIRMED: storage.ts:214 specArtifactPaths, spec.ts:156 isSpecBody, spec.ts:66 SpecArtifact — all shipped in s6, importable by t1.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p4",
-          "ref": "t4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "approveArtifactByJsonPath (gates.ts) is the workflow-agnostic approve seam t4 exercises over a SPEC-*.md (block-verdict refuse + override).",
-          "evidence": "Confirmed by direct read this session: approveArtifactByJsonPath is defined in src/workflow/gates.ts (~L391) — the workflow-agnostic approve seam t4 exercises. The grep returned 50 matches across docs; the source symbol exists.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p5",
-          "ref": "t3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/workflow/__tests__/spec-artifact.test.ts exists as the fixture pattern (mkdtempSync + specArtifactPaths + writeAtomic) t3/t4 reuse.",
-          "evidence": "CONFIRMED: src/workflow/__tests__/spec-artifact.test.ts imports specArtifactPaths (:36) + uses it (:151); the mkdtempSync + writeAtomic tmp-repo fixture pattern is present — the exact template t3/t4 reuse.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "tasks",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The task DAG is acyclic with a valid topological order: t1 (no deps) -> t2,t3 (dep t1) -> t4 (dep t2,t3); order 1,2,3,4 respects it.",
-          "evidence": "Task DAG is acyclic and order 1..4 is a valid topological order: t1 (no deps), t2/t3 depend on t1, t4 depends on t2+t3 — no task precedes a dependency. storyDependsOn=[s6] is already shipped.",
-          "action": "No change needed.",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 6
-      },
-      "reviewedAt": "2026-08-02T11:45:32.036Z",
-      "model": "client"
+    "epicCreatedAt": "2026-08-01T11:55:48.046Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "approvedAt": "2026-08-02T11:46:07.207Z",
-    "epicCreatedAt": "2026-08-01T11:55:48.046Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "3940ca4bf68c1c89be62e5c3f6ee7af163657ad2f3f0100aec1cae56cf14af1c",
+        "at": "2026-08-02T11:44:40.509Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-08-02T11:46:07.207Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 6
+        },
+        "at": "2026-08-02T11:45:32.036Z",
+        "report": {
+          "entityId": "PLAN-abd1ecf6a5f5063e-s7",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-PLAN-abd1ecf6a5f5063e-s7-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "tasks": [

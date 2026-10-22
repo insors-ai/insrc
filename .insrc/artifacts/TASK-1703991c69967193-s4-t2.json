@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4fb0d345-bca3-412b-ad4b-f650092e0898",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:14.371Z",
+    "epicCreatedAt": "2026-09-18T10:07:09.320Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1703991c69967193",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement nextAfterIssue (the pure magnitude advance-route)",
+      "parent": {
+        "entityId": "STORY-1703991c69967193-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-1703991c69967193-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-1703991c69967193-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e1bdbf6944db1ac390b4be1ea01f8ac29c97eb19b3d17379175050658f620e29",
+        "at": "2026-10-22T12:43:14.371Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:14.372Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement nextAfterIssue (the pure magnitude advance-route)",
+    "summary": "Implement nextAfterIssue(issue: IssueArtifact, repo: string): BugfixNextCall. Read issue.meta.magnitude, re-derive the route via the consumed routeForSizeClass('bugfix', magnitude) (triage/classify.ts:36), and emit: small => a standalone insrc_build_step nextCall (issue->build, mirroring buildNextCall's trivial branch's standalone param); sized => a standalone insrc_workflow_run design.story nextCall (issue->design->plan->build). Throw invalid-magnitude when magnitude is neither 'small' nor 'sized'. Pure: reads meta only, no IO.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "magnitude='small' -> insrc_build_step standalone nextCall (no design.story/plan); magnitude='sized' -> insrc_workflow_run design.story standalone nextCall.",
+      "The emitted route matches routeForSizeClass('bugfix', magnitude) (producesLld/needsPlan consistency).",
+      "magnitude absent/invalid -> throws invalid-magnitude (no silent default). tsc clean."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "nextAfterIssue: magnitude='small' -> a standalone insrc_build_step nextCall (issue->build), no design.story/plan tool"
+      },
+      {
+        "level": "unit",
+        "name": "nextAfterIssue: magnitude='sized' -> a standalone insrc_workflow_run design.story nextCall (issue->design->plan->build)"
+      },
+      {
+        "level": "unit",
+        "name": "nextAfterIssue: the emitted route matches routeForSizeClass('bugfix', magnitude) (producesLld/needsPlan consistency)"
+      },
+      {
+        "level": "unit",
+        "name": "nextAfterIssue: the small build nextCall carries the standalone param (mirrors buildNextCall's trivial branch)"
+      },
+      {
+        "level": "unit",
+        "name": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude (no silent default route)"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

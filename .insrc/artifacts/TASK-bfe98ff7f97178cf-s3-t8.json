@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8bdcbd1-8987-4008-9886-a3d6688c8b41",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:32.585Z",
+    "epicCreatedAt": "2026-09-29T08:46:37.128Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bfe98ff7f97178cf",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Rebuild the extension, report the size delta, confirm the sweep",
+      "parent": {
+        "entityId": "STORY-bfe98ff7f97178cf-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bfe98ff7f97178cf-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bfe98ff7f97178cf-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2165102f5bc2e6c4751218577e9ff13e23d59b8606cc6802c1895559a6e10ffd",
+        "at": "2026-10-22T12:44:32.585Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:32.586Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rebuild the extension, report the size delta, confirm the sweep",
+    "summary": "The shipping act, which must come last: rebuild and reinstall the extension (esbuild bundle + VSIX) and report the size delta against the 241,713-byte baseline — the figure alternative a3 was rejected on, and therefore the number that proves the DOM-construction route kept its central promise. Also restate which artefact had to be rebuilt for which change, since conflating the daemon rebuild (t1) with the extension rebuild makes a correct change look broken.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "The extension is rebuilt and the VSIX size delta is COMPUTED from the two artefacts and reported — never typed from memory",
+      "The delta is a few KB, not megabytes, confirming the DOM-construction route avoided a3's >10x cost",
+      "The full plugin sweep passes and its count is stated, as is the docs-review suite's",
+      "The daemon rebuild (t1) and the extension rebuild (this task) are both named in the completion note, with which change each one ships"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the full plugin sweep passes and its count is stated, as is the docs-review suite's"
+      },
+      {
+        "level": "live",
+        "name": "the VSIX is rebuilt and its size delta against the 241,713-byte baseline is COMPUTED from the two artefacts and reported"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

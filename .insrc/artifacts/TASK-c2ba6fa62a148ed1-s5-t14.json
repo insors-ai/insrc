@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-486642a4-c963-4f31-926f-ff1db4d9dec4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:36.743Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s5",
+    "envelope": {
+      "description": "The daemon's built-in graph tools apply the same guard and filtering",
+      "parent": {
+        "entityId": "STORY-c2ba6fa62a148ed1-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c2ba6fa62a148ed1-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c2ba6fa62a148ed1-s5-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "505d5d7746a6ecd443cbdd3e7b79999b037a824359a60cfc9b3fe7ef543fc6ff",
+        "at": "2026-10-22T12:44:36.743Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:36.743Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The daemon's built-in graph tools apply the same guard and filtering",
+    "summary": "src/daemon/tools/builtins/graph/index.ts: graph_entity, graph_callers, graph_callees and graph_query fail with the RepoIndexingError message ('repo-indexing' first) for a named entity (or any root) under index, and leave such entities out of traversal and closure results; graph_search skips repositories under index as search.query does. Reuses the guard of t12 and the filtering of t13. Grounding: src/daemon/tools/builtins/graph/index.ts defines graph_entity (:73), graph_search (:113), graph_callers and graph_callees (one factory, :157-167) and graph_query (:308).",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "graph_entity, graph_callers, graph_callees and graph_query about a repository under index fail with 'repo-indexing'.",
+      "graph_search leaves a repository under index out; graph_query from a ready repository leaves out the entities of a repository under index."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the built-in graph tools (graph_entity, graph_callers, graph_callees, graph_query) about a repository under index fail with 'repo-indexing'; graph_search leaves such a repository out"
+      },
+      {
+        "level": "integration",
+        "name": "graph_query from a ready repository whose closure reaches a repository under index leaves that repository's entities out"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

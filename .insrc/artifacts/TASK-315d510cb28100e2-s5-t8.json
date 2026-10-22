@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c2245e8f-361a-4b56-ae32-ab1c9bdfd1c9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:26.248Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Guard build",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0910d0a615ae7ad7df8d9d08fe7997ca2e4336bd37ece915f2f0faa0ffdd9d8f",
+        "at": "2026-10-22T12:43:26.248Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:26.249Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Guard build",
+    "summary": "Call the gate with action build in the build-step implement and validate phases (src/daemon/steps/build-step/phases) before they act, deriving the Task or standalone unit from the request, and throw TeamGateRefusedError for a non-holder.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "Build implement and validate on a stage held by someone else are refused naming the holder",
+      "A repo with no policy builds as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts: build implement and validate on a stage held by someone else are refused naming the holder"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

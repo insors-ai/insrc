@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-16c99421-ce32-4272-8be8-3ebb935d7692",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:55.509Z",
+    "epicCreatedAt": "2026-10-09T14:36:42.809Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8ab2cc2edb3743df",
+    "storyId": "s1",
+    "envelope": {
+      "description": "A consumer receives every output produced under a name, and the report task's prompt presents them all",
+      "parent": {
+        "entityId": "STORY-8ab2cc2edb3743df-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-8ab2cc2edb3743df-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0897793b94bf9c4be910f0e690ece23eb6234db2e98cc54083b082ead60e4f9a",
+        "at": "2026-10-22T12:43:55.509Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:55.511Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "A consumer receives every output produced under a name, and the report task's prompt presents them all",
+    "summary": "Add the UpstreamOutput type and change upstreamOutputs to a map from output name to a list of them (src/analyze/executor/types.ts and the shared aggregate code's arguments). In the plan walk, append one entry per produced name when a task finishes ok (planner tasks included), project whole lists to a consumer, keep the dependency rules' meaning (a name is present when it has at least one output), and list every failed or skipped producer as absent whether or not a sibling produced the name. In the shared aggregate code, render today's block for a name with one output and one sub-section per task for a name with several; word the absent section per task when the name also has outputs and leave it byte-identical otherwise; count outputs for tasksAnalyzed and the log. Bring the tests that build or read the map to the new shape: aggregator.test.ts, aggregate-absent-inputs.test.ts, completeness-all-runtimes.test.ts, walker.test.ts, walker-aggregate.test.ts, walker-walk-failure.test.ts and the four live aggregate-report suites. The task is one piece because the type change does not compile in parts.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "Through the plan walk, eight tasks of one template that each produce the same name leave the report task with eight outputs under it, in plan order, each with its task id, template and params.",
+      "A root plan with four planner tasks hands its report task four child reports, each attributed to its planner task.",
+      "When one of several producers of a name fails, the report task runs on the others and is handed that producer as absent with its task id and reason; the prompt says that task's output is absent and the others under the name are available.",
+      "For a map in which every name has one output, the user message is byte-identical to the one the code rendered before the change, and when no absent name has an output the absent section is byte-identical too.",
+      "A name with several outputs is rendered with one sub-section per task in plan order, with the task id, the template and the params; a null value renders the unavailable line in its sub-section.",
+      "Each of the five aggregate-report runtimes hands every output of a name on, and tasksAnalyzed is the number of outputs.",
+      "A task that is not the report task receives every output of a name it consumes.",
+      "The existing assertions on the absent list, the task records, tasksCompleted and tasksFailed for plans with one producer per name are unchanged and pass; the assertions on what a consumer was handed are in the list form.",
+      "The four live aggregate-report suites are type-correct for the new map (they are skipped without INSRC_LIVE_TESTS).",
+      "`npx tsc --noEmit` is clean and the executor and runtimes suites pass."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params"
+      },
+      {
+        "level": "integration",
+        "name": "a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task"
+      },
+      {
+        "level": "integration",
+        "name": "when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged"
+      },
+      {
+        "level": "integration",
+        "name": "a task that is not the report task receives every output of a name it consumes"
+      },
+      {
+        "level": "unit",
+        "name": "a map in which every name has one output renders a user message byte-identical to the one rendered before the change"
+      },
+      {
+        "level": "unit",
+        "name": "a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section"
+      },
+      {
+        "level": "unit",
+        "name": "each of the five aggregate-report runtimes hands every output of a name to the shared aggregate code, and the count of tasks analysed is the number of outputs"
+      },
+      {
+        "level": "unit",
+        "name": "for a plan with one producer per name the existing assertions on the absent list, the task records, tasksCompleted and tasksFailed are kept unchanged, and the assertions on what a consumer was handed are rewritten to the list form (one entry with the expected task id, template, params and value)"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

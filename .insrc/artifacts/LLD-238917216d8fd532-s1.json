@@ -24,71 +24,61 @@
     "hldBaseRunId": "wf-1789799576767-kl7v1b",
     "hldEffectiveHash": "c93cb4358ff4bac8cafea32cce98dffe14aa21172b7d14ee226c0ebaebfb947a",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "c3",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "ArtifactMetaBase carries approvedAt (types.ts:342) and rejectedAt (types.ts:344); pending is derived from both absent, and approveWorkflowTarget (gates.ts:617) stamps approvedAt.",
-          "evidence": "src/workflow/types.ts carries approvedAt?/rejectedAt? and src/workflow/gates.ts defines approveWorkflowTarget (32 matches incl. the real source files); reads confirm types.ts:342/344.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "Artifacts persist under ARTIFACTS_DIR '.insrc/artifacts' as <KIND>-<hash>.json, and resolve.ts already enumerates that directory (artifactsDir + readdirSync) — the scan pattern listPendingArtifacts reuses.",
-          "evidence": "ARTIFACTS_DIR = '.insrc/artifacts' at src/workflow/storage.ts:53 and artifactsDir/readdirSync enumeration in resolve.ts confirmed.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "c2",
-          "kind": "closed-union",
-          "severity": "LOW",
-          "premise": "The daemon has workflow.approve/artifact.get/artifact.search but NO workflow.pending handler — it is net-new and additive.",
-          "evidence": "'workflow.approve' handler at src/daemon/index.ts:555 confirmed; 'workflow.pending' appears only in this Epic's HLD/LLD docs, never under src/ — confirming it is net-new.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "c4",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The plugin's DaemonGateway.call(method, params) one-shot socket client exists and is the transport the new pendingArtifacts wrapper extends.",
-          "evidence": "DaemonGateway.kt:69 `fun call(method,params)` and UnixSocketDaemonRpc.kt confirmed — the transport the new wrapper extends.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "c1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "s1 owns sc1 (PendingArtifactList) per the HLD, and implements the workflow.pending contract; s2/s5 consume it — consistent with the HLD story boundaries.",
-          "evidence": "The Epic HLD lists sc1 (PendingArtifactList) ownedByStory=s1; the LLD implements it and s2/s5 consume it — the cross-artifact trace holds.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 5
-      },
-      "reviewedAt": "2026-09-19T06:54:05.531Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-238917216d8fd532-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-19T07:08:36.646Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "662f4686f66c62650266be3815fb8bb1bf13b78cd17fce7964aebbff2b72571a",
+        "at": "2026-09-19T06:52:59.083Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-19T07:08:36.646Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 5
+        },
+        "at": "2026-09-19T06:54:05.531Z",
+        "report": {
+          "entityId": "LLD-238917216d8fd532-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-238917216d8fd532-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

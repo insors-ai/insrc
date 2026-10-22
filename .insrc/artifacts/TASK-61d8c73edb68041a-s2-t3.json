@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4a20ca24-0c28-4953-88a3-bc764a163822",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:39.303Z",
+    "epicCreatedAt": "2026-09-17T10:47:35.743Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "61d8c73edb68041a",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Host detection + format-safe path resolution (detectPresent)",
+      "parent": {
+        "entityId": "STORY-61d8c73edb68041a-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-61d8c73edb68041a-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-61d8c73edb68041a-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0d3dfaecaa618dbe2c34848542c72264b755839ad19476bd0a118b45a32eab8a",
+        "at": "2026-10-22T12:43:39.303Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:39.304Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Host detection + format-safe path resolution (detectPresent)",
+    "summary": "Implement detectPresent(): probe the running IDE for AI Assistant and Junie, returning only installed+enabled hosts with resolved absolute mcpConfigPath + rulesFilePath; exclude disabled/absent hosts; return empty when neither present. This task OWNS host-format recognition (the c8 external dimension isolated behind a small per-host resolver): a host whose config shape/version cannot be safely recognised is logged and omitted (fail-safe skip), so the format-agnostic writer (t2) is only ever handed a recognised, anchored file. Detection never throws.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "detectPresent returns entries only for installed+enabled hosts, each with absolute mcpConfigPath and rulesFilePath",
+      "a disabled or absent host is excluded from the result",
+      "neither host present -> empty list (no throw)",
+      "a host whose config format/shape is unrecognised is omitted + logged (fail-safe skip) so no unrecognised file ever reaches the writer, never surfaced as a partial/broken host"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DetectPresentTest#includesInstalledEnabledHostsWithResolvedPaths_excludesDisabledAndAbsent (stub host-presence inputs)"
+      },
+      {
+        "level": "unit",
+        "name": "DetectPresentTest#unrecognisedHostFormat_failSafeSkip_omittedAndLogged_neverReachesWriter"
+      },
+      {
+        "level": "unit",
+        "name": "DetectPresentTest#neitherHostPresent_returnsEmpty_noThrow"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

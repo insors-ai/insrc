@@ -21,9 +21,37 @@
     "epicSlug": "controller-code-review-silently-discards-every",
     "standalone": true,
     "magnitude": "small",
-    "approvedAt": "2026-10-04T12:52:36.912Z",
     "parentRef": {
       "slug": "controller-code-review-silently-discards-every"
+    },
+    "epicCreatedAt": "2026-10-04T05:13:54.693Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "917c542ab8e4fcb6c0b954ef15dcfb4e3dd4775a1fbd4b1120c5d6384740b0a2",
+        "at": "2026-10-04T05:13:54.693Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-04T12:52:36.912Z"
+      },
+      "signoffs": []
     }
   },
   "body": {
@@ -72,7 +100,7 @@
     {
       "id": "c7",
       "kind": "prior-artifact",
-      "ref": "CR-93081bff91ae5108-S001 — the live measurement",
+      "ref": "CR-93081bff91ae5108-s1 — the live measurement",
       "quotedText": "counts {high: 0, med: 0, low: 1}; adherence 0, conventions 0, coverage 1, quality 0 — against seven findings submitted"
     },
     {

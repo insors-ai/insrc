@@ -1,4 +1,4 @@
-<!-- insrc:artifact BUILD-764b88ed7474de35-S001 -->
+<!-- insrc:artifact BUILD-764b88ed7474de35-s1 -->
 
 # Build (standalone trivial) — Story S001
 
@@ -30,7 +30,7 @@ The BUILD, TESTS and code-review writers now store the epicSlug, epicCreatedAt a
 
 ## Changes
 
-- `.insrc/artifacts/CR-764b88ed7474de35-S001.json` — **insrc-build** (2026-10-12T05:25:02.571Z)
+- `.insrc/artifacts/CR-764b88ed7474de35-s1.json` — **insrc-build** (2026-10-12T05:25:02.571Z)
 - `.insrc/artifacts/ISSUE-764b88ed7474de35.json` — **insrc-build** (2026-10-12T05:25:02.571Z)
 - `docs/standalone/stamp-ledger-records-their-work-item-E20261012764b88ed/ISSUE.md` — **insrc-build** (2026-10-12T05:25:02.571Z)
 - `docs/standalone/stamp-ledger-records-their-work-item-E20261012764b88ed/S001/CR.md` — **insrc-build** (2026-10-12T05:25:02.571Z)

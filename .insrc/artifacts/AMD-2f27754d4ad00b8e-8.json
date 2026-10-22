@@ -1,23 +1,56 @@
 {
-  "id": "AMD-2f27754d4ad00b8e-8",
-  "epicHash": "2f27754d4ad00b8e",
-  "epicSlug": "one-common-model-every-artifact",
-  "hldBaseRunId": "wf-1792406752203-whj6zi",
-  "amendment": {
-    "type": "storyBoundary.addConsumer",
-    "contractId": "sc4",
-    "consumer": "s4"
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "createdAt": "2026-10-21T04:50:52.507Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "dec26f48e8081bb65b0ab344ca649df6d8b40b5805f36baefc4fcb7838b140f9",
+        "at": "2026-10-21T04:50:52.507Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-21T04:58:56.532Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "The HLD requires approve, review and complete to read the log tail on every call and ac9 needs completion recorded when the last step is recorded. Both need a LifecycleService with a durable History and WriteJournal, which only s4 provides, so s4 consumes sc4 and its LLD must wire a durable LifecycleService into the daemon and the approval path.",
-  "citations": [],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1792557860113-nm31as",
-    "storyId": "s3",
-    "stepId": "s4"
+  "body": {
+    "id": "AMD-2f27754d4ad00b8e-8",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "amendment": {
+      "type": "storyBoundary.addConsumer",
+      "contractId": "sc4",
+      "consumer": "s4"
+    },
+    "rationale": "The HLD requires approve, review and complete to read the log tail on every call and ac9 needs completion recorded when the last step is recorded. Both need a LifecycleService with a durable History and WriteJournal, which only s4 provides, so s4 consumes sc4 and its LLD must wire a durable LifecycleService into the daemon and the approval path.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792557860113-nm31as",
+      "storyId": "s3",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-21T04:50:52.507Z",
+    "approvedBy": "user (explicit yes in chat, 2026-10-21)"
   },
-  "proposedAt": "2026-10-21T04:50:52.507Z",
-  "status": "approved",
-  "approvedAt": "2026-10-21T04:58:56.532Z",
-  "approvedBy": "user (explicit yes in chat, 2026-10-21)"
+  "citations": []
 }

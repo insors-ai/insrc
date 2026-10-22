@@ -24,101 +24,61 @@
     "hldBaseRunId": "wf-1790009331473-c5to0q",
     "hldEffectiveHash": "1e2038ef723235b64e83ceb16211d8262911619c0f401b3886b6a4c352eda9a9",
     "hldAmendmentsApplied": [],
-    "review": {
-      "artifact": "design.story",
-      "stage": "design.story",
-      "verdict": "pass",
-      "findings": [
-        {
-          "claimId": "cl1",
-          "ref": "rpc",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts:15 defines `export async function rpc<T = unknown>(method, params, connect = () => createConnection(PATHS.sockFile)): Promise<T>` — the fn the LLD moves into src/shared/ipc-client.",
-          "evidence": "Confirmed verbatim: src/cli/client.ts:15 = `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T>`. The move-into-src/shared/ipc-client premise is grounded.",
-          "action": "None — rpc signature/location resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl2",
-          "ref": "dataModel",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "Exactly four non-test files import `rpc` from '../client.js': src/cli/services/{debug,repo,config,daemon}.ts — the importers the re-export must keep byte-compatible.",
-          "evidence": "Confirmed: the four importers src/cli/services/{config:12,daemon:17,debug:25,repo:15}.ts each `import { rpc } from '../client.js'` — exactly the inventory the byte-compatible re-export must preserve. No other non-test importer.",
-          "action": "None — importer inventory is exact.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl3",
-          "ref": "IpcClient.status",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon's real DaemonStatus (src/shared/types.ts:882) has fields uptime/repos[]/queueDepth/embeddingsPending/modelPull*/lmdbFileSizeMb? and NO `running` boolean — the basis for the reachability amendment.",
-          "evidence": "Confirmed: src/shared/types.ts:882 `export interface DaemonStatus {` with uptime/repos/queueDepth/embeddingsPending/modelPull*/lmdbFileSizeMb? and no `running` field (the test fixture at command.test.ts:32 mirrors those fields). The reachability-amendment basis holds.",
-          "action": "None — DaemonStatus shape confirmed; reachability derivation is correctly grounded.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl4",
-          "ref": "IpcClient.status",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The daemon registers a 'daemon.status' IPC handler (src/daemon/index.ts:913) returning that DaemonStatus — the call reachability() makes.",
-          "evidence": "Confirmed: src/daemon/index.ts:913 `'daemon.status': async () => {` — the real handler reachability() calls.",
-          "action": "None — daemon.status handler resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl5",
-          "ref": "IpcRequest/IpcResponse",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/shared/types.ts already exports IpcRequest (798) and IpcResponse (812) that the shared client re-uses (no mirrored copies), and IpcRequest carries the { label, pid } client envelope.",
-          "evidence": "Confirmed: src/shared/types.ts:798 IpcRequest, :812 IpcResponse, and :809 the `client?: { readonly label; readonly pid }` envelope — the shared client reuses these existing types (no mirrored copies), and the { label, pid } wire envelope is real.",
-          "action": "None — IPC types + client envelope confirmed.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl6",
-          "ref": "dataModel",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/shared/paths.ts:19 defines sockFile = join(INSRC_DIR, 'daemon.sock') — the socket path the sc1 client dials / exposes as sockFilePath.",
-          "evidence": "Confirmed: src/shared/paths.ts:19 `sockFile: join(INSRC_DIR, 'daemon.sock')` — the socket path the sc1 client dials / exposes.",
-          "action": "None — socket path resolves.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl7",
-          "ref": "dataModel",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "src/cli/client.ts's only imports are node:net + src/shared/types + src/shared/paths (all shared-safe), so extracting rpc into src/shared/ipc-client pulls no daemon internals (the k5 thin-boundary basis).",
-          "evidence": "Confirmed: src/cli/client.ts:1 imports only `{ createConnection, Socket } from 'node:net'` plus IpcRequest/IpcResponse from ../shared/types.js and PATHS from ../shared/paths.js — no daemon internals/indexer/storage on the import graph, so the extraction keeps the k5 thin boundary. (The 52 grep hits are unrelated Socket uses across the tree, not client.ts imports.)",
-          "action": "None — the thin-boundary import basis holds; a build-time import-graph test is specified to guard it.",
-          "fixability": "auto"
-        },
-        {
-          "claimId": "cl8",
-          "ref": "interactionWithShared",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "s1 implements only contracts it owns per the HLD (sc1-sc4); the adjacent-owned sc5/sc6/sc7 are named only as future consumers, not implemented here.",
-          "evidence": "Internal-consistency check (no source probe): the LLD's interactionWithShared implements only sc1-sc4 (all ownedByStory=s1 in the HLD); sc5/sc6/sc7 appear only as adjacent-owned future consumers, never designed/implemented — the scope boundary (sbdry5) holds.",
-          "action": "None — s1 stays within its owned contracts.",
-          "fixability": "auto"
-        }
-      ],
-      "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 8
-      },
-      "reviewedAt": "2026-09-21T17:20:56.910Z",
-      "model": "client"
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": "",
+      "parent": {
+        "entityId": "STORY-ad0d45c9d690f8c1-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      }
     },
-    "approvedAt": "2026-09-21T17:44:04.838Z"
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "0468650b407e4a51be6f9c057955f5c132d0fc3d24354c76e1b9c57b13fe8ef8",
+        "at": "2026-09-21T17:19:36.960Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-09-21T17:44:04.838Z"
+      },
+      "review": {
+        "revision": 0,
+        "reviewer": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "controller",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 8
+        },
+        "at": "2026-09-21T17:20:56.910Z",
+        "report": {
+          "entityId": "LLD-ad0d45c9d690f8c1-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "migrated-LLD-ad0d45c9d690f8c1-s1-review"
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "hldContextSlice": {

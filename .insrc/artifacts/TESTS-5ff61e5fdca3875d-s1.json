@@ -1,0 +1,345 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "5ff61e5fdca3875d",
+    "storyId": "s1",
+    "createdAt": "2026-10-13T06:46:35.572Z",
+    "updatedAt": "2026-10-13T06:46:35.572Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-13T06:45:42.001Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 0,
+        "contentHash": "7787dd2e0c7a409183149b6b9452d533ae6890c4c27b8c85048a277e20e46a5a",
+        "at": "2026-10-13T06:46:35.572Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "6d5b5b75",
+        "ranAt": "2026-10-13T06:46:35.572Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/render-registry.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 363,
+            "titles": [
+              {
+                "title": "renderRow dispatches to a registered renderer for its kind",
+                "result": "pass"
+              },
+              {
+                "title": "renderRow falls back to line() for an unmapped kind (incl. the reserved 'approval-request')",
+                "result": "pass"
+              },
+              {
+                "title": "the fallback renderer applies the vm cssClass (byte-identical to line(s,cls))",
+                "result": "pass"
+              },
+              {
+                "title": "a renderer that throws is caught and the row falls back to line() (per-row isolation)",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: default-collapsed wraps with the collapsed class + a ▸ icon-only chevron",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: clicking the chevron toggles collapsed<->expanded and swaps ▸/▾",
+                "result": "pass"
+              },
+              {
+                "title": "collapsible: defaultCollapsed=false starts expanded with a ▾ chevron",
+                "result": "pass"
+              },
+              {
+                "title": "renderRegistryWebviewSource() is CSP-safe: no import/remote/vscode; innerHTML only via guarded marked",
+                "result": "pass"
+              },
+              {
+                "title": "RENDER_REGISTRY_STYLE clamps the collapsed body to a 3-line preview",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel maps transcript rows: user/assistant/marker to the right kind + role",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel maps live events: assistant-delta -> assistant-text (ac2), tool-call -> tool-command (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "toViewModel is total: an unrecognised event maps to a fallback row",
+                "result": "pass"
+              },
+              {
+                "title": "parity: eval(webview toViewModel) equals host toViewModel for every sample (drift fails build)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: an assistant multi-step turn renders each step's actual text (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: a command-bearing tool-call renders the command; a command-less one renders the tool name (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "the tool-command renderer never wraps its content in the collapse primitive (k6 d)",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: appendKeyed renders once per key — a live echo and its replay twin reconcile to one row",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: distinct keys render distinct rows (two identical prompts -> two rows)",
+                "result": "pass"
+              },
+              {
+                "title": "lc1: resetKeys() clears the map so a fresh replay re-renders (restore after a live echo)",
+                "result": "pass"
+              },
+              {
+                "title": "appendKeyed(vm, null) always renders (unkeyed rows are never reconciled)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: the user and assistant-text renderers emit distinct role tones",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a >3-line USER message is wrapped in the collapse primitive (default-collapsed); a short one is not",
+                "result": "pass"
+              },
+              {
+                "title": "S003 k6 d: the tool-command renderer stays inline, never wrapped in collapse",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level JSON value renders as a formatted json code block (via marked)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): markdown renders via marked (heading + list + inline code) as HTML",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): plain prose renders as a paragraph (marked), text preserved",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): malformed JSON does not throw — it renders as markdown text",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the render source uses marked + sanitizes with guardMd (no unsanitized innerHTML)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 k6 c: inline-diff wraps its body in the collapse primitive with a caption",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): toViewModel maps a live tool-result event and its replayed twin to the SAME view-model (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): the tool-result renderer shows the command + a separator, and collapses ONLY the output",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a command-less tool-result renders no command line but still collapses the output",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — many lines; it has the chevron and the user can fold it",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish) / ISSUE-b1c7c1bc: a LONG assistant row is NEVER default-collapsed — long single line",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a short assistant row still renders in full, uncollapsed",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-b1c7c1bc (counterpart): the assistant carve-out does NOT disable collapsing for tool rows",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: the 'approval' renderer builds an icon-only approve/deny card via className/textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: card buttons invoke the registered decision sink with (requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: approving the card adds the resolved (approved) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac1: denying the card adds the resolved (rejected) class and REMOVES the actions element",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: toViewModel maps a live permission-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: the permission-outcome renderer draws a non-actionable tool + decided badge chip (green approved)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: a rejected permission-outcome reuses the red deny tint",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t6: an approval card with no decision sink registered does not throw on click",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): marked renders GFM tables (thead/tbody/th/td), ordered lists, and blockquotes",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a table-only response still renders as a table (marked GFM)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-request event to the card view-model (prompt/options/multi/requestId on meta)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): toViewModel maps a live selection-outcome event and its replayed twin to the SAME vm (dual-input)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws radio controls for single-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-request renderer draws checkbox controls for multi-select",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): confirm is disabled until >=1 is chosen; a single pick posts exactly one selection-decision with the id",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): single-select — picking a second option replaces the first (radio semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): multi-select — two checkboxes both submit; a zero-chosen confirm posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): duplicate option ids still render distinctly (keyed by index) and both are selectable",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-request card with no decision sink registered does not throw on confirm",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): the selection-outcome renderer draws a non-actionable chip listing the chosen labels",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a session-restored replay renders the resolved chip; the pending selection-request card does NOT re-surface",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a tool-result attaches to its tool row — the command is drawn ONCE",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: results pair by command; a command-less result takes the oldest pending row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an unpaired tool-result (no pending row) still renders its standalone row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a long command collapses via the chevron; a short one stays inline",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a replayed tool marker + tool-result reconcile to ONE row showing the real command",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: resetKeys drops pending tool rows so a new replay never attaches to a cleared row",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: an id-carrying result pairs ONLY with its call — an Edit result (no tool row) stays standalone",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a done/error marker settles pending rows so a later turn's result never attaches upstream",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: the stacked-result rule outranks the base .insrc-toolrow rule emitted after it",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-1163888072faa9f2: a user row settles pending rows (cancelled turn, replay) so results never attach across turns",
+                "result": "pass"
+              },
+              {
+                "title": "approval renderer: with position/total and total > 1 the card shows '1 of 3'; without them it renders exactly as before",
+                "result": "pass"
+              },
+              {
+                "title": "registry forgetKeysBefore drops only the r<n> keys below the index; withIsolatedPending runs a render with an empty pending-tool list and restores the live list afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "registry forgetPendingIn drops the pending tool entries whose node is given, and a later result for one renders as its own row",
+                "result": "pass"
+              },
+              {
+                "title": "render registry: a user row with attachments renders a chip per attachment with textContent only, a click calls the open sink with the attachment's id, and a row without attachments renders as today",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

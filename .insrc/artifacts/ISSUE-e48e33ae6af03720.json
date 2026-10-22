@@ -22,9 +22,37 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-16T17:38:47.519Z",
     "parentRef": {
       "slug": "both-cli-providers-reject-top-level"
+    },
+    "epicCreatedAt": "2026-10-16T17:38:08.183Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "c6029c8b19f9962b7f9811f53469ff196909c177d4a6fed8c7f0fd63a40ae266",
+        "at": "2026-10-16T17:38:08.183Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        },
+        "at": "2026-10-16T17:38:47.519Z"
+      },
+      "signoffs": []
     }
   },
   "body": {

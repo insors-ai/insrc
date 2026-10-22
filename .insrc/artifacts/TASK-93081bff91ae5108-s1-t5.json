@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-231a0019-3228-4047-9db6-d3f26a0383b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:44:00.714Z",
+    "epicCreatedAt": "2026-10-02T09:15:19.460Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "93081bff91ae5108",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Stamp the range base at approval, gated on the artifact's workflow, as a declared full sha",
+      "parent": {
+        "entityId": "STORY-93081bff91ae5108-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-93081bff91ae5108-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "16dc82abc260135f322dd7daa32185d9da3e3c005f6d9973104bdcd8db323f98",
+        "at": "2026-10-22T12:44:00.714Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:44:00.715Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Stamp the range base at approval, gated on the artifact's workflow, as a declared full sha",
+    "summary": "Write meta.rangeBase (HEAD at approval time) at the single approval site. s1 established three constraints the LLD could not: approveArtifactByJsonPath (gates.ts:499) is GENERIC across every artifact kind, so the stamp MUST be gated on meta.workflow rather than written unconditionally onto DEF/HLD/AMD/BUILD records; it is SYNCHRONOUS, so an await-based read cannot go there; and the base must be a FULL sha, since an abbreviation in a persisted range base can collide as history grows and a base that silently resolves to the wrong commit is the exact class of defect this ISSUE exists to remove. CRITIQUE APPLIED — the MECHANISM is now named rather than left to the build: run `git rev-parse HEAD` WITHOUT `--short` through the directory's existing synchronous execFileSync idiom (migrate-docs-tree.ts:317, tracker/github.ts:17) inside gates.ts. Do NOT call revParse (helpers.ts:40), which hard-codes `--short` and would silently persist an abbreviation that satisfies the letter of the stamp while defeating it; and do NOT widen revParse, whose eleven-plus git-builtin call sites all want the short form. The field must also be DECLARED, not merely written: gates.ts:504-512 parses meta through a narrow inline literal type, and under strict mode with exactOptionalPropertyTypes an undeclared field is at best unchecked and invisible to every downstream reader. Inert until t6 reads it.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "meta.rangeBase is DECLARED on the artifact-meta type gates.ts parses, as an optional `string | undefined` matching the repo's exactOptionalPropertyTypes convention, and that declaration is the single source every reader uses — no inline cast at the read site",
+      "Approving a PLAN stamps meta.rangeBase alongside meta.approvedAt, and the stamped value MATCHES /^[0-9a-f]{40}$/ — the length assertion is the only thing that mechanically distinguishes a full sha from revParse's abbreviated form",
+      "The stamp is produced by `git rev-parse HEAD` with no `--short`, via the synchronous execFileSync idiom already used in src/workflow/; revParse is NOT called and NOT modified",
+      "Approving a DEF, HLD, AMD or BUILD record stamps NO rangeBase — asserted per kind, because the stamp site is generic and an ungated stamp would pollute every artifact",
+      "A standalone-Small LLD IS stamped, being the only upstream that route has",
+      "An unreadable HEAD (non-git directory, or git unavailable) leaves rangeBase ABSENT and still completes the approval — never throws, never writes an empty string",
+      "The field survives a write-read-write round trip through approveArtifactByJsonPath; the spread at :537 preserves unknown keys, but the function also deliberately DELETES two keys immediately after, so this is pinned rather than assumed",
+      "meta.approvedAt, the rejection-clearing behaviour at gates.ts:539-540, and the review gate that precedes it are all undisturbed"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approving a PLAN in a real repo stamps meta.rangeBase alongside meta.approvedAt and the value MATCHES /^[0-9a-f]{40}$/ — a full sha, not revParse's abbreviation"
+      },
+      {
+        "level": "unit",
+        "name": "the generic stamp site is GATED: approving a DEF, HLD, AMD and BUILD record each stamps NO rangeBase — one assertion per kind"
+      },
+      {
+        "level": "integration",
+        "name": "a standalone-Small LLD IS stamped, being the only upstream the no-plan route has"
+      },
+      {
+        "level": "integration",
+        "name": "an unreadable HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never writes an empty string"
+      },
+      {
+        "level": "unit",
+        "name": "meta.rangeBase survives a write-read-write round trip through approveArtifactByJsonPath, and the two deliberate key deletions do not take it with them"
+      },
+      {
+        "level": "unit",
+        "name": "meta.approvedAt, rejection-clearing and the preceding review gate are undisturbed by the stamp"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

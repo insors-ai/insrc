@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc0d5832-13f8-451f-bb6d-2dbe0261ce49",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:22.778Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s9",
+    "envelope": {
+      "description": "persistReview, the one review persist helper",
+      "parent": {
+        "entityId": "STORY-2f27754d4ad00b8e-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-2f27754d4ad00b8e-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-2f27754d4ad00b8e-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fc45523488c1fd195eac9bf65f1ff750dc08f57edf756e1b2ebc6090fc905c5c",
+        "at": "2026-10-22T12:43:22.779Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:22.779Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "persistReview, the one review persist helper",
+    "summary": "Add src/workflow/review/persist-review.ts: inspect, head conflict check, store the fix through updateContent with addresses [], record the review (a 'review' log entry with the full report via t2, then lifecycle.review with the report Reference), render the markdown; a failure raises ReviewPersistError naming the step. Test src/workflow/review/__tests__/persist-review.test.ts with a failure injected at each step.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "The steps run in the stated order and the lifecycle record comes before the markdown",
+      "A failure at each step names the step and a rerun repairs the state",
+      "The auto-fix passes addresses [] so open feedback stays open"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "persist-review.test.ts: a failure at each step names the step and a rerun repairs the state"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

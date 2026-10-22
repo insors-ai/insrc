@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e1f49e8-67bb-4519-b6eb-35fbcaf97bdc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:59.160Z",
+    "epicCreatedAt": "2026-08-06T15:51:10.850Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "914cbf5ea9026b92",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Python + Go HTTP-client recognizers",
+      "parent": {
+        "entityId": "STORY-914cbf5ea9026b92-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-914cbf5ea9026b92-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-914cbf5ea9026b92-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5842647edbeafacdd1044aa607d7b65eee6cd78e0abcfb18107d6630bf36385",
+        "at": "2026-10-22T12:43:59.160Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:59.161Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Python + Go HTTP-client recognizers",
+    "summary": "Wire the Python and Go recognizers into their respective call visitors using the shared client-shape helper from t3. Python (call node): requests.{get,post,…} / httpx.{get,post,Client…} / urllib.request.urlopen / aiohttp.ClientSession requests. Go (call_expression): http.{Get,Post,PostForm} / http.NewRequest(method,url,body) / client.Do(req) where the URL/req is traceable to a literal or config expr. Each emits an unresolved CALLS_HTTP { from: callerId, to: rawUrlExpr, resolved:false } on a client match; look-alike non-HTTP calls stay plain CALLS; unextractable URLs emit nothing.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Python fixtures: requests.get(url) / httpx.get(url) / urllib.request.urlopen(url) / aiohttp each emit one CALLS_HTTP with the raw URL expr; a non-HTTP look-alike stays a plain CALLS edge.",
+      "Go fixtures: http.Get(url) / http.NewRequest(method,url,body) / client.Do(req) each emit one CALLS_HTTP with the URL arg; a non-HTTP call stays a plain CALLS edge.",
+      "In both languages an unextractable URL emits no CALLS_HTTP and a no-HTTP file yields an unchanged ParseResult."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "python recognizer: requests/httpx/urllib.urlopen/aiohttp each emit one CALLS_HTTP with the raw URL expr; look-alike stays CALLS"
+      },
+      {
+        "level": "unit",
+        "name": "python recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+      },
+      {
+        "level": "unit",
+        "name": "go recognizer: http.Get/http.NewRequest/client.Do each emit one CALLS_HTTP with the URL arg; non-HTTP call stays CALLS"
+      },
+      {
+        "level": "unit",
+        "name": "go recognizer: unextractable URL emits no CALLS_HTTP; no-HTTP file yields an unchanged ParseResult"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-317c0f23-3b09-4e4c-97c7-c597aed7e0bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T12:43:10.810Z",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Language map and the span-markup scanner",
+      "parent": {
+        "entityId": "STORY-00d80121c593053c-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-00d80121c593053c-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "71366c4e20ff995c8864fa8db6e57906fbb7fe5f8de8f78070d484998d9f4152",
+        "at": "2026-10-22T12:43:10.813Z",
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:migration",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-22T12:43:10.814Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Language map and the span-markup scanner",
+    "summary": "In the registry's page script add the extension-to-language map (case-insensitive, with Dockerfile and Makefile by name) and the string scanner that turns the highlighter's span markup into per-line runs: innermost class wins, a span crossing a newline continues on the next line, a multi-class span uses its first hljs class, a class with no hljs- prefix is classless, and any other tag or entity makes it return undefined. Both are pure and written as a reusable unit.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "the extension is matched without regard to case and a Dockerfile and a Makefile have a language",
+      "nested spans and a span that crosses a newline are flattened per line with the innermost class",
+      "a multi-class span such as hljs-title function_ uses its first hljs class, and a span with no hljs- class is classless text",
+      "markup other than a span with a class, a span close and the five entities makes the scanner return undefined"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "the extension is matched without regard to case and a Dockerfile has a language"
+      },
+      {
+        "level": "unit",
+        "name": "nested spans and a span that crosses a newline are flattened per line with the innermost class"
+      },
+      {
+        "level": "unit",
+        "name": "the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class"
+      },
+      {
+        "level": "unit",
+        "name": "a span with no hljs- class is read as classless text and does not reject the section"
+      },
+      {
+        "level": "unit",
+        "name": "highlighter output that is not plain spans and text falls back to plain text"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,490 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792649831046-21lohx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-22T06:21:10.203Z",
+    "epicCreatedAt": "2026-10-22T05:17:03.574Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 239134,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "afcfa02717f5bf7d",
+    "epicSlug": "add-cross-thread-named-lock-framework",
+    "storyId": "S001",
+    "lldRunId": "wf-1792645989237-ndo9ea",
+    "lldEffectiveHash": "afcfa02717f5bf7dcb148e5ebcbe40714d202a8789d1d47a071f6af53b4b86a0",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-22T06:23:26.169Z",
+    "rangeBase": "df57a1fd131fd252b7ba008f7536bc7e7adda2dc"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means writing one new module that lays a lock table over a single SharedArrayBuffer and gives every daemon thread a Web Locks-shaped request/query API on it, with waiting done by Atomics.waitAsync and every state change behind a short per-name mutex. The work goes bottom-up: block layout and validation, then grants and release, then waiting with timeout and abort, then query and reclaim for dead workers. It ends by making the lock block a required part of every daemon worker's start and proving the semantics across real worker threads, including workers killed in the middle of a grant.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Lock block layout, name table, install and errors",
+        "summary": "Create src/shared/locks/lock-manager.ts with the block layout (header with capacities and acquisition counter; name table with claim state storing the claimer threadId, hash, length and 64 name bytes; per-name lock word, pending-exclusive count, version word and mutex word; holder and pending tables), createLockBlock(capacity?) with defaults 64/512/256, installLockManager(block) and getLockManager() (private block outside a daemon, as getStoreGuard), the error classes LockTimeoutError, LockNestedError, LockCapacityError and LockArgumentError, argument validation (name 1-64 UTF-8 bytes, activity <= 64 B, reason <= 1024 B, timeoutMs >= 0, ifAvailable not combined with signal or timeoutMs; refused, never truncated), and name resolution: find-or-claim a name slot by CAS so every thread resolves one name to one slot, with LockCapacityError('names') when full.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "createLockBlock stores its capacities in the header and a second installLockManager over the same block reads the same layout",
+          "Each invalid argument is refused with LockArgumentError naming the argument and limit, before any shared state changes",
+          "Resolving the same name twice returns the same slot; a full name table gives LockCapacityError naming the names table",
+          "getLockManager() without an install returns a manager over a private block"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "createLockBlock stores capacities in the header and two managers over one block read the same layout"
+          },
+          {
+            "level": "unit",
+            "name": "invalid arguments are refused with LockArgumentError and nothing is truncated"
+          },
+          {
+            "level": "unit",
+            "name": "a name resolves to one slot and a full name table gives LockCapacityError(names)"
+          },
+          {
+            "level": "unit",
+            "name": "getLockManager without an install uses a private block"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "request: grant, release on settle, ifAvailable, writer preference, nesting, test hooks",
+        "summary": "Implement LockManager.request for grants without waiting: every change to a name's state happens inside its per-name mutex (CAS 0 -> threadId, a few atomic writes, never across an await); exclusive is granted only when the lock word is 0, shared only when it is >= 0 and no exclusive is pending; the holder slot is claimed by CAS 0 -> -1, filled (mode, threadId, acquisition id, since, metadata) and published last as name index + 1 before the callback runs; a full holder table gives back the lock word and throws LockCapacityError('holders'). The callback runs in try/finally and release (lock word, holder slot cleared, version bumped, notify) happens on resolve, reject or synchronous throw. ifAvailable grants now or calls back with (null, blockedBy) listing holders and, for shared, pending exclusive requests, without registering as pending. An AsyncLocalStorage set of held names refuses a same-name re-request and an unbounded nested wait for another name with LockNestedError. A test-only grant hook (set through an exported setter, a no-op by default) is called at three points: inside the critical section, after the lock word changes, and before the holder record is published, so integration tests can pause and terminate a worker mid-grant.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Exclusive excludes exclusive and shared, shared admits shared, and mode defaults to exclusive",
+          "ifAvailable returns callback(null, blockedBy) with the holders and their metadata when unavailable and leaves no pending entry",
+          "The lock is released and its holder slot cleared after resolve, reject and a synchronous throw, and the error is rethrown unchanged",
+          "A same-name nested request and a nested different-name request with neither ifAvailable nor timeoutMs fail with LockNestedError; a nested different name with ifAvailable or timeoutMs is allowed",
+          "A full holder table gives LockCapacityError naming holders and leaves the lock word unchanged",
+          "The grant hook fires at its three points in order when set and changes nothing when unset"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive"
+          },
+          {
+            "level": "unit",
+            "name": "ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending"
+          },
+          {
+            "level": "unit",
+            "name": "the lock is released and its holder slot cleared on resolve, reject and synchronous throw"
+          },
+          {
+            "level": "unit",
+            "name": "same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed"
+          },
+          {
+            "level": "unit",
+            "name": "a full holder table gives LockCapacityError(holders) and leaves no grant behind"
+          },
+          {
+            "level": "unit",
+            "name": "the grant hook fires at its three points in order and is inert when unset"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Waiting requests: pending table, waitAsync, timeout, abort, arrival order",
+        "summary": "Add the waiting path to request: a pending slot (claim -1, publish name index + 1 last) with mode, threadId and since; an exclusive waiter increments the pending-exclusive count under the name's mutex from the moment it starts waiting until it is granted, times out or aborts (writer preference), and the count and the lock word are read and changed only under that mutex so a shared grant never interleaves with an exclusive waiter registering; waiters wait with Atomics.waitAsync on the version word with a keep-alive timer, never Atomics.wait; timeoutMs rejects with LockTimeoutError carrying name, waitedMs and holders; a signal aborted before queuing rejects with signal.reason before touching shared state, and an abort while waiting cleans up and rejects with signal.reason; clean-up removes the pending slot, decrements the count and bumps the version. Requests for one name from one thread are served in arrival order through a per-thread queue; a full pending table gives LockCapacityError('pending').",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A waiting exclusive request is granted when the holder releases, and while it waits a new ifAvailable shared request gets null with it in blockedBy and a waiting shared request runs only after it",
+          "The pending-exclusive count and the lock word are read and changed only under the name's mutex",
+          "timeoutMs rejects with LockTimeoutError naming the holders, and afterwards the pending entry and pending-exclusive count are gone",
+          "An already-aborted signal rejects before queuing; an abort while waiting rejects with signal.reason and cleans up",
+          "Requests for one name from one thread are granted in arrival order",
+          "A full pending table gives LockCapacityError naming pending and queues nothing",
+          "A thread whose only pending work is a lock wait stays alive until the wait completes"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared"
+          },
+          {
+            "level": "unit",
+            "name": "timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count"
+          },
+          {
+            "level": "unit",
+            "name": "an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up"
+          },
+          {
+            "level": "unit",
+            "name": "requests for one name from one thread are served in arrival order"
+          },
+          {
+            "level": "unit",
+            "name": "a full pending table gives LockCapacityError(pending) and queues nothing"
+          },
+          {
+            "level": "unit",
+            "name": "a lock wait keeps its thread alive until it completes"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "query, reclaim and watchWorker",
+        "summary": "Implement query() as a synchronous lock-free read of held and pending slots that reads a slot only when its state is published (> 0), so a slot being written is omitted but never torn; reclaim(threadId) on the main thread takes over any name mutex whose value is the dead threadId, removes that thread's holder and pending records, recomputes each affected name's lock word and pending-exclusive count from the remaining published records, releases the mutex, bumps the version and notifies, resets name slots left 'being claimed' by that thread to free, and logs each reclaimed entry as a warning with name, mode and metadata; watchWorker(worker) captures worker.threadId at registration and calls reclaim with it on 'exit'. Unit tests prove mutex takeover and name-claim reset by writing a foreign threadId into the mutex and name state words directly; the real-termination proof is t6's.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "query() lists held and pending entries with mode, threadId, since and metadata, and omits metadata when none was given",
+          "query() run concurrently with grants never returns a slot in its being-written state",
+          "reclaim(threadId) releases that thread's holds and pending requests, recomputes the lock word and pending-exclusive count, and wakes waiters",
+          "With a foreign threadId written into a name's mutex word and a name slot's claim state, reclaim(that threadId) takes over the mutex, recounts, and resets the claim to free",
+          "watchWorker reclaims using the threadId captured at registration"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "query lists held and pending entries with mode, threadId, since and metadata"
+          },
+          {
+            "level": "unit",
+            "name": "query never returns a slot in its being-written state"
+          },
+          {
+            "level": "unit",
+            "name": "reclaim releases a thread's holds and pending requests, recounts and wakes waiters"
+          },
+          {
+            "level": "unit",
+            "name": "reclaim takes over a mutex and resets a name claim left by a foreign threadId"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "DaemonWorkerInit.lockBlock and startDaemonWorker install",
+        "summary": "Add the required lockBlock field to DaemonWorkerInit beside guardBlock (src/daemon/threads/worker-entry.ts:25-30) and install it in startDaemonWorker with installLockManager; update the callers src/daemon/threads/__tests__/worker-stores.test.ts:42, :57 and :96 (create a lock block and pass it) and src/daemon/threads/__tests__/helpers/store-worker.ts:23-24 (read it from workerData and pass it).",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "DaemonWorkerInit.lockBlock is required and tsc fails on a call without it",
+          "startDaemonWorker installs the lock block so getLockManager() on the worker uses the shared block",
+          "worker-stores.test.ts passes with the updated callers"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a daemon worker and the main thread contend for the same named lock"
+          },
+          {
+            "level": "integration",
+            "name": "worker-stores tests pass with the lock block passed to startDaemonWorker"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Cross-thread integration tests with real workers",
+        "summary": "Add a helper worker script under src/shared/locks/__tests__/helpers that runs scripted lock operations (request with options, hold until told, release, query, nested requests, and the t2 grant hook set to pause at a chosen point) and reports outcomes, and an integration test file proving the semantics across threads sharing one block: main shared vs worker ifAvailable exclusive, wake within 50 ms of release, writer preference across three workers, reclaim of a terminated holder and waiter, metadata read across threads, startDaemonWorker sharing the lock with the main thread, opposite-order nested bounded waits ending in one LockTimeoutError, watchWorker reclaiming without an explicit call, and termination at each point of a grant leaving nothing held.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Every integration subject in the LLD test strategy has a passing test using real worker_threads",
+          "A worker terminated at each paused point of a grant leaves nothing held after watchWorker's reclaim and another worker then gets the lock",
+          "Two workers taking x then y and y then x with bounded nested waits: one gets LockTimeoutError, the other completes, nothing stays held"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5",
+          "c7",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a worker's ifAvailable exclusive gets null while the main thread holds shared, then gets the lock"
+          },
+          {
+            "level": "integration",
+            "name": "a waiting worker is woken within 50 ms of another worker's release"
+          },
+          {
+            "level": "integration",
+            "name": "writer preference across three workers"
+          },
+          {
+            "level": "integration",
+            "name": "terminated holder and waiter are reclaimed and a third worker gets the lock"
+          },
+          {
+            "level": "integration",
+            "name": "holder metadata written on one worker is read on another"
+          },
+          {
+            "level": "integration",
+            "name": "opposite-order nested bounded waits end in one LockTimeoutError and nothing stays held"
+          },
+          {
+            "level": "integration",
+            "name": "watchWorker reclaims a terminated worker's hold and pending request without an explicit reclaim"
+          },
+          {
+            "level": "integration",
+            "name": "a worker terminated at each point of a grant leaves nothing held"
+          },
+          {
+            "level": "integration",
+            "name": "watchWorker uses the threadId captured at registration"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "exclusive excludes exclusive and shared; shared admits shared; mode defaults to exclusive",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "ifAvailable: granted when free; callback(null, blockedBy) with the holders and their metadata when not; it never registers as pending",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "writer preference: with an exclusive request waiting, an ifAvailable shared request gets null with the pending exclusive in blockedBy and a waiting shared request waits until the exclusive has run",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "release on resolve, reject, synchronous throw and abort, with the holder slot cleared each time",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "timeoutMs: LockTimeoutError naming the holders, and the pending entry and pending-exclusive count are gone afterwards",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "signal: an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "same-name nesting on one async chain fails with LockNestedError; a nested different name is allowed with ifAvailable or timeoutMs and refused as an unbounded wait",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "query(): held and pending entries with mode, threadId, since and metadata",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "capacity: a full holder or pending or name table gives LockCapacityError and leaves no grant behind",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "arguments: empty or over-long name, over-long activity or reason, negative timeout and ifAvailable with signal/timeout are refused with LockArgumentError and nothing is truncated",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "requests for one name from one thread are served in arrival order",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "holder and pending slots: query() run concurrently with grants never returns a slot in its being-written state",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the main thread holds shared, a worker's ifAvailable exclusive gets null with the main thread as blocker, and gets the lock after the main thread releases",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a worker waiting for exclusive is woken and granted when another worker releases (no polling: the wait ends within 50 ms of the release)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "writer preference across threads: shared holders on worker A, exclusive waiter on worker B, a new shared request on worker C is refused (ifAvailable) and B is granted when A releases",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a worker terminated while holding exclusive (and another while waiting) is reclaimed by reclaim(threadId) on the main thread; a third worker then gets the lock and query() shows no entry for the dead threads",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "holder metadata written on one worker is read by query() and blockedBy on another",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "startDaemonWorker installs the lock block, so a daemon worker and the main thread contend for the same named lock",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "two workers taking x then y and y then x with bounded nested waits: one gets LockTimeoutError, the other completes, nothing stays held",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "watchWorker: a worker terminated while holding a named lock and waiting for another has both reclaimed without any explicit reclaim call in the test",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a worker terminated at each point of a grant (test hooks pause it inside the critical section, after the lock word changes, and before publishing its record) leaves nothing held after watchWorker's reclaim; another worker then gets the lock",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "watchWorker reclaims using the threadId captured at registration even though worker.threadId reads -1 after exit",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api LockManager.request"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api LockManager.query"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api LockManager.reclaim"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api createLockBlock and installLockManager"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api watchWorker"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges Lock block (SharedArrayBuffer)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges DaemonWorkerInit.lockBlock"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    }
+  ]
+}

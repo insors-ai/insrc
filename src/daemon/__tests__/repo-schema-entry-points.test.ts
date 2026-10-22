@@ -25,6 +25,7 @@ import { handleTriageStep } from '../steps/triage-step/handler.js';
 import { handleWorkflowStep } from '../steps/workflow-step/handler.js';
 import { codeReviewRunStart } from '../code-review-rpc.js';
 import { listTemplatesRpc } from '../artifacts-rpc.js';
+import { repoSchemaRefusalOfInput } from '../repo-schema-guard.js';
 import { handleRepoConvert } from '../repo-convert.js';
 import { handleTrackerAttach } from '../tracker-attach.js';
 import { handleTrackerSyncComments } from '../tracker-sync-comments.js';
@@ -61,6 +62,10 @@ test('repo-schema-entry-points.test.ts: each daemon entry point refuses an uncon
 
 		assert.throws(() => prepareWorkflowRun({ workflow: 'define', focus: 'x', repo }), NAMING, 'workflow.run refuses');
 		await assert.rejects(listTemplatesRpc({ repoRoot: repo }), NAMING, 'artifacts.listTemplates refuses a repository root');
+
+		// a later phase carries only the run's state token: it is not checked against another repository the fallback names
+		assert.equal(repoSchemaRefusalOfInput({ phase: 'plan', state: 'tok' }, repo), undefined);
+		assert.match(repoSchemaRefusalOfInput({ phase: 'start' }, repo) ?? '', NAMING);
 
 		// repo.convert is exempt, and a converted repository passes the guard
 		assert.equal('error' in (await handleRepoConvert({ repo }, undefined)), false, 'repo.convert previews an unconverted repository');

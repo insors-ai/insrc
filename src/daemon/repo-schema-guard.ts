@@ -35,8 +35,14 @@ export function repoSchemaRefusal(repo: string | undefined): string | undefined 
 	}
 }
 
-/** {@link repoSchemaRefusal} for the `repo` field of a step input, falling back to `fallback` (the caller's INSRC_REPO). */
+/**
+ * {@link repoSchemaRefusal} for the `repo` field of a step input, falling back to `fallback` (the caller's INSRC_REPO). A later phase
+ * of a run carries only the `state` token of the run, which belongs to the repository the run started on and which the start already
+ * checked: with no `repo` of its own it is not checked against the fallback, which may be another repository.
+ */
 export function repoSchemaRefusalOfInput(input: unknown, fallback: string | undefined = process.env['INSRC_REPO']): string | undefined {
-	const repo = (input as { repo?: unknown } | null)?.repo;
-	return repoSchemaRefusal(typeof repo === 'string' && repo.length > 0 ? repo : fallback);
+	const { repo, state } = (input ?? {}) as { repo?: unknown; state?: unknown };
+	if (typeof repo === 'string' && repo.length > 0) return repoSchemaRefusal(repo);
+	if (typeof state === 'string' && state.length > 0) return undefined;
+	return repoSchemaRefusal(fallback);
 }

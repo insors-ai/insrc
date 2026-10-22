@@ -39,11 +39,12 @@ export async function handleRepoConvert(params: unknown, repoEnv: string | undef
 	if (mode !== 'preview' && mode !== 'apply') return { error: `unknown mode ${String(mode)}: use 'preview' or 'apply'` };
 	if (!existsSync(repoPath) || !statSync(repoPath).isDirectory()) return { error: `${repoPath} is not a repository directory` };
 	try {
+		// the tracker, when the repository has one, is read by both modes: the plan lists the pre-s8 attach comments on its issues
+		const gate = openTracker(repoPath);
 		// a preview opens no store and no sidecar: opening them creates files, and a preview writes nothing
-		if (mode === 'preview') return { mode, plan: await planConversion(repoPath, { rules: CONVERSION_RULES }) };
+		if (mode === 'preview') return { mode, plan: await planConversion(repoPath, { rules: CONVERSION_RULES, ...('port' in gate ? { tracker: gate.port } : {}) }) };
 		const entry = lifecycleFor(repoPath);
 		const history = new History(createFileSidecarStore(repoPath));
-		const gate = openTracker(repoPath);
 		const deps: ConversionDeps = {
 			store: entry.store, history, now: () => new Date(), actor: MIGRATION_ACTOR,
 			taskSets: new TaskSets({ repoPath, store: entry.store, service: entry.service, history }),

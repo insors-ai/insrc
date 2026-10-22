@@ -173,6 +173,6 @@ test('the delivery IPC types list exactly the sketched members', () => {
 function recordStub(): Parameters<DeliveryMarkdownPort['markdownOf']>[0] {
 	return {
 		artifactId: 'BUILD-h-s1', kind: 'BUILD', workItemHash: 'h', storyIdRaw: 's1', storyOrdinal: 1,
-		approval: { state: 'pending', approvedAt: null, rejectedAt: null }, createdAt: null, epicCreatedAt: null, meta: {}, body: {},
+		approval: { state: 'pending', at: null }, createdAt: null, epicCreatedAt: null, meta: {}, body: {},
 	};
 }

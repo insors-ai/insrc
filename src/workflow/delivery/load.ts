@@ -47,20 +47,22 @@ export function kindOfFile(fileName: string): DeliveryArtifactKind | null {
 	return (DELIVERY_ARTIFACT_KINDS as readonly string[]).includes(prefix) ? prefix as DeliveryArtifactKind : null;
 }
 
-function approvalOf(fields: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
-	const approvedAt = asString(fields['approvedAt']);
-	const rejectedAt = asString(fields['rejectedAt']);
-	const status = asString(fields['status']);
-	const state: ApprovalState = approvedAt !== null || status === 'approved' ? 'approved'
-		: rejectedAt !== null || status === 'rejected' ? 'rejected'
-		: 'pending';
-	return { state, approvedAt, rejectedAt };
+/** The statuses of an artifact that was approved and has moved on or is still approved. */
+const APPROVED_STATUSES: readonly string[] = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed'];
+
+/** Approval as the lifecycle records it: the status decides, and the time is that of the approval. A rejection has no time on the head. */
+function approvalOf(meta: Readonly<Record<string, unknown>>): ArtifactRecord['approval'] {
+	const lifecycle = asObject(meta['lifecycle']);
+	const status = lifecycle === null ? null : asString(lifecycle['status']);
+	const state: ApprovalState = status !== null && APPROVED_STATUSES.includes(status) ? 'approved' : status === 'rejected' ? 'rejected' : 'pending';
+	const approval = lifecycle === null ? null : asObject(lifecycle['approval']);
+	return { state, at: state === 'approved' && approval !== null ? asString(approval['at']) : null };
 }
 
 /**
- * Lift one parsed store file into an ArtifactRecord: an AMD from its flat
- * shape, every other kind from { meta, body }. Returns a RecordLoadFailure
- * for an unknown prefix or a record without the shape its kind needs.
+ * Lift one parsed store file into an ArtifactRecord from its { meta, body }.
+ * Returns a RecordLoadFailure for an unknown prefix or a record without the
+ * shape its kind needs.
  */
 export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord | RecordLoadFailure {
 	const kind = kindOfFile(fileName);
@@ -69,21 +71,6 @@ export function liftStoreFile(fileName: string, parsed: unknown): ArtifactRecord
 	}
 	const artifactId = fileName.replace(/\.json$/, '');
 	const top = asObject(parsed);
-	if (kind === 'AMD') {
-		if (top === null) return { fileName, reason: 'missing-meta', detail: 'amendment record is not an object' };
-		const { amendment, ...meta } = top;
-		return {
-			artifactId, kind,
-			workItemHash:  asString(top['epicHash']),
-			storyIdRaw:    null,
-			storyOrdinal:  null,
-			approval:      approvalOf(top),
-			createdAt:     asString(top['proposedAt']),
-			epicCreatedAt: null,
-			meta,
-			body:          amendment,
-		};
-	}
 	const meta = top === null ? null : asObject(top['meta']);
 	if (top === null || meta === null) return { fileName, reason: 'missing-meta', detail: 'record has no meta object' };
 	const storyIdRaw = asString(meta['storyId']);

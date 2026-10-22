@@ -28,25 +28,24 @@ export interface ArtifactRecord {
 	/** File stem, e.g. 'LLD-<hash>-s1'. */
 	readonly artifactId: string;
 	readonly kind: DeliveryArtifactKind;
-	/** meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC; top-level epicHash for an AMD. */
+	/** meta.epicHash; meta.issueHash for an ISSUE; meta.specHash for a SPEC. */
 	readonly workItemHash: string | null;
 	/** meta.storyId exactly as written. */
 	readonly storyIdRaw: string | null;
 	/** Canonical ordinal of storyIdRaw; null when absent or unparseable. */
 	readonly storyOrdinal: number | null;
-	/** meta.approvedAt / meta.rejectedAt; for an AMD, top-level approvedAt / rejectedAt / status. */
+	/** From meta.lifecycle: the status decides the state, `at` is the time of the approval (null unless approved). */
 	readonly approval: {
-		readonly state:      ApprovalState;
-		readonly approvedAt: string | null;
-		readonly rejectedAt: string | null;
+		readonly state: ApprovalState;
+		readonly at:    string | null;
 	};
-	/** meta.createdAt; top-level proposedAt for an AMD. */
+	/** meta.createdAt. */
 	readonly createdAt: string | null;
 	/** meta.epicCreatedAt when stamped. */
 	readonly epicCreatedAt: string | null;
-	/** The record's meta; for a flat AMD, every top-level field except `amendment`. */
+	/** The record's meta. */
 	readonly meta: Readonly<Record<string, unknown>>;
-	/** The record's body; for a flat AMD, its `amendment` object. */
+	/** The record's body. */
 	readonly body: unknown;
 }
 

@@ -94,8 +94,7 @@ function wellFormedFindings(value: unknown): Finding[] | null {
 }
 
 function approvalOf(record: ArtifactRecord): ArtifactGate['approval'] {
-	const { state, approvedAt, rejectedAt } = record.approval;
-	return { state, at: state === 'approved' ? approvedAt : state === 'rejected' ? rejectedAt : null };
+	return { state: record.approval.state, at: record.approval.at };
 }
 
 /** A design artifact's review, read from meta.review; blocking is set by the caller. */

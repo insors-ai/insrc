@@ -19,6 +19,8 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { History } from '../artifact-core/history.js';
+import { flatToHead } from '../convert/amendments.js';
+import { backfillHead } from '../convert/backfill.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import type { Actor, Lifecycle, Reference, Review, Status } from '../artifact-core/types.js';
 import { reviewEntryOf, reviewReference } from '../review/report-log.js';
@@ -110,4 +112,28 @@ export function writeHead(repo: string, artifactId: string, head: { readonly met
 export async function recordReview(repo: string, artifactId: string, report: ReviewReport, entryId = `fixture-review-${artifactId}`): Promise<Reference> {
 	await new History(new FileSidecarStore(repo)).appendLog(artifactId, reviewEntryOf({ id: entryId, actor: SYSTEM, timestamp: report.reviewedAt, report }));
 	return reviewReference(artifactId, entryId);
+}
+
+const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
+
+/**
+ * A store file written in the vocabulary of the legacy stamps (`meta.approvedAt`, `rejectedAt`, a flat amendment) as the file
+ * the lifecycle model stores for it, mapped by the conversion's own functions. For a fixture whose captured data predates the
+ * model (the delivery tests' real store files). A file that is not a head, or that the conversion cannot read, comes back
+ * unchanged, so a test of a load failure still sees one.
+ */
+export function asLifecycleFile(fileName: string, raw: unknown, now = '2026-10-07T00:00:00.000Z'): unknown {
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw;
+	const artifactId = fileName.replace(/\.json$/, '');
+	let json = raw as Record<string, unknown>;
+	if (artifactId.startsWith('AMD-') && (typeof json['meta'] !== 'object' || json['meta'] === null)) {
+		const proposedAt = typeof json['proposedAt'] === 'string' ? json['proposedAt'] : undefined;
+		const out = flatToHead(json, proposedAt);
+		if ('problem' in out) return raw;
+		json = out.head;
+	}
+	if (typeof json['meta'] !== 'object' || json['meta'] === null || typeof json['body'] !== 'object' || json['body'] === null) return raw;
+	try {
+		return JSON.parse(backfillHead({ head: { artifactId, json }, hasLog: false, now, actor: MIGRATION }).converted.bytes);
+	} catch { return raw; }
 }

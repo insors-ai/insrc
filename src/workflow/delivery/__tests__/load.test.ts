@@ -13,8 +13,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ARTIFACTS_DIR } from '../../storage.js';
-import { loadArtifactRecordSet, nodeStoreFs } from '../load.js';
+import { liftStoreFile, loadArtifactRecordSet, nodeStoreFs } from '../load.js';
 import { DeliveryStoreUnreadableError, type ReadonlyStoreFs } from '../types.js';
+import { approvedMeta, asLifecycleFile, draftMeta, rejectedMeta } from '../../__tests__/lifecycle-fixtures.js';
 import { REAL_STORE } from './fixtures.js';
 
 const NOW = () => '2026-10-07T12:00:00.000Z';
@@ -24,7 +25,7 @@ function storeRepo(files: Readonly<Record<string, unknown>>): string {
 	const dir = join(repo, ARTIFACTS_DIR);
 	mkdirSync(dir, { recursive: true });
 	for (const [name, value] of Object.entries(files)) {
-		writeFileSync(join(dir, name), typeof value === 'string' ? value : JSON.stringify(value, null, 2));
+		writeFileSync(join(dir, name), typeof value === 'string' ? value : JSON.stringify(asLifecycleFile(name, value), null, 2));
 	}
 	return repo;
 }
@@ -48,7 +49,7 @@ const SPEC = { meta: { specHash: '5555555555555555', createdAt: '2026-10-01T00:0
 const DEF  = { meta: { epicHash: '1111111111111111', epicCreatedAt: '2026-10-01T00:00:00.000Z', seededFromSpec: '5555555555555555' }, body: {} };
 const HLD  = { meta: { epicHash: '1111111111111111', epicCreatedAt: '2026-10-01T00:00:00.000Z', rejectedAt: '2026-10-02T00:00:00.000Z' }, body: {} };
 
-test('every kind in a temporary store is lifted, AMD from its flat shape', () => {
+test('every kind in a temporary store is lifted, an amendment like the others', () => {
 	const repo = storeRepo({
 		...REAL_STORE,
 		'SPEC-5555555555555555.json': SPEC,
@@ -76,11 +77,10 @@ test('every kind in a temporary store is lifted, AMD from its flat shape', () =>
 		const amd = byId.get('AMD-761a43a6fa645815-1');
 		assert.ok(amd);
 		assert.equal(amd.workItemHash, '761a43a6fa645815');
-		assert.deepEqual(amd.approval, { state: 'approved', approvedAt: '2026-08-05T05:03:58.498Z', rejectedAt: null });
+		assert.deepEqual(amd.approval, { state: 'approved', at: '2026-08-05T05:03:58.498Z' });
 		assert.equal(amd.createdAt, '2026-08-05T04:47:34.061Z');
 		assert.equal('amendment' in amd.meta, false);
-		assert.equal(amd.meta['status'], 'approved');
-		assert.deepEqual(amd.body, { type: 'storyBoundary.addStory', storyId: 's9', internal: "Private implementation of s9: Wait for a fresh index before grounding a Story's code review" });
+		assert.deepEqual((amd.body as { amendment: unknown }).amendment, { type: 'storyBoundary.addStory', storyId: 's9', internal: "Private implementation of s9: Wait for a fresh index before grounding a Story's code review" });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -167,6 +167,34 @@ test('an unparseable storyId keeps storyIdRaw with storyOrdinal null', () => {
 		assert.ok(lld);
 		assert.equal(lld.storyIdRaw, 'x');
 		assert.equal(lld.storyOrdinal, null);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('load.test.ts: approval state comes from the lifecycle', () => {
+	const meta = { epicHash: '2222222222222222', epicCreatedAt: '2026-10-01T00:00:00.000Z', createdAt: '2026-10-01T00:00:00.000Z' };
+	const repo = storeRepo({
+		'DEF-2222222222222222.json':      { meta: { ...meta, ...approvedMeta({ at: '2026-10-02T00:00:00.000Z' }) }, body: {} },
+		'HLD-2222222222222222.json':      { meta: { ...meta, ...rejectedMeta() }, body: {} },
+		'LLD-2222222222222222-s1.json':   { meta: { ...meta, storyId: 's1', ...draftMeta() }, body: {} },
+		'LLD-2222222222222222-s2.json':   { meta: { ...meta, storyId: 's2', lifecycle: { ...(approvedMeta()['lifecycle'] as object), status: 'completed' } }, body: {} },
+		'LLD-2222222222222222-s3.json':   { meta: { ...meta, storyId: 's3', lifecycle: { ...(approvedMeta()['lifecycle'] as object), status: 'in-signoff' } }, body: {} },
+		'LLD-2222222222222222-s4.json':   { meta: { ...meta, storyId: 's4', lifecycle: { ...(draftMeta()['lifecycle'] as object), status: 'pending-review' } }, body: {} },
+	});
+	try {
+		const set = loadArtifactRecordSet(repo, undefined, NOW);
+		assert.deepEqual(set.failures, []);
+		const approval = (id: string) => set.records.find(r => r.artifactId === id)?.approval;
+		assert.deepEqual(approval('DEF-2222222222222222'), { state: 'approved', at: '2026-10-02T00:00:00.000Z' });
+		assert.deepEqual(approval('HLD-2222222222222222'), { state: 'rejected', at: null });
+		assert.deepEqual(approval('LLD-2222222222222222-s1'), { state: 'pending', at: null });
+		assert.equal(approval('LLD-2222222222222222-s2')?.state, 'approved', 'a completed unit was approved');
+		assert.equal(approval('LLD-2222222222222222-s3')?.state, 'approved', 'a head in signoff was approved');
+		assert.equal(approval('LLD-2222222222222222-s4')?.state, 'pending');
+		// the legacy stamps on a head with no lifecycle say nothing: only the lifecycle decides
+		const stamped = liftStoreFile('PLAN-2222222222222222-s1.json', { meta: { ...meta, storyId: 's1', approvedAt: '2026-10-03T00:00:00.000Z', rejectedAt: '2026-10-04T00:00:00.000Z', status: 'approved' }, body: {} });
+		assert.deepEqual('approval' in stamped ? stamped.approval : null, { state: 'pending', at: null });
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

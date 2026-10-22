@@ -55,13 +55,13 @@ test('every real-shape fixture builds a valid ArtifactRecord with its identity f
 	assert.equal(d880.createdAt, '2026-08-04T19:09:56.031Z');
 	assert.equal(get('BUILD-d88062a6e63aa312-s1').approval.state, 'approved');
 
-	// Flat AMD: hash from top-level epicHash, approval from top-level fields, body is the amendment.
+	// AMD: a head like the others; its flat stamps became the lifecycle, and the amendment sits in the body.
 	const amd = get('AMD-761a43a6fa645815-1');
 	assert.equal(amd.workItemHash, '761a43a6fa645815');
 	assert.equal(amd.approval.state, 'approved');
-	assert.equal(amd.approval.approvedAt, '2026-08-05T05:03:58.498Z');
+	assert.equal(amd.approval.at, '2026-08-05T05:03:58.498Z');
 	assert.equal(amd.createdAt, '2026-08-05T04:47:34.061Z');
-	assert.equal((amd.body as { storyId: string }).storyId, 's9');
+	assert.equal((amd.body as { amendment: { storyId: string } }).amendment.storyId, 's9');
 	assert.equal('amendment' in amd.meta, false);
 
 	const ext = get('EXT-761a43a6fa645815-s9');

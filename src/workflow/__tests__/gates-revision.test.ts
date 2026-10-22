@@ -20,6 +20,7 @@ import { dirname, join } from 'node:path';
 import { ackStaleArtifact, appendStoryToDefine, rejectArtifactByJsonPath } from '../gates.js';
 import { defineArtifactPaths } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
@@ -61,22 +62,23 @@ test('approve through the lifecycle leaves the revision and the body unchanged',
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('ack-stale and reject leave the revision and the body unchanged', () => {
+test('ack-stale and reject through the lifecycle leave the revision and the body unchanged', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-rev-'));
 	try {
 		const json = seed(repo);
 		const body0 = JSON.stringify(read(json).body);
-		// meta-only: ack-stale
-		ackStaleArtifact(json, 'reviewed');
+		const service = createRepoLifecycle(repo).service;
+		// ack-stale: marks the Define stale against its HLD and acknowledges it, in the lifecycle
+		await ackStaleArtifact(json, 'reviewed', { lifecycle: service });
 		let d = read(json);
 		assert.equal(d.meta['revision'], 3);
 		assert.equal(JSON.stringify(d.body), body0);
 
-		// meta-only: reject
-		rejectArtifactByJsonPath(json, 'not yet');
+		// reject
+		await rejectArtifactByJsonPath(json, 'not yet', { lifecycle: service });
 		d = read(json);
 		assert.equal(d.meta['revision'], 3);
-		assert.ok(d.meta['rejectedAt']);
+		assert.equal(d.meta['lifecycle'].status, 'rejected');
 		assert.equal(JSON.stringify(d.body), body0);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

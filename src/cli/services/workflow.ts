@@ -61,6 +61,7 @@ import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/git
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { openTracker } from '../../workflow/tracker-auto.js';
 import { lifecycleFor, repoOfArtifactPath } from '../../daemon/lifecycle-registry.js';
+import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
 import { syncPlanTasks } from '../../daemon/tasks-sync.js';
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
@@ -199,9 +200,7 @@ export function chainText(repoPath: string, epicHash: string): string {
 export async function approve(artifactPath: string, withTracker = true, overrideReview?: string): Promise<ApproveOutcome> {
 	const jsonPath = jsonPathForMd(artifactPath);
 	// the approval is made in the lifecycle of the repository that holds the artifact
-	const repoPath = repoOfArtifactPath(jsonPath);
-	if (repoPath === undefined) throw new Error(`no repository holds ${jsonPath}: it is not under a .insrc/artifacts folder`);
-	const approval = await approveArtifactByJsonPath(jsonPath, { lifecycle: lifecycleFor(repoPath).service, ...(overrideReview !== undefined ? { overrideReview } : {}) });
+	const approval = await approveArtifactByJsonPath(jsonPath, { lifecycle: lifecycleOfArtifact(jsonPath), ...(overrideReview !== undefined ? { overrideReview } : {}) });
 	// An approved plan makes the Story's Tasks artifacts, before their issues are pushed; never fails the approval
 	const tasks = approval.workflow === 'plan' ? await syncPlanTasks(approval.path) : undefined;
 	if (!withTracker) return { approval, ...(tasks !== undefined ? { tasks } : {}) };
@@ -222,8 +221,16 @@ export async function approve(artifactPath: string, withTracker = true, override
 	};
 }
 
-export function reject(artifactPath: string, reason: string): RejectionResult {
-	return rejectArtifactByJsonPath(jsonPathForMd(artifactPath), reason);
+/** The service of the repository that holds the artifact at `jsonPath`. */
+function lifecycleOfArtifact(jsonPath: string): LifecycleService {
+	const repoPath = repoOfArtifactPath(jsonPath);
+	if (repoPath === undefined) throw new Error(`no repository holds ${jsonPath}: it is not under a .insrc/artifacts folder`);
+	return lifecycleFor(repoPath).service;
+}
+
+export async function reject(artifactPath: string, reason: string): Promise<RejectionResult> {
+	const jsonPath = jsonPathForMd(artifactPath);
+	return rejectArtifactByJsonPath(jsonPath, reason, { lifecycle: lifecycleOfArtifact(jsonPath) });
 }
 
 export interface ReviewFindingsResult {
@@ -335,8 +342,9 @@ export async function readEntitiesForRepoFromDaemon(repoPath: string): Promise<E
 	return reply;
 }
 
-export function ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string } {
-	return ackStaleArtifact(jsonPathForMd(artifactPath), reason);
+export async function ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }> {
+	const jsonPath = jsonPathForMd(artifactPath);
+	return ackStaleArtifact(jsonPath, reason, { lifecycle: lifecycleOfArtifact(jsonPath) });
 }
 
 export function amendments(repoPath: string, epicHash: string): readonly AmendmentRecord[] {

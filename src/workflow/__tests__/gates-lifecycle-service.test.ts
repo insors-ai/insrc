@@ -28,7 +28,10 @@ import { createCompletionEvidence } from '../artifact-core/completion-evidence.j
 import { History } from '../artifact-core/history.js';
 import { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
-import { approveWorkflowTarget } from '../gates.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
+import { durableKit } from '../artifact-core/__tests__/durable-kit.js';
+import { ackStaleArtifact, approveWorkflowTarget, rejectArtifactByJsonPath } from '../gates.js';
+import { staleAckOf } from '../artifact-core/stale-ack.js';
 import { reviewArtifactFile } from '../review/run-artifact.js';
 import { artifactJsonPath } from '../storage.js';
 import { H, alice, artifact, bob, clock, kit } from '../artifact-core/__tests__/store-kit.js';
@@ -70,7 +73,7 @@ test('with a service, an explicit override over an advisory-blocked code review 
 		const build = await k.store.read(BUILD);
 		assert.equal(build.lifecycle.status, 'completed', 'the BUILD record was completed with its Story');
 		assert.equal(build.lifecycle.approval?.override?.reason, 'known gap, tracked elsewhere');
-		assert.equal(typeof readHead(k, BUILD).meta['approvedAt'], 'string', 'the legacy stamp still follows');
+		assert.equal(readHead(k, BUILD).meta['approvedAt'], undefined, 'and no stamp follows');
 
 		// the Story and then the Epic completed once, with the override reason on the Story's entry
 		const story = await k.store.readWithHistory(STORY);
@@ -160,46 +163,41 @@ test('with a service, a review auto-fix or BUILD hook rewrite keeps the log in s
 	} finally { k.done(); }
 });
 
-test('without a service the approval and review paths behave as before and meta.approvedAt is still stamped', async () => {
+test('without a service one is built over the repository files, and the approval is the lifecycle\'s', async () => {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
 		await k.store.write(artifact(PLAN), alice);
-		const logBefore = (await k.store.readWithHistory(PLAN)).changeLog.length;
 		const result = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: artifactJsonPath(k.repo, PLAN) }, { enforce: false });
 		assert.equal(result.approved.length, 1);
 		assert.equal(result.skipped.length, 0);
-		assert.equal(typeof readHead(k, PLAN).meta['approvedAt'], 'string');
-		const after = await k.store.readWithHistory(PLAN);
-		assert.equal(after.lifecycle.status, 'draft', 'the lifecycle is not touched without a service');
-		assert.equal(after.changeLog.length, logBefore, 'and nothing is logged');
+		assert.equal(readHead(k, PLAN).meta['approvedAt'], undefined, 'no stamp');
+		assert.equal((await k.store.read(PLAN)).lifecycle.status, 'approved', 'the lifecycle is approved');
+		const log = await createRepoLifecycle(k.repo).history.log(PLAN);
+		assert.equal(log.filter(e => e.operation === 'approve').length, 1, 'and the approval is logged, in the files of the repository');
 	} finally { k.done(); }
 });
 
-test('with a service, an approval the service refuses takes the legacy stamp back, and a review made before the current revision is not mirrored', async () => {
+test('with a service, an approval the service refuses leaves the head as it was, and a review bound to the revision lets it through', async () => {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
 		const lld = `LLD-${H}-s1`;
 		await k.store.write(artifact(lld), alice);
-		// the legacy review stamp is older than the revision it sits on
 		const path = artifactJsonPath(k.repo, lld);
-		const head = readHead(k, lld);
-		head.meta['review'] = { artifact: 'LLD', stage: 'design.story', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 }, reviewedAt: '2020-01-01T00:00:00.000Z', model: 'm', reviewedBy: 'daemon' };
-		writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
 		const before = readFileSync(path, 'utf8');
 		const svc = serviceFor(k);
 
+		// a design record with no review bound to its revision is refused
 		const refused = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
 		assert.deepEqual(refused.approved, []);
 		assert.equal(refused.skipped.length, 1);
 		assert.match(refused.skipped[0]?.reason ?? '', /review/i);
-		assert.equal(readFileSync(path, 'utf8'), before, 'the legacy stamp was taken back');
+		assert.equal(readFileSync(path, 'utf8'), before, 'the head is as it was');
 		assert.equal((await k.store.read(lld)).lifecycle.status, 'draft');
 
-		// a review made after the revision is mirrored onto the lifecycle and the approval goes through
-		head.meta['review'] = { ...(head.meta['review'] as object), reviewedAt: '2099-01-01T00:00:00.000Z' };
-		writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
+		// the other party reviews it: the review is bound to the revision and the approval goes through
+		await svc.apply(lld, 'review', bob, { review: { reviewer: bob, party: 'daemon', verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } });
 		const ok = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
 		assert.equal(ok.skipped.length, 0, JSON.stringify(ok.skipped));
 		const approved = await k.store.read(lld);
@@ -208,7 +206,7 @@ test('with a service, an approval the service refuses takes the legacy stamp bac
 	} finally { k.done(); }
 });
 
-test('with a service, an artifact in a status the table has no approval from is refused and its legacy stamp taken back', async () => {
+test('with a service, an artifact in a status the table has no approval from is refused and left as it is', async () => {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
@@ -220,8 +218,47 @@ test('with a service, an artifact in a status the table has no approval from is 
 		const result = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
 		assert.deepEqual(result.approved, []);
 		assert.match(result.skipped[0]?.reason ?? '', /cannot be approved from rejected/);
-		assert.equal(readFileSync(path, 'utf8'), before, 'the legacy stamp was taken back');
+		assert.equal(readFileSync(path, 'utf8'), before, 'nothing was written');
 		assert.equal((await k.store.read(PLAN)).lifecycle.status, 'rejected');
 	} finally { k.done(); }
 });
 
+test('gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService', async () => {
+	const k = durableKit();
+	try {
+		await k.store.write(artifact(`DEF-${H}`), alice);
+		await k.store.write(artifact(`HLD-${H}`), alice);
+		const lld = `LLD-${H}-s1`;
+		await k.store.write(artifact(lld, { }), alice);
+		const svc = new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce: false, history: new History(k.sidecar) }), now: clock() });
+		const path = artifactJsonPath(k.repo, lld);
+		const stamps = ['approvedAt', 'rejectedAt', 'rejectReason', 'staleAckedAt', 'staleAckedReason', 'reviewOverride'];
+		const noStamps = (): void => { for (const f of stamps) assert.equal(readHead(k, lld).meta[f], undefined, f); };
+
+		// stale acknowledgement: the artifact is marked stale against its HLD, then acknowledged; the entry keeps the reason and the time
+		const ack = await ackStaleArtifact(path, 'known inconsistency, scheduled', { lifecycle: svc, actor: bob });
+		assert.equal(ack.path, path);
+		assert.equal(ack.reason, 'known inconsistency, scheduled');
+		const afterAck = await k.store.readWithHistory(lld);
+		assert.deepEqual(afterAck.changeLog.filter(e => e.operation === 'mark-stale' || e.operation === 'ack-stale').map(e => e.operation), ['mark-stale', 'ack-stale']);
+		assert.equal(afterAck.lifecycle.stale, undefined, 'the acknowledgement clears the stale mark');
+		assert.deepEqual(staleAckOf(k.repo, lld), { at: ack.ackedAt, reason: 'known inconsistency, scheduled' });
+		assert.equal(ack.ackedAt, afterAck.changeLog.find(e => e.operation === 'ack-stale')?.timestamp);
+		noStamps();
+
+		// rejection: the lifecycle takes the artifact to rejected and the entry keeps the reason
+		const rejection = await rejectArtifactByJsonPath(path, 'not enough detail', { lifecycle: svc, actor: bob });
+		assert.equal(rejection.rejectReason, 'not enough detail');
+		const afterReject = await k.store.readWithHistory(lld);
+		assert.equal(afterReject.lifecycle.status, 'rejected');
+		const entry = afterReject.changeLog.find(e => e.operation === 'reject');
+		assert.deepEqual([entry?.outcome?.result, entry?.outcome?.summary, entry?.actor.id], ['rejected', 'not enough detail', bob.id]);
+		assert.equal(rejection.rejectedAt, entry?.timestamp);
+		noStamps();
+
+		// an empty reason is refused before the lifecycle is asked, and a rejected artifact cannot be rejected again
+		await assert.rejects(rejectArtifactByJsonPath(path, '  ', { lifecycle: svc }), /non-empty/);
+		await assert.rejects(rejectArtifactByJsonPath(path, 'again', { lifecycle: svc }), /not a step from rejected/);
+		await assert.rejects(ackStaleArtifact(path, '', { lifecycle: svc }), /reason is required/);
+	} finally { k.done(); }
+});

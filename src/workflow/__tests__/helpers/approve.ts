@@ -5,12 +5,16 @@
 import { dirname } from 'node:path';
 
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
-import { approveArtifactByJsonPath } from '../../gates.js';
-import type { ApprovalResult } from '../../gates.js';
+import { approveArtifactByJsonPath, rejectArtifactByJsonPath } from '../../gates.js';
+import type { ApprovalResult, RejectionResult } from '../../gates.js';
 
 /** The repository root of a head at `<repo>/.insrc/artifacts/<id>.json`. */
 export const repoOfHead = (jsonPath: string): string => dirname(dirname(dirname(jsonPath)));
 
 export function approveJson(jsonPath: string, overrideReview?: string): Promise<ApprovalResult> {
 	return approveArtifactByJsonPath(jsonPath, { lifecycle: createRepoLifecycle(repoOfHead(jsonPath)).service, ...(overrideReview !== undefined ? { overrideReview } : {}) });
+}
+
+export function rejectJson(jsonPath: string, reason: string): Promise<RejectionResult> {
+	return rejectArtifactByJsonPath(jsonPath, reason, { lifecycle: createRepoLifecycle(repoOfHead(jsonPath)).service });
 }

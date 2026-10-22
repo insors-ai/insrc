@@ -115,6 +115,9 @@ export class LifecycleService {
 				for (const member of members) await this.reopenMember(member, id, by);
 			} else if (op === 'approve' && detail.override !== undefined) {
 				outcome = { result: 'override', summary: detail.override.reason };
+			} else if ((op === 'reject' || op === 'ack-stale' || op === 'withdraw') && detail.reason !== undefined) {
+				// the reason is the whole point of the entry: the head keeps no copy of it
+				outcome = { result: op === 'reject' ? 'rejected' : op === 'ack-stale' ? 'acknowledged' : 'withdrawn', summary: detail.reason };
 			} else if (op === 'review' && detail.review !== undefined) {
 				const counts = detail.review.counts;
 				outcome = { result: detail.review.verdict, summary: `reviewed by the ${detail.review.party}: ${detail.review.verdict}`, data: { counts } };

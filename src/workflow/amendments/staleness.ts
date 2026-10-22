@@ -26,7 +26,9 @@
  */
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
+
+import { staleAckOf } from '../artifact-core/stale-ack.js';
 
 import type { HldArtifact } from '../artifacts/hld.js';
 import type { LldArtifact } from '../artifacts/lld.js';
@@ -96,10 +98,7 @@ export function scanLldStaleness(
 			continue;
 		}
 		const storyId = meta.storyId ?? storyIdFromName;
-		const metaExt = meta as unknown as { staleAckedAt?: string; staleAckedReason?: string };
-		const ackedStale = metaExt.staleAckedAt !== undefined
-			? { at: metaExt.staleAckedAt, reason: metaExt.staleAckedReason ?? '' }
-			: undefined;
+		const ackedStale = staleAckOf(repoPath, basename(path).replace(/\.json$/, ''));
 
 		if (meta.hldEffectiveHash === currentEffective) {
 			out.push({ path, storyId, stale: false, currentEffective, storedEffective: meta.hldEffectiveHash, ...(ackedStale !== undefined ? { ackedStale } : {}) });
@@ -116,23 +115,4 @@ export function scanLldStaleness(
 		out.push({ path, storyId, stale: true, staleReason: reason, currentEffective, storedEffective: meta.hldEffectiveHash, ...(ackedStale !== undefined ? { ackedStale } : {}) });
 	}
 	return out;
-}
-
-// ---------------------------------------------------------------------------
-// Ack helpers
-// ---------------------------------------------------------------------------
-
-/** Record a staleness override on the LLD artifact meta. Returns
- *  the record shape written into `meta.staleAckedAt` +
- *  `meta.staleAckedReason` so the CLI can print a receipt. */
-export interface StaleAck {
-	readonly staleAckedAt:      string;
-	readonly staleAckedReason:  string;
-}
-
-export function makeStaleAck(reason: string): StaleAck {
-	if (typeof reason !== 'string' || reason.trim().length === 0) {
-		throw new Error(`ack-stale reason is required`);
-	}
-	return { staleAckedAt: new Date().toISOString(), staleAckedReason: reason };
 }

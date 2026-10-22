@@ -11,7 +11,9 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { approveArtifactByJsonPath, approveWorkflowTarget } from '../gates.js';
+import { approveWorkflowTarget } from '../gates.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approveJson } from './helpers/approve.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import { contentHash } from '../artifact-core/lifecycle.js';
 import { reviewArtifactFile } from '../review/run-artifact.js';
@@ -43,7 +45,7 @@ function head(workflow: string, stored: 'matching' | 'mismatched' | 'empty', ext
 	}, null, 2) + '\n';
 }
 const read = (p: string): string => readFileSync(p, 'utf8');
-const isApproved = (p: string): boolean => (JSON.parse(read(p)) as { meta?: { approvedAt?: string | undefined } | undefined }).meta?.approvedAt !== undefined;
+const isApproved = (p: string): boolean => approvalStateOf((JSON.parse(read(p)) as { meta?: unknown }).meta) === 'approved';
 
 test('approveWorkflowTarget refuses a conflicted BUILD target in both branches before ensureBuildRecordOnCompletion rewrites it', async () => {
 	await withRepo(async (repo, dir) => {
@@ -82,9 +84,9 @@ test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head 
 		writeFileSync(plan, head('plan', 'mismatched'));
 		const before = read(plan);
 
-		// approve: LifecycleConflictError before the stamp, synchronously
-		assert.throws(() => approveArtifactByJsonPath(plan), (e: unknown) => e instanceof LifecycleConflictError && e.reason === 'hash-mismatch');
-		assert.equal(read(plan), before, 'nothing was stamped');
+		// approve: LifecycleConflictError before anything is approved
+		await assert.rejects(approveJson(plan), (e: unknown) => e instanceof LifecycleConflictError && e.reason === 'hash-mismatch');
+		assert.equal(read(plan), before, 'nothing was approved');
 		// on the workflow path the same head comes back in skipped[]
 		const viaWorkflow = await approveWorkflowTarget({ repoPath: repo, artifactPath: plan }, { enforce: false });
 		assert.deepEqual(viaWorkflow.approved, []);
@@ -106,9 +108,9 @@ test('approveArtifactByJsonPath and reviewArtifactFile refuse a conflicted head 
 		for (const stored of ['empty', 'matching'] as const) {
 			const p = artifactJsonPath(repo, `PLAN-${HASH}-s${stored === 'empty' ? 2 : 3}`);
 			writeFileSync(p, head('plan', stored));
-			const result = approveArtifactByJsonPath(p);
+			const result = await approveJson(p);
 			assert.equal(result.path, p);
-			assert.ok(isApproved(p), `${stored}: stamped`);
+			assert.ok(isApproved(p), `${stored}: approved`);
 		}
 	});
 });

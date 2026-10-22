@@ -74,11 +74,9 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 		file: 'src/workflow/gates.ts', class: 'mixed', via: 'both',
 		sites: [
 			{ fn: 'appendStoryToDefine', kind: 'content' },
-			{ fn: 'ackStaleArtifact', kind: 'meta-only' },
 			{ fn: 'approveArtifactByJsonPath', kind: 'meta-only' },
-			{ fn: 'rejectArtifactByJsonPath', kind: 'meta-only' },
 		],
-		note: 'the extend path changes body.stories; approve, reject and ack-stale change only meta',
+		note: 'the extend path changes body.stories; approve stamps meta.rangeBase after the lifecycle approves (reject and ack-stale write no head)',
 	},
 	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content' }], note: 'apply changes the body; accept, override and defer append a resolution entry to the log (report-file.ts, through the sidecar store) and write no head' },
 	{ file: 'src/workflow/review/run-artifact.ts', class: 'mixed', via: 'both', sites: [{ fn: 'reviewArtifactFile', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },

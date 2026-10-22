@@ -32,8 +32,6 @@ export {
 	computeHldEffectiveHash,
 } from './effective.js';
 export {
-	makeStaleAck,
 	scanLldStaleness,
-	type StaleAck,
 	type StaleLldEntry,
 } from './staleness.js';

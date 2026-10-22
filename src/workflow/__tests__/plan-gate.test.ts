@@ -24,8 +24,10 @@ import {
 	ArtifactNotApprovedError,
 	readPlanUpstream,
 	requireApprovedLld,
+	ackStaleArtifact,
 } from '../gates.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../storage.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvedMeta, rejectedMeta } from './lifecycle-fixtures.js';
@@ -72,7 +74,6 @@ interface LldMetaOpts {
 	readonly approved?:      boolean;
 	readonly rejected?:      boolean;
 	readonly effectiveHash?: string;
-	readonly staleAckedAt?:  string;
 	readonly standalone?:    boolean;
 }
 
@@ -85,7 +86,6 @@ function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
 	};
 	if (opts.rejected) Object.assign(meta, rejectedMeta({ at: '2026-01-02T00:00:00Z' }));
 	else if (opts.approved) Object.assign(meta, approvedMeta({ at: '2026-01-01T00:00:00Z' }));
-	if (opts.staleAckedAt) meta['staleAckedAt'] = opts.staleAckedAt;
 	if (opts.standalone) meta['standalone'] = true;
 	writeFileSync(lp.json, JSON.stringify({
 		meta,
@@ -143,7 +143,9 @@ test('requireApprovedLld: returns the LLD when stale but stale-acked', async () 
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
 		await seedDefineAndHld(repo);
-		seedLld(repo, 's1', { approved: true, effectiveHash: 'stale-different-hash', staleAckedAt: '2026-01-03T00:00:00Z' });
+		const json = seedLld(repo, 's1', { approved: true, effectiveHash: 'stale-different-hash' });
+		assert.throws(() => requireApprovedLld(repo, HASH, 's1'), /stale/);
+		await ackStaleArtifact(json, 'accepted', { lifecycle: createRepoLifecycle(repo).service });
 		const lld = requireApprovedLld(repo, HASH, 's1');
 		assert.equal(lld.meta.storyId, 's1');
 	} finally { rmSync(repo, { recursive: true, force: true }); }

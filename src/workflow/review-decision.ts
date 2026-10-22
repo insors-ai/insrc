@@ -40,6 +40,7 @@ import type { Actor, Feedback } from './artifact-core/types.js';
 import type { FeedbackService } from './feedback/feedback-service.js';
 import { feedbackAnchorOf } from './feedback/legacy-anchor.js';
 import { approvalActorOf } from './artifact-core/approval-actor.js';
+import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
 import { approveWorkflowTarget, jsonPathForMd, rejectArtifactByJsonPath, type WorkflowApproveResult } from './gates.js';
 
 const log = getLogger('workflow:review-decision');
@@ -97,7 +98,7 @@ export interface DecisionFeedback {
 export interface ReviewDecisionDeps {
 	readonly reviewer?:    ReviewerDeps | undefined;
 	readonly approve?:     typeof approveWorkflowTarget | undefined;
-	/** The repository's durable LifecycleService; the daemon passes its registry. Without it the approval runs head-only. */
+	/** The repository's durable LifecycleService; the daemon passes its registry. Without it one is built over the repository's files. */
 	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 	readonly reject?:      typeof rejectArtifactByJsonPath | undefined;
 	/** The repository's feedback service; the daemon passes its registry's. Without it a decision's comments cannot be saved. */
@@ -195,7 +196,7 @@ export async function handleReviewDecision(
 			}
 		} else if (decision === 'reject') {
 			reason = comments.find(c => c.anchor === undefined)?.comment ?? `Rejected in the review pane by ${author}`;
-			(deps.reject ?? rejectArtifactByJsonPath)(jsonPath, reason);
+			await (deps.reject ?? rejectArtifactByJsonPath)(jsonPath, reason, { lifecycle: deps.lifecycleFor?.(repoPath) ?? createRepoLifecycle(repoPath).service, actor: named ?? approvalActorOf(undefined) });
 			outcome = 'rejected';
 		} else {
 			outcome = 'recorded';

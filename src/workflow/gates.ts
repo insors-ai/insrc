@@ -24,8 +24,8 @@ import { basename, join } from 'node:path';
 
 import { approvalStateOf } from './artifact-core/approval-view.js';
 import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
+import { staleAckOf } from './artifact-core/stale-ack.js';
 import { getEffectiveHld } from './amendments/effective.js';
-import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
@@ -303,7 +303,7 @@ export function readLldArtifact(repoPath: string, epicHash: string, storyId: str
  *  rejected, OR stale. Staleness is defined in exactly ONE place:
  *  this reuses `computeHldEffectiveHash` + the same base-runId/approved-
  *  amendment comparison `scanLldStaleness` uses, and honours a
- *  `meta.staleAckedAt` override. The `plan` workflow's upstream gate —
+ *  stale acknowledgement (an 'ack-stale' entry of the LLD's log). The `plan` workflow's upstream gate —
  *  the throwing peer of `requireApprovedHld`. */
 export function requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact {
 	const lld   = readLldArtifact(repoPath, epicHash, storyId);
@@ -328,8 +328,7 @@ export function requireApprovedLld(repoPath: string, epicHash: string, storyId: 
 	}
 	// Staleness — recompute the current effective HLD hash the same way
 	// `scanLldStaleness` does, and compare to the LLD's stored value.
-	const staleAckedAt = (lld.meta as { staleAckedAt?: string }).staleAckedAt;
-	if (staleAckedAt === undefined || staleAckedAt.length === 0) {
+	if (staleAckOf(repoPath, lldArtifactId(epicHash, storyId)) === undefined) {
 		const baseHld = readBaseHld(repoPath, epicHash);
 		const amendmentIds = listApprovedAmendments(repoPath, epicHash).map(a => a.id);
 		const currentEffective = computeHldEffectiveHash(baseHld.meta.runId, amendmentIds);
@@ -507,22 +506,32 @@ export function readBuildUpstream(repoPath: string, epicHash: string, storyId: s
 // Stale-ack helper
 // ---------------------------------------------------------------------------
 
-/** Record a stale-ack override on an LLD artifact meta. Reads
- *  `<lldJsonPath>`, adds `staleAckedAt` + `staleAckedReason`,
- *  writes atomically. */
-export function ackStaleArtifact(jsonPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string } {
+/**
+ * Acknowledge that an LLD is stale against its HLD, with a reason. The lifecycle marks the artifact stale against the HLD first when
+ * it is not marked yet, then takes the acknowledgement; the change log keeps the time and the reason, which the plan gate and the
+ * staleness scan read.
+ */
+export async function ackStaleArtifact(jsonPath: string, reason: string, opts: DecisionOptions): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }> {
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
 	}
-	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: Record<string, unknown> };
+	if (typeof reason !== 'string' || reason.trim().length === 0) throw new Error(`ack-stale reason is required`);
+	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { epicHash?: string } };
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	const ack = makeStaleAck(reason);
-	const next = { ...artifact, meta: { ...artifact.meta, ...ack } };
-	writeArtifact(jsonPath, next, 'meta-only');
-	return { path: jsonPath, ackedAt: ack.staleAckedAt, reason: ack.staleAckedReason };
+	const { lifecycle } = opts;
+	const id = artifactIdOf(jsonPath);
+	const actor = opts.actor ?? GATE_ACTOR;
+	const seen = await lifecycle.inspect(id);
+	if (seen !== undefined && seen.lifecycle.stale === undefined) {
+		const hldId = typeof artifact.meta.epicHash === 'string' ? hldArtifactId(artifact.meta.epicHash) : undefined;
+		if (hldId === undefined) throw new IllegalTransitionError(`${id} names no HLD it could be stale against`);
+		const hld = await lifecycle.inspect(hldId);
+		await lifecycle.apply(id, 'mark-stale', actor, { upstream: { upstream: { entityId: hldId, type: 'HLD', relation: 'derived-from' }, upstreamRevision: hld?.lifecycle.revision.number ?? 0 } });
+	}
+	const done = await lifecycle.apply(id, 'ack-stale', actor, { reason });
+	return { path: jsonPath, ackedAt: done.entry.timestamp, reason };
 }
 
 // ---------------------------------------------------------------------------
@@ -655,7 +664,6 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const stored = readReviewRecordOf(jsonPath);
 	const lifecycleVerdict = seen?.lifecycle.review?.verdict;
 	const effective = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) : lifecycleVerdict;
-	let needsOverride = false;
 	if (effective === 'block') {
 		if (!overridden) {
 			const res = stored?.resolutions ?? {};
@@ -668,7 +676,6 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 				summary,
 			);
 		}
-		needsOverride = true;
 	}
 	// The other-party review rule: a DEF, HLD or LLD must have been reviewed, a
 	// BUILD record's Story must have a code review, and no review may have been
@@ -677,7 +684,6 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const missing = otherPartyReviewGap(jsonPath, artifact.meta, seen?.lifecycle.review);
 	if (missing !== undefined) {
 		if (!overridden) throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
-		needsOverride = true;
 	}
 
 	// The range base is read HERE, at approval, so it cannot depend on whether
@@ -701,7 +707,8 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	} else {
 		if (seen !== undefined && seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
 		await bindEffectiveReview(lifecycle, id, seen, stored, effective);
-		const done = await lifecycle.apply(id, 'approve', actor, needsOverride ? { override: { reason: override as string } } : {}, { overrideReview: needsOverride ? override : undefined });
+		// an override the caller gave is recorded on the approval, whether or not this artifact needed it
+		const done = await lifecycle.apply(id, 'approve', actor, overridden ? { override: { reason: override as string } } : {}, { overrideReview: overridden ? override : undefined });
 		approvedAt = done.lifecycle.approval?.at ?? new Date().toISOString();
 	}
 	if (rangeBase !== undefined && priorBase !== rangeBase) {
@@ -1117,8 +1124,15 @@ export interface RejectionResult {
 	readonly rejectReason: string;
 }
 
-/** Same as `approveArtifactByJsonPath` but records a rejection. */
-export function rejectArtifactByJsonPath(jsonPath: string, reason: string): RejectionResult {
+/** What a decision other than an approval needs: the repository's lifecycle service, and who decides. */
+export interface DecisionOptions {
+	readonly lifecycle: LifecycleService;
+	/** The actor the service records; the approval gate itself when absent. */
+	readonly actor?:    Actor | undefined;
+}
+
+/** Same as `approveArtifactByJsonPath` but rejects: the lifecycle takes the artifact to rejected and its change log keeps the reason. */
+export async function rejectArtifactByJsonPath(jsonPath: string, reason: string, opts: DecisionOptions): Promise<RejectionResult> {
 	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
 	if (!existsSync(jsonPath)) {
 		throw new ArtifactMissingError(`No artifact at ${jsonPath}`);
@@ -1126,17 +1140,12 @@ export function rejectArtifactByJsonPath(jsonPath: string, reason: string): Reje
 	if (typeof reason !== 'string' || reason.trim().length === 0) {
 		throw new Error(`reject requires a non-empty --reason`);
 	}
-	const raw = readFileSync(jsonPath, 'utf8');
-	const artifact = JSON.parse(raw) as { meta?: { workflow?: string; approvedAt?: string; rejectedAt?: string; rejectReason?: string } };
+	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { workflow?: string } };
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	const rejectedAt = new Date().toISOString();
-	const nextMeta = { ...artifact.meta, rejectedAt, rejectReason: reason };
-	delete nextMeta.approvedAt;
-	const next = { ...artifact, meta: nextMeta };
-	writeArtifact(jsonPath, next, 'meta-only');
-	return { workflow: nextMeta.workflow ?? 'unknown', path: jsonPath, rejectedAt, rejectReason: reason };
+	const done = await opts.lifecycle.apply(artifactIdOf(jsonPath), 'reject', opts.actor ?? GATE_ACTOR, { reason });
+	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, rejectedAt: done.entry.timestamp, rejectReason: reason };
 }
 
 /** Given a human-facing artifact path (which the CLI accepts),

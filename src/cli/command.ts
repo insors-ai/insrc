@@ -253,12 +253,12 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 		}
 		case 'reject': {
 			if (rest[0] === undefined || rest.length < 2) return ['usage: workflow reject <path> <reason>'];
-			svc.workflow.reject(rest[0], rest.slice(1).join(' '));
+			await svc.workflow.reject(rest[0], rest.slice(1).join(' '));
 			return [`rejected ${rest[0]}`];
 		}
 		case 'ack-stale': {
 			if (rest[0] === undefined || rest.length < 2) return ['usage: workflow ack-stale <path> <reason>'];
-			const r = svc.workflow.ackStale(rest[0], rest.slice(1).join(' '));
+			const r = await svc.workflow.ackStale(rest[0], rest.slice(1).join(' '));
 			return [`acked ${r.path}`];
 		}
 		case 'sync': {

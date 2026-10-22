@@ -60,8 +60,8 @@ export interface Services {
 		reviewFindings(artifactPath: string): import('./workflow.js').ReviewFindingsResult;
 		resolveFinding(artifactPath: string, findingId: string, action: import('../../workflow/review/index.js').ReviewAction, note?: string): import('../../workflow/review/index.js').ResolveReviewResult;
 		runWorkflowStreaming(repoPath: string, workflow: string, focus: string, params: Record<string, unknown>, onLine: (line: string) => void): Promise<import('./workflow.js').StreamRunResult>;
-		reject(artifactPath: string, reason: string): RejectionResult;
-		ackStale(artifactPath: string, reason: string): { readonly path: string; readonly ackedAt: string; readonly reason: string };
+		reject(artifactPath: string, reason: string): Promise<RejectionResult>;
+		ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }>;
 		amendments(repoPath: string, epicHash: string): readonly AmendmentRecord[];
 		approveAmendment(repoPath: string, amendmentId: string, approvedBy: string): AmendmentRecord;
 		rejectAmendment(repoPath: string, amendmentId: string, reason: string): AmendmentRecord;

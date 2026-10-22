@@ -21,12 +21,11 @@ import {
 	ArtifactMissingError,
 	ArtifactNotApprovedError,
 	jsonPathForMd,
-	rejectArtifactByJsonPath,
 	requireApprovedEpic,
 } from '../gates.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { defineArtifactPaths } from '../storage.js';
-import { approveJson } from './helpers/approve.js';
+import { approveJson, rejectJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 
@@ -181,24 +180,41 @@ test('gates.test.ts: approval goes through LifecycleService and stamps none of t
 	}
 });
 
-test('rejectArtifactByJsonPath sets meta.rejectedAt + reason', () => {
+test('rejectArtifactByJsonPath rejects through the lifecycle and keeps the reason in the change log', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
-		const r = rejectArtifactByJsonPath(path, 'not enough stories');
+		const r = await rejectJson(path, 'not enough stories');
 		assert.equal(r.workflow, 'define');
+		assert.equal(r.rejectReason, 'not enough stories');
 		const raw = JSON.parse(readFileSync(path, 'utf8'));
-		assert.equal(raw.meta.rejectReason, 'not enough stories');
+		assert.equal(raw.meta.lifecycle.status, 'rejected');
+		assert.equal(raw.meta.rejectReason, undefined, 'the head keeps no copy of the reason');
+		const log = await createRepoLifecycle(repo).history.log('DEF-' + HASH);
+		assert.equal(log.find(e => e.operation === 'reject')?.outcome?.summary, 'not enough stories');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
 
-test('rejectArtifactByJsonPath refuses empty reason', () => {
+test('rejectArtifactByJsonPath refuses empty reason', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
-		assert.throws(() => rejectArtifactByJsonPath(path, ''));
+		await assert.rejects(rejectJson(path, ''), /non-empty/);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('reject then approve is refused until the content changes', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
+	try {
+		const path = writeFixture(repo);
+		stampOtherPartyReview(path);   // approval requires an other-party review
+		await rejectJson(path, 'try again');
+		await assert.rejects(approveJson(path), /cannot be approved from rejected/);
+		assert.equal(approvalStateOf(JSON.parse(readFileSync(path, 'utf8')).meta), 'rejected');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

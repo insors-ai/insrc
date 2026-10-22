@@ -1,0 +1,361 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Cross-thread named locks (Story afcfa027/S001), shaped like the Web Locks API
+ * (navigator.locks), which Node 22 lacks. Every thread of the process shares
+ * one lock table in a SharedArrayBuffer: the main thread creates it with
+ * createLockBlock() and each worker installs it at start, as the store guard's
+ * block is (src/db/store-guard.ts).
+ *
+ * - A lock is named, and taken in shared or exclusive mode.
+ * - Waiting is always asynchronous (Atomics.waitAsync), never Atomics.wait.
+ * - Every change to one name's state happens inside that name's short critical
+ *   section: a mutex word holding the owner's threadId + 1, held only for a few
+ *   atomic writes and never across an await.
+ * - Holder and pending records are claimed, filled, then published last, so a
+ *   reader never sees one half-written.
+ */
+
+import { threadId as currentThreadId } from 'node:worker_threads';
+
+/** Atomics.waitAsync (Node 16+); the project's TypeScript lib target predates its declaration. */
+type WaitAsyncResult = { readonly async: false; readonly value: 'not-equal' | 'timed-out' } | { readonly async: true; readonly value: Promise<'ok' | 'timed-out'> };
+const waitAsync = (Atomics as unknown as { waitAsync(typed: Int32Array, index: number, value: number, timeoutMs: number): WaitAsyncResult }).waitAsync;
+
+export type LockMode = 'shared' | 'exclusive';
+
+export interface LockMetadata {
+	readonly activity: string;
+	readonly reason: string;
+}
+
+export interface LockOptions {
+	/** Defaults to 'exclusive', as in Web Locks. */
+	readonly mode?: LockMode | undefined;
+	/** Grant now or call back with a null lock; never waits. */
+	readonly ifAvailable?: boolean | undefined;
+	readonly signal?: AbortSignal | undefined;
+	readonly timeoutMs?: number | undefined;
+	readonly metadata?: LockMetadata | undefined;
+}
+
+export interface LockInfo {
+	readonly name: string;
+	readonly mode: LockMode;
+	readonly threadId: number;
+	readonly since: number;
+	readonly metadata?: LockMetadata | undefined;
+}
+
+export interface LockCapacity {
+	readonly names: number;
+	readonly holders: number;
+	readonly pending: number;
+}
+
+export const DEFAULT_LOCK_CAPACITY: LockCapacity = { names: 64, holders: 512, pending: 256 };
+
+/** Limits, in UTF-8 bytes. Over-limit values are refused, never truncated. */
+export const LOCK_NAME_MAX_BYTES = 64;
+export const LOCK_ACTIVITY_MAX_BYTES = 64;
+export const LOCK_REASON_MAX_BYTES = 1024;
+
+// ---------------------------------------------------------------------------
+// Shared block layout (Int32 words, then a Float64 region for times)
+// ---------------------------------------------------------------------------
+
+// Header
+const H_NAMES       = 0;   // name-table capacity
+const H_HOLDERS     = 1;   // holder-table capacity
+const H_PENDING     = 2;   // pending-table capacity
+const H_ACQ         = 3;   // next acquisition id
+const H_TABLE_MUTEX = 4;   // name-table mutex: 0 free, else the claimer's threadId + 1
+const HEADER_WORDS  = 8;
+
+// Name slot. A slot is filled while its state is free and published READY last;
+// it is never freed (lock names are few and long-lived), so a READY slot never changes name.
+const N_STATE   = 0;   // 0 free, 1 ready
+const N_HASH    = 1;
+const N_LEN     = 2;   // name length in bytes
+const N_LOCK    = 3;   // 0 free, n > 0 shared holders, -1 exclusive
+const N_PENDX   = 4;   // exclusive requests waiting
+const N_VERSION = 5;   // bumped on every change; waiters wait on it
+const N_MUTEX   = 6;   // 0 free, else the owner's threadId + 1
+const N_BYTES   = 7;   // name bytes
+const NAME_WORDS = N_BYTES + LOCK_NAME_MAX_BYTES / 4;
+const NAME_READY = 1;
+
+// Holder slot. State: 0 free, -(threadId + 1) being written by that thread, name index + 1 published.
+const S_STATE      = 0;
+const S_MODE       = 1;   // 1 shared, 2 exclusive
+const S_THREAD     = 2;
+const S_ACQ        = 3;
+const S_ACT_LEN    = 4;   // -1 when the holder has no metadata
+const S_REASON_LEN = 5;
+const S_ACT        = 6;
+const S_REASON     = S_ACT + LOCK_ACTIVITY_MAX_BYTES / 4;
+const HOLDER_WORDS = S_REASON + LOCK_REASON_MAX_BYTES / 4;
+
+// Pending slot. Same state protocol as a holder slot.
+const P_STATE  = 0;
+const P_MODE   = 1;
+const P_THREAD = 2;
+const PENDING_WORDS = 3;
+
+const MODE_SHARED = 1;
+const MODE_EXCLUSIVE = 2;
+
+interface Layout {
+	readonly capacity: LockCapacity;
+	readonly names: number;      // first word of the name table
+	readonly holders: number;    // first word of the holder table
+	readonly pending: number;    // first word of the pending table
+	readonly intWords: number;
+	readonly f64Offset: number;  // byte offset of the Float64 region: holder since, then pending since
+	readonly bytes: number;
+}
+
+function layoutFor(capacity: LockCapacity): Layout {
+	const names = HEADER_WORDS;
+	const holders = names + capacity.names * NAME_WORDS;
+	const pending = holders + capacity.holders * HOLDER_WORDS;
+	const intWords = pending + capacity.pending * PENDING_WORDS;
+	const f64Offset = Math.ceil((intWords * 4) / 8) * 8;
+	return { capacity, names, holders, pending, intWords, f64Offset, bytes: f64Offset + (capacity.holders + capacity.pending) * 8 };
+}
+
+/** Create the process's lock block. The main thread creates it once and hands it to every worker. */
+export function createLockBlock(capacity: Partial<LockCapacity> = {}): SharedArrayBuffer {
+	const c: LockCapacity = { ...DEFAULT_LOCK_CAPACITY, ...capacity };
+	for (const table of ['names', 'holders', 'pending'] as const) {
+		if (!Number.isInteger(c[table]) || c[table] < 1) throw new LockArgumentError(`capacity.${table}`, 'must be a positive integer');
+	}
+	const block = new SharedArrayBuffer(layoutFor(c).bytes);
+	const words = new Int32Array(block, 0, HEADER_WORDS);
+	words[H_NAMES] = c.names;
+	words[H_HOLDERS] = c.holders;
+	words[H_PENDING] = c.pending;
+	return block;
+}
+
+// ---------------------------------------------------------------------------
+// Errors
+// ---------------------------------------------------------------------------
+
+function describeHolders(holders: readonly LockInfo[]): string {
+	if (holders.length === 0) return 'no holder recorded';
+	return holders.map(h => {
+		const meta = h.metadata !== undefined ? ` (${h.metadata.activity}: ${h.metadata.reason})` : '';
+		return `${h.mode} on thread ${h.threadId} since ${new Date(h.since).toISOString()}${meta}`;
+	}).join(', ');
+}
+
+export class LockTimeoutError extends Error {
+	constructor(readonly lockName: string, readonly waitedMs: number, readonly holders: readonly LockInfo[]) {
+		super(`lock '${lockName}': not granted within ${waitedMs} ms (held by ${describeHolders(holders)})`);
+		this.name = 'LockTimeoutError';
+	}
+}
+
+export class LockNestedError extends Error {
+	constructor(readonly lockName: string, readonly heldName: string, readonly kind: 'same-name' | 'unbounded-wait') {
+		super(kind === 'same-name'
+			? `lock '${lockName}': requested again inside a callback that holds it; it would wait on itself forever`
+			: `lock '${lockName}': requested inside a callback holding '${heldName}' as a wait with no timeoutMs; a nested request must use ifAvailable or timeoutMs so no lock cycle can wait forever`);
+		this.name = 'LockNestedError';
+	}
+}
+
+export class LockCapacityError extends Error {
+	constructor(readonly table: 'names' | 'holders' | 'pending', readonly capacity: number) {
+		super(`lock table '${table}' is full (${capacity} slots); nothing was granted or queued`);
+		this.name = 'LockCapacityError';
+	}
+}
+
+export class LockArgumentError extends Error {
+	constructor(readonly argument: string, readonly limit: string) {
+		super(`lock argument '${argument}' ${limit}`);
+		this.name = 'LockArgumentError';
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+export interface ValidatedRequest {
+	readonly nameBytes: Uint8Array;
+	readonly mode: LockMode;
+	readonly activity?: Uint8Array | undefined;
+	readonly reason?: Uint8Array | undefined;
+}
+
+/** Check a request's arguments before any shared state is touched. */
+export function validateLockRequest(name: string, options: LockOptions): ValidatedRequest {
+	if (typeof name !== 'string') throw new LockArgumentError('name', 'must be a string');
+	const nameBytes = encoder.encode(name);
+	if (nameBytes.length < 1 || nameBytes.length > LOCK_NAME_MAX_BYTES) {
+		throw new LockArgumentError('name', `must be 1 to ${LOCK_NAME_MAX_BYTES} UTF-8 bytes (got ${nameBytes.length})`);
+	}
+	const mode = options.mode ?? 'exclusive';
+	if (mode !== 'shared' && mode !== 'exclusive') throw new LockArgumentError('mode', "must be 'shared' or 'exclusive'");
+	if (options.timeoutMs !== undefined && !(Number.isFinite(options.timeoutMs) && options.timeoutMs >= 0)) {
+		throw new LockArgumentError('timeoutMs', 'must be a finite number >= 0');
+	}
+	if (options.ifAvailable === true && (options.signal !== undefined || options.timeoutMs !== undefined)) {
+		throw new LockArgumentError('ifAvailable', 'cannot be combined with signal or timeoutMs (it never waits)');
+	}
+	if (options.metadata === undefined) return { nameBytes, mode };
+	const { activity, reason } = options.metadata;
+	if (typeof activity !== 'string' || typeof reason !== 'string') throw new LockArgumentError('metadata', 'activity and reason must be strings');
+	const a = encoder.encode(activity);
+	if (a.length > LOCK_ACTIVITY_MAX_BYTES) throw new LockArgumentError('metadata.activity', `must be at most ${LOCK_ACTIVITY_MAX_BYTES} UTF-8 bytes (got ${a.length})`);
+	const r = encoder.encode(reason);
+	if (r.length > LOCK_REASON_MAX_BYTES) throw new LockArgumentError('metadata.reason', `must be at most ${LOCK_REASON_MAX_BYTES} UTF-8 bytes (got ${r.length})`);
+	return { nameBytes, mode, activity: a, reason: r };
+}
+
+/** FNV-1a over the name's bytes. */
+function hashBytes(bytes: Uint8Array): number {
+	let h = 0x811c9dc5;
+	for (const b of bytes) h = Math.imul(h ^ b, 0x01000193);
+	return h | 0;
+}
+
+// ---------------------------------------------------------------------------
+// Manager
+// ---------------------------------------------------------------------------
+
+export interface LockManagerDeps {
+	readonly threadId?: number | undefined;
+	readonly now?: (() => number) | undefined;
+}
+
+export class LockManager {
+	private readonly words: Int32Array;
+	private readonly bytes: Uint8Array;
+	private readonly times: Float64Array;
+	private readonly layout: Layout;
+	private readonly threadId: number;
+	private readonly now: () => number;
+
+	constructor(readonly block: SharedArrayBuffer, deps: LockManagerDeps = {}) {
+		const header = new Int32Array(block, 0, HEADER_WORDS);
+		this.layout = layoutFor({ names: header[H_NAMES]!, holders: header[H_HOLDERS]!, pending: header[H_PENDING]! });
+		if (this.layout.bytes !== block.byteLength) throw new Error('lock block: its size does not match the capacities in its header');
+		this.words = new Int32Array(block, 0, this.layout.intWords);
+		this.bytes = new Uint8Array(block, 0, this.layout.intWords * 4);
+		this.times = new Float64Array(block, this.layout.f64Offset, this.layout.capacity.holders + this.layout.capacity.pending);
+		this.threadId = deps.threadId ?? currentThreadId;
+		this.now = deps.now ?? Date.now;
+	}
+
+	/** The table sizes read from the block's header. */
+	get capacity(): LockCapacity {
+		return this.layout.capacity;
+	}
+
+	/**
+	 * The name-table slot for `name`, claimed if no thread has used the name yet.
+	 * Every thread resolves one name to one slot.
+	 */
+	async resolveName(nameBytes: Uint8Array): Promise<number> {
+		const found = this.findName(nameBytes);
+		if (found >= 0) return found;
+		await this.lockMutex(H_TABLE_MUTEX);
+		try {
+			// Another thread may have claimed it while this one waited for the table.
+			const again = this.findName(nameBytes);
+			if (again >= 0) return again;
+			for (let i = 0; i < this.layout.capacity.names; i++) {
+				const base = this.nameBase(i);
+				if (Atomics.load(this.words, base + N_STATE) !== 0) continue;
+				Atomics.store(this.words, base + N_HASH, hashBytes(nameBytes));
+				Atomics.store(this.words, base + N_LEN, nameBytes.length);
+				this.bytes.set(nameBytes, (base + N_BYTES) * 4);
+				Atomics.store(this.words, base + N_STATE, NAME_READY);
+				return i;
+			}
+			throw new LockCapacityError('names', this.layout.capacity.names);
+		} finally {
+			this.unlockMutex(H_TABLE_MUTEX);
+		}
+	}
+
+	// -- internals ----------------------------------------------------------
+
+	private nameBase(i: number): number {
+		return this.layout.names + i * NAME_WORDS;
+	}
+
+	/** Lock-free lookup over published slots; slots are claimed in order and never freed, so the first free slot ends the scan. */
+	private findName(nameBytes: Uint8Array): number {
+		const hash = hashBytes(nameBytes);
+		for (let i = 0; i < this.layout.capacity.names; i++) {
+			const base = this.nameBase(i);
+			if (Atomics.load(this.words, base + N_STATE) !== NAME_READY) return -1;
+			if (this.words[base + N_HASH] !== hash || this.words[base + N_LEN] !== nameBytes.length) continue;
+			const at = (base + N_BYTES) * 4;
+			if (nameBytes.every((b, k) => this.bytes[at + k] === b)) return i;
+		}
+		return -1;
+	}
+
+	/** The name stored in a published slot. */
+	protected nameAt(i: number): string {
+		const base = this.nameBase(i);
+		const at = (base + N_BYTES) * 4;
+		return decoder.decode(this.bytes.slice(at, at + this.words[base + N_LEN]!));
+	}
+
+	/**
+	 * Take a mutex word (value: owner threadId + 1). Critical sections are a few
+	 * atomic writes, so a taken mutex is retried; between retries the thread
+	 * yields to its event loop, so the main thread can still reclaim a mutex
+	 * left by a worker that died inside it.
+	 */
+	protected async lockMutex(index: number): Promise<void> {
+		const mine = this.threadId + 1;
+		for (let spins = 0; ; spins++) {
+			const held = Atomics.compareExchange(this.words, index, 0, mine);
+			if (held === 0) return;
+			if (spins < 64) continue;
+			const wait = waitAsync(this.words, index, held, 1);
+			if (wait.async) {
+				const keepAlive = setTimeout(() => {}, 1);
+				try { await wait.value; } finally { clearTimeout(keepAlive); }
+			}
+		}
+	}
+
+	protected unlockMutex(index: number): void {
+		Atomics.store(this.words, index, 0);
+		Atomics.notify(this.words, index);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Process singleton
+// ---------------------------------------------------------------------------
+
+let _manager: LockManager | null = null;
+
+/** Install this thread's manager over the process block (the main thread creates the block; workers receive it). */
+export function installLockManager(block: SharedArrayBuffer, deps: LockManagerDeps = {}): LockManager {
+	_manager = new LockManager(block, deps);
+	return _manager;
+}
+
+/** This thread's manager; on first use without an installed block (tests, tools), a private block is created. */
+export function getLockManager(): LockManager {
+	if (_manager === null) _manager = new LockManager(createLockBlock());
+	return _manager;
+}
+

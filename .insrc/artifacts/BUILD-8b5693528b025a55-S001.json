@@ -4,13 +4,14 @@
     "epicHash": "8b5693528b025a55",
     "storyId": "S001",
     "createdAt": "2026-10-22T12:07:31.507Z",
-    "updatedAt": "2026-10-22T12:07:31.507Z",
+    "updatedAt": "2026-10-22T12:32:19.990Z",
     "authoredBy": "controller",
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "One story with one obvious approach: read two optional keys from the global config and pass them to the existing update paths.",
     "epicCreatedAt": "2026-10-22T11:56:49.811Z",
-    "epicSlug": "make-daemon-update-source-repo-url"
+    "epicSlug": "make-daemon-update-source-repo-url",
+    "approvedAt": "2026-10-22T12:32:21.816Z"
   },
   "body": {
     "tasks": [
@@ -26,96 +27,19 @@
     "changeLog": [
       {
         "target": {
-          "file": "docs/daemon.md"
+          "file": ".insrc/artifacts/CR-8b5693528b025a55-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
+        "timestamp": "2026-10-22T12:32:19.990Z"
       },
       {
         "target": {
-          "file": "docs/standalone/make-daemon-update-source-repo-url-E202610228b569352/S001/LLD.md"
+          "file": "docs/standalone/make-daemon-update-source-repo-url-E202610228b569352/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "scripts/daemon-ctl.sh"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/cli/__tests__/maintenance-source.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/cli/services/maintenance.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/config/__tests__/config-catalog-contract.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/config/config-catalog.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/__tests__/daemon-ctl-source.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/__tests__/helpers-update-fixture.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/__tests__/update-runner.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/update-runner.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/__tests__/update-source.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/update-source.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-22T12:07:31.507Z"
+        "timestamp": "2026-10-22T12:32:19.990Z"
       }
     ],
-    "commit": "f37a2c2e"
+    "commit": "6c91a7db"
   }
 }

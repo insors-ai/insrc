@@ -32,7 +32,7 @@ The insrc daemon serves every client — each Claude/Codex session's MCP server,
 - **E2026102186197ac6:FR005** — Graph, vector and data-store reads and writes remain consistent when issued from different threads, with the daemon still the sole owner of the stores. _(Daemon-owns-all-DB-access rule [[c6]]; LMDB lock behaviour has bitten this daemon before [[c7]].)_
 - **E2026102186197ac6:FR006** — A failure on a session's thread is reported to that session and does not take down the daemon, the admin thread, the indexer or other sessions. _(Isolation is the point of the split; today one failure path affects all clients [[c3]].)_
 - **E2026102186197ac6:FR007** — A session's thread is created on the session's first request and released when the session ends, and the daemon reports which threads exist and what each is doing. _(Operators need to see a busy session rather than infer a frozen daemon [[c3]].)_
-- **E2026102186197ac6:FR008** — Every existing client of the daemon socket keeps working without change, including the MCP server, the VS Code and JetBrains plugins, the TUI and daemon-ctl. _(The IPC contract is the only surface those clients consume [[c8]].)_
+- **E2026102186197ac6:FR008** — Every existing client of the daemon socket keeps working without change, including the MCP server, the VS Code and JetBrains plugins, the TUI and daemon-ctl. _(The IPC contract is the only surface those clients consume [[c8]]. The socket's clients are anchored in [[c19]]; only 'cli' and 'mcp' self-report a label.)_
 
 **s1:**
 
@@ -45,7 +45,7 @@ The insrc daemon serves every client — each Claude/Codex session's MCP server,
 - **E2026102186197ac6:S002:FR002** — Admin-class requests are served by a dedicated admin thread that indexing work cannot block.
 - **E2026102186197ac6:S002:FR003** — Code indexing runs on one dedicated thread and document summaries on another, the summaries yielding to code indexing as today.
 - **E2026102186197ac6:S002:FR004** — Queue status and idle-waiting remain available to other threads.
-- **E2026102186197ac6:S002:FR005** — Graph-store compaction runs as idle maintenance during which the daemon holds every request except the liveness check.
+- **E2026102186197ac6:S002:FR005** — Graph-store compaction runs as idle maintenance under an exclusive daemon maintenance lock; while it holds the lock every request except the liveness check is refused with the maintenance activity and reason.
 
 **s3:**
 
@@ -127,7 +127,7 @@ Liveness pings, daemon status, the TUI and daemon-ctl get prompt answers during 
 - **ac5:** Given a session thread is busy with a long task, when a file change enqueues indexing work, then the indexing work starts and completes without waiting for the session. _(operationalizes `k3`)_
 - **ac6:** Given code indexing and document summaries on their two threads, when both have work, then a document summary starts only while code indexing is idle, and the order of work and the indexed results equal today's single-thread queue for the same input. _(operationalizes `k3`, `k6`, `k7`)_
 - **ac7:** Given a session or admin request that waits for indexing to become idle or reads queue status, when it runs on its own thread, then it gets the real state of the code-indexing and document-summary threads. _(operationalizes `k3`, `k5`)_
-- **ac8:** Given the daemon has been idle for 30 minutes and the graph store has at least 25% and 256 MB reclaimable, or a client requests daemon.compact while indexing is idle, when maintenance compaction runs, then every request other than daemon.status waits and is served after compaction ends, daemon.status answers throughout and reports the maintenance, no write is lost, and daemon.compact's responses (its result, and today's refusal while indexing is busy) are unchanged. _(operationalizes `k4`, `k5`, `k7`)_
+- **ac8:** Given the daemon has been idle for 30 minutes and the graph store has at least 25% and 256 MB reclaimable, or a client requests daemon.compact while indexing is idle, when maintenance compaction runs, then maintenance holds the daemon's maintenance lock exclusively with its activity and reason; every request other than daemon.status is refused at once with that activity and reason (it is not queued), daemon.status answers throughout and reports the maintenance, requests already running finish before compaction starts, no write is lost, and daemon.compact's responses (its result, and today's refusal while indexing is busy) are unchanged [[c18]]. _(operationalizes `k4`, `k5`, `k7`)_
 
 ### 6.3 E2026102186197ac6:S003 — Each session runs on its own serial thread
 
@@ -187,6 +187,8 @@ The main thread only routes requests and supervises threads, so nothing a handle
 - **[[c15]]** `code` `src/daemon/shutdown.ts:64-71` — "export function endAfterStoreFailure(reason, health, deps) { clearPid; append the last line; deps.killSelf(); }  (killSelf = process.kill(process.pid, 'SIGKILL'))"
 - **[[c16]]** `code` `src/db/entities.ts:223-330` — "upsertEntities: await withWriteTxn(s => { ... }) commits the graph rows (line 223); then '// Push vectors to Lance after the LMDB commit' (line 298) ... await lance.addEntityEmbeddings(adds) (line 324"
 - **[[c17]]** `code` `src/daemon/threads/__tests__/worker-stores.test.ts` — "s1 t10: a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row; two workers' artifact-vector and config writes are read back from a t"
+- **[[c18]]** `prior-artifact` `docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md` — "A named-lock framework that every thread of the daemon shares, shaped like the Web Locks API: shared and exclusive modes, ifAvailable (no-wait) requests that report the holder's activity and reason, w"
+- **[[c19]]** `code` `scripts/daemon-ctl.sh:226-245` — "Socket clients today: the TUI/CLI and the VS Code extension through rpc() (src/shared/ipc-client.ts:46-55, label 'cli'); the MCP server (src/mcp/forward-step.ts:120, src/mcp/daemon-stream.ts:137, labe"
 
 ## 8. Open questions
 

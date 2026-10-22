@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "pass",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,8 +36,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The admin class (10 methods) and indexing class (10 methods) name methods the daemon actually serves, so the router covers the admin/indexing intent.",
-          "evidence": "src/daemon/index.ts has 'repo.list' :585, 'repo.stats' :594, 'repo.reindex' :839, 'docSummary.restoreFromBackup' :849, 'daemon.status' :1060, 'daemon.debug-status' :1091, 'index.file' :1401, 'config.show' :1483, 'config.catalog' :1496, 'guide.get' :1526, 'guide.list' :1531, 'config.enqueue' :1567, 'config.reindex' :1575, 'daemon.shutdown' :1632, 'daemon.backup' :1638, 'daemon.compact' :1647; 'daemon.update'/'daemon.updateOutcome' come from makeUpdateHandlers (src/daemon/update-runner.ts:270-275). [files: src/daemon/index.ts, src/daemon/update-runner.ts]",
+          "premise": "Every s2 acceptance criterion in the DEF (ac1 to ac8, including ac8 on maintenance compaction under an exclusive lock, refusing every request except daemon.status, and keeping daemon.compact's responses) is designed in the LLD.",
+          "evidence": "DEF.md:123-130 lists ac1-ac8 for S002. ac8 reads: 'maintenance holds the daemon's maintenance lock exclusively with its activity and reason; every request other than daemon.status is refused at once ... daemon.compact's responses ... are unchanged'. LLD sections 3.5, 2.3 and 5 design each of these, and section 6 maps ac1-ac8. The session-pool, controller and threads-section work belongs to s3/s4 and appears only as adjacent scope. [files: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -48,8 +48,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "IpcServer today takes (handlers, streamHandlers, now, socketPath), updates lastMethod/label/pid before dispatch, answers 'invalid JSON' with id -1, and falls back from stream to unary.",
-          "evidence": "src/daemon/server.ts:133 constructor(handlers, streamHandlers = {}, now = Date.now, socketPath = PATHS.sockFile); :206 {id:-1,error:'invalid JSON'}; :214-219 registry update before dispatch; :243-255 stream-to-unary fallback. [files: src/daemon/server.ts]",
+          "premise": "The ten admin methods and ten indexing methods named in sc5 are all served today (the rpc table in index.ts plus makeUpdateHandlers).",
+          "evidence": "Found in index.ts: repo.add:508, repo.remove:569, repo.list:585, repo.stats:594, repo.reindex:839, docSummary.restoreFromBackup:849, daemon.status:1060, daemon.debug-status:1091, index.file:1401, config.show:1483, config.catalog:1496, guide.get:1526, guide.list:1531, config.enqueue:1567, config.reindex:1575, daemon.shutdown:1632, daemon.backup:1638, daemon.compact:1647. daemon.update and daemon.updateOutcome are in update-runner.ts:270-275 and are spread in at index.ts:1670. [files: src/daemon/index.ts, src/daemon/update-runner.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -60,8 +60,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "runDocSummarySweep calls takeEdit synchronously at :79 and has no await between the final shouldStop/isCodeIdle checks and summarise (:89-91).",
-          "evidence": "src/indexer/doc-summary-sweep.ts:33 `takeEdit(): { entityId: string } | undefined;` :79 `const edit = deps.takeEdit();` :91-94 shouldStop, isCodeIdle, then `await deps.summarise(entity)` with no await in between. (The checks sit at :91-92, a line off from the cited range.) [files: src/indexer/doc-summary-sweep.ts]",
+          "premise": "compactGraphStore closes the env at store.ts:861 and renames and removes the lock file at :871-875, so a beforeRename hook fits between them.",
+          "evidence": "store.ts:861 'await inst.root.close();'. Lines 871-875 run renameSync(original to bak), renameSync(compact to original) and rmSync(lockPath). The reopen is at :886 through getGraphStore(). There is no hook today. [files: src/db/graph/store.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -72,8 +72,20 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The main thread's queue/indexer uses listed in §3.3 are the complete set the indexing port must replace.",
-          "evidence": "grep of queue./indexer./watcher. in src/daemon/index.ts returns :272, :294 (boot), :533, :575, :826, :844, :1076-1077, :1403, :1571, :1577, :1652, :2074-2076 (shutdown). Every handler-body use is listed. Apart from :826 (codeReview.freshness, a session method) and :1076-1077 (daemon.status, admin), all sit in indexing-class handlers. [files: src/daemon/index.ts]",
+          "premise": "daemon.compact today refuses with 'indexer is busy (queue=N, processing=...)' when queue.depth > 0 or isProcessing, and otherwise calls compactGraphStore.",
+          "evidence": "index.ts:1652-1660: 'if (queue.depth > 0 || queue.isProcessing) throw new Error(`daemon.compact: indexer is busy (queue=${queue.depth}, processing=...`' and then 'await compactGraphStore()'. [files: src/daemon/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The prune timer (index.ts:2014) and the todo-retention timer (todos-rpc.ts:1206) are main-thread background store users that run outside any request.",
+          "evidence": "index.ts:2014 'const pruneTimer = setInterval(async () => { ... pruneConversations(db) ... compactConversations(...)'. todos-rpc.ts:1205-1206 'void run(); const timer = setInterval(() => void run(), DAY_MS);'. [files: src/daemon/index.ts, src/daemon/todos-rpc.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -84,8 +96,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Reused s1 pieces exist with the stated shapes: StoreGuard.reclaim(threadId) → {released, unhealthy}, TargetRegistry.targetFor(cls, session?), startDaemonWorker/NotADaemonWorkerError, StatusBoard.publishClients/publishIndexing, and publishLane does not exist yet.",
-          "evidence": "src/db/store-guard.ts:255 `async reclaim(threadId: number): Promise<{ readonly released: readonly StoreId[]; readonly unhealthy: readonly StoreId[] }>`; src/daemon/threads/registry.ts:54 targetFor(cls, session?); src/daemon/threads/worker-entry.ts:32,40-41; status-board.ts:76-77 has publishIndexing/publishClients and no publishLane; MethodClass is defined in channel.ts:31; method-class.ts does not exist yet. [files: src/db/store-guard.ts, src/daemon/threads/registry.ts, src/daemon/threads/worker-entry.ts, src/daemon/threads/status-board.ts]",
+          "premise": "The maintenance lock reuses a lock framework (LockManager with ifAvailable, timeoutMs, metadata, writer preference, query, LockTimeoutError, watchWorker) that exists with that shape.",
+          "evidence": "No lock-manager module exists in src yet. The Glob for src/**/*lock*.ts finds only graph lock tests. The design is aware of this: open question 3 says s2's build starts after Story afcfa027's build. The afcfa027 LLD defines exactly the shape s2 uses: line 42 (mode, ifAvailable, timeoutMs, metadata {activity, reason}), line 48 (LockTimeoutError carrying the holders), line 59 (writer preference), line 73 (query with metadata) and section 2.6 (watchWorker). It also forbids ifAvailable together with timeoutMs (line 52). s2 uses ifAvailable for requests and a bounded wait for jobs and timers, so it never combines the two. [files: docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -95,12 +107,12 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "compactGraphStore is reused unchanged, and maintenance can check that the native environment really closed before the rename, abandoning compaction without renaming if it did not.",
-          "evidence": "src/db/graph/store.ts:855-886: compactGraphStore does backup, then `await inst.root.close()` (:861), then immediately `renameSync(originalPath, bakPath)` and removes the lock file (:871-875), then reopens with getGraphStore (:886), all in one function with no hook between close and rename. A caller cannot insert the 'environment really closed' check before the rename unless compactGraphStore changes, yet §2.11 calls it today's function and lists no change site in store.ts. Built as written, the safety check either cannot run or runs after the rename, which is the step it is meant to protect. [files: src/db/graph/store.ts]",
-          "action": "Add a change site for compactGraphStore: split it, or give it a pre-rename verification callback that aborts and reopens without renaming. Name the check concretely, and test that the rename never runs when the check fails.",
+          "severity": "LOW",
+          "premise": "RequestEnvelope in channel.ts has no underHold field today, so adding it is new and additive.",
+          "evidence": "channel.ts:35-41 has kind, requestId, method, params, stream and session?. There is no underHold field anywhere in src/daemon/threads. [files: src/daemon/threads/channel.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.1",
@@ -108,9 +120,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The IpcServer construction sites that move to directDispatch are src/daemon/index.ts:1997 plus the tests and helpers that build their own tables (store-child.ts:178 and :212).",
-          "evidence": "grep `new IpcServer(` finds index.ts:1997, store-child.ts:178/:212, plus tests mcp-process-e2e:227, forward-step:36, update-handlers:54/73/90/98, understanding-rpc:43, store-failure-dispatch:85/121, server-registry (6 sites), step-host:215. The design names these suites generically in §6 ('servers built with directDispatch where they build their own tables'), so the inventory is covered, though not enumerated. [files: src/daemon/index.ts, src/db/graph/__tests__/helpers/store-child.ts]",
-          "action": "Optionally enumerate every test construction site in §2.3 so none is missed.",
+          "premise": "Every IpcServer construction site is index.ts:1997 plus store-child.ts:178 and :212, and today's constructor takes (handlers, streamHandlers, now, socketPath).",
+          "evidence": "server.ts:133 'constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now = Date.now, private readonly socketPath = PATHS.sockFile)'. The Grep for 'new IpcServer(' in src non-test code and helpers finds index.ts:1997 and store-child.ts:178 and :212. The LLD also covers other tests that build their own server through directDispatch. [files: src/daemon/server.ts, src/daemon/index.ts, src/db/graph/__tests__/helpers/store-child.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,8 +132,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "createInDaemonClient(unary, stream, deps?) exists with an InDaemonClientDeps the route function can extend, and it is installed at index.ts:1996.",
-          "evidence": "src/daemon/steps/daemon-client.ts:73-83 InDaemonClientDeps {setTimer?, clearTimer?} and createInDaemonClient(unary, stream, deps = {}); its call() looks up unary[method] locally (:85). index.ts:1996 installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers)). [files: src/daemon/steps/daemon-client.ts, src/daemon/index.ts]",
+          "premise": "The summary sweep's queue dependencies (takeEdit, shouldStop, waitForCodeIdle, isCodeIdle) are wired at indexer/index.ts:957-961 and :988 from IndexQueue members, so the queue view on the summary worker replaces exactly these.",
+          "evidence": "indexer/index.ts:957 'takeEdit: () => this.queue.takeDocSummaryEdit()', :959 shouldStop -> queue.isStopping, :960 waitForIndexIdle, :961 isIndexIdle, :988-989 the same reads in docSummariseEntity. queue.ts:233, 302, 315 and 330 define them. [files: src/indexer/index.ts, src/daemon/queue.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -132,9 +144,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Today's withCompleteness leaves completeness out when the read fails, while the board's RepoStatusSnapshot requires it, so the type must be loosened for rows to match today's.",
-          "evidence": "src/daemon/repo-completeness.ts:30-36 returns `(T & { completeness?: RepoCompleteness })[]` and omits the field when the read fails; src/daemon/threads/status-board.ts:40 `RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness }` (required). [files: src/daemon/repo-completeness.ts, src/daemon/threads/status-board.ts]",
-          "action": "none (the design correctly records the loosening as an sc4 amendment)",
+          "premise": "The board's RepoStatusSnapshot currently makes completeness required, so the LLD's loosening to optional is needed to publish today's rows unchanged.",
+          "evidence": "status-board.ts:40 'export type RepoStatusSnapshot = RegisteredRepo & { readonly completeness: RepoCompleteness };'. Completeness is required today, and the LLD records the loosening as an sc4 amendment (section 3.8). [files: src/daemon/threads/status-board.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +156,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Workers closing their graph handle for maintenance stays within s1's contract (s1 verified a worker's open/close/exit keeps the process lock).",
-          "evidence": "src/db/graph/__tests__/worker-thread-lock.test.ts:62-91 asserts 'held after the worker closed its handle' and that writes continue afterwards; closeGraphStore (store.ts:938-958) calls root.close(), with no main-thread-only guard. The adjacent-scope text 'LMDB is opened once per process and never closed by a worker' is in tension with this, but the s1 test covers a worker closing its own handle. [files: src/db/graph/__tests__/worker-thread-lock.test.ts, src/db/graph/store.ts]",
-          "action": "Reconcile the wording with s1/the HLD so 'never closed by a worker' clearly means the process-wide environment, not a worker's handle.",
+          "premise": "s2 changes s1-owned contracts (sc3 RequestEnvelope.underHold, sc4 publishLane, RepoStatusSnapshot.completeness) only additively or as a recorded loosening, and does not redesign them.",
+          "evidence": "underHold is an optional field that channel.ts:35-41 lacks today. publishLane is a new method beside an unchanged publishIndexing. completeness becomes optional and is recorded as an HLD sc4 amendment. Session-pool supervision is left to s3/s4 (section 5, supervision boundary note). [files: src/daemon/threads/channel.ts, src/daemon/threads/status-board.ts]",
+          "action": "none",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -155,12 +167,24 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "A socket close while a request runs on a worker is handled 'as today' by cancelling and aborting the AbortSignal.",
-          "evidence": "src/daemon/server.ts:234-239: a unary handler is awaited with no abort on socket close; only stream requests get an AbortController wired to socket 'close' (:261-267). The design's forward() cancel function and CancelEnvelope apply to every request, and its edge-case table says the response is 'as today'. For unary requests that is a behaviour change (today they run to completion; the reply write just fails). The design does not say whether a worker cancels a unary handler or only drops its reply. [files: src/daemon/server.ts]",
-          "action": "State that a cancel for a unary request only drops the late reply and does not abort the handler (today's behaviour), and cancel only streams.",
+          "severity": "LOW",
+          "premise": "A runDocSummarySweep with an async takeEdit keeps today's guard, because the shouldStop/isCodeIdle checks that gate summarise still run after the last await and before summarise.",
+          "evidence": "doc-summary-sweep.ts:79 'const edit = deps.takeEdit();' sits before getEntity (:83, awaited). The final checks at :91-92 ('if (deps.shouldStop()) return' and 'if (!deps.isCodeIdle()) continue;') come after the getEntity await and directly before 'await deps.summarise(entity)' at :94. Awaiting takeEdit at :79 adds no await between those checks and summarise. [files: src/indexer/doc-summary-sweep.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A pause-limit timeout is detectable: the exclusive request rejects with LockTimeoutError naming the holders, and a timed-out exclusive stops blocking new shared requests, so 'requests are accepted again'.",
+          "evidence": "Lock LLD line 48: 'LockTimeoutError when A waiting request was not granted within timeoutMs; carries name, waitedMs and the holders'. Line 174: 'The request removes its pending entry (and decrements the pending-exclusive count ...) and rejects with LockTimeoutError'. Writer preference therefore ends when the request times out. [files: docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "tests.1",
@@ -168,8 +192,8 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every acceptance criterion ac1–ac8 maps to at least one named test, and the maintenance safety paths have tests.",
-          "evidence": "§6 acceptance mapping covers ac1–ac8, each with integration/unit/contract subjects. It includes 'maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename', 'a worker that never acknowledges the pause', and the worker-kill tests. Whether the abandon-before-rename test can pass depends on the compactGraphStore change flagged under new-versus-reuse.",
+          "premise": "Each s2 acceptance criterion ac1-ac8 maps to at least one named test in the LLD's acceptance mapping, and the ac8 sub-clauses (refusal with activity and reason, running requests finish, status reports compacting, no write lost, compact responses unchanged) each have a test subject.",
+          "evidence": "The section 6 acceptance mapping lists ac1-ac8. ac8 maps to the integration maintenance test (refusal, running requests finish first, status compacting, no lost write, file shrinks), the manual daemon.compact result and busy-refusal test, and unit idle and threshold tests. This matches the clauses in DEF.md:130. [files: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -177,16 +201,15 @@
       ],
       "counts": {
         "high": 0,
-        "med": 2,
-        "low": 10,
+        "med": 0,
+        "low": 14,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T20:51:10.450Z",
+      "reviewedAt": "2026-10-22T06:11:44.698Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-22T04:36:54.849Z",
     "reviewOverride": {
       "reason": "Stakeholder approved with override 2026-10-22: 3 review rounds; round-3 had 0 HIGH and 2 MED (compactGraphStore pre-rename hook, unary cancel semantics), both folded after the round; every earlier finding folded (lastMethod republish, async sweep takeEdit, supervision boundary note, handle-close compaction within s1's verified contract, store-child construction site, optional completeness and store fallback before first publish).",
       "at": "2026-10-22T04:36:54.847Z"
@@ -199,7 +222,16 @@
         "rationale": "Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs.",
         "resolvedAt": "2026-10-22T04:39:45.951Z"
       }
-    }
+    },
+    "amendments": [
+      {
+        "at": "2026-10-22",
+        "by": "Subho Ghosh (stakeholder) via controller",
+        "summary": "Maintenance uses the daemon maintenance lock (lock framework afcfa027): requests are refused with activity and reason instead of held; pause = exclusive request with timeout; workers registered with watchWorker.",
+        "reviewFolds": "Aligned with HLD amendment round 1: shared hold only at top-level request entry; daemon.status and daemon.compact exempt; shutdown RPC refused during maintenance, SIGTERM waits."
+      }
+    ],
+    "approvedAt": "2026-10-22T06:16:59.059Z"
   },
   "body": {
     "summary": {
@@ -406,7 +438,9 @@
           ],
           "postconditions": [
             "new IpcServer(directDispatch(rpc, stream)) behaves on the wire exactly as today's new IpcServer(rpc, stream).",
-            "The registry is republished through StatusBoard.publishClients on connect, on close, and after every message updates it (lastMethod, label, pid), before the request is forwarded, so debug-status reports the caller's own 'daemon.debug-status' as its lastMethod exactly as today."
+            "The registry is republished through StatusBoard.publishClients on connect, on close, and after every message updates it (lastMethod, label, pid), before the request is forwarded, so debug-status reports the caller's own 'daemon.debug-status' as its lastMethod exactly as today.",
+            "Before running any top-level request other than daemon.status and daemon.compact, its entry point (the router for main-thread session work, the worker's request entry otherwise) requests the daemon maintenance lock shared with ifAvailable and holds it until the request finishes; when it is unavailable the request is answered at once {id, error: \"daemon busy: <activity> since <time> (<reason>); retry later\"} built from the blocking holder's metadata, and nothing runs. Nested in-daemon calls and cross-class channel calls made under that hold do not request it again. daemon.compact is exempt because it triggers maintenance itself; every other method, daemon.shutdown included, is refused during maintenance (a SIGTERM shutdown waits for the compaction or the hard-exit backstop).",
+            "A cross-class request made by a handler that already holds the maintenance lock (a nested in-daemon call routed to another worker) carries underHold: true on its RequestEnvelope, an additive optional field on s1's sc3 envelope delivered by s2; the receiving worker's entry skips the maintenance check for it, so a pending exclusive cannot refuse a request half-way through."
           ]
         },
         {
@@ -532,7 +566,7 @@
           ],
           "returns": {
             "type": "Promise<DaemonStatus>",
-            "meaning": "Today's DaemonStatus, every field and meaning unchanged, plus an additive maintenance field {state: 'compacting', since} while compaction runs."
+            "meaning": "Today's DaemonStatus, every field and meaning unchanged, plus an additive maintenance field {state: 'compacting', since, activity, reason} while maintenance holds the daemon maintenance lock."
           },
           "errors": [],
           "preconditions": [
@@ -614,9 +648,10 @@
             }
           ],
           "preconditions": [
-            "Called only by the main thread's maintenance while every request except daemon.status is held, after every thread that may hold a graph handle (the admin worker, the code-indexing worker, the document-summary worker and the main thread's own session work) has acknowledged that it has no store work in flight and has closed its handle with closeGraphStore.",
+            "Called only by the main thread's maintenance while the main thread holds the daemon maintenance lock exclusively (every other request is refused and none is running), after every thread that may hold a graph handle (the admin worker, the code-indexing worker, the document-summary worker and the main thread's own session work) has acknowledged that it has no store work in flight and has closed its handle with closeGraphStore.",
             "Closing a worker's handle is within s1's contract: s1 verified that a worker's open, use, close and exit keep the process's LMDB locks (src/db/graph/__tests__/worker-thread-lock.test.ts), and the approved HLD's Stores section states a worker closing its handle is safe. lmdb-js shares one native environment per process and closes it only when its last handle closes, so the main thread's close inside compactGraphStore ends the environment only because every other handle is already closed; the rename and lock-file removal therefore never run under a handle that is still open.",
-            "Change site: src/db/graph/store.ts:861-875 gains the optional beforeRename hook between root.close() and renameSync; without the hook (today's callers) behaviour is unchanged."
+            "Change site: src/db/graph/store.ts:861-875 gains the optional beforeRename hook between root.close() and renameSync; without the hook (today's callers) behaviour is unchanged.",
+            "The 'environment really closed' check maintenance passes as beforeRename is concrete: every live worker the router supervises has acknowledged a 'graph.close' message only after its own closeGraphStore() resolved (its module instance holds no handle), the main thread's own handle closed inside compactGraphStore, and no worker was started since the acknowledgements were collected; a missing acknowledgement makes the check return false."
           ],
           "postconditions": [
             "Every thread reopens its handle lazily on next use after resume, onto the compacted file; no write is lost because nothing writes between the copy and the close."
@@ -745,7 +780,7 @@
       {
         "entity": "Router daemon.info hub op and maintenance state",
         "change": "new",
-        "details": "A main-thread hub service returning {startedAt, modelState, installedCommit, lmdbFileSizeMb, maintenance?}. bootstrapEmbeddingModel runs once on the main thread (src/daemon/lifecycle.ts:87-109); its decided backend is pushed to every worker ('embedder.backend') because the embedder's activeBackend is per isolate (src/indexer/embedder.ts:85-103). maintenance is {state: 'compacting', since} while compaction runs; DaemonStatus gains it as an additive optional field.",
+        "details": "A main-thread hub service returning {startedAt, modelState, installedCommit, lmdbFileSizeMb, maintenance?}. bootstrapEmbeddingModel runs once on the main thread (src/daemon/lifecycle.ts:87-109); its decided backend is pushed to every worker ('embedder.backend') because the embedder's activeBackend is per isolate (src/indexer/embedder.ts:85-103). maintenance is {state: 'compacting', since, activity, reason}, read from the maintenance lock's holder metadata (LockManager.query) while the lock is held exclusively; DaemonStatus gains it as an additive optional field.",
         "callSites": [
           "src/daemon/index.ts:262",
           "src/daemon/lifecycle.ts:87-109",
@@ -756,11 +791,14 @@
       {
         "entity": "Maintenance controller",
         "change": "new",
-        "details": "On the main thread. Idle: no non-admin request has arrived and none is in flight for idleMs (config, default 30 minutes), and the board shows both lanes idle; admin requests (status polls) do not count as activity. Worth it: reclaimable = file size - pages in use * pageSize, pages in use summed from getStats() (branch + leaf + overflow pages) over every named database of the GraphStore (src/db/graph/store.ts:250-312); compaction runs only when reclaimable >= 25% of the file and >= 256 MB (config). Sequence: set maintenance state; hold every incoming request except daemon.status in arrival order; wait for in-flight main-thread requests to finish; pause() the queue on the code-indexing worker and the summary worker's current job; each indexing worker and the admin worker close their graph handle and acknowledge; compactGraphStore on the main thread; resume the queue; forward the held requests in arrival order; clear maintenance state. Manual daemon.compact on the code-indexing worker keeps today's busy refusal (queue.depth > 0 or processing) and otherwise asks the main thread to run maintenance now and returns its CompactResult.",
+        "details": "On the main thread, coordinated through the daemon maintenance lock (lock framework afcfa027, docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md). Every request other than daemon.status makes a no-wait shared request (ifAvailable) on the lock 'daemon.maintenance' before it runs, on whichever thread serves it, and holds it until it finishes; indexing jobs take it shared per job and wait (a bounded wait) rather than fail. Idle: no non-admin request has arrived and none is in flight for idleMs (config, default 30 minutes), and the board shows both lanes idle; admin requests (status polls) do not count as activity. Worth it: reclaimable = file size - pages in use * pageSize, pages in use summed from getStats() (branch + leaf + overflow pages) over every named database of the GraphStore (src/db/graph/store.ts:250-312); compaction runs only when reclaimable >= 25% of the file and >= 256 MB (config). Sequence: request the lock exclusively with metadata {activity: 'compaction', reason: '<idle time>, <reclaimable %> / <reclaimable MB> reclaimable'} and timeoutMs = the pause limit (10 minutes, config); by writer preference every new request is refused from that moment with the activity, reason and start time; requests already running finish and release; once granted, tell every live worker to close its graph handle and wait for each acknowledgement; compactGraphStore on the main thread with its pre-rename check; release the lock. Each decision (pause wait, idle time, reclaimable % and bytes, outcome) is logged. Manual daemon.compact on the code-indexing worker keeps today's busy refusal (queue.depth > 0 or processing) and otherwise asks the main thread to run maintenance now and returns its CompactResult; it does not take a shared hold itself, so it cannot block its own maintenance. Non-request store users take the lock too: the prune timer and todo-retention timer on the main thread (src/daemon/index.ts:2014, src/daemon/todos-rpc.ts:1206), the watcher path and every indexing job request it shared with a bounded wait around each run, so none writes during compaction. As a second guard, while maintenance compacts, getGraphStore on any thread other than the compactor rejects with a named MaintenanceInProgress error instead of reopening the store. Long-lived subscription streams (understanding.watch, src/daemon/understanding-rpc.ts:106-113; todos.subscribe) do not hold the lock for their lifetime and do not count as activity for idle detection: each refresh or push takes it shared with ifAvailable and is skipped while maintenance holds it. Bounded streams (workflow.run, codeReview.run, step.call, analyze.run.start, ollama.pull, workflow.review) hold it for their run like any request.",
         "callSites": [
+          "src/daemon/index.ts:1647-1664",
+          "src/daemon/index.ts:2014",
+          "src/daemon/todos-rpc.ts:1206",
+          "src/daemon/understanding-rpc.ts:106-113",
           "src/db/graph/store.ts:250-312",
-          "src/db/graph/store.ts:831-890",
-          "src/daemon/index.ts:1647-1664"
+          "src/db/graph/store.ts:831-890"
         ]
       },
       {
@@ -798,6 +836,15 @@
         "callSites": [
           "src/db/graph/store.ts:855-886"
         ]
+      },
+      {
+        "entity": "RequestEnvelope.underHold",
+        "change": "field-add",
+        "details": "Optional boolean on sc3's RequestEnvelope (src/daemon/threads/channel.ts), set by the in-daemon client's router path for a cross-class call made under an outer request's maintenance hold; the receiving worker does not request the maintenance lock for it. Additive amendment to s1's contract, delivered by s2.",
+        "callSites": [
+          "src/daemon/threads/channel.ts",
+          "src/daemon/steps/daemon-client.ts:79-91"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -827,7 +874,7 @@
         {
           "scenario": "The admin worker exits (uncaught exception, import failure, out of memory).",
           "detection": "The router's 'exit' listener on the admin Worker fires; its in-flight admin requests are in the router's pending map.",
-          "response": "reclaim(threadId); unregister; answer each in-flight admin request {id, error: \"the daemon's admin thread stopped while serving <method>; retry\"}; start a replacement; admin requests arriving meanwhile wait for it (at most 30 s). Restarts are rate-limited (5 in 60 s); past the limit the router logs fatal and runs shutdown. s2 supervises the workers it introduces (admin, code-indexing, document-summary); s4 extends the same supervision to session workers and owns the unified view (HLD boundary note 2026-10-22).",
+          "response": "reclaim(threadId); unregister; answer each in-flight admin request {id, error: \"the daemon's admin thread stopped while serving <method>; retry\"}; start a replacement; admin requests arriving meanwhile wait for it (at most 30 s). Restarts are rate-limited (5 in 60 s); past the limit the router logs fatal and runs shutdown. s2 supervises the workers it introduces (admin, code-indexing, document-summary); s4 extends the same supervision to session workers and owns the unified view (HLD boundary note 2026-10-22). Every worker the router starts is registered with the lock framework's watchWorker, so a dead worker's maintenance-lock holds are reclaimed; the router reclaims its store-guard permits itself.",
           "userImpact": "One status call may fail; the next is answered by the new admin worker.",
           "recoverable": true
         },
@@ -860,16 +907,16 @@
           "recoverable": false
         },
         {
-          "scenario": "A worker does not acknowledge the maintenance pause (a long job keeps running).",
-          "detection": "The maintenance controller's wait for every worker's pause acknowledgement passes its limit (10 minutes, config).",
-          "response": "Maintenance is abandoned before anything is closed: the queue resumes, held requests are forwarded, maintenance state clears, and a warning is logged; the idle check starts over. A manual daemon.compact in this case answers {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.",
+          "scenario": "Requests already running do not finish within the pause limit after maintenance asked for the lock.",
+          "detection": "The exclusive lock request's timeoutMs (the pause limit, 10 minutes, config) expires with a LockTimeoutError naming the shared holders.",
+          "response": "Maintenance is abandoned before anything is closed: the exclusive request is withdrawn (new requests are accepted again), a warning names the holders, and the idle check starts over. A manual daemon.compact in this case answers {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.",
           "userImpact": "Compaction is skipped; nothing is lost and requests are served.",
           "recoverable": true
         },
         {
           "scenario": "compactGraphStore fails (copy, close or rename).",
           "detection": "compactGraphStore rejects with LmdbStoreError.",
-          "response": "As today the store is left at its original path (the rename failure path restores .bak); the main thread reopens it, the workers reopen on next use, the queue resumes and held requests are forwarded; the failure is logged and returned to a manual daemon.compact caller as today's error message.",
+          "response": "As today the store is left at its original path (the rename failure path restores .bak); the main thread reopens it, the workers reopen on next use, the maintenance lock is released so requests are accepted again; the failure is logged and returned to a manual daemon.compact caller as today's error message.",
           "userImpact": "Compaction failed with an error; the daemon keeps serving.",
           "recoverable": true
         },
@@ -886,6 +933,13 @@
           "response": "For a stream request the router sends a CancelEnvelope and the worker aborts the stream handler's AbortSignal, as today. For a unary request nothing is aborted: the handler runs to completion as today and the router drops its late reply, as today's write to a closed socket does.",
           "userImpact": "Same as today.",
           "recoverable": true
+        },
+        {
+          "scenario": "A background timer (conversation prune, todo retention) or a watcher-driven write fires during compaction.",
+          "detection": "The timer's run requests the maintenance lock shared with a bounded wait; a store access that slips past it hits getGraphStore's maintenance guard.",
+          "response": "The run waits until maintenance releases the lock (or skips this tick at its bound and logs it); getGraphStore rejects with MaintenanceInProgress rather than reopening the original file before the rename.",
+          "userImpact": "No background write is lost or written to the file being replaced.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -895,7 +949,7 @@
         },
         {
           "input": "A session request arrives during maintenance.",
-          "expected": "It is held and served after compaction, in arrival order with other held requests; daemon.status meanwhile reports maintenance compacting."
+          "expected": "It is refused at once with {error: \"daemon busy: compaction since <time> (<reason>); retry later\"}; daemon.status meanwhile reports maintenance compacting with the same activity and reason."
         },
         {
           "input": "daemon.compact while the queue has work.",
@@ -920,6 +974,18 @@
         {
           "input": "A file change while a long session request runs on the main thread.",
           "expected": "The watcher on the code-indexing worker enqueues and indexes it; the main thread's busy loop does not delay it."
+        },
+        {
+          "input": "A request arrives after maintenance asked for the lock but before the running requests finished.",
+          "expected": "Refused with the maintenance activity and reason (writer preference), even though compaction has not started yet."
+        },
+        {
+          "input": "An indexing job is due while maintenance holds the lock.",
+          "expected": "The queue's job loop waits for the lock (it has no caller to refuse) and starts the job once maintenance releases it."
+        },
+        {
+          "input": "A client keeps an understanding.watch or todos.subscribe stream open for hours.",
+          "expected": "The stream does not keep the daemon from becoming idle and does not block maintenance; refreshes due during maintenance are skipped and resume after it."
         }
       ],
       "invariantsToPreserve": [
@@ -961,7 +1027,7 @@
             "publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today",
             "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
             "reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required",
-            "router hold queue: requests held during maintenance are released in arrival order; daemon.status is never held; a target missing for 30 s answers the not-available error",
+            "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered; a target missing for 30 s answers the not-available error",
             "runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)",
             "compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data"
           ]
@@ -977,14 +1043,21 @@
             "queue status from daemon.status and waitForIndexIdle on the summary worker reflect the code-indexing worker's real state",
             "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
             "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
-            "maintenance: with idle forced and the threshold met, a session request and an admin read sent during compaction wait and are answered afterwards, daemon.status answers during it with maintenance compacting, every row written before compaction is present after it, and the file shrank",
+            "maintenance: with idle forced and the threshold met, a session request and an admin read sent during compaction are refused with the maintenance activity and reason, a request already running finishes before compaction starts, daemon.status answers during it with maintenance compacting, every row written before compaction is present after it, and the file shrank",
             "manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work",
-            "a worker that never acknowledges the pause makes maintenance abandon without closing anything",
+            "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
             "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
             "a worker started before the embedding bootstrap settles embeds with the decided backend after the push",
             "maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename, and the store is untouched",
             "after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held (lock probe as in worker-thread-lock.test.ts)",
-            "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires"
+            "a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires",
+            "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock; manual daemon.compact does not wait on a hold of its own",
+            "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+            "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+            "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
+            "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+            "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+            "after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment (test before relying on it for the rename)"
           ],
           "fixturesNeeded": [
             "temporary HOME with the daemon started in-process on a temporary socket",
@@ -1062,7 +1135,7 @@
         {
           "criterionId": "ac8",
           "provingTests": [
-            "integration: during maintenance requests wait and are answered after, daemon.status reports compacting, no write is lost, the file shrinks",
+            "integration: during maintenance requests are refused with the activity and reason, running requests finish first, daemon.status reports compacting, no write is lost, the file shrinks",
             "integration: manual daemon.compact keeps today's result and busy refusal",
             "unit: idle detection ignores admin polls; the reclaimable thresholds are both required"
           ]
@@ -1119,7 +1192,7 @@
         },
         {
           "order": 8,
-          "action": "Add the maintenance controller (idle detection, reclaimable estimate, hold-all-but-status, pause and handle close, compaction, resume) and route daemon.compact through it, keeping today's responses.",
+          "action": "Add the maintenance controller on the daemon maintenance lock (lock framework afcfa027): every request takes it shared with no wait and is refused with the activity and reason while maintenance holds it; idle detection, the reclaimable estimate, the exclusive request with the pause limit, handle close, compaction and release; route daemon.compact through it, keeping today's responses; register every worker with watchWorker.",
           "rollbackable": true,
           "prerequisiteFlags": [
             "daemon.threads.enabled"
@@ -1131,7 +1204,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "The IPC contract is unchanged: socket path and permissions, method names, request shapes and every response field and meaning, including 'unknown method', 'invalid JSON', stream framing, the stream-to-unary fallback, the named LmdbStoreLocksLostError message, and daemon.compact's result and busy refusal. daemon.status gains one optional field (maintenance) present only while compaction runs. The only behavioural change clients see is that during idle maintenance their requests other than daemon.status wait until compaction ends. With daemon.threads.enabled off the daemon runs single-threaded as today.",
+      "backwardCompat": "The IPC contract is unchanged: socket path and permissions, method names, request shapes and every response field and meaning, including 'unknown method', 'invalid JSON', stream framing, the stream-to-unary fallback, the named LmdbStoreLocksLostError message, and daemon.compact's result and busy refusal. daemon.status gains one optional field (maintenance) present only while compaction runs. The only behavioural change clients see is that during idle maintenance their requests other than daemon.status are refused with the maintenance activity and reason and must be retried. With daemon.threads.enabled off the daemon runs single-threaded as today.",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -1189,8 +1262,8 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.",
-      "Session workers (s3) must join the maintenance pause: s3 adds them to the set of threads that close their graph handle and acknowledge before compaction.",
-      "Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22."
+      "Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.",
+      "Depends on the lock framework (standalone Story afcfa027, LLD approved 2026-10-22); s2's build starts after that Story's build. Session workers (s3) need no pause registry: they take the maintenance lock shared per request and are registered with watchWorker."
     ]
   },
   "citations": [

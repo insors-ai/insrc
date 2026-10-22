@@ -30,308 +30,310 @@
           "ref": "c1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "In src/daemon/index.ts main() declares `const rpcHandlers: RpcHandlers` near line 507 and `const streamHandlers: StreamHandlers`, with the understanding routes merged in near lines 1994-1995.",
-          "evidence": "read src/daemon/index.ts:507 → `const rpcHandlers: RpcHandlers = {` (matches the claim). grep finds `const streamHandlers: StreamHandlers = {` at src/daemon/index.ts:1906; the premise names this declaration without giving a line, so nothing contradicts it. read src/daemon/index.ts:1994 → `Object.assign(rpcHandlers, understandingRoutes.rpc);`, which confirms the understanding routes are merged in near line 1994. Line 1995 was not read separately, but it sits right after the rpc merge and fits the claimed streamHandlers merge. The DEF's c1 citation (DEF.md:171) describes the same structure.",
+          "premise": "src/daemon/index.ts main() builds `const rpcHandlers: RpcHandlers` at line 507, spreads makeUpdateHandlers (daemon.update, daemon.updateOutcome) around line 1670, and merges understanding routes around lines 1994-1995.",
+          "evidence": "All three anchors resolve to the entities the premise names. The read of src/daemon/index.ts:507 returns `const rpcHandlers: RpcHandlers = {`, the read of src/daemon/index.ts:1670 returns `...makeUpdateHandlers({`, and the read of src/daemon/index.ts:1994 returns `Object.assign(rpcHandlers, understandingRoutes.rpc);`. The grep also places `const streamHandlers: StreamHandlers = {` at src/daemon/index.ts:1906, which fits the companion stream merge at about line 1995. makeUpdateHandlers is exported from src/daemon/update-runner.ts:265 and imported at index.ts:72. The evidence does not list the method names makeUpdateHandlers returns (daemon.update, daemon.updateOutcome), but nothing contradicts them. Line 1995 was not read, and the premise says 'around', so that is acceptable.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence confirms the premise: rpcHandlers is declared at line 507, streamHandlers is declared at line 1906, and the understanding routes are merged in with Object.assign at line 1994. No edit needed."
+            "rationale": "The cited lines match the source exactly; no edit is needed."
           }
         },
         {
           "claimId": "p2",
-          "ref": "c1",
+          "ref": "c2",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "rpcHandlers receives daemon.update and daemon.updateOutcome from a makeUpdateHandlers spread near src/daemon/index.ts:1670.",
-          "evidence": "grep /\\.\\.\\.makeUpdateHandlers/ returns exactly 1 match, at src/daemon/index.ts:1670 (\"...makeUpdateHandlers({\"), and the read of src/daemon/index.ts:1670 returns FOUND with that same line. So the spread into the handler map is at the cited line. The method names are referenced throughout: DEF.md:171 cites the same spread at line 1670, the S002 LLD.md:60 puts daemon.update and daemon.updateOutcome in the admin class, and the older test output shows 't3: daemon.updateOutcome returns the last outcome'. The evidence does not show the body of makeUpdateHandlers, so the names it returns are inferred from those references, not read directly. Nothing contradicts the premise.",
+          "premise": "src/daemon/server.ts exports RpcHandler (:39), StreamHandler (:42), RpcHandlers (:48), StreamHandlers (:49), failureMessage (:71) and class IpcServer (:79) with flushPendingWrites (:106).",
+          "evidence": "Every cited anchor in the evidence resolves to the claimed export: src/daemon/server.ts:39 'export type RpcHandler = (params: unknown) => Promise<unknown>;', :42 'export type StreamHandler = (', :48 'export type RpcHandlers = Record<string, RpcHandler>;', :49 'export type StreamHandlers = Record<string, StreamHandler>;' (grep), :71 'export function failureMessage(err: unknown, method: string): string {', :79 'export class IpcServer {', :106 'async flushPendingWrites(timeoutMs = 1000): Promise<boolean> {'. Callers of flushPendingWrites exist at src/daemon/index.ts:2081 and src/daemon/__tests__/understanding-rpc.test.ts:145/170/173.",
           "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p3",
-          "ref": "c2",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "src/daemon/server.ts exports RpcHandler, StreamHandler, RpcHandlers, StreamHandlers, failureMessage and class IpcServer with members listen, close, attachedClients, disconnectClients, flushPendingWrites.",
-          "evidence": "The export grep confirms every named top-level export in src/daemon/server.ts: `export type RpcHandler` (:39), `export type StreamHandler` (:42), `export type RpcHandlers` (:48), `export type StreamHandlers` (:49), `export function failureMessage(err: unknown, method: string): string` (:71) and `export class IpcServer` (:79). The cited anchor src/daemon/server.ts:18 points somewhere else: it reads `readonly connectedAt: number;`, a field of the AttachedClient shape, not the start of the inventory. The member grep stopped at its 50-match cap, and none of the matches it returned are in src/daemon/server.ts. So listen, close, attachedClients, disconnectClients and flushPendingWrites are not directly confirmed on IpcServer. Indirect support: test logs name `attachedClients()`, and an older LLD cites attachedClients() at server.ts:84. disconnectClients and flushPendingWrites appear only in the S002 LLD's own target signature, which is not ground truth. The export half of the premise is verified. The member half can't be checked from this evidence, and the anchor is stale but still points at the same file and concept.",
-          "action": "Change the anchor from src/daemon/server.ts:18 to src/daemon/server.ts:79, where `export class IpcServer` is, or cite the export range :39-79. Then check that the five IpcServer members exist. Read the class body after :79, or grep src/daemon/server.ts alone for `(listen|close|attachedClients|disconnectClients|flushPendingWrites)\\(`. Pay particular attention to disconnectClients and flushPendingWrites; if either does not exist yet, mark it as a new member the Story adds, not as existing inventory.",
-          "fixability": "assisted",
+          "fixability": "manual",
           "proposedFix": {
-            "rationale": "The export list is verified (:39-:79). The anchor is stale (:18 is the AttachedClient.connectedAt field). The members could not be verified because the grep hit its cap. Re-anchoring to :79 follows from the evidence, but it is only safe once the anchor string is confirmed to be unique in the artifact. The member claims need a targeted read before anyone relies on them.",
-            "options": [
-              "Re-anchor to src/daemon/server.ts:79 (export class IpcServer) and keep the member list once a targeted read confirms all five members.",
-              "Re-anchor to src/daemon/server.ts:39-79 (the export block) and split the premise: exports verified, and any members not confirmed by a read get listed as additions.",
-              "Remove disconnectClients and flushPendingWrites from the existing-inventory claim if a read shows they are not in the current IpcServer, and list them as members this Story adds."
-            ]
+            "rationale": "All seven cited line numbers and symbol names match the source exactly; no correction needed."
           }
         },
         {
-          "claimId": "p4",
-          "ref": "Problem",
+          "claimId": "p3",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The index queue and all graph/vector/data-store access run on the daemon's single main JavaScript thread today (before this Epic).",
-          "evidence": "All 10 `new Worker(` matches are in test files only (src/daemon/threads/__tests__/*.test.ts, src/db/__tests__/cross-thread-stores.test.ts, src/db/__tests__/store-guard.test.ts, src/db/graph/__tests__/store-health-threads.test.ts, src/db/graph/__tests__/worker-thread-lock.test.ts). No production module spawns a worker. The non-test `worker_threads` imports are src/daemon/threads/channel.ts:21, store-health-hub.ts:14, worker-entry.ts:16-17 and src/db/store-guard.ts:25. These are worker infrastructure that this Epic's s1 added (the S001 LLD covers real worker_threads tests). They are not a pre-existing off-main-thread execution path. src/daemon/queue.ts:301 confirms the index lane lives in queue.ts ('True when the index lane has no job running and none queued.'). So the pre-Epic state the premise describes holds: the queue and all store access run on the single main thread, and even after s1 nothing in production runs a Worker yet.",
-          "action": "none — verified sound. Optional: when later Stories (s2+) start spawning production workers, keep the Problem text worded as 'before this Epic' so it doesn't read as describing the current code.",
+          "premise": "Today the daemon serves all clients and runs the index queue and all store access on a single JavaScript thread (no worker_threads used for request handling before this Epic).",
+          "evidence": "grep /new Worker\\(/ found 11 matches, and every one is in a test (src/daemon/threads/__tests__/*.test.ts, src/db/__tests__/*.test.ts, src/db/graph/__tests__/*.test.ts) or in LLD prose. None is in production code. The lock-framework LLD (docs/standalone/.../S001/LLD.md:137) also says \"no production code spawns daemon workers yet\". Outside tests, grep /worker_threads/ matches only imports of types, isMainThread or threadId: src/daemon/threads/channel.ts:21, store-health-hub.ts:14, worker-entry.ts:16-17 and src/db/store-guard.ts:25. That is this Epic's s1 thread infrastructure, which prepares for workers but spawns none. None of the anchored files src/daemon/index.ts, server.ts or queue.ts imports worker_threads. server.ts:79 resolves to `export class IpcServer`, the single in-process IPC server. So requests, the index queue and store access all still run on one JS thread.",
+          "action": "none — verified sound. Optional: note that s1 already added thread scaffolding (src/daemon/threads/*, src/db/store-guard.ts) but that no production code calls `new Worker(` yet.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p4",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "getGraphStore() in src/db/graph/store.ts (~564-572) returns the module-level _instance or shared _initPromise: one GraphStore per process.",
+          "evidence": "The read of src/db/graph/store.ts:564 returns `export async function getGraphStore(): Promise<GraphStore> {`. In src/, the grep for /export (async )?function getGraphStore/ matches only this line, plus the separate `getGraphStorePath` at :336. The module-level state is declared at store.ts:321 `let _instance: GraphStore | null = null;` and at store.ts:322 `let _initPromise: Promise<GraphStore> | null = null;`. Inside the function, store.ts:568 reads `if (_initPromise !== null) return _initPromise;` and store.ts:572 reads `_initPromise = (async (): Promise<GraphStore> => {`. That is the shared-promise path within the cited ~564-572 range. The `_instance` early return (presumably at :565-567) was not shown verbatim. Even so, the module-level `_instance`, the shared `_initPromise` and the lazy-init shape confirm one cached GraphStore per process (per module instance).",
+          "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "Verified sound against the evidence: the only Worker spawns are in tests, and the threads/ modules are scaffolding from this Epic's s1. No edit needed."
+            "rationale": "The anchor and the singleton semantics are both confirmed by the evidence, so no edit is needed."
           }
         },
         {
           "claimId": "p5",
-          "ref": "c14",
+          "ref": "c12",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "scripts/daemon-ctl.sh around lines 259-263 stops a stale daemon (signal_stop; wait_for_daemon_stop || force_stop_daemon) before starting a new one.",
-          "evidence": "The read of scripts/daemon-ctl.sh:259 found '# Stop a stale daemon first + wait for full drain.' The search for 'stopping stale daemon' matched scripts/daemon-ctl.sh:261 (log \"stopping stale daemon (pid $(cat \"$PID_FILE\"))\"). The search for 'wait_for_daemon_stop || force_stop_daemon' matched scripts/daemon-ctl.sh:263. So lines 259-263 contain the stale-daemon stop sequence the premise describes. The evidence does not show line 262 (signal_stop) directly, but the anchor range and the quoted call order both line up with the real lines.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p6",
-          "ref": "c7",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/db/graph/store.ts:564-568 getGraphStore() returns the module-level _instance or shared _initPromise — one GraphStore per process.",
-          "evidence": "The read of src/db/graph/store.ts:564 returns `export async function getGraphStore(): Promise<GraphStore> {`, and the grep shows this is the only getGraphStore definition in src/. src/db/graph/store.ts:568 is `if (_initPromise !== null) return _initPromise;`, so the function returns the shared in-flight promise inside the cited 564-568 range. `_initPromise` is declared once at module level at store.ts:322 (`let _initPromise: Promise<GraphStore> | null = null;`). store.ts:339 (`if (_instance !== null || _initPromise !== null) throw ...`) shows `_instance` is a module-level singleton too, so there is one GraphStore per process. The `_instance` early-return line itself is not in the evidence, but given the pattern it almost certainly sits between :564 and :568, and the premise's conclusion holds. One side note: the DEF.md copy of c7 (DEF.md:177) still cites the stale range `store.ts:528-531`. This premise's own anchor :564-568 is the correct, current one.",
+          "premise": "src/shared/ipc-client.ts rpc() (~46-55) opens a new socket per call via createConnection and sends client: { label: 'cli', pid: process.pid }.",
+          "evidence": "read src/shared/ipc-client.ts:46 → FOUND: `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {`. That is the default per-call connect seam, so each call opens a new socket through createConnection. The grep for label: 'cli' matched src/shared/ipc-client.ts:53: `const req: IpcRequest = { id: _nextId++, method, params, client: { label: 'cli', pid: process.pid } };`, inside the ~46-55 range. src/cli/services/__tests__/debug-mcp.test.ts:129 asserts `req.client` deepEquals `{ label: 'cli', pid: process.pid }`. The evidence confirms every part of the premise.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The anchor and the singleton behaviour are confirmed by store.ts:564, :568, :322 and :339. Nothing needs changing in this premise. Separately, it would help to refresh the stale `store.ts:528-531` range in DEF.md c7 to 564-568."
+            "rationale": "The premise matches the source at both cited points: the per-call createConnection default at :46 and the client identity envelope at :53. No edit is needed."
+          }
+        },
+        {
+          "claimId": "p6",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/mcp/forward-step.ts (~115-121) opens a socket per step.call and sends client label 'mcp' with pid; src/mcp/daemon-stream.ts also sends the client identity.",
+          "evidence": "src/mcp/forward-step.ts:115 reads `const connect = deps.connect ?? _connectOverride;`, which is where the per-call connection is set up. src/mcp/forward-step.ts:120 sends `client: { label: 'mcp', pid: process.pid },`, inside the cited ~115-121 range. src/mcp/daemon-stream.ts also sends the client identity at three places: line 137 (`client: { label: 'mcp', pid: process.pid }, // self-identify to the daemon registry (Story s4)`), line 226 (the rpc write) and line 424 (the stream write). The evidence supports every part of the premise.",
+          "action": "None. The evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the premise, so no edit is needed."
           }
         },
         {
           "claimId": "p7",
-          "ref": "c12",
-          "kind": "citation",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "src/shared/ipc-client.ts:46-55 rpc() opens a new socket per call via createConnection and sends client { label: 'cli', pid: process.pid }.",
-          "evidence": "read src/shared/ipc-client.ts:46 → FOUND: `export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {`. Each call invokes the `connect` seam, which by default opens a new socket via createConnection. grep /label: 'cli'/ → src/shared/ipc-client.ts:53: `const req: IpcRequest = { id: _nextId++, method, params, client: { label: 'cli', pid: process.pid } };`. This falls inside the cited 46-55 range. src/cli/services/__tests__/debug-mcp.test.ts:129 also asserts `req.client` deepEquals `{ label: 'cli', pid: process.pid }`. The premise holds.",
-          "action": "none — verified sound",
+          "premise": "The client identity field on IPC requests is optional on the wire, so requests without it must be accepted.",
+          "evidence": "The evidence supports the premise. src/shared/types.ts:896 declares the IpcRequest field as `client?: { readonly label: string; readonly pid: number } | undefined;`, so the field is optional on the wire. The design that added it (docs/epics/...f900cf34/S004/LLD.md:146) says it is \"Additive/non-breaking — the daemon reads it opportunistically for the connection registry; absence yields an 'unknown'-labelled connection\". The plan at S004/PLAN.md:23 also says \"every existing caller/handler stays valid with the field absent\". The server test src/daemon/__tests__/server-registry.test.ts:47 builds requests with an optional `client?: IpcRequest['client']`, which fits requests both with and without the field. Epic 86197ac6's own HLD.md:484 cites the same line as constraint c11. One caveat: the field is declared in src/shared/types.ts, not in the listed anchors src/shared/ipc-client.ts and src/daemon/server.ts. No line from server.ts was read, so the evidence does not directly show how the server handles a missing field. The type and the design record do establish the contract.",
+          "action": "None. The premise is verified. Optionally, add src/shared/types.ts:896 as an anchor, since that line holds the declaration.",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The premise is confirmed by the read at :46 and the grep match at :53, so no edit is needed."
+            "rationale": "The premise is verified. The field is optional at src/shared/types.ts:896, and the design record says a request without it is accepted and labelled 'unknown'. No edit is needed. Adding the types.ts:896 anchor would only make the citation more precise."
           }
         },
         {
           "claimId": "p8",
-          "ref": "c12",
-          "kind": "inventory",
-          "severity": "LOW",
-          "premise": "The MCP server sends client label 'mcp' with pid from both src/mcp/forward-step.ts (~115-121, socket per step.call) and src/mcp/daemon-stream.ts; cli and mcp are the clients that self-report identity, and the field is optional on the wire.",
-          "evidence": "The premise checks out. src/mcp/forward-step.ts:120 sets `client: { label: 'mcp', pid: process.pid }`. Line 115 (`const connect = deps.connect ?? _connectOverride;`) is the per-call connect in the same block, so the cited range 115-121 is correct. src/mcp/daemon-stream.ts also sends `client: { label: 'mcp', pid: process.pid }` at :137, :226 and :424. src/shared/ipc-client.ts:53 sends `client: { label: 'cli', pid: process.pid }`. In non-test source, the label grep finds no other producer, so cli and mcp are the only clients that report their identity. src/shared/types.ts:896 declares the field optional: `client?: { readonly label: string; readonly pid: number } | undefined;`.",
-          "action": "None needed; the evidence confirms the premise.",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "Verified sound; no edit needed."
-          }
-        },
-        {
-          "claimId": "p9",
           "ref": "c13",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/daemon/queue.ts:301-318 defines get isIndexIdle() checking lanes.index.inFlight === null && jobs.length === 0, and waitForIndexIdle().",
-          "evidence": "src/daemon/queue.ts:301 reads \"/** True when the index lane has no job running and none queued. */\", which is the doc comment just above line 302 \"get isIndexIdle(): boolean { return this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0; }\". src/daemon/queue.ts:315 defines \"waitForIndexIdle(): Promise<void> {\", which is inside the cited 301-318 range. Callers at queue.ts:268, indexer/index.ts:960 and :988, plus the tests in queue-lanes.test.ts, show both members exist and are used.",
+          "premise": "src/daemon/queue.ts (~301-318) defines `get isIndexIdle()` (index lane inFlight null and no jobs) and waitForIndexIdle(); the summary lane yields to the index lane.",
+          "evidence": "The evidence confirms each part of the premise. Line 301 of src/daemon/queue.ts is the doc comment \"/** True when the index lane has no job running and none queued. */\". Line 302 has `get isIndexIdle(): boolean { return this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0; }`. Line 315 has `waitForIndexIdle(): Promise<void> {`, so both members sit inside the cited range 301-318. The summary lane yields to the index lane: line 268 runs `while (!this.stopped && !this.isIndexIdle) await this.waitForIndexIdle();`, and line 296 releases the waiters once the index lane drains. The sweep in src/indexer/index.ts:960 and :988 also uses it.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p10",
-          "ref": "k3",
-          "kind": "semantic",
+          "claimId": "p9",
+          "ref": "c14",
+          "kind": "citation",
           "severity": "LOW",
-          "premise": "The queue has exactly two lanes (index and document-summary), and the summary lane starts a job only while the index lane is idle.",
-          "evidence": "src/daemon/queue.ts:53 and :56 build the queue and its depth from exactly two lanes, `this.lanes.index` and `this.lanes.summary`. :243 returns `{ index: of(this.lanes.index), summary: of(this.lanes.summary) }`, :254-255 drain only those two lanes, and src/daemon/status.ts:51 reports only index and summary. So there are exactly two lanes. For the idle gate, :264 checks `lane === this.lanes.summary && lane.jobs.length > 0` and :268 then runs `while (!this.stopped && !this.isIndexIdle) await this.waitForIndexIdle();` before the summary lane takes a job. :302 defines `isIndexIdle` as `this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0`. src/indexer/index.ts:988 repeats the same gate for the document sweep. The evidence confirms the premise.",
+          "premise": "scripts/daemon-ctl.sh (~259-263) start/restart stops a stale daemon first (signal_stop; wait_for_daemon_stop || force_stop_daemon).",
+          "evidence": "scripts/daemon-ctl.sh:259 reads '# Stop a stale daemon first + wait for full drain.'; :261 has 'log \"stopping stale daemon (pid $(cat \"$PID_FILE\"))\"'; :263 has 'wait_for_daemon_stop || force_stop_daemon'; force_stop_daemon is defined at :188. The cited range 259-263 matches the premise.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence confirms the premise: the queue has two lanes, and the summary lane waits for the index lane to go idle before it starts a job (queue.ts:264-268, :302). No change is needed."
+            "rationale": "The anchor and the described stop-then-wait-or-force sequence match the source; nothing to change."
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c15",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/shutdown.ts (~64-71) exports endAfterStoreFailure(reason, health, deps) which clears the pid, appends a last line and calls deps.killSelf() (SIGKILL).",
+          "evidence": "src/daemon/shutdown.ts:64 reads 'export function endAfterStoreFailure(reason: string, health: LocksLost, deps: EndDeps = realEndDeps): void {', which matches the cited signature and anchor. Line 70 is 'deps.killSelf();', inside the cited 64-71 range. At line 45 the real deps define 'killSelf: () => { process.kill(process.pid, 'SIGKILL'); }', so the end is SIGKILL. The interface declares killSelf at line 36. The tests at shutdown-store-failure.test.ts:168 and :214 inject a killSelf fake and record 'KILL'. The evidence does not show the pid-clear or the last-line append lines directly. Those are minor sub-claims, and the parts that matter (the signature, killSelf, SIGKILL) are confirmed.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence confirms the export, its signature and its line, and the SIGKILL end through deps.killSelf(). No edit is needed."
           }
         },
         {
           "claimId": "p11",
-          "ref": "c15",
+          "ref": "c16",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/daemon/shutdown.ts:64-71 exports endAfterStoreFailure(reason, health, deps) which clears the pid, appends the last line and calls deps.killSelf() (SIGKILL).",
-          "evidence": "The read of src/daemon/shutdown.ts:64 found `export function endAfterStoreFailure(reason: string, health: LocksLost, deps: EndDeps = realEndDeps): void {`. That matches the cited anchor, the exported name and the parameter list (reason, health, deps). The grep for /export function endAfterStoreFailure/ finds exactly one source definition, at that line; the other match is the DEF.md:185 citation itself. The SIGKILL-to-self behaviour is backed by the file's header comment, which HLD c20 quotes from shutdown.ts:12-15: \"`locks-lost`, the daemon NEVER calls `process.exit`. ... SIGKILL to itself, which runs no exit hook\". The body steps on lines 65-71 (clear the pid, append the last line, call deps.killSelf()) were not in the gathered reads, but nothing in the evidence contradicts them. The citation points at the right entity with the right signature.",
-          "action": "none — verified sound",
-          "fixability": "manual",
-          "proposedFix": {
-            "rationale": "The anchor resolves to the cited function with the stated signature, and the file's header comment backs the claim that it ends by SIGKILL to itself without process.exit. No edit is needed."
-          }
+          "premise": "src/db/entities.ts upsertEntities commits graph rows via withWriteTxn (~223), then pushes vectors to Lance after the LMDB commit (~298) via lance.addEntityEmbeddings (~324).",
+          "evidence": "All three anchors match what the premise says. src/db/entities.ts:223 reads `await withWriteTxn(s => {`. src/db/entities.ts:298 reads `// Push vectors to Lance after the LMDB commit. Two paths:`. src/db/entities.ts:324 reads `if (adds.length > 0)    await lance.addEntityEmbeddings(adds);`. Line 299 (`firstEmbed: use addEntityEmbeddings (raw .add(), no JOIN)`) adds that this is the first-embed path. So the order holds: the graph rows commit in withWriteTxn first, and the vectors go to Lance afterwards.",
+          "action": "None. The premise checks out against the source.",
+          "fixability": "manual"
         },
         {
           "claimId": "p12",
-          "ref": "c16",
-          "kind": "ordering",
+          "ref": "c17",
+          "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "In src/db/entities.ts upsertEntities commits graph rows via withWriteTxn (~line 223) and only afterwards pushes vectors to Lance (addEntityEmbeddings ~line 324), so vectors are written after the graph commit.",
-          "evidence": "All three anchors match the source. Reading src/db/entities.ts:223 returns `await withWriteTxn(s => {`, which is where the graph commit happens. src/db/entities.ts:298 is the comment `// Push vectors to Lance after the LMDB commit. Two paths:`. src/db/entities.ts:324 returns `if (adds.length > 0)    await lance.addEntityEmbeddings(adds);`. The commit is awaited at line 223, the comment at 298 states the ordering, and the Lance push follows at 324. That confirms vectors are written only after the graph commit. A second Lance push at src/db/entities.ts:511 matches the same pattern and does not contradict the premise.",
-          "action": "None. The premise checks out against the source.",
+          "premise": "Story s1 is complete and verified multi-thread store use in src/daemon/threads/__tests__/worker-stores.test.ts (whole-transaction reads, vectors never precede graph rows, cross-worker artifact/config writes readable).",
+          "evidence": "The anchor file exists: src/daemon/threads/__tests__/worker-stores.test.ts:1 resolves to FOUND. Line 124 holds the test 'a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row'. S001/TESTS.md records that test as pass (line 279). It also records 'two workers' artifact-vector and config writes are read back from a third thread' as pass (line 285). The file summary at TESTS.md:309 shows 0 failing and 5 passing. Story s1 has a BUILD record that lists this test file (S001/BUILD.md:109) and a code review (S001/CR.md). The review raises only LOW reached-not-passing notes, and those notes say worker-stores.test.ts passes. DEF.md:189 states c17 the same way.",
+          "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "Verified sound: the cited lines exist and show the graph commit happening before the Lance vector push. Nothing needs editing."
+            "rationale": "The evidence confirms the premise. The test file exists, and both behaviours it names have passing test cases recorded against s1's BUILD."
           }
         },
         {
           "claimId": "p13",
           "ref": "c17",
-          "kind": "citation",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "src/daemon/threads/__tests__/worker-stores.test.ts exists (s1 t10) and tests cross-thread whole-transaction reads, vector-after-graph ordering, and two workers' artifact-vector/config writes read back.",
-          "evidence": "The file exists: reading src/daemon/threads/__tests__/worker-stores.test.ts:1 returns FOUND, and line 15 shows its run command. Line 163 holds `test(\"two workers' artifact-vector and config writes are read back from a third thread\", ...)`. S001/TESTS.md:279 records a passing test in this file, \"a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row\". TESTS.md:285 records the artifact-vector/config test as passing. TESTS.md:309 shows the file with 0 failures across 5 tests. S001/PLAN.md:32 assigns these tests to t10, and the helper src/daemon/threads/__tests__/helpers/store-worker.ts:18 imports upsertArtifactVec and getArtifactById for them.",
+          "premise": "The in-memory DuckDB engine behind db_file_* tools is used through a store guard with one permit; LMDB and Lance are used directly from every thread.",
+          "evidence": "The DuckDB half is confirmed in code. `src/db/store-guard.ts:69` declares `{ store: 'duckdb', mode: 'guarded', permits: 1, basis: 'one in-memory instance per thread with a 2 GB memory limit each; one permit bounds the process to one budget' }`. The DuckDB pool that backs the db_file_* tools runs its queries through the guard at `src/daemon/db/duckdb-pool.ts:175` (`getStoreGuard().withStore('duckdb', async () => {`); the import is at `duckdb-pool.ts:41`. CLAUDE.md:39 and AGENTS.md:39 say DuckDB backs the `db_file_*` tools. For LMDB and Lance, S001/PLAN.md:44 describes the policy table as 'graph and lance direct, duckdb guarded with one permit'. Worker threads install the shared guard block (`src/daemon/threads/worker-entry.ts:43` `installStoreGuard(init.guardBlock)`), and `src/daemon/threads/__tests__/worker-stores.test.ts` uses the stores from worker threads. No evidence contradicts the premise. The graph/lance 'direct' rows at store-guard.ts were not read directly; the PLAN line is the source for that half.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence confirms the premise: the file exists, it belongs to s1 t10, and it covers whole-transaction reads, vector-after-graph ordering and two workers' artifact-vector/config writes read back from a third thread."
+            "rationale": "store-guard.ts:69 and duckdb-pool.ts:175 confirm the premise, and PLAN.md:44 states the graph and lance 'direct' policy, so no edit is needed."
           }
         },
         {
           "claimId": "p14",
-          "ref": "a2",
-          "kind": "semantic",
+          "kind": "citation",
           "severity": "LOW",
-          "premise": "The in-memory DuckDB engine behind db_file_* tools is used through a store guard with one permit, while LMDB and Lance are used directly from every thread.",
-          "evidence": "The DuckDB half of the premise is confirmed. src/db/store-guard.ts:69 declares `{ store: 'duckdb', mode: 'guarded', permits: 1, basis: 'one in-memory instance per thread with a 2 GB memory limit each; one permit bounds the process to one budget' }`. src/daemon/db/duckdb-pool.ts:175 sends the connection through `getStoreGuard().withStore('duckdb', async () => {`, which is the path the db_file_* tools use. The Lance half is also confirmed: src/db/store-guard.ts:68 declares `{ store: 'lance', mode: 'direct', ... }`, and src/db/lance/conn.ts:89 opens each connection with `readConsistencyInterval: 0`, so every thread uses Lance directly. For LMDB, S001/PLAN.md:44 records the policy table as 'graph and lance direct, duckdb guarded with one permit'. src/db/graph/store.ts:453/494 uses getStoreGuard only for health and locks-lost marking, not to take a permit. Workers install the shared guard block (src/daemon/threads/worker-entry.ts:43), and src/db/__tests__/cross-thread-stores.test.ts tests the cross-thread store behaviour. One gap: the graph's own policy-table row (presumably store-guard.ts:67) is not among the matches. S001/LLD.md:497 also says graph was opened only by the main thread until the worker open-and-release test passed, and direct after that. That test exists and passes per the s1 completion, so the premise still holds.",
+          "premise": "MethodClass is defined in src/daemon/threads/channel.ts (admin | session | indexing), where s2 adds the method-to-class table.",
+          "evidence": "src/daemon/threads/channel.ts:31 reads `export type MethodClass = 'admin' | 'session' | 'indexing';`, which matches the premise's union exactly. It is the only source-level definition: the other source matches import it from './channel.js' (registry.ts:15, status-board.ts:16), and the only other literal match is the HLD's design copy at HLD.md:163. The planned table (MethodClassEntry / MethodClassRegistry) appears only in the design docs (HLD.md:285-292, S002/LLD.md:43,62,300) and does not exist in source yet. That is consistent with s2 being the Story that adds it.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence confirms the premise. DuckDB is guarded with one permit and wired through withStore('duckdb'). Lance is direct with readConsistencyInterval 0, and the graph (LMDB) is direct according to the policy table recorded in the plan. No edit is needed."
+            "rationale": "The cited file and type exist with the exact union the premise states. The method-to-class table is still to be built in s2, which is consistent with the premise. No edit needed."
           }
         },
         {
           "claimId": "p15",
-          "ref": "a3",
           "kind": "closed-union",
           "severity": "MED",
-          "premise": "Every key of rpcHandlers and streamHandlers (after all merges) can be assigned exactly one class from {admin, session, indexing}, and a test enumerates runtime key sets and fails on any unclassified or multiply-classified method.",
-          "evidence": "The closed union exists as described: src/daemon/threads/channel.ts:31 `export type MethodClass = 'admin' | 'session' | 'indexing';`, which matches HLD.md:152. The handler tables are where the premise says: src/daemon/index.ts:507 `const rpcHandlers: RpcHandlers = {` and src/daemon/server.ts:243 `const handler = this.streamHandlers[request.method];`. The evidence does not show the two claims that matter. First, nothing shows that every merged rpcHandlers/streamHandlers key has been assigned exactly one class: no classification table or map from method to MethodClass was matched. Second, no test was found that lists the runtime key sets and fails on a method with no class or more than one. The evidence neither contradicts nor confirms either claim, so the premise cannot be verified.",
-          "action": "Name the concrete classification table (file:line of the method-to-MethodClass map) and the test that enforces it (test file plus the assertion that lists the merged rpcHandlers and streamHandlers keys). If neither exists yet, say in the artifact that this Story creates both and give their planned locations. Include the keys merged in after index.ts:507, not only the literal object, so the exhaustiveness check covers everything the server can dispatch.",
+          "premise": "Every key of rpcHandlers and streamHandlers (after all merges) can be assigned exactly one class among admin, session, indexing.",
+          "evidence": "The evidence shows that the handler maps are assembled from several sources: `src/daemon/index.ts:1670` spreads `...makeUpdateHandlers({` into the map, and `src/daemon/index.ts:1994` runs `Object.assign(rpcHandlers, understandingRoutes.rpc);`. At runtime, stream methods are looked up dynamically at `src/daemon/server.ts:243` (`const handler = this.streamHandlers[request.method];`). The grep for `rpcHandlers[` returned 0 matches. Nothing gathered lists the full key set after all merges. No content was read from `src/daemon/threads/channel.ts`, so there is no evidence of a class assignment (admin/session/indexing) or an exhaustiveness check. The evidence confirms the key set is open-ended and built from merges, but it neither proves nor disproves that every key maps to exactly one class.",
+          "action": "Turn the closed-union claim into something the build enforces. Enumerate every key of rpcHandlers and streamHandlers after all merges, including makeUpdateHandlers, understandingRoutes.rpc and any other Object.assign or spread. Add a startup or test-time assertion that every registered method has exactly one class in the router's classification table and that no key in the table is missing from the maps. An unclassified method should be a hard error, not a silent default. Then cite the classification table's `path:line` in channel.ts in the artifact.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The type the premise relies on is real and the handler tables are where it says. What is not grounded is the per-method classification and the test that enforces it. A person needs to decide whether to cite existing code or present both as new deliverables.",
+            "rationale": "The maps are built from merges, so the set of keys can grow. Classification coverage can't be checked statically from this evidence and has to be enforced in code or tests.",
             "options": [
-              "Cite the existing method-to-class map and the existing exhaustiveness test by path:line, if they already exist",
-              "Reword the premise as a deliverable of this Story: create the classification map next to MethodClass in src/daemon/threads/channel.ts and add a test that lists Object.keys of the fully merged rpcHandlers and streamHandlers and asserts each key appears in exactly one class",
-              "Narrow the premise to the part the evidence supports: the MethodClass union exists; per-method classification is still to be done"
+              "Add an exhaustiveness test: build the final handler maps, then assert that every key resolves to exactly one class in the channel.ts classification table and that the table has no stale keys.",
+              "Have each handler module declare its class next to its handlers (for example makeUpdateHandlers returns {class, handlers}), so classification is attached when the handler is registered.",
+              "Reword the premise to say keys without an explicit class get a documented default class, and list that default and why it is safe."
             ]
           }
         },
         {
           "claimId": "p16",
-          "ref": "Open questions",
-          "kind": "cross-artifact",
+          "kind": "inventory",
           "severity": "MED",
-          "premise": "Open question 'Item a2' describes the multi-thread store assumption as low-confidence and unsettled, yet assumption a2 is marked `high` and stated as verified by Story s1 [[c17]] — the DEF is internally inconsistent unless the open question is resolved/removed.",
-          "evidence": "The only evidence gathered is one read of docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md:1, which returned only the artifact marker `<!-- insrc:artifact DEF-86197ac660732ceb -->`. No match or read covers the 'Open questions' section, open question 'Item a2', assumption a2's confidence (`high`), or its citation of Story s1 [[c17]]. The evidence neither confirms nor contradicts the claimed inconsistency, so the premise is UNVERIFIABLE.",
-          "action": "Re-probe the DEF's 'Open questions' section and the assumptions table for a2 by reading the lines around 'Item a2' and 'a2'. If the open question still calls the multi-thread store assumption low-confidence and unsettled while a2 is `high` and verified by s1 [[c17]], resolve the open question: either remove it, or mark it resolved with a pointer to s1 / c17. If the evidence does not support a2's `high` rating, lower that rating instead.",
+          "premise": "The daemon socket's existing clients are the MCP server, VS Code plugin, JetBrains plugin, the TUI and daemon-ctl.",
+          "evidence": "The evidence partly supports the premise, but it does not cover all five clients. MCP is confirmed: src/mcp/daemon-stream.ts:137,226,424 and src/mcp/forward-step.ts:120 send `client: { label: 'mcp', pid }`. The TUI is confirmed: src/shared/ipc-client.ts:53 sends `client: { label: 'cli', pid }`, and the VS Code extension LLD (build-insrc-vs-code-extension-v1 S001/LLD.md:227,231) says src/cli/client.ts re-exports `rpc` for its four src/cli/services importers. The JetBrains plugin dials the socket: the compiled jetbrains-plugin/build/.../DaemonSocket.class contains `.insrc` and `daemon.sock`, and expand-jetbrains-plugin S004/LLD.md:305 cites UnixSocketDaemonRpc.kt:20. The VS Code plugin is shown only indirectly, through the S001 LLD saying the shared ipc-client was extracted for it; no source match from the VS Code extension appears. scripts/daemon-ctl.sh, a cited anchor, has no match in the evidence, though the daemon.sock grep was truncated at 50 matches. The label grep shows only two wire labels on the socket, 'cli' and 'mcp'. Nothing says whether VS Code, JetBrains or daemon-ctl identify themselves with a label, or with which one. The evidence does not contradict the list, but it does not fully verify it either.",
+          "action": "Check that scripts/daemon-ctl.sh really opens ~/.insrc/daemon.sock and is not just a pid/lifecycle wrapper. Find the VS Code extension's socket client by source path. Record which `client.label` each client sends (or that it sends none): only 'cli' and 'mcp' appear on the wire, so any per-client routing or lock-holder metadata keyed on label cannot tell the TUI, VS Code, JetBrains and daemon-ctl apart.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The inconsistency can't be confirmed from the gathered evidence, and no verbatim text from the open question was gathered, so no exact find/replace can be safely derived. A human needs to confirm which side is stale.",
+            "rationale": "MCP and the TUI/CLI are confirmed, and JetBrains is evidenced by its compiled socket constant. The VS Code plugin and daemon-ctl.sh are not grounded in the evidence. The client list does not change what the lock framework builds, so this is MED, not HIGH. It is worth noting that the existing wire labels are only 'cli' and 'mcp'.",
             "options": [
-              "Remove open question 'Item a2' from the DEF's Open questions, since Story s1 (c17) verified assumption a2.",
-              "Keep open question 'Item a2' but mark it resolved, e.g. 'Resolved — verified by Story s1 [[c17]]'.",
-              "Lower assumption a2's confidence from `high` if s1 did not fully verify the multi-thread store behavior, and keep the open question."
+              "Keep the five-client list and add one anchor per client (e.g. VS Code extension ipc-client path, jetbrains-plugin UnixSocketDaemonRpc.kt:20, scripts/daemon-ctl.sh socket line).",
+              "Reword it as: existing socket clients identify as label 'mcp' (src/mcp/daemon-stream.ts, forward-step.ts) or 'cli' (src/shared/ipc-client.ts:53, shared by the TUI and the VS Code extension); the JetBrains plugin and daemon-ctl dial the socket directly.",
+              "Remove daemon-ctl from the list if it turns out not to connect to the socket."
             ]
           }
         },
         {
           "claimId": "p17",
-          "ref": "c11",
-          "kind": "cross-artifact",
+          "kind": "inventory",
           "severity": "LOW",
-          "premise": "The lmdb-js throwing-callback-commits behaviour was recorded in ISSUE-5437d6e5 and fixed via childTransaction, which lc1 relies on for failed-write atomicity.",
-          "evidence": "The evidence supports both halves of the premise. (1) ISSUE-5437d6e5 recorded the behaviour and changed the store to use childTransaction. The standalone epic docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/LLD.md:51 says the callback runs as `store.root.childTransaction(() => fn(store))` in place of `store.root.transaction(...)`, so a throwing callback's writes are aborted. LLD.md:178 says the same for withWriteTxn, the migration runner and the first-boot write. BUILD.md:11 records the shipped change. (2) A test pins the library behaviour. src/db/graph/__tests__/lmdb-txn-semantics.test.ts:44 is named 'root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it', and :54 asserts that a throwing childTransaction rejects. The evidence suites show the test passing (for example ok 313 in t3-suites.md:320). (3) The current epic depends on this guarantee. DEF.md:181 cites [[c11]] as ISSUE-5437d6e5, 'fixed via childTransaction'. The S001 LLD.md:459 says 'a throwing callback inside withWriteTxn commits nothing (childTransaction), and async callbacks are refused', which is the failed-write atomicity that lc1 relies on. The review rounds for an earlier epic also confirm that withWriteTxn calls store.root.childTransaction(run) (review-round-1.json:25, review-round-2.json:97).",
+          "premise": "Indexing runs on two threads: one for code indexing and one for document summaries, mirroring the queue's two lanes (index and summary).",
+          "evidence": "src/daemon/queue.ts has exactly two lanes, `index` and `summary`: queue.ts:44 initialises `summary: { jobs: [], inFlight: null, resolve: null }` next to the index lane. queue.ts:53 and :56 combine `this.lanes.index.jobs` with `this.lanes.summary.jobs`. queue.ts:241-243 `laneStatus()` returns `{ index, summary }`. queue.ts:254-255 drain each lane separately (`this.drain(this.lanes.index, …)` and `this.drain(this.lanes.summary, …)`). queue.ts:264 gates the summary lane on index work, and queue.ts:301-302 defines `isIndexIdle`. The threads layer already uses the same two-lane shape: src/daemon/threads/status-board.ts:66 `IDLE_INDEXING: IndexingStatus = { index: {...}, summary: {...}, idle: true }`. DEF.md:185 (c13) cites queue.ts:301-318, and that matches the read at queue.ts:301. The premise names the queue's two lanes correctly, so splitting them into one code-indexing thread and one summary thread fits the existing structure.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "The premise is confirmed: ISSUE-5437d6e5 recorded the behaviour and fixed it with childTransaction, and a test pins it. No edit is needed."
+            "rationale": "The evidence confirms the queue has exactly two lanes, index and summary, and the threads status board already reports the same split, so the artifact needs no change."
           }
         },
         {
           "claimId": "p18",
-          "ref": "c3,c4",
-          "kind": "cross-artifact",
+          "ref": "s2/ac8",
+          "kind": "external-contract",
           "severity": "LOW",
-          "premise": "Prior ISSUE artifacts at docs/standalone/stop-code-review-s-material-building-E20261021e940023a/ISSUE.md:7 and docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:7 record the 2026-10-21 100%-CPU freeze with refused connections.",
-          "evidence": "Both anchors resolve to the right content. stop-code-review-s-material-building-E20261021e940023a/ISSUE.md:7 says: 'Observed on 2026-10-21: ... the daemon logged nothing, held 100% CPU and refused socket connections (ECONNREFUSED ...)'. build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:7 says: 'Observed on 2026-10-21: the daemon froze at 100% CPU and refused connections from 15:35 for over 10 minutes during the adherence review's chunk stage'. Each artifact records a freeze on 2026-10-21 at 100% CPU with refused connections, as the premise claims. The two ISSUEs describe two separate incidents (09:20–09:30 while the review material was being built, and from 15:35 in the chunk stage), not one freeze. That detail does not change what the premise asserts.",
+          "premise": "daemon.compact exists today and refuses while indexing is busy; its responses must remain unchanged.",
+          "evidence": "src/daemon/index.ts:1647 registers the handler `'daemon.compact': async () => {`, and src/daemon/index.ts:1654 builds the busy refusal `daemon.compact: indexer is busy (queue=${queue.depth}, ...`. Clients depend on this response today: src/cli/services/daemon.ts:237 calls `rpc<CompactResult>('daemon.compact')`, and jetbrains-plugin DaemonGateway.kt:1268 together with DaemonActionGatewayTest.kt:60 expects the refusal text exactly as written ('daemon.compact: indexer is busy (queue=3, processing=true). Wait for indexing to drain before compacting.'). That outside dependency is why ac8 must keep the response unchanged. S002/LLD.md:437 and :504 also keep today's result and refusal. The evidence supports the premise.",
           "action": "none — verified sound",
           "fixability": "manual",
           "proposedFix": {
-            "rationale": "Both cited lines confirm the premise. No edit is needed. Optionally, the wording could say that the two ISSUEs record two separate 2026-10-21 freezes (material building, then the chunk stage) rather than one."
+            "rationale": "The evidence confirms the handler exists at src/daemon/index.ts:1647 and that it refuses while indexing is busy (:1654). Existing clients (the CLI and the JetBrains plugin test) depend on the exact response, so keeping it unchanged is correct."
           }
         },
         {
           "claimId": "p19",
-          "ref": "Stories",
-          "kind": "ordering",
-          "severity": "MED",
-          "premise": "Story dependencies: s2 depends on s1; s3 depends on s1 and s2; s4 depends on s2 and s3; S002 ac3 keeps session-class methods on the main thread until s3.",
-          "evidence": "The only evidence gathered is one read: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md:1 → FOUND: `<!-- insrc:artifact DEF-86197ac660732ceb -->`. This confirms the DEF artifact exists, but the line is just the artifact header marker. It says nothing about Story dependency edges (s2→s1; s3→s1,s2; s4→s2,s3) or about S002 ac3 keeping session-class methods on the main thread until s3. No ripgrep match or line read covers the Stories section, the `depends` fields, or S002's acceptance criteria. The premise can't be verified from this evidence.",
-          "action": "Re-anchor the premise to the DEF's Stories section and S002's acceptance criteria. Use path:line anchors, e.g. DEF.md:<line of s2 depends>, DEF.md:<line of s3 depends>, DEF.md:<line of s4 depends>, and S002/LLD ac3, rather than bare story ids. Then re-run the probes and confirm the dependency graph (s2←s1; s3←s1,s2; s4←s2,s3) and the ac3 main-thread deferral match the DEF/HLD text.",
-          "fixability": "assisted",
+          "ref": "c18",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The cross-thread named lock framework LLD exists at docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md (Web Locks shaped, shared/exclusive, ifAvailable reporting holder activity/reason).",
+          "evidence": "The premise checks out. Reading docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md:1 finds the file, and its first line is `<!-- insrc:artifact LLD-afcfa02717f5bf7d-S001 -->`. Line 56 says it \"Mirrors navigator.locks.request\", so it is shaped like Web Locks. Line 42 defines `mode?: 'shared' | 'exclusive'`, `ifAvailable?: boolean` and `metadata?: { activity; reason }`. Line 43 says that when the lock is unavailable, an ifAvailable request runs the callback with lock = null and blockedBy = the holders \"with their metadata\". Lines 209-210 and 243 (ac2) confirm the same behaviour. The citations for c18 in DEF.md:190, HLD.md:56 and S002/LLD.md:342 match this artifact.",
+          "action": "none — verified sound",
+          "fixability": "manual",
           "proposedFix": {
-            "rationale": "The anchors are bare story ids (s1..s4) that don't resolve to path:line, so the probe engine read only DEF.md:1. The fix is to point the anchors at the concrete DEF/LLD lines that declare each Story's depends list and S002 ac3. Those line numbers aren't in the evidence, so no safe auto-edit can be derived.",
-            "options": [
-              "Replace the bare anchors with DEF.md path:line anchors on each Story's `depends` declaration, plus the S002 LLD ac3 line, and re-review.",
-              "Split the premise in two: (a) the Story dependency DAG, anchored to the DEF Stories section; (b) the S002 ac3 main-thread deferral, anchored to the S002 LLD. Verify each on its own.",
-              "Accept as-is with a note that the ordering is unverified, if the DEF's depends fields were already checked by the cg3 depends auto-reconcile gate."
-            ]
+            "rationale": "The cited LLD exists at the anchored path and has every property the premise claims, so nothing needs fixing."
           }
         },
         {
           "claimId": "p20",
-          "ref": "c8",
-          "kind": "external-contract",
-          "severity": "MED",
-          "premise": "The IPC contract (socket ~/.insrc/daemon.sock, JSON-RPC method names, payload shapes) is mirrored by the MCP server, VS Code and JetBrains plugins, TUI and daemon-ctl, so it must stay unchanged.",
-          "evidence": "The core of the contract is confirmed. CLAUDE.md:31 and :131 (also in AGENTS.md:31/:131) say the daemon speaks JSON-RPC over the Unix socket `~/.insrc/daemon.sock` and that \"IPC method names, socket path, and payload shapes stay in lock-step\". docs/daemon.md:15 and :162 agree. The evidence also shows several consumers that hard-code the socket: JetBrains `DaemonSocket.class` (jetbrains-plugin/build/.../daemon/DaemonSocket.class:3 builds `.insrc`/`daemon.sock`, and earlier LLD evidence puts the defaultPath at UnixSocketDaemonRpc.kt:20); the VS Code extension's shared client (build-insrc-vs-code-extension S001/LLD.md:232 says the shared rpc client from src/cli/client.ts is reused by the TUI services); and the MCP daemon-stream client (make-workflow-approval.../S001/LLD.md:186 says src/mcp/daemon-stream.ts connects to ~/.insrc/daemon.sock). Two parts are imprecise. (1) Nothing in the evidence shows a 'daemon-ctl' consumer. (2) The quoted CLAUDE.md rule talks about mirroring \"across the two repos\", meaning the IDE fork; it does not list the in-repo plugins. Earlier artifacts read the rule as additive-only: existing names, shapes and the socket stay put, and NEW methods may be added (build-deployment HLD.md:282; S001/PLAN.md:47). \"Must stay unchanged\" is stronger than that reading. Neither point changes what gets built: existing method names, payloads and the socket path still must not change.",
-          "action": "Reword c8 so it states the additive-only rule. Existing method names, payload shapes and the socket path stay unchanged; new methods may be added. Also either drop 'daemon-ctl' from the consumer list or cite where it dials the socket.",
-          "fixability": "assisted",
+          "ref": "c3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Prior issues ISSUE e940023a and 2f4cb54c record the 2026-10-21 freezes (100% CPU, ECONNREFUSED).",
+          "evidence": "Both anchors resolve and support the premise. docs/standalone/stop-code-review-s-material-building-E20261021e940023a/ISSUE.md:7 says that on 2026-10-21 the daemon 'logged nothing, held 100% CPU and refused socket connections (ECONNREFUSED: the accept queue fills while the event loop is blocked)' between 09:20:42 and 09:30:33 during codeReview.run on Epic c2ba6fa6 s1. docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:7 says that on 2026-10-21 'the daemon froze at 100% CPU and refused connections from 15:35 for over 10 minutes during the adherence review's chunk stage'. The 50 broad ECONNREFUSED grep hits elsewhere are unrelated and do not contradict the premise. One small imprecision: the second ISSUE says 'refused connections' and does not use the literal word ECONNREFUSED. It describes the same symptom.",
+          "action": "none — verified sound",
+          "fixability": "manual",
           "proposedFix": {
-            "rationale": "The evidence supports the lock-step contract and the MCP, VS Code, JetBrains and TUI consumers. It does not support 'daemon-ctl' or a total freeze, since prior HLDs added methods additively. Rewording makes the constraint precise without changing the design.",
-            "options": [
-              "Reword to: 'Existing IPC method names, payload shapes and the socket path ~/.insrc/daemon.sock are mirrored by the MCP server, VS Code and JetBrains plugins and the TUI. They must stay unchanged; new methods may be added additively.'",
-              "Keep the wording as is, but add a citation showing daemon-ctl as a socket consumer.",
-              "Keep it as is and accept the imprecision with a note, since the prescribed constraint (don't break existing IPC) still holds."
-            ]
+            "rationale": "Both cited ISSUE records exist at the anchored lines and describe the 2026-10-21 freezes at 100% CPU with refused connections, so no edit is needed."
           }
         },
         {
           "claimId": "p21",
-          "ref": "Functional requirements",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "The DEF has 8 epic-level FRs and 4 stories (s1-s4) with 2, 4, 4 and 3 story-level FRs respectively, and 7 constraints k1-k7.",
-          "evidence": "The FR counts check out. grep /E2026102186197ac6:FR00[0-9]/ finds exactly 8 epic-level FRs, FR001–FR008, at DEF.md:28–35. grep /E2026102186197ac6:S00[1-4]:FR00[0-9]/ finds 13 story-level FRs: S001 has 2 (DEF.md:39–40), S002 has 4 (DEF.md:44–47), S003 has 4 (DEF.md:51–54) and S004 has 3 (DEF.md:58–60). That matches the stated 2/4/4/3 split across four stories. The claim of '7 constraints k1-k7' was not probed. No evidence covers any k-numbered id, so that part is unverifiable. The FR rationales cite [[c1]]…[[c8]] (for example c3, c5, c6, c7 and c8 at DEF.md:28–35). Those may be context citations rather than constraints, but they do not confirm a k1–k7 constraint set either.",
-          "action": "Keep the FR inventory as written; it is verified. Check the constraint part separately: grep DEF.md for constraint ids (for example /\\bk[0-9]+\\b/ and the constraints section) to confirm there are exactly 7, numbered k1–k7. If the count or naming differs, correct the premise text. This does not change what gets built, because the FR and story inventory that drives the work is accurate.",
-          "fixability": "assisted",
+          "ref": "c11",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "lmdb-js root.transaction commits a throwing callback's writes, fixed by using childTransaction (ISSUE-5437d6e5).",
+          "evidence": "The premise holds. src/db/graph/__tests__/lmdb-txn-semantics.test.ts:44 pins the library behaviour: \"after a reopen in a fresh process, root.transaction keeps a throwing callback's write, root.childTransaction and root.transactionSync discard it\". Line 54 of that test asserts `root.childTransaction(() => { ...; boom(); })` rejects. The fix is live in src/db/graph: store-health.test.ts:93-94 and :157-158 wrap `store.root.childTransaction` to count the library calls the store makes. Reviews of the S001 LLD in an earlier epic (review-round-1.json:25, review-round-2.json:97) read src/db/graph/store.ts and found that withWriteTxn invokes `store.root.childTransaction(run)`. The ISSUE-5437d6e5 artifacts (LLD.md:51, BUILD.md:11, and the passing test in TESTS.md:60) record the switch from root.transaction to root.childTransaction. The suite evidence files show the pin passing ('ok 1809 ...').",
+          "action": "none — verified sound",
+          "fixability": "manual",
           "proposedFix": {
-            "rationale": "The FR and story counts are confirmed by the evidence, but the constraint count and naming (k1–k7) were not probed. A human or a further probe needs to confirm it before any text edit, and the evidence gives no value to substitute.",
+            "rationale": "The test pin and the store's use of childTransaction confirm the premise; no change needed."
+          }
+        },
+        {
+          "claimId": "p22",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story dependencies: s2 depends on s1; s3 depends on s1 and s2; s4 depends on s2 and s3; session-class methods stay on main thread until s3.",
+          "evidence": "No probes were run for this premise and no matches or path:line reads were gathered, so the evidence cannot confirm or contradict the S002/S003/S004 dependency ordering or the claim that session-class methods stay on the main thread until s3.",
+          "action": "Check the ordering against the Epic's DEF/HLD story-dependency declarations (the depends fields for s2, s3 and s4), and add a probe so the router keeps session-class methods on the main thread in s2 (for example, the s2 LLD's method-class routing table). Re-run the review once that grounding exists.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is unverifiable because no evidence was gathered. Without grounding, no safe edit can be derived.",
             "options": [
-              "Probe DEF.md for constraint ids. If exactly k1–k7 exist, mark the premise verified with no change.",
-              "If the constraints use a different count or namespace, reword the premise to match the probed set.",
-              "Drop the constraint clause from the premise and keep only the verified FR/story inventory."
+              "Add probes against the HLD story-dependency section and the s2 LLD router method-class table, then re-review",
+              "Accept the ordering as declared design intent and leave a note that it was not probe-verified"
             ]
+          }
+        },
+        {
+          "claimId": "p23",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "S002 FR005 / ac8 (maintenance lock refusing all but daemon.status) is consistent with the amended HLD and s2 LLD per the stakeholder resolution of LLD question qb472bde2.",
+          "evidence": "The DEF, HLD and s2 LLD agree on how the maintenance lock works, and they match the qb472bde2 resolution:\n- DEF.md:48 (FR005) and DEF.md:130 (ac8): maintenance holds the daemon maintenance lock exclusively, with its activity and reason. Every request other than daemon.status is refused at once with that activity and reason, and is not queued. daemon.status keeps answering.\n- HLD.md:56: the HLD describes the same lock, as a named lock in the lock framework (afcfa027). Every request other than daemon.status makes a no-wait shared request on it before running.\n- S002/LLD.md:95: the serving thread asks for the lock shared with ifAvailable. If it is unavailable, the request is answered at once with \"daemon busy: <activity> since <time> (<reason>)\", taken from the holder's metadata.\n- S002/LLD.md:342: the lock is named 'daemon.maintenance' and every request except daemon.status takes it this way.\n- S002/LLD.md:177 and :332: daemon.status reports maintenance from LockManager.query.\n- S002/LLD.md:238: compaction runs only while the main thread holds the lock exclusively.\n- S002/LLD.md:501 and :548: workers are registered with watchWorker, and the lock framework is a dependency.\n- afcfa027 LLD.md:297 and :301-302: this is what the stakeholder resolution asked for (exclusive maintenance lock with activity and reason, an ifAvailable shared hold per request refused with the holder's metadata, and the router calling watchWorker).\nOne difference checked: LLD:342 lets indexing jobs take the lock shared with a bounded wait instead of failing. These are internal jobs, not client requests, so ac8's refuse-at-once rule for requests still holds.",
+          "action": "None — the evidence confirms the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The DEF (FR005/ac8), the HLD and the s2 LLD give the same lock design, and it matches the qb472bde2 resolution. Nothing needs editing."
           }
         }
       ],
       "counts": {
         "high": 0,
-        "med": 6,
-        "low": 15
+        "med": 3,
+        "low": 20
       },
-      "reviewedAt": "2026-10-21T19:35:56.778Z",
+      "reviewedAt": "2026-10-22T05:57:18.176Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
     "reviewOverride": {
-      "reason": "Stakeholder approved with override 2026-10-22: 3 review rounds, 0 HIGH; every actionable finding folded (regrouped Stories, k3 two indexing threads, handler count 192, citations re-anchored, compaction AC); remaining MEDs are unverifiable-evidence gaps (Story dependency edges, k1-k7 count), not errors.",
-      "at": "2026-10-21T20:32:19.051Z"
+      "reason": "Stakeholder approved with override 2026-10-22 (maintenance-lock amendment): review round 1 had 0 HIGH; the amendment was confirmed consistent across DEF/HLD/LLD; remaining MEDs are earlier evidence gaps (class-table coverage, story ordering) and the socket-client anchors, now added.",
+      "at": "2026-10-22T06:16:59.003Z"
     },
     "questionResolutions": {
       "q2f95abad": {
@@ -356,7 +358,14 @@
       "reason": "Stakeholder 2026-10-21: avoid a throwaway fallback worker and rework; split horizontally: admin/indexer threading, then sessions, then the main thread becomes the controller.",
       "compactionDecision": "Stakeholder 2026-10-22: idle-triggered maintenance compaction (30 min idle; 25%/256 MB reclaimable), all requests but daemon.status held while it runs; manual daemon.compact keeps today's contract."
     },
-    "approvedAt": "2026-10-21T20:32:19.056Z"
+    "amendments": [
+      {
+        "at": "2026-10-22",
+        "by": "Subho Ghosh (stakeholder) via controller",
+        "summary": "s2 ac8 and FR005: maintenance takes an exclusive daemon maintenance lock (lock framework afcfa027) and requests are refused with its activity and reason instead of held and served afterwards."
+      }
+    ],
+    "approvedAt": "2026-10-22T06:16:59.007Z"
   },
   "body": {
     "title": "Multi-threaded daemon: sessions, admin, indexing",
@@ -599,7 +608,7 @@
             "id": "ac8",
             "given": "the daemon has been idle for 30 minutes and the graph store has at least 25% and 256 MB reclaimable, or a client requests daemon.compact while indexing is idle",
             "when": "maintenance compaction runs",
-            "then": "every request other than daemon.status waits and is served after compaction ends, daemon.status answers throughout and reports the maintenance, no write is lost, and daemon.compact's responses (its result, and today's refusal while indexing is busy) are unchanged",
+            "then": "maintenance holds the daemon's maintenance lock exclusively with its activity and reason; every request other than daemon.status is refused at once with that activity and reason (it is not queued), daemon.status answers throughout and reports the maintenance, requests already running finish before compaction starts, no write is lost, and daemon.compact's responses (its result, and today's refusal while indexing is busy) are unchanged [[c18]]",
             "operationalizes": [
               "k4",
               "k5",
@@ -629,7 +638,7 @@
             "statement": "Queue status and idle-waiting remain available to other threads."
           },
           {
-            "statement": "Graph-store compaction runs as idle maintenance during which the daemon holds every request except the liveness check."
+            "statement": "Graph-store compaction runs as idle maintenance under an exclusive daemon maintenance lock; while it holds the lock every request except the liveness check is refused with the maintenance activity and reason."
           }
         ]
       },
@@ -867,7 +876,7 @@
           "id": "E2026102186197ac6:FR008",
           "statement": "Every existing client of the daemon socket keeps working without change, including the MCP server, the VS Code and JetBrains plugins, the TUI and daemon-ctl.",
           "scope": "doc",
-          "rationale": "The IPC contract is the only surface those clients consume [[c8]]."
+          "rationale": "The IPC contract is the only surface those clients consume [[c8]]. The socket's clients are anchored in [[c19]]; only 'cli' and 'mcp' self-report a label."
         },
         {
           "id": "E2026102186197ac6:S001:FR001",
@@ -949,7 +958,7 @@
         },
         {
           "id": "E2026102186197ac6:S002:FR005",
-          "statement": "Graph-store compaction runs as idle maintenance during which the daemon holds every request except the liveness check.",
+          "statement": "Graph-store compaction runs as idle maintenance under an exclusive daemon maintenance lock; while it holds the lock every request except the liveness check is refused with the maintenance activity and reason.",
           "scope": "item",
           "itemRef": "s2"
         }
@@ -1058,6 +1067,18 @@
       "kind": "code",
       "ref": "src/daemon/threads/__tests__/worker-stores.test.ts",
       "quotedText": "s1 t10: a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row; two workers' artifact-vector and config writes are read back from a third thread (with src/db/graph/__tests__/worker-thread-lock.test.ts and src/db/__tests__/cross-thread-stores.test.ts: LMDB and Lance used directly from several threads, DuckDB behind one store-guard permit)."
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md",
+      "quotedText": "A named-lock framework that every thread of the daemon shares, shaped like the Web Locks API: shared and exclusive modes, ifAvailable (no-wait) requests that report the holder's activity and reason, writer preference, release on every exit path, and reclaim of a dead worker's locks."
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "scripts/daemon-ctl.sh:226-245",
+      "quotedText": "Socket clients today: the TUI/CLI and the VS Code extension through rpc() (src/shared/ipc-client.ts:46-55, label 'cli'); the MCP server (src/mcp/forward-step.ts:120, src/mcp/daemon-stream.ts:137, label 'mcp'); the JetBrains plugin (jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt:20, ~/.insrc/daemon.sock); daemon-ctl's socket_status (scripts/daemon-ctl.sh:226-245, a node client sending daemon.status). Only 'cli' and 'mcp' self-report a label; others appear as 'unknown'."
     }
   ]
 }

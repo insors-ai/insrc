@@ -92,6 +92,8 @@ class IpcServer { constructor(forward: (request: RequestEnvelope, deliver: (enve
 **Postconditions:**
 - new IpcServer(directDispatch(rpc, stream)) behaves on the wire exactly as today's new IpcServer(rpc, stream).
 - The registry is republished through StatusBoard.publishClients on connect, on close, and after every message updates it (lastMethod, label, pid), before the request is forwarded, so debug-status reports the caller's own 'daemon.debug-status' as its lastMethod exactly as today.
+- Before running any top-level request other than daemon.status and daemon.compact, its entry point (the router for main-thread session work, the worker's request entry otherwise) requests the daemon maintenance lock shared with ifAvailable and holds it until the request finishes; when it is unavailable the request is answered at once {id, error: "daemon busy: <activity> since <time> (<reason>); retry later"} built from the blocking holder's metadata, and nothing runs. Nested in-daemon calls and cross-class channel calls made under that hold do not request it again. daemon.compact is exempt because it triggers maintenance itself; every other method, daemon.shutdown included, is refused during maintenance (a SIGTERM shutdown waits for the compaction or the hard-exit backstop).
+- A cross-class request made by a handler that already holds the maintenance lock (a nested in-daemon call routed to another worker) carries underHold: true on its RequestEnvelope, an additive optional field on s1's sc3 envelope delivered by s2; the receiving worker's entry skips the maintenance check for it, so a pending exclusive cannot refuse a request half-way through.
 
 ### 2.4 `TargetRegistry.targetFor`
 
@@ -173,7 +175,7 @@ class IpcServer { constructor(forward: (request: RequestEnvelope, deliver: (enve
 **Parameters:**
 - `src: DaemonStatusSources` — On the admin worker: repos with completeness and unattributedUnwritable from the board's store slot; queueDepth and queueLanes from the board's two lanes and sweep; uptime, modelState, installedCommit, lmdbFileSizeMb and the maintenance state from the router's daemon.info hub op; store health from the shared health word.
 
-**Returns:** `Promise<DaemonStatus>` — Today's DaemonStatus, every field and meaning unchanged, plus an additive maintenance field {state: 'compacting', since} while compaction runs.
+**Returns:** `Promise<DaemonStatus>` — Today's DaemonStatus, every field and meaning unchanged, plus an additive maintenance field {state: 'compacting', since, activity, reason} while maintenance holds the daemon maintenance lock.
 
 **Preconditions:**
 - Reused unchanged from src/daemon/status.ts:61; only its sources change.
@@ -234,9 +236,10 @@ class IpcServer { constructor(forward: (request: RequestEnvelope, deliver: (enve
 - `LmdbStoreError` when As today (store not open, rename or close failure).
 
 **Preconditions:**
-- Called only by the main thread's maintenance while every request except daemon.status is held, after every thread that may hold a graph handle (the admin worker, the code-indexing worker, the document-summary worker and the main thread's own session work) has acknowledged that it has no store work in flight and has closed its handle with closeGraphStore.
+- Called only by the main thread's maintenance while the main thread holds the daemon maintenance lock exclusively (every other request is refused and none is running), after every thread that may hold a graph handle (the admin worker, the code-indexing worker, the document-summary worker and the main thread's own session work) has acknowledged that it has no store work in flight and has closed its handle with closeGraphStore.
 - Closing a worker's handle is within s1's contract: s1 verified that a worker's open, use, close and exit keep the process's LMDB locks (src/db/graph/__tests__/worker-thread-lock.test.ts), and the approved HLD's Stores section states a worker closing its handle is safe. lmdb-js shares one native environment per process and closes it only when its last handle closes, so the main thread's close inside compactGraphStore ends the environment only because every other handle is already closed; the rename and lock-file removal therefore never run under a handle that is still open.
 - Change site: src/db/graph/store.ts:861-875 gains the optional beforeRename hook between root.close() and renameSync; without the hook (today's callers) behaviour is unchanged.
+- The 'environment really closed' check maintenance passes as beforeRename is concrete: every live worker the router supervises has acknowledged a 'graph.close' message only after its own closeGraphStore() resolved (its module instance holds no handle), the main thread's own handle closed inside compactGraphStore, and no worker was started since the acknowledgements were collected; a missing acknowledgement makes the check return false.
 
 **Postconditions:**
 - Every thread reopens its handle lazily on next use after resume, onto the compacted file; no write is lost because nothing writes between the copy and the close.
@@ -328,7 +331,7 @@ The queue/indexer/watcher objects the main thread's handler runtime used (src/da
 
 ### 3.4 `Router daemon.info hub op and maintenance state` — new
 
-A main-thread hub service returning {startedAt, modelState, installedCommit, lmdbFileSizeMb, maintenance?}. bootstrapEmbeddingModel runs once on the main thread (src/daemon/lifecycle.ts:87-109); its decided backend is pushed to every worker ('embedder.backend') because the embedder's activeBackend is per isolate (src/indexer/embedder.ts:85-103). maintenance is {state: 'compacting', since} while compaction runs; DaemonStatus gains it as an additive optional field.
+A main-thread hub service returning {startedAt, modelState, installedCommit, lmdbFileSizeMb, maintenance?}. bootstrapEmbeddingModel runs once on the main thread (src/daemon/lifecycle.ts:87-109); its decided backend is pushed to every worker ('embedder.backend') because the embedder's activeBackend is per isolate (src/indexer/embedder.ts:85-103). maintenance is {state: 'compacting', since, activity, reason}, read from the maintenance lock's holder metadata (LockManager.query) while the lock is held exclusively; DaemonStatus gains it as an additive optional field.
 
 **Call sites:**
 - `src/daemon/index.ts:262`
@@ -338,12 +341,15 @@ A main-thread hub service returning {startedAt, modelState, installedCommit, lmd
 
 ### 3.5 `Maintenance controller` — new
 
-On the main thread. Idle: no non-admin request has arrived and none is in flight for idleMs (config, default 30 minutes), and the board shows both lanes idle; admin requests (status polls) do not count as activity. Worth it: reclaimable = file size - pages in use * pageSize, pages in use summed from getStats() (branch + leaf + overflow pages) over every named database of the GraphStore (src/db/graph/store.ts:250-312); compaction runs only when reclaimable >= 25% of the file and >= 256 MB (config). Sequence: set maintenance state; hold every incoming request except daemon.status in arrival order; wait for in-flight main-thread requests to finish; pause() the queue on the code-indexing worker and the summary worker's current job; each indexing worker and the admin worker close their graph handle and acknowledge; compactGraphStore on the main thread; resume the queue; forward the held requests in arrival order; clear maintenance state. Manual daemon.compact on the code-indexing worker keeps today's busy refusal (queue.depth > 0 or processing) and otherwise asks the main thread to run maintenance now and returns its CompactResult.
+On the main thread, coordinated through the daemon maintenance lock (lock framework afcfa027, docs/standalone/add-cross-thread-named-lock-framework-E20261022afcfa027/S001/LLD.md). Every request other than daemon.status makes a no-wait shared request (ifAvailable) on the lock 'daemon.maintenance' before it runs, on whichever thread serves it, and holds it until it finishes; indexing jobs take it shared per job and wait (a bounded wait) rather than fail. Idle: no non-admin request has arrived and none is in flight for idleMs (config, default 30 minutes), and the board shows both lanes idle; admin requests (status polls) do not count as activity. Worth it: reclaimable = file size - pages in use * pageSize, pages in use summed from getStats() (branch + leaf + overflow pages) over every named database of the GraphStore (src/db/graph/store.ts:250-312); compaction runs only when reclaimable >= 25% of the file and >= 256 MB (config). Sequence: request the lock exclusively with metadata {activity: 'compaction', reason: '<idle time>, <reclaimable %> / <reclaimable MB> reclaimable'} and timeoutMs = the pause limit (10 minutes, config); by writer preference every new request is refused from that moment with the activity, reason and start time; requests already running finish and release; once granted, tell every live worker to close its graph handle and wait for each acknowledgement; compactGraphStore on the main thread with its pre-rename check; release the lock. Each decision (pause wait, idle time, reclaimable % and bytes, outcome) is logged. Manual daemon.compact on the code-indexing worker keeps today's busy refusal (queue.depth > 0 or processing) and otherwise asks the main thread to run maintenance now and returns its CompactResult; it does not take a shared hold itself, so it cannot block its own maintenance. Non-request store users take the lock too: the prune timer and todo-retention timer on the main thread (src/daemon/index.ts:2014, src/daemon/todos-rpc.ts:1206), the watcher path and every indexing job request it shared with a bounded wait around each run, so none writes during compaction. As a second guard, while maintenance compacts, getGraphStore on any thread other than the compactor rejects with a named MaintenanceInProgress error instead of reopening the store. Long-lived subscription streams (understanding.watch, src/daemon/understanding-rpc.ts:106-113; todos.subscribe) do not hold the lock for their lifetime and do not count as activity for idle detection: each refresh or push takes it shared with ifAvailable and is skipped while maintenance holds it. Bounded streams (workflow.run, codeReview.run, step.call, analyze.run.start, ollama.pull, workflow.review) hold it for their run like any request.
 
 **Call sites:**
+- `src/daemon/index.ts:1647-1664`
+- `src/daemon/index.ts:2014`
+- `src/daemon/todos-rpc.ts:1206`
+- `src/daemon/understanding-rpc.ts:106-113`
 - `src/db/graph/store.ts:250-312`
 - `src/db/graph/store.ts:831-890`
-- `src/daemon/index.ts:1647-1664`
 
 ### 3.6 `Handler runtime construction` — invariant-change
 
@@ -377,6 +383,14 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
 **Call sites:**
 - `src/db/graph/store.ts:855-886`
 
+### 3.10 `RequestEnvelope.underHold` — field-add
+
+Optional boolean on sc3's RequestEnvelope (src/daemon/threads/channel.ts), set by the in-daemon client's router path for a cross-class call made under an outer request's maintenance hold; the receiving worker does not request the maintenance lock for it. Additive amendment to s1's contract, delivered by s2.
+
+**Call sites:**
+- `src/daemon/threads/channel.ts`
+- `src/daemon/steps/daemon-client.ts:79-91`
+
 ## 4. Interaction with shared contracts
 
 | Contract | Role | How |
@@ -392,7 +406,7 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
 
 - **The admin worker exits (uncaught exception, import failure, out of memory).** (recoverable)
   - Detection: The router's 'exit' listener on the admin Worker fires; its in-flight admin requests are in the router's pending map.
-  - Response: reclaim(threadId); unregister; answer each in-flight admin request {id, error: "the daemon's admin thread stopped while serving <method>; retry"}; start a replacement; admin requests arriving meanwhile wait for it (at most 30 s). Restarts are rate-limited (5 in 60 s); past the limit the router logs fatal and runs shutdown. s2 supervises the workers it introduces (admin, code-indexing, document-summary); s4 extends the same supervision to session workers and owns the unified view (HLD boundary note 2026-10-22).
+  - Response: reclaim(threadId); unregister; answer each in-flight admin request {id, error: "the daemon's admin thread stopped while serving <method>; retry"}; start a replacement; admin requests arriving meanwhile wait for it (at most 30 s). Restarts are rate-limited (5 in 60 s); past the limit the router logs fatal and runs shutdown. s2 supervises the workers it introduces (admin, code-indexing, document-summary); s4 extends the same supervision to session workers and owns the unified view (HLD boundary note 2026-10-22). Every worker the router starts is registered with the lock framework's watchWorker, so a dead worker's maintenance-lock holds are reclaimed; the router reclaims its store-guard permits itself.
   - User impact: One status call may fail; the next is answered by the new admin worker.
 - **The code-indexing worker exits mid-job.** (recoverable)
   - Detection: Its 'exit' listener fires; its pending indexing requests and internal port requests are in the router's pending map.
@@ -410,13 +424,13 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
   - Detection: Any thread's recordLocksLost wins the shared health word and broadcasts (s1).
   - Response: Unchanged: every thread's next store call fails with LmdbStoreLocksLostError; status answers with storeFailure; shutdown skips the drain and the close and ends by SIGKILL. Maintenance never starts while health is not ok, and an in-progress maintenance stops waiting and takes the same path.
   - User impact: Same as today.
-- **A worker does not acknowledge the maintenance pause (a long job keeps running).** (recoverable)
-  - Detection: The maintenance controller's wait for every worker's pause acknowledgement passes its limit (10 minutes, config).
-  - Response: Maintenance is abandoned before anything is closed: the queue resumes, held requests are forwarded, maintenance state clears, and a warning is logged; the idle check starts over. A manual daemon.compact in this case answers {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.
+- **Requests already running do not finish within the pause limit after maintenance asked for the lock.** (recoverable)
+  - Detection: The exclusive lock request's timeoutMs (the pause limit, 10 minutes, config) expires with a LockTimeoutError naming the shared holders.
+  - Response: Maintenance is abandoned before anything is closed: the exclusive request is withdrawn (new requests are accepted again), a warning names the holders, and the idle check starts over. A manual daemon.compact in this case answers {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.
   - User impact: Compaction is skipped; nothing is lost and requests are served.
 - **compactGraphStore fails (copy, close or rename).** (recoverable)
   - Detection: compactGraphStore rejects with LmdbStoreError.
-  - Response: As today the store is left at its original path (the rename failure path restores .bak); the main thread reopens it, the workers reopen on next use, the queue resumes and held requests are forwarded; the failure is logged and returned to a manual daemon.compact caller as today's error message.
+  - Response: As today the store is left at its original path (the rename failure path restores .bak); the main thread reopens it, the workers reopen on next use, the maintenance lock is released so requests are accepted again; the failure is logged and returned to a manual daemon.compact caller as today's error message.
   - User impact: Compaction failed with an error; the daemon keeps serving.
 - **A worker's reply or frame cannot be structured-cloned.** (recoverable)
   - Detection: postMessage throws DataCloneError in the worker's reply path.
@@ -426,19 +440,26 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
   - Detection: IpcServer's socket 'close' listener calls the cancel function from forward().
   - Response: For a stream request the router sends a CancelEnvelope and the worker aborts the stream handler's AbortSignal, as today. For a unary request nothing is aborted: the handler runs to completion as today and the router drops its late reply, as today's write to a closed socket does.
   - User impact: Same as today.
+- **A background timer (conversation prune, todo retention) or a watcher-driven write fires during compaction.** (recoverable)
+  - Detection: The timer's run requests the maintenance lock shared with a bounded wait; a store access that slips past it hits getGraphStore's maintenance guard.
+  - Response: The run waits until maintenance releases the lock (or skips this tick at its bound and logs it); getGraphStore rejects with MaintenanceInProgress rather than reopening the original file before the rename.
+  - User impact: No background write is lost or written to the file being replaced.
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
 | daemon.status polls arrive every few seconds from the TUI and plugins while the daemon is otherwise idle. | They do not count as activity, so the idle timer still reaches 30 minutes and maintenance can run. |
-| A session request arrives during maintenance. | It is held and served after compaction, in arrival order with other held requests; daemon.status meanwhile reports maintenance compacting. |
+| A session request arrives during maintenance. | It is refused at once with {error: "daemon busy: compaction since <time> (<reason>); retry later"}; daemon.status meanwhile reports maintenance compacting with the same activity and reason. |
 | daemon.compact while the queue has work. | Today's refusal: 'daemon.compact: indexer is busy (queue=N, processing=...)'. |
 | The idle timer fires but reclaimable space is below 25% or 256 MB. | No maintenance; the check runs again after the next idle period. |
 | daemon.status before the first store publish. | The admin worker waits for the first publish (at most 5 s); past that it reads the registry from the store as today, so repo.list and daemon.status answer exactly today's list. |
 | A stream request for a unary-only method. | The serving thread falls back to the unary handler and the client gets one {id, result} line, as today. |
 | A step handler on the main thread makes a nested call to repo.reindex. | The in-daemon client routes it to the code-indexing worker and returns its reply; it never runs on the main thread. |
 | A file change while a long session request runs on the main thread. | The watcher on the code-indexing worker enqueues and indexes it; the main thread's busy loop does not delay it. |
+| A request arrives after maintenance asked for the lock but before the running requests finished. | Refused with the maintenance activity and reason (writer preference), even though compaction has not started yet. |
+| An indexing job is due while maintenance holds the lock. | The queue's job loop waits for the lock (it has no caller to refuse) and starts the job once maintenance releases it. |
+| A client keeps an understanding.watch or todos.subscribe stream open for hours. | The stream does not keep the daemon from becoming idle and does not block maintenance; refreshes due during maintenance are skipped and resume after it. |
 
 **Invariants to preserve**
 
@@ -456,9 +477,9 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
 **Test levels**
 
 - **unit** — Pin the class table, the board's lane merge, the router's bookkeeping and the maintenance decisions without real workers.
-  - Subjects: `classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique`, `coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry`, `publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today`, `maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does`, `reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required`, `router hold queue: requests held during maintenance are released in arrival order; daemon.status is never held; a target missing for 30 s answers the not-available error`, `runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)`, `compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data`
+  - Subjects: `classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique`, `coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry`, `publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today`, `maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does`, `reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required`, `maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered; a target missing for 30 s answers the not-available error`, `runDocSummarySweep with an async takeEdit: a queued edit runs before the next document, and a summary never starts while code work is queued (no await between the final checks and summarise)`, `compactGraphStore with a beforeRename hook that returns false: no rename, no lock-file removal, the compacted copy is removed and the original store reopens with its data`
 - **integration** — Prove routing, isolation, the indexing split and maintenance with the real router and real workers on a temporary HOME and socket.
-  - Subjects: `each admin-class method runs on the admin worker's thread id and each indexing-class method on the code-indexing worker's thread id`, `daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs over a fixture repo and another worker keeps an LMDB write transaction open`, `a session request on the main thread is answered while an indexing pass runs; a file change is indexed while a session request spins the main thread`, `with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input`, `queue status from daemon.status and waitForIndexIdle on the summary worker reflect the code-indexing worker's real state`, `codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result`, `a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker`, `maintenance: with idle forced and the threshold met, a session request and an admin read sent during compaction wait and are answered afterwards, daemon.status answers during it with maintenance compacting, every row written before compaction is present after it, and the file shrank`, `manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work`, `a worker that never acknowledges the pause makes maintenance abandon without closing anything`, `admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving`, `a worker started before the embedding bootstrap settles embeds with the decided backend after the push`, `maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename, and the store is untouched`, `after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held (lock probe as in worker-thread-lock.test.ts)`, `a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires`
+  - Subjects: `each admin-class method runs on the admin worker's thread id and each indexing-class method on the code-indexing worker's thread id`, `daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs over a fixture repo and another worker keeps an LMDB write transaction open`, `a session request on the main thread is answered while an indexing pass runs; a file change is indexed while a session request spins the main thread`, `with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input`, `queue status from daemon.status and waitForIndexIdle on the summary worker reflect the code-indexing worker's real state`, `codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result`, `a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker`, `maintenance: with idle forced and the threshold met, a session request and an admin read sent during compaction are refused with the maintenance activity and reason, a request already running finishes before compaction starts, daemon.status answers during it with maintenance compacting, every row written before compaction is present after it, and the file shrank`, `manual daemon.compact returns today's CompactResult when idle and today's busy refusal while the queue has work`, `a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards`, `admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving`, `a worker started before the embedding bootstrap settles embeds with the decided backend after the push`, `maintenance with a worker that has not closed its graph handle: compaction is abandoned before any rename, and the store is untouched`, `after maintenance, writes from the main thread and from each worker land in the compacted file and the process's LMDB lock is still held (lock probe as in worker-thread-lock.test.ts)`, `a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires`, `a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock; manual daemon.compact does not wait on a hold of its own`, `daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down`, `an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds`, `the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves`, `a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress`, `an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered`, `after every worker's closeGraphStore and the main thread's close, the native environment is really gone: a fresh open in-process sees a new environment (test before relying on it for the rename)`
   - Fixtures: `temporary HOME with the daemon started in-process on a temporary socket`, `a fixture repository with code and markdown files large enough for an indexing pass of several seconds`, `a test hook reporting the serving thread id`, `a stub summariser so summaries run without a model`
 - **contract** — Keep responses identical for existing clients.
   - Subjects: `recorded responses: daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list, guide.get, repo.stats and daemon.compact from the threaded daemon equal the single-thread daemon's for the same fixture state (volatile fields compared by type; maintenance absent when not compacting)`, `existing suites pass unchanged in meaning: server-registry, daemon-status-field, daemon-status-lanes, status-store-failure, shutdown-store-failure, store-failure-dispatch, repo-stats, repo-stats-handler-contract, update-handlers, understanding-rpc, queue lanes, step-host, forward-step and mcp-process-e2e (servers built with directDispatch where they build their own tables)`, `debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself`, `repo.list and daemon.status before the first publish (publication withheld) return today's list read from the store; a repo whose completeness read fails has no completeness field, as today`, `the store suites that spawn src/db/graph/__tests__/helpers/store-child.ts pass unchanged with its server built through directDispatch`
@@ -476,7 +497,7 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
 | `ac5` | `integration: a file change is indexed while a session request spins the main thread` |
 | `ac6` | `integration: summaries start only while the index lane is idle, and job order and results equal the single-thread queue` |
 | `ac7` | `integration: daemon.status queue fields and the summary worker's waitForIndexIdle reflect the code-indexing worker's real state`, `integration: codeReview.freshness gets codeIndexWorkFor from the code-indexing worker` |
-| `ac8` | `integration: during maintenance requests wait and are answered after, daemon.status reports compacting, no write is lost, the file shrinks`, `integration: manual daemon.compact keeps today's result and busy refusal`, `unit: idle detection ignores admin polls; the reclaimable thresholds are both required` |
+| `ac8` | `integration: during maintenance requests are refused with the activity and reason, running requests finish first, daemon.status reports compacting, no write is lost, the file shrinks`, `integration: manual daemon.compact keeps today's result and busy refusal`, `unit: idle detection ignores admin polls; the reclaimable thresholds are both required` |
 
 ## 7. Migration
 
@@ -495,10 +516,10 @@ An optional beforeRename callback in compactGraphStore, run between the close (s
 5. Start the admin worker and route admin methods to it behind daemon.threads.enabled. — ↩ rollbackable _(needs: `daemon.threads.enabled`)_
 6. Start the code-indexing worker with the queue, watcher and indexer and the document-summary worker executing summary jobs; give the main thread's runtime the indexing port and the in-daemon client its routing; push the embedding backend; publish lanes and the store slot. — ↩ rollbackable _(needs: `daemon.threads.enabled`)_
 7. Add worker supervision (exit handling, lock reclaim, restart limits) and rewire shutdown to stop the workers, wait for the drain and close the stores on the main thread after they exit. — ↩ rollbackable _(needs: `daemon.threads.enabled`)_
-8. Add the maintenance controller (idle detection, reclaimable estimate, hold-all-but-status, pause and handle close, compaction, resume) and route daemon.compact through it, keeping today's responses. — ↩ rollbackable _(needs: `daemon.threads.enabled`)_
+8. Add the maintenance controller on the daemon maintenance lock (lock framework afcfa027): every request takes it shared with no wait and is refused with the activity and reason while maintenance holds it; idle detection, the reclaimable estimate, the exclusive request with the pause limit, handle close, compaction and release; route daemon.compact through it, keeping today's responses; register every worker with watchWorker. — ↩ rollbackable _(needs: `daemon.threads.enabled`)_
 9. Run the contention, routing, indexing-order, maintenance, restart and smoke tests; then default daemon.threads.enabled on and release with the installer (clients need no update). — ↩ rollbackable
 
-**Backward compat:** The IPC contract is unchanged: socket path and permissions, method names, request shapes and every response field and meaning, including 'unknown method', 'invalid JSON', stream framing, the stream-to-unary fallback, the named LmdbStoreLocksLostError message, and daemon.compact's result and busy refusal. daemon.status gains one optional field (maintenance) present only while compaction runs. The only behavioural change clients see is that during idle maintenance their requests other than daemon.status wait until compaction ends. With daemon.threads.enabled off the daemon runs single-threaded as today.
+**Backward compat:** The IPC contract is unchanged: socket path and permissions, method names, request shapes and every response field and meaning, including 'unknown method', 'invalid JSON', stream framing, the stream-to-unary fallback, the named LmdbStoreLocksLostError message, and daemon.compact's result and busy refusal. daemon.status gains one optional field (maintenance) present only while compaction runs. The only behavioural change clients see is that during idle maintenance their requests other than daemon.status are refused with the maintenance activity and reason and must be retried. With daemon.threads.enabled off the daemon runs single-threaded as today.
 
 ## 8. Alternatives considered
 
@@ -541,24 +562,23 @@ Common parts as in a1, but a single indexing worker runs IndexQueue with both la
 ## 10. Open questions
 
 - Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.
-- Session workers (s3) must join the maintenance pause: s3 adds them to the set of threads that close their graph handle and acknowledge before compaction.
 - Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.
+- Depends on the lock framework (standalone Story afcfa027, LLD approved 2026-10-22); s2's build starts after that Story's build. Session workers (s3) need no pause registry: they take the maintenance lock shared per request and are registered with watchWorker.
 
-## Resolved questions
+<!-- insrc:review -->
 
-- `q036f006e` — Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.
-  - **resolved**: Ship defaults + instrument for tuning — Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs. _(2026-10-22T04:39:45.951Z)_
+## Review
 
-## Citations
+### ✅ Review `PASS` — design.story (design.story)
 
-- **[[c1]]** `code` `src/daemon/shutdown.ts:115-168`
-- **[[c2]]** `code` `src/daemon/server.ts:16-32`
-- **[[c3]]** `step-output` `s1`
-- **[[c4]]** `step-output` `s4`
-- **[[c5]]** `step-output` `s5`
-- **[[c6]]** `code` `src/daemon/threads/worker-entry.ts:40-48`
-- **[[c7]]** `code` `src/db/graph/store.ts:831-890`
-- **[[c8]]** `code` `src/daemon/server.ts:201-293`
-- **[[c13]]** `code` `src/daemon/queue.ts:251-318`
-- **[[c15]]** `code` `src/daemon/shutdown.ts:64-71`
-- **[[c16]]** `code` `src/db/entities.ts:223-330`
+**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-22T06:11:44.698Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

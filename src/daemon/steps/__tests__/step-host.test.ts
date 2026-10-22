@@ -25,7 +25,7 @@ import type { StepCallContext } from '../../../shared/step-context.js';
 import type { IpcStreamMessage } from '../../../shared/types.js';
 import { runCodeReview } from '../../../workflow/code-review/runner.js';
 import type { CodeReviewGrounding, CodeReviewSubject } from '../../../workflow/code-review/types.js';
-import { IpcServer } from '../../server.js';
+import { IpcServer, directDispatch } from '../../server.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../server.js';
 import { loadState as loadAnalyzeState } from '../analyze-step/state-store.js';
 import { loadState as loadCodeReviewState } from '../code-review-step/state-store.js';
@@ -212,7 +212,7 @@ function untilAborted() {
 
 /** An IpcServer serving `stream` on a temporary socket path, through its own connection handling. */
 async function serve(stream: StreamHandlers, rpc: RpcHandlers = {}) {
-	const ipc = new IpcServer(rpc, stream);
+	const ipc = new IpcServer(directDispatch(rpc, stream));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-step-sock-'));
 	const path = join(dir, 'd.sock');
 	const server = createServer((socket: Socket) => {

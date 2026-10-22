@@ -173,11 +173,11 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 		case 'health':
 			return { ok: true, value: getStoreHealth() };
 		case 'serve': {
-			const { IpcServer } = await import('../../../../daemon/server.js');
+			const { IpcServer, directDispatch } = await import('../../../../daemon/server.js');
 			const { PATHS } = await import('../../../../shared/paths.js');
 			const server = new IpcServer(
-				{ 'test.read': async () => opened().meta.get('a') ?? null },
-				{ 'test.stream': async (_params, send) => { send({ id: 0, stream: 'done', data: opened().meta.get('a') ?? null }); } },
+				directDispatch({ 'test.read': async () => opened().meta.get('a') ?? null },
+				{ 'test.stream': async (_params, send) => { send({ id: 0, stream: 'done', data: opened().meta.get('a') ?? null }); } }),
 			);
 			await server.listen();
 			return { ok: true, value: PATHS.sockFile };
@@ -186,7 +186,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 			startPeriodicReaderCheck(cmd.ms);
 			return { ok: true };
 		case 'daemon-like': {
-			const { IpcServer } = await import('../../../../daemon/server.js');
+			const { IpcServer, directDispatch } = await import('../../../../daemon/server.js');
 			const { IndexQueue } = await import('../../../../daemon/queue.js');
 			const { writePid } = await import('../../../../daemon/lifecycle.js');
 			const { createShutdown, realEndDeps } = await import('../../../../daemon/shutdown.js');
@@ -209,7 +209,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 				await new Promise(res => setTimeout(res, j.ms));
 				await withWriteTxn(s => { void s.meta.put(j.key, '1'); });
 			});
-			const server = new IpcServer({
+			const server = new IpcServer(directDispatch({
 				'daemon.shutdown': async () => { shutdown('daemon.shutdown RPC'); return { ok: true }; },
 				'daemon.status': async () => buildDaemonStatus({
 					uptimeSec: 1,
@@ -225,7 +225,7 @@ async function run(cmd: StoreChildCommand): Promise<StoreChildReply> {
 					queue.enqueue({ kind: 'full', repoPath: `/job-${p.key}`, ms: p.ms, key: p.key } as never);
 					return { ok: true };
 				},
-			});
+			}));
 			const shutdown = createShutdown({
 				log,
 				stopBackgroundWork: () => { queue.stop(); void server.close(); },

@@ -12,7 +12,7 @@ import { assertUnderstandingRoles, understandingRoles } from '../../understandin
 import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
-import { IpcServer } from '../server.js';
+import { IpcServer, directDispatch } from '../server.js';
 import { createUnderstandingRoutes } from '../understanding-rpc.js';
 import { UnderstandingService } from '../../understanding/service.js';
 import type { Owner } from '../../understanding/service.js';
@@ -40,7 +40,7 @@ beforeEach(async () => {
   await getGraphStore();
   currentOwner = owner;
   routes = createUnderstandingRoutes({ service: () => { if (!service) throw new AssessmentError('unavailable'); return service; }, owner: async () => currentOwner });
-  server = new IpcServer(routes.rpc, routes.streams, Date.now, join(dir, 'daemon.sock'));
+  server = new IpcServer(directDispatch(routes.rpc, routes.streams), Date.now, join(dir, 'daemon.sock'));
   await server.listen();
   service = await UnderstandingService.open(join(dir, 'daemon.sock'));
 });

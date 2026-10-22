@@ -4,6 +4,7 @@ import type { AttachedClient, IpcRequest, IpcResponse, IpcStreamMessage } from '
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { LmdbStoreLocksLostError, recordStoreFailureIfLockError } from '../db/graph/store.js';
+import type { FrameEnvelope, ReplyEnvelope, RequestEnvelope } from './threads/channel.js';
 
 const log = getLogger('ipc');
 
@@ -48,6 +49,55 @@ export type StreamHandler = (
 export type RpcHandlers = Record<string, RpcHandler>;
 export type StreamHandlers = Record<string, StreamHandler>;
 
+/** Writes one reply or stream frame of a forwarded request to its socket, in today's wire shape. */
+export type DeliverEnvelope = (envelope: ReplyEnvelope | FrameEnvelope) => void;
+/**
+ * Hands one parsed request to whatever serves it (Epic 86197ac6, Story s2):
+ * directDispatch in this thread, or the router. Returns the function the server
+ * calls when the request's socket closes: a stream request is aborted; a unary
+ * request runs on and its late reply is dropped.
+ */
+export type ForwardRequest = (request: RequestEnvelope, deliver: DeliverEnvelope) => () => void;
+
+/**
+ * The in-thread forward: today's dispatch rules over a pair of handler tables.
+ * An unknown method is answered 'unknown method: X'; a stream request for a
+ * method with only a unary handler gets that handler's one reply; a handler's
+ * error is reduced by failureMessage; a stream handler that throws after its
+ * request was cancelled sends nothing more.
+ */
+export function directDispatch(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}): ForwardRequest {
+  return (request, deliver) => {
+    const { requestId, method } = request;
+    const streamHandler = request.stream ? streamHandlers[method] : undefined;
+    if (streamHandler === undefined) {
+      const handler = handlers[method];
+      if (!handler) {
+        deliver({ kind: 'reply', requestId, error: `unknown method: ${method}` });
+        return () => {};
+      }
+      let running: Promise<unknown>;
+      try { running = Promise.resolve(handler(request.params)); } catch (err) { running = Promise.reject(err); }
+      running.then(
+        result => deliver({ kind: 'reply', requestId, result }),
+        err => deliver({ kind: 'reply', requestId, error: failureMessage(err, method) }),
+      );
+      return () => {};
+    }
+    const abortController = new AbortController();
+    const send = (msg: IpcStreamMessage): void => deliver({ kind: 'frame', requestId, frame: msg });
+    let running: Promise<void>;
+    try { running = streamHandler(request.params, send, abortController.signal); } catch (err) { running = Promise.reject(err); }
+    running.catch(err => {
+      // Handler threw: send an error frame if the request is still wanted.
+      if (!abortController.signal.aborted) {
+        send({ id: 0, stream: 'error', data: { error: failureMessage(err, method), recoverable: true } });
+      }
+    });
+    return () => abortController.abort();
+  };
+}
+
 // ---------------------------------------------------------------------------
 // IPC Server
 // ---------------------------------------------------------------------------
@@ -77,8 +127,6 @@ export function failureMessage(err: unknown, method: string): string {
 }
 
 export class IpcServer {
-  private readonly handlers: RpcHandlers;
-  private readonly streamHandlers: StreamHandlers;
   private server: Server | null = null;
   private readonly pendingWrites = new Set<Promise<boolean>>();
   private writeFailed = false;
@@ -128,12 +176,27 @@ export class IpcServer {
    *  `daemon.debug-status` IPC. */
   private readonly conns = new Map<Socket, ConnInfo>();
   private connSeq = 0;
+  private requestSeq = 0;
   private readonly now: () => number;
+  /** In-flight requests per open connection: requestId -> the cancel function forward() returned. */
+  private readonly inflight = new Map<Socket, Map<string, () => void>>();
+  private registryListener: ((clients: AttachedClient[]) => void) | undefined;
 
-  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
-    this.handlers = handlers;
-    this.streamHandlers = streamHandlers;
+  constructor(private readonly forward: ForwardRequest, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
     this.now = now;
+  }
+
+  /**
+   * Called with attachedClients() whenever the registry changes: on connect,
+   * on close, and after each message updates it, before the request is
+   * forwarded (so a debug-status caller sees its own lastMethod).
+   */
+  onRegistryChange(listener: (clients: AttachedClient[]) => void): void {
+    this.registryListener = listener;
+  }
+
+  private registryChanged(): void {
+    this.registryListener?.(this.attachedClients());
   }
 
   /** Snapshot of the attached-client registry, sorted by connectedAt (Story s4).
@@ -181,7 +244,16 @@ export class IpcServer {
 
     // Register the connection (Story s4) — 'unknown' until a message identifies it.
     this.conns.set(socket, { id: ++this.connSeq, connectedAt: this.now(), label: 'unknown' });
-    socket.on('close', () => { this.conns.delete(socket); });
+    this.inflight.set(socket, new Map());
+    socket.on('close', () => {
+      this.conns.delete(socket);
+      // Cancel what is still running for this socket: streams abort, unary replies are dropped.
+      const running = this.inflight.get(socket);
+      this.inflight.delete(socket);
+      for (const cancel of running?.values() ?? []) cancel();
+      this.registryChanged();
+    });
+    this.registryChanged();
 
     socket.on('data', (chunk: Buffer) => {
       buffer += chunk.toString();
@@ -198,13 +270,14 @@ export class IpcServer {
     socket.on('error', () => { /* client disconnected abruptly */ });
   }
 
-  private async handleMessage(raw: string, socket: Socket): Promise<void> {
+  /** Serve one line; the promise settles when the request ends (its reply, its stream's done/error frame, or its socket's close). */
+  private handleMessage(raw: string, socket: Socket): Promise<void> {
     let request: IpcRequest;
     try {
       request = JSON.parse(raw) as IpcRequest;
     } catch {
       this.send(socket, { id: -1, error: 'invalid JSON' });
-      return;
+      return Promise.resolve();
     }
 
     // Update the connection registry from the (validated) client identity +
@@ -212,84 +285,46 @@ export class IpcServer {
     // before it touches the registry; a bad envelope leaves the connection
     // 'unknown'/pid undefined.
     const conn = this.conns.get(socket);
+    const client = validClient(request.client);
     if (conn !== undefined) {
       if (typeof request.method === 'string') conn.lastMethod = request.method;
-      const id = validClient(request.client);
-      if (id !== undefined) { conn.label = id.label; conn.pid = id.pid; }
+      if (client !== undefined) { conn.label = client.label; conn.pid = client.pid; }
     }
+    this.registryChanged();
 
-    // Check for streaming request
-    if (request.stream) {
-      await this.handleStreamMessage(request, socket);
-      return;
-    }
-
-    // Standard request → response
-    const handler = this.handlers[request.method];
-    if (!handler) {
-      this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });
-      return;
-    }
-
-    try {
-      const result = await handler(request.params);
-      this.send(socket, { id: request.id, result });
-    } catch (err) {
-      this.send(socket, { id: request.id, error: failureMessage(err, request.method) });
-    }
-  }
-
-  private async handleStreamMessage(request: IpcRequest, socket: Socket): Promise<void> {
-    const handler = this.streamHandlers[request.method];
-    if (!handler) {
-      // Fall back to standard handler if no stream handler registered
-      const stdHandler = this.handlers[request.method];
-      if (stdHandler) {
-        try {
-          const result = await stdHandler(request.params);
-          this.send(socket, { id: request.id, result });
-        } catch (err) {
-          this.send(socket, { id: request.id, error: failureMessage(err, request.method) });
-        }
+    const running = this.inflight.get(socket);
+    const requestId = String(++this.requestSeq);
+    let ended = false;
+    let settle!: () => void;
+    const settled = new Promise<void>(resolve => { settle = resolve; });
+    let cancel: () => void = () => {};
+    const end = (): void => { ended = true; running?.delete(requestId); settle(); };
+    const deliver: DeliverEnvelope = (envelope) => {
+      // The socket closed: the reply or frame is dropped, as a write to a closed socket was.
+      if (!this.inflight.has(socket)) return;
+      if (envelope.kind === 'reply') {
+        end();
+        this.send(socket, envelope.error !== undefined ? { id: request.id, error: envelope.error } : { id: request.id, result: envelope.result });
         return;
       }
-      this.send(socket, { id: request.id, error: `unknown method: ${request.method}` });
-      return;
-    }
-
-    // Set up abort controller for this streaming request
-    const abortController = new AbortController();
-
-    // Abort on socket close/error
-    const onClose = (): void => { abortController.abort(); };
-    const onError = (): void => { abortController.abort(); };
-    socket.on('close', onClose);
-    socket.on('error', onError);
-
-    // Stream send function — writes IpcStreamMessage to socket
-    // Always override msg.id with the request's id so the client can correlate
-    const sendStream = (msg: IpcStreamMessage): void => {
+      // Always override the frame's id with the request's id so the client can correlate.
+      const frame = { ...(envelope.frame as IpcStreamMessage), id: request.id };
+      if (frame.stream === 'done' || frame.stream === 'error') end();
       try {
-        const out = { ...msg, id: request.id };
-        this.writeLine(socket, JSON.stringify(out) + '\n');
+        this.writeLine(socket, JSON.stringify(frame) + '\n');
       } catch {
-        // Socket broken — abort the handler
-        abortController.abort();
+        // Socket broken: abort the handler.
+        cancel();
       }
     };
-
-    try {
-      await handler(request.params, sendStream, abortController.signal);
-    } catch (err) {
-      // Handler threw — send error stream message if socket is still writable
-      if (!abortController.signal.aborted) {
-        const msg = failureMessage(err, request.method);
-        sendStream({ id: request.id, stream: 'error', data: { error: msg, recoverable: true } });
-      }
-    } finally {
-      socket.removeListener('close', onClose);
-      socket.removeListener('error', onError);
-    }
+    cancel = this.forward({
+      kind: 'request', requestId, method: request.method, params: request.params, stream: request.stream === true,
+      ...(client !== undefined ? { session: client } : {}),
+    }, deliver);
+    // Remember it until it ends or its socket closes (unless it was answered already).
+    if (!ended && running !== undefined && this.inflight.has(socket)) running.set(requestId, () => { cancel(); settle(); });
+    else if (!ended) settle();
+    return settled;
   }
 
   private send(socket: Socket, response: IpcResponse): void {

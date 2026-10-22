@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 
-import { IpcServer } from '../../daemon/server.js';
+import { IpcServer, directDispatch } from '../../daemon/server.js';
 import type { RpcHandlers, StreamHandler, StreamHandlers } from '../../daemon/server.js';
 import { createStepCallHandler } from '../../daemon/steps/host.js';
 import { STEP_TOOL_NAMES } from '../../shared/step-context.js';
@@ -33,7 +33,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** The real IpcServer request handling, served on a temporary socket. */
 async function standInDaemon(stream: StreamHandlers, rpc: RpcHandlers = {}) {
-	const ipc = new IpcServer(rpc, stream);
+	const ipc = new IpcServer(directDispatch(rpc, stream));
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-forward-'));
 	const path = join(dir, 'd.sock');
 	const server = createServer((socket: Socket) => {

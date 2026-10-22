@@ -23,7 +23,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
 
-import { IpcServer, failureMessage } from '../server.js';
+import { IpcServer, directDispatch, failureMessage } from '../server.js';
 import { IndexQueue } from '../queue.js';
 import { getStoreHealth, resetStoreHealthForTests } from '../../db/graph/store.js';
 import { killAllStoreChildren, runLockLossSequence } from '../../db/graph/__tests__/helpers/store-child-driver.js';
@@ -83,8 +83,8 @@ function assertRecorded(operation: string): void {
 test('dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner', async () => {
 	for (const thrown of [lockFailure, badRslot]) {
 		const server = new IpcServer(
-			{ 'x.read': async () => { throw thrown(); } },
-			{ 'x.stream': async () => { throw thrown(); } },
+			directDispatch({ 'x.read': async () => { throw thrown(); } },
+			{ 'x.stream': async () => { throw thrown(); } }),
 		);
 
 		// Site 1: the standard request.
@@ -118,7 +118,7 @@ test('dispatcher: a handler throwing code -30775 records locks-lost and the call
 
 	// Any other error is passed through as before and records nothing.
 	resetStoreHealthForTests();
-	const server = new IpcServer({ 'x.read': async () => { throw Object.assign(new Error('Invalid argument'), { code: 22 }); } });
+	const server = new IpcServer(directDispatch({ 'x.read': async () => { throw Object.assign(new Error('Invalid argument'), { code: 22 }); } }));
 	assert.deepEqual(await request(server, { method: 'x.read' }), { id: 1, error: 'Invalid argument' });
 	assert.equal(failureMessage('plain', 'm'), 'plain');
 	assert.deepEqual(getStoreHealth(), { state: 'ok' });

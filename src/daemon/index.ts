@@ -37,7 +37,7 @@ import { listRepos } from '../db/repos.js';
 import { Watcher } from '../indexer/watcher.js';
 import { IndexQueue } from './queue.js';
 import { IndexerService } from '../indexer/index.js';
-import { IpcServer } from './server.js';
+import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
@@ -328,7 +328,7 @@ async function main(): Promise<void> {
 		understandingService: () => understandingService,
 	});
 	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
-	const server = new IpcServer(rpcHandlers, streamHandlers);
+	const server = new IpcServer(directDispatch(rpcHandlers, streamHandlers));
 
 	// Initialize chat session pool
 	initChatHandlers();

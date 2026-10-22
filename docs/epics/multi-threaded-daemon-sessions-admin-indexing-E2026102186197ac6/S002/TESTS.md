@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 51 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -271,3 +271,39 @@ Run at 2026-10-22T08:41:28.673Z on commit `68147045`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/router.test.ts` | 0 | 4 | 1.7 s |  |
+
+## t10
+
+Run at 2026-10-22T08:48:38.137Z on commit `791ba857`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: each admin-class method runs on the admin worker's thread id**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each admin-class method runs on the admin worker's thread id | `src/daemon/threads/__tests__/admin-worker.test.ts` |
+
+**integration: recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's | `src/daemon/threads/__tests__/admin-worker.test.ts` |
+| pass | config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads | `src/config/__tests__/settings-catalog.test.ts` |
+
+**integration: repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field | `src/daemon/threads/__tests__/admin-worker.test.ts` |
+
+**integration: daemon.status answers with storeFailure when store health is locks-lost**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | daemon.status answers with storeFailure when store health is locks-lost | `src/daemon/threads/__tests__/admin-worker.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/settings-catalog.test.ts` | 0 | 4 | 0.4 s |  |
+| `src/daemon/threads/__tests__/admin-worker.test.ts` | 0 | 4 | 6.6 s |  |

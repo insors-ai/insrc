@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:41:28.673Z",
+    "updatedAt": "2026-10-22T08:48:38.137Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1172,6 +1172,123 @@
               },
               {
                 "title": "debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "791ba857",
+        "ranAt": "2026-10-22T08:48:38.137Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each admin-class method runs on the admin worker's thread id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "each admin-class method runs on the admin worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/settings-catalog.test.ts",
+                "title": "config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "daemon.status answers with storeFailure when store health is locks-lost",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+                "title": "daemon.status answers with storeFailure when store health is locks-lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/settings-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 445,
+            "titles": [
+              {
+                "title": "buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws",
+                "result": "pass"
+              },
+              {
+                "title": "config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/admin-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6568,
+            "titles": [
+              {
+                "title": "each admin-class method runs on the admin worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of daemon.status, daemon.debug-status, repo.list, config.show, config.catalog, guide.list and guide.get equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "title": "repo.list and daemon.status before the first publish return today's list read from the store; a repo whose completeness read fails has no completeness field",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.status answers with storeFailure when store health is locks-lost",
                 "result": "pass"
               }
             ],

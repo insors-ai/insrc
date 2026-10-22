@@ -122,7 +122,7 @@ export function buildRepoStats(input: {
 export function collectRepoStats(
   store: GraphStore,
   registeredRepos: RegisteredRepo[],
-  queue: IndexQueue,
+  queue: Pick<IndexQueue, 'depthForRepo'>,
 ): RepoStats[] {
   const entities: RepoStatsEntity[] = [];
   const u64ToRepo = new Map<bigint, string>();

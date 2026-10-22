@@ -66,6 +66,7 @@ export class Router {
 	private readonly pending = new Map<string, Pending>();
 	private readonly held = new Set<Held>();
 	private readonly holdMs: number;
+	private seq = 0;
 
 	constructor(private readonly opts: RouterOptions) {
 		this.holdMs = opts.holdMs ?? DEFAULT_HOLD_MS;
@@ -79,6 +80,27 @@ export class Router {
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);
 		return this.hold(cls, request, deliver);
 	};
+
+	/**
+	 * Ask the worker of `cls` directly (not through classOf): the indexing port
+	 * and in-daemon calls. Held like a socket request while no worker is
+	 * registered. underHold marks a call made under the caller's maintenance hold.
+	 */
+	request(cls: MethodClass, method: string, params: unknown, opts: { readonly underHold?: boolean | undefined } = {}): Promise<unknown> {
+		const request: RequestEnvelope = {
+			kind: 'request', requestId: `internal-${++this.seq}`, method, params, stream: false,
+			...(opts.underHold === true ? { underHold: true } : {}),
+		};
+		return new Promise((resolve, reject) => {
+			const deliver: DeliverEnvelope = (envelope) => {
+				if (envelope.kind !== 'reply') return;
+				if (envelope.error !== undefined) reject(new Error(envelope.error)); else resolve(envelope.result);
+			};
+			const target = this.opts.registry.targetFor(cls);
+			if (target !== undefined && this.ports.has(target.threadId)) this.send(target.threadId, request, deliver);
+			else this.hold(cls, request, deliver);
+		});
+	}
 
 	/** A worker's channel: its replies and frames are routed back to their requests. */
 	attach(threadId: number, port: MessagePort): void {

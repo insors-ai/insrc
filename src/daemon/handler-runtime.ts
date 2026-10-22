@@ -24,9 +24,7 @@ import { getDb } from '../db/client.js';
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
-import type { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
-import type { IndexerService } from '../indexer/index.js';
 import { unattributedUnwritable, withCompleteness } from './repo-completeness.js';
 import { buildDaemonStatus, composeQueueLanes } from './status.js';
 import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
@@ -69,7 +67,7 @@ import {
 } from '../db/conversations.js';
 import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
-import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient } from '../shared/types.js';
+import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
 import { basename } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
 import { setConfigAtPath } from '../config/write-path.js';
@@ -105,11 +103,36 @@ function offlineStream(method: string): StreamHandler {
 	};
 }
 
+/** The code-graph work for one repo, queued or in flight (IndexQueue.codeIndexWorkFor). */
+export interface CodeIndexWork { readonly inFlight: boolean; readonly pending: number }
+
+/**
+ * What the handlers use of the index queue: the IndexQueue itself where the
+ * queue lives, or, on the main thread with daemon threads, a port to the
+ * code-indexing worker (Epic 86197ac6 s2), whose codeIndexWorkFor answers
+ * asynchronously.
+ */
+export interface RuntimeQueue {
+	readonly depth: number;
+	readonly isProcessing: boolean;
+	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } };
+	enqueue(job: IndexJob): void;
+	codeIndexWorkFor(repoPath: string): CodeIndexWork | Promise<CodeIndexWork>;
+	depthForRepo(repoPath: string): number;
+}
+
+/** What the handlers use of the indexer. */
+export interface RuntimeIndexer {
+	addRepo(repoPath: string): Promise<void>;
+	removeRepo(repoPath: string): Promise<void>;
+	summarySweepProgress(): { repoPath: string; done: number; total: number } | undefined;
+}
+
 export interface HandlerRuntimeDeps {
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
-	readonly queue: IndexQueue;
-	readonly indexer: IndexerService;
+	readonly queue: RuntimeQueue;
+	readonly indexer: RuntimeIndexer;
 	/** When the daemon started, for daemon.status's uptime. */
 	readonly startedAt: number;
 	/** Called by daemon.shutdown and daemon.update; the shutdown is created after the tables. */

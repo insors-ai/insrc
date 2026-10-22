@@ -24,6 +24,7 @@ import type { WorkflowReviewDone } from '../workflow-review-rpc.js';
 import type { RpcHandlers, StreamHandlers } from '../server.js';
 import { failureMessage } from '../server.js';
 import type { IpcStreamMessage } from '../../shared/types.js';
+import type { MethodClass } from '../threads/channel.js';
 import {
 	codeReviewRequestParams,
 	freshnessFromReply,
@@ -69,10 +70,26 @@ export function stepDaemonClient(): StepDaemonClient {
 	return _installed;
 }
 
-/** Test seam: the timer the wait limit uses. */
+/**
+ * With daemon threads (Epic 86197ac6 s2): a call to a method of a routed class
+ * (admin, indexing) is sent to that class's worker instead of the local table.
+ */
+export interface InDaemonRoute {
+	readonly classOf: (method: string) => MethodClass | undefined;
+	readonly routed: ReadonlySet<MethodClass>;
+	readonly request: (cls: MethodClass, method: string, params: unknown) => Promise<unknown>;
+}
+
+/** Test seam: the timer the wait limit uses; and the route to the daemon's workers. */
 export interface InDaemonClientDeps {
 	readonly setTimer?:   ((fn: () => void, ms: number) => unknown) | undefined;
 	readonly clearTimer?: ((handle: unknown) => void) | undefined;
+	readonly route?:      InDaemonRoute | undefined;
+}
+
+/** The in-daemon client, plus a unary request to any served method (for nested calls). */
+export interface InDaemonClient extends StepDaemonClient {
+	readonly request: <T>(method: string, params: unknown) => Promise<T>;
 }
 
 /** The client that calls the daemon's own request handlers in-process. */
@@ -80,8 +97,17 @@ export function createInDaemonClient(
 	unary:  RpcHandlers,
 	stream: StreamHandlers,
 	deps:   InDaemonClientDeps = {},
-): StepDaemonClient {
+): InDaemonClient {
 	const call = async <T>(method: string, params: unknown): Promise<T> => {
+		const cls = deps.route?.classOf(method);
+		if (deps.route !== undefined && cls !== undefined && deps.route.routed.has(cls)) {
+			// Served on the class's worker, whose reply already carries the reduced error message.
+			try {
+				return await deps.route.request(cls, method, params) as T;
+			} catch (err) {
+				throw new Error(err instanceof Error ? err.message : String(err));
+			}
+		}
 		const handler = unary[method];
 		if (handler === undefined) throw new Error(`unknown method: ${method}`);
 		try {
@@ -116,6 +142,7 @@ export function createInDaemonClient(
 		}, deps);
 
 	return {
+		request: <T>(method: string, params: unknown) => call<T>(method, params),
 		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', reviewArtifactRequestParams(params), opts),
 		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', codeReviewRequestParams(params), opts),
 		fetchCodeReviewGrounding: (params) =>

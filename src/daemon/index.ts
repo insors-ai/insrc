@@ -57,6 +57,10 @@ import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
 import { methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
+import { IndexingPortClient, INDEXING_DRAINED, INDEXING_STOP_OP } from './threads/indexing-port.js';
+import { pushToWorker } from './threads/channel.js';
+import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
+import type { ForwardRequest } from './server.js';
 import { startClassWorker } from './threads/workers.js';
 import type { MethodClass } from './threads/channel.js';
 import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
@@ -223,15 +227,49 @@ async function main(): Promise<void> {
 		.then(() => threadServices?.setEmbedderBackend(getActiveEmbedderBackend()))
 		.catch(() => { /* the bootstrap logs its own failures */ });
 
-	// 5. Load repos, start indexer
+	// 5. Load repos, start indexer: on this thread, or, with daemon threads
+	//    (Epic 86197ac6 s2), on the code-indexing worker, which this thread
+	//    reaches through the indexing port. The router is made here because the
+	//    port asks the worker through it; its local tables come later.
 	const configStore = new ConfigStore(db);
-
-	const repos = await listRepos(db);
-	const watcher = new Watcher();
-	const queue = new IndexQueue();
-	const indexer = new IndexerService(db, queue, watcher, configStore);
-
-	await indexer.start(repos);
+	const routed = new Set<MethodClass>();
+	let localForward: ForwardRequest | undefined;
+	const router = threadServices !== undefined
+		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver) })
+		: undefined;
+	let queue: RuntimeQueue;
+	let indexer: RuntimeIndexer;
+	let startQueue: () => Promise<void>;
+	let stopIndexing: () => void;
+	if (threadServices !== undefined && router !== undefined) {
+		const port = new IndexingPortClient((method, params) => router.request('indexing', method, params), threadServices.board);
+		queue = port;
+		indexer = port;
+		routed.add('indexing');
+		const indexing = startClassWorker(threadServices, router, 'indexing', 'indexing-worker');
+		// The queue lives on the worker: "done" is its report that it drained after a stop (or its exit).
+		startQueue = () => indexing.then(
+			({ worker, threadId }) => {
+				log.info({ threadId }, 'code-indexing worker ready');
+				return new Promise<void>(resolve => {
+					worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); });
+					worker.once('exit', () => resolve());
+				});
+			},
+			(err: unknown) => { log.error({ err: err instanceof Error ? err.message : String(err) }, 'code-indexing worker did not start'); },
+		);
+		stopIndexing = () => { void indexing.then(({ port: channel }) => pushToWorker(channel, INDEXING_STOP_OP, null), () => {}); };
+	} else {
+		const repos = await listRepos(db);
+		const watcher = new Watcher();
+		const indexQueue = new IndexQueue();
+		const indexerService = new IndexerService(db, indexQueue, watcher, configStore);
+		await indexerService.start(repos);
+		queue = indexQueue;
+		indexer = indexerService;
+		startQueue = () => indexQueue.start(job => indexerService.processJob(job));
+		stopIndexing = () => { indexQueue.stop(); void watcher.close(); };
+	}
 
 	// 5b. Boot-time steering refresh — re-stamp the insrc:steering skeleton into
 	// every registered repo that already carries the markers. This is the single
@@ -253,7 +291,7 @@ async function main(): Promise<void> {
 	}).catch(() => { /* wrapper never rejects; belt-and-suspenders so boot can't see an unhandled rejection */ });
 
 	// Run queue in background (never awaited until shutdown)
-	const queueDone = queue.start(job => indexer.processJob(job));
+	const queueDone = startQueue();
 
 	// 6. Write PID
 	writePid();
@@ -348,15 +386,15 @@ async function main(): Promise<void> {
 		attachedClients: () => server.attachedClients(),
 		understandingService: () => understandingService,
 	});
-	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
+	// A step handler's nested call to an admin or indexing method goes to that
+	// class's worker (daemon threads); session methods run here, as before.
+	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers, router !== undefined
+		? { route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) } }
+		: {}));
 	// With daemon threads, the router is the server's forward (Epic 86197ac6
-	// s2): routed classes go to their workers, everything else runs here. A
-	// class is routed once its worker exists; until then it runs here, as before.
+	// s2): routed classes go to their workers, everything else runs here.
 	const local = directDispatch(rpcHandlers, streamHandlers);
-	const routed = new Set<MethodClass>();
-	const router = threadServices !== undefined
-		? new Router({ classOf: methodClasses.classOf, registry: threadServices.registry, routed, local })
-		: undefined;
+	localForward = local;
 	const server = new IpcServer(router?.forward ?? local);
 	if (threadServices !== undefined && router !== undefined) {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
@@ -448,9 +486,8 @@ async function main(): Promise<void> {
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
-			queue.stop();
+			stopIndexing();
 			void disposeChatHandlers();
-			void watcher.close();
 			void server.close();
 		},
 		queueDone,

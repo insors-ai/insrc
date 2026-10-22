@@ -13,6 +13,7 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
+import type { MessagePort } from 'node:worker_threads';
 
 import type { MethodClass } from './channel.js';
 import type { ThreadServices } from './main-services.js';
@@ -27,6 +28,8 @@ export function workerScript(name: string): URL {
 export interface StartedWorker {
 	readonly worker: Worker;
 	readonly threadId: number;
+	/** The main thread's end of the worker's channel (requests, hub, pushes). */
+	readonly port: MessagePort;
 }
 
 /**
@@ -49,7 +52,7 @@ export function startClassWorker(services: ThreadServices, router: Router, cls: 
 			worker.off('exit', onExit);
 			services.registry.register({ threadId, cls });
 			router.attach(threadId, conn.port);
-			resolve({ worker, threadId });
+			resolve({ worker, threadId, port: conn.port });
 		});
 	});
 }

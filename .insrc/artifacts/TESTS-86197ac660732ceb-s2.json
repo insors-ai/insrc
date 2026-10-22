@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T09:52:45.302Z",
+    "updatedAt": "2026-10-22T11:17:33.745Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1618,6 +1618,110 @@
               },
               {
                 "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "aef1dc6d",
+        "ranAt": "2026-10-22T11:17:33.745Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2630,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+                "result": "pass"
+              },
+              {
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              },
+              {
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+                "result": "pass"
+              },
+              {
+                "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
                 "result": "pass"
               }
             ],

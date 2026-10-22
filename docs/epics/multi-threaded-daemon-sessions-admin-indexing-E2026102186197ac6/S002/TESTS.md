@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 71 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 76 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -424,3 +424,43 @@ Run at 2026-10-22T09:52:45.302Z on commit `9b2deef7`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/supervisor.test.ts` | 0 | 3 | 9.5 s |  |
 | `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 2 | 10.6 s |  |
+
+## t15
+
+Run at 2026-10-22T11:17:33.745Z on commit `aef1dc6d`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+
+**integration: a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+
+**integration: an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+
+**integration: a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+
+**integration: an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/maintenance-lock.test.ts` | 0 | 5 | 2.6 s |  |

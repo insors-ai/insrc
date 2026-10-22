@@ -93,6 +93,23 @@ test('a name resolves to one slot and a full name table gives LockCapacityError(
 	});
 	// Names already claimed still resolve when the table is full.
 	assert.equal(await b.resolveName(enc('same')), x);
+
+	// A slot another thread is claiming (state -(threadId + 1)) is never passed: a
+	// resolver waits on it, and claims it itself once it is reset to free (as
+	// reclaim does for a claimer that died).
+	const fresh = createLockBlock({ names: 2, holders: 2, pending: 2 });
+	const words = new Int32Array(fresh);
+	const SLOT0_STATE = 8; // first word after the 8-word header
+	Atomics.store(words, SLOT0_STATE, -(7 + 1));
+	let resolved: number | undefined;
+	const pending = new LockManager(fresh, { threadId: 3 }).resolveName(enc('late')).then(i => { resolved = i; });
+	await new Promise(res => setTimeout(res, 20));
+	assert.equal(resolved, undefined, 'the resolver waits behind the slot being claimed');
+	assert.equal(Atomics.load(words, SLOT0_STATE), -(7 + 1));
+	Atomics.store(words, SLOT0_STATE, 0);
+	await pending;
+	assert.equal(resolved, 0, 'the freed slot is claimed, not skipped');
+	assert.equal(Atomics.load(words, SLOT0_STATE), 1, 'published ready');
 });
 
 test('getLockManager without an install uses a private block', () => {

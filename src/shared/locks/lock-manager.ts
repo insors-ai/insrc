@@ -72,12 +72,12 @@ const H_NAMES       = 0;   // name-table capacity
 const H_HOLDERS     = 1;   // holder-table capacity
 const H_PENDING     = 2;   // pending-table capacity
 const H_ACQ         = 3;   // next acquisition id
-const H_TABLE_MUTEX = 4;   // name-table mutex: 0 free, else the claimer's threadId + 1
 const HEADER_WORDS  = 8;
 
-// Name slot. A slot is filled while its state is free and published READY last;
-// it is never freed (lock names are few and long-lived), so a READY slot never changes name.
-const N_STATE   = 0;   // 0 free, 1 ready
+// Name slot. A slot is claimed by CAS (state 0 -> -(claimer threadId + 1)), filled,
+// and published READY last; it is never freed (lock names are few and long-lived),
+// so a READY slot never changes name. Slots are claimed in table order.
+const N_STATE   = 0;   // 0 free, 1 ready, -(threadId + 1) being claimed by that thread
 const N_HASH    = 1;
 const N_LEN     = 2;   // name length in bytes
 const N_LOCK    = 3;   // 0 free, n > 0 shared holders, -1 exclusive
@@ -267,26 +267,32 @@ export class LockManager {
 	 * Every thread resolves one name to one slot.
 	 */
 	async resolveName(nameBytes: Uint8Array): Promise<number> {
-		const found = this.findName(nameBytes);
-		if (found >= 0) return found;
-		await this.lockMutex(H_TABLE_MUTEX);
-		try {
-			// Another thread may have claimed it while this one waited for the table.
-			const again = this.findName(nameBytes);
-			if (again >= 0) return again;
-			for (let i = 0; i < this.layout.capacity.names; i++) {
-				const base = this.nameBase(i);
-				if (Atomics.load(this.words, base + N_STATE) !== 0) continue;
-				Atomics.store(this.words, base + N_HASH, hashBytes(nameBytes));
+		const hash = hashBytes(nameBytes);
+		const claim = -(this.threadId + 1);
+		// Slots are claimed in table order and a thread never passes a slot another
+		// thread is still claiming (it may be this same name), so one name can never
+		// be claimed in two slots.
+		for (let i = 0; i < this.layout.capacity.names;) {
+			const base = this.nameBase(i);
+			const state = Atomics.load(this.words, base + N_STATE);
+			if (state === NAME_READY) {
+				if (this.nameMatches(i, nameBytes, hash)) return i;
+				i++;
+			} else if (state === 0) {
+				if (Atomics.compareExchange(this.words, base + N_STATE, 0, claim) !== 0) continue;
+				Atomics.store(this.words, base + N_HASH, hash);
 				Atomics.store(this.words, base + N_LEN, nameBytes.length);
 				this.bytes.set(nameBytes, (base + N_BYTES) * 4);
 				Atomics.store(this.words, base + N_STATE, NAME_READY);
+				Atomics.notify(this.words, base + N_STATE);
 				return i;
+			} else {
+				// Being claimed by another thread: wait until it is published (or, if
+				// that thread died, reset to free by reclaim on the main thread).
+				await this.yieldOn(base + N_STATE, state);
 			}
-			throw new LockCapacityError('names', this.layout.capacity.names);
-		} finally {
-			this.unlockMutex(H_TABLE_MUTEX);
 		}
+		throw new LockCapacityError('names', this.layout.capacity.names);
 	}
 
 	// -- internals ----------------------------------------------------------
@@ -295,17 +301,11 @@ export class LockManager {
 		return this.layout.names + i * NAME_WORDS;
 	}
 
-	/** Lock-free lookup over published slots; slots are claimed in order and never freed, so the first free slot ends the scan. */
-	private findName(nameBytes: Uint8Array): number {
-		const hash = hashBytes(nameBytes);
-		for (let i = 0; i < this.layout.capacity.names; i++) {
-			const base = this.nameBase(i);
-			if (Atomics.load(this.words, base + N_STATE) !== NAME_READY) return -1;
-			if (this.words[base + N_HASH] !== hash || this.words[base + N_LEN] !== nameBytes.length) continue;
-			const at = (base + N_BYTES) * 4;
-			if (nameBytes.every((b, k) => this.bytes[at + k] === b)) return i;
-		}
-		return -1;
+	private nameMatches(i: number, nameBytes: Uint8Array, hash: number): boolean {
+		const base = this.nameBase(i);
+		if (this.words[base + N_HASH] !== hash || this.words[base + N_LEN] !== nameBytes.length) return false;
+		const at = (base + N_BYTES) * 4;
+		return nameBytes.every((b, k) => this.bytes[at + k] === b);
 	}
 
 	/** The name stored in a published slot. */
@@ -326,13 +326,17 @@ export class LockManager {
 		for (let spins = 0; ; spins++) {
 			const held = Atomics.compareExchange(this.words, index, 0, mine);
 			if (held === 0) return;
-			if (spins < 64) continue;
-			const wait = waitAsync(this.words, index, held, 1);
-			if (wait.async) {
-				const keepAlive = setTimeout(() => {}, 1);
-				try { await wait.value; } finally { clearTimeout(keepAlive); }
-			}
+			if (spins >= 64) await this.yieldOn(index, held);
 		}
+	}
+
+	/** Wait (at most 1 ms, never blocking the event loop) for the word at `index` to change from `value`. */
+	private async yieldOn(index: number, value: number): Promise<void> {
+		const wait = waitAsync(this.words, index, value, 1);
+		if (!wait.async) return;
+		// A pending waitAsync does not keep a thread alive; a timer for its length does.
+		const keepAlive = setTimeout(() => {}, 1);
+		try { await wait.value; } finally { clearTimeout(keepAlive); }
 	}
 
 	protected unlockMutex(index: number): void {

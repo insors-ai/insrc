@@ -33,7 +33,7 @@ import { preflightUpstreamQuestions } from '../questions-gate.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepResolveQuestions } from '../types.js';
 
-import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+import { assertMayAuthor, settleBeforeAuthor } from '../../../../workflow/team/author-gate.js';
 import { runMetaFor } from '../../../../workflow/team/run-meta.js';
 
 const log = getLogger('mcp:workflow-step:start');
@@ -58,6 +58,7 @@ export async function handleStart(
 
 	// Team gate first, before even the upstream-question gate: a stage held by someone else is refused
 	// naming the holder, not answered with questions to resolve.
+	await settleBeforeAuthor({ workflow: input.workflow, repoPath, params });   // signoff of the stage this follows, settled first
 	assertMayAuthor({ workflow: input.workflow, repoPath, params });
 
 	// Mandatory start gate: resolve the IMMEDIATE-UPSTREAM artifact's open

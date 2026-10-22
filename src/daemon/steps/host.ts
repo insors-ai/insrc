@@ -29,6 +29,7 @@ import { handleReviewStep } from './review-step/handler.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { registerParkOffer } from './workflow-step/park-offer.js';
+import { registerSignoff } from './workflow-step/signoff-registration.js';
 import { registerWorkflowRunners } from '../../workflow/index.js';
 
 const log = getLogger('daemon:step-host');
@@ -62,6 +63,8 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 	registerWorkflowRunners();
 	// The team gate offers a refused holder to park their work: it asks this daemon's run store and working tree.
 	registerParkOffer();
+	// The team gate waits for signoff the policy requires: it registers the completion hook and records through this daemon's lifecycle registry.
+	registerSignoff();
 	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
 		insrc_analyze:          (args) => runAnalyzeOneShot(args),

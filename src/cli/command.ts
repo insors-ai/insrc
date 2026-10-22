@@ -334,16 +334,21 @@ function parseClaimUnit(args: readonly string[]): Omit<UnitRef, 'repoPath'> | un
 }
 
 /**
- * `team init [path]`, `team refresh [path] [--branch <name>]`, `team claim|release <epicHash> [storyId [taskId]]`, and
- * `team park <epicHash> [storyId]` / `team resume <epicHash> [storyId] [--workflow <name>]`.
+ * `team init [path]`, `team refresh [path] [--branch <name>]`, `team claim|release <epicHash> [storyId [taskId]]`,
+ * `team park <epicHash> [storyId]` / `team resume <epicHash> [storyId] [--workflow <name>]`, and `team settle <epicHash> [storyId]`.
  * The path defaults to the selected repo; claim and release act on the selected repo.
  */
 async function runTeam(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
-	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>] | team claim|release <epicHash> [storyId [taskId]] | team park <epicHash> [storyId] | team resume <epicHash> [storyId] [--workflow <name>]';
+	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>] | team claim|release <epicHash> [storyId [taskId]] | team park <epicHash> [storyId] | team resume <epicHash> [storyId] [--workflow <name>] | team settle <epicHash> [storyId]';
 	if (sub === 'claim' || sub === 'release') {
 		const unit = parseClaimUnit(rest);
 		if (unit === undefined) return [USAGE];
 		return [sub === 'claim' ? svc.team.teamClaim(ctx.repoPath, unit) : svc.team.teamRelease(ctx.repoPath, unit)];
+	}
+	if (sub === 'settle') {
+		const unit = parseClaimUnit(rest);
+		if (unit === undefined || unit.unit === 'task') return [USAGE];
+		return [await svc.team.teamSettle(ctx.repoPath, unit)];
 	}
 	if (sub === 'park' || sub === 'resume') {
 		const args = [...rest];

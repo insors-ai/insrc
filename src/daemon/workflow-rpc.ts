@@ -26,7 +26,7 @@
  */
 
 import { ensureDraftIssues, readinessFields, type IssueReadiness } from '../workflow/draft-issues.js';
-import { assertMayAuthor } from '../workflow/team/author-gate.js';
+import { assertMayAuthor, settleBeforeAuthor } from '../workflow/team/author-gate.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
@@ -180,6 +180,7 @@ export async function runWorkflowServerSide(
 	opts:     RunWorkflowOpts,
 ): Promise<RunWorkflowResult> {
 	registerWorkflowRunners();   // idempotent — the daemon never registers them otherwise
+	await settleBeforeAuthor(intent);   // signoff of the stage this follows, settled first
 	assertMayAuthor(intent);     // team gate: nothing is decomposed or generated for a stage someone else holds
 	if (!provider.capabilities.structuredOutput) {
 		throw new Error(`workflow.run: provider '${opts.modelLabel}' does not support structured output`);
@@ -480,6 +481,7 @@ export async function runStart(
 	const p = { review: prep.review };
 
 	try {
+		await settleBeforeAuthor(intent);   // signoff of the stage this follows, settled first
 		assertMayAuthor(intent);   // team gate at the entry; the driver asks again before the draft is written
 		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.
 		// WorkflowProgress → StageProgressEvent on `progress`; the per-token

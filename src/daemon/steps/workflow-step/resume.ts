@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
 import { prepareDecompose, prepareSynthesize } from '../../../workflow/orchestrator.js';
 import { actingUser } from '../../../workflow/team/gate.js';
+import { settleForAttempt, settleSignoff } from '../../../workflow/team/signoff.js';
 import { rebindCheckpoint, resumeCheck, type ResumeCheck, type ResumeDeps, type ResumePlan, type RunCheckpoint, type StageWorkflow } from '../../../workflow/team/handoff.js';
 import type { UnitRef } from '../../../workflow/tracker/refs.js';
 import { saveState } from './state-store.js';
@@ -167,5 +168,14 @@ export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = 
  * carry out. A repo's first run resumes where the parker stopped; with no parked branch the answer is to start the stage afresh.
  */
 export async function resumeStage(repo: string, unit: UnitRef, opts: { readonly workflow?: string | undefined } = {}, deps: ResumeDeps & ApplyDeps = {}): Promise<ResumeResult> {
+	// Signoff of what this stage follows is settled first; a refusal for a workflow that is not known yet comes from the registered hook.
+	if (opts.workflow !== undefined) await settleForAttempt(repo, unit, 'author', opts.workflow);
+	else await settleUnknownStage(repo, unit);
 	return applyResume(await resumeCheck(repo, unit, opts, deps), repo, deps);
+}
+
+/** The workflow a resume will run is inferred later, so settle the units its stage could follow: the Epic's HLD and, for a Story, its LLD. */
+async function settleUnknownStage(repo: string, unit: UnitRef): Promise<void> {
+	await settleSignoff(repo, { unit: 'epic', repoPath: unit.repoPath, epicHash: unit.epicHash });
+	if (unit.storyId !== undefined) await settleSignoff(repo, { unit: 'story', repoPath: unit.repoPath, epicHash: unit.epicHash, storyId: unit.storyId });
 }

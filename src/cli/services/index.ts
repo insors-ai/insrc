@@ -27,6 +27,7 @@ import * as config from './config.js';
 import * as maintenance from './maintenance.js';
 import * as team from './team.js';
 import { registerParkOfferProvider } from '../../workflow/team/gate.js';
+import { registerSignoffHook } from '../../workflow/team/signoff.js';
 import { draftParkOffer } from '../../workflow/team/handoff.js';
 import * as debug from './debug.js';
 import { isRunning } from './lifecycle.js';
@@ -93,6 +94,7 @@ export interface Services {
 		teamRelease(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): string;
 		teamPark(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
 		teamResume(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>, workflow?: string): Promise<string>;
+		teamSettle(repoPath: string, unit: Omit<import('../../workflow/tracker/refs.js').UnitRef, 'repoPath'>): Promise<string>;
 	};
 	readonly debug: DebugService;
 }
@@ -100,6 +102,8 @@ export interface Services {
 export function makeServices(): Services {
 	// The terminal runs the team gate in its own process, which has no run store: its refusals offer to park an uncommitted draft.
 	registerParkOfferProvider((repo, unit) => draftParkOffer(repo, unit));
+	// The same gate holds a stage that awaits signoff; the hook only reads the recorded state, so the terminal needs no tracker for it.
+	registerSignoffHook();
 	return {
 		daemon: {
 			isRunning,
@@ -159,6 +163,7 @@ export function makeServices(): Services {
 			teamRelease: team.teamRelease,
 			teamPark:    (repoPath, unit) => team.teamPark(repoPath, unit),
 			teamResume:  (repoPath, unit, workflow) => team.teamResume(repoPath, unit, workflow),
+			teamSettle:  (repoPath, unit) => team.teamSettle(repoPath, unit),
 		},
 		debug: {
 			sections:        debug.sections,

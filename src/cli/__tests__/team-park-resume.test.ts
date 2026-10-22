@@ -21,7 +21,7 @@ import type { TeamPolicy } from '../../workflow/team/types.js';
 import type { PortResult, TrackerPort } from '../../workflow/tracker/port.js';
 
 const HASH = '315d510cb28100e2';
-const USAGE = /^usage: team init .*team park <epicHash> \[storyId\] \| team resume <epicHash> \[storyId\] \[--workflow <name>\]$/;
+const USAGE = /^usage: team init .*team park <epicHash> \[storyId\] \| team resume <epicHash> \[storyId\] \[--workflow <name>\]( \| team settle <epicHash> \[storyId\])?$/;
 
 type Call = { method: string; params: Record<string, unknown> };
 

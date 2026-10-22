@@ -59,8 +59,10 @@ export function teamRelease(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): 
 type DaemonCall = (method: string, params: Record<string, unknown>) => Promise<unknown>;
 const viaDaemon: DaemonCall = (method, params) => rpc<unknown>(method, params);
 
-/** What `team.park` and `team.resume` answer (the workflow-step outputs, as JSON). */
+/** What `team.park` and `team.resume` answer (the workflow-step outputs, as JSON), and `team.settle` (Story s7). */
 interface HandoffReply {
+	readonly recorded?: ReadonlyArray<{ readonly artifactId: string; readonly from: string; readonly to: string }>;
+	readonly statuses?: Readonly<Record<string, string>>;
 	readonly next: string;
 	readonly branch?: string; readonly variant?: string; readonly noted?: boolean; readonly noteFailure?: string; readonly cleanupWarning?: string;
 	readonly stepId?: string; readonly state?: string;
@@ -97,4 +99,22 @@ export async function teamResume(repoPath: string, unit: Omit<UnitRef, 'repoPath
 		case 'nothing_to_resume': return `• nothing to resume for ${label} — ${reply.reason ?? ''}`;
 		default:                return failureLine('resumed', reply);
 	}
+}
+
+/**
+ * Settle a unit's signoff requests now (Story s7): the daemon reads each open request, records what the tracker reports and runs a
+ * completion the signoff was holding. It is how a BUILD's request is read, since no stage start reads it.
+ */
+export async function teamSettle(repoPath: string, unit: Omit<UnitRef, 'repoPath'>, call: DaemonCall = viaDaemon): Promise<string> {
+	const reply = await call('team.settle', unitArgs(repoPath, unit)) as HandoffReply;
+	const label = unitLabel(unit as UnitRef);
+	if (reply.next !== 'settled') return failureLine('settled', reply);
+	const recorded = reply.recorded ?? [];
+	if (recorded.length === 0) {
+		const open = Object.entries(reply.statuses ?? {}).filter(([, status]) => status === 'in-signoff').map(([id]) => id);
+		return open.length > 0
+			? `• ${label}: nothing to record yet — still awaiting signoff: ${open.join(', ')}`
+			: `• ${label}: no signoff request is waiting`;
+	}
+	return `✓ settled ${label} — ${recorded.map(r => `${r.artifactId} ${r.from} → ${r.to}`).join('; ')}`;
 }

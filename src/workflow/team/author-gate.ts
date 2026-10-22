@@ -15,6 +15,7 @@
 import type { WorkflowIntent } from '../types.js';
 import type { UnitRef } from '../tracker/refs.js';
 import { teamGate, TeamGateRefusedError } from './gate.js';
+import { settleForAttempt } from './signoff.js';
 
 /**
  * The stage unit an authoring run changes: a design.epic run changes the Epic, a design.story
@@ -48,10 +49,28 @@ export function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoP
  * or the Story of a standalone one. Throws TeamGateRefusedError for anyone but the holder;
  * a stage with no issue is refused as the gate says (only the first author turn is let through).
  */
-export function assertMayBuild(repoPath: string, ref: { readonly epicHash: string; readonly storyId: string; readonly taskId?: string | undefined }): void {
-	const unit: UnitRef = ref.taskId !== undefined
-		? { unit: 'task', repoPath, epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId }
-		: { unit: 'story', repoPath, epicHash: ref.epicHash, storyId: ref.storyId };
-	const outcome = teamGate(repoPath, unit, 'build');
+export function assertMayBuild(repoPath: string, ref: BuildRef): void {
+	const outcome = teamGate(repoPath, buildUnitOf(repoPath, ref), 'build');
 	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
+}
+
+type BuildRef = { readonly epicHash: string; readonly storyId: string; readonly taskId?: string | undefined };
+
+const buildUnitOf = (repoPath: string, ref: BuildRef): UnitRef => ref.taskId !== undefined
+	? { unit: 'task', repoPath, epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId }
+	: { unit: 'story', repoPath, epicHash: ref.epicHash, storyId: ref.storyId };
+
+/**
+ * The async partner of assertMayAuthor, awaited just before it at the entries that start a stage (Story s7): settle the signoff of
+ * the stage this run follows and refuse (TeamGateRefusedError) while signoff still blocks it. A run that follows nothing is untouched.
+ */
+export async function settleBeforeAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): Promise<void> {
+	const unit = authorUnitOf(intent);
+	if (unit === undefined) return;
+	await settleForAttempt(intent.repoPath, unit, 'author', intent.workflow);
+}
+
+/** The async partner of assertMayBuild: settle and refuse for the stage a build follows (the Story's LLD). */
+export async function settleBeforeBuild(repoPath: string, ref: BuildRef): Promise<void> {
+	await settleForAttempt(repoPath, buildUnitOf(repoPath, ref), 'build');
 }

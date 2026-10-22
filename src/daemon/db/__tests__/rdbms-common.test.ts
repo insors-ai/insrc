@@ -763,10 +763,13 @@ describe('compileTemporalTrend', () => {
 			MYSQL_DIALECT,
 		);
 		assert.equal(r.native, false);
-		// Six SUM-of-CASE moments + min/max
+		// Six SUM-of-CASE moments of x centred on its minimum (a window over the filtered
+		// rows), summed as non-integers so epoch seconds cannot overflow (ISSUE-cf81a4e9); + x0, min/max.
+		assert.match(r.text, /UNIX_TIMESTAMP\(`ts`\) AS x_, MIN\(CASE WHEN .* THEN UNIX_TIMESTAMP\(`ts`\) END\) OVER \(\) AS x0_/);
 		assert.match(r.text, /SUM\(CASE WHEN .* THEN 1 ELSE 0 END\) +AS n/);
-		assert.match(r.text, /SUM\(CASE WHEN .* THEN UNIX_TIMESTAMP\(`ts`\) +END\) +AS sx/);
-		assert.match(r.text, /SUM\(CASE WHEN .* THEN UNIX_TIMESTAMP\(`ts`\) \* `val` +END\) +AS sxy/);
+		assert.match(r.text, /SUM\(CASE WHEN .* THEN \(\(x_ - x0_\) \* 1\.0\) +END\) +AS sx/);
+		assert.match(r.text, /SUM\(CASE WHEN .* THEN \(\(x_ - x0_\) \* 1\.0\) \* \(y_ \* 1\.0\) +END\) +AS sxy/);
+		assert.match(r.text, /MIN\(x0_\) +AS x0/);
 		assert.match(r.text, /MIN\(CASE WHEN .*\) +AS min_x/);
 		assert.match(r.text, /MAX\(CASE WHEN .*\) +AS max_x/);
 	});

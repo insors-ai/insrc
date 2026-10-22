@@ -1814,23 +1814,36 @@ function buildNativeRegrSql(yCol: string, xExpr: string, quotedTarget: string, w
 }
 
 function buildExpressionRegrSql(yCol: string, xExpr: string, quotedTarget: string, whereClause: string): string {
+	// The moments are of x CENTRED on its minimum and summed as non-integers
+	// (ISSUE-cf81a4e9). x is epoch seconds (~1.7e9): integer SUM(x*x) overflows
+	// 64 bits within a few rows, and raw float sums lose the slope to
+	// cancellation (n*sxx and sx^2 are both ~1e19 and differ in their last
+	// digits). dx = x - min(x) keeps every term small; the reader moves the
+	// intercept back by x0. min(x) is a window over the same filtered rows, so
+	// the WHERE clause (and its parameters) appears once.
+	//
 	// `x*y` (and the other products) are NULL when either side is NULL,
 	// so SUM ignores them naturally -- but we wrap the linear sums in
 	// a CASE so SUM(x), SUM(y), SUM(x*x), SUM(y*y) are also restricted
 	// to the pair-non-null subset (otherwise SUM(x) would include rows
 	// where x is non-null but y is null, giving inconsistent moments).
-	const pair = `${yCol} IS NOT NULL AND ${xExpr} IS NOT NULL`;
+	const innerPair = `${yCol} IS NOT NULL AND ${xExpr} IS NOT NULL`;
+	const pair = `y_ IS NOT NULL AND x_ IS NOT NULL`;
+	const dx = `((x_ - x0_) * 1.0)`;
+	const y = `(y_ * 1.0)`;
 	return [
 		'SELECT',
-		`  SUM(CASE WHEN ${pair} THEN 1 ELSE 0 END)                  AS n,`,
-		`  SUM(CASE WHEN ${pair} THEN ${xExpr}                  END) AS sx,`,
-		`  SUM(CASE WHEN ${pair} THEN ${yCol}                   END) AS sy,`,
-		`  SUM(CASE WHEN ${pair} THEN ${xExpr} * ${xExpr}       END) AS sxx,`,
-		`  SUM(CASE WHEN ${pair} THEN ${yCol} * ${yCol}         END) AS syy,`,
-		`  SUM(CASE WHEN ${pair} THEN ${xExpr} * ${yCol}        END) AS sxy,`,
-		`  MIN(CASE WHEN ${pair} THEN ${xExpr}                  END) AS min_x,`,
-		`  MAX(CASE WHEN ${pair} THEN ${xExpr}                  END) AS max_x`,
-		`FROM ${quotedTarget}${whereClause}`,
+		`  SUM(CASE WHEN ${pair} THEN 1 ELSE 0 END)           AS n,`,
+		`  SUM(CASE WHEN ${pair} THEN ${dx}              END) AS sx,`,
+		`  SUM(CASE WHEN ${pair} THEN ${y}               END) AS sy,`,
+		`  SUM(CASE WHEN ${pair} THEN ${dx} * ${dx}      END) AS sxx,`,
+		`  SUM(CASE WHEN ${pair} THEN ${y} * ${y}        END) AS syy,`,
+		`  SUM(CASE WHEN ${pair} THEN ${dx} * ${y}       END) AS sxy,`,
+		`  MIN(x0_)                                           AS x0,`,
+		`  MIN(CASE WHEN ${pair} THEN x_                 END) AS min_x,`,
+		`  MAX(CASE WHEN ${pair} THEN x_                 END) AS max_x`,
+		`FROM (SELECT ${yCol} AS y_, ${xExpr} AS x_, MIN(CASE WHEN ${innerPair} THEN ${xExpr} END) OVER () AS x0_`,
+		`      FROM ${quotedTarget}${whereClause}) AS moments_`,
 	].join(' ');
 }
 
@@ -1899,9 +1912,11 @@ export function readTemporalTrendRow(
 	let slope: number | null;
 	let intercept: number | null;
 	let r2: number | null;
+	// The moments are of x - x0 (buildExpressionRegrSql): the intercept at x = 0 is moved back by x0.
+	const x0 = asNumericValue(row['x0'] as number | string | null | undefined) ?? 0;
 	if (Sxx > 0) {
 		slope     = Sxy / Sxx;
-		intercept = (sy - slope * sx) / n;
+		intercept = (sy - slope * sx) / n - slope * x0;
 		r2        = Syy > 0 ? (Sxy * Sxy) / (Sxx * Syy) : null;
 	} else {
 		// Zero variance in X: regression slope is undefined.

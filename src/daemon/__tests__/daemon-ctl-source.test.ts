@@ -76,6 +76,13 @@ test('daemon-ctl-source.test.ts: daemon-ctl.sh update with --repo-url and --bran
 		assert.equal(git(f.install, 'rev-parse', 'HEAD'), before);
 		assert.equal(head(), 'main');
 
+		// a URL that cannot be fetched from does not stay as origin
+		const gone = join(f.root, 'does-not-exist.git');
+		r = ctl(f.install, f.root, '--repo-url', gone);
+		assert.notEqual(r.code, 0, r.out);
+		assert.match(r.out, /origin restored/);
+		assert.equal(originUrl(), f.fork, 'origin is back to the previous URL');
+
 		// a malformed flag
 		r = ctl(f.install, f.root, '--repo-url', '--branch', 'dev');
 		assert.equal(r.code, 1, r.out);

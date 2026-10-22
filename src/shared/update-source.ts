@@ -73,3 +73,11 @@ export function updateSourceArgs(source: UpdateSource): string[] {
 		...(source.branch !== undefined ? ['--branch', source.branch] : []),
 	];
 }
+
+/** The source with each value checked, for a caller that was handed the values directly rather than reading the config. */
+export function checkUpdateSource(source: UpdateSource): UpdateSource {
+	return {
+		...(source.repoUrl !== undefined ? { repoUrl: checkUrl(source.repoUrl) } : {}),
+		...(source.branch !== undefined ? { branch: checkBranch(source.branch) } : {}),
+	};
+}

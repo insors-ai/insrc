@@ -95,7 +95,9 @@ sync_repo() {
 		die "$DAEMON_ROOT has uncommitted local changes; refusing to overwrite" 3
 	fi
 
-	if [ -n "$REPO_URL" ] && [ "$(git -C "$DAEMON_ROOT" remote get-url origin 2>/dev/null || true)" != "$REPO_URL" ]; then
+	local previous_origin
+	previous_origin=$(git -C "$DAEMON_ROOT" remote get-url origin 2>/dev/null || true)
+	if [ -n "$REPO_URL" ] && [ "$previous_origin" != "$REPO_URL" ]; then
 		log "pointing origin at $REPO_URL"
 		git -C "$DAEMON_ROOT" remote set-url origin "$REPO_URL"
 	fi
@@ -103,7 +105,14 @@ sync_repo() {
 	log "syncing $DAEMON_ROOT against origin/$branch"
 	# An explicit refspec: the install is a single-branch clone, so a plain
 	# `fetch origin <branch>` of any other branch would not create origin/<branch>.
-	git -C "$DAEMON_ROOT" fetch --quiet origin "+refs/heads/$branch:refs/remotes/origin/$branch"
+	if ! git -C "$DAEMON_ROOT" fetch --quiet origin "+refs/heads/$branch:refs/remotes/origin/$branch"; then
+		# a URL that cannot be fetched from must not stay as origin: an unset --repo-url keeps origin as it is
+		if [ -n "$REPO_URL" ] && [ "$previous_origin" != "$REPO_URL" ] && [ -n "$previous_origin" ]; then
+			git -C "$DAEMON_ROOT" remote set-url origin "$previous_origin"
+			log "fetch from $REPO_URL failed; origin restored to $previous_origin"
+		fi
+		die "git fetch origin $branch failed" 4
+	fi
 
 	local current incoming
 	current=$(git -C "$DAEMON_ROOT" rev-parse HEAD)

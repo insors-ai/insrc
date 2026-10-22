@@ -26,7 +26,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import { rpc } from '../client.js';
-import { readUpdateSource } from '../../shared/update-source.js';
+import { checkUpdateSource, readUpdateSource } from '../../shared/update-source.js';
 import type { UpdateSource } from '../../shared/update-source.js';
 import type { RegisteredRepo } from '../../shared/types.js';
 import { describeStop, startDaemon, stopDaemon } from './daemon.js';
@@ -93,8 +93,12 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 		try { source = opts.source ?? readUpdateSource(); }
 		catch (err) { return { ok: false, steps, error: `invalid daemonUpdate config: ${(err as Error).message}` }; }
 		const currentBranch = (await capture('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-		const branch = opts.branch ?? source.branch ?? currentBranch;
-		const repoUrl = opts.repoUrl ?? source.repoUrl;
+		// the values handed in directly become git arguments too: they get the same checks as the config
+		let wanted: UpdateSource;
+		try { wanted = checkUpdateSource({ repoUrl: opts.repoUrl ?? source.repoUrl, branch: opts.branch ?? source.branch }); }
+		catch (err) { return { ok: false, steps, error: `invalid update source: ${(err as Error).message}` }; }
+		const branch = wanted.branch ?? currentBranch;
+		const repoUrl = wanted.repoUrl;
 		const lockBefore = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
 
 		if (opts.skipSync !== true) {
@@ -107,19 +111,23 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			if (dirty.length > 0) {
 				return { ok: false, steps, error: 'daemon checkout has uncommitted changes; refusing to overwrite' };
 			}
-			if (repoUrl !== undefined) {
-				const origin = (await capture('git', ['-C', root, 'remote', 'get-url', 'origin'])).stdout.trim();
-				if (origin !== repoUrl) {
-					onLog(`pointing origin at ${repoUrl}`);
-					if (await stream('git', ['-C', root, 'remote', 'set-url', 'origin', repoUrl], onLog) !== 0) {
-						return { ok: false, steps, error: 'git remote set-url origin failed' };
-					}
+			const previousOrigin = (await capture('git', ['-C', root, 'remote', 'get-url', 'origin'])).stdout.trim();
+			const repointed = repoUrl !== undefined && previousOrigin !== repoUrl;
+			if (repointed) {
+				onLog(`pointing origin at ${repoUrl}`);
+				if (await stream('git', ['-C', root, 'remote', 'set-url', 'origin', repoUrl], onLog) !== 0) {
+					return { ok: false, steps, error: 'git remote set-url origin failed' };
 				}
 			}
 			onLog(`syncing ${root} against origin/${branch}`);
 			// An explicit refspec: the install is a single-branch clone, so a plain `fetch origin <branch>` of any other
 			// branch would not create origin/<branch>.
 			if (await stream('git', ['-C', root, 'fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], onLog) !== 0) {
+				// a URL that cannot be fetched from must not stay as origin: an unset repoUrl keeps origin as it is
+				if (repointed && previousOrigin.length > 0) {
+					await capture('git', ['-C', root, 'remote', 'set-url', 'origin', previousOrigin]);
+					onLog(`fetch from ${repoUrl} failed; origin restored to ${previousOrigin}`);
+				}
 				return { ok: false, steps, error: `git fetch origin/${branch} failed` };
 			}
 			const current  = (await capture('git', ['-C', root, 'rev-parse', 'HEAD'])).stdout.trim();

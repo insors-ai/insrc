@@ -69,5 +69,21 @@ test('maintenance-source.test.ts: the CLI update applies the configured repo URL
 		assert.equal(r.ok, false);
 		assert.match(r.error ?? '', /commits no remote branch has/);
 		assert.equal(git(f.install, 'rev-parse', 'HEAD'), before);
+
+		// a URL that cannot be fetched from does not stay as origin
+		git(f.install, 'reset', '--hard', '-q', 'HEAD~1');
+		const origin = git(f.install, 'remote', 'get-url', 'origin');
+		r = await run({ source: { repoUrl: join(f.root, 'does-not-exist.git') } });
+		assert.equal(r.ok, false);
+		assert.match(r.error ?? '', /git fetch origin\/main failed/);
+		assert.equal(git(f.install, 'remote', 'get-url', 'origin'), origin);
+
+		// a config the reader refuses, and values handed in directly that fail the same checks, stop the update before git runs
+		r = await run({ source: {}, repoUrl: '--upload-pack=x' });
+		assert.equal(r.ok, false);
+		assert.match(r.error ?? '', /invalid update source/);
+		r = await run({ branch: 'a..b' });
+		assert.equal(r.ok, false);
+		assert.match(r.error ?? '', /invalid update source/);
 	} finally { delete process.env['INSRC_DAEMON_ROOT']; f.cleanup(); }
 });

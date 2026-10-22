@@ -5,12 +5,26 @@
 
 /**
  * The pure conversion of a stored legacy `FeedbackEntry` (`body.feedback`) into a
- * `Feedback` for the s9 conversion. Nothing is dropped silently: a value that has
- * no home in the new shape is reported in `unmapped`.
+ * `Feedback` for the s9 conversion, by the s5 mapping: the author becomes a namespaced
+ * actor (`legacy:<slug>` with the text in `properties.name`, unless it already is an
+ * `os:`, `git:` or `github:` id), a feedback decision or kind is a revision request, and
+ * a file other than the artifact's own document goes to `anchor.section`. Nothing is
+ * dropped silently: a value that has no home in the new shape is reported in `unmapped`.
  */
 
 import type { FeedbackDecision, FeedbackEntry } from '../artifacts/provenance/types.js';
 import type { Feedback } from './types.js';
+
+const NAMESPACED = /^(os|git|github):/i;
+
+/** The actor an author text stands for: an already namespaced id (lower-cased) or a stable legacy:<slug>. */
+function actorOfAuthor(author: string): Feedback['actor'] {
+	const trimmed = author.trim();
+	const id = NAMESPACED.test(trimmed)
+		? trimmed.toLowerCase()
+		: `legacy:${trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'unknown'}`;
+	return { id, kind: 'person', properties: { name: author } };
+}
 
 export interface UnmappedField {
 	/** The legacy field, e.g. `target.version`. */
@@ -28,16 +42,20 @@ export interface ConvertedFeedback {
 
 /**
  * @param entry        The stored entry.
- * @param ownDocument  The artifact's own document path; a `target.file` equal to it is dropped, any other is reported.
+ * @param ownDocument  The artifact's own document path; a `target.file` equal to it is dropped, any other goes to `anchor.section`.
  */
 export function convertLegacyFeedback(entry: FeedbackEntry, ownDocument?: string | undefined): ConvertedFeedback {
 	const unmapped: UnmappedField[] = [];
 
-	const anchor = entry.anchor === undefined && entry.target.segment === undefined ? undefined : {
+	const own = ownDocument !== undefined && entry.target.file === ownDocument;
+	// a file other than the artifact's own document is kept in the section, with the heading slug after a '#'
+	const section = own ? entry.anchor?.sectionSlug
+		: entry.anchor?.sectionSlug !== undefined ? `${entry.target.file}#${entry.anchor.sectionSlug}` : entry.target.file;
+	const anchor = entry.anchor === undefined && entry.target.segment === undefined && own ? undefined : {
 		...(entry.anchor !== undefined ? { quote: entry.anchor.quote } : {}),
 		...(entry.anchor?.prefix !== undefined ? { prefix: entry.anchor.prefix } : {}),
 		...(entry.anchor?.suffix !== undefined ? { suffix: entry.anchor.suffix } : {}),
-		...(entry.anchor?.sectionSlug !== undefined ? { section: entry.anchor.sectionSlug } : {}),
+		...(section !== undefined ? { section } : {}),
 		...(entry.target.segment !== undefined ? { lines: [entry.target.segment.startLine, entry.target.segment.endLine] as [number, number] } : {}),
 	};
 
@@ -48,17 +66,14 @@ export function convertLegacyFeedback(entry: FeedbackEntry, ownDocument?: string
 		if (Number.isSafeInteger(n)) revision = n;
 		else unmapped.push({ field: 'target.version', value: version, reason: 'not an integer revision' });
 	}
-	if (ownDocument === undefined || entry.target.file !== ownDocument) {
-		unmapped.push({ field: 'target.file', value: entry.target.file, reason: 'not the artifact\'s own document' });
-	}
 
 	const feedback: Feedback = {
 		id:        entry.id,
 		text:      entry.comment,
-		actor:     { id: `unknown:${entry.author}`, kind: 'person', properties: {} },
+		actor:     actorOfAuthor(entry.author),
 		timestamp: entry.timestamp,
 		feedback:  [],
-		kind:      entry.kind === 'suggestion' ? 'suggestion' : 'comment',
+		kind:      entry.decision === 'feedback' || entry.kind === 'feedback' ? 'revision-request' : entry.kind === 'suggestion' ? 'suggestion' : 'comment',
 		...(anchor !== undefined ? { anchor } : {}),
 		...(revision !== undefined ? { revision } : {}),
 		...(entry.batchId !== undefined ? { batchId: entry.batchId } : {}),

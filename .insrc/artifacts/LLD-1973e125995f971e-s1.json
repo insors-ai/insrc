@@ -137,6 +137,13 @@
         "choice": "Accept as new symbol",
         "rationale": "User 2026-10-23: codeReviewWaitLimits is new; the plan removes DAEMON_CODE_REVIEW_WAIT_MS and moves its callers (incl. routing.test.ts) onto it.",
         "resolvedAt": "2026-10-22T20:23:21.199Z"
+      },
+      "qdf86b285": {
+        "question": "dm1 (partial): src/config/config-catalog.ts, where the two keys are declared, is not cited in s1, though the file exists.",
+        "status": "resolved",
+        "choice": "Amend LLD s1 to cite config-catalog.ts",
+        "rationale": "User 2026-10-23: src/config/config-catalog.ts is the declaration site of codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs; the plan covers declaring them there.",
+        "resolvedAt": "2026-10-22T20:23:33.128Z"
       }
     }
   },

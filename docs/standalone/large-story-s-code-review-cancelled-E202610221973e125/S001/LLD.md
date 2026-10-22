@@ -288,6 +288,8 @@ The step starts the daemon review and returns at once; a new phase polls for the
 
 - `qe720ca27` — cd1 (partial): codeReviewWaitLimits is a new function replacing DAEMON_CODE_REVIEW_WAIT_MS, not an existing symbol.
   - **resolved**: Accept as new symbol — User 2026-10-23: codeReviewWaitLimits is new; the plan removes DAEMON_CODE_REVIEW_WAIT_MS and moves its callers (incl. routing.test.ts) onto it. _(2026-10-22T20:23:21.199Z)_
+- `qdf86b285` — dm1 (partial): src/config/config-catalog.ts, where the two keys are declared, is not cited in s1, though the file exists.
+  - **resolved**: Amend LLD s1 to cite config-catalog.ts — User 2026-10-23: src/config/config-catalog.ts is the declaration site of codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs; the plan covers declaring them there. _(2026-10-22T20:23:33.128Z)_
 
 ## Citations
 

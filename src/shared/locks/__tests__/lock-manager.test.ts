@@ -13,15 +13,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
 import {
 	createLockBlock, DEFAULT_LOCK_CAPACITY, getLockManager, installLockManager, LockArgumentError, LockCapacityError, LockManager,
-	LockNestedError, LockTimeoutError, setLockGrantHookForTests, validateLockRequest,
+	LockNestedError, LockTimeoutError, setLockGrantHookForTests, validateLockRequest, watchWorker,
 } from '../lock-manager.js';
 import type { Lock, LockGrantPoint, LockInfo, LockOptions } from '../lock-manager.js';
+import type { Worker as WorkerType } from 'node:worker_threads';
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -401,4 +403,164 @@ test('a lock wait keeps its thread alive until it completes', async () => {
 	await held.release();
 	assert.deepEqual(await granted, { granted: 'exclusive' });
 	assert.equal(await exit, 0, 'and exits on its own once its wait is done');
+});
+
+/**
+ * Word offsets of the block layout (lock-manager.ts): an 8-word header; name
+ * slots of 23 words (state, hash, length, lock, pending-exclusive, version,
+ * mutex, 16 name words); holder slots of 278 words; pending slots of 4.
+ */
+function offsets(capacity: { names: number; holders: number }): {
+	nameState: (i: number) => number; lock: (i: number) => number; pendx: (i: number) => number; mutex: (i: number) => number;
+	holderState: (slot: number) => number; pendingState: (slot: number) => number;
+} {
+	const names = 8;
+	const holders = names + capacity.names * 23;
+	const pending = holders + capacity.holders * 278;
+	return {
+		nameState: i => names + i * 23, lock: i => names + i * 23 + 3, pendx: i => names + i * 23 + 4, mutex: i => names + i * 23 + 6,
+		holderState: slot => holders + slot * 278, pendingState: slot => pending + slot * 4,
+	};
+}
+
+test('query lists held and pending entries with mode, threadId, since and metadata', async () => {
+	const block = createLockBlock();
+	const [a, b, c] = [1, 2, 3].map(threadId => new LockManager(block, { threadId })) as [LockManager, LockManager, LockManager];
+	assert.deepEqual(a.query(), { held: [], pending: [] });
+	const before = Date.now();
+	const metadata = { activity: 'maintenance', reason: 'compacting' };
+	const ha = await hold(a, 'q', { mode: 'shared', metadata });
+	const hb = await hold(b, 'q', { mode: 'shared' });
+	const waiter = c.request('q', { timeoutMs: 5_000 }, () => 'granted');
+	await tick();
+
+	const snap = b.query();
+	const strip = (i: LockInfo): unknown => ({ ...i, since: 0 });
+	assert.deepEqual(snap.held.map(strip), [
+		{ name: 'q', mode: 'shared', threadId: 1, since: 0, metadata },
+		{ name: 'q', mode: 'shared', threadId: 2, since: 0 },
+	]);
+	assert.equal('metadata' in snap.held[1]!, false, 'no metadata key when none was given');
+	assert.deepEqual(snap.pending.map(strip), [{ name: 'q', mode: 'exclusive', threadId: 3, since: 0 }]);
+	for (const i of [...snap.held, ...snap.pending]) assert.ok(i.since >= before && i.since <= Date.now(), `since ${i.since}`);
+	assert.deepEqual(c.query(), snap, 'every thread reads the same snapshot');
+
+	await ha.release();
+	await hb.release();
+	assert.equal(await waiter, 'granted');
+	assert.deepEqual(a.query(), { held: [], pending: [] }, 'released and granted records are gone');
+});
+
+test('query never returns a slot in its being-written state', async () => {
+	const block = createLockBlock({ names: 2, holders: 4, pending: 4 });
+	const a = new LockManager(block, { threadId: 1 });
+	const reader = new LockManager(block, { threadId: 2 });
+	const other = await hold(a, 'other', { mode: 'shared' });
+	// At each grant point the new holder's slot is claimed or being filled, not published.
+	const seen: [LockGrantPoint, number][] = [];
+	setLockGrantHookForTests(point => { seen.push([point, reader.query().held.filter(h => h.name === 'w').length]); });
+	try {
+		await a.request('w', {}, () => undefined);
+	} finally {
+		setLockGrantHookForTests(null);
+	}
+	assert.deepEqual(seen, [['in-critical-section', 0], ['after-lock-word', 0], ['before-publish', 0]]);
+	assert.deepEqual(reader.query().held.map(h => h.name), ['other'], 'the holder records of other locks are read throughout');
+
+	// Slots claimed by a thread (state -(threadId + 1)) but not yet published are left out.
+	const words = new Int32Array(block);
+	const o = offsets({ names: 2, holders: 4 });
+	Atomics.store(words, o.holderState(3), -(9 + 1));
+	Atomics.store(words, o.pendingState(3), -(9 + 1));
+	assert.deepEqual(reader.query().pending, []);
+	assert.deepEqual(reader.query().held.map(h => h.name), ['other']);
+	await other.release();
+});
+
+test("reclaim releases a thread's holds and pending requests, recounts and wakes waiters", async () => {
+	const block = createLockBlock();
+	const live = new LockManager(block, { threadId: 1 });
+	const dying = new LockManager(block, { threadId: 7 });
+	// Thread 7 holds 'r' exclusive (its callback never settles: it "dies" holding it)
+	// and waits for 'r2' exclusive behind live's shared hold.
+	let heldByDying!: () => void;
+	const dyingHolds = new Promise<void>(r => { heldByDying = r; });
+	void dying.request('r', { metadata: { activity: 'indexing', reason: 'repo x' } }, () => { heldByDying(); return new Promise(() => {}); });
+	await dyingHolds;
+	const shared = await hold(live, 'r2', { mode: 'shared' });
+	const stop = new AbortController();
+	const dyingWait = dying.request('r2', { signal: stop.signal }, () => 0).catch(() => 'stopped');
+	await tick();
+	assert.equal((await probe(live, 'r2', 'shared')).lock, null, "thread 7's waiting exclusive is counted");
+
+	// live waits for 'r'; it is woken when 'r' is reclaimed.
+	const woken = live.request('r', { timeoutMs: 5_000 }, l => l?.mode);
+	await tick();
+	const reclaimedAt = Date.now();
+	const reclaimed = await live.reclaim(7);
+	assert.deepEqual(reclaimed.map(i => [i.name, i.mode, i.threadId, i.metadata?.activity]), [['r', 'exclusive', 7, 'indexing'], ['r2', 'exclusive', 7, undefined]]);
+	assert.equal(await woken, 'exclusive', 'the waiter was granted');
+	assert.ok(Date.now() - reclaimedAt < 1_000, `the waiter was woken by the reclaim, not by its wait running out (${Date.now() - reclaimedAt} ms)`);
+	assert.equal(live.query().held.concat(live.query().pending).some(i => i.threadId === 7), false, 'no record of thread 7 is left');
+	assert.equal((await probe(live, 'r2', 'shared')).lock?.mode, 'shared', 'the pending-exclusive count was recomputed');
+	assert.deepEqual(await live.reclaim(7), [], 'a second reclaim finds nothing');
+	stop.abort();
+	await dyingWait;
+	await shared.release();
+
+	// watchWorker reclaims with the threadId it captured, though the field reads -1 after exit.
+	installLockManager(block, { threadId: 0 });
+	const thread8 = new LockManager(block, { threadId: 8 });
+	let held8!: () => void;
+	const holds8 = new Promise<void>(r => { held8 = r; });
+	void thread8.request('r3', {}, () => { held8(); return new Promise(() => {}); });
+	await holds8;
+	const fake = Object.assign(new EventEmitter(), { threadId: 8 });
+	watchWorker(fake as unknown as WorkerType);
+	fake.threadId = -1;
+	fake.emit('exit', 1);
+	await tick();
+	assert.equal(live.query().held.some(h => h.threadId === 8), false, 'thread 8 reclaimed on exit');
+	assert.equal((await probe(live, 'r3', 'exclusive')).lock?.mode, 'exclusive');
+});
+
+test('reclaim takes over a mutex and resets a name claim left by a foreign threadId', async () => {
+	const capacity = { names: 3, holders: 4, pending: 4 };
+	const block = createLockBlock(capacity);
+	const words = new Int32Array(block);
+	const o = offsets(capacity);
+	const a = new LockManager(block, { threadId: 1 });
+	const b = new LockManager(block, { threadId: 2 });
+	const shared = await hold(a, 'x', { mode: 'shared' });
+	assert.equal(Atomics.load(words, o.lock(0)), 1);
+
+	// Thread 9 "died" inside x's critical section after changing its words, and
+	// while claiming slot 1 for a new name, and with half-written holder and pending slots.
+	Atomics.store(words, o.mutex(0), 9 + 1);
+	Atomics.store(words, o.lock(0), 5);
+	Atomics.store(words, o.pendx(0), 2);
+	Atomics.store(words, o.nameState(1), -(9 + 1));
+	Atomics.store(words, o.holderState(3), -(9 + 1));
+	Atomics.store(words, o.pendingState(3), -(9 + 1));
+
+	// b's request for x cannot enter x's critical section while 9 holds it.
+	let bGranted = false;
+	const bWaits = b.request('x', { timeoutMs: 5_000 }, () => { bGranted = true; });
+	await tick();
+	assert.equal(bGranted, false);
+
+	assert.deepEqual(await a.reclaim(9), [], 'thread 9 had no published record');
+	assert.equal(Atomics.load(words, o.nameState(1)), 0, 'the abandoned name claim is free again');
+	assert.equal(Atomics.load(words, o.holderState(3)), 0, 'the half-written holder slot is free');
+	assert.equal(Atomics.load(words, o.pendingState(3)), 0, 'the half-written pending slot is free');
+	assert.notEqual(Atomics.load(words, o.mutex(0)), 9 + 1, 'the mutex was taken over');
+	assert.equal(Atomics.load(words, o.lock(0)), 1, 'the lock word was recounted from the one published shared holder');
+
+	await tick();
+	// b is now in the queue as an exclusive waiter (counted), and is granted when a releases.
+	assert.equal(Atomics.load(words, o.pendx(0)), 1, 'the recounted pending-exclusive count holds only b');
+	await shared.release();
+	await bWaits;
+	assert.equal(bGranted, true);
+	assert.equal(await a.resolveName(enc('y')), 1, 'the freed name slot is claimed for the next name');
 });

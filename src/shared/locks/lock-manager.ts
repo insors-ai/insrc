@@ -21,6 +21,11 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { threadId as currentThreadId } from 'node:worker_threads';
+import type { Worker } from 'node:worker_threads';
+
+import { getLogger } from '../logger.js';
+
+const log = getLogger('locks');
 
 /** Atomics.waitAsync (Node 16+); the project's TypeScript lib target predates its declaration. */
 type WaitAsyncResult = { readonly async: false; readonly value: 'not-equal' | 'timed-out' } | { readonly async: true; readonly value: Promise<'ok' | 'timed-out'> };
@@ -60,6 +65,11 @@ export interface Lock {
 
 /** Runs while the lock is held; with ifAvailable and the lock unavailable, runs with null and what blocks it. */
 export type LockCallback<T> = (lock: Lock | null, blockedBy: readonly LockInfo[]) => T | Promise<T>;
+
+export interface LockManagerSnapshot {
+	readonly held: readonly LockInfo[];
+	readonly pending: readonly LockInfo[];
+}
 
 export interface LockCapacity {
 	readonly names: number;
@@ -115,7 +125,8 @@ const HOLDER_WORDS = S_REASON + LOCK_REASON_MAX_BYTES / 4;
 const P_STATE  = 0;
 const P_MODE   = 1;
 const P_THREAD = 2;
-const PENDING_WORDS = 3;
+const P_ID     = 3;   // a request id (from the acquisition counter), so a reused slot is told apart
+const PENDING_WORDS = 4;
 
 const MODE_SHARED = 1;
 const MODE_EXCLUSIVE = 2;
@@ -358,7 +369,115 @@ export class LockManager {
 		}
 	}
 
+	/**
+	 * Every held and pending request in the process, as navigator.locks.query()
+	 * returns them, plus thread, time and metadata. Synchronous and lock-free: a
+	 * record being written or released while it is read is left out, never torn.
+	 */
+	query(): LockManagerSnapshot {
+		const held: LockInfo[] = [];
+		for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
+			const r = this.readHolder(slot);
+			if (r !== null) held.push(r.info);
+		}
+		const pending: LockInfo[] = [];
+		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
+			const r = this.readPending(slot);
+			if (r !== null) pending.push(r.info);
+		}
+		return { held, pending };
+	}
+
+	/**
+	 * Release every lock `threadId` held and remove every request it was waiting
+	 * on. Called on the main thread after that worker's 'exit' event.
+	 *
+	 * A name whose mutex the dead thread holds (it died inside a critical
+	 * section) is taken over; each affected name's lock word and pending-exclusive
+	 * count are then recomputed from the records that remain published, so the
+	 * count is right wherever the worker died. Asynchronous, because a name's
+	 * mutex may be held by another thread: a live one leaves it within a few
+	 * atomic writes, and one that has also died is reclaimed when its own exit
+	 * event runs, which a synchronous spin here would never let happen.
+	 */
+	async reclaim(threadId: number): Promise<readonly LockInfo[]> {
+		const dead = threadId + 1;
+		const claim = -dead;
+		const reclaimed: LockInfo[] = [];
+		for (let i = 0; i < this.layout.capacity.names; i++) {
+			const base = this.nameBase(i);
+			const state = Atomics.load(this.words, base + N_STATE);
+			if (state === claim) {
+				// A name claim the dead thread never published: free the slot.
+				Atomics.compareExchange(this.words, base + N_STATE, claim, 0);
+				Atomics.notify(this.words, base + N_STATE);
+				log.warn({ threadId, slot: i }, 'locks: reset a name claim left by a worker that exited');
+				continue;
+			}
+			if (state !== NAME_READY) continue;
+			const mine = (r: { readonly info: LockInfo } | null): boolean => r !== null && r.info.threadId === threadId;
+			const touched = Atomics.load(this.words, base + N_MUTEX) === dead
+				|| this.holdersOf(i).some(h => h.threadId === threadId)
+				|| this.pendingOf(i).some(p => p.threadId === threadId);
+			if (!touched) continue;
+			await this.takeMutex(base + N_MUTEX, dead);
+			try {
+				for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
+					const r = this.readHolder(slot);
+					if (r === null || r.index !== i || !mine(r)) continue;
+					this.clearHolder(slot);
+					reclaimed.push(r.info);
+					log.warn({ name: r.info.name, mode: r.info.mode, threadId, metadata: r.info.metadata }, 'locks: released a lock held by a worker that exited');
+				}
+				for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
+					const r = this.readPending(slot);
+					if (r === null || r.index !== i || !mine(r)) continue;
+					this.clearPending(i, slot, 'shared'); // uncounted here: the count is recomputed below
+					reclaimed.push(r.info);
+					log.warn({ name: r.info.name, mode: r.info.mode, threadId }, 'locks: removed a request a worker that exited was waiting on');
+				}
+				this.recount(i);
+				this.bumpVersion(i);
+			} finally {
+				this.unlockMutex(base + N_MUTEX);
+			}
+		}
+		// Holder and pending slots the dead thread had claimed but not published:
+		// their names' mutexes were taken over above, so nothing else will finish them.
+		for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
+			const h = this.holderBase(slot);
+			if (Atomics.load(this.words, h + S_STATE) === claim) { this.clearHolder(slot); }
+		}
+		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
+			const p = this.pendingBase(slot);
+			if (Atomics.load(this.words, p + P_STATE) !== claim) continue;
+			for (const w of [P_MODE, P_THREAD, P_ID]) Atomics.store(this.words, p + w, 0);
+			Atomics.store(this.words, p + P_STATE, 0);
+		}
+		return reclaimed;
+	}
+
 	// -- internals ----------------------------------------------------------
+
+	/** Take a mutex that is free or held by the dead thread (`dead` = its threadId + 1). */
+	private async takeMutex(index: number, dead: number): Promise<void> {
+		const mine = this.threadId + 1;
+		for (let spins = 0; ; spins++) {
+			const held = Atomics.compareExchange(this.words, index, 0, mine);
+			if (held === 0) return;
+			if (held === dead && Atomics.compareExchange(this.words, index, dead, mine) === dead) return;
+			if (spins >= 64) await this.yieldOn(index, held);
+		}
+	}
+
+	/** Inside the name's mutex: set its lock word and pending-exclusive count from its published records. */
+	private recount(index: number): void {
+		const base = this.nameBase(index);
+		const holders = this.holdersOf(index);
+		const word = holders.some(h => h.mode === 'exclusive') ? -1 : holders.length;
+		Atomics.store(this.words, base + N_LOCK, word);
+		Atomics.store(this.words, base + N_PENDX, this.pendingOf(index).filter(p => p.mode === 'exclusive').length);
+	}
 
 	/**
 	 * Wait for the lock: behind this thread's earlier requests for the name, then
@@ -484,6 +603,7 @@ export class LockManager {
 			if (Atomics.compareExchange(this.words, p + P_STATE, 0, claim) !== 0) continue;
 			Atomics.store(this.words, p + P_MODE, mode === 'exclusive' ? MODE_EXCLUSIVE : MODE_SHARED);
 			Atomics.store(this.words, p + P_THREAD, this.threadId);
+			Atomics.store(this.words, p + P_ID, Atomics.add(this.words, H_ACQ, 1) + 1);
 			this.times[this.layout.capacity.holders + slot] = this.now();
 			Atomics.store(this.words, p + P_STATE, index + 1);
 			if (mode === 'exclusive') Atomics.add(this.words, this.nameBase(index) + N_PENDX, 1);
@@ -498,6 +618,7 @@ export class LockManager {
 		const p = this.pendingBase(slot);
 		Atomics.store(this.words, p + P_MODE, 0);
 		Atomics.store(this.words, p + P_THREAD, 0);
+		Atomics.store(this.words, p + P_ID, 0);
 		this.times[this.layout.capacity.holders + slot] = 0;
 		Atomics.store(this.words, p + P_STATE, 0);
 		if (mode === 'exclusive') Atomics.sub(this.words, this.nameBase(index) + N_PENDX, 1);
@@ -542,7 +663,8 @@ export class LockManager {
 	private holdersOf(index: number): LockInfo[] {
 		const out: LockInfo[] = [];
 		for (let slot = 0; slot < this.layout.capacity.holders; slot++) {
-			if (Atomics.load(this.words, this.holderBase(slot) + S_STATE) === index + 1) out.push(this.readHolder(slot, index));
+			const info = this.readHolder(slot);
+			if (info !== null && info.index === index) out.push(info.info);
 		}
 		return out;
 	}
@@ -551,30 +673,50 @@ export class LockManager {
 	private pendingOf(index: number): LockInfo[] {
 		const out: LockInfo[] = [];
 		for (let slot = 0; slot < this.layout.capacity.pending; slot++) {
-			const p = this.pendingBase(slot);
-			if (Atomics.load(this.words, p + P_STATE) !== index + 1) continue;
-			out.push({
-				name: this.nameAt(index),
-				mode: Atomics.load(this.words, p + P_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
-				threadId: Atomics.load(this.words, p + P_THREAD),
-				since: this.times[this.layout.capacity.holders + slot]!,
-			});
+			const info = this.readPending(slot);
+			if (info !== null && info.index === index) out.push(info.info);
 		}
 		return out;
 	}
 
-	private readHolder(slot: number, index: number): LockInfo {
+	/**
+	 * A holder slot's record, or null unless it is published. The state and
+	 * acquisition id are read before and after the fields: if either moved, the
+	 * slot was released or reused while being read, and it is left out rather
+	 * than returned torn.
+	 */
+	private readHolder(slot: number): { readonly index: number; readonly info: LockInfo } | null {
 		const h = this.holderBase(slot);
+		const state = Atomics.load(this.words, h + S_STATE);
+		if (state <= 0) return null;
+		const acq = Atomics.load(this.words, h + S_ACQ);
 		const actLen = Atomics.load(this.words, h + S_ACT_LEN);
+		const at = (w: number, len: number): string => decoder.decode(this.bytes.slice(w * 4, w * 4 + len));
 		const info: LockInfo = {
-			name: this.nameAt(index),
+			name: this.nameAt(state - 1),
 			mode: Atomics.load(this.words, h + S_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
 			threadId: Atomics.load(this.words, h + S_THREAD),
 			since: this.times[slot]!,
+			...(actLen >= 0 ? { metadata: { activity: at(h + S_ACT, actLen), reason: at(h + S_REASON, Atomics.load(this.words, h + S_REASON_LEN)) } } : {}),
 		};
-		if (actLen < 0) return info;
-		const at = (w: number, len: number): string => decoder.decode(this.bytes.slice(w * 4, w * 4 + len));
-		return { ...info, metadata: { activity: at(h + S_ACT, actLen), reason: at(h + S_REASON, Atomics.load(this.words, h + S_REASON_LEN)) } };
+		if (Atomics.load(this.words, h + S_STATE) !== state || Atomics.load(this.words, h + S_ACQ) !== acq) return null;
+		return { index: state - 1, info };
+	}
+
+	/** A pending slot's record, or null unless it is published; read as readHolder reads. */
+	private readPending(slot: number): { readonly index: number; readonly info: LockInfo } | null {
+		const p = this.pendingBase(slot);
+		const state = Atomics.load(this.words, p + P_STATE);
+		if (state <= 0) return null;
+		const id = Atomics.load(this.words, p + P_ID);
+		const info: LockInfo = {
+			name: this.nameAt(state - 1),
+			mode: Atomics.load(this.words, p + P_MODE) === MODE_EXCLUSIVE ? 'exclusive' : 'shared',
+			threadId: Atomics.load(this.words, p + P_THREAD),
+			since: this.times[this.layout.capacity.holders + slot]!,
+		};
+		if (Atomics.load(this.words, p + P_STATE) !== state || Atomics.load(this.words, p + P_ID) !== id) return null;
+		return { index: state - 1, info };
 	}
 
 	private holderBase(slot: number): number {
@@ -631,6 +773,21 @@ export class LockManager {
 		Atomics.store(this.words, index, 0);
 		Atomics.notify(this.words, index);
 	}
+}
+
+/**
+ * On the main thread, right after starting a daemon worker: when the worker
+ * exits, reclaim every named lock it held or waited for. The threadId is
+ * captured now, because worker.threadId reads -1 once the thread has stopped.
+ * Store-guard permits are reclaimed separately (StoreGuard.reclaim).
+ */
+export function watchWorker(worker: Worker): void {
+	const threadId = worker.threadId;
+	worker.once('exit', () => {
+		getLockManager().reclaim(threadId).catch((err: unknown) => {
+			log.error({ threadId, err }, 'locks: reclaiming an exited worker\'s locks failed');
+		});
+	});
 }
 
 const TIMED_OUT = Symbol('timed-out');

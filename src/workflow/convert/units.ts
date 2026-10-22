@@ -31,10 +31,10 @@ const text = (v: unknown): string | undefined => typeof v === 'string' && v.leng
 const storyOf = (id: string): string => `s${Number(/\d+/.exec(id)?.[0] ?? '0')}`;
 
 /** A Story a Define lists: its lower-case id and title. */
-interface ListedStory { readonly id: string; readonly title: string }
-interface Epic { readonly hash: string; readonly stories: readonly ListedStory[] }
+export interface ListedStory { readonly id: string; readonly title: string }
+export interface Epic { readonly hash: string; readonly stories: readonly ListedStory[] }
 
-function epicsOf(heads: readonly RawHead[]): Epic[] {
+export function epicsOf(heads: readonly RawHead[]): Epic[] {
 	const epics: Epic[] = [];
 	for (const head of heads) {
 		const m = /^DEF-([0-9a-f]{16})$/.exec(head.artifactId);
@@ -48,7 +48,7 @@ function epicsOf(heads: readonly RawHead[]): Epic[] {
 }
 
 /** The id of the LLD of a Story as stored, or undefined: either id form (S001 before the rename, s1 after) matches. */
-function lldOf(heads: readonly RawHead[], hash: string, story: string): RawHead | undefined {
+export function lldOf(heads: readonly RawHead[], hash: string, story: string): RawHead | undefined {
 	return heads.find(h => { const m = /^LLD-([0-9a-f]{16})-([sS]\d+)$/.exec(h.artifactId); return m !== null && m[1] === hash && storyOf(m[2]!) === story; });
 }
 
@@ -63,8 +63,8 @@ const holdsBinding = (head: RawHead | undefined): boolean => {
 	return e['binding'] !== undefined || (Array.isArray(e['attachments']) && e['attachments'].length > 0);
 };
 
-const epicId = (hash: string): string => ArtifactIds.make({ kind: 'EPIC', epicHash: hash });
-const storyId = (hash: string, story: string): string => ArtifactIds.make({ kind: 'STORY', epicHash: hash, story });
+export const epicId = (hash: string): string => ArtifactIds.make({ kind: 'EPIC', epicHash: hash });
+export const storyId = (hash: string, story: string): string => ArtifactIds.make({ kind: 'STORY', epicHash: hash, story });
 
 /** The plan rule: which EPIC and STORY heads are missing and which bindings would move. */
 export const unitsRule: PlanRule = (ctx): RulePlan => {

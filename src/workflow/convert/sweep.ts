@@ -17,6 +17,8 @@ import { decodeArtifactHead } from '../artifact-core/decode.js';
 import type { History } from '../artifact-core/history.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { LEGACY_META_FIELDS } from './backfill.js';
+import { rewriteString } from './rename.js';
+import type { UnitView } from './types.js';
 
 export interface SweepProblem { readonly artifactId: string; readonly reason: string }
 export interface SweepReport {
@@ -28,7 +30,24 @@ export interface SweepReport {
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-export async function sweepHeads(repo: string, history: History): Promise<SweepReport> {
+const APPROVED_OR_BEYOND = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed'];
+
+/** Why a head differs from what it was before the conversion (its revision number or approval), or undefined when it kept them. */
+function keptProblem(before: UnitView, lifecycle: { readonly status: string; readonly revision: { readonly number: number } }): string | undefined {
+	if (before.revision !== null && before.revision !== lifecycle.revision.number) return `has revision ${lifecycle.revision.number}, it was ${before.revision}`;
+	const approved = APPROVED_OR_BEYOND.includes(lifecycle.status);
+	if (before.approval === 'approved' && !approved) return `is ${lifecycle.status}, it was approved`;
+	if (before.approval === 'rejected' && lifecycle.status !== 'rejected') return `is ${lifecycle.status}, it was rejected`;
+	if (before.approval === 'pending' && (approved || lifecycle.status === 'rejected')) return `is ${lifecycle.status}, it was pending`;
+	return undefined;
+}
+
+/**
+ * Sweep every head. With the before-snapshot of the apply (`before`), each head that was in it must also have kept its revision
+ * number and its approval; the snapshot names the heads as they were stored, so a renamed id is looked up under its new name.
+ */
+export async function sweepHeads(repo: string, history: History, before: readonly UnitView[] = []): Promise<SweepReport> {
+	const kept = new Map(before.map(v => [rewriteString(v.artifactId), v]));
 	const dir = join(repo, ARTIFACTS_DIR);
 	const names = readdirSync(dir).filter(n => n.endsWith('.json')).sort();
 	const problems: SweepProblem[] = [];
@@ -46,6 +65,11 @@ export async function sweepHeads(repo: string, history: History): Promise<SweepR
 		if (meta['lifecycle'] === undefined || meta['envelope'] === undefined) left.push('lifecycle' as never);
 		if (left.length > 0) { fail(`still carries ${left.join(', ')}`); continue; }
 
+		const was = kept.get(artifactId);
+		if (was !== undefined) {
+			const moved = keptProblem(was, decoded.artifact.lifecycle);
+			if (moved !== undefined) { fail(moved); continue; }
+		}
 		const view = { description: decoded.artifact.description, payload: decoded.artifact.payload, lifecycle: decoded.artifact.lifecycle };
 		const own = checkHeadIntegrity(view);
 		if (!own.ok) { fail(`fails the integrity check of its own content (${own.reason})`); continue; }

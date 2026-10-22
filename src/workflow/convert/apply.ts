@@ -17,7 +17,6 @@
  * was computed from are gone from the heads already converted).
  */
 
-import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
@@ -27,7 +26,7 @@ import { writeAtomic } from '../storage.js';
 import { applyAmendments, amendmentRule } from './amendments.js';
 import { backfillHead } from './backfill.js';
 import { applyFeedback, feedbackRule } from './feedback-rule.js';
-import { PROGRESS_FILE } from './marker.js';
+import { PROGRESS_FILE, readProgress } from './marker.js';
 import { writeMigratedHead } from './migrated-head.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
 import { planConversion, plansEqual } from './plan.js';
@@ -77,15 +76,6 @@ export function deliveryReadsLifecycle(): boolean {
 	};
 	const lifted = liftStoreFile(`DEF-${'a'.repeat(16)}.json`, head);
 	return !('reason' in lifted) && lifted.approval.state === 'approved';
-}
-
-function readProgress(repo: string): { snapshot: readonly UnitView[] } | undefined {
-	const path = join(repo, PROGRESS_FILE);
-	if (!existsSync(path)) return undefined;
-	try {
-		const parsed = JSON.parse(readFileSync(path, 'utf8')) as { snapshot?: unknown };
-		return Array.isArray(parsed.snapshot) ? { snapshot: parsed.snapshot as UnitView[] } : undefined;
-	} catch { return undefined; }
 }
 
 /** Migrate every head that has no lifecycle or still carries a legacy field. Answers how many were written. */

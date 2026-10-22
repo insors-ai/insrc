@@ -60,6 +60,14 @@ describe('convert-marker', () => {
 			assert.equal(existsSync(join(repo, REPO_SCHEMA_FILE)), false, 'a blocked sweep writes no marker');
 			assert.equal(existsSync(join(repo, PROGRESS_FILE)), true, 'and the progress file stays for the rerun');
 
+			// a head that did not keep its status is listed too
+			const demoted = JSON.parse(clean) as { meta: { lifecycle: { status: string } } };
+			demoted.meta.lifecycle.status = 'draft';
+			writeFileSync(path, JSON.stringify(demoted, null, 2) + '\n');
+			await assert.rejects(writeMarkerIfClean(repo, history, deps.now), (e: unknown) => e instanceof ConversionIncomplete
+				&& e.heads.length === 1 && e.heads[0]!.artifactId === LLD && /is draft, it was approved/.test(e.heads[0]!.reason));
+			assert.equal(existsSync(join(repo, REPO_SCHEMA_FILE)), false);
+
 			// the heads are clean: the marker is written, by a temporary file that is renamed, and the progress file goes
 			writeFileSync(path, clean);
 			const report = await writeMarkerIfClean(repo, history, deps.now);

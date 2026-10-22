@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T09:01:42.169Z",
+    "updatedAt": "2026-10-22T09:33:13.695Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1465,6 +1465,59 @@
             "titles": [
               {
                 "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "96671195",
+        "ranAt": "2026-10-22T09:33:13.695Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+                "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+                "title": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3489,
+            "titles": [
+              {
+                "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle on the summary worker reflects the code-indexing worker's real state",
                 "result": "pass"
               }
             ],

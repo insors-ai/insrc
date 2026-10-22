@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 65 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 67 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -367,3 +367,25 @@ Run at 2026-10-22T09:01:42.169Z on commit `3602a797`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 2 s |  |
 | `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 1 | 3.1 s |  |
+
+## t13
+
+Run at 2026-10-22T09:33:13.695Z on commit `96671195`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input | `src/daemon/threads/__tests__/summary-worker.test.ts` |
+
+**integration: waitForIndexIdle on the summary worker reflects the code-indexing worker's real state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | waitForIndexIdle on the summary worker reflects the code-indexing worker's real state | `src/daemon/threads/__tests__/summary-worker.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/summary-worker.test.ts` | 0 | 2 | 3.5 s |  |

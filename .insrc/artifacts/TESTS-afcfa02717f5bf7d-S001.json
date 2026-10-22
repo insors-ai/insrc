@@ -4,7 +4,7 @@
     "epicHash": "afcfa02717f5bf7d",
     "storyId": "S001",
     "createdAt": "2026-10-22T06:26:37.927Z",
-    "updatedAt": "2026-10-22T06:51:17.426Z",
+    "updatedAt": "2026-10-22T06:53:26.729Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-22T05:17:03.574Z",
     "epicSlug": "add-cross-thread-named-lock-framework"
@@ -540,6 +540,95 @@
               },
               {
                 "title": "reclaim takes over a mutex and resets a name claim left by a foreign threadId",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3e28b52e",
+        "ranAt": "2026-10-22T06:53:26.729Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a daemon worker and the main thread contend for the same named lock",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a daemon worker and the main thread contend for the same named lock",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker-stores tests pass with the lock block passed to startDaemonWorker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2885,
+            "titles": [
+              {
+                "title": "a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread",
+                "result": "pass"
+              },
+              {
+                "title": "no module outside src/daemon and src/db calls declareLiveStoreOwner",
+                "result": "pass"
+              },
+              {
+                "title": "a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row",
+                "result": "pass"
+              },
+              {
+                "title": "two workers' artifact-vector and config writes are read back from a third thread",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "a daemon worker and the main thread contend for the same named lock",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -165,3 +165,29 @@ Run at 2026-10-22T06:51:17.426Z on commit `ab7c89f5`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 20 | 1.3 s |  |
+
+## t5
+
+Run at 2026-10-22T06:53:26.729Z on commit `3e28b52e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a daemon worker and the main thread contend for the same named lock**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a daemon worker and the main thread contend for the same named lock | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**integration: worker-stores tests pass with the lock block passed to startDaemonWorker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker that has not declared the store owner is refused on the live LMDB and Lance paths, and startDaemonWorker refuses a main thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+| pass | no module outside src/daemon and src/db calls declareLiveStoreOwner | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+| pass | a reader on one thread sees only whole LMDB transactions while a worker writes, and vectors never precede their graph row | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+| pass | two workers' artifact-vector and config writes are read back from a third thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+| pass | a throwing withWriteTxn callback on a worker leaves none of its writes visible to the main thread | `src/daemon/threads/__tests__/worker-stores.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/worker-stores.test.ts` | 0 | 6 | 2.9 s |  |

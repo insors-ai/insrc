@@ -13,7 +13,6 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { _setSignoffDepsForTests, openSignoff, settleSignoff, signoffRecordsFromHeads, signoffRecordsOf, signoffRefOf, signoffReferenceOf, signoffViewOf, stagesOfUnit, type CodeReviewRecord, type SignoffDeps } from '../signoff.js';
-import { TeamGateRefusedError } from '../gate.js';
 import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
 import type { PortResult, SignoffRequestRef, SignoffRequestSpec, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
@@ -175,7 +174,7 @@ test('openSignoff refuses a missing approval, a missing or author-written review
 
 	// a submitter who is not the holder is refused with the gate's error naming the holder
 	s = submit({ [LLD]: approvedHead() }, { holder: 'bob' });
-	await assert.rejects(openSignoff('/repo', STORY, [LLD], s.deps), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'held-by-other' && e.outcome.holder === 'bob');
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /held by bob: only the holder can submit/);
 	assert.deepEqual([s.opened.length, s.applied.length], [0, 0]);
 	// the holder is compared without regard to case
 	s = submit({ [LLD]: approvedHead() }, { holder: 'Alice', me: 'alice' });
@@ -184,11 +183,11 @@ test('openSignoff refuses a missing approval, a missing or author-written review
 
 test('openSignoff refuses an unassigned unit saying it must be claimed first', async () => {
 	const s = submit({ [LLD]: approvedHead() }, { holder: null });
-	await assert.rejects(openSignoff('/repo', STORY, [LLD], s.deps), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'refused' && /claim it before submitting/.test(e.outcome.reason));
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /claim it before submitting/);
 	assert.deepEqual([s.opened.length, s.applied.length, s.published.length], [0, 0, 0]);
 	// and a unit with no issue at all
 	const none = submit({ [LLD]: approvedHead() });
-	await assert.rejects(openSignoff('/repo', STORY, [LLD], { ...none.deps, resolveIssue: () => null }), (e: unknown) => e instanceof TeamGateRefusedError && e.outcome.kind === 'no-issue');
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], { ...none.deps, resolveIssue: () => null })), /has no tracker issue/);
 });
 
 test('openSignoff for BUILD checks the Story\'s code-review record (missing, written by the author, or blocking is refused; pass or warn by the other party is accepted) and never the lifecycle review', async () => {
@@ -371,4 +370,22 @@ test('settleSignoff records signed-off on all artifacts of a completed request, 
 	await settleSignoff('/repo', STORY, s.deps);
 	assert.deepEqual(s.applied.map(a => a.id), [LLD, BUILD]);
 	assert.deepEqual(s.completed, [`STORY-${EPIC}-s1`]);
+});
+
+test('settleSignoff answers the problems it met, so an unreachable tracker is told apart from a request still open', async () => {
+	// open request: nothing wrong, nothing reported
+	let s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { state: 'open' });
+	assert.deepEqual(await settleSignoff('/repo', EPIC_UNIT, s.deps), []);
+
+	// the tracker cannot be loaded
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { load: true });
+	assert.match((await settleSignoff('/repo', EPIC_UNIT, s.deps)).join('|'), /tracker is not available.*no gh/);
+
+	// the request cannot be read
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') }, { read: true });
+	assert.match((await settleSignoff('/repo', EPIC_UNIT, s.deps)).join('|'), /request acme\/demo#9 could not be read \(offline\)/);
+
+	// a record that fails part-way
+	s = settleWorld({ [DEF]: inSignoff('acme/demo#9'), [HLD]: inSignoff('acme/demo#9') }, { on: HLD });
+	assert.match((await settleSignoff('/repo', EPIC_UNIT, s.deps)).join('|'), new RegExp(`${HLD} could not be recorded \\(injected failure\\)`));
 });

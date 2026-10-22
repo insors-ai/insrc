@@ -12,24 +12,22 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
-import type { Reference } from '../artifact-core/types.js';
 import { approvalStateOf, approvedAtOf, lifecycleOfMeta, lifecycleReviewOf } from '../artifact-core/approval-view.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId, defineArtifactId, hldArtifactId, lldArtifactId } from '../storage.js';
-import type { SignoffRequestRef } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
-import type { GuardedAction } from './gate.js';
 import { ArtifactIds } from '../artifact-ids.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
-import type { Actor } from '../artifact-core/types.js';
+import type { Actor, Reference } from '../artifact-core/types.js';
 import { authorPartyOf, reviewerPartyOf } from '../review/party.js';
 import { loadTracker } from '../tracker/github-adapter.js';
 import { commitAndPushArtifacts } from '../tracker/github.js';
-import type { Capability, IssueRef, PortResult, TrackerPort } from '../tracker/port.js';
+import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import { resolveUnitIssueLocal } from '../tracker/unit-issue.js';
-import { registerCompletionHook, TeamGateRefusedError, type GateOutcome } from './gate.js';
+import { registerCompletionHook, TeamGateRefusedError, type GateOutcome, type GuardedAction } from './gate.js';
 import { runGit } from './git.js';
 import { pickRemote, policyReader, remoteHeadBranch } from './policy-reader.js';
 import type { PolicyResult, SignoffStage, TeamPolicy } from './types.js';
@@ -158,7 +156,7 @@ export interface SignoffRecord {
 	readonly request:        SignoffRequestRef;
 	readonly artifacts:      ReadonlyArray<{ readonly artifactId: string; readonly revision: number }>;
 	readonly completedAt:    string;
-	readonly grandfathered?: boolean;
+	readonly grandfathered?: boolean | undefined;
 }
 
 /** A head as read from its file: the id and its `meta`. */
@@ -318,6 +316,12 @@ export function signoffCompletionHook(repo: string, unit: UnitRef, _port: unknow
 /** Register the signoff hook in this process; the daemon and the terminal each run the gate, so each registers it. */
 export function registerSignoffHook(): void { registerCompletionHook(signoffCompletionHook); }
 
+/** The heads of the stages a unit holds that the policy lists for signoff and that exist on disk. */
+function listedHeads(repo: string, unit: UnitRef, policy: TeamPolicy, deps: SignoffDeps): HeadMeta[] {
+	const listed = new Set(stagesOfUnit(unit).filter(stage => policy.signoffStages.includes(stage)).map(stage => stageArtifactId(unit, stage)));
+	return headsOfUnit(repo, unit, deps).filter(h => listed.has(h.artifactId));
+}
+
 /**
  * Does signoff hold this unit's completion? True for a Story whose listed LLD or BUILD, or an Epic whose listed DEF or HLD, is
  * neither signed off nor grandfathered. Always false outside team mode, with no policy or for another unit. Reads only.
@@ -330,14 +334,7 @@ export function signoffHoldsCompletion(repo: string, unitId: string, deps: Signo
 	const unit: UnitRef = key.kind === 'STORY' && key.story !== undefined
 		? { unit: 'story', repoPath: repo, epicHash: key.epicHash, storyId: key.story }
 		: { unit: 'epic', repoPath: repo, epicHash: key.epicHash };
-	const read = deps.readHead ?? testDeps.readHead ?? readHeadMeta;
-	for (const stage of stagesOfUnit(unit)) {
-		if (!policy.signoffStages.includes(stage)) continue;
-		const artifactId = stageArtifactId(unit, stage);
-		const meta = artifactId === undefined ? undefined : read(repo, artifactId);
-		if (meta !== undefined && !isSignedOffOrGrandfathered(policy, meta)) return true;
-	}
-	return false;
+	return listedHeads(repo, unit, policy, deps).some(h => !isSignedOffOrGrandfathered(policy, h.meta));
 }
 
 // ---------------------------------------------------------------------------
@@ -433,19 +430,8 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 	const d: SignoffDeps = { ...testDeps, ...deps };
 	const policy = teamPolicyOf(repo, d);
 	if (policy === undefined) return rejected('this repository does not use team signoff (no team policy, or team mode and claims are not enforced)');
-	if (artifactIds.length === 0) return rejected('choose at least one artifact to submit for signoff');
-
-	// the artifacts: each is a stage this unit holds, the policy lists that stage, and its head exists
-	const read = d.readHead ?? readHeadMeta;
-	const artifacts: Array<{ artifactId: string; stage: SignoffStage; meta: unknown }> = [];
-	for (const artifactId of [...new Set(artifactIds)]) {
-		const stage = stageOfArtifact(unit, artifactId);
-		if (stage === undefined) return rejected(`${artifactId} is not an artifact this unit holds for signoff`);
-		if (!policy.signoffStages.includes(stage)) return rejected(`the policy does not ask for signoff at the ${stage}: ${artifactId} needs local approval only`);
-		const meta = read(repo, artifactId);
-		if (meta === undefined) return rejected(`${artifactId} does not exist`);
-		artifacts.push({ artifactId, stage, meta });
-	}
+	const artifacts = submissionArtifacts(repo, unit, artifactIds, policy, d);
+	if (!artifacts.ok) return artifacts;
 
 	// the tracker, the actor and the holder of the unit's issue
 	const loaded = (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
@@ -454,16 +440,16 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 	const who = port.whoAmI();
 	if (!who.ok) return who;
 	const issue = (d.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
-	if (issue === null) throw new TeamGateRefusedError({ kind: 'no-issue', allowFirstAuthor: false }, 'signoff');
+	if (issue === null) return rejected(`${unit.storyId ?? unit.epicHash} has no tracker issue to hold the signoff: create its issue first`);
 	const holder = port.readAssignee(issue);
 	if (!holder.ok) return holder;
-	if (holder.value === null) throw new TeamGateRefusedError({ kind: 'refused', reason: `nobody holds ${issue}: claim it before submitting for signoff` }, 'signoff');
-	if (holder.value.toLowerCase() !== who.value.toLowerCase()) throw new TeamGateRefusedError({ kind: 'held-by-other', holder: holder.value, offerPark: false }, 'signoff');
+	if (holder.value === null) return rejected(`nobody holds ${issue}: claim it before submitting for signoff`);
+	if (holder.value.toLowerCase() !== who.value.toLowerCase()) return rejected(`${issue} is held by ${holder.value}: only the holder can submit for signoff`);
 
 	// a request already open on some of these artifacts is the request for all of them
 	const openRefs = new Set<string>();
-	const unrecorded: typeof artifacts = [];
-	for (const a of artifacts) {
+	const unrecorded: Submission[] = [];
+	for (const a of artifacts.value) {
 		const status = lifecycleOfMeta(a.meta)?.['status'];
 		if (status === 'in-signoff') {
 			const view = signoffViewOf(a.meta);
@@ -476,31 +462,58 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 		}
 	}
 	if (openRefs.size > 1) return rejected(`these artifacts belong to different open requests (${[...openRefs].join(', ')}): submit them separately`);
+	const [openRef] = openRefs;
 	let request: SignoffRequestRef;
-	if (openRefs.size === 1) {
-		request = { ref: [...openRefs][0] as string };
+	if (openRef !== undefined) {
+		request = { ref: openRef };
 		if (unrecorded.length === 0) return { ok: true, value: request };
 	} else {
-		const paths = artifacts.map(a => ({ artifactId: a.artifactId, path: `.insrc/artifacts/${a.artifactId}.json` }));
-		const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
-		const message = `docs: submit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
-		const published = (d.publishBranch ?? publishArtifactsBranch)(repo, paths.map(p => `${repo}/${p.path}`), message);
-		if (!published.ok) return published;
-		const opened = port.openSignoffRequest({
-			title: `Signoff: ${stages} of ${unit.storyId ?? unit.epicHash}`,
-			body: `Please review and approve to sign off:\n\n${artifacts.map(a => `- ${a.stage} \`${a.artifactId}\` at revision ${revisionOfMeta(a.meta) ?? 0}`).join('\n')}\n\nMerging this pull request records the signoff.`,
-			unit,
-			artifacts: artifacts.map(a => ({ artifactId: a.artifactId, revision: revisionOfMeta(a.meta) ?? 0, path: `.insrc/artifacts/${a.artifactId}.json` })),
-			branch: published.value,
-			issue,
-		});
+		const opened = openRequest(repo, unit, artifacts.value, port, issue, d);
 		if (!opened.ok) return opened;
 		request = opened.value;
 	}
+	return recordOpened(repo, unrecorded, request, personOf(who.value), d);
+}
 
-	// every artifact is recorded with the same request; a failure part-way is finished by a repeat
+/** An artifact chosen for submission, with its head. */
+interface Submission { readonly artifactId: string; readonly stage: SignoffStage; readonly meta: unknown }
+
+/** The artifacts to submit: each is a stage this unit holds, the policy lists that stage, and its head exists. */
+function submissionArtifacts(repo: string, unit: UnitRef, artifactIds: readonly string[], policy: TeamPolicy, d: SignoffDeps): PortResult<Submission[]> {
+	if (artifactIds.length === 0) return rejected('choose at least one artifact to submit for signoff');
+	const read = d.readHead ?? readHeadMeta;
+	const artifacts: Submission[] = [];
+	for (const artifactId of new Set(artifactIds)) {
+		const stage = stageOfArtifact(unit, artifactId);
+		if (stage === undefined) return rejected(`${artifactId} is not an artifact this unit holds for signoff`);
+		if (!policy.signoffStages.includes(stage)) return rejected(`the policy does not ask for signoff at the ${stage}: ${artifactId} needs local approval only`);
+		const meta = read(repo, artifactId);
+		if (meta === undefined) return rejected(`${artifactId} does not exist`);
+		artifacts.push({ artifactId, stage, meta });
+	}
+	return { ok: true, value: artifacts };
+}
+
+/** Publish the artifact files to a branch and open the one request for them through the tracker. */
+function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission[], port: TrackerPort, issue: IssueRef, d: SignoffDeps): PortResult<SignoffRequestRef> {
+	const files = artifacts.map(a => ({ artifactId: a.artifactId, absolute: artifactJsonPath(repo, a.artifactId), path: relative(repo, artifactJsonPath(repo, a.artifactId)) }));
+	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
+	const message = `docs: submit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
+	const published = (d.publishBranch ?? publishArtifactsBranch)(repo, files.map(f => f.absolute), message);
+	if (!published.ok) return published;
+	return port.openSignoffRequest({
+		title: `Signoff: ${stages} of ${unit.storyId ?? unit.epicHash}`,
+		body: `Please review and approve to sign off:\n\n${artifacts.map(a => `- ${a.stage} \`${a.artifactId}\` at revision ${revisionOfMeta(a.meta) ?? 0}`).join('\n')}\n\nMerging this pull request records the signoff.`,
+		unit,
+		artifacts: artifacts.map((a, i) => ({ artifactId: a.artifactId, revision: revisionOfMeta(a.meta) ?? 0, path: files[i]?.path ?? '' })),
+		branch: published.value,
+		issue,
+	});
+}
+
+/** Record every artifact with the same request; a failure part-way is finished by a repeat. */
+async function recordOpened(repo: string, unrecorded: readonly Submission[], request: SignoffRequestRef, by: Actor, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> {
 	const service = (d.lifecycleFor ?? lifecycleProvider ?? ((r: string) => createRepoLifecycle(r).service))(repo);
-	const by = personOf(who.value);
 	for (const a of unrecorded) {
 		try {
 			await service.apply(a.artifactId, 'open-signoff', by, { request: signoffReferenceOf(request) });
@@ -522,13 +535,9 @@ interface Waiting { readonly artifactId: string; readonly ref: string }
 
 /** The heads of the unit's listed stages that are in signoff, with the open request each waits on. */
 function waitingHeads(repo: string, unit: UnitRef, policy: TeamPolicy, d: SignoffDeps): Waiting[] {
-	const read = d.readHead ?? readHeadMeta;
 	const waiting: Waiting[] = [];
-	for (const stage of stagesOfUnit(unit)) {
-		if (!policy.signoffStages.includes(stage)) continue;
-		const artifactId = stageArtifactId(unit, stage);
-		const meta = artifactId === undefined ? undefined : read(repo, artifactId);
-		if (artifactId === undefined || meta === undefined || lifecycleOfMeta(meta)?.['status'] !== 'in-signoff') continue;
+	for (const { artifactId, meta } of listedHeads(repo, unit, policy, d)) {
+		if (lifecycleOfMeta(meta)?.['status'] !== 'in-signoff') continue;
 		const view = signoffViewOf(meta);
 		if (view.state === 'open' && view.request !== null) waiting.push({ artifactId, ref: view.request.ref });
 		else log.warn({ artifactId }, 'a head is in signoff but names no open request; it stays blocked');
@@ -548,13 +557,15 @@ function completionIdOf(unit: UnitRef): string | undefined {
  * request together: a completed request is signed-off, one with changes requested is signoff-changes. When every artifact of a
  * completed request is recorded, the claim on the unit's issue is cleared (completion is itself the authorization) and the
  * completion the hold deferred is run. A failure part-way stops that request and leaves the rest for the next attempt: the stage
- * stays blocked until every artifact is recorded. Never throws for a tracker or lifecycle failure; outside team mode it does nothing.
+ * stays blocked until every artifact is recorded. Never throws for a tracker or lifecycle failure: each is logged and also returned,
+ * so a caller can tell an unreachable tracker from a request that is still open. Outside team mode it does nothing.
  */
-export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDeps = {}): Promise<void> {
+export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDeps = {}): Promise<readonly string[]> {
 	const d: SignoffDeps = { ...testDeps, ...deps };
 	const policy = teamPolicyOf(repo, d);
-	if (policy === undefined) return;
+	if (policy === undefined) return [];
 	const service = (d.lifecycleFor ?? lifecycleProvider ?? ((r: string) => createRepoLifecycle(r).service))(repo);
+	const problems: string[] = [];
 	let by: Actor = SETTLE_ACTOR;
 	/** True when a completed request could not be recorded on every artifact: nothing is released or completed until the rest is. */
 	let unfinished = false;
@@ -564,6 +575,7 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 		const loaded = (d.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim', 'signoff-request']));
 		if (!loaded.ok) {
 			log.warn({ kind: loaded.kind, reason: loaded.reason }, 'signoff requests cannot be read: the tracker is not available');
+			problems.push(`the tracker is not available, so the signoff requests could not be read (${loaded.reason})`);
 		} else {
 			const port = loaded.value;
 			const who = port.whoAmI();
@@ -572,7 +584,11 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 			for (const ref of refs) {
 				const group = waiting.filter(w => w.ref === ref);
 				const state = port.readSignoffState({ ref });
-				if (!state.ok) { log.warn({ ref, kind: state.kind, reason: state.reason }, 'a signoff request could not be read; the stage stays blocked'); continue; }
+				if (!state.ok) {
+					log.warn({ ref, kind: state.kind, reason: state.reason }, 'a signoff request could not be read; the stage stays blocked');
+					problems.push(`request ${ref} could not be read (${state.reason})`);
+					continue;
+				}
 				if (state.value === 'open') continue;
 				const op = state.value === 'completed' ? 'signed-off' : 'signoff-changes';
 				let recorded = 0;
@@ -581,7 +597,9 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 						await service.apply(w.artifactId, op, by);
 						recorded += 1;
 					} catch (err) {
-						log.warn({ ref, artifactId: w.artifactId, op, err: err instanceof Error ? err.message : String(err) }, 'a signoff could not be recorded; the rest is left for the next attempt');
+						const reason = err instanceof Error ? err.message : String(err);
+						log.warn({ ref, artifactId: w.artifactId, op, err: reason }, 'a signoff could not be recorded; the rest is left for the next attempt');
+						problems.push(`${w.artifactId} could not be recorded (${reason}); the rest is left for the next attempt`);
 						break;
 					}
 				}
@@ -597,9 +615,12 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 		try {
 			await service.completeIfRolledUp(completionId, by, { holds: (unitId: string) => signoffHoldsCompletion(repo, unitId, d) });
 		} catch (err) {
-			log.warn({ completionId, err: err instanceof Error ? err.message : String(err) }, 'the deferred completion failed; it is retried by the next settle');
+			const reason = err instanceof Error ? err.message : String(err);
+			log.warn({ completionId, err: reason }, 'the deferred completion failed; it is retried by the next settle');
+			problems.push(`the deferred completion of ${completionId} failed (${reason}); it is retried by the next settle`);
 		}
 	}
+	return problems;
 }
 
 /** Clear the assignee of the unit's issue; a failure is logged, since the artifacts stay signed off and the stage proceeds. */

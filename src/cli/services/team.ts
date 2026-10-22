@@ -61,8 +61,9 @@ const viaDaemon: DaemonCall = (method, params) => rpc<unknown>(method, params);
 
 /** What `team.park` and `team.resume` answer (the workflow-step outputs, as JSON), and `team.settle` (Story s7). */
 interface HandoffReply {
-	readonly recorded?: ReadonlyArray<{ readonly artifactId: string; readonly from: string; readonly to: string }>;
-	readonly statuses?: Readonly<Record<string, string>>;
+	readonly recorded?: ReadonlyArray<{ readonly artifactId: string; readonly from: string; readonly to: string }> | undefined;
+	readonly statuses?: Readonly<Record<string, string>> | undefined;
+	readonly problems?: readonly string[] | undefined;
 	readonly next: string;
 	readonly branch?: string; readonly variant?: string; readonly noted?: boolean; readonly noteFailure?: string; readonly cleanupWarning?: string;
 	readonly stepId?: string; readonly state?: string;
@@ -110,6 +111,11 @@ export async function teamSettle(repoPath: string, unit: Omit<UnitRef, 'repoPath
 	const label = unitLabel(unit as UnitRef);
 	if (reply.next !== 'settled') return failureLine('settled', reply);
 	const recorded = reply.recorded ?? [];
+	const problems = reply.problems ?? [];
+	if (problems.length > 0) {
+		const done = recorded.length > 0 ? `recorded ${recorded.map(r => `${r.artifactId} ${r.from} → ${r.to}`).join('; ')}; ` : '';
+		return `! ${label}: ${done}could not settle completely — ${problems.join('; ')}`;
+	}
 	if (recorded.length === 0) {
 		const open = Object.entries(reply.statuses ?? {}).filter(([, status]) => status === 'in-signoff').map(([id]) => id);
 		return open.length > 0

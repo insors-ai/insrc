@@ -108,6 +108,8 @@ test('team settle passes the unit to the daemon and prints what was recorded, wh
 	assert.match((await runCommand(`team settle ${HASH} s1`, settled.ctx()))[0] ?? '', /nothing to record yet — still awaiting signoff: BUILD-/);
 	answer = { next: 'settled', recorded: [], statuses: {} };
 	assert.match((await runCommand(`team settle ${HASH}`, settled.ctx()))[0] ?? '', /no signoff request is waiting/);
+	answer = { next: 'settled', recorded: [], statuses: { [`BUILD-${HASH}-s1`]: 'in-signoff' }, problems: ['the tracker is not available, so the signoff requests could not be read (no gh)'] };
+	assert.match((await runCommand(`team settle ${HASH} s1`, settled.ctx()))[0] ?? '', /^! story .*could not settle completely — the tracker is not available/);
 	answer = { next: 'error', error: { code: 'bad-input', message: 'no repo' } };
 	assert.deepEqual(await runCommand(`team settle ${HASH}`, settled.ctx()), ['✗ not settled — no repo']);
 	for (const bad of ['team settle', 'team settle nope', `team settle ${HASH} s1 t1`]) assert.match((await runCommand(bad, settled.ctx()))[0] ?? '', USAGE, bad);

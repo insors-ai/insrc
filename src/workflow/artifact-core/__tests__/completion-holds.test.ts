@@ -1,3 +1,14 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Story s7: the completion walk stops at a unit the `holds` predicate names, so a held Story does not complete and neither does the Epic above it.
+ *
+ * Run: npx tsx --test src/workflow/artifact-core/__tests__/completion-holds.test.ts
+ */
+
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 

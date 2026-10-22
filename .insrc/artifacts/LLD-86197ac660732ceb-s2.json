@@ -190,6 +190,15 @@
     "reviewOverride": {
       "reason": "Stakeholder approved with override 2026-10-22: 3 review rounds; round-3 had 0 HIGH and 2 MED (compactGraphStore pre-rename hook, unary cancel semantics), both folded after the round; every earlier finding folded (lastMethod republish, async sweep takeEdit, supervision boundary note, handle-close compaction within s1's verified contract, store-child construction site, optional completeness and store fallback before first publish).",
       "at": "2026-10-22T04:36:54.847Z"
+    },
+    "questionResolutions": {
+      "q036f006e": {
+        "question": "Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.",
+        "status": "resolved",
+        "choice": "Ship defaults + instrument for tuning",
+        "rationale": "Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs.",
+        "resolvedAt": "2026-10-22T04:39:45.951Z"
+      }
     }
   },
   "body": {

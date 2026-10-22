@@ -543,3 +543,22 @@ Common parts as in a1, but a single indexing worker runs IndexQueue with both la
 - Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.
 - Session workers (s3) must join the maintenance pause: s3 adds them to the set of threads that close their graph handle and acknowledge before compaction.
 - Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.
+
+## Resolved questions
+
+- `q036f006e` — Pause-acknowledgement limit for maintenance (default 10 minutes) and the maintenance thresholds (30 min idle, 25% and 256 MB reclaimable) are config values; confirm the defaults after the first live runs.
+  - **resolved**: Ship defaults + instrument for tuning — Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs. _(2026-10-22T04:39:45.951Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/daemon/shutdown.ts:115-168`
+- **[[c2]]** `code` `src/daemon/server.ts:16-32`
+- **[[c3]]** `step-output` `s1`
+- **[[c4]]** `step-output` `s4`
+- **[[c5]]** `step-output` `s5`
+- **[[c6]]** `code` `src/daemon/threads/worker-entry.ts:40-48`
+- **[[c7]]** `code` `src/db/graph/store.ts:831-890`
+- **[[c8]]** `code` `src/daemon/server.ts:201-293`
+- **[[c13]]** `code` `src/daemon/queue.ts:251-318`
+- **[[c15]]** `code` `src/daemon/shutdown.ts:64-71`
+- **[[c16]]** `code` `src/db/entities.ts:223-330`

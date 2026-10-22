@@ -32,7 +32,7 @@ import { SHUTDOWN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
-import { SummaryRunner } from './summary-link.js';
+import { SUMMARY_PORT_OP, SummaryRunner } from './summary-link.js';
 import { startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
@@ -53,9 +53,13 @@ const queue = new IndexQueue({
 	publishLane: (lane, status, sweep) => board.publishLane(lane, status, sweep),
 	sweepProgress: () => summaries !== undefined ? summaries.sweepProgress() : indexer?.summarySweepProgress(),
 });
-if (init.summaryPort !== undefined) {
-	summaries = new SummaryRunner(init.summaryPort, () => queue.takeDocSummaryEdit(), () => queue.lanesChanged());
-}
+const summaryRunner = (port: MessagePort): SummaryRunner => new SummaryRunner(port, () => queue.takeDocSummaryEdit(), () => queue.lanesChanged());
+if (init.summaryPort !== undefined) summaries = summaryRunner(init.summaryPort);
+// The document-summary worker was replaced: a port to the new one.
+hub.onPush(SUMMARY_PORT_OP, port => {
+	if (summaries !== undefined) summaries.rebind(port as MessagePort);
+	else summaries = summaryRunner(port as MessagePort);
+});
 indexer = new IndexerService(db, queue, watcher, configStore);
 const service = indexer;
 
@@ -117,7 +121,7 @@ Object.assign(table, {
 	[INDEXING_PORT.takeDocSummaryEdit]: async () => queue.takeDocSummaryEdit() ?? null,
 } satisfies RpcHandlers);
 
-serveRequests(init.hubPort, directDispatch(table));
+serveRequests(init.hubPort, directDispatch(table), { beforeTestExit: () => watcher.close() });
 
 // The store slot before the queue starts, so the admin worker's first status has it.
 await publishStore();
@@ -136,6 +140,7 @@ const queueDone = queue.start(async job => {
 // the worker's environment is torn down aborts the whole process.
 hub.onPush(INDEXING_STOP_OP, async () => {
 	queue.stop();
+	summaries?.stop();
 	await watcher.close();
 	await queueDone;
 	parentPort!.postMessage(INDEXING_DRAINED);

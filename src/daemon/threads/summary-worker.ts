@@ -22,13 +22,18 @@ import { Watcher } from '../../indexer/watcher.js';
 import type { Entity } from '../../shared/types.js';
 import { IndexingBlock } from './indexing-block.js';
 import type { WorkerConnection } from './main-services.js';
-import { SummaryWorkerLink } from './summary-link.js';
+import { SUMMARY_PORT_OP, SummaryWorkerLink } from './summary-link.js';
 import { startDaemonWorker } from './worker-entry.js';
+import { TEST_EXIT_METHOD } from './worker-requests.js';
 
 const init = workerData as WorkerConnection['workerData'] & { readonly summaryPort: MessagePort };
-startDaemonWorker(init);
+const hub = startDaemonWorker(init);
 const block = new IndexingBlock(init.indexingBlock);
 const link = new SummaryWorkerLink(init.summaryPort, block);
+// The code-indexing worker was replaced: a port to the new one.
+hub.onPush(SUMMARY_PORT_OP, port => { link.rebind(port as MessagePort); });
+// Test-only (INSRC_TEST_HOOKS=1): exit with code 1 at once, as a crash mid-summary.
+if (process.env['INSRC_TEST_HOOKS'] === '1') hub.onPush(TEST_EXIT_METHOD, () => process.exit(1));
 const db = await getDb();
 
 /**

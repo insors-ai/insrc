@@ -780,12 +780,18 @@ export class LockManager {
  * exits, reclaim every named lock it held or waited for. The threadId is
  * captured now, because worker.threadId reads -1 once the thread has stopped.
  * Store-guard permits are reclaimed separately (StoreGuard.reclaim).
+ * Resolves, after the exit, once the reclaim is done (with what it reclaimed;
+ * empty when it failed, which is logged), so a supervisor can order the
+ * worker's replacement after it.
  */
-export function watchWorker(worker: Worker): void {
+export function watchWorker(worker: Worker): Promise<readonly LockInfo[]> {
 	const threadId = worker.threadId;
-	worker.once('exit', () => {
-		getLockManager().reclaim(threadId).catch((err: unknown) => {
-			log.error({ threadId, err }, 'locks: reclaiming an exited worker\'s locks failed');
+	return new Promise(resolve => {
+		worker.once('exit', () => {
+			getLockManager().reclaim(threadId).then(resolve, (err: unknown) => {
+				log.error({ threadId, err }, 'locks: reclaiming an exited worker\'s locks failed');
+				resolve([]);
+			});
 		});
 	});
 }

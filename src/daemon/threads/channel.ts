@@ -112,9 +112,9 @@ export function serveHub(port: Port, handlers: HubHandlers): () => void {
 	return () => port.off('message', onMessage);
 }
 
-/** Push a one-way message from the main thread to one worker's port. */
-export function pushToWorker(port: Pick<MessagePort, 'postMessage'>, op: string, args: unknown): void {
-	port.postMessage({ kind: 'hub-message', op, args } satisfies HubMessage);
+/** Push a one-way message from the main thread to one worker's port; ports in `args` go in `transferList`. */
+export function pushToWorker(port: Pick<MessagePort, 'postMessage'>, op: string, args: unknown, transferList: readonly MessagePort[] = []): void {
+	port.postMessage({ kind: 'hub-message', op, args } satisfies HubMessage, [...transferList]);
 }
 
 /** A worker's client for the main thread's hub. */

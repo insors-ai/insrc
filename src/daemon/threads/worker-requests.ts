@@ -25,6 +25,13 @@ const log = getLogger('worker-requests');
 
 /** Test-only method (with INSRC_TEST_HOOKS=1) answering the thread that served it. */
 export const SERVING_THREAD_METHOD = 'test.servingThread';
+/** Test-only method (with INSRC_TEST_HOOKS=1): the worker exits with code 1 and never answers, as a crash mid-request. */
+export const TEST_EXIT_METHOD = 'test.exit';
+
+export interface ServeRequestsOptions {
+	/** Run before a test.exit ends the worker (the code-indexing worker closes its watcher first). */
+	readonly beforeTestExit?: (() => Promise<void>) | undefined;
+}
 
 type Port = Pick<MessagePort, 'postMessage' | 'on' | 'off'>;
 
@@ -32,7 +39,7 @@ const isRequest = (m: unknown): m is RequestEnvelope => (m as { kind?: unknown }
 const isCancel = (m: unknown): m is CancelEnvelope => (m as { kind?: unknown } | null)?.kind === 'cancel';
 
 /** Serve request envelopes arriving on `port` with `forward`; returns a function that stops serving. */
-export function serveRequests(port: Port, forward: ForwardRequest): () => void {
+export function serveRequests(port: Port, forward: ForwardRequest, opts: ServeRequestsOptions = {}): () => void {
 	const inflight = new Map<string, () => void>();
 	const testHooks = process.env['INSRC_TEST_HOOKS'] === '1';
 
@@ -47,6 +54,10 @@ export function serveRequests(port: Port, forward: ForwardRequest): () => void {
 		const { requestId, method } = msg;
 		if (testHooks && method === SERVING_THREAD_METHOD) {
 			port.postMessage({ kind: 'reply', requestId, result: { threadId } } satisfies ReplyEnvelope);
+			return;
+		}
+		if (testHooks && method === TEST_EXIT_METHOD) {
+			void (opts.beforeTestExit?.() ?? Promise.resolve()).finally(() => process.exit(1));
 			return;
 		}
 		let ended = false;

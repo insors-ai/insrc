@@ -57,12 +57,11 @@ import { readInstalledCommit } from './installed-commit.js';
 import { ThreadServices, currentLmdbFileSizeMb, threadsEnabled } from './threads/main-services.js';
 import { methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
-import { IndexingPortClient, INDEXING_DRAINED, INDEXING_STOP_OP } from './threads/indexing-port.js';
-import { pushToWorker } from './threads/channel.js';
+import { IndexingPortClient } from './threads/indexing-port.js';
 import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
 import type { ForwardRequest } from './server.js';
-import { startClassWorker, startWorker } from './threads/workers.js';
-import { MessageChannel } from 'node:worker_threads';
+import { Supervisor } from './threads/supervisor.js';
+import { startIndexingWorkers } from './threads/indexing-workers.js';
 import type { MethodClass } from './threads/channel.js';
 import { embedQuery, getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { pruneConversations } from '../db/conversations.js';
@@ -242,32 +241,24 @@ async function main(): Promise<void> {
 	let indexer: RuntimeIndexer;
 	let startQueue: () => Promise<void>;
 	let stopIndexing: () => void;
+	// The daemon's shutdown, once it is made below; a worker supervisor's fatal before then ends the process.
+	let shutdownDaemon: (reason: string) => void = reason => { exitRespectingStoreHealth(1, reason); };
+	let supervisor: Supervisor | undefined;
 	if (threadServices !== undefined && router !== undefined) {
 		const port = new IndexingPortClient((method, params) => router.request('indexing', method, params), threadServices.board);
 		queue = port;
 		indexer = port;
 		routed.add('indexing');
-		// Summary jobs run on the document-summary worker, over a channel of their own.
-		const summaryChannel = new MessageChannel();
-		const indexing = startClassWorker(threadServices, router, 'indexing', 'indexing-worker',
-			{ workerData: { summaryPort: summaryChannel.port1 }, transferList: [summaryChannel.port1] });
-		startWorker(threadServices, 'document-summary', 'summary-worker',
-			{ workerData: { summaryPort: summaryChannel.port2 }, transferList: [summaryChannel.port2] }).then(
-			({ threadId }) => log.info({ threadId }, 'document-summary worker ready'),
-			(err: unknown) => log.error({ err: err instanceof Error ? err.message : String(err) }, 'document-summary worker did not start'),
-		);
-		// The queue lives on the worker: "done" is its report that it drained after a stop (or its exit).
-		startQueue = () => indexing.then(
-			({ worker, threadId }) => {
-				log.info({ threadId }, 'code-indexing worker ready');
-				return new Promise<void>(resolve => {
-					worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); });
-					worker.once('exit', () => resolve());
-				});
-			},
-			(err: unknown) => { log.error({ err: err instanceof Error ? err.message : String(err) }, 'code-indexing worker did not start'); },
-		);
-		stopIndexing = () => { void indexing.then(({ port: channel }) => pushToWorker(channel, INDEXING_STOP_OP, null), () => {}); };
+		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => shutdownDaemon(reason) });
+		supervisor = workers;
+		// Code indexing and document summaries, each on a worker of its own.
+		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock);
+		// The queue lives on the code-indexing worker: "done" is the current one's
+		// report that it drained after the stop (or its exit).
+		let drained: () => void = () => {};
+		const queueStopped = new Promise<void>(resolve => { drained = resolve; });
+		startQueue = () => queueStopped;
+		stopIndexing = () => { void indexingWorkers.stop().then(drained); };
 	} else {
 		const repos = await listRepos(db);
 		const watcher = new Watcher();
@@ -411,8 +402,10 @@ async function main(): Promise<void> {
 		// Admin methods go to the admin worker; a request arriving before it is
 		// ready is held for it. If it cannot start, they are served here again.
 		routed.add('admin');
-		startClassWorker(threadServices, router, 'admin', 'admin-worker').then(
-			({ threadId }) => log.info({ threadId }, 'admin worker ready'),
+		supervisor!.start({
+			name: 'admin', cls: 'admin', script: 'admin-worker',
+			started: w => log.info({ threadId: w.threadId }, 'admin worker ready'),
+		}).catch(
 			(err: unknown) => {
 				routed.delete('admin');
 				router.targetsChanged();
@@ -510,12 +503,20 @@ async function main(): Promise<void> {
 			// alongside via closeGraphStore / closeLanceConn.
 			const { closeGraphStore } = await import('../db/graph/store.js');
 			const { closeLanceConn  } = await import('../db/lance/conn.js');
+			// With daemon threads the workers exit before this thread closes the
+			// stores (the code-indexing worker has drained by now).
+			if (supervisor !== undefined) {
+				await supervisor.terminateAll();
+				log.info('shutdown: the daemon\'s workers exited');
+			}
 			await closeDb();
 			await closeDuckDB();
 			await closeGraphStore();
 			await closeLanceConn();
+			log.info('shutdown: stores closed');
 		},
 	});
+	shutdownDaemon = shutdown;
 
 	process.on('SIGTERM', () => shutdown('SIGTERM'));
 	process.on('SIGINT',  () => shutdown('SIGINT'));

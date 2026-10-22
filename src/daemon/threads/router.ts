@@ -40,6 +40,15 @@ export interface RouterOptions {
 interface Pending {
 	readonly threadId: number;
 	readonly method: string;
+	readonly stream: boolean;
+	readonly deliver: DeliverEnvelope;
+}
+
+/** A request in flight on a worker that exited, for the caller to fail. */
+export interface OrphanedRequest {
+	readonly requestId: string;
+	readonly method: string;
+	readonly stream: boolean;
 	readonly deliver: DeliverEnvelope;
 }
 
@@ -122,17 +131,17 @@ export class Router {
 	}
 
 	/** Forget a worker's channel (it exited); its in-flight requests are returned for the caller to fail. */
-	detach(threadId: number): { readonly requestId: string; readonly method: string; readonly deliver: DeliverEnvelope }[] {
+	detach(threadId: number): OrphanedRequest[] {
 		const port = this.ports.get(threadId);
 		const listener = this.listeners.get(threadId);
 		if (port !== undefined && listener !== undefined) port.off('message', listener);
 		this.ports.delete(threadId);
 		this.listeners.delete(threadId);
-		const orphaned: { readonly requestId: string; readonly method: string; readonly deliver: DeliverEnvelope }[] = [];
+		const orphaned: OrphanedRequest[] = [];
 		for (const [requestId, p] of this.pending) {
 			if (p.threadId !== threadId) continue;
 			this.pending.delete(requestId);
-			orphaned.push({ requestId, method: p.method, deliver: p.deliver });
+			orphaned.push({ requestId, method: p.method, stream: p.stream, deliver: p.deliver });
 		}
 		return orphaned;
 	}
@@ -160,7 +169,7 @@ export class Router {
 
 	private send(threadId: number, request: RequestEnvelope, deliver: DeliverEnvelope): () => void {
 		const port = this.ports.get(threadId)!;
-		this.pending.set(request.requestId, { threadId, method: request.method, deliver });
+		this.pending.set(request.requestId, { threadId, method: request.method, stream: request.stream, deliver });
 		port.postMessage(request);
 		return () => this.cancel(threadId, request);
 	}

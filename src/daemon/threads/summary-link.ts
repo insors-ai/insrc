@@ -11,6 +11,12 @@
  * to code work are the queue's own. The summary worker asks back for the
  * single-document edits queued meanwhile, and reports its sweep's progress,
  * which the code-indexing worker publishes with the summary lane.
+ *
+ * When either worker exits, the other end's port closes: the code-indexing
+ * worker fails the job in flight and holds the next until a new summary worker
+ * is connected; the summary worker abandons its job (its sweep stops between
+ * documents, as on shutdown). The main thread then gives the survivor a port
+ * to the replacement (SUMMARY_PORT_OP).
  */
 
 import type { MessagePort } from 'node:worker_threads';
@@ -21,6 +27,9 @@ import type { IndexingBlock } from './indexing-block.js';
 import type { SummarySweepProgress } from './status-board.js';
 
 type DocEdit = { kind: 'doc-summarise-entity'; entityId: string };
+
+/** The main thread's push to either worker: a port to the other worker's replacement. */
+export const SUMMARY_PORT_OP = 'summary.port';
 
 type ToSummary =
 	| { readonly t: 'job'; readonly id: number; readonly job: IndexJob }
@@ -35,13 +44,31 @@ export class SummaryRunner {
 	private seq = 0;
 	private readonly pending = new Map<number, { resolve: () => void; reject: (e: Error) => void }>();
 	private sweep: SummarySweepProgress | undefined;
+	/** The live port to the summary worker; undefined between its exit and its replacement's connection. */
+	private port: MessagePort | undefined;
+	private connected: Promise<MessagePort>;
+	private connect: (port: MessagePort) => void = () => {};
+	private stopWaiting: (err: Error) => void = () => {};
 
 	constructor(
-		private readonly port: MessagePort,
+		port: MessagePort,
 		private readonly takeEdit: () => DocEdit | undefined,
 		/** Called when the reported sweep progress changes, so the summary lane is republished. */
 		private readonly onSweep: () => void,
 	) {
+		this.connected = Promise.resolve(port);
+		this.bind(port);
+	}
+
+	/** Connect to a new summary worker (the last one exited). */
+	rebind(port: MessagePort): void {
+		this.port?.close();
+		this.bind(port);
+		this.connect(port);
+	}
+
+	private bind(port: MessagePort): void {
+		this.port = port;
 		port.on('message', (m: ToCode) => {
 			if (m.t === 'done') {
 				const p = this.pending.get(m.id);
@@ -54,20 +81,36 @@ export class SummaryRunner {
 				this.onSweep();
 			}
 		});
-		port.on('close', () => this.abandon('the document-summary worker is gone'));
+		port.on('close', () => {
+			if (this.port !== port) return;
+			this.port = undefined;
+			this.connected = new Promise((resolve, reject) => { this.connect = resolve; this.stopWaiting = reject; });
+			this.connected.catch(() => {});
+			this.abandon('the document-summary worker is gone');
+		});
 	}
 
-	/** Run one summary job on the summary worker; rejects when it fails or the worker goes. */
-	run(job: IndexJob): Promise<void> {
+	/**
+	 * Run one summary job on the summary worker; rejects when it fails or the
+	 * worker goes. Between a summary worker's exit and its replacement, waits
+	 * for the replacement.
+	 */
+	async run(job: IndexJob): Promise<void> {
+		const port = this.port ?? await this.connected;
 		const id = ++this.seq;
 		return new Promise<void>((resolve, reject) => {
 			this.pending.set(id, { resolve, reject });
-			this.port.postMessage({ t: 'job', id, job } satisfies ToSummary);
+			port.postMessage({ t: 'job', id, job } satisfies ToSummary);
 		});
 	}
 
 	/** The summary sweep's progress, as the summary worker last reported it. */
 	sweepProgress(): SummarySweepProgress | undefined { return this.sweep; }
+
+	/** Shutdown: a job waiting for a replacement summary worker fails instead, so the queue drains. */
+	stop(): void {
+		this.stopWaiting(new Error('summary job abandoned: the code-indexing worker is stopping'));
+	}
 
 	/** Fail every job in flight (the summary worker exited); the summary lane goes on, as after a failed summary. */
 	abandon(why: string): void {
@@ -87,34 +130,61 @@ export class SummaryRunner {
 export class SummaryWorkerLink implements IndexerQueue {
 	private seq = 0;
 	private readonly edits = new Map<number, (edit: DocEdit | undefined) => void>();
+	private port: MessagePort;
+	/** The code-indexing worker that handed over the running job exited: the job stops as on shutdown. */
+	private abandoned = false;
+	private jobs: { run: (job: IndexJob) => Promise<void>; sweep: () => SummarySweepProgress | undefined } | undefined;
 
-	constructor(private readonly port: MessagePort, private readonly block: IndexingBlock) {
+	constructor(port: MessagePort, private readonly block: IndexingBlock) {
+		this.port = port;
+		this.bind(port);
+	}
+
+	/** Connect to a new code-indexing worker (the last one exited). */
+	rebind(port: MessagePort): void {
+		this.port.close();
+		this.port = port;
+		this.bind(port);
+	}
+
+	private bind(port: MessagePort): void {
 		port.on('message', (m: ToSummary) => {
-			if (m.t !== 'edit') return;
-			const resolve = this.edits.get(m.id);
-			this.edits.delete(m.id);
-			resolve?.(m.edit ?? undefined);
+			if (m.t === 'edit') {
+				const resolve = this.edits.get(m.id);
+				this.edits.delete(m.id);
+				resolve?.(m.edit ?? undefined);
+			} else if (this.jobs !== undefined) {
+				this.serveJob(port, m, this.jobs.run, this.jobs.sweep);
+			}
+		});
+		port.on('close', () => {
+			if (this.port !== port) return;
+			this.abandoned = true;
+			// No answer will come for an edit asked of the exited worker.
+			for (const [id, resolve] of this.edits) { this.edits.delete(id); resolve(undefined); }
 		});
 	}
 
 	/** Serve the jobs the code-indexing worker hands over, one at a time as the lane sends them. */
 	serveJobs(run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
-		this.port.on('message', (m: ToSummary) => {
-			if (m.t !== 'job') return;
-			let last: string | undefined;
-			const report = (): void => {
-				const now = sweep();
-				const key = JSON.stringify(now ?? null);
-				if (key === last) return;
-				last = key;
-				this.port.postMessage({ t: 'sweep', sweep: now ?? null } satisfies ToCode);
-			};
-			const ticker = setInterval(report, 200);
-			run(m.job).then(
-				() => { clearInterval(ticker); report(); this.port.postMessage({ t: 'done', id: m.id } satisfies ToCode); },
-				(err: unknown) => { clearInterval(ticker); report(); this.port.postMessage({ t: 'done', id: m.id, error: err instanceof Error ? err.message : String(err) } satisfies ToCode); },
-			);
-		});
+		this.jobs = { run, sweep };
+	}
+
+	private serveJob(port: MessagePort, m: Extract<ToSummary, { t: 'job' }>, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
+		this.abandoned = false;
+		let last: string | undefined;
+		const report = (): void => {
+			const now = sweep();
+			const key = JSON.stringify(now ?? null);
+			if (key === last) return;
+			last = key;
+			port.postMessage({ t: 'sweep', sweep: now ?? null } satisfies ToCode);
+		};
+		const ticker = setInterval(report, 200);
+		run(m.job).then(
+			() => { clearInterval(ticker); report(); port.postMessage({ t: 'done', id: m.id } satisfies ToCode); },
+			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ t: 'done', id: m.id, error: err instanceof Error ? err.message : String(err) } satisfies ToCode); },
+		);
 	}
 
 	// IndexerQueue, as the indexer's summary paths use it.
@@ -128,7 +198,7 @@ export class SummaryWorkerLink implements IndexerQueue {
 			this.port.postMessage({ t: 'take-edit', id } satisfies ToCode);
 		});
 	}
-	get isStopping(): boolean { return this.block.stopping; }
+	get isStopping(): boolean { return this.block.stopping || this.abandoned; }
 	get isIndexIdle(): boolean { return !this.block.codeBusy; }
 	waitForIndexIdle(): Promise<void> { return this.block.waitForCodeIdle(); }
 }

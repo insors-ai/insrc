@@ -72,6 +72,7 @@ import {
 import { ensureBuildRecordOnCompletion } from './runners/build/completion-record.js';
 import { authorizeApproval } from './team/approval-gate.js';
 import { TeamGateRefusedError } from './team/gate.js';
+import { signoffHoldsCompletion } from './team/signoff.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -941,11 +942,14 @@ export async function approveWorkflowTarget(
 		if (ref === undefined) return;
 		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, { writer: lifecycle, actor });
 	};
-	/** A BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. */
+	/**
+	 * A BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. A unit the
+	 * policy still requires signoff for stays approved (signoffHoldsCompletion), and settling that signoff runs the completion.
+	 */
 	const completeThroughService = async (jsonPath: string): Promise<void> => {
 		const key = ArtifactIds.parse(artifactIdOf(jsonPath));
 		if (key?.kind === 'BUILD' && key.story !== undefined) {
-			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, { overrideReview: req.overrideReview });
+			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, { overrideReview: req.overrideReview, holds: (unitId: string) => signoffHoldsCompletion(req.repoPath, unitId) });
 		}
 	};
 

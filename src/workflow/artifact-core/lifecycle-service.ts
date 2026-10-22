@@ -26,6 +26,11 @@ const log = getLogger('lifecycle-service');
 /** What one call knows that the service does not: the override reason the approval in hand carries. */
 export interface EvidenceContext {
 	readonly overrideReview?: string | undefined;
+	/**
+	 * Says whether a unit's completion is held for now (signoff the policy requires is still to come). The completion walk asks it
+	 * for every unit whose roll-up holds and stops at one it holds, so the units above it are not completed either. Absent, nothing is held.
+	 */
+	readonly holds?: ((unitId: string) => boolean) | undefined;
 }
 
 export interface LifecycleServiceDeps {
@@ -166,6 +171,7 @@ export class LifecycleService {
 			const status = await this.reader.statusOf(next);
 			if (status === undefined || status === 'withdrawn' || status === 'superseded') break;
 			if (status !== 'completed') {
+				if (ctx.holds?.(next) === true) break;
 				const result = await this.apply(next, 'complete', by, {}, ctx);
 				if (result.recorded) completed.push(next);
 			}

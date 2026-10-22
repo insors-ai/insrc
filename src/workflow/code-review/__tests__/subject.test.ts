@@ -185,7 +185,7 @@ async function warningsDuring(fn: () => Promise<unknown>): Promise<unknown[][]> 
 test('T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story\'s source files', async () => {
 	const fx = mkStoryRepo(['src/a.ts', 'src/b.ts']);
 	try {
-		writeFileSync(join(fx.repo, '.insrc/artifacts/PLAN-x-s1.json'), '{"v":2,"approvedAt":"now"}\n');
+		writeFileSync(join(fx.repo, '.insrc/artifacts/PLAN-x-s1.json'), '{"v":2,"status":"approved"}\n');
 		assert.deepEqual([...await realChangedFiles(fx.repo)], ['.insrc/artifacts/PLAN-x-s1.json'],
 			'fixture precondition: the old derivation reviewed the one dirty ledger file and nothing else');
 

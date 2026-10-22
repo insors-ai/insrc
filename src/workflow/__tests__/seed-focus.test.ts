@@ -20,12 +20,13 @@ import { join } from 'node:path';
 
 import { composeSpecFocus, resolveStageFocus, specScopeFitsStandalone } from '../seed-focus.js';
 import { renderLldMarkdown, type LldArtifact } from '../artifacts/lld.js';
-import { SpecNotApprovedError, SpecArtifactNotFoundError, approveArtifactByJsonPath } from '../gates.js';
+import { SpecNotApprovedError, SpecArtifactNotFoundError } from '../gates.js';
 import { renderSpecMarkdown, SPEC_SCHEMA_VERSION, type SpecArtifact } from '../artifacts/spec.js';
 import { renderDefineMarkdown, type DefineArtifact, type DefineBody } from '../artifacts/define.js';
 import { finalizeArtifact } from '../orchestrator.js';
 import { specArtifactPaths, writeAtomic } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
 
@@ -42,7 +43,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 			schemaVersion: SPEC_SCHEMA_VERSION,
 			specHash:      SPEC_HASH,
 			epicSlug:      'brainstorm-stage',
-			...(approved ? { approvedAt: '2026-08-02T01:00:00.000Z' } : {}),
+			...(approved ? approvedMeta({ at: '2026-08-02T01:00:00.000Z' }) : {}),
 		},
 		body: {
 			category:      'requirements',

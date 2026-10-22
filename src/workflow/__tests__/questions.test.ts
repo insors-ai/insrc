@@ -34,6 +34,8 @@ import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, lldArtifactId } from '.
 import type { QuestionResolution } from '../types.js';
 import { _setTrackerExecForTests } from '../tracker/github.js';
 import { getLogger } from '../../shared/logger.js';
+import { approvedMeta } from './lifecycle-fixtures.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';
@@ -46,7 +48,7 @@ function artifactsDir(repo: string): string {
 
 function seedDef(repo: string, openQs: readonly string[]): void {
 	writeFileSync(join(artifactsDir(repo), `${defineArtifactId(HASH)}.json`), JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, ...approvedMeta({ at: CREATED_AT }) },
 		body: { flavor: 'enhancement', problem: 'p', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 'One', userValue: 'v', acceptanceCriteria: [] }], openQuestions: openQs },
 		citations: [],
 	}, null, 2));
@@ -145,6 +147,23 @@ test('recordResolution ignore + defer persist the right status to DEF meta', () 
 		// neither re-surfaces as open
 		const { texts, resolutions } = artifactOpenQuestions(repo, 'define', HASH);
 		assert.equal(unresolvedOpen(texts, resolutions).length, 0);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('questions.test.ts: the question tests run on lifecycle fixtures', () => {
+	const repo = mkRepo();
+	try {
+		// an approved Define: a resolution is a meta-only write, so the approval and the revision are as they were
+		seedDef(repo, ['[q1 / a] Add a metric?']);
+		const path = join(artifactsDir(repo), `${defineArtifactId(HASH)}.json`);
+		const before = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
+		assert.equal(approvalStateOf(before.meta), 'approved');
+		recordResolution(repo, 'define', HASH, undefined, 'q1', 'ignored', undefined, 'not needed');
+		const after = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
+		assert.equal(approvalStateOf(after.meta), 'approved', 'recording a resolution leaves the approval alone');
+		assert.deepEqual(after.meta['lifecycle'], before.meta['lifecycle'], 'and the lifecycle as it was');
+		assert.equal(after.meta['revision'], before.meta['revision']);
+		assert.equal((after.meta['questionResolutions'] as Record<string, QuestionResolution>)['q1']?.status, 'ignored');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

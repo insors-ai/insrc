@@ -26,6 +26,7 @@ import type { WorkItemRef } from '../../types.js';
 import { resolveWorkflowRef } from '../../tracker/resolve.js';
 import { deriveMdPath } from '../../pending.js';
 import type { Entity } from '../../../shared/types.js';
+import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 const HASH_A = '1111aaaa2222bbbb';
 const HASH_B = '3333cccc4444dddd';
@@ -70,7 +71,7 @@ const GH: ResolvedGithubConfig = {
 function bugfixIssue(parentRef: WorkItemRef): IssueArtifact {
 	return {
 		meta: { workflow: 'issue', runId: 'r', repoPath: '/repo', createdAt: '2026-10-20T00:00:00.000Z', elapsedMs: 1, repoIndexedAt: null,
-			schemaVersion: 1, issueHash: 'abcd1234abcd1234', approvedAt: '2026-10-20T00:00:01.000Z', parentRef } as IssueArtifact['meta'],
+			schemaVersion: 1, issueHash: 'abcd1234abcd1234', ...approvedMeta({ at: '2026-10-20T00:00:01.000Z' }), parentRef } as IssueArtifact['meta'],
 		body: { title: 'Fix the boom', reproduction: 'do X', rootCause: 'Y', fixIntent: 'Z' },
 		citations: [],
 	};

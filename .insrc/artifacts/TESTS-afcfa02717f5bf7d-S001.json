@@ -4,7 +4,7 @@
     "epicHash": "afcfa02717f5bf7d",
     "storyId": "S001",
     "createdAt": "2026-10-22T06:26:37.927Z",
-    "updatedAt": "2026-10-22T06:46:38.033Z",
+    "updatedAt": "2026-10-22T06:51:17.426Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-22T05:17:03.574Z",
     "epicSlug": "add-cross-thread-named-lock-framework"
@@ -389,6 +389,157 @@
               },
               {
                 "title": "a lock wait keeps its thread alive until it completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ab7c89f5",
+        "ranAt": "2026-10-22T06:51:17.426Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "query lists held and pending entries with mode, threadId, since and metadata",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "query lists held and pending entries with mode, threadId, since and metadata",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "query never returns a slot in its being-written state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "query never returns a slot in its being-written state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaim releases a thread's holds and pending requests, recounts and wakes waiters",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "reclaim releases a thread's holds and pending requests, recounts and wakes waiters",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reclaim takes over a mutex and resets a name claim left by a foreign threadId",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+                "title": "reclaim takes over a mutex and resets a name claim left by a foreign threadId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1305,
+            "titles": [
+              {
+                "title": "createLockBlock stores capacities in the header and two managers over one block read the same layout",
+                "result": "pass"
+              },
+              {
+                "title": "invalid arguments are refused with LockArgumentError and nothing is truncated",
+                "result": "pass"
+              },
+              {
+                "title": "a name resolves to one slot and a full name table gives LockCapacityError(names)",
+                "result": "pass"
+              },
+              {
+                "title": "getLockManager without an install uses a private block",
+                "result": "pass"
+              },
+              {
+                "title": "exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive",
+                "result": "pass"
+              },
+              {
+                "title": "ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending",
+                "result": "pass"
+              },
+              {
+                "title": "the lock is released and its holder slot cleared on resolve, reject and synchronous throw",
+                "result": "pass"
+              },
+              {
+                "title": "same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed",
+                "result": "pass"
+              },
+              {
+                "title": "a full holder table gives LockCapacityError(holders) and leaves no grant behind",
+                "result": "pass"
+              },
+              {
+                "title": "the grant hook fires at its three points in order and is inert when unset",
+                "result": "pass"
+              },
+              {
+                "title": "writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared",
+                "result": "pass"
+              },
+              {
+                "title": "timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count",
+                "result": "pass"
+              },
+              {
+                "title": "an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up",
+                "result": "pass"
+              },
+              {
+                "title": "requests for one name from one thread are served in arrival order",
+                "result": "pass"
+              },
+              {
+                "title": "a full pending table gives LockCapacityError(pending) and queues nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a lock wait keeps its thread alive until it completes",
+                "result": "pass"
+              },
+              {
+                "title": "query lists held and pending entries with mode, threadId, since and metadata",
+                "result": "pass"
+              },
+              {
+                "title": "query never returns a slot in its being-written state",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim releases a thread's holds and pending requests, recounts and wakes waiters",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim takes over a mutex and resets a name claim left by a foreign threadId",
                 "result": "pass"
               }
             ],

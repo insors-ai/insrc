@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -131,3 +131,37 @@ Run at 2026-10-22T06:46:38.033Z on commit `50770364`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 16 | 1.1 s |  |
+
+## t4
+
+Run at 2026-10-22T06:51:17.426Z on commit `ab7c89f5`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: query lists held and pending entries with mode, threadId, since and metadata**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | query lists held and pending entries with mode, threadId, since and metadata | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: query never returns a slot in its being-written state**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | query never returns a slot in its being-written state | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: reclaim releases a thread's holds and pending requests, recounts and wakes waiters**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reclaim releases a thread's holds and pending requests, recounts and wakes waiters | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**unit: reclaim takes over a mutex and resets a name claim left by a foreign threadId**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reclaim takes over a mutex and resets a name claim left by a foreign threadId | `src/shared/locks/__tests__/lock-manager.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/locks/__tests__/lock-manager.test.ts` | 0 | 20 | 1.3 s |  |

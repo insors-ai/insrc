@@ -571,6 +571,8 @@ Common parts as in a1, but a single indexing worker runs IndexQueue with both la
   - **resolved**: Ship defaults + instrument for tuning — Stakeholder 2026-10-22: keep 30 min idle, 25%/256 MB, 10 min pause-ack as config defaults and log each maintenance decision (pause-ack time, idle duration, reclaimable % and bytes) to tune from live runs. _(2026-10-22T04:39:45.951Z)_
 - `q2590bbb2` — Supervision boundary: s2 supervises the workers it introduces (exit handling, lock reclaim, replacement, restart limit) so no s2 worker crash leaves the daemon broken until s4; s4 extends it to every worker class. Recorded as an HLD boundary note on 2026-10-22.
   - **resolved**: A: s2 owns full supervision of its own workers, built as an extensible supervisor — Stakeholder 2026-10-22: s2 builds one supervisor (exit handling, watchWorker lock reclaim plus StoreGuard.reclaim, replacement, restart limit) for the admin and two indexing workers; s4 registers the session workers with the same supervisor. _(2026-10-22T07:16:54.121Z)_
+- `qc85bf1b4` — Depends on the lock framework (standalone Story afcfa027, LLD approved 2026-10-22); s2's build starts after that Story's build. Session workers (s3) need no pause registry: they take the maintenance lock shared per request and are registered with watchWorker.
+  - **resolved**: Plan now, gate build on afcfa027 — The gate is already met: Story afcfa027/S001's BUILD was approved on 2026-10-22 (4fafac47), so s2 plans and builds against the real lock framework (src/shared/locks/lock-manager.ts). Session workers (s3) take the maintenance lock shared per request and are registered with watchWorker, with no pause registry. _(2026-10-22T07:17:06.435Z)_
 
 ## Citations
 

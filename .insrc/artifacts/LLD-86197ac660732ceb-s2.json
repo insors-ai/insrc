@@ -228,6 +228,13 @@
         "choice": "A: s2 owns full supervision of its own workers, built as an extensible supervisor",
         "rationale": "Stakeholder 2026-10-22: s2 builds one supervisor (exit handling, watchWorker lock reclaim plus StoreGuard.reclaim, replacement, restart limit) for the admin and two indexing workers; s4 registers the session workers with the same supervisor.",
         "resolvedAt": "2026-10-22T07:16:54.121Z"
+      },
+      "qc85bf1b4": {
+        "question": "Depends on the lock framework (standalone Story afcfa027, LLD approved 2026-10-22); s2's build starts after that Story's build. Session workers (s3) need no pause registry: they take the maintenance lock shared per request and are registered with watchWorker.",
+        "status": "resolved",
+        "choice": "Plan now, gate build on afcfa027",
+        "rationale": "The gate is already met: Story afcfa027/S001's BUILD was approved on 2026-10-22 (4fafac47), so s2 plans and builds against the real lock framework (src/shared/locks/lock-manager.ts). Session workers (s3) take the maintenance lock shared per request and are registered with watchWorker, with no pause registry.",
+        "resolvedAt": "2026-10-22T07:17:06.435Z"
       }
     },
     "amendments": [

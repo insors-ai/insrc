@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { REPO_SCHEMA_FILE, RepoSchemaGate } from '../repo-schema.js';
+import { REPO_SCHEMA_FILE, RepoSchemaGate, writeRepoSchema } from '../repo-schema.js';
 import { RepoSchemaError } from '../types.js';
 
 describe('RepoSchemaGate', () => {
@@ -36,6 +36,19 @@ describe('RepoSchemaGate', () => {
 				assert.throws(() => RepoSchemaGate.read(repo), RepoSchemaError, bad);
 				assert.throws(() => RepoSchemaGate.require(repo, 2), RepoSchemaError, bad);
 			}
+		} finally { rmSync(repo, { recursive: true, force: true }); }
+	});
+});
+
+describe('writeRepoSchema', () => {
+	it('writeRepoSchema writes by temporary file and rename', () => {
+		const repo = mkdtempSync(join(tmpdir(), 'schema-write-'));
+		try {
+			writeRepoSchema(repo, { version: 2, convertedAt: '2026-10-22T00:00:00.000Z' });
+			assert.deepEqual(RepoSchemaGate.read(repo), { version: 2, convertedAt: '2026-10-22T00:00:00.000Z' });
+			assert.deepEqual(readdirSync(join(repo, '.insrc')), ['schema.json'], 'no temporary file is left');
+			assert.throws(() => writeRepoSchema(repo, { version: 0 }), RepoSchemaError);
+			assert.deepEqual(RepoSchemaGate.read(repo).version, 2, 'a refused write leaves the marker as it was');
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	});
 });

@@ -21,11 +21,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
+import { RepoSchemaGate } from '../artifact-core/repo-schema.js';
 import { liftStoreFile } from '../delivery/load.js';
 import { writeAtomic } from '../storage.js';
 import { applyAmendments, amendmentRule } from './amendments.js';
 import { backfillHead } from './backfill.js';
 import { applyFeedback, feedbackRule } from './feedback-rule.js';
+import { PROGRESS_FILE } from './marker.js';
 import { writeMigratedHead } from './migrated-head.js';
 import type { MigratedHeadSeams } from './migrated-head.js';
 import { planConversion, plansEqual } from './plan.js';
@@ -44,7 +46,7 @@ const log = getLogger('workflow:convert');
 /** The rules the planner is given, in the order they are listed. The applier's own order is the one in {@link applyConversion}. */
 export const CONVERSION_RULES: readonly PlanRule[] = [renameRule, stampRule, amendmentRule, feedbackRule, unitsRule, tasksRule, storyHistoryRule];
 
-export const PROGRESS_FILE = '.insrc/convert-progress.json';
+export { PROGRESS_FILE };
 
 /** The steps of an apply, as a test seam sees them: called after each step has finished. */
 export type ApplyStep = 'rename' | 'stamp' | 'amendments' | 'feedback' | 'migrate' | 'units' | 'tasks' | 'story-history';
@@ -105,6 +107,7 @@ async function migrateHeads(repo: string, deps: ConversionDeps, seams: MigratedH
  * are written; the schema marker is not (the sweep writes it once every head has passed its checks).
  */
 export async function applyConversion(repo: string, plan: ConversionPlan, deps: ConversionDeps, options: ApplyOptions = {}): Promise<ConversionResult> {
+	if (RepoSchemaGate.read(repo).version >= 2) return { written: [], markerWritten: false, trackerFailures: [] }; // converted already: nothing to write
 	if (!(options.deliveryReadsLifecycle ?? deliveryReadsLifecycle)()) {
 		throw new ConversionRefused('the delivery reader still reads the legacy approval and review stamps, which the conversion removes: run the conversion with a build whose readers read the lifecycle');
 	}

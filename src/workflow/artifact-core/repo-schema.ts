@@ -6,12 +6,13 @@
 /**
  * The repository version marker (sc8). `.insrc/schema.json` records whether a
  * repository has been converted to the common model; no marker means version 1,
- * unconverted. s2 only reads and requires; the s9 conversion writes it.
+ * unconverted. The gate only reads and requires; the s9 conversion writes it, last, with `writeRepoSchema`.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { writeAtomic } from '../storage.js';
 import { RepoSchemaError } from './types.js';
 import type { RepoSchema } from './types.js';
 
@@ -45,3 +46,10 @@ export const RepoSchemaGate = {
 		};
 	},
 } as const;
+
+/** Write the marker by temporary file and rename, so a reader sees the old marker or the whole new one. Only the conversion calls it. */
+export function writeRepoSchema(repo: string, schema: RepoSchema): void {
+	const { version, convertedAt } = schema;
+	if (!Number.isInteger(version) || version < 1) throw new RepoSchemaError(`a marker needs an integer version of at least 1, not ${String(version)}`);
+	writeAtomic(join(repo, REPO_SCHEMA_FILE), JSON.stringify({ version, ...(convertedAt !== undefined ? { convertedAt } : {}) }, null, 2) + '\n');
+}

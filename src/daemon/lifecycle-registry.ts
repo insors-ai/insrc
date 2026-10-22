@@ -13,13 +13,9 @@ import { existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { realpathSync } from 'node:fs';
 
-import { creationContextProvider } from '../workflow/artifact-core/codecs.js';
 import { ARTIFACTS_DIR } from '../workflow/storage.js';
-import { createCompletionEvidence } from '../workflow/artifact-core/completion-evidence.js';
-import { History } from '../workflow/artifact-core/history.js';
-import { createFileJournal } from '../workflow/artifact-core/journal.js';
-import { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
-import { createFileSidecarStore } from '../workflow/artifact-core/sidecar-store.js';
+import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
+import { createRepoLifecycle } from '../workflow/artifact-core/repo-lifecycle.js';
 import { ArtifactStore } from '../workflow/artifact-core/store.js';
 import { FeedbackService } from '../workflow/feedback/feedback-service.js';
 import { IdentityService } from '../workflow/identity/identity-service.js';
@@ -51,12 +47,7 @@ export function lifecycleFor(requested: string): RepoLifecycle {
 	const repoPath = realpathSync(resolve(requested));
 	const cached = ENTRIES.get(repoPath);
 	if (cached !== undefined) return cached;
-	const history = new History(createFileSidecarStore(repoPath));
-	// The round records (BUILD, TESTS, code review) of a Trivial standalone build are the first records of their work item,
-	// so with no anchor stamped yet their own clock is the anchor, as it is for the writers that created them before.
-	const contexts = creationContextProvider(repoPath, { rootKinds: ['BUILD', 'TESTS', 'CR'] });
-	const store = new ArtifactStore({ repoPath, history, journal: createFileJournal(repoPath), contexts });
-	const service = new LifecycleService({ store, evidence: ctx => createCompletionEvidence(repoPath, { overrideReview: ctx.overrideReview }) });
+	const { history, store, service } = createRepoLifecycle(repoPath);
 	const entry = { store, service, feedback: new FeedbackService({ history, store }), identity: identityService };
 	ENTRIES.set(repoPath, entry);
 	return entry;

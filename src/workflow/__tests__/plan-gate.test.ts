@@ -22,19 +22,20 @@ import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import {
 	ArtifactMissingError,
 	ArtifactNotApprovedError,
-	approveArtifactByJsonPath,
 	readPlanUpstream,
 	requireApprovedLld,
 } from '../gates.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../storage.js';
+import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, rejectedMeta } from './lifecycle-fixtures.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
 const HLD_RUN = 'hld-run-1';
 const CURRENT_EFFECTIVE = computeHldEffectiveHash(HLD_RUN, []);
 
-function seedDefineAndHld(repo: string): void {
+async function seedDefineAndHld(repo: string): Promise<void> {
 	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
@@ -47,7 +48,7 @@ function seedDefineAndHld(repo: string): void {
 		citations: [],
 	}, null, 2));
 	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	await approveJson(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic');
 	writeFileSync(hp.json, JSON.stringify({
@@ -64,7 +65,7 @@ function seedDefineAndHld(repo: string): void {
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
 	stampOtherPartyReview(hp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(hp.json);
+	await approveJson(hp.json);
 }
 
 interface LldMetaOpts {
@@ -82,8 +83,8 @@ function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
 		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED, epicCreatedAt: CREATED,
 		hldBaseRunId: HLD_RUN, hldEffectiveHash: opts.effectiveHash ?? CURRENT_EFFECTIVE, hldAmendmentsApplied: [],
 	};
-	if (opts.approved) meta['approvedAt'] = '2026-01-01T00:00:00Z';
-	if (opts.rejected) meta['rejectedAt'] = '2026-01-02T00:00:00Z';
+	if (opts.rejected) Object.assign(meta, rejectedMeta({ at: '2026-01-02T00:00:00Z' }));
+	else if (opts.approved) Object.assign(meta, approvedMeta({ at: '2026-01-01T00:00:00Z' }));
 	if (opts.staleAckedAt) meta['staleAckedAt'] = opts.staleAckedAt;
 	if (opts.standalone) meta['standalone'] = true;
 	writeFileSync(lp.json, JSON.stringify({
@@ -101,65 +102,65 @@ function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
 	return lp.json;
 }
 
-test('requireApprovedLld: returns the LLD when approved + non-stale', () => {
+test('requireApprovedLld: returns the LLD when approved + non-stale', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: true });
 		const lld = requireApprovedLld(repo, HASH, 's1');
 		assert.equal(lld.meta.storyId, 's1');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('requireApprovedLld: throws ArtifactNotApprovedError when approvedAt is missing', () => {
+test('requireApprovedLld: throws ArtifactNotApprovedError when the lifecycle is not approved', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: false });
 		assert.throws(() => requireApprovedLld(repo, HASH, 's1'), ArtifactNotApprovedError);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('requireApprovedLld: throws when rejectedAt is set', () => {
+test('requireApprovedLld: throws when the lifecycle is rejected', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: true, rejected: true });
 		assert.throws(() => requireApprovedLld(repo, HASH, 's1'), /rejected/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('requireApprovedLld: throws when effective hash differs and no stale-ack', () => {
+test('requireApprovedLld: throws when effective hash differs and no stale-ack', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: true, effectiveHash: 'stale-different-hash' });
 		assert.throws(() => requireApprovedLld(repo, HASH, 's1'), /stale/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('requireApprovedLld: returns the LLD when stale but stale-acked', () => {
+test('requireApprovedLld: returns the LLD when stale but stale-acked', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: true, effectiveHash: 'stale-different-hash', staleAckedAt: '2026-01-03T00:00:00Z' });
 		const lld = requireApprovedLld(repo, HASH, 's1');
 		assert.equal(lld.meta.storyId, 's1');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('requireApprovedLld: throws ArtifactMissingError when no LLD exists', () => {
+test('requireApprovedLld: throws ArtifactMissingError when no LLD exists', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		assert.throws(() => requireApprovedLld(repo, HASH, 's1'), ArtifactMissingError);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts', () => {
+test('readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approved artifacts', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
-		seedDefineAndHld(repo);
+		await seedDefineAndHld(repo);
 		seedLld(repo, 's1', { approved: true });
 		const up = readPlanUpstream(repo, HASH, 's1');
 		assert.equal(up.lld.meta.storyId, 's1');
@@ -168,7 +169,7 @@ test('readPlanUpstream: assembles { lld, hldSlice, storyDependsOn } from approve
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)', () => {
+test('readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice null, no throw (no HLD/DEF present)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
 		// Seed ONLY an approved standalone LLD — no define/HLD on disk at all.
@@ -181,7 +182,7 @@ test('readPlanUpstream: a standalone LLD skips the HLD/epic reads → hldSlice n
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent', () => {
+test('readPlanUpstream: an epic-scoped LLD (standalone unset) still requires the HLD — throws when it is absent', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-gate-'));
 	try {
 		// Approved epic-scoped LLD but NO HLD seeded → the hard gate still fires.

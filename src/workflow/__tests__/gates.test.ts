@@ -15,18 +15,20 @@ import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import {
-	approveArtifactByJsonPath,
 	ArtifactMissingError,
 	ArtifactNotApprovedError,
 	jsonPathForMd,
 	rejectArtifactByJsonPath,
 	requireApprovedEpic,
 } from '../gates.js';
+import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 import { defineArtifactPaths } from '../storage.js';
+import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // → E20260717a3f4b8c9
@@ -152,16 +154,28 @@ function writeFixture(repo: string): string {
 	return paths.json;
 }
 
-test('approveArtifactByJsonPath sets meta.approvedAt', () => {
+test('gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
 		stampOtherPartyReview(path);   // approval requires an other-party review
-		const r = approveArtifactByJsonPath(path);
+		const r = await approveJson(path);
 		assert.equal(r.workflow, 'define');
 		assert.match(r.approvedAt, /^\d{4}-\d{2}-\d{2}T/);
 		const raw = JSON.parse(readFileSync(path, 'utf8'));
-		assert.ok(raw.meta.approvedAt);
+		// the head is approved in its lifecycle, at the time the result names, by the gate's actor
+		assert.equal(raw.meta.lifecycle.status, 'approved');
+		assert.equal(raw.meta.lifecycle.approval.at, r.approvedAt);
+		assert.equal(raw.meta.lifecycle.approval.by.id, 'insrc:approval');
+		// and carries none of the stamps the lifecycle replaced
+		for (const stamp of ['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride', 'review', 'reviewResolutions']) assert.equal(raw.meta[stamp], undefined, stamp);
+		// the change log records the approval, with the revision the head is at
+		const log = await createRepoLifecycle(repo).history.log('DEF-' + HASH);
+		assert.deepEqual(log.filter(e => e.operation === 'approve').map(e => e.status), [{ from: 'draft', to: 'approved' }]);
+		// approving again changes nothing
+		const again = await approveJson(path);
+		assert.equal(again.approvedAt, r.approvedAt);
+		assert.equal((await createRepoLifecycle(repo).history.log('DEF-' + HASH)).filter(e => e.operation === 'approve').length, 1);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -185,22 +199,6 @@ test('rejectArtifactByJsonPath refuses empty reason', () => {
 	try {
 		const path = writeFixture(repo);
 		assert.throws(() => rejectArtifactByJsonPath(path, ''));
-	} finally {
-		rmSync(repo, { recursive: true, force: true });
-	}
-});
-
-test('reject then approve clears the rejection', () => {
-	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
-	try {
-		const path = writeFixture(repo);
-		rejectArtifactByJsonPath(path, 'try again');
-		stampOtherPartyReview(path);   // approval requires an other-party review
-		approveArtifactByJsonPath(path);
-		const raw = JSON.parse(readFileSync(path, 'utf8'));
-		assert.ok(raw.meta.approvedAt);
-		assert.equal(raw.meta.rejectedAt, undefined);
-		assert.equal(raw.meta.rejectReason, undefined);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -235,12 +233,12 @@ test('requireApprovedEpic throws ArtifactNotApprovedError when Define is not app
 	}
 });
 
-test('requireApprovedEpic returns the Define artifact after approval', () => {
+test('requireApprovedEpic returns the Define artifact after approval', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-'));
 	try {
 		const path = writeFixture(repo);
 		stampOtherPartyReview(path);   // approval requires an other-party review
-		approveArtifactByJsonPath(path);
+		await approveJson(path);
 		const epic = requireApprovedEpic(repo, HASH);
 		assert.equal(epic.body.flavor, 'new-capability');
 		assert.equal(epic.body.stories[0]!.id, 's1');
@@ -260,6 +258,10 @@ test('requireApprovedEpic returns the Define artifact after approval', () => {
 const FULL_SHA = /^[0-9a-f]{40}$/;
 
 /** A real git repo with one commit, plus an artifact json of the given meta. */
+const ID_OF: Record<string, string> = {
+	plan: `PLAN-${HASH}-s1`, define: `DEF-${HASH}`, 'design.epic': `HLD-${HASH}`, amendment: `AMD-${HASH}-1`, build: `BUILD-${HASH}-s1`, 'design.story': `LLD-${HASH}-s1`,
+};
+
 function seedGitArtifact(meta: Record<string, unknown>): { repo: string; json: string; head: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-rangebase-'));
 	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
@@ -267,44 +269,46 @@ function seedGitArtifact(meta: Record<string, unknown>): { repo: string; json: s
 	writeFileSync(join(repo, 'f.ts'), 'export const f = 1;\n');
 	git('add', '.'); git('commit', '-qm', 'base');
 	const head = git('rev-parse', 'HEAD');
-	const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+	const json = join(repo, '.insrc', 'artifacts', `${ID_OF[String(meta['workflow'])] ?? 'PLAN-' + HASH + '-s1'}.json`);
 	mkdirSync(dirname(json), { recursive: true });
 	writeFileSync(json, JSON.stringify({ meta, body: {} }, null, 2) + '\n');
+	// a design record needs the review its approval requires
+	if (/^(DEF|HLD|LLD|BUILD)-/.test(basename(json))) stampOtherPartyReview(json);
 	return { repo, json, head, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
 const metaOf = (json: string): Record<string, unknown> =>
 	(JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta;
 
-test('t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt', () => {
+test('t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside the lifecycle approval', async () => {
 	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
-		const out = approveArtifactByJsonPath(s.json);
+		const out = await approveJson(s.json);
 		const m = metaOf(s.json);
-		assert.equal(typeof m['approvedAt'], 'string', 'approvedAt still stamped');
-		assert.equal(out.approvedAt, m['approvedAt']);
+		assert.equal(approvalStateOf(m), 'approved', 'approved in the lifecycle');
+		assert.equal(out.approvedAt, (m['lifecycle'] as { approval: { at: string } }).approval.at);
 		assert.match(String(m['rangeBase']), FULL_SHA,
 			'a FULL sha — the length check is the only thing that mechanically distinguishes it from revParse\'s --short form');
 		assert.equal(m['rangeBase'], s.head, 'and it is HEAD at approval time');
 	} finally { s.cleanup(); }
 });
 
-test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase', () => {
+test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase', async () => {
 	for (const workflow of ['define', 'design.epic', 'amendment', 'build']) {
 		const s = seedGitArtifact({ workflow, epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 		try {
-			approveArtifactByJsonPath(s.json);
+			await approveJson(s.json, 'the fixture has no review of its own');
 			const m = metaOf(s.json);
-			assert.equal(typeof m['approvedAt'], 'string', `${workflow}: still approved`);
+			assert.equal(approvalStateOf(m), 'approved', `${workflow}: still approved`);
 			assert.ok(!('rangeBase' in m), `${workflow}: must NOT be stamped — no build reads it`);
 		} finally { s.cleanup(); }
 	}
 });
 
-test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT', () => {
-	const standalone = seedGitArtifact({ workflow: 'design.story', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: CREATED, epicCreatedAt: CREATED });
+test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT', async () => {
+	const standalone = seedGitArtifact({ workflow: 'design.story', standalone: true, epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
-		approveArtifactByJsonPath(standalone.json);
+		await approveJson(standalone.json);
 		assert.match(String(metaOf(standalone.json)['rangeBase']), FULL_SHA,
 			'a standalone LLD is a build\'s upstream, so it carries the base');
 	} finally { standalone.cleanup(); }
@@ -313,35 +317,35 @@ test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-pla
 	// stamping the LLD too would put a second, staler base on the same chain.
 	const epic = seedGitArtifact({ workflow: 'design.story', epicHash: HASH, storyId: 's4', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
-		approveArtifactByJsonPath(epic.json);
+		await approveJson(epic.json);
 		assert.ok(!('rangeBase' in metaOf(epic.json)), 'an epic-route LLD is NOT stamped — its PLAN is');
 	} finally { epic.cleanup(); }
 });
 
-test('t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string', () => {
+test('t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string', async () => {
 	// A non-git directory: `git rev-parse HEAD` fails.
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-nogit-'));
 	try {
-		const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+		const json = join(repo, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`);
 		mkdirSync(dirname(json), { recursive: true });
 		writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: {} }, null, 2) + '\n');
 
-		let out: ReturnType<typeof approveArtifactByJsonPath> | undefined;
-		assert.doesNotThrow(() => { out = approveArtifactByJsonPath(json); }, 'approval must not depend on git');
+		let out: Awaited<ReturnType<typeof approveJson>> | undefined;
+		await assert.doesNotReject(async () => { out = await approveJson(json); }, 'approval must not depend on git');
 		const m = metaOf(json);
 		assert.equal(typeof out?.approvedAt, 'string', 'the approval completed');
 		assert.ok(!('rangeBase' in m), 'ABSENT, not present-and-empty — an empty string would be a falsy base that reads as "no range" by accident');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)', () => {
+test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-nocommit-'));
 	try {
 		execFileSync('git', ['init', '-q'], { cwd: repo });
-		const json = join(repo, '.insrc', 'artifacts', 'ART-test.json');
+		const json = join(repo, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`);
 		mkdirSync(dirname(json), { recursive: true });
 		writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', epicHash: HASH, storyId: 's1' }, body: {} }, null, 2) + '\n');
-		approveArtifactByJsonPath(json);
+		await approveJson(json);
 		assert.ok(!('rangeBase' in metaOf(json)), 'an unborn HEAD yields no base rather than a bogus one');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -362,10 +366,10 @@ test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not reso
 // the only arrangement that can tell them apart.
 // ---------------------------------------------------------------------------
 
-test('CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins', () => {
+test('CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins', async () => {
 	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
-		approveArtifactByJsonPath(s.json);
+		await approveJson(s.json);
 		const firstBase = metaOf(s.json)['rangeBase'];
 		assert.equal(firstBase, s.head, 'precondition: the first stamp is HEAD at first approval');
 
@@ -377,58 +381,51 @@ test('CR-3: re-approving after the work has landed does NOT move rangeBase forwa
 		assert.notEqual(newHead, s.head, 'precondition: HEAD actually moved');
 
 		// Re-approval (after a review resolution, a correction, a batch re-run …).
-		const out = approveArtifactByJsonPath(s.json);
+		const out = await approveJson(s.json);
 		const m = metaOf(s.json);
 		assert.equal(m['rangeBase'], firstBase,
 			'the base still points BEFORE the Story\'s work — moving it to the new HEAD would make base..HEAD empty');
 		assert.notEqual(m['rangeBase'], newHead, 'and specifically it is NOT the post-work HEAD');
-		// approvedAt must still refresh: this is a narrowing of the stamp only.
-		assert.equal(out.approvedAt, m['approvedAt'], 'approvedAt is still re-stamped on every approval');
+		// the approval itself stays as it was made: a second approval changes nothing
+		assert.equal(out.approvedAt, (m['lifecycle'] as { approval: { at: string } }).approval.at);
 	} finally { s.cleanup(); }
 });
 
-test('CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once', () => {
+test('CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once', async () => {
 	const PRIOR = 'a'.repeat(40);
 	const s = seedGitArtifact({
 		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 		rangeBase: PRIOR,
 	});
 	try {
-		approveArtifactByJsonPath(s.json);
+		await approveJson(s.json);
 		assert.equal(metaOf(s.json)['rangeBase'], PRIOR,
 			'an already-stamped base is authoritative — the approval does not second-guess it');
 		assert.notEqual(metaOf(s.json)['rangeBase'], s.head, 'and it was not overwritten with HEAD');
 	} finally { s.cleanup(); }
 });
 
-test('CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever', () => {
+test('CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever', async () => {
 	const s = seedGitArtifact({
 		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 		rangeBase: '',
 	});
 	try {
-		approveArtifactByJsonPath(s.json);
+		await approveJson(s.json);
 		assert.equal(metaOf(s.json)['rangeBase'], s.head,
 			'an empty base is no base at all — preserving it would make the artifact permanently unstampable');
 	} finally { s.cleanup(); }
 });
 
-test('t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them', () => {
-	const s = seedGitArtifact({
-		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
-		// Pre-existing rejection, which the approve path DELETES — the neighbouring
-		// behaviour that makes "does the spread keep my key?" worth pinning.
-		rejectedAt: '2026-01-01T00:00:00.000Z', rejectReason: 'an earlier rejection',
-	});
+test('t5: rangeBase SURVIVES a write-read-write round trip', async () => {
+	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
-		approveArtifactByJsonPath(s.json);
+		await approveJson(s.json);
 		const first = metaOf(s.json);
 		assert.match(String(first['rangeBase']), FULL_SHA);
-		assert.ok(!('rejectedAt' in first), 'rejection cleared, as before');
-		assert.ok(!('rejectReason' in first), 'and its reason');
 
-		// Re-approve: the stamp is re-read, and the key survives the round trip.
-		approveArtifactByJsonPath(s.json);
+		// Approve again: the key survives the re-read, and the unrelated meta is untouched.
+		await approveJson(s.json);
 		const second = metaOf(s.json);
 		assert.equal(second['rangeBase'], first['rangeBase'], 'same HEAD, same base, not dropped by the re-write');
 		assert.equal(second['epicHash'], HASH, 'and unrelated meta is untouched');

@@ -60,6 +60,7 @@ import {
 import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { openTracker } from '../../workflow/tracker-auto.js';
+import { lifecycleFor, repoOfArtifactPath } from '../../daemon/lifecycle-registry.js';
 import { syncPlanTasks } from '../../daemon/tasks-sync.js';
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
@@ -197,7 +198,10 @@ export function chainText(repoPath: string, epicHash: string): string {
  *  tracker — mirroring the old `insrc workflow approve` flow. */
 export async function approve(artifactPath: string, withTracker = true, overrideReview?: string): Promise<ApproveOutcome> {
 	const jsonPath = jsonPathForMd(artifactPath);
-	const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);
+	// the approval is made in the lifecycle of the repository that holds the artifact
+	const repoPath = repoOfArtifactPath(jsonPath);
+	if (repoPath === undefined) throw new Error(`no repository holds ${jsonPath}: it is not under a .insrc/artifacts folder`);
+	const approval = await approveArtifactByJsonPath(jsonPath, { lifecycle: lifecycleFor(repoPath).service, ...(overrideReview !== undefined ? { overrideReview } : {}) });
 	// An approved plan makes the Story's Tasks artifacts, before their issues are pushed; never fails the approval
 	const tasks = approval.workflow === 'plan' ? await syncPlanTasks(approval.path) : undefined;
 	if (!withTracker) return { approval, ...(tasks !== undefined ? { tasks } : {}) };

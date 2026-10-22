@@ -45,7 +45,7 @@ describe('lifecycle-fixtures', () => {
 			const s = lifecycle(3);
 			assert.deepEqual([s.status, s.stale?.upstream.entityId, s.stale?.upstreamRevision], ['approved', `HLD-${H}`, 2]);
 			const r = lifecycle(4);
-			assert.deepEqual([r.status, r.review?.verdict, r.review?.party], ['pending-review', 'pass', 'daemon']);
+			assert.deepEqual([r.status, r.review?.verdict, r.review?.party], ['draft', 'pass', 'daemon']);
 			assert.deepEqual([lifecycle(5).status, lifecycle(5).revision.number], ['draft', 3]);
 			const b = lifecycle(6);
 			assert.deepEqual([b.review?.verdict, b.review?.counts], ['block', { high: 1, med: 0, low: 0 }]);

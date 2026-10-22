@@ -17,11 +17,14 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { approveArtifactByJsonPath, approveWorkflowTarget } from '../gates.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
+import { approveWorkflowTarget } from '../gates.js';
 import { _setGateDepsForTests, TeamGateRefusedError } from '../team/gate.js';
 import type { PortResult, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
+import { approveJson } from './helpers/approve.js';
+import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 
 afterEach(() => _setGateDepsForTests());
 
@@ -60,7 +63,7 @@ const planDoc = (repo: string, tasks: string[]) => ({
 	body: { tasks: tasks.map((id, i) => ({ id, title: id, summary: 's', size: 'S', order: i + 1, dependsOn: [], acceptanceChecks: ['x'], derivedFrom: [], tests: [] })) },
 	citations: [],
 });
-const isApproved = (p: string): boolean => (JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+const isApproved = (p: string): boolean => approvalStateOf((JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget authorizes a BUILD target before ensureBuildRecordOnCompletion so a refused target creates no BUILD record, puts it in skipped[] with the reason and approves the others', async () => {
 	await withRepo(async (repo, dir) => {
@@ -70,35 +73,38 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 
 		// local approval of a stage held by someone else: refused before anything is stamped
 		inject({ 'story:s1': 'bob' });
-		assert.throws(() => approveArtifactByJsonPath(plan), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
+		await assert.rejects(approveJson(plan), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
 		assert.ok(!isApproved(plan), 'nothing stamped');
 		assert.equal(JSON.stringify(JSON.parse(readFileSync(plan, 'utf8'))), JSON.stringify(planDoc(repo, ['t1', 't2'])), 'the artifact is unchanged');
 
 		// the refusal comes BEFORE the review check: a blocking review and a stage held by someone else give the team refusal
 		const blocked = planDoc(repo, ['t1']);
-		(blocked.meta as Record<string, unknown>)['review'] = { verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', summary: 'x' }], counts: { high: 1, med: 0, low: 0 } };
-		const blockedPath = put(dir, `PLAN-${HASH}-s2.json`, { ...blocked, meta: { ...blocked.meta, storyId: 's2' } });
+		const report = recordReviewSync(repo, `PLAN-${HASH}-s2`, {
+			artifact: 'PLAN', stage: 'plan', verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', kind: 'inventory', premise: 'x', evidence: 'e', action: 'a', fixability: 'manual' }],
+			counts: { high: 1, med: 0, low: 0 }, reviewedAt: '2026-10-05T00:00:00.000Z', model: 'm',
+		});
+		const blockedPath = put(dir, `PLAN-${HASH}-s2.json`, { ...blocked, meta: { ...blocked.meta, storyId: 's2', ...blockedMeta({ report }) } });
 		inject({ 'story:s2': 'bob' });
-		assert.throws(() => approveArtifactByJsonPath(blockedPath), (err: unknown) => err instanceof TeamGateRefusedError);
+		await assert.rejects(approveJson(blockedPath), (err: unknown) => err instanceof TeamGateRefusedError);
 		inject({ 'story:s2': 'alice' });
-		assert.throws(() => approveArtifactByJsonPath(blockedPath), (err: unknown) => err instanceof Error && err.name === 'ReviewBlockedError', 'the holder then meets the review check');
+		await assert.rejects(approveJson(blockedPath), (err: unknown) => err instanceof Error && err.name === 'ReviewBlockedError', 'the holder then meets the review check');
 
 		// an artifact whose meta lacks its workflow is read from its file name, not waved through
 		const unnamed = put(dir, `PLAN-${HASH}-s3.json`, { meta: { repoPath: repo, epicHash: HASH, storyId: 's3' }, body: { tasks: [] }, citations: [] });
 		inject({ 'story:s3': 'bob' });
-		assert.throws(() => approveArtifactByJsonPath(unnamed), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
+		await assert.rejects(approveJson(unnamed), (err: unknown) => err instanceof TeamGateRefusedError && /held by bob/.test(err.reason));
 		assert.ok(!isApproved(unnamed));
 
 		// the holder approves; so does a repo with no policy
 		inject({ 'story:s1': 'alice' });
-		assert.doesNotThrow(() => approveArtifactByJsonPath(plan));
+		await assert.doesNotReject(approveJson(plan));
 		assert.ok(isApproved(plan));
 	});
 
 	await withRepo(async (repo, dir) => {
 		const plan = put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, ['t1', 't2']));
 		inject({}, none);
-		assert.doesNotThrow(() => approveArtifactByJsonPath(plan));
+		await assert.doesNotReject(approveJson(plan));
 		assert.ok(isApproved(plan), 'no policy: approved exactly as before');
 	});
 

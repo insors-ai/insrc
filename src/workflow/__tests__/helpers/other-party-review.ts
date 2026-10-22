@@ -25,6 +25,7 @@ import { authorPartyOf, otherParty } from '../../review/party.js';
 import type { Party } from '../../review/party.js';
 import type { ReviewReport } from '../../review/types.js';
 import { codeReviewArtifactId } from '../../storage.js';
+import { lifecycleMeta, recordReviewSync } from '../lifecycle-fixtures.js';
 
 /** The model label each party's reviews carry: `client` has always meant the controller. */
 const MODEL: Record<Party, string> = { controller: 'client', daemon: 'cli-claude:test-reviewer' };
@@ -37,11 +38,12 @@ export interface StampedReview {
 }
 
 /**
- * Stamp a passing other-party review for the artifact at `jsonPath`.
+ * Record a passing other-party review for the artifact at `jsonPath`.
  *
  * A BUILD record (`BUILD-…json`) gets a code-review record written beside it;
- * any other artifact gets `meta.review` on its own json. Returns who reviewed
- * and where the review was written.
+ * any other artifact gets a lifecycle review bound to its revision, with the
+ * report as the review entry of its log. Returns who reviewed and where the
+ * review was written.
  */
 export function stampOtherPartyReview(jsonPath: string): StampedReview {
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
@@ -73,6 +75,11 @@ export function stampOtherPartyReview(jsonPath: string): StampedReview {
 		artifact: stage, stage, verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 },
 		reviewedAt: at, model: MODEL[reviewedBy], reviewedBy,
 	};
-	writeFileSync(jsonPath, JSON.stringify({ ...artifact, meta: { ...artifact.meta, review } }, null, 2) + '\n');
+	const artifactId = basename(jsonPath).replace(/\.json$/, '');
+	const repo = dirname(dirname(dirname(jsonPath)));
+	const report = recordReviewSync(repo, artifactId, review);
+	const revision = typeof artifact.meta['revision'] === 'number' ? artifact.meta['revision'] : 0;
+	const lifecycle = lifecycleMeta({ status: 'draft', review: { verdict: 'pass', counts: review.counts, party: reviewedBy, reviewer: { id: `insrc:${reviewedBy}`, kind: 'agent', properties: {} }, report } }, { revision, at });
+	writeFileSync(jsonPath, JSON.stringify({ ...artifact, meta: { ...artifact.meta, ...lifecycle } }, null, 2) + '\n');
 	return { reviewedBy, path: jsonPath };
 }

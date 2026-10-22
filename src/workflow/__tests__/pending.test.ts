@@ -345,7 +345,7 @@ test('pending.test.ts: pending approvals read the lifecycle', () => {
 	const lld = (storyId: string, meta: Record<string, unknown>) => ({ meta: { epicHash: HASH, epicCreatedAt: CREATED, storyId, ...meta }, body: { title: storyId } });
 	const repo = fixtureRepo({
 		'LLD-238917216d8fd532-s1.json': lld('s1', draftMeta()),
-		'LLD-238917216d8fd532-s2.json': lld('s2', reviewedMeta()),                      // pending-review
+		'LLD-238917216d8fd532-s2.json': lld('s2', reviewedMeta()),                      // reviewed, still a draft
 		'LLD-238917216d8fd532-s3.json': lld('s3', approvedMeta()),
 		'LLD-238917216d8fd532-s4.json': lld('s4', rejectedMeta()),
 		'LLD-238917216d8fd532-s5.json': lld('s5', lifecycleMeta({ status: 'completed', approval: true })),

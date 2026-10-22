@@ -32,6 +32,7 @@ import { ARTIFACTS_DIR, artifactJsonPath, writeAtomic } from '../storage.js';
 
 export const FIXTURE_ACTOR: Actor = { id: 'github:fixture', kind: 'person', properties: {} };
 const SYSTEM: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
+const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
 
 export interface FixtureOptions {
 	/** The revision number of the head; also `meta.revision`. Default 1. */
@@ -87,7 +88,7 @@ export interface ReviewFixture extends FixtureOptions {
 	readonly party?:   Review['party'] | undefined;
 	/** The Reference to the review entry (see {@link recordReview}); none by default. */
 	readonly report?:  Reference | undefined;
-	/** The status of the head. Default pending-review. */
+	/** The status of the head. Default draft: a review leaves the head a draft. */
 	readonly status?:  Status | undefined;
 }
 
@@ -97,7 +98,7 @@ const COUNTS = { pass: { high: 0, med: 0, low: 0 }, warn: { high: 0, med: 1, low
 export function reviewedMeta(opts: ReviewFixture = {}): Record<string, unknown> {
 	const verdict = opts.verdict ?? 'pass';
 	return lifecycleMeta({
-		status: opts.status ?? 'pending-review',
+		status: opts.status ?? 'draft',
 		...(opts.status === 'approved' ? { approval: true } : {}),
 		review: { verdict, counts: opts.counts ?? COUNTS[verdict], party: opts.party ?? 'daemon', reviewer: { id: 'insrc:daemon', kind: 'agent', properties: {} }, report: opts.report },
 	}, opts);

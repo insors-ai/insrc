@@ -17,9 +17,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { ackStaleArtifact, appendStoryToDefine, approveArtifactByJsonPath, rejectArtifactByJsonPath } from '../gates.js';
+import { ackStaleArtifact, appendStoryToDefine, rejectArtifactByJsonPath } from '../gates.js';
 import { defineArtifactPaths } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
+import { approveJson } from './helpers/approve.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -45,25 +46,29 @@ function seed(repo: string): string {
 
 const read = (p: string) => JSON.parse(readFileSync(p, 'utf8')) as { meta: Record<string, any>; body: unknown; citations: unknown };
 
-test('appendStoryToDefine mints a revision, approve reject and ack-stale leave revision and body unchanged', () => {
+test('approve through the lifecycle leaves the revision and the body unchanged', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-rev-'));
 	try {
 		const json = seed(repo);
 		const body0 = JSON.stringify(read(json).body);
-
-		// meta-only: approve
 		stampOtherPartyReview(json);
-		const bodyAfterStamp = JSON.stringify(read(json).body);
-		assert.equal(bodyAfterStamp, body0);
-		approveArtifactByJsonPath(json);
-		let d = read(json);
+		assert.equal(JSON.stringify(read(json).body), body0);
+		await approveJson(json);
+		const d = read(json);
 		assert.equal(d.meta['revision'], 3, 'approve does not mint a revision');
-		assert.ok(d.meta['approvedAt']);
+		assert.equal(d.meta['lifecycle'].status, 'approved');
 		assert.equal(JSON.stringify(d.body), body0, 'approve leaves the body byte-identical');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
 
+test('ack-stale and reject leave the revision and the body unchanged', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-rev-'));
+	try {
+		const json = seed(repo);
+		const body0 = JSON.stringify(read(json).body);
 		// meta-only: ack-stale
 		ackStaleArtifact(json, 'reviewed');
-		d = read(json);
+		let d = read(json);
 		assert.equal(d.meta['revision'], 3);
 		assert.equal(JSON.stringify(d.body), body0);
 
@@ -73,18 +78,24 @@ test('appendStoryToDefine mints a revision, approve reject and ack-stale leave r
 		assert.equal(d.meta['revision'], 3);
 		assert.ok(d.meta['rejectedAt']);
 		assert.equal(JSON.stringify(d.body), body0);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
 
-		// content: the extend path
+test('appendStoryToDefine mints a revision and an approved Define returns to draft', async () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gates-rev-'));
+	try {
+		const json = seed(repo);
 		stampOtherPartyReview(json);
-		approveArtifactByJsonPath(json);
-		const approvedAt = read(json).meta['approvedAt'];
+		await approveJson(json);
 		const story: DefineStory = { id: 's2', title: 'Filter by multiple tags', userValue: 'faster triage', acceptanceCriteria: [{ id: 'ac2', given: 'g', when: 'w', then: 't', operationalizes: [] }] };
 		const next = appendStoryToDefine(repo, 'a3f4b8c9d1e2f3a4', story);
-		d = read(json);
+		const d = read(json);
 		assert.equal(d.meta['revision'], 4, 'the extend path mints a revision');
 		assert.equal((d.body as { stories: unknown[] }).stories.length, 2);
 		assert.deepEqual(d.meta['tracker'], TRACKER, 'the tracker block survives');
-		assert.equal(d.meta['approvedAt'], approvedAt, 'the extend keeps approval, as before');
+		// the lifecycle keeps what was approved: revision 3, and the head is a draft at revision 4 until it is approved again
+		assert.equal(d.meta['lifecycle'].status, 'draft');
+		assert.equal(d.meta['lifecycle'].approval.revision, 3);
 		assert.equal((next.meta as Record<string, unknown>)['revision'], 4, 'the returned object carries the minted revision');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

@@ -18,7 +18,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { approveWorkflowTarget, NoPendingArtifactsError, ArtifactMissingError } from '../gates.js';
+import { approvalStateOf } from '../artifact-core/approval-view.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
+import { approvedMeta, blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 
@@ -29,10 +31,17 @@ async function withRepo(fn: (repo: string, artifactsDir: string) => void | Promi
 	try { await fn(repo, artifactsDir); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
-/** A pending artifact JSON (no approvedAt). `blocked` gives it an unresolved HIGH finding. */
+/** A pending artifact JSON (a draft). `blocked` gives it an unresolved HIGH finding. */
 function writeArtifact(dir: string, name: string, workflow: string, blocked = false): string {
 	const meta: Record<string, unknown> = { workflow, epicHash: HASH };
-	if (blocked) meta['review'] = { verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', summary: 'x' }], counts: { high: 1, med: 0, low: 0 } };
+	if (blocked) {
+		// a review whose report is the entry of the artifact's log and whose HIGH finding nobody has resolved
+		const report = recordReviewSync(join(dir, '..', '..'), name.replace(/\.json$/, ''), {
+			artifact: workflow, stage: workflow, verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', kind: 'inventory', premise: 'x', evidence: 'e', action: 'a', fixability: 'manual' }],
+			counts: { high: 1, med: 0, low: 0 }, reviewedAt: '2026-10-05T00:00:00.000Z', model: 'm', reviewedBy: 'daemon',
+		});
+		Object.assign(meta, blockedMeta({ report }));
+	}
 	const p = join(dir, name);
 	writeFileSync(p, JSON.stringify({ meta, body: {}, citations: [] }, null, 2));
 	// A "clean" design artifact is one that HAS been reviewed, by the other party,
@@ -42,20 +51,20 @@ function writeArtifact(dir: string, name: string, workflow: string, blocked = fa
 }
 
 const isApproved = (jsonPath: string): boolean =>
-	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+	approvalStateOf((JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: unknown }).meta) === 'approved';
 
 // ---------------------------------------------------------------------------
 // single artifact
 // ---------------------------------------------------------------------------
 
-test('single: a review-clean artifact is approved (approvedAt stamped)', async () => {
+test('single: a review-clean artifact is approved (in its lifecycle)', async () => {
 	await withRepo(async (repo, dir) => {
 		const p = writeArtifact(dir, `HLD-${HASH}.json`, 'design.epic');
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p });
 		assert.equal(out.approved.length, 1);
 		assert.equal(out.skipped.length, 0);
 		assert.equal(out.approved[0]!.path, p);
-		assert.ok(isApproved(p), 'approvedAt written to disk');
+		assert.ok(isApproved(p), 'approved in the lifecycle on disk');
 	});
 });
 
@@ -66,7 +75,7 @@ test('single: a review-blocked artifact lands in skipped[] (not approved[]), no 
 		assert.equal(out.approved.length, 0);
 		assert.equal(out.skipped.length, 1);
 		assert.equal(out.skipped[0]!.path, p);
-		assert.ok(!isApproved(p), 'blocked artifact NOT stamped');
+		assert.ok(!isApproved(p), 'blocked artifact NOT approved');
 	});
 });
 
@@ -113,7 +122,7 @@ test('batch: only NOT-yet-approved artifacts are swept (already-approved exclude
 		const already = writeArtifact(dir, `HLD-${HASH}.json`, 'design.epic');
 		// pre-approve HLD
 		const j = JSON.parse(readFileSync(already, 'utf8')) as { meta: Record<string, unknown> };
-		j.meta['approvedAt'] = new Date(0).toISOString();
+		Object.assign(j.meta, approvedMeta({ at: new Date(0).toISOString() }));
 		writeFileSync(already, JSON.stringify(j));
 		const out = await approveWorkflowTarget({ repoPath: repo, epicHash: HASH });
 		assert.equal(out.approved.length, 1, 'only the pending DEF is swept');
@@ -126,7 +135,7 @@ test('batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError'
 		// all artifacts already approved
 		const p = writeArtifact(dir, `DEF-${HASH}.json`, 'define');
 		const j = JSON.parse(readFileSync(p, 'utf8')) as { meta: Record<string, unknown> };
-		j.meta['approvedAt'] = new Date(0).toISOString();
+		Object.assign(j.meta, approvedMeta({ at: new Date(0).toISOString() }));
 		writeFileSync(p, JSON.stringify(j));
 		await assert.rejects(async () => approveWorkflowTarget({ repoPath: repo, epicHash: HASH }), NoPendingArtifactsError);
 	});

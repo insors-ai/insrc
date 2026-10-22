@@ -23,6 +23,7 @@ import { dirname } from 'node:path';
 import { basename, join } from 'node:path';
 
 import { approvalStateOf } from './artifact-core/approval-view.js';
+import { createRepoLifecycle } from './artifact-core/repo-lifecycle.js';
 import { getEffectiveHld } from './amendments/effective.js';
 import { makeStaleAck } from './amendments/staleness.js';
 import { listApprovedAmendments } from './amendments/store.js';
@@ -38,15 +39,15 @@ import { decodeArtifactHead } from './artifact-core/decode.js';
 import { checkHeadIntegrity } from './artifact-core/lifecycle.js';
 import type { LifecycleService } from './artifact-core/lifecycle-service.js';
 import { IllegalTransitionError, LifecycleConflictError, ReviewRequiredError } from './artifact-core/types.js';
-import type { Actor, IntegrityReason } from './artifact-core/types.js';
+import type { Actor, IntegrityReason, Review } from './artifact-core/types.js';
 import { ArtifactIds } from './artifact-ids.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
 import { authorPartyOf, reviewerPartyOf } from './review/party.js';
 import type { Party, PartyOrUnknown } from './review/party.js';
+import { readReviewRecordOf } from './review/report-file.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
-import type { ReviewReport } from './review/types.js';
-import type { ReviewResolution } from './types.js';
+import type { ReviewVerdict } from './review/types.js';
 import {
 	ARTIFACT_ID_MARKER_RE,
 	ARTIFACTS_DIR,
@@ -227,17 +228,17 @@ export function appendStoryToDefine(repoPath: string, epicHash: string, story: D
 export function requireApprovedEpic(repoPath: string, epicHash: string): DefineArtifact {
 	const define = readDefineArtifact(repoPath, epicHash);
 	const label  = define.meta.epicSlug ?? epicHash;
+	if (approvalStateOf(define.meta) === 'rejected') {
+		throw new ArtifactNotApprovedError(
+			`Epic '${label}' (${epicHash}) was rejected. ` +
+			`Re-run define with --reopen first.`,
+		);
+	}
 	if (approvalStateOf(define.meta) !== 'approved') {
 		const path = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(define.meta), workItemKindOf(define.meta), define.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting design.epic.`,
-		);
-	}
-	if (approvalStateOf(define.meta) === 'rejected') {
-		throw new ArtifactNotApprovedError(
-			`Epic '${label}' (${epicHash}) was rejected. ` +
-			`Re-run define with --reopen first.`,
 		);
 	}
 	return define;
@@ -307,17 +308,17 @@ export function readLldArtifact(repoPath: string, epicHash: string, storyId: str
 export function requireApprovedLld(repoPath: string, epicHash: string, storyId: string): LldArtifact {
 	const lld   = readLldArtifact(repoPath, epicHash, storyId);
 	const label = lld.meta.epicSlug ?? epicHash;
+	if (approvalStateOf(lld.meta) === 'rejected') {
+		throw new ArtifactNotApprovedError(
+			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
+			`Re-run design.story before plan.`,
+		);
+	}
 	if (approvalStateOf(lld.meta) !== 'approved') {
 		const path = lldArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting plan.`,
-		);
-	}
-	if (approvalStateOf(lld.meta) === 'rejected') {
-		throw new ArtifactNotApprovedError(
-			`LLD for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
-			`Re-run design.story before plan.`,
 		);
 	}
 	// Standalone LLDs (triage-routed non-Epic features) have no parent HLD, so
@@ -406,17 +407,17 @@ export function readPlanArtifact(repoPath: string, epicHash: string, storyId: st
 export function requireApprovedPlan(repoPath: string, epicHash: string, storyId: string): PlanArtifact {
 	const plan  = readPlanArtifact(repoPath, epicHash, storyId);
 	const label = plan.meta.epicSlug ?? epicHash;
+	if (approvalStateOf(plan.meta) === 'rejected') {
+		throw new ArtifactNotApprovedError(
+			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
+			`Re-run plan before build.`,
+		);
+	}
 	if (approvalStateOf(plan.meta) !== 'approved') {
 		const path = planArtifactPaths(repoPath, epicHash, storyId, workItemAnchorCreatedAt(plan.meta), workItemKindOf(plan.meta), plan.meta.epicSlug).md;
 		throw new ArtifactNotApprovedError(
 			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) is not approved. ` +
 			`Run \`insrc workflow approve ${path}\` before starting build.`,
-		);
-	}
-	if (approvalStateOf(plan.meta) === 'rejected') {
-		throw new ArtifactNotApprovedError(
-			`Plan for Story '${storyId}' of Epic '${label}' (${epicHash}) was rejected. ` +
-			`Re-run plan before build.`,
 		);
 	}
 	return plan;
@@ -541,9 +542,6 @@ export interface ApprovalResult {
  */
 export interface ApprovableArtifactMeta {
 	readonly workflow?:   string | undefined;
-	readonly approvedAt?: string | undefined;
-	readonly rejectedAt?: string | undefined;
-	readonly rejectReason?: string | undefined;
 	/** `true` on a standalone (bugfix / Small) artifact, absent on an epic-route one. */
 	readonly standalone?: boolean | undefined;
 	/**
@@ -554,10 +552,11 @@ export interface ApprovableArtifactMeta {
 	 * ABSENT when HEAD could not be read; never an empty string.
 	 */
 	readonly rangeBase?:  string | undefined;
-	readonly review?: ReviewReport | undefined;
-	readonly reviewResolutions?: Record<string, ReviewResolution> | undefined;
-	readonly reviewOverride?: { reason: string; at: string } | undefined;
+	readonly lifecycle?:  unknown;
 }
+
+/** The meta field the approval stamps with the Story's range base. The one stamp the approval still writes into a head. */
+const RANGE_BASE_KEY = 'rangeBase';
 
 /**
  * Whether approving THIS artifact should stamp a range base.
@@ -611,10 +610,21 @@ export function headConflict(jsonPath: string): { readonly artifactId: string; r
 	}
 }
 
-/** Mark an artifact approved by writing `meta.approvedAt` into its
- *  JSON. Works generically for any workflow — the artifact's JSON
- *  path is passed in verbatim. */
-export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly overrideReview?: string }): ApprovalResult {
+/** What the approval needs besides the path: the repository's lifecycle service, who approves, and an override reason. */
+export interface ApproveOptions {
+	readonly overrideReview?: string | undefined;
+	readonly lifecycle:       LifecycleService;
+	/** The actor the service records; the approval gate itself when absent. */
+	readonly actor?:          Actor | undefined;
+}
+
+/**
+ * Approve an artifact through the lifecycle. The head is checked against its change log first, the team gate and the review rules
+ * are applied, and only then does the service take the head from draft to approved (an artifact already approved or beyond stays
+ * as it is). The only thing written into the head besides the lifecycle is the Story's range base. Works generically for any
+ * workflow: the artifact's JSON path is passed in verbatim.
+ */
+export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveOptions): Promise<ApprovalResult> {
 	// A test record is a record, not an approvable artifact. Refused HERE because
 	// this is the function every approval goes through, the TUI's included.
 	if (isTestRecordJsonPath(jsonPath)) throw new NotApprovableError(jsonPath);
@@ -626,55 +636,57 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
-	// A head whose stored content hash no longer matches its content is not stamped: a person has to resolve it first.
-	const conflict = headConflict(jsonPath);
-	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
+	const { lifecycle } = opts;
+	const id = artifactIdOf(jsonPath);
+	const actor = opts.actor ?? GATE_ACTOR;
+	// A head that is out of step with its change log, or whose stored hash no longer matches its content, is not approved: a person has to resolve it first.
+	const seen = await lifecycle.inspect(id);
+	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(id, seen.integrity.reason);
 	// Team gate: in a team repo a stage held by someone else is not approved here. Refused before any
-	// review check or stamp; a repo with no policy is untouched.
+	// review check or approval; a repo with no policy is untouched.
 	const teamRefusal = authorizeApproval(jsonPath);
 	if (teamRefusal !== undefined) throw new TeamGateRefusedError(teamRefusal.outcome, teamRefusal.subject);
 
 	// Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
 	// (the effective verdict, after the interactive resolutions in R3), unless
-	// an explicit override reason is supplied. Auto-fixes + per-finding
-	// resolutions clear the block one finding at a time.
-	const override = opts?.overrideReview;
-	const review = artifact.meta.review;
-	let reviewOverride: { reason: string; at: string } | undefined;
-	if (review !== undefined && effectiveReviewVerdict(review, artifact.meta.reviewResolutions) === 'block') {
-		if (override === undefined || override.length === 0) {
-			const res = artifact.meta.reviewResolutions ?? {};
-			const pending = review.findings.filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
+	// an explicit override reason is supplied. The report and the resolutions are the entries of the artifact's log.
+	const override = opts.overrideReview;
+	const overridden = override !== undefined && override.length > 0;
+	const stored = readReviewRecordOf(jsonPath);
+	const lifecycleVerdict = seen?.lifecycle.review?.verdict;
+	const effective = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) : lifecycleVerdict;
+	let needsOverride = false;
+	if (effective === 'block') {
+		if (!overridden) {
+			const res = stored?.resolutions ?? {};
+			const pending = (stored?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
 			const highs = pending.filter(f => f.severity === 'HIGH').length;
 			const meds = pending.filter(f => f.severity === 'MED').length;
-			const summary = `${highs} HIGH · ${meds} MED unresolved`;
+			const summary = stored !== undefined ? `${highs} HIGH · ${meds} MED unresolved` : 'the review verdict is block';
 			throw new ReviewBlockedError(
 				`Review blocks approval (${summary}). Resolve findings ('insrc workflow resolve <path> <id> <action>') or approve with an override reason.`,
 				summary,
 			);
 		}
-		reviewOverride = { reason: override, at: new Date().toISOString() };
+		needsOverride = true;
 	}
 	// The other-party review rule: a DEF, HLD or LLD must have been reviewed, a
 	// BUILD record's Story must have a code review, and no review may have been
 	// done by the party that authored the work. An override reason approves past
 	// each and is recorded like any other override.
-	const missing = otherPartyReviewGap(jsonPath, artifact.meta);
+	const missing = otherPartyReviewGap(jsonPath, artifact.meta, seen?.lifecycle.review);
 	if (missing !== undefined) {
-		if (override === undefined || override.length === 0) {
-			throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
-		}
-		reviewOverride = reviewOverride ?? { reason: override, at: new Date().toISOString() };
+		if (!overridden) throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
+		needsOverride = true;
 	}
-	const approvedAt = new Date().toISOString();
+
 	// The range base is read HERE, at approval, so it cannot depend on whether
 	// anyone later remembered to commit the artifact. Absent when HEAD is
 	// unreadable — the approval still completes; a build with no resolvable base
 	// reports an empty change set rather than a wrong one.
 	//
 	// WRITE-ONCE (CR-3): an existing base is never recomputed. Re-approval is an
-	// anticipated path — this function clears a prior rejection a few lines below —
-	// and "HEAD at approval time" on a SECOND approval means HEAD after the Story's
+	// anticipated path, and "HEAD at approval time" on a SECOND approval means HEAD after the Story's
 	// work has already landed. Re-stamping then moved the base forward onto the
 	// Story's own commits and `base..HEAD` collapsed to empty, silently discarding
 	// the change set. The first stamp is the one that means anything, so it wins.
@@ -682,18 +694,43 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	const rangeBase = priorBase !== undefined && priorBase.length > 0
 		? priorBase
 		: stampsRangeBase(artifact.meta) ? headFullSha(dirname(jsonPath)) : undefined;
-	const nextMeta: Record<string, unknown> = {
-		...artifact.meta,
-		approvedAt,
-		...(rangeBase !== undefined ? { rangeBase } : {}),
-		...(reviewOverride !== undefined ? { reviewOverride } : {}),
-	};
-	// Clear any prior rejection if we're re-approving.
-	delete nextMeta.rejectedAt;
-	delete nextMeta.rejectReason;
-	const next = { ...artifact, meta: nextMeta };
-	writeArtifact(jsonPath, next, 'meta-only');
-	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
+
+	let approvedAt: string;
+	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {
+		approvedAt = seen.lifecycle.approval?.at ?? new Date().toISOString();   // approved already: it stays as it is
+	} else {
+		if (seen !== undefined && seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
+		await bindEffectiveReview(lifecycle, id, seen, stored, effective);
+		const done = await lifecycle.apply(id, 'approve', actor, needsOverride ? { override: { reason: override as string } } : {}, { overrideReview: needsOverride ? override : undefined });
+		approvedAt = done.lifecycle.approval?.at ?? new Date().toISOString();
+	}
+	if (rangeBase !== undefined && priorBase !== rangeBase) {
+		// raw patch of the one field: the lifecycle has taken the head to approved, and a meta-only write moves no revision
+		const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+		writeArtifact(jsonPath, { ...current, meta: { ...current.meta, [RANGE_BASE_KEY]: rangeBase } }, 'meta-only');
+	}
+	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt };
+}
+
+/**
+ * A design artifact is approved by the lifecycle only against a review bound to its revision whose verdict does not block. The
+ * review is recorded with the verdict the reviewer gave; the user's resolutions came after, as entries of the log. So when the
+ * resolutions lift a block, the review is bound again at the effective verdict (the same reviewer, counts and report) before the
+ * approval. Nothing is written when the lifecycle already says what the effective verdict says.
+ */
+async function bindEffectiveReview(
+	lifecycle: LifecycleService, id: string,
+	seen: Awaited<ReturnType<LifecycleService['inspect']>>,
+	stored: ReturnType<typeof readReviewRecordOf>,
+	effective: ReviewVerdict | undefined,
+): Promise<void> {
+	const review = seen?.lifecycle.review;
+	if (seen === undefined || review === undefined || stored === undefined || effective === undefined) return;
+	if (!REVIEWED_KINDS.includes(ArtifactIds.parse(id)?.kind ?? '')) return;
+	if (review.revision !== seen.lifecycle.revision.number || review.verdict === effective) return;
+	await lifecycle.apply(id, 'review', review.reviewer, {
+		review: { reviewer: review.reviewer, party: review.party, verdict: effective, counts: review.counts, ...(review.report !== undefined ? { report: review.report } : {}) },
+	});
 }
 
 /** The artifact kinds whose approval requires a review, read from the
@@ -724,7 +761,7 @@ const PARTY_REVIEW_TOOL: Record<Party, string> = {
  * An unknown author or an unknown reviewer never withholds approval by itself.
  * The BUILD record's code review is read from the artifact store beside it.
  */
-function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta): { readonly message: string; readonly summary: string } | undefined {
+function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta, lifecycleReview: Review | undefined): { readonly message: string; readonly summary: string } | undefined {
 	const required = reviewRequiredFor(jsonPath);
 	const author = authorPartyOf(meta);
 
@@ -744,8 +781,8 @@ function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta): { 
 			};
 		}
 		reviewer = reviewerPartyOf(cr.meta);
-	} else if (meta.review !== undefined) {
-		reviewer = reviewerPartyOf(meta.review);
+	} else if (lifecycleReview !== undefined) {
+		reviewer = reviewerPartyOf(lifecycleReview);
 	} else if (required === 'design') {
 		const need = author === 'unknown' ? 'a review (run insrc_review_step)' : PARTY_REVIEW_TOOL[author];
 		return {
@@ -851,7 +888,7 @@ export interface WorkflowApproveResult {
 }
 
 /** JSON paths of every DEF/HLD/LLD/PLAN/BUILD artifact under `epicHash` that is
- *  not yet approved (meta.approvedAt absent). BUILD is the story-completion
+ *  not yet approved (its lifecycle is not approved). BUILD is the story-completion
  *  approval target, so it joins the batch sweep alongside the design artifacts.
  *  Sorted; malformed files skipped. */
 function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] {
@@ -863,8 +900,8 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 		if (!re.test(name)) continue;
 		const jsonPath = join(dir, name);
 		try {
-			const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { approvedAt?: string } }).meta;
-			if (meta?.approvedAt === undefined) out.push(jsonPath);
+			const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: unknown }).meta;
+			if (approvalStateOf(meta) !== 'approved') out.push(jsonPath);
 		} catch { /* malformed — skip */ }
 	}
 	return out;
@@ -873,36 +910,7 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 const GATE_ACTOR: Actor = { id: 'insrc:approval', kind: 'system', properties: {} };
 const artifactIdOf = (jsonPath: string): string => basename(jsonPath).replace(/\.json$/, '');
 const REVIEWED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
-/** What approveArtifactByJsonPath stamps (and clears): the keys an approval taken back has to restore. */
-const STAMP_KEYS: readonly string[] = ['approvedAt', 'rejectedAt', 'rejectReason', 'rangeBase', 'reviewOverride'];
 const APPROVED_OR_BEYOND: readonly string[] = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed'];
-
-/**
- * A DEF, HLD or LLD is approved by the lifecycle only against a review bound to its revision. The review a design stage
- * stamps is still `meta.review`, so it is mirrored onto `lifecycle.review` first (the verdict after the user's resolutions).
- */
-async function mirrorLegacyReview(lifecycle: LifecycleService, jsonPath: string): Promise<void> {
-	const id = artifactIdOf(jsonPath);
-	if (!REVIEWED_KINDS.includes(ArtifactIds.parse(id)?.kind ?? '')) return;
-	const seen = await lifecycle.inspect(id);
-	if (seen === undefined || seen.status !== 'draft' || seen.lifecycle.review?.revision === seen.lifecycle.revision.number) return;
-	const meta = (readJsonOrUndefined(jsonPath) as { meta?: { review?: ReviewReport | undefined; reviewResolutions?: Record<string, ReviewResolution> | undefined } | undefined } | undefined)?.meta;
-	const review = meta?.review;
-	if (review === undefined) return;
-	// A review made before the current revision was written did not review it: it is not mirrored.
-	const reviewedAt = Date.parse(review.reviewedAt);
-	const revisionAt = Date.parse(seen.lifecycle.revision.at);
-	if (!Number.isNaN(reviewedAt) && !Number.isNaN(revisionAt) && reviewedAt < revisionAt) return;
-	const reviewerParty = reviewerPartyOf(review);
-	const party = reviewerParty === 'daemon' ? 'daemon' : 'controller';
-	await lifecycle.apply(id, 'review', { id: `insrc:${party}`, kind: 'agent', properties: {} }, {
-		review: {
-			reviewer: { id: `insrc:${party}`, kind: 'agent', properties: {} }, party,
-			verdict: effectiveReviewVerdict(review, meta?.reviewResolutions),
-			counts: { high: review.counts.high, med: review.counts.med, low: review.counts.low },
-		},
-	});
-}
 
 /** Approve a single artifact or a whole epic's pending set — daemon-safe (no
  *  cli/services dependency). Each artifact goes through approveArtifactByJsonPath
@@ -936,11 +944,11 @@ export async function approveWorkflowTarget(
 		return true;
 	};
 
-	const lifecycle = req.lifecycle;
+	// a caller that names no service gets one built over the repository's files
+	const lifecycle: LifecycleService = req.lifecycle ?? createRepoLifecycle(req.repoPath).service;
 	const actor = req.actor ?? GATE_ACTOR;
-	/** With a service: the head and its change log must agree before a BUILD record is touched or anything is stamped. */
+	/** The head and its change log must agree before a BUILD record is touched or anything is approved. */
 	const refuseLogConflict = async (jsonPath: string): Promise<boolean> => {
-		if (lifecycle === undefined) return false;
 		const seen = await lifecycle.inspect(artifactIdOf(jsonPath));
 		if (seen === undefined || seen.integrity.ok) return false;
 		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(artifactIdOf(jsonPath), seen.integrity.reason).message });
@@ -950,35 +958,10 @@ export async function approveWorkflowTarget(
 	const runBuildHook = async (jsonPath: string): Promise<void> => {
 		const ref = buildRefFor(jsonPath);
 		if (ref === undefined) return;
-		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, lifecycle !== undefined ? { writer: lifecycle, actor } : undefined);
+		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, { writer: lifecycle, actor });
 	};
-	/**
-	 * With a service: apply the approval through it once the legacy gates have passed. False when the service refuses it (the caller
-	 * takes the legacy stamp back). An artifact already approved or beyond stays as it is; one in a status the closed table has no
-	 * approval from (rejected, pending review, withdrawn, ...) is refused.
-	 */
-	const approveThroughService = async (jsonPath: string): Promise<boolean> => {
-		if (lifecycle === undefined) return true;
-		const id = artifactIdOf(jsonPath);
-		try {
-			await mirrorLegacyReview(lifecycle, jsonPath);
-			const seen = await lifecycle.inspect(id);
-			if (seen === undefined || APPROVED_OR_BEYOND.includes(seen.status)) return true;
-			if (seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
-			await lifecycle.apply(id, 'approve', actor, req.overrideReview !== undefined && req.overrideReview.length > 0 ? { override: { reason: req.overrideReview } } : {}, { overrideReview: req.overrideReview });
-			return true;
-		} catch (err) {
-			if (err instanceof ReviewRequiredError || err instanceof IllegalTransitionError || err instanceof LifecycleConflictError) {
-				approved.pop();
-				skipped.push({ path: jsonPath, reason: err.message });
-				return false;
-			}
-			throw err;
-		}
-	};
-	/** With a service: a BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. */
+	/** A BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. */
 	const completeThroughService = async (jsonPath: string): Promise<void> => {
-		if (lifecycle === undefined) return;
 		const key = ArtifactIds.parse(artifactIdOf(jsonPath));
 		if (key?.kind === 'BUILD' && key.story !== undefined) {
 			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, { overrideReview: req.overrideReview });
@@ -1018,30 +1001,14 @@ export async function approveWorkflowTarget(
 		}
 		let completeAfter = false;
 		try {
-			const stampless = lifecycle !== undefined ? readFileSync(jsonPath, 'utf8') : undefined;
-			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
-			const restoreStamp = (): void => {
-				// The service did not approve, so the stamp this approval wrote is taken back and nothing reads the target as approved.
-				// Only the stamp keys go back: whatever the service committed meanwhile (a mirrored review, say) stays.
-				const prior = (JSON.parse(stampless ?? '{}') as { meta?: Record<string, unknown> }).meta ?? {};
-				const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
-				for (const key of STAMP_KEYS) {
-					if (key in prior) current.meta[key] = prior[key];
-					else delete current.meta[key];
-				}
-				writeArtifact(jsonPath, current, 'meta-only');
-			};
-			let applied: boolean;
-			try { applied = await approveThroughService(jsonPath); }
-			catch (err) { restoreStamp(); throw err; }
-			if (!applied) restoreStamp();
-			else completeAfter = true;
+			approved.push({ path: jsonPath, result: await approveArtifactByJsonPath(jsonPath, { ...(approveOpts ?? {}), lifecycle, actor }) });
+			completeAfter = true;
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });
 			} else if (err instanceof TeamGateRefusedError) {
 				skipped.push({ path: jsonPath, reason: err.reason });
-			} else if (err instanceof LifecycleConflictError) {
+			} else if (err instanceof LifecycleConflictError || err instanceof ReviewRequiredError || err instanceof IllegalTransitionError) {
 				skipped.push({ path: jsonPath, reason: err.message });
 			} else {
 				throw err;   // ArtifactMissingError / no-meta — surface, not skip

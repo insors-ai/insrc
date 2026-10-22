@@ -32,11 +32,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { finalizeArtifact, firstCompanionValidationFailure } from '../orchestrator.js';
-import { approveArtifactByJsonPath } from '../gates.js';
+import { markApprovedSync } from './lifecycle-fixtures.js';
 import { defineArtifactPaths } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const EPIC_HASH = 'c0ffee1234abcd56';
 const CREATED   = '2026-09-30T00:00:00.000Z';
@@ -190,7 +189,7 @@ function seedOneStoryEpic(repo: string): void {
 	const dp = defineArtifactPaths(repo, EPIC_HASH, CREATED, 'epic', 'gate-epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-gate', schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'gate-epic', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-gate', schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'gate-epic', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'The story', userValue: 'v', acceptanceCriteria: [], dependsOn: [] }],
@@ -198,8 +197,7 @@ function seedOneStoryEpic(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 }
 function validHldBody(extra: Record<string, unknown>): Record<string, unknown> {
 	return {

@@ -31,6 +31,7 @@ import { artifactJsonPath, lldArtifactId } from '../../storage.js';
 import type { PortResult, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
 const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });

@@ -28,6 +28,7 @@ import { H, alice, artifact } from './store-kit.js';
 import { durableKit } from './durable-kit.js';
 import type { DurableKit } from './durable-kit.js';
 import { stubEvidence } from './lifecycle-kit.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 const BUILD = buildArtifactId(H, 's1');
 const TESTS = testsArtifactId(H, 's1');

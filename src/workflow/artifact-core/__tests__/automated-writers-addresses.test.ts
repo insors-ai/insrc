@@ -35,6 +35,7 @@ import { History } from '../history.js';
 import { FileSidecarStore } from '../sidecar-store.js';
 import type { Actor, Feedback } from '../types.js';
 import { H, alice, artifact } from './store-kit.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 const PLAN = `PLAN-${H}-s1`;
 const MD = `<!-- insrc:artifact ${PLAN} -->\n\n# Story s1\n\n- t1: extend the two exported constants in foo.\n`;

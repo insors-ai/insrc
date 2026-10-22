@@ -29,6 +29,7 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../review/tem
 import { lifecycleReviewOf } from '../artifact-core/approval-view.js';
 import { approvedMeta, draftMeta } from './lifecycle-fixtures.js';
 import { idOfWorkflow, writeDesign } from '../../daemon/steps/review-step/__tests__/review-fixture.js';
+import './helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';

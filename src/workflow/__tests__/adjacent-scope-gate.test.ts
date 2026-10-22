@@ -28,13 +28,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { finalizeArtifact } from '../orchestrator.js';
-import { approveArtifactByJsonPath } from '../gates.js';
+import { markApprovedSync } from './lifecycle-fixtures.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../storage.js';
 import { ANTI_OVERREACH_RULE, SMALLEST_CHANGE_RULE, SMALLEST_SHAPE_RULE } from '../runners/scope-prompts.js';
 import type { LldBody } from '../artifacts/lld.js';
 import type { WorkflowIntent } from '../types.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC  = join(HERE, '..');
@@ -189,8 +188,7 @@ function seedTwoStoryEpic(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 
 	const hp = hldArtifactPaths(repo, EPIC_HASH, CREATED, 'epic');
 	writeFileSync(hp.json, JSON.stringify({
@@ -209,8 +207,7 @@ function seedTwoStoryEpic(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
-	stampOtherPartyReview(hp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(hp.json);
+	markApprovedSync(hp.json);
 }
 
 function epicStoryIntent(repo: string, storyId: string): WorkflowIntent {

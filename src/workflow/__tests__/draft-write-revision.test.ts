@@ -21,6 +21,7 @@ import { _clearWorkflowStateStoreForTests } from '../../daemon/steps/workflow-st
 import { registerWorkflowRunners } from '../index.js';
 import { writeArtifact } from '../storage.js';
 import { patchTrackerMeta } from '../tracker/refs.js';
+import './helpers/converted-repos.js';
 
 type Doc = { meta: Record<string, any>; body: Record<string, unknown>; citations: unknown };
 const payload = (env: { content: readonly { text: string }[] }): Record<string, unknown> => JSON.parse(env.content[0]!.text) as Record<string, unknown>;

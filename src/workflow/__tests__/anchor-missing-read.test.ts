@@ -26,6 +26,7 @@ import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { appendStoryToDefine, requireApprovedEpic } from '../gates.js';
 import { questionId, recordResolution } from '../questions.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
+import './helpers/converted-repos.js';
 
 const HASH = 'c0ffee00d15ea5e5';
 const CREATED = '2026-10-01T10:00:00.000Z';

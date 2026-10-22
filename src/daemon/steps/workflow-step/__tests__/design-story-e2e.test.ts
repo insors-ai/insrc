@@ -38,8 +38,7 @@ import { join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
@@ -62,7 +61,7 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	const definePath = definePaths.json;
 	writeFileSync(definePath, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: opts.flavor,
 			problem: 'Users cannot filter todos by tag.',
@@ -77,15 +76,14 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(definePath);   // approval requires an other-party review
-	approveArtifactByJsonPath(definePath);
+	markApprovedSync(definePath);
 
 	// Approved HLD
 	const hldPaths = hldArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
 	const hldPath = hldPaths.json;
 	writeFileSync(hldPath, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			frameworkSummary: 'Extract TagFilter service.',
 			architectureShape: 'TagFilter owns the tag index [[c1]]; sidebar consumes it.',
@@ -118,8 +116,7 @@ function seed(repo: string, epicHash: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(hldPath);   // approval requires an other-party review
-	approveArtifactByJsonPath(hldPath);
+	markApprovedSync(hldPath);
 }
 
 // ---------------------------------------------------------------------------
@@ -386,8 +383,7 @@ test('design.story: refuses without an approved HLD', async () => {
 				stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }], openQuestions: [] },
 			citations: [],
 		}, null, 2));
-		stampOtherPartyReview(definePath);   // approval requires an other-party review
-		approveArtifactByJsonPath(definePath);
+		markApprovedSync(definePath);
 
 		const startOut = payload(await handleWorkflowStep({
 			phase: 'start', workflow: 'design.story', focus: 'x', repo,

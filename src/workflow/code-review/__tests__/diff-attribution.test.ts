@@ -38,6 +38,7 @@ import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../daemon/code
 import { handleCodeReviewStep, type CodeReviewStepDeps } from '../../../daemon/steps/code-review-step/handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-review-step/state-store.js';
 import type { CodeReviewStepOutput } from '../../../daemon/steps/code-review-step/types.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
 const STORY = 's1';

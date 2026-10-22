@@ -25,6 +25,7 @@ import { resumeCheck } from '../handoff.js';
 import {
 	HASH, PLAN_STEPS, entryOf, git, handOver, mkWorld, park, parkDeps, parse, resumeDeps, s1Context, taskCore, team, treeOf, unitOf,
 } from './helpers/handoff-world.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); });
 

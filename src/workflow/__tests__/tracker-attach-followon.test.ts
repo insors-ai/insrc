@@ -19,6 +19,7 @@ import { readAttachments } from '../tracker/binding.js';
 import type { TrackerPort } from '../tracker/port.js';
 
 import { HASH, CREATED, SLUG, fakeTracker, seed, teamPolicy } from './approve-fallback-kit.js';
+import './helpers/converted-repos.js';
 
 const git = (repo: string, ...args: string[]): string => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
 

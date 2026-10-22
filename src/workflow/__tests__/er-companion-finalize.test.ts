@@ -21,12 +21,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { finalizeArtifact } from '../orchestrator.js';
-import { approveArtifactByJsonPath } from '../gates.js';
+import { markApprovedSync } from './lifecycle-fixtures.js';
 import { defineArtifactPaths } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 import type { HldArtifact } from '../artifacts/hld.js';
 import type { LldArtifact } from '../artifacts/lld.js';
-import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const EPIC_HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED   = '2026-07-17T07:42:28.275Z';
@@ -108,7 +107,7 @@ function seedOneStoryEpic(repo: string): void {
 	const dp = defineArtifactPaths(repo, EPIC_HASH, CREATED, 'epic', 'er-epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-er', schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'er-epic', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-er', schemaVersion: 1, epicHash: EPIC_HASH, epicSlug: 'er-epic', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'The data model story', userValue: 'v', acceptanceCriteria: [], dependsOn: [] }],
@@ -116,8 +115,7 @@ function seedOneStoryEpic(repo: string): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 }
 
 function validHldBody(withEr: boolean): Record<string, unknown> {

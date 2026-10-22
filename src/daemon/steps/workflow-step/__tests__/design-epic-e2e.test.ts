@@ -33,8 +33,7 @@ import { join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
@@ -53,7 +52,7 @@ function seedApprovedDefine(repo: string, epicHash: string): void {
 	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	writeFileSync(paths.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag. This blocks triage.',
@@ -68,8 +67,7 @@ function seedApprovedDefine(repo: string, epicHash: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(paths.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(paths.json);
+	markApprovedSync(paths.json);
 }
 
 // ---------------------------------------------------------------------------

@@ -25,12 +25,13 @@ import { tmpdir } from 'node:os';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath, jsonPathForMd } from '../../../../workflow/gates.js';
+import { jsonPathForMd } from '../../../../workflow/gates.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
 import { computeHldEffectiveHash } from '../../../../workflow/artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../../../../workflow/storage.js';
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { TeamPolicy } from '../../../../workflow/team/policy.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -63,8 +64,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	writeFileSync(hp.json, JSON.stringify({
@@ -80,8 +80,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}, null, 2));
-	stampOtherPartyReview(hp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(hp.json);
+	markApprovedSync(hp.json);
 
 	const lp = lldArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 	const meta: Record<string, unknown> = {
@@ -100,7 +99,7 @@ function seed(repo: string, opts: SeedOpts): void {
 		},
 		citations: [],
 	}, null, 2));
-	if (opts.lldApproved) { stampOtherPartyReview(lp.json); approveArtifactByJsonPath(lp.json); }
+	if (opts.lldApproved) { markApprovedSync(lp.json); }
 }
 
 // ---------------------------------------------------------------------------
@@ -192,7 +191,7 @@ test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>
 		// The written md resolves to its json and is approvable.
 		const jsonPath = jsonPathForMd(outPath);
 		assert.ok(jsonPath.endsWith(`/.insrc/artifacts/PLAN-${HASH}-s1.json`), jsonPath);
-		const res = approveArtifactByJsonPath(jsonPath);
+		const res = await approveJson(jsonPath);
 		assert.equal(res.workflow, 'plan');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

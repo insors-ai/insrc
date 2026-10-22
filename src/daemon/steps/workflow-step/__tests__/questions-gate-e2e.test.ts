@@ -34,12 +34,11 @@ import { tmpdir } from 'node:os';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
 import { _setQuestionProviderForTests } from '../../../../workflow/questions.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../../../../workflow/storage.js';
 import type { LLMProvider } from '../../../../shared/types.js';
 import type { QuestionResolution as QR } from '../../../../workflow/types.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import '../../../../workflow/__tests__/helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -89,8 +88,7 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(dp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json);
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	writeFileSync(hp.json, JSON.stringify({
@@ -114,8 +112,7 @@ function seed(repo: string, hldOpenQuestions: readonly string[]): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(hp.json);   // approval requires an other-party review
-	approveArtifactByJsonPath(hp.json);
+	markApprovedSync(hp.json);
 }
 
 function readHldResolutions(repo: string): Record<string, QR> {

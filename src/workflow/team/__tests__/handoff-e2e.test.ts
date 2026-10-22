@@ -21,6 +21,7 @@ import { _clearWorkflowStateStoreForTests, listStates } from '../../../daemon/st
 import { registerWorkflowRunners } from '../../index.js';
 import { _setGateDepsForTests, registerParkOfferProvider } from '../gate.js';
 import { HASH, PLAN_STEPS, entryOf, git, mkWorld, parse, resumeDeps, s1Context, taskCore } from './helpers/handoff-world.js';
+import '../../__tests__/helpers/converted-repos.js';
 
 afterEach(() => { _setGateDepsForTests(); _setHandoffDepsForTests(); registerParkOfferProvider(undefined); _clearWorkflowStateStoreForTests(); });
 

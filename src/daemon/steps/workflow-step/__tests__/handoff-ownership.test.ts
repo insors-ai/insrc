@@ -19,9 +19,8 @@ import { dirname, join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { _clearWorkflowStateStoreForTests, listStates } from '../state-store.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
 import { computeHldEffectiveHash } from '../../../../workflow/artifacts/lld.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
 import { defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths } from '../../../../workflow/storage.js';
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
@@ -59,7 +58,7 @@ function seedChain(repo: string): void {
 	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, revision: 3 },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'a', when: 'b', then: 'c', operationalizes: [] }], dependsOn: [] }],
@@ -67,11 +66,11 @@ function seedChain(repo: string): void {
 		},
 		citations: [],
 	}));
-	stampOtherPartyReview(dp.json); approveArtifactByJsonPath(dp.json);
+	markApprovedSync(dp.json, { revision: 3 });
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, revision: 5 },
+		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x [[c1]]',
 			sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
@@ -83,12 +82,12 @@ function seedChain(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
 	}));
-	stampOtherPartyReview(hp.json); approveArtifactByJsonPath(hp.json);
+	markApprovedSync(hp.json, { revision: 5 });
 
 	const lp = lldArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
 	writeFileSync(lp.json, JSON.stringify({
 		meta: {
-			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, revision: 7,
+			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 			hldBaseRunId: HLD_RUN, hldEffectiveHash: computeHldEffectiveHash(HLD_RUN, []), hldAmendmentsApplied: [],
 		},
 		body: {
@@ -101,7 +100,7 @@ function seedChain(repo: string): void {
 		},
 		citations: [],
 	}));
-	stampOtherPartyReview(lp.json); approveArtifactByJsonPath(lp.json);
+	markApprovedSync(lp.json, { revision: 7 });
 }
 
 const PLAN_STEPS = [

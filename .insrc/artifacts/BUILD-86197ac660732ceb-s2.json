@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s2",
+    "createdAt": "2026-10-22T08:05:05.885Z",
+    "updatedAt": "2026-10-22T08:05:05.885Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Moved the construction of the rpc and stream handler tables (from the session-purge pipeline through the understanding-route merge), with the offline-stub and step.call helpers, from main() into buildHandlerRuntime(deps) in src/daemon/handler-runtime.ts. deps carries db, configStore, queue, indexer and startedAt, plus three late-bound functions for things main() creates after the tables: shutdown, the server's attachedClients and the understanding service. A diff of the moved block against the original shows only those three reads changed; every handler body is otherwise byte-identical. main() calls the function with the real queue and indexer. Four source-scan tests that read handler code from index.ts now read handler-runtime.ts (titles unchanged). Run: the new key-set test, the 7 related daemon/MCP source and registry suites (40/40), and the MCP and step suites (499/499); the src/daemon directory suite was not completed, per the user's rule to run the full sweep once at the end.",
+    "testRecord": {
+      "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/delivery-handler-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/list-models.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/server-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/import-graph.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-22T08:05:05.885Z"
+      }
+    ],
+    "commit": "e3f1203a"
+  }
+}

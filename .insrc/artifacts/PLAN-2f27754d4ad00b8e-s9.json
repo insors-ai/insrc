@@ -1,0 +1,1468 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792650220331-9eq4dn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-22T06:32:30.750Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 530399,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s9",
+    "lldRunId": "wf-1792648664385-274vcg",
+    "lldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-22T06:33:43.796Z",
+    "rangeBase": "76feb4f80f6c8b6bac671e72d6f1f50035b71674"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means writing the conversion engine first and exercising it on legacy fixtures, then moving the rest of the code off the old approval, review, feedback and tracker fields in ordered groups: readers first, then writers and gates, then the feedback and tracker fallbacks, then the entry-point guards. The conversion is run on this repository by hand after the BUILD is approved. Each task names the files and tests it may change, so the work lands in small steps that keep the typecheck and its own tests green.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Change convertLegacyFeedback to the s5 mapping",
+        "summary": "In src/workflow/artifact-core/feedback-convert.ts: the actor id is the author text lower-cased when it is already an os:, git: or github: id, else legacy:<slug of the author> with the author text in actor.properties.name; kind is revision-request when the entry's decision or kind is feedback, suggestion stays, the rest comment; a target.file other than the artifact's own document goes to anchor.section and is no longer reported unmapped; id, timestamp, batchId and revision are kept. Update src/workflow/artifact-core/__tests__/feedback-convert.test.ts and add src/workflow/convert/__tests__/convert-feedback.test.ts.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A namespaced author is kept lower-cased and any other author becomes legacy:<slug> with the text in actor.properties.name",
+          "Decision or kind feedback is revision-request, suggestion stays suggestion, the rest comment",
+          "A foreign target.file lands in anchor.section and is not reported unmapped",
+          "id, timestamp, batchId and revision are kept"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "convert-feedback.test.ts: each mapping of convertLegacyFeedback from the s5 hand-off (actor, kind, anchor section, kept fields)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Store the review report in the review log entry and read it back",
+        "summary": "Add src/workflow/review/report-log.ts with reviewEntryOf (the 'review' ChangeLogEntry whose outcome.data holds { kind: 'review', report, resolutions }), resolutionEntryOf (a 'review' entry with outcome.data.kind 'review-resolution'), reviewReference (the Reference { entityId, type: 'change-log-entry', relation: 'reviews', fragment }) and readReviewReport(history, artifactId, review), which returns the report with the resolutions applied in order. Test src/workflow/review/__tests__/report-log.test.ts, including that effectiveReviewVerdict computed from the read-back report equals the verdict the old stamp gave.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "readReviewReport returns the full report from the entry the lifecycle Reference names, and undefined when the Reference or entry is absent",
+          "Later resolution entries are applied in order",
+          "effectiveReviewVerdict over the read-back report equals the verdict computed from meta.review and reviewResolutions"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "report-log.test.ts: the review report and its resolutions are read back from the review entry and give the verdict the old stamp gave"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Conversion types, migrated entry ids and legacyDeliveryView",
+        "summary": "Add src/workflow/convert/types.ts (ConversionPlan, ConversionChange, ConvertedHead, ConversionDeps, ConversionResult, ConversionReport, errors ConversionRefused, ConversionUnreadable, ConversionIncomplete), src/workflow/convert/entry-ids.ts (migratedEntryId) and src/workflow/convert/legacy-view.ts (legacyDeliveryView over raw legacy heads: status, revision number, approval, review verdict and blocking, open feedback count, reproducing the old delivery reader's rules). Tests src/workflow/convert/__tests__/entry-ids.test.ts and legacy-view.test.ts.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "migratedEntryId is stable and distinct per part",
+          "legacyDeliveryView gives the old approval, review and blocking state for approved, rejected, pending and blocked heads",
+          "legacyDeliveryView reads no file"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "entry-ids.test.ts: migrated entry ids are stable and distinct per part"
+          },
+          {
+            "level": "unit",
+            "name": "legacy-view.test.ts: legacyDeliveryView reproduces the old delivery reader's approval, review and blocking"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Lifecycle back-fill and the migrated log entries",
+        "summary": "Add src/workflow/convert/backfill.ts: from a raw legacy head compute meta.envelope and meta.lifecycle (status, approval, review bound to the head's current revision, stale), the contentHash of the converted content, the stamp entries (-approve, -reject, -mark-stale), the review entry from t2 and the revision-bearing migrated-<artifact id> entry (operation create when the artifact has no log, update otherwise; actor insrc:migration; the stamps' original times). Test src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Status follows the later of the approval and rejection stamps and both stamp entries keep their original times",
+          "A review older than the head's revision is not bound to it and the review entry still records the report",
+          "The revision-bearing entry carries the head's meta.revision and the contentHash of the converted content",
+          "meta.rangeBase is not stripped"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "The migration write",
+        "summary": "Add src/workflow/convert/migrated-head.ts with writeMigratedHead: under ArtifactStore.exclusive append each migrated log entry whose id is not found in History.log (stamp and review entries first, the revision-bearing entry last), then replace the head with writeAtomic, keeping meta.revision, status and approval; refuse a head whose revision number, status or approval would change. Test src/workflow/convert/__tests__/migrated-head.test.ts: an approved head keeps its revision number, status and approval, and a crash injected after each step then a rerun leaves one entry per id.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "An approved head keeps its revision number, status and approval and passes checkHeadIntegrity and checkIntegrity",
+          "A crash after any step followed by a rerun leaves one migrated entry per id and the same bytes as an uninterrupted run",
+          "A write that would change revision, status or approval is refused and nothing is written for the head"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "migrated-head.test.ts: an approved head keeps its revision number, status and approval and a crash at each step then a rerun leaves one entry per id"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Planner core",
+        "summary": "Add src/workflow/convert/plan.ts and src/workflow/convert/raw-heads.ts: refuse on a merge in progress or uncommitted changes under .insrc/artifacts and docs/epics; read every file raw, list unreadable files as problems; compute the before-snapshot with legacyDeliveryView; return equal plans for the same tree and an empty plan for a converted tree; recompute-and-compare for apply. Test src/workflow/convert/__tests__/convert-preview.test.ts.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A merge or dirty tree is refused naming the paths",
+          "An unreadable file is a problem in the plan and nothing is skipped silently",
+          "Two plans of the same tree are equal and a preview writes nothing"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-preview.test.ts: a preview writes nothing, refuses a dirty tree and lists unreadable files as problems"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Rename rule for uppercase story ids",
+        "summary": "Add src/workflow/convert/rename.ts: build the rename map first (S001 to s1 through ArtifactIds), check each target against existing files and other renames, rename the files and rewrite the references in structured fields, list references in prose; leave no alias. Test src/workflow/convert/__tests__/convert-ids.test.ts.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Uppercase story ids are renamed once and every structured reference is rewritten",
+          "A collision is a plan problem and no rename is applied",
+          "References in prose are listed in the report"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "convert-ids.test.ts: uppercase story ids are renamed once with references rewritten and none left as an alias"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Stamp and amendment rules",
+        "summary": "Add src/workflow/convert/stamps.ts (epicCreatedAt from the work item head or the standalone design's own createdAt, a record with none is a problem) and src/workflow/convert/amendments.ts (a flat AMD record becomes a { meta, body, citations } head with a lifecycle from its own approval and rejection stamps). Tests src/workflow/convert/__tests__/convert-stamps.test.ts and convert-amendments.test.ts.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "epicCreatedAt is taken from the head of the work item",
+          "A flat amendment becomes a head with a lifecycle from its stamps",
+          "A record with no usable stamp is reported as a problem"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "convert-stamps.test.ts: epicCreatedAt is taken from the head of the work item"
+          },
+          {
+            "level": "unit",
+            "name": "convert-amendments.test.ts: a flat amendment becomes a head with a lifecycle from its stamps"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Feedback rule and its order",
+        "summary": "Add src/workflow/convert/feedback-rule.ts: for each head append the Feedback lines from body.feedback through convertLegacyFeedback (ids kept, deterministic) and the batch outcomes BEFORE the head's migration write, so the migration write is the only step that strips body.feedback; count unmapped values in the report. Test src/workflow/convert/__tests__/convert-feedback-rule.test.ts: a crash after each step and a rerun lose no feedback.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t1",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Feedback lines are appended before the head is replaced",
+          "A crash between the append and the head write loses no feedback on the rerun",
+          "A repeated run appends no line twice"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-feedback-rule.test.ts: feedback lines are appended before the head is replaced and a crash loses no feedback"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "EPIC and STORY heads with move-binding",
+        "summary": "Add src/workflow/convert/units.ts: one EPIC head per Define and one STORY head per Story in it (parent chain Epic, Story, LLD; status by rollUp); move the Epic binding and attachments from the Define to the EPIC head and the Story binding and attachments from the LLD to the STORY head with bindArtifact. Test src/workflow/convert/__tests__/convert-units.test.ts.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The EPIC and STORY heads hold the bindings and attachments moved from the Define and the LLD",
+          "An unbound Define or LLD gives a head with no binding",
+          "A repeat moves nothing again"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-units.test.ts: EPIC and STORY heads hold the bindings and attachments moved from the Define and the LLD"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "move-story-history and the pre-s8 comment listing",
+        "summary": "Add src/workflow/convert/story-history.ts: copy the LLD's tracker:<comment id> feedback lines and feedback-post receipts to the STORY head (the LLD keeps its append-only copies; feedback ids de-duplicate); when a tracker port is supplied list the pre-s8 attach comments in the plan and the report without rewriting them. Test src/workflow/convert/__tests__/convert-story-history.test.ts.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "The STORY head holds the tracker feedback lines and receipts and feedback ids de-duplicate on a repeat",
+          "The pre-s8 attach comments are listed and not rewritten"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-story-history.test.ts: tracker feedback lines and receipts move to the STORY head and attach comments are listed"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Task heads for Stories planned before s7",
+        "summary": "Add src/workflow/convert/tasks.ts: call TaskSets.createFromPlan for each approved PLAN with no TASKS head (it alone moves the Plan's Task record) and back-fill one revision-less build-round entry per passed BUILD task result; write no Task record itself. Test src/workflow/convert/__tests__/convert-tasks.test.ts.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Task heads, bindings and passed build rounds exist for a Story planned before s7",
+          "An unapproved PLAN gets no Task heads and a failed task result gets no round",
+          "The conversion writes no Task record itself"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-tasks.test.ts: Task heads and passed build rounds are created and createFromPlan alone moves the Task record"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Apply: the rules in order",
+        "summary": "Add src/workflow/convert/apply.ts: run the rules in the LLD's order (rename, stamps, amendments, feedback, migrate every head, EPIC and STORY heads, Task heads, bindings, story history), recompute the plan first and refuse on a difference, and refuse while the delivery reader's approval source is not the lifecycle. Test src/workflow/convert/__tests__/convert-apply.test.ts.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Apply on a legacy fixture converts every artifact and creates EPIC, STORY and Task heads in the stated order",
+          "A tree that changed since the preview is refused",
+          "Apply refuses while the delivery reader still reads the legacy stamps"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Post-apply sweep and the marker",
+        "summary": "Add src/workflow/convert/sweep.ts and src/workflow/convert/marker.ts and a writeRepoSchema in src/workflow/artifact-core/repo-schema.ts: sweep every head (decodes, no legacy field other than meta.rangeBase, checkHeadIntegrity and checkIntegrity, stored revision, status and approval kept) and write .insrc/schema.json by temporary file and rename only if the sweep is clean. Tests src/workflow/convert/__tests__/convert-marker.test.ts and the existing src/workflow/artifact-core/__tests__/repo-schema.test.ts.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "The marker is written last and only when every head is clean",
+          "A head that still carries a legacy field is listed and blocks the marker",
+          "A second apply writes nothing"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-marker.test.ts: the marker is written last and only when every head is clean"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "persistReview, the one review persist helper",
+        "summary": "Add src/workflow/review/persist-review.ts: inspect, head conflict check, store the fix through updateContent with addresses [], record the review (a 'review' log entry with the full report via t2, then lifecycle.review with the report Reference), render the markdown; a failure raises ReviewPersistError naming the step. Test src/workflow/review/__tests__/persist-review.test.ts with a failure injected at each step.",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The steps run in the stated order and the lifecycle record comes before the markdown",
+          "A failure at each step names the step and a rerun repairs the state",
+          "The auto-fix passes addresses [] so open feedback stays open"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "persist-review.test.ts: a failure at each step names the step and a rerun repairs the state"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Shared test helper for lifecycle fixtures",
+        "summary": "Add src/workflow/__tests__/lifecycle-fixtures.ts: helpers that write an approved, rejected, stale, reviewed or blocked head through the lifecycle (envelope, lifecycle, the review entry) instead of stamping meta.approvedAt, for the tests that the reader and writer tasks rewrite. Test src/workflow/__tests__/lifecycle-fixtures.test.ts.",
+        "size": "S",
+        "order": 16,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Each helper produces a head the lifecycle readers see as approved, rejected, stale, reviewed or blocked",
+          "The helpers stamp none of the legacy fields"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "lifecycle-fixtures.test.ts: each helper produces a head the lifecycle readers see in that state"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Delivery reader: load and types read the lifecycle",
+        "summary": "In src/workflow/delivery/load.ts (approvalOf) and src/workflow/delivery/types.ts read approval, rejection and status from meta.lifecycle only. Update src/workflow/delivery/__tests__/load.test.ts, types.test.ts, fixtures.test.ts and contract.test.ts to the lifecycle helper.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "Approval state comes from the lifecycle",
+          "No file under delivery load or types names approvedAt or rejectedAt"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "load.test.ts: approval state comes from the lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t20",
+        "title": "Delivery gate reads the review through readReviewReport",
+        "summary": "In src/workflow/delivery/gate.ts read the design review and its blocking state from the lifecycle review and readReviewReport. Update src/workflow/delivery/__tests__/gate.test.ts.",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t19"
+        ],
+        "acceptanceChecks": [
+          "Malformed findings are still dropped before effectiveReviewVerdict",
+          "Blocking comes from the lifecycle review and the review log entry"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gate.test.ts: blocking comes from the lifecycle review and the review log entry"
+          }
+        ]
+      },
+      {
+        "id": "t21",
+        "title": "Delivery currency and snapshot read the lifecycle",
+        "summary": "In src/workflow/delivery/currency.ts (lines around 80 and 181) read the review verdict and reviewedAt from the lifecycle. Update src/workflow/delivery/__tests__/currency.test.ts, graph.test.ts, handlers.test.ts, snapshot.test.ts and stage.test.ts.",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t20"
+        ],
+        "acceptanceChecks": [
+          "Currency uses the lifecycle review",
+          "The delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "snapshot.test.ts: the delivery snapshot of a lifecycle fixture equals the old snapshot of the same unit"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Verification inside apply",
+        "summary": "Add src/workflow/convert/verify.ts: after the marker is written compare the planner's before-snapshot with the snapshot the real delivery reader builds from the converted repository and report each difference without correcting it (a contentHash difference is not reported). Verification runs inside apply only; there is no standalone verify mode. Test src/workflow/convert/__tests__/convert-verify.test.ts: an approved legacy head verifies with no difference, and a planted difference is reported.",
+        "size": "M",
+        "order": 20,
+        "dependsOn": [
+          "t14",
+          "t21"
+        ],
+        "acceptanceChecks": [
+          "An approved legacy head verifies with no difference through the real delivery reader",
+          "A planted difference is reported with the unit and the reason",
+          "Nothing is written by verification"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-verify.test.ts: an approved legacy head verifies with no difference and a planted difference is reported"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "runConversion with preview and apply",
+        "summary": "Add src/workflow/convert/run.ts: runConversion(repo, mode, deps) with modes preview and apply (preview is the planner alone). Tests src/workflow/convert/__tests__/convert-repeat.test.ts (a second apply, and an apply crashed at each step then rerun, write nothing more and leave one migrated entry per head) and the remaining convert-preview cases.",
+        "size": "M",
+        "order": 21,
+        "dependsOn": [
+          "t15"
+        ],
+        "acceptanceChecks": [
+          "A preview writes nothing and lists what would change",
+          "A repeat apply leaves the bytes of every file unchanged",
+          "A crash at each step then a rerun gives the result of an uninterrupted run"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "convert-repeat.test.ts: a second apply and an apply crashed at each step then rerun write nothing more"
+          }
+        ]
+      },
+      {
+        "id": "t22",
+        "title": "Pending, admit, chain and artifact-content read the lifecycle",
+        "summary": "Move src/workflow/pending.ts, src/workflow/bugfix/admit.ts, src/workflow/chain.ts and src/workflow/artifact-content.ts to the lifecycle. Update src/workflow/__tests__/pending.test.ts, artifact-content.test.ts, artifact-kinds.test.ts and src/workflow/runners/build/__tests__/admit-build.test.ts.",
+        "size": "M",
+        "order": 22,
+        "dependsOn": [
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "Pending approvals, admission and the chain report read the lifecycle",
+          "None of the four files names the legacy stamps"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "pending.test.ts: pending approvals read the lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Completion evidence, tracker readers and workflow types",
+        "summary": "Move src/workflow/artifact-core/completion-evidence.ts, src/workflow/runners/tracker/context.ts, src/workflow/tracker/conventions.ts and src/workflow/types.ts to the lifecycle. Update src/workflow/artifact-core/__tests__/completion-evidence.test.ts, src/workflow/tracker/__tests__/tracker.test.ts and src/workflow/tasks/__tests__/task-readers.test.ts.",
+        "size": "M",
+        "order": 23,
+        "dependsOn": [
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "Completion evidence and the tracker context read the lifecycle",
+          "The WorkflowArtifactMeta type no longer declares the approval stamps"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "completion-evidence.test.ts: completion evidence reads the lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t24",
+        "title": "Review readers: tracker-auto, party and resolve",
+        "summary": "Move src/workflow/tracker-auto.ts (readReview), src/workflow/review/party.ts (reviewerPartyOf) and src/workflow/review/resolve.ts (effectiveReviewVerdict callers) to readReviewReport. Update src/workflow/review/__tests__/resolve.test.ts, outcome.test.ts, template-review.test.ts, gate-resolve-finding.test.ts, same-party-refusal.test.ts and src/workflow/__tests__/tracker-auto.test.ts.",
+        "size": "M",
+        "order": 24,
+        "dependsOn": [
+          "t2",
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "The review report is read from the review log entry",
+          "reviewerPartyOf reads the party from the lifecycle review"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "resolve.test.ts: the review report is read from the review log entry"
+          }
+        ]
+      },
+      {
+        "id": "t25",
+        "title": "Access, MCP server, CLI service and workflow-rpc readers",
+        "summary": "Move src/shared/access.ts, src/mcp/server.ts, src/cli/services/workflow.ts, src/daemon/workflow-rpc.ts and the findings entry of src/workflow/artifact-write-inventory.ts to the lifecycle. Update src/cli/__tests__/command.test.ts, tui.test.ts, src/daemon/__tests__/workflow-rpc.test.ts, workflow-review-rpc.test.ts, src/mcp/__tests__/workflow-approve-dispatch.test.ts and src/understanding/__tests__/acceptance.test.ts.",
+        "size": "M",
+        "order": 25,
+        "dependsOn": [
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "The access check, the MCP approve dispatch and the CLI approve read the lifecycle",
+          "The write inventory matches the new findings writer"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "workflow-approve-dispatch.test.ts: the MCP approve dispatch reads the lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t26",
+        "title": "Approve gate writes only the lifecycle",
+        "summary": "In src/workflow/gates.ts approveArtifactByJsonPath calls LifecycleService only; remove approvedAt, rejectedAt, rejectReason and reviewOverride from STAMP_KEYS and remove mirrorLegacyReview; keep meta.rangeBase in its own constant. Update src/workflow/__tests__/gates.test.ts, gate-approve.test.ts, gates-revision.test.ts, plan-gate.test.ts and approve-workflow-target.test.ts.",
+        "size": "M",
+        "order": 26,
+        "dependsOn": [
+          "t19",
+          "t20",
+          "t21",
+          "t22",
+          "t23",
+          "t24",
+          "t25"
+        ],
+        "acceptanceChecks": [
+          "Approval goes through LifecycleService",
+          "meta.rangeBase is still stamped at approval and read by the build range",
+          "The approve gate writes none of the removed stamps"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gates.test.ts: approval goes through LifecycleService and stamps none of the removed fields"
+          }
+        ]
+      },
+      {
+        "id": "t27",
+        "title": "Reject and ack-stale gates write only the lifecycle",
+        "summary": "In src/workflow/gates.ts the reject and ack-stale gates call LifecycleService only. Update src/workflow/__tests__/gates-lifecycle-guard.test.ts and gates-lifecycle-service.test.ts.",
+        "size": "S",
+        "order": 27,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "Rejection and stale acknowledgement go through LifecycleService",
+          "Neither writes meta.rejectedAt, rejectReason or staleAckedAt"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gates-lifecycle-service.test.ts: rejection and stale acknowledgement go through LifecycleService"
+          }
+        ]
+      },
+      {
+        "id": "t28",
+        "title": "Review and completion gates",
+        "summary": "In src/workflow/gates.ts move the review gate (lines near 641, 746 and 889), the other-party check and the BUILD completion check to the lifecycle review. Update src/workflow/__tests__/review-gate.test.ts, other-party-review-gate.test.ts, approve-build-completion.test.ts, approve-build-record-completion.test.ts and approve-codereview-gate.test.ts.",
+        "size": "M",
+        "order": 28,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "The review gate withholds approval on a blocking lifecycle review",
+          "BUILD completion needs a code review by the other party read from the lifecycle"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "review-gate.test.ts: a blocking lifecycle review withholds approval"
+          }
+        ]
+      },
+      {
+        "id": "t29",
+        "title": "Review phases call persistReview",
+        "summary": "Move src/workflow/review/run-artifact.ts and the phases src/daemon/steps/review-step/phases/verdicts.ts and findings.ts onto persistReview, and update the findings entry in src/workflow/artifact-write-inventory.ts. Update src/daemon/steps/review-step/__tests__/review-step-findings.test.ts, review-step-routing.test.ts, review-step.test.ts and verdicts-lifecycle.test.ts.",
+        "size": "M",
+        "order": 29,
+        "dependsOn": [
+          "t17",
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "findings, verdicts and run-artifact all call persistReview and HLD and LLD reviews bind to the lifecycle",
+          "No review phase writes meta.review"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview"
+          }
+        ]
+      },
+      {
+        "id": "t30",
+        "title": "Review decision on the lifecycle",
+        "summary": "Move src/workflow/review-decision.ts off meta.review, meta.reviewResolutions and body.feedback, recording resolutions as review-resolution log entries. Update src/workflow/__tests__/review-decision.test.ts.",
+        "size": "M",
+        "order": 30,
+        "dependsOn": [
+          "t26",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A review decision records its resolution as a log entry and its comments through FeedbackService",
+          "The decision writes no legacy stamp"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "review-decision.test.ts: a review decision records its resolution as a log entry"
+          }
+        ]
+      },
+      {
+        "id": "t31",
+        "title": "Bugfix, issue and spec writers",
+        "summary": "Move src/workflow/bugfix/stamp.ts, src/workflow/bugfix/mount.ts and src/workflow/artifacts/issue.ts to the lifecycle. Update src/workflow/__tests__/bugfix-orchestration.test.ts, bugfix-tracker.test.ts, issue-artifact.test.ts, spec-artifact.test.ts, spec-resolver.test.ts and spec-review-approve.test.ts.",
+        "size": "M",
+        "order": 31,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "The bugfix chain advances from a lifecycle approval",
+          "Issue and spec artifacts carry no legacy stamp"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "bugfix-orchestration.test.ts: the bugfix chain advances from a lifecycle approval"
+          }
+        ]
+      },
+      {
+        "id": "t32",
+        "title": "Completion record and standalone record",
+        "summary": "Move src/workflow/runners/build/completion-record.ts and standalone-record.ts off the legacy stamps and off body.feedback. Update src/workflow/runners/build/__tests__/build-record.test.ts, build-record-enrichment.test.ts and src/daemon/steps/build-step/__tests__/build-step.test.ts, build-start.test.ts, validate-task-round.test.ts, gate-call-sites.test.ts and comment-sync-callers.test.ts.",
+        "size": "M",
+        "order": 32,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "The completion record and the standalone record need no legacy stamp",
+          "The build-step tests pass on lifecycle fixtures"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build-record.test.ts: the completion record needs no legacy stamp"
+          }
+        ]
+      },
+      {
+        "id": "t33",
+        "title": "Range base keeps meta.rangeBase",
+        "summary": "Move src/workflow/runners/build/range-base.ts off the legacy approval stamps while it keeps reading meta.rangeBase. Update src/workflow/runners/build/__tests__/range-base.test.ts and changed-files.test.ts.",
+        "size": "S",
+        "order": 33,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "A Story's build range still resolves from meta.rangeBase",
+          "range-base.ts names none of the removed stamps"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "range-base.test.ts: a Story's build range still resolves from meta.rangeBase"
+          }
+        ]
+      },
+      {
+        "id": "t34",
+        "title": "tasks-sync, daemon index and the workflow-step end-to-end tests",
+        "summary": "Move src/daemon/tasks-sync.ts and the stamp uses in src/daemon/index.ts to the lifecycle. Update src/workflow/tasks/__tests__/task-set-approve.test.ts, src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts, define-extend-e2e.test.ts, src/daemon/steps/triage-step/__tests__/handler.test.ts and src/workflow/team/__tests__/handoff-resume-check.test.ts and snapshot-upstream.test.ts.",
+        "size": "M",
+        "order": 34,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "Plan approval syncs Task heads from the lifecycle approval",
+          "The daemon index stamps nothing"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval"
+          }
+        ]
+      },
+      {
+        "id": "t35",
+        "title": "Amendment records on the lifecycle",
+        "summary": "Move src/workflow/amendments/store.ts, types.ts, effective.ts and staleness.ts to the head shape and the lifecycle. Update src/workflow/amendments/__tests__/store.test.ts, applier.test.ts and effective-and-staleness.test.ts.",
+        "size": "M",
+        "order": 35,
+        "dependsOn": [
+          "t26"
+        ],
+        "acceptanceChecks": [
+          "Amendments are heads with a lifecycle",
+          "approveAmendment and the effective HLD read the lifecycle"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store.test.ts: amendments are heads with a lifecycle"
+          }
+        ]
+      },
+      {
+        "id": "t36",
+        "title": "Make LifecycleService mandatory",
+        "summary": "Make lifecycle required on WorkflowApproveRequest (src/workflow/gates.ts) and ReviewArtifactOpts (src/workflow/review/run-artifact.ts) and delete the head-only guard paths; update the tests that pass lifecycleFor: () => undefined or roundWriterFor: () => undefined: src/workflow/artifact-core/__tests__/round-recording.test.ts, store-write.test.ts and the gates and review tests that still build a request without a service.",
+        "size": "M",
+        "order": 36,
+        "dependsOn": [
+          "t27",
+          "t28",
+          "t29",
+          "t30",
+          "t31",
+          "t32",
+          "t33",
+          "t34",
+          "t35"
+        ],
+        "acceptanceChecks": [
+          "No production request type has an optional lifecycle",
+          "headConflict is the full log check on every path"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "round-recording.test.ts: round recording runs with a mandatory lifecycle service"
+          }
+        ]
+      },
+      {
+        "id": "t37",
+        "title": "Fixture sweep, part one",
+        "summary": "Rewrite the remaining test fixtures that stamp the legacy fields to the lifecycle helper: src/workflow/__tests__/anchor-missing-producers.test.ts, anchor-missing-read.test.ts, artifact-writer.test.ts, docs-s3-follow-ups.test.ts, feedback-carry-finalize.test.ts, folder-identity-finalize.test.ts, meta-only-body-unchanged.test.ts and plan-artifact.test.ts.",
+        "size": "M",
+        "order": 37,
+        "dependsOn": [
+          "t36"
+        ],
+        "acceptanceChecks": [
+          "None of the listed tests names a removed stamp",
+          "Each still passes"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "artifact-writer.test.ts: the writer tests run on lifecycle fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t38",
+        "title": "Fixture sweep, part two",
+        "summary": "Rewrite the remaining test fixtures: src/workflow/__tests__/questions.test.ts, scope-extend.test.ts, seed-focus.test.ts, src/workflow/locate/__tests__/locate-parent-ids.test.ts and src/workflow/code-review/__tests__/subject.test.ts.",
+        "size": "S",
+        "order": 38,
+        "dependsOn": [
+          "t36"
+        ],
+        "acceptanceChecks": [
+          "None of the listed tests names a removed stamp",
+          "Each still passes"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "questions.test.ts: the question tests run on lifecycle fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t39",
+        "title": "Remove body.feedback and its writers",
+        "summary": "Remove appendFeedback, appendFeedbackBatch and the tool artifact_feedback_append and the body.feedback fields: src/workflow/artifacts/provenance/writer.ts, tool.ts, schema.ts and types.ts, src/workflow/artifacts/define.ts, hld.ts, lld.ts and plan.ts, src/workflow/artifact-content.ts (companion headers and delivery text read FeedbackService threads), src/workflow/artifact-core/history.ts and src/workflow/feedback/feedback-service.ts where they name it. Update src/workflow/artifacts/provenance/__tests__/body-fields.test.ts, review-fields.test.ts, writer.test.ts, src/daemon/__tests__/artifact-feedback-handler-contract.test.ts, src/workflow/__tests__/feedback-provenance.test.ts and feedback-synth-schema.test.ts.",
+        "size": "L",
+        "order": 39,
+        "dependsOn": [
+          "t36"
+        ],
+        "acceptanceChecks": [
+          "No production file writes or declares body.feedback",
+          "The companion headers show FeedbackService threads"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "body-fields.test.ts: no body.feedback field is declared or written"
+          }
+        ]
+      },
+      {
+        "id": "t40",
+        "title": "Remove the Plan Task record readers and the head-less fallbacks",
+        "summary": "Remove the Plan Task record fields and readers (taskRefs, units for Tasks, the Task branch of recordUnit, bindingHome's Plan fallback) in src/workflow/tracker/unit-issue.ts, refs.ts, resolve.ts, src/workflow/runners/tracker/context.ts, index.ts and schemas.ts and src/workflow/orchestrator.ts, and taskBuildPassed's BUILD-record branch in src/workflow/artifact-core/completion-evidence.ts. Update src/workflow/tracker/__tests__/unit-issue.test.ts, unit-issue-binding.test.ts, unit-issue-bind-failures.test.ts, src/workflow/tasks/__tests__/task-unit-issue.test.ts and src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts.",
+        "size": "L",
+        "order": 40,
+        "dependsOn": [
+          "t36"
+        ],
+        "acceptanceChecks": [
+          "No production file reads the Plan's Task record or the BUILD record's per-task result for completion",
+          "createFromPlan remains the only mover of Task records"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "unit-issue.test.ts: the unit issue resolves from the binding with no Plan Task record"
+          }
+        ]
+      },
+      {
+        "id": "t41",
+        "title": "Remove the older Epic and Story refs",
+        "summary": "Remove epicRef, storyRef and storyRefs from meta.tracker and their readers: src/workflow/tracker/sync.ts, link.ts and conventions.ts, src/workflow/chain.ts, questions.ts, storage.ts and tracker-auto.ts, src/workflow/artifacts/define.ts, hld.ts, lld.ts and tracker.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts, src/daemon/steps/build-step/render.ts. Update src/workflow/__tests__/define-artifact.test.ts, hld-artifact.test.ts, lld-artifact.test.ts, lld-head.test.ts, lld-head-resolve.test.ts, tracker-artifact.test.ts, tracker-push-modes.test.ts, tracker-tasks.test.ts, redraft-preserves-tracker.test.ts, draft-issues.test.ts, draft-write-revision.test.ts, id-resolve.test.ts and approve-fallback-issues.test.ts.",
+        "size": "L",
+        "order": 41,
+        "dependsOn": [
+          "t40"
+        ],
+        "acceptanceChecks": [
+          "The Epic and Story refs are read only from the binding of the EPIC and STORY head",
+          "The renderers' tracker lines read the binding"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "tracker-artifact.test.ts: the tracker lines read the binding, not the older refs"
+          }
+        ]
+      },
+      {
+        "id": "t42",
+        "title": "artifactOfUnit answers the STORY head, and the PLAN task table",
+        "summary": "In src/workflow/tracker/comment-sync.ts make artifactOfUnit answer the STORY head for a Story; render the PLAN document's task table from the Task heads in src/workflow/artifacts/plan.ts. Update src/workflow/tracker/__tests__/comment-sync-inbound.test.ts, comment-sync-outbound.test.ts and src/workflow/__tests__/plan-artifact.test.ts.",
+        "size": "M",
+        "order": 42,
+        "dependsOn": [
+          "t41"
+        ],
+        "acceptanceChecks": [
+          "Comment sync reads and posts on the STORY head",
+          "The PLAN table shows each Task's status and revision from its head"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "comment-sync-inbound.test.ts: comment sync reads and posts on the STORY head"
+          },
+          {
+            "level": "integration",
+            "name": "plan-artifact.test.ts: the PLAN task table shows each Task's status and revision from its head"
+          }
+        ]
+      },
+      {
+        "id": "t43",
+        "title": "The repo.convert daemon method",
+        "summary": "Add src/daemon/repo-convert.ts with handleRepoConvert (params repo and mode preview or apply, default preview, an error that says why nothing was attempted) and register repo.convert in src/daemon/index.ts beside tracker.attach. Test src/daemon/__tests__/repo-convert.test.ts.",
+        "size": "S",
+        "order": 43,
+        "dependsOn": [
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "A bare call runs a preview and writes nothing",
+          "A missing repo or a bad mode returns an error that says why"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repo-convert.test.ts: a bare repo.convert call runs a preview and writes nothing"
+          }
+        ]
+      },
+      {
+        "id": "t44",
+        "title": "RepoSchemaGate guards at the daemon entry points",
+        "summary": "Call RepoSchemaGate.require(repo, 2) at the entry of src/daemon/workflow-rpc.ts, workflow-review-rpc.ts, code-review-rpc.ts, artifacts-rpc.ts, tracker-attach.ts and tracker-sync-comments.ts, and of the step handlers src/daemon/steps/analyze-step/handler.ts, build-step/handler.ts, code-review-step/handler.ts, review-step/handler.ts, triage-step/handler.ts and workflow-step/handler.ts; repo.convert is exempt. Test src/daemon/__tests__/repo-schema-entry-points.test.ts.",
+        "size": "M",
+        "order": 44,
+        "dependsOn": [
+          "t42",
+          "t43"
+        ],
+        "acceptanceChecks": [
+          "Each listed daemon entry point refuses an unconverted repository with a message naming the conversion",
+          "repo.convert is exempt"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repo-schema-entry-points.test.ts: each daemon entry point refuses an unconverted repository with the conversion message"
+          }
+        ]
+      },
+      {
+        "id": "t45",
+        "title": "RepoSchemaGate guard at the MCP server",
+        "summary": "Call RepoSchemaGate.require(repo, 2) in src/mcp/server.ts for the tools that read or write artifacts (not insrc_analyze, insrc_docgen, insrc_schema or insrc_guide). Test src/mcp/__tests__/repo-schema-guard.test.ts.",
+        "size": "S",
+        "order": 45,
+        "dependsOn": [
+          "t44"
+        ],
+        "acceptanceChecks": [
+          "The MCP artifact tools refuse an unconverted repository with a message naming the conversion",
+          "The read-only tools still work on an unconverted repository"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "repo-schema-guard.test.ts: the MCP artifact tools refuse an unconverted repository"
+          }
+        ]
+      },
+      {
+        "id": "t46",
+        "title": "Hand-offs and the contract source check",
+        "summary": "Add a section 's9 build: hand-offs' to docs/plans/core-data-model.md (the conversion is run by hand after BUILD approval with the restarted daemon; the pre-s8 attach comments; the first-sync backlog) and a contract test src/workflow/__tests__/s9-handoffs.test.ts that also fails if any production file outside src/workflow/convert names meta.approvedAt, rejectedAt, staleAckedAt, reviewOverride, reviewResolutions, rejectReason, meta.review or the body.feedback writers.",
+        "size": "S",
+        "order": 46,
+        "dependsOn": [
+          "t37",
+          "t38",
+          "t39",
+          "t41",
+          "t42",
+          "t45"
+        ],
+        "acceptanceChecks": [
+          "The plans document names each s9 hand-off",
+          "The source check passes on the production tree"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s9-handoffs.test.ts: the plans document names each s9 hand-off and no production file outside the conversion names a removed stamp"
+          },
+          {
+            "level": "smoke",
+            "name": "smoke: preview on a copy of this repository lists the expected 444 renames and 56 flat amendments"
+          },
+          {
+            "level": "smoke",
+            "name": "smoke: apply on the copy reports no unexplained difference and every approved artifact keeps its revision number"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "convertLegacyFeedback: a namespaced author is kept lower-cased, any other author becomes legacy:<slug> with the text in actor.properties.name",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertLegacyFeedback: decision or kind feedback is revision-request, suggestion stays, the rest comment",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertLegacyFeedback: a foreign target.file goes to anchor.section and is not reported unmapped; id, timestamp, batchId and revision are kept",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "rename of uppercase story ids with collision and prose-reference reporting",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "epicCreatedAt stamping from the work item head",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "flat amendment to head conversion",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "lifecycle computed from approvedAt, rejectedAt, reviewOverride, staleAckedAt and review with reviewResolutions, including a review older than the revision and a rejection followed by an approval",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "migratedEntryId is stable; the stamp entries carry the original times; the review entry carries the full report and the resolutions",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "readReviewReport returns the report from the entry the lifecycle Reference names, and effectiveReviewVerdict computed from it equals the verdict the old stamp gave",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "legacyDeliveryView reproduces the old delivery reader's approval, review and blocking for approved, rejected, pending and blocked heads",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "writeMigratedHead: an approved head keeps its revision number, status and approval, and contentHash is that of the converted content",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "writeRepoSchema writes by temporary file and rename",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "RepoSchemaGate.require refusal message",
+        "coveredByTaskIds": [
+          "t14",
+          "t44"
+        ]
+      },
+      {
+        "lldStrategyItem": "preview writes nothing and lists the changes",
+        "coveredByTaskIds": [
+          "t6",
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "apply on a legacy fixture converts every head, creates EPIC, STORY and Task heads, and writes the marker last",
+        "coveredByTaskIds": [
+          "t13",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "a second apply writes nothing (bytes of every file and line file unchanged)",
+        "coveredByTaskIds": [
+          "t14",
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "a crash injected after each step of writeMigratedHead and each rule, then a rerun, gives the same result as an uninterrupted run with one migrated entry per head",
+        "coveredByTaskIds": [
+          "t5",
+          "t9",
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "an approved head keeps its revision number, status and approval after conversion and checkIntegrity passes",
+        "coveredByTaskIds": [
+          "t5",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "verify: an approved legacy head verifies with no difference (before-snapshot from legacyDeliveryView, after-snapshot from the real delivery reader), and a planted difference is reported",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "apply refuses while the delivery reader still reads the legacy stamps",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "move-binding (Define to EPIC, LLD to STORY) and move-story-history: the STORY head holds the binding, the attachments, the tracker:<id> feedback lines and the receipts, and artifactOfUnit answers it",
+        "coveredByTaskIds": [
+          "t10",
+          "t11",
+          "t42"
+        ]
+      },
+      {
+        "lldStrategyItem": "createFromPlan for earlier Stories moves the Plan's Task record, and the conversion writes no Task record itself",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "daemon repo.convert default mode is preview",
+        "coveredByTaskIds": [
+          "t43"
+        ]
+      },
+      {
+        "lldStrategyItem": "each daemon method and MCP step refuses an unconverted repository with the conversion message",
+        "coveredByTaskIds": [
+          "t44",
+          "t45"
+        ]
+      },
+      {
+        "lldStrategyItem": "a source check that no production file under src names meta.approvedAt, rejectedAt, staleAckedAt, reviewOverride, reviewResolutions, rejectReason, meta.review or the body.feedback writers, outside the conversion module",
+        "coveredByTaskIds": [
+          "t46"
+        ]
+      },
+      {
+        "lldStrategyItem": "approval, rejection, stale acknowledgement and review through LifecycleService only",
+        "coveredByTaskIds": [
+          "t26",
+          "t27"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistReview with a failure injected at each of its steps: the error names the step and a rerun repairs the state",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "findings, verdicts and run-artifact all call persistReview and HLD and LLD design reviews bind to the lifecycle",
+        "coveredByTaskIds": [
+          "t29"
+        ]
+      },
+      {
+        "lldStrategyItem": "tracker-auto readReview, reviewerPartyOf and the delivery gate read the report through readReviewReport",
+        "coveredByTaskIds": [
+          "t24",
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "the PLAN task table rendered from the Task heads",
+        "coveredByTaskIds": [
+          "t42"
+        ]
+      },
+      {
+        "lldStrategyItem": "delivery board status and counts equal the pre-conversion read on the fixture",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "preview on a copy of this repository lists the expected 444 renames and 56 flat amendments",
+        "coveredByTaskIds": [
+          "t46"
+        ]
+      },
+      {
+        "lldStrategyItem": "apply then verify on the copy reports no unexplained difference and every approved artifact keeps its revision number",
+        "coveredByTaskIds": [
+          "t46"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contractDetails: planConversion, applyConversion, writeMigratedHead, migratedEntryId, verifyConversion, runConversion, handleRepoConvert, RepoSchemaGate.require, convertLegacyFeedback, persistReview, readReviewReport"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 dataModelChanges: ConversionPlan, MigratedLogEntry, the converted lifecycle, the review report location, the migration write, the stamp writers and readers, the flat amendments, body.feedback, the tracker records, the Story history, the EPIC and STORY heads, the Task heads and the marker"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 errorPaths: refusals, unreadable files, crashes and reruns, snapshot differences, a reader group not done, tracker failures and persistReview failures"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 testStrategy: the unit, integration, contract and smoke subjects and the acceptance mapping of ac27, ac28 and ac29"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 migration: the ordered steps, the reader group before the first run and the retirement groups"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md#s9-lld-approved-with-an-override-2026-10-22",
+      "quotedText": "Convert feedback before the migration write, and let the migration write strip."
+    }
+  ]
+}

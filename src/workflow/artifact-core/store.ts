@@ -102,6 +102,9 @@ export function createNonDurableStore(deps: Omit<ArtifactStoreDeps, 'journal'>):
 export class ArtifactStore {
 	constructor(private readonly deps: ArtifactStoreDeps) {}
 
+	/** The history this store writes its log entries through, for a writer that appends a revision-less entry of its own under {@link exclusive}. */
+	get history(): History { return this.deps.history; }
+
 	/** The envelope of one artifact, every part filled from its head. Writes nothing and calls no History method. */
 	async read(id: string): Promise<Artifact<HeadPayload>> {
 		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);

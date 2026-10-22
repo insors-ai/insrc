@@ -24,7 +24,9 @@ afterAll(async () => {
 	rmSync(STORE_DIR, { recursive: true, force: true });
 });
 
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { handleReviewStep } from '../handler.js';
+import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 
 const MD = '# Story s1\n\n- t1: extend the two exported constants in foo.\n- t2: beta constant defined at src/foo.ts:2.\n';
@@ -54,12 +56,7 @@ function fixture() {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-verdicts-rev-'));
 	mkdirSync(join(repo, 'src'), { recursive: true });
 	writeFileSync(join(repo, 'src', 'foo.ts'), 'export const alpha = 1;\nexport const beta = 2;\nexport const gamma = 3;\n');
-	const dir = join(repo, 'docs', 'stub');
-	mkdirSync(dir, { recursive: true });
-	const mdPath = join(dir, 's1.md');
-	const jsonPath = join(dir, 's1.json');
-	writeFileSync(mdPath, MD);
-	writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: 'plan', authoredBy: 'daemon', revision: 2 }, body: { tasks: ['extend the two exported constants in foo.'] } }, null, 2) + '\n');
+	const { mdPath, jsonPath } = writeDesign(repo, idOfWorkflow('plan'), { meta: { workflow: 'plan', storyId: 's1', authoredBy: 'daemon', revision: 2 }, body: { tasks: ['extend the two exported constants in foo.'] } }, MD);
 	return { repo, mdPath, jsonPath, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -87,6 +84,7 @@ test('the verdicts path bumps the revision only when auto-fixes change the body'
 		const after = JSON.parse(readFileSync(only.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 		assert.equal(after.meta['revision'], 2, 'a report-only review keeps the revision');
 		assert.equal(JSON.stringify(after.body), JSON.stringify(before.body));
-		assert.ok(after.meta['review']);
+		assert.ok(readReviewRecordOf(only.jsonPath), 'and the review is recorded');
+		assert.equal(after.meta['review'], undefined);
 	} finally { only.cleanup(); }
 });

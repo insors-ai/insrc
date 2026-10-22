@@ -26,7 +26,9 @@ afterAll(async () => {
 });
 
 import { envelopeProvider } from '../../../../workflow/review-pipeline/__tests__/enveloped.js';
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { handleReviewStep } from '../handler.js';
+import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { reviewArtifactFile } from '../../../../workflow/review/run-artifact.js';
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
@@ -67,12 +69,7 @@ function fixture(authoredBy: 'daemon' | 'controller') {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-fix-'));
 	mkdirSync(join(repo, 'src'), { recursive: true });
 	writeFileSync(join(repo, 'src', 'foo.ts'), 'export const alpha = 1;\nexport const beta = 2;\nexport const gamma = 3;\n');
-	const dir = join(repo, 'docs', 'stub');
-	mkdirSync(dir, { recursive: true });
-	const md = join(dir, 's1.md');
-	const json = join(dir, 's1.json');
-	writeFileSync(md, MD);
-	writeFileSync(json, JSON.stringify({ meta: { workflow: 'plan', authoredBy, revision: 2, repoPath: repo, epicHash: HASH, storyId: 's1' }, body: { tasks: ['extend the two exported constants in foo.'] } }, null, 2) + '\n');
+	const { mdPath: md, jsonPath: json } = writeDesign(repo, idOfWorkflow('plan'), { meta: { workflow: 'plan', authoredBy, revision: 2, repoPath: repo, storyId: 's1' }, body: { tasks: ['extend the two exported constants in foo.'] } }, MD);
 	return { repo, md, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -116,7 +113,7 @@ test('a review of a stage held by someone else runs and reports findings, applie
 		assert.equal(done.next, 'done', 'the review ran');
 		assert.equal(done.applied, 0, 'no auto-fix was applied');
 		const after = read(theirs.json);
-		assert.ok(after.meta['review'], 'the findings are reported');
+		assert.ok(readReviewRecordOf(theirs.json), 'the findings are reported');
 		assert.equal(after.meta['revision'], 2, 'the revision is unchanged');
 		assert.equal(JSON.stringify(after.body), bodyBefore, 'the body is unchanged');
 		assert.doesNotMatch(readFileSync(theirs.md, 'utf8').split('## Review')[0] ?? '', /three exported constants/);
@@ -137,7 +134,7 @@ test('a review of a stage held by someone else runs and reports findings, applie
 		const res = await reviewArtifactFile({ mdPath: other.md, jsonPath: other.json, repo: other.repo, provider: provider(), model: 'fake', reviewedAt: '2026-10-18T00:00:00.000Z', reReview: false });
 		assert.equal(res.applied.length, 0);
 		const after = read(other.json);
-		assert.ok(after.meta['review']);
+		assert.ok(readReviewRecordOf(other.json));
 		assert.equal(after.meta['revision'], 2);
 		assert.doesNotMatch(JSON.stringify(after.body), /three exported constants/);
 	} finally { other.cleanup(); }

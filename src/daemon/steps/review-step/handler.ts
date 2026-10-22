@@ -64,7 +64,7 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 			case 'start':    return await handleStart(step, deps);
 			case 'claims':   return await handleClaims(step);
 			case 'verdicts': return await handleVerdicts(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service));
-			case 'findings': return handleFindings(step);
+			case 'findings': return await handleFindings(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service));
 			default:
 				return errorResult(
 					'bad-phase',

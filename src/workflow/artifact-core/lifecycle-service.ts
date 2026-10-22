@@ -60,6 +60,9 @@ const UNITS = ['TASK', 'STORY', 'EPIC'] as const;
 export class LifecycleService {
 	private readonly reader: ChildStatusReader;
 
+	/** The store every operation goes through. */
+	get store(): ArtifactStore { return this.deps.store; }
+
 	constructor(private readonly deps: LifecycleServiceDeps) {
 		const store = deps.store;
 		this.reader = {

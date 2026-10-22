@@ -5,8 +5,8 @@
 
 /**
  * s4 t9: the controller's verdicts phase through the repository's durable LifecycleService: an applied fix is stored through
- * the service (logged, revisioned), the review is stamped and recorded on the lifecycle, and a head that is ahead of its log is
- * refused before anything is stamped.
+ * the service (logged, revisioned), the review is recorded on the lifecycle, and a head that is ahead of its log is
+ * refused before anything is recorded.
  *
  * Run: npx tsx --test --test-force-exit src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts
  */
@@ -28,6 +28,7 @@ after(async () => {
 
 import { artifact, alice, H } from '../../../../workflow/artifact-core/__tests__/store-kit.js';
 import { FileSidecarStore } from '../../../../workflow/artifact-core/sidecar-store.js';
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { artifactJsonPath } from '../../../../workflow/storage.js';
 import { lifecycleFor, resetLifecycleRegistry } from '../../../lifecycle-registry.js';
 import { handleReviewStep } from '../handler.js';
@@ -74,7 +75,7 @@ async function verdicts(fx: { repo: string; md: string }): Promise<{ next: strin
 	return parse(await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never));
 }
 
-test('handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log', async () => {
+test('handleVerdicts with a service stores an applied fix through the service and records the review on the lifecycle, and refuses a head that is ahead of its log', async () => {
 	const fx = await fixture();
 	const { store } = lifecycleFor(fx.repo);
 	const before = await store.readWithHistory(PLAN);
@@ -90,14 +91,15 @@ test('handleVerdicts with a service stores an applied fix through the service, s
 	assert.ok(after.changeLog.some(e => e.operation === 'update' && e.actor.id === 'insrc:review' && e.revision?.number === after.lifecycle.revision.number), JSON.stringify(update));
 	assert.deepEqual((after.payload.body as { tasks: string[] }).tasks, ['extend the three exported constants in foo.']);
 	// the review is stamped on the head and recorded on the lifecycle by the controller
-	const stamped = JSON.parse(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8')) as { meta: { review?: { model: string; reviewedBy: string } } };
-	assert.equal(stamped.meta.review?.model, 'client');
+	const stamped = JSON.parse(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8')) as { meta: Record<string, unknown> };
+	assert.equal(stamped.meta['review'], undefined, 'the head carries no review stamp');
+	assert.equal(readReviewRecordOf(artifactJsonPath(fx.repo, PLAN))?.report.model, 'client', 'the report is the review entry of the log');
 	assert.equal(after.lifecycle.review?.party, 'controller');
 	assert.equal(after.lifecycle.review?.revision, after.lifecycle.revision.number);
 	assert.ok(after.changeLog.some(e => e.operation === 'review'));
 	assert.equal((await lifecycleFor(fx.repo).service.inspect(PLAN))?.integrity.ok, true);
 
-	// A head whose log is ahead of it (a merge brought in a later entry) is refused before anything is stamped.
+	// A head whose log is ahead of it (a merge brought in a later entry) is refused before anything is recorded.
 	const tail = after.changeLog.at(-1);
 	assert.ok(tail?.revision);
 	await new FileSidecarStore(fx.repo).appendRecord('log', {
@@ -109,6 +111,6 @@ test('handleVerdicts with a service stores an applied fix through the service, s
 	const refused = await verdicts(fx);
 	assert.equal(refused.next, 'error');
 	assert.match(refused.error?.message ?? '', /log-ahead-of-head/);
-	assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), headBefore, 'nothing was stamped');
+	assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), headBefore, 'nothing was recorded');
 	assert.equal(readFileSync(fx.md, 'utf8'), mdBefore);
 });

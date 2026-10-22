@@ -54,12 +54,14 @@ test('every writer file is inventoried, annotated and classified as the design s
 
 	// the classification is the one the design states
 	const classOf = (f: string): string | undefined => byFile.get(f)?.class;
-	for (const f of ['src/workflow/questions.ts', 'src/daemon/steps/review-step/phases/findings.ts', 'src/workflow/tracker/refs.ts', 'src/workflow/bugfix/stamp.ts', 'src/workflow/orchestrator.ts']) assert.equal(classOf(f), 'meta-only', f);
+	for (const f of ['src/workflow/questions.ts', 'src/workflow/tracker/refs.ts', 'src/workflow/bugfix/stamp.ts', 'src/workflow/orchestrator.ts']) assert.equal(classOf(f), 'meta-only', f);
+	// the review phases persist through persistReview and write no head of their own
+	for (const f of ['src/daemon/steps/review-step/phases/findings.ts', 'src/daemon/steps/review-step/phases/verdicts.ts', 'src/workflow/review/run-artifact.ts']) assert.equal(byFile.has(f), false, `${f} needs no entry`);
 	for (const f of [
 		'src/daemon/steps/workflow-step/phases/synthesize.ts', 'src/daemon/workflow-rpc.ts', 'src/workflow/resolve-comment.ts',
 		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/code-review/runner.ts', 'src/workflow/runners/build/test-record.ts', 'src/daemon/steps/code-review-step/handler.ts',
 	]) assert.equal(classOf(f), 'content', f);
-	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts', 'src/workflow/review/run-artifact.ts', 'src/daemon/steps/review-step/phases/verdicts.ts']) assert.equal(classOf(f), 'mixed', f);
+	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts']) assert.equal(classOf(f), 'mixed', f);
 	assert.equal(classOf('src/workflow/amendments/store.ts'), 'record');
 	assert.equal(classOf('src/daemon/steps/workflow-step/resume.ts'), 'migration');
 	// feedback is human provenance: appending it never mints a revision

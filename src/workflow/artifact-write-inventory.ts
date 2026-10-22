@@ -61,7 +61,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
 	{ file: 'src/workflow/artifacts/provenance/writer.ts', class: 'meta-only', via: 'writeArtifact', note: 'feedback is human provenance, not the stage content: appending it never mints a revision' },
 	{ file: 'src/workflow/questions.ts', class: 'meta-only', via: 'both', note: 'meta.questionResolutions only' },
-	{ file: 'src/daemon/steps/review-step/phases/findings.ts', class: 'meta-only', via: 'both', note: 'meta.review only; the body is written back untouched' },
 	{ file: 'src/workflow/tracker/refs.ts', class: 'meta-only', via: 'writeArtifact', note: 'patchTrackerMeta' },
 	{ file: 'src/workflow/tracker/binding.ts', class: 'meta-only', via: 'writeArtifact', note: 'the tracker binding: the one writer of meta.envelope.binding after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
 	{ file: 'src/workflow/tracker/attach.ts', class: 'meta-only', via: 'writeArtifact', note: 'recordAttachment: the one writer of meta.envelope.attachments after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
@@ -79,8 +78,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 		note: 'the extend path changes body.stories; approve stamps meta.rangeBase after the lifecycle approves (reject and ack-stale write no head)',
 	},
 	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content' }], note: 'apply changes the body; accept, override and defer append a resolution entry to the log (report-file.ts, through the sidecar store) and write no head' },
-	{ file: 'src/workflow/review/run-artifact.ts', class: 'mixed', via: 'both', sites: [{ fn: 'reviewArtifactFile', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
-	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts', class: 'mixed', via: 'both', sites: [{ fn: 'handleVerdicts', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
 
 	// --- store: the artifact store itself ------------------------------------------
 	{ file: 'src/workflow/artifact-core/lifecycle-service.ts', class: 'meta-only', via: 'injected', note: 'applies lifecycle operations through ArtifactStore.update: the content is never changed, so no revision is minted, and the store logs each operation' },

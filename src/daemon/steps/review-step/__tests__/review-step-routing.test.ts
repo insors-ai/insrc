@@ -36,7 +36,9 @@ import type { WorkflowReviewDone } from '../../../workflow-review-rpc.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../../../workflow/review/template.js';
 import { reviewArtifactStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { ReviewArtifactStreamParams, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { handleReviewStep } from '../handler.js';
+import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { DESIGN_REVIEW_WAIT_MS, PIPELINE_REVIEW_WAIT_MS } from '../phases/start.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import type { ReviewStepDeps } from '../types.js';
@@ -49,12 +51,7 @@ const AUTHOR_META: Record<Author, Record<string, unknown>> = { controller: { aut
 
 function fixture(workflow: string, author: Author) {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-routing-'));
-	const dir = join(repo, 'docs', 'stub');
-	mkdirSync(dir, { recursive: true });
-	const mdPath = join(dir, 's1.md');
-	const jsonPath = join(dir, 's1.json');
-	writeFileSync(mdPath, '# Doc\n\nThe body.\n');
-	writeFileSync(jsonPath, JSON.stringify({ meta: { workflow, epicHash: 'abcd', storyId: 'S001', ...AUTHOR_META[author] }, body: { note: 'untouched' } }, null, 2) + '\n');
+	const { mdPath, jsonPath } = writeDesign(repo, idOfWorkflow(workflow), { meta: { workflow, storyId: 's1', ...AUTHOR_META[author] }, body: { note: 'untouched' } }, '# Doc\n\nThe body.\n');
 	return { repo, mdPath, jsonPath, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -302,14 +299,14 @@ test('T12/T4 on a daemon-authored DEF the verdicts phase stamps the controller, 
 		const done = parse(await handleReviewStep({ phase: 'verdicts', state: claims['state'] as string, verdicts: { verdicts: [] } }, { lifecycleFor: () => undefined }));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		assert.equal(done['reviewedBy'], undefined, 'the tool reviewed it itself: not a daemon review');
-		const review = JSON.parse(readFileSync(def.jsonPath, 'utf8')).meta.review;
+		const review = readReviewRecordOf(def.jsonPath)!.report;
 		assert.equal(review.stage, 'define');
 		assert.equal(review.reviewedBy, 'controller');
 
 		const s2 = (await start(lld, d.deps))['state'] as string;
 		const out = parse(await handleReviewStep({ phase: 'findings', state: s2, findings: answer() }));
 		assert.equal(out['next'], 'done');
-		assert.equal(JSON.parse(readFileSync(lld.jsonPath, 'utf8')).meta.review.reviewedBy, 'controller');
+		assert.equal(readReviewRecordOf(lld.jsonPath)!.report.reviewedBy, 'controller');
 		assert.deepEqual(d.calls, []);
 	} finally { def.cleanup(); lld.cleanup(); }
 });

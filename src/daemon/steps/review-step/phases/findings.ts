@@ -11,16 +11,20 @@
  * and answers once; this phase validates that answer with the SAME validator
  * the reviewer session uses (`validateTemplateAnswer`) and stamps the review.
  *
- * A rejected answer stamps nothing and keeps the run's state, so the controller
+ * A rejected answer records nothing and keeps the run's state, so the controller
  * can correct it and call `findings` again.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 import { getLogger } from '../../../../shared/logger.js';
-import { writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
+import type { LifecycleService } from '../../../../workflow/artifact-core/lifecycle-service.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
+import type { Actor } from '../../../../workflow/artifact-core/types.js';
+import { persistReview } from '../../../../workflow/review/persist-review.js';
 import {
-	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport, REVIEW_SECTION,
+	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport,
 	reviewTemplateFor, stripReviewSection, tallyFindings, validateTemplateAnswer,
 } from '../../../../workflow/review/index.js';
 import type { ReviewReport } from '../../../../workflow/review/index.js';
@@ -32,7 +36,14 @@ const log = getLogger('mcp:review-step:findings');
 
 const REVIEW_MODEL = 'client';
 
-export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone | ReviewStepError {
+/** Who the store records for the controller's review, and who the lifecycle names as its reviewer. */
+const REVIEWER: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
+const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {} };
+
+export async function handleFindings(
+	input: ReviewStepInputFindings,
+	lifecycleFor?: ((repoPath: string) => LifecycleService | undefined) | undefined,
+): Promise<ReviewStepDone | ReviewStepError> {
 	if (typeof input.state !== 'string' || input.state.length === 0) {
 		throw new Error(`insrc_review_step[findings]: missing \`state\` token from the prior start response.`);
 	}
@@ -47,13 +58,13 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 	const template = reviewTemplateFor(state.templateIntent);
 	const result = validateTemplateAnswer(template, input.findings);
 	if (!result.ok) {
-		log.warn({ runId: state.runId, template: template.id, errors: result.errors.length }, 'insrc_review_step[findings]: answer rejected; nothing stamped');
+		log.warn({ runId: state.runId, template: template.id, errors: result.errors.length }, 'insrc_review_step[findings]: answer rejected; nothing recorded');
 		return {
 			next: 'error',
 			error: {
 				code: 'invalid-findings',
 				message:
-					`The answer does not satisfy checklist ${template.id}; nothing was stamped. Correct it and call ` +
+					`The answer does not satisfy checklist ${template.id}; nothing was recorded. Correct it and call ` +
 					`phase='findings' again with the same state.\n` + result.errors.map(e => `- ${e}`).join('\n'),
 				retryable: true,
 			},
@@ -77,20 +88,22 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[findings]: no artifact json at ${state.jsonPath}`);
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[findings]: no artifact md at ${state.mdPath}`);
 
-	// A design is not edited by its review: stamp meta.review and append the
-	// rendered report; the body is written back untouched.
+	// A design is not edited by its review: the report becomes the review entry of its log and the lifecycle review names it; the
+	// body is untouched.
 	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
-	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
+	// This phase records the CONTROLLER's review, so it does not record one on work
 	// the controller authored. `start` already sends such work to the daemon; this
-	// holds the rule at the point of the stamp, whatever led here.
+	// holds the rule at the point of the record, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
 		releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
-	writeArtifact(state.jsonPath, { ...artifact, meta: { ...artifact.meta, review: report } }, 'meta-only');
-	// raw-write: markdown render of the review section.
-	writeAtomic(state.mdPath, `${md.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`);
+	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
+	await persistReview({
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle: lifecycleFor?.(state.repo) ?? createRepoLifecycle(state.repo).service,
+		report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER, markdown: md,
+	});
 
 	const pending = pendingUserFindings(report).length;
 	releaseState(input.state);

@@ -33,10 +33,19 @@ import { writeAtomic } from '../storage.js';
 import { authorPartyOf, SamePartyReviewError } from './party.js';
 import { reviewEntryOf, reviewReference } from './report-log.js';
 import { renderReviewReport } from './report.js';
-import { REVIEW_SECTION } from './run-artifact.js';
 import type { ReviewReport } from './types.js';
 
 const log = getLogger('review:persist');
+
+/** The marker that opens the rendered review section appended to an artifact's md. */
+export const REVIEW_SECTION = '<!-- insrc:review -->';
+
+/** Strip a previously-appended review section so re-runs don't stack. */
+export function stripReviewSection(md: string): string {
+	const i = md.indexOf('\n' + REVIEW_SECTION);
+	return i === -1 ? md : md.slice(0, i).replace(/\s+$/, '') + '\n';
+}
+
 
 export type PersistStep = 'inspect' | 'conflict' | 'fix' | 'record-review' | 'render';
 
@@ -53,8 +62,9 @@ export interface PersistReviewInput {
 	readonly jsonPath:   string;
 	readonly mdPath:     string;
 	readonly lifecycle:  LifecycleService;
-	readonly store:      ArtifactStore;
-	readonly history:    History;
+	/** The service's store and its history unless given: a review is recorded through the store the service writes with. */
+	readonly store?:     ArtifactStore | undefined;
+	readonly history?:   History | undefined;
 	readonly report:     ReviewReport;
 	/** Who is recorded as the reviewer on the lifecycle. */
 	readonly reviewer:   Actor;
@@ -84,6 +94,8 @@ export function reviewEntryId(artifactId: string, report: ReviewReport): string 
 
 export async function persistReview(input: PersistReviewInput): Promise<PersistedReview> {
 	const { artifactId } = input;
+	const store = input.store ?? input.lifecycle.store;
+	const history = input.history ?? store.history;
 	const stored: string[] = [];
 	let step: PersistStep = 'inspect';
 	try {
@@ -107,9 +119,9 @@ export async function persistReview(input: PersistReviewInput): Promise<Persiste
 
 		step = 'record-review';
 		const entryId = reviewEntryId(artifactId, input.report);
-		await input.store.exclusive(artifactId, async () => {
-			if ((await input.history.log(artifactId)).some(e => e.id === entryId)) return;
-			await input.history.appendLog(artifactId, reviewEntryOf({ id: entryId, actor: input.recorder, timestamp: input.report.reviewedAt, report: input.report }));
+		await store.exclusive(artifactId, async () => {
+			if ((await history.log(artifactId)).some(e => e.id === entryId)) return;
+			await history.appendLog(artifactId, reviewEntryOf({ id: entryId, actor: input.recorder, timestamp: input.report.reviewedAt, report: input.report }));
 		});
 		stored.push('the review entry');
 		const now = await input.lifecycle.inspect(artifactId);

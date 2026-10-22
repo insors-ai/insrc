@@ -6,7 +6,7 @@
 /**
  * `insrc_review_step` on a DESIGN document: `start` hands the controller the
  * review template, and `findings` validates the answer with the same rules as
- * the reviewer session and stamps the review. Every other artifact keeps
+ * the reviewer session and records the review on the lifecycle. Every other artifact keeps
  * start → claims → verdicts.
  * (LLD-f2f08ccf89f8ab25-S001, test T13.)
  */
@@ -22,7 +22,9 @@ import type { ReviewTemplate } from '../../../../workflow/review/template.js';
 import { handleInsrcSchema } from '../../../../mcp/schema/handler.js';
 import type { InsrcSchemaOk } from '../../../../mcp/schema/schema.js';
 import { buildInsrcMcpServerWithRegistry } from '../../../../mcp/server.js';
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
 import { handleReviewStep } from '../handler.js';
+import { FIXTURE_HASH, idOfWorkflow, writeDesign } from './review-fixture.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
@@ -31,14 +33,13 @@ const DESIGN_MD = '# LLD\n\nThe design body.\n';
 
 function fixture(opts: { workflow?: string; issue?: boolean; priorReview?: boolean } = {}) {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-findings-'));
-	const dir = join(repo, 'docs', 'stub');
-	mkdirSync(dir, { recursive: true });
-	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	if (opts.issue === true) writeFileSync(join(repo, '.insrc', 'artifacts', 'ISSUE-abcd.json'), '{}');
-	const mdPath = join(dir, 's1.md');
-	const jsonPath = join(dir, 's1.json');
-	writeFileSync(mdPath, opts.priorReview === true ? `${DESIGN_MD}\n<!-- insrc:review -->\n\n## Review\n\nOLD REVIEW TEXT\n` : DESIGN_MD);
-	writeFileSync(jsonPath, JSON.stringify({ meta: { workflow: opts.workflow ?? 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'daemon' }, body: { note: 'untouched' } }, null, 2) + '\n');
+	if (opts.issue === true) { mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true }); writeFileSync(join(repo, '.insrc', 'artifacts', `ISSUE-${FIXTURE_HASH}.json`), '{}'); }
+	const workflow = opts.workflow ?? 'design.story';
+	const { mdPath, jsonPath } = writeDesign(
+		repo, idOfWorkflow(workflow),
+		{ meta: { workflow, storyId: 's1', authoredBy: 'daemon' }, body: { note: 'untouched' } },
+		opts.priorReview === true ? `${DESIGN_MD}\n<!-- insrc:review -->\n\n## Review\n\nOLD REVIEW TEXT\n` : DESIGN_MD,
+	);
 	return { repo, mdPath, jsonPath, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -91,7 +92,7 @@ test('T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a de
 	} finally { issue.cleanup(); hld.cleanup(); }
 });
 
-test('T13 the findings phase stamps the review and does not edit the design', async () => {
+test('T13 the findings phase records the review and does not edit the design', async () => {
 	_clearReviewStateStoreForTests();
 	const fx = fixture({ priorReview: true });
 	try {
@@ -111,14 +112,18 @@ test('T13 the findings phase stamps the review and does not edit the design', as
 		assert.ok((out['report'] as string).includes('#### Does not hold (blocks approval)'));
 
 		const stored = JSON.parse(readFileSync(fx.jsonPath, 'utf8'));
-		assert.equal(stored.meta.review.model, 'client');
+		// the review is the lifecycle's; its report is the review entry of the artifact's log
+		const report = readReviewRecordOf(fx.jsonPath)!.report;
+		assert.equal(report.model, 'client');
 		// T4 (LLD-1716f77ba9ba017b-S001): the findings phase is the controller's review.
-		assert.equal(stored.meta.review.reviewedBy, 'controller');
-		assert.equal(stored.meta.review.template, 'design-spec');
-		assert.equal(stored.meta.review.findings.length, 8);
+		assert.equal(report.reviewedBy, 'controller');
+		assert.equal(stored.meta.lifecycle.review.party, 'controller');
+		assert.equal(report.template, 'design-spec');
+		assert.equal(report.findings.length, 8);
+		assert.equal(stored.meta.review, undefined, 'the head carries no review stamp');
 		assert.deepEqual(stored.body, { note: 'untouched' });
 		const md = readFileSync(fx.mdPath, 'utf8');
-		assert.ok(md.startsWith(DESIGN_MD.trimEnd()));
+		assert.ok(md.includes(DESIGN_MD.trimEnd()));
 		assert.ok(md.includes('#### Could not verify (does not block)'));
 		assert.ok(!md.includes('OLD REVIEW TEXT'), 'the earlier review section is replaced, not stacked');
 		assert.equal(md.split('<!-- insrc:review -->').length, 2);
@@ -129,7 +134,7 @@ test('T13 the findings phase stamps the review and does not edit the design', as
 	} finally { fx.cleanup(); }
 });
 
-test('T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped', async () => {
+test('T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is recorded', async () => {
 	_clearReviewStateStoreForTests();
 	const fx = fixture();
 	try {
@@ -188,14 +193,14 @@ test('T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt',
 	}
 });
 
-test('T4 the findings phase stamps the controller on an HLD too', async () => {
+test('T4 the findings phase records the controller on an HLD too', async () => {
 	_clearReviewStateStoreForTests();
 	const fx = fixture({ workflow: 'design.epic' });
 	try {
 		const state = (await start(fx))['state'] as string;
 		const out = parse(await handleReviewStep({ phase: 'findings', state, findings: answer(SPEC) }));
 		assert.equal(out['next'], 'done');
-		const review = JSON.parse(readFileSync(fx.jsonPath, 'utf8')).meta.review;
+		const review = readReviewRecordOf(fx.jsonPath)!.report;
 		assert.equal(review.stage, 'design.epic');
 		assert.equal(review.reviewedBy, 'controller');
 	} finally { fx.cleanup(); }
@@ -225,6 +230,35 @@ test('T13 the ISSUE template is validated against its own items', async () => {
 		assert.equal(wrong['next'], 'error');
 		const ok = parse(await handleReviewStep({ phase: 'findings', state, findings: answer(ISSUE) }));
 		assert.equal(ok['next'], 'done');
-		assert.equal(JSON.parse(readFileSync(fx.jsonPath, 'utf8')).meta.review.template, 'design-issue');
+		assert.equal(readReviewRecordOf(fx.jsonPath)!.report.template, 'design-issue');
 	} finally { fx.cleanup(); }
+});
+
+test('review-step-findings.test.ts: the findings phase binds the review to the lifecycle through persistReview', async () => {
+	_clearReviewStateStoreForTests();
+	for (const workflow of ['design.story', 'design.epic']) {
+		const fx = fixture({ workflow });
+		try {
+			const state = (await start(fx))['state'] as string;
+			const out = parse(await handleReviewStep({ phase: 'findings', state, findings: answer(SPEC, { 'change-sites': { premise: 'p', outcome: 'does-not-hold', severity: 'MED', evidence: 'e', action: 'a', files: ['src/mcp/server.ts'] } }) }));
+			assert.equal(out['next'], 'done', `${workflow}: ${JSON.stringify(out['error'])}`);
+
+			// the lifecycle review is bound to the revision the head is at, names the party and holds the verdict and counts of the report
+			const head = JSON.parse(readFileSync(fx.jsonPath, 'utf8')) as { meta: { lifecycle: { status: string; revision: { number: number }; review: { revision: number; party: string; verdict: string; counts: Record<string, number>; report: { entityId: string; type: string; relation: string; fragment: string } } } } };
+			const review = head.meta.lifecycle.review;
+			assert.equal(review.revision, head.meta.lifecycle.revision.number, `${workflow}: bound to the revision`);
+			assert.equal(review.party, 'controller');
+			assert.equal(review.verdict, 'block', 'a MED that does not hold blocks');
+			assert.deepEqual([review.counts['high'], review.counts['med']], [0, 1]);
+			assert.equal(head.meta.lifecycle.status, 'draft', 'a review leaves the head a draft');
+
+			// and the Reference names the log entry that holds the full report
+			const id = idOfWorkflow(workflow);
+			assert.deepEqual([review.report.entityId, review.report.type, review.report.relation], [id, 'change-log-entry', 'reviews']);
+			const record = readReviewRecordOf(fx.jsonPath);
+			assert.equal(record?.report.findings.length, 8);
+			const log = readFileSync(join(fx.repo, '.insrc', 'artifacts', `${id}.log.jsonl`), 'utf8');
+			assert.ok(log.includes(review.report.fragment), 'the review entry is in the log file');
+		} finally { fx.cleanup(); }
+	}
 });

@@ -27,6 +27,8 @@ afterAll(async () => {
 import { buildExtractPrompt, EXTRACT_SCHEMA } from '../../../../workflow/review/extract.js';
 import { buildVerifyPrompt, VERIFY_SCHEMA } from '../../../../workflow/review/verify.js';
 import type { Claim, Evidence, ReviewReport } from '../../../../workflow/review/types.js';
+import { readReviewRecordOf } from '../../../../workflow/review/report-file.js';
+import { idOfWorkflow, writeDesign } from './review-fixture.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 
@@ -50,24 +52,11 @@ function makeFixture(): { repo: string; mdPath: string; jsonPath: string; cleanu
 		join(repo, 'src', 'foo.ts'),
 		['export const alpha = 1;', 'export const beta = 2;', 'export const gamma = 3;', ''].join('\n'),
 	);
-	// Side-by-side md + json under docs/stub (the layout jsonPathForMd resolves
-	// by extension swap), so the tool can map md → json deterministically.
-	const dir = join(repo, 'docs', 'stub');
-	mkdirSync(dir, { recursive: true });
-	const mdPath = join(dir, 's1.md');
-	const jsonPath = join(dir, 's1.json');
-	writeFileSync(mdPath, ARTIFACT_MD);
-	writeFileSync(
-		jsonPath,
-		JSON.stringify(
-			// Authored by the daemon, so this tool's own phases (the controller's
-			// review) are the ones that run. Controller-authored work is sent to the
-			// daemon instead: see review-step-routing.test.ts.
-			{ meta: { workflow: 'plan', authoredBy: 'daemon' }, body: { tasks: ['extend the two exported constants in foo.'] } },
-			null,
-			2,
-		) + '\n',
-	);
+	// The artifact store holds the json; the markdown carries the marker that names it, so the tool can map md → json deterministically.
+	// Authored by the daemon, so this tool's own phases (the controller's
+	// review) are the ones that run. Controller-authored work is sent to the
+	// daemon instead: see review-step-routing.test.ts.
+	const { mdPath, jsonPath } = writeDesign(repo, idOfWorkflow('plan'), { meta: { workflow: 'plan', storyId: 's1', authoredBy: 'daemon' }, body: { tasks: ['extend the two exported constants in foo.'] } }, ARTIFACT_MD);
 	return { repo, mdPath, jsonPath, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -123,10 +112,10 @@ function parse(env: { content: { text: string }[] }): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// (1) Full loop: start → claims → verdicts → done(block), meta.review stamped
+// (1) Full loop: start → claims → verdicts → done(block), review recorded
 // ---------------------------------------------------------------------------
 
-test('review-step drives the full loop and stamps meta.review with model=client', async () => {
+test('review-step drives the full loop and records the review with model=client', async () => {
 	_clearReviewStateStoreForTests();
 	const fx = makeFixture();
 	try {
@@ -166,10 +155,11 @@ test('review-step drives the full loop and stamps meta.review with model=client'
 		assert.equal(doneOut['applied'], 1, 'the one auto-fix was applied');
 		assert.ok(typeof doneOut['report'] === 'string' && (doneOut['report'] as string).includes('BLOCK'), 'rendered report returned');
 
-		// --- persistence: meta.review stamped with model=client ---
+		// --- persistence: the review recorded with model=client ---
 		const persisted = JSON.parse(readFileSync(fx.jsonPath, 'utf8')) as { meta: { review?: ReviewReport }; body: unknown };
-		const review = persisted.meta.review;
-		assert.ok(review, 'meta.review stamped on the json');
+		assert.equal(persisted.meta.review, undefined, 'the head carries no review stamp');
+		const review = readReviewRecordOf(fx.jsonPath)?.report;
+		assert.ok(review, 'the report is the review entry of the log');
 		assert.equal(review.model, 'client', 'review model is the controller, not the daemon provider');
 		// T4 (LLD-1716f77ba9ba017b-S001): the verdicts phase is the controller's review.
 		assert.equal(review.reviewedBy, 'controller');

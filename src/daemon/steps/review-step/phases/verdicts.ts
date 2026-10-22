@@ -25,13 +25,14 @@ import type { LifecycleService } from '../../../../workflow/artifact-core/lifecy
 import { LifecycleConflictError } from '../../../../workflow/artifact-core/types.js';
 import type { Actor } from '../../../../workflow/artifact-core/types.js';
 import { headConflict } from '../../../../workflow/gates.js';
-import { writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
 import {
 	applyAutoFixes, computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, normalizeFinding,
-	pendingUserFindings, renderReviewReport, REVIEW_SECTION, stripReviewSection, tallyFindings,
+	pendingUserFindings, renderReviewReport, stripReviewSection, tallyFindings,
 } from '../../../../workflow/review/index.js';
 import type { Claim, Finding, RawFinding, ReviewReport } from '../../../../workflow/review/index.js';
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
+import { persistReview } from '../../../../workflow/review/persist-review.js';
+import { createRepoLifecycle } from '../../../../workflow/artifact-core/repo-lifecycle.js';
 import { reviewFixModeFor } from '../../../../workflow/team/approval-gate.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
@@ -45,9 +46,8 @@ const REVIEWER: Actor = { id: 'insrc:review', kind: 'system', properties: {} };
 const CONTROLLER: Actor = { id: 'insrc:controller', kind: 'agent', properties: {} };
 
 /**
- * `lifecycleFor` gives the service of the run's repository. With one, the head is checked against its change log before
- * anything is stamped, an applied fix goes through the store (staged, logged, revisioned), and the review is recorded on the
- * lifecycle; without one the review is persisted as before.
+ * `lifecycleFor` gives the service of the run's repository (one is built over its files when it gives none). The head is checked
+ * against its change log before anything is recorded, and the review is persisted by `persistReview`.
  */
 export async function handleVerdicts(
 	input: ReviewStepInputVerdicts,
@@ -100,21 +100,17 @@ export async function handleVerdicts(
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[verdicts]: no artifact md at ${state.mdPath}`);
 
 	// The head is checked (and any write a crash left staged is finished) BEFORE it is read: everything below works on the head as it is afterwards.
-	// The head is checked BEFORE it is read, and any write a crash left staged is finished first (inspect does that), so a state the
-	// journal repairs is not refused: everything below works on the head as it is afterwards.
+	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not reviewed until a person resolves it.
 	const artifactId = basename(state.jsonPath).replace(/\.json$/, '');
-	const lifecycle = lifecycleFor?.(state.repo);
-	if (lifecycle !== undefined) {
-		const seen = await lifecycle.inspect(artifactId);
-		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
-	}
-	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not stamped until a person resolves it.
+	const lifecycle = lifecycleFor?.(state.repo) ?? createRepoLifecycle(state.repo).service;
+	const seen = await lifecycle.inspect(artifactId);
+	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
 	const conflict = headConflict(state.jsonPath);
 	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
-	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
-	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
+	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown; citations?: unknown };
+	// This phase records the CONTROLLER's review, so it does not record one on work
 	// the controller authored. `start` already sends such work to the daemon; this
-	// holds the rule at the point of the stamp, whatever led here.
+	// holds the rule at the point of the record, whatever led here.
 	if (authorPartyOf(artifact.meta) === 'controller') {
 		releaseState(input.state);
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
@@ -125,32 +121,13 @@ export async function handleVerdicts(
 		? applyAutoFixes(md, artifact.body, report)
 		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 
-	const nextJson = { ...artifact, meta: { ...artifact.meta, review: report }, body: fixed.body };
-	// auto-fixes change the body (content); a report-only review changes only meta.
-	if (lifecycle !== undefined && fixed.applied.length > 0) {
-		// With a service the content goes through the store; the review stamp then follows as a meta-only write.
-		const stored = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { citations?: unknown };
-		const citations = Array.isArray(stored.citations) ? stored.citations : [];
-		// an automated fix is not an answer to a person's feedback: it addresses none
-		await lifecycle.updateContent(artifactId, REVIEWER, { body: fixed.body as Record<string, unknown>, citations }, { addresses: [] });
-		const current = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown> };
-		writeArtifact(state.jsonPath, { ...current, meta: { ...current.meta, review: report } }, 'meta-only');
-	} else {
-		writeArtifact(state.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
-	}
-	// With a service the review is also recorded on the lifecycle (lifecycle.review and a log entry), when the status allows one.
-	if (lifecycle !== undefined) {
-		const seen = await lifecycle.inspect(artifactId);
-		if (seen !== undefined && (seen.status === 'draft' || seen.status === 'pending-review')) {
-			await lifecycle.apply(artifactId, 'review', REVIEWER, {
-				review: { reviewer: CONTROLLER, party: 'controller', verdict: report.verdict, counts: { high: report.counts.high, med: report.counts.med, low: report.counts.low } },
-			});
-		}
-	}
-	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
-	// raw-write: markdown render of the review.
-	writeAtomic(state.mdPath, nextMd);
-
+	// The one persist path: the auto-fix goes through the store (it answers no feedback), the report becomes the review entry of the
+	// log and the lifecycle review names it, and the markdown is written last.
+	await persistReview({
+		artifactId, jsonPath: state.jsonPath, mdPath: state.mdPath, lifecycle, report, reviewer: CONTROLLER, party: 'controller', recorder: REVIEWER,
+		...(fixed.applied.length > 0 ? { fix: { body: fixed.body as Record<string, unknown>, citations: Array.isArray(artifact.citations) ? artifact.citations : [] } } : {}),
+		markdown: fixed.markdown,
+	});
 	const pending = pendingUserFindings(report).length;
 	releaseState(input.state);
 

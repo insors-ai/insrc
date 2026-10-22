@@ -30,6 +30,7 @@ import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/git
 import { artifactJsonPath, planArtifactId, planMdRel } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
 import { taskIssueRefsOf } from '../../tasks/lookup.js';
+import { unitIssueOf } from '../../tracker/unit-head.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
 
@@ -59,11 +60,11 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 	}));
 
 	const existing: { epicRef?: string; storyRefs?: Record<string, string>; taskRefs?: Record<string, Record<string, string>> } = {};
-	const trackerMeta = (epic.meta as { tracker?: { epicRef?: string; storyRefs?: Record<string, string> } }).tracker;
-	if (trackerMeta !== undefined) {
-		if (typeof trackerMeta.epicRef === 'string') existing.epicRef = trackerMeta.epicRef;
-		if (typeof trackerMeta.storyRefs === 'object' && trackerMeta.storyRefs !== null) existing.storyRefs = trackerMeta.storyRefs;
-	}
+	// the issues already bound on the Epic's head and on its Stories' heads
+	const boundEpic = unitIssueOf(ctx.intent.repoPath, epicHash);
+	if (boundEpic !== undefined) existing.epicRef = boundEpic;
+	const boundStories = boundStoryRefs(ctx.intent.repoPath, epicHash, epic.body.stories.map(s => s.id));
+	if (Object.keys(boundStories).length > 0) existing.storyRefs = boundStories;
 
 	// Task tier (opt-in): for each Story that has an APPROVED plan, surface
 	// its Tasks so the execute step can create typed Task sub-issues. Also
@@ -115,17 +116,18 @@ export function assembleSyncContext(ctx: StepRunnerContext): SyncContext {
 	const epic = requireApprovedEpic(ctx.intent.repoPath, epicHash);
 	const epicSlug = epic.meta.epicSlug ?? epicHash;
 	const gh   = requireGithubAdapter(resolveGithubConfig(ctx.intent.repoPath), ctx.intent.workflow);
-	const trackerMeta = (epic.meta as { tracker?: { epicRef?: string; storyRefs?: Record<string, string>; milestoneRef?: string } }).tracker;
-	if (trackerMeta === undefined || typeof trackerMeta.epicRef !== 'string' || typeof trackerMeta.storyRefs !== 'object') {
+	const milestoneRef = (epic.meta as { tracker?: { milestoneRef?: string } }).tracker?.milestoneRef;
+	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash);
+	if (epicRef === undefined) {
 		throw new Error(
 			`tracker.sync: Epic '${epicSlug}' (${epicHash}) has no tracker refs to sync. ` +
 			`Run \`tracker.push\` first.`,
 		);
 	}
 	const refs: SyncContext['refs'] = {
-		epicRef:   trackerMeta.epicRef,
-		storyRefs: trackerMeta.storyRefs,
-		...(typeof trackerMeta.milestoneRef === 'string' ? { milestoneRef: trackerMeta.milestoneRef } : {}),
+		epicRef,
+		storyRefs: boundStoryRefs(ctx.intent.repoPath, epicHash, epic.body.stories.map(s => s.id)),
+		...(typeof milestoneRef === 'string' ? { milestoneRef } : {}),
 	};
 	return {
 		kind: 'sync',
@@ -150,9 +152,9 @@ export function assemblePostContext(ctx: StepRunnerContext): PostContext {
 		throw new Error(`tracker.post: params.target.kind must be 'hld' | 'lld' | 'amendment'`);
 	}
 
-	// Pull Epic's tracker refs (must already exist).
-	const trackerMeta = (epic.meta as { tracker?: { epicRef?: string; storyRefs?: Record<string, string> } }).tracker;
-	if (trackerMeta === undefined || typeof trackerMeta.epicRef !== 'string') {
+	// Pull Epic's tracker refs (must already exist): the issues bound on its heads.
+	const epicRef = unitIssueOf(ctx.intent.repoPath, epicHash);
+	if (epicRef === undefined) {
 		throw new Error(`tracker.post: Epic '${epicSlug}' (${epicHash}) has no tracker refs. Run \`tracker.push\` first.`);
 	}
 
@@ -160,14 +162,14 @@ export function assemblePostContext(ctx: StepRunnerContext): PostContext {
 	let summaryMd: string;
 	if (targetKind === 'hld') {
 		const hld = readBaseHld(ctx.intent.repoPath, epicHash);
-		issueRef  = trackerMeta.epicRef;
+		issueRef  = epicRef;
 		summaryMd = renderTrackerHldSummary(hld);
 	} else if (targetKind === 'lld') {
 		const storyId = (ctx.intent.params['target'] as { storyId?: unknown } | undefined)?.storyId;
 		if (typeof storyId !== 'string' || storyId.length === 0) {
 			throw new Error(`tracker.post: target.kind='lld' requires target.storyId`);
 		}
-		const storyRef = trackerMeta.storyRefs?.[storyId];
+		const storyRef = unitIssueOf(ctx.intent.repoPath, epicHash, storyId);
 		if (typeof storyRef !== 'string') {
 			throw new Error(`tracker.post: no tracker ref for Story '${storyId}' (Epic may need a re-push)`);
 		}
@@ -183,7 +185,7 @@ export function assemblePostContext(ctx: StepRunnerContext): PostContext {
 		if (rec.status !== 'approved') {
 			throw new Error(`tracker.post: amendment '${amendmentId}' has status '${rec.status}'; only approved amendments post to the tracker`);
 		}
-		issueRef  = trackerMeta.epicRef;
+		issueRef  = epicRef;
 		summaryMd = renderTrackerAmendmentSummary(rec);
 	}
 
@@ -198,6 +200,16 @@ export function assemblePostContext(ctx: StepRunnerContext): PostContext {
 
 // ---------------------------------------------------------------------------
 // Helpers
+
+/** The issue bound on each listed Story's head, by Story id; a Story with none is left out. */
+function boundStoryRefs(repoPath: string, epicHash: string, storyIds: readonly string[]): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (const id of storyIds) {
+		const ref = unitIssueOf(repoPath, epicHash, id);
+		if (ref !== undefined) out[id] = ref;
+	}
+	return out;
+}
 // ---------------------------------------------------------------------------
 
 /** Narrow the resolved config to the github adapter or throw a clear

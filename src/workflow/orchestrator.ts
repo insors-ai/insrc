@@ -2881,7 +2881,7 @@ function finalizeTracker(
 }
 
 /** Merge tracker refs into the Epic artifact's meta.tracker. Push
- *  writes epicRef + storyRefs + milestoneRef + labelsCreated; sync
+ *  binds the epic and story issues on their heads and writes milestoneRef + labelsCreated; sync
  *  writes storyStatus + epicStatus + lastSyncedAt; post is a no-op
  *  at the Epic level (comment ids attach to the target artifact by
  *  the caller if needed — Phase F doesn't record commentIds in the
@@ -2904,15 +2904,13 @@ function mutateEpicTrackerMeta(
 		artifact.meta.tracker = {
 			...artifact.meta.tracker,
 			adapter:   'github',
-			epicRef:   push.epicRef,
-			storyRefs: push.storyRefs,
 			...(push.milestoneRef !== undefined ? { milestoneRef: push.milestoneRef } : {}),
 			labelsCreated: push.labelsCreated,
-			pushedAt:  new Date().toISOString(),
 		};
 		writeArtifact(defineJson, artifact, 'meta-only');
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
-		// re-render each doc's markdown with a `**Tracker:**` link.
+		// bind the Epic's and each Story's issue on its head, then re-render each
+		// doc's markdown with a `**Tracker:**` link read from it.
 		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
 		// Task tier: bind each Task issue to its Task artifact, so a re-push adopts it (and downstream `build` can find its
 		// issues). A Task with no artifact has nowhere to be recorded: the approval of its plan makes them.

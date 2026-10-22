@@ -34,7 +34,7 @@ import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 import { lifecycleFor } from '../../../lifecycle-registry.js';
 import { seedSidecarRules } from '../../../../workflow/artifact-core/__tests__/seed-rules.js';
-import { seedBoundTaskHead } from '../../../../workflow/__tests__/helpers/task-heads.js';
+import { seedBoundTaskHead, seedBoundUnits } from '../../../../workflow/__tests__/helpers/task-heads.js';
 
 /** The judge's structured verdict, with the fields a test does not care about filled in. */
 function judgeVerdict(over: Record<string, unknown>): Record<string, unknown> {
@@ -80,7 +80,6 @@ function seedLld(repo: string, openQuestions: readonly string[] = []): void {
 			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
 			...approvedMeta({ at: CREATED_AT }),
-			tracker: { storyRef: 'acme/widgets#10' },
 		},
 		body: { openQuestions }, citations: [],
 	}, null, 2));
@@ -103,6 +102,7 @@ function seedPlan(repo: string, approved: boolean): string {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
+	seedBoundUnits(repo, HASH, undefined, { s1: 'acme/widgets#10' }, CREATED_AT);
 	seedBoundTaskHead(repo, HASH, 's1', 't1', 'acme/widgets#42', CREATED_AT);
 	if (approved) markApprovedSync(json);
 	return json;
@@ -122,7 +122,7 @@ function seedSecondEpic(repo: string): void {
 			workflow: 'design.story', runId: 'lld-run-2', schemaVersion: 1,
 			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2,
 			hldBaseRunId: 'hld-run-2', hldEffectiveHash: 'basis-hash-222', hldAmendmentsApplied: [],
-			...approvedMeta({ at: CREATED_AT2 }), tracker: { storyRef: 'acme/widgets#20' },
+			...approvedMeta({ at: CREATED_AT2 }),
 		},
 		body: { openQuestions: [] }, citations: [],
 	}, null, 2));
@@ -142,6 +142,7 @@ function seedSecondEpic(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
+	seedBoundUnits(repo, HASH2, undefined, { s1: 'acme/widgets#20' }, CREATED_AT2);
 	seedBoundTaskHead(repo, HASH2, 's1', 't1', 'acme/widgets#52', CREATED_AT2);
 	markApprovedSync(planJson);
 }

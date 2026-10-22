@@ -14,8 +14,8 @@ test('the approve-time pushes post each comment once: a crash after a successful
 		const t = fakeTracker();
 		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'created');
 
-		// the crash: the comment reaches the issue, then the record of it cannot be written (a store write is staged for the LLD)
-		const journal = join(fx.repo, '.insrc', 'journal', `${lldArtifactId(HASH, 's1')}.json`);
+		// the crash: the comment reaches the issue, then the record of it cannot be written (a store write is staged for the STORY head)
+		const journal = join(fx.repo, '.insrc', 'journal', `STORY-${HASH}-s1.json`);
 		const ops = t.port.issueOps;
 		const post = ops.comment.bind(ops);
 		let crashed = false;
@@ -29,8 +29,8 @@ test('the approve-time pushes post each comment once: a crash after a successful
 		const storyComments = () => t.log.comments.filter(([ref]) => ref === 'acme/demo#2');
 		assert.equal(storyComments().length, 2, 'the design comment and the review comment were each posted once');
 		assert.deepEqual(first.status === 'created' ? first.extrasFailed?.map(f => f.name).sort() : null, ['designComment', 'reviewComment'], 'posted but unrecorded is reported');
-		assert.deepEqual(readBinding(fx.repo, lldArtifactId(HASH, 's1'))?.posted.map(p => p.kind), ['task-list'], 'nothing else was recorded');
-		for (const [, body] of storyComments()) assert.match(body, /^<!-- insrc:post:LLD-[0-9a-f]{16}-s1:(design|review) -->\n/);
+		assert.deepEqual(readBinding(fx.repo, `STORY-${HASH}-s1`)?.posted.map(p => p.kind), ['task-list'], 'nothing else was recorded');
+		for (const [, body] of storyComments()) assert.match(body, /^<!-- insrc:post:STORY-[0-9a-f]{16}-s1:(design|review) -->\n/);
 
 		// the next approve finds both posts by their markers, records them, and posts nothing
 		rmSync(journal);
@@ -40,7 +40,7 @@ test('the approve-time pushes post each comment once: a crash after a successful
 		assert.equal(second.status === 'already-exists' ? second.extrasFailed : undefined, undefined, 'nothing failed');
 		assert.equal(storyComments().length, 2, 'no comment was posted twice');
 		assert.equal(t.log.writeBodies, writes, 'nor was the task list written again');
-		assert.deepEqual(readBinding(fx.repo, lldArtifactId(HASH, 's1'))?.posted.map(p => p.kind).sort(), ['design', 'review', 'task-list']);
+		assert.deepEqual(readBinding(fx.repo, `STORY-${HASH}-s1`)?.posted.map(p => p.kind).sort(), ['design', 'review', 'task-list']);
 
 		// and a third approve changes nothing
 		const before = t.log.comments.length;

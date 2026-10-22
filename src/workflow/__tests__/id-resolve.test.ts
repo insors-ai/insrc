@@ -22,6 +22,7 @@ import {
 } from '../tracker/resolve.js';
 import { renderTaskBody, parseIdMarker } from '../tracker/conventions.js';
 import type { PlanTask } from '../artifacts/plan.js';
+import { seedBoundTaskHead, seedBoundUnits } from './helpers/task-heads.js';
 
 // Worked example from the spec.
 const EPIC_HASH = '185807ba9a6b35d3';
@@ -48,8 +49,7 @@ function writeJson(path: string, obj: unknown): void {
 	writeFileSync(path, JSON.stringify(obj, null, 2) + '\n');
 }
 
-/** A one-epic artifacts dir: DEF (epicRef), LLD s1 (storyRef), PLAN s1
- *  (taskRefs t3 → #9). */
+/** A one-epic artifacts dir: DEF, LLD s1, PLAN s1, and the bound heads (Epic #1, Story #5, Task t3 → #9). */
 function setupRepo(): { repo: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-'));
 	const dir = join(repo, '.insrc/artifacts');
@@ -57,7 +57,6 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 		meta: {
 			workflow: 'define', runId: 'd1', repoPath: repo, epicHash: EPIC_HASH, epicSlug: 'demo-feature',
 			createdAt: CREATED, schemaVersion: 1,
-			tracker: { adapter: 'github', epicRef: 'acme/demo#1', storyRefs: { s1: 'acme/demo#5' } },
 		},
 		body: { flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
 		citations: [],
@@ -66,7 +65,6 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: EPIC_HASH, epicSlug: 'demo-feature',
 			storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
-			tracker: { adapter: 'github', storyRef: 'acme/demo#5' },
 		},
 		body: {},
 	});
@@ -74,11 +72,13 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 		meta: {
 			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: EPIC_HASH, epicSlug: 'demo-feature',
 			storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
-			tracker: { adapter: 'github', taskRefs: { t3: 'acme/demo#9' } },
 		},
 		body: { tasks: [TASK_T3], testStrategyCoverage: [] },
 		citations: [],
 	});
+	// the issues are the bindings of the Epic's, the Story's and the Task's heads
+	seedBoundUnits(repo, EPIC_HASH, 'acme/demo#1', { s1: 'acme/demo#5' }, CREATED);
+	seedBoundTaskHead(repo, EPIC_HASH, 's1', 't3', 'acme/demo#9', CREATED, 3);
 	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -188,7 +188,6 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: BUG_HASH,
 			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
-			tracker: { adapter: 'github', storyRef: 'acme/demo#77' },
 		},
 		body: {},
 	});
@@ -196,11 +195,12 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 		meta: {
 			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: BUG_HASH,
 			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
-			tracker: { adapter: 'github', taskRefs: { t1: 'acme/demo#78' } },
 		},
 		body: { tasks: [TASK_T1], testStrategyCoverage: [] },
 		citations: [],
 	});
+	seedBoundUnits(repo, BUG_HASH, undefined, { s1: 'acme/demo#77' }, CREATED);
+	seedBoundTaskHead(repo, BUG_HASH, 's1', 't1', 'acme/demo#78', CREATED, 1);
 	return { repo, dir, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
@@ -932,21 +932,17 @@ test('t6 — resolveByIssue NO-OP: issue numbers resolve at task, story and epic
 	} finally { s.cleanup(); }
 });
 
-test('t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef for a story that does not exist now refuses', () => {
+test('t6 — resolveByIssue, the ONE corner that is not a no-op: a bound STORY head for a story the Define does not declare refuses', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-phantom-'));
 	const dir = join(repo, '.insrc/artifacts');
 	try {
-		// The third pass derives storyId from DEF `storyRefs` KEYS, which no
-		// artifact evidences — unlike the task and story passes, which read it
-		// off a filename. So a storyRef naming an undeclared, unbuilt story used
-		// to mint a dummy ref and now refuses. That is the SAME defect class this
-		// story fixes, not a regression; pinned here so the change is deliberate
-		// and visible rather than an unnoticed side effect.
+		// A STORY head bound to an issue for a story the Define does not declare
+		// and nobody built is a phantom: it used to mint a dummy ref and now
+		// refuses, pinned here so the change is deliberate and visible.
 		writeJson(join(dir, `DEF-${DECL_HASH}.json`), {
 			meta: {
 				workflow: 'define', runId: 'd1', repoPath: repo, epicHash: DECL_HASH,
 				epicSlug: 'phantom-storyref', createdAt: CREATED, schemaVersion: 1,
-				tracker: { adapter: 'github', epicRef: 'acme/demo#100', storyRefs: { s7: 'acme/demo#107' } },
 			},
 			body: {
 				flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [],
@@ -955,6 +951,7 @@ test('t6 — resolveByIssue, the ONE corner that is not a no-op: a DEF storyRef 
 			},
 			citations: [],
 		});
+		seedBoundUnits(repo, DECL_HASH, 'acme/demo#100', { s7: 'acme/demo#107' }, CREATED);
 		assert.equal(resolveWorkflowRef(repo, '#107'), null,
 			'a storyRef for a story with no artifact and no declaration is a phantom — refused');
 
@@ -1007,10 +1004,10 @@ test('resolveWorkflowRef reports each ResolvedRef output as the artifact id of i
 	try {
 		const other = '2222333344445555';
 		writeJson(join(s.dir, `DEF-${other}.json`), {
-			meta: { workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: other, epicSlug: 'other-epic', createdAt: '2026-08-01T00:00:00.000Z', schemaVersion: 1,
-				tracker: { adapter: 'github', epicRef: 'acme/demo#40', storyRefs: { s1: 'acme/demo#41' } } },
+			meta: { workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: other, epicSlug: 'other-epic', createdAt: '2026-08-01T00:00:00.000Z', schemaVersion: 1 },
 			body: { stories: [{ id: 's1' }] }, citations: [],
 		});
+		seedBoundUnits(s.repo, other, 'acme/demo#40', { s1: 'acme/demo#41' }, '2026-08-01T00:00:00.000Z');
 		const bug = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
 		assert.equal(bug?.workflowId, `TASK-${BUG_HASH}-s1-t1`);
 		assert.equal(bug?.slug, bug?.workflowId);

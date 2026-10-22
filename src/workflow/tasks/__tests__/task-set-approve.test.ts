@@ -19,7 +19,7 @@ const T = (n: number): string => `TASK-${HASH}-s1-t${n}`;
 /** Every record carries the folder anchor a stored one has. */
 function anchorAll(repo: string): void {
 	const dir = join(repo, ARTIFACTS_DIR);
-	for (const name of readdirSync(dir)) {
+	for (const name of readdirSync(dir).filter(n => n.endsWith('.json'))) {
 		const p = join(dir, name);
 		const doc = JSON.parse(readFileSync(p, 'utf8'));
 		doc.meta.epicCreatedAt = CREATED;
@@ -50,7 +50,7 @@ const withPort = (t: ReturnType<typeof fakeTracker>): void => { _setAutoPushDeps
 
 test("approving a plan creates the Task set and each Task's issue is bound on its Task head under the Story's issue, through the cli approve flow and the daemon seam, and a failed sync never fails the approval", async () => {
 	// the cli approve flow
-	const fx = seed({ pushTasks: false });
+	const fx = seed({ pushTasks: false, taskHeads: false });
 	try {
 		anchorAll(fx.repo); groundPlan(fx.plan);
 		const { t, links } = trackedFake();
@@ -72,7 +72,7 @@ test("approving a plan creates the Task set and each Task's issue is bound on it
 	} finally { fx.cleanup(); }
 
 	// the daemon seam: the same set and the same bindings
-	const fy = seed({ pushTasks: false });
+	const fy = seed({ pushTasks: false, taskHeads: false });
 	try {
 		anchorAll(fy.repo); groundPlan(fy.plan);
 		const { t, links } = trackedFake();
@@ -89,7 +89,7 @@ test("approving a plan creates the Task set and each Task's issue is bound on it
 	} finally { fy.cleanup(); }
 
 	// a plan whose rows cannot become Tasks: the approval stands, the failure is reported beside it, no Task head is made
-	const fz = seed({ pushTasks: false });
+	const fz = seed({ pushTasks: false, taskHeads: false });
 	try {
 		anchorAll(fz.repo); groundPlan(fz.plan, doc => { doc.body.tasks[1].order = 5; });
 		const { t } = trackedFake();
@@ -107,7 +107,7 @@ test("approving a plan creates the Task set and each Task's issue is bound on it
 });
 
 test('task-set-approve.test.ts: plan approval syncs Task heads from the lifecycle approval', async () => {
-	const fx = seed({ pushTasks: false });
+	const fx = seed({ pushTasks: false, taskHeads: false });
 	try {
 		anchorAll(fx.repo); groundPlan(fx.plan);
 		const { t } = trackedFake();

@@ -24,7 +24,7 @@ import type { UnitRef } from '../refs.js';
 import { bindArtifact } from '../binding.js';
 import { ensureUnitIssue, ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
 
-import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed, story, task } from './unit-issue-kit.js';
+import { CFG, HASH, MEMBERSHIP, SLUG, bound, deps, epic, fakeTracker, ref, seed, story, task , epicHead, storyHead } from './unit-issue-kit.js';
 
 // ---------------------------------------------------------------------------
 
@@ -47,39 +47,32 @@ test('ensureUnitIssue takes a unit and a port and returns a PortResult without a
 	}
 });
 
-test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command', () => {
+test('resolveUnitIssueLocal resolves from the bindings and reads no older ref, reconciles nothing and runs no command', () => {
 	const fx = seed();
 	try {
-		// Epic: the Define's older epicRef; the record and the HLD ref are written locally
-		const def = fx.read(defineArtifactId(HASH)); def.meta.tracker = { adapter: 'github', epicRef: 'acme/demo#7' };
+		// the older refs a Define, an HLD and an LLD once carried are not read
+		const def = fx.read(defineArtifactId(HASH)); def.meta.tracker = { adapter: 'github', epicRef: 'acme/demo#7', storyRefs: { s1: 'acme/demo#8' } };
 		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def));
-		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
-		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#7');
-		assert.equal(fx.read(hldArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#7', 'the HLD ref is reconciled');
+		const lld0 = fx.read(lldArtifactId(HASH, 's1')); lld0.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#8' };
+		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld0));
+		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), null);
+		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), null);
+		assert.equal(bound(fx, epicHead), undefined, 'and nothing is bound from them');
 
-		// Story: the Define's storyRefs entry; the LLD gets its own storyRef and record
-		const def2 = fx.read(defineArtifactId(HASH)); def2.meta.tracker.storyRefs = { s1: 'acme/demo#8' };
-		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def2));
+		// the binding of the EPIC head and of the STORY head
+		assert.equal(bindArtifact(fx.repo, epicHead, 'acme/demo#7').ok, true);
+		assert.equal(bindArtifact(fx.repo, storyHead, 'acme/demo#8').ok, true);
+		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
 		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
-		const lld = fx.read(lldArtifactId(HASH, 's1')).meta;
-		assert.equal(lld.tracker.storyRef, 'acme/demo#8');
-		assert.equal(lld.envelope.binding.createdAtRevision, 2, 'the binding notes the artifact revision');
+		assert.equal(fx.read(hldArtifactId(HASH)).meta.tracker, undefined, 'no older ref is written back on the HLD');
+		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.storyRef, 'acme/demo#8', 'and the LLD keeps what it had, unread');
+		assert.equal(fx.read(storyHead).meta.envelope.binding.createdAtRevision, 1, 'the binding notes the head revision');
 
 		// Task: the binding on its Task artifact; a record the plan once held for it is not read
 		const plan = fx.read(planArtifactId(HASH, 's1')); plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#9' }, units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } };
 		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(plan));
 		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), null, 'a Task record on the plan is not read');
 		assert.equal(bindArtifact(fx.repo, `TASK-${HASH}-s1-t1`, 'acme/demo#9').ok, true);
-		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
-		assert.equal(bound(fx, `TASK-${HASH}-s1-t1`), 'acme/demo#9');
-
-		// the bindings alone (legacy refs removed) resolve all three units
-		const d3 = fx.read(defineArtifactId(HASH)); delete d3.meta.tracker.epicRef; delete d3.meta.tracker.storyRefs;
-		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(d3));
-		const l3 = fx.read(lldArtifactId(HASH, 's1')); delete l3.meta.tracker.storyRef;
-		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(l3));
-		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
-		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
 		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
 
 		// a unit with nothing recorded, and an unreadable repo, resolve to null without throwing
@@ -89,17 +82,16 @@ test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles lo
 	} finally { fx.cleanup(); }
 });
 
-test('a legacy LLD with only storyRef creates no second Story issue', () => {
+test('a legacy LLD with only storyRef is no issue: the Story is looked up and bound afresh', () => {
 	const fx = seed();
 	try {
-		const lld = fx.read(lldArtifactId(HASH, 's1')); lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#5' };   // no units, no unit label
+		const lld = fx.read(lldArtifactId(HASH, 's1')); lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#5' };
 		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
 		const t = fakeTracker();
+		ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		const r = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
-		assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#5', created: false, duplicateCheck: 'clean' } });
-		assert.equal(t.calls.create, 0);
-		assert.equal(t.calls.find, 0, 'no tracker lookup either');
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.storyRefs.s1, 'acme/demo#5', 'the Define aggregate is reconciled');
+		assert.deepEqual(r.ok && [r.value.issue === 'acme/demo#5', r.value.created], [false, true], 'the older ref is not adopted');
+		assert.equal(bound(fx, storyHead), r.ok ? r.value.issue : '');
 	} finally { fx.cleanup(); }
 });
 
@@ -142,14 +134,13 @@ test('team mode creates only when everything misses and reports phase before-cre
 		assert.deepEqual(e, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
 		assert.deepEqual(t.issues[0]!.spec.labels, ['epic', MEMBERSHIP, unitLabel(epic(fx.repo))], 'kind, membership and per-unit labels');
 		assert.equal(t.issues[0]!.spec.issueType, 'Epic');
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');
-		assert.equal(fx.read(hldArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');
+		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 
 		const s = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(s.ok && s.value.issue, 'acme/demo#2');
 		assert.deepEqual(t.calls.link[0], ['acme/demo#1', 1002], 'the Story is linked under its Epic');
 		assert.match(t.issues[1]!.spec.body, /#1/, 'the body names the Epic issue');
-		assert.equal(bound(fx, lldArtifactId(HASH, 's1')), 'acme/demo#2');
+		assert.equal(bound(fx, storyHead), 'acme/demo#2');
 
 		const k = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
 		assert.equal(k.ok && k.value.issue, 'acme/demo#3');
@@ -169,7 +160,7 @@ test('team mode creates only when everything misses and reports phase before-cre
 			const a = ensureUnitIssueDetailed(epic(other.repo), t2.port, deps);
 			assert.deepEqual(a.ok && [a.value.issue, a.value.created], ['acme/demo#40', false]);
 			assert.equal(t2.calls.create, 0);
-			assert.equal(bound(other, defineArtifactId(HASH)), 'acme/demo#40', 'and recorded');
+			assert.equal(bound(other, epicHead), 'acme/demo#40', 'and recorded');
 		} finally { other.cleanup(); }
 
 		// a unit that is not in its artifact is a failure before create
@@ -185,12 +176,12 @@ test('a create that times out after the remote committed is adopted by its label
 		const first = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
 		assert.equal(t.issues.length, 1, 'the remote did commit the issue');
-		assert.equal(readFileSync(fx.json(defineArtifactId(HASH)), 'utf8').includes('"epicRef"'), false, 'but nothing was recorded');
+		assert.equal(bound(fx, epicHead), undefined, 'but nothing was recorded');
 
 		const second = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(second.ok && [second.value.issue, second.value.created], ['acme/demo#1', false], 'found by its per-unit label');
 		assert.equal(t.calls.create, 1, 'no second create');
-		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1');
+		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 	} finally { fx.cleanup(); }
 });
 
@@ -223,8 +214,8 @@ test('a lower-numbered issue is adopted and the call\'s own is commented on and 
 			assert.deepEqual(t.calls.comments.map(([ref]) => ref), ['acme/demo#2'], 'the call\'s own issue is commented on');
 			assert.match(t.calls.comments[0]![1], /Duplicate of acme\/demo#1/);
 			assert.deepEqual(t.calls.closed, failClose ? [] : ['acme/demo#2']);
-			assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1', 'the record names the lowest');
-			assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');
+			assert.equal(bound(fx, epicHead), 'acme/demo#1', 'the record names the lowest');
+			assert.equal(bound(fx, epicHead), 'acme/demo#1');
 
 			// the listing's own issue first: kept, nothing commented
 			const clean = fakeTracker({ withListing: true });
@@ -252,8 +243,8 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 		assert.equal(ra.ok && rb?.ok, true);
 		assert.deepEqual(shared.issues.filter(i => i.state === 'open').map(i => i.ref), ['acme/demo#1'], 'one open issue: the lowest');
 		assert.deepEqual(second.calls.closed, ['acme/demo#2']);
-		assert.equal(bound(a, defineArtifactId(HASH)), 'acme/demo#1');
-		assert.equal(bound(b, defineArtifactId(HASH)), 'acme/demo#1', 'both records name it');
+		assert.equal(bound(a, epicHead), 'acme/demo#1');
+		assert.equal(bound(b, epicHead), 'acme/demo#1', 'both records name it');
 	} finally { a.cleanup(); b.cleanup(); }
 });
 
@@ -263,7 +254,7 @@ test('a failed findIssues listing keeps the recorded issue and a following call 
 		const t = fakeTracker({ withListing: true, failList: true });
 		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'not-run' } });
-		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1');
+		assert.equal(bound(fx, epicHead), 'acme/demo#1');
 		const before = { ...t.calls };
 		const again = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(again, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'clean' } });
@@ -278,7 +269,7 @@ test('a link under the parent that failed at creation is retried on the next ens
 		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
 		const first = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(first.ok, true, 'the Story issue is still returned');
-		const pending = fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding.pendingLink;
+		const pending = fx.read(storyHead).meta.envelope.binding.pendingLink;
 		assert.deepEqual(pending, { parent: ref('acme/demo#1'), childId: 1002 }, 'the failed link is recorded on the binding');
 		assert.equal(isUnitSettled(story(fx.repo)), false);
 
@@ -288,7 +279,7 @@ test('a link under the parent that failed at creation is retried on the next ens
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
 		assert.equal(t.calls.link.length, linksBefore + 1);
 		assert.equal(t.calls.create, createsBefore);
-		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding.pendingLink, undefined);
+		assert.equal(fx.read(storyHead).meta.envelope.binding.pendingLink, undefined);
 		assert.equal(isUnitSettled(story(fx.repo)), true);
 
 		// settled: a further ensure makes no tracker call at all
@@ -329,10 +320,9 @@ function timedOutUnit(fx: ReturnType<typeof seed>, unitOf: (repo: string) => Uni
 	assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
 	return t;
 }
-/** The unit's record in the shape the retry reads: a Story's binding (refs as owner/repo#N), a Task's Plan record. */
+/** The unit's record in the shape the retry reads: the binding of its Story or Task head (refs as owner/repo#N). */
 const recordOf = (fx: ReturnType<typeof seed>, u: UnitRef) => {
-	if (u.unit !== 'story') return fx.read(planArtifactId(HASH, 's1')).meta.tracker.units['task:s1/t1'];
-	const b = fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding;
+	const b = fx.read(u.unit === 'story' ? storyHead : `TASK-${HASH}-s1-t1`).meta.envelope.binding;
 	const p = b.pendingLink;
 	return {
 		issue: b.reference.entityId, createdAtRevision: b.createdAtRevision,
@@ -351,7 +341,7 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		assert.deepEqual(t.calls.resolve, ['acme/demo#2']);
 		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]]);
 		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
-		assert.equal(recordOf(fx, story(fx.repo)).createdAtRevision, 2);
+		assert.equal(recordOf(fx, story(fx.repo)).createdAtRevision, 1);
 		assert.equal(isUnitSettled(story(fx.repo)), true);
 	} finally { fx.cleanup(); }
 
@@ -374,7 +364,7 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		const rec = recordOf(fx, story(fx.repo));
 		assert.deepEqual(rec.pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
 		assert.equal(rec.issue, 'acme/demo#2');
-		assert.equal(rec.createdAtRevision, 2, 'the record kept its revision mark');
+		assert.equal(rec.createdAtRevision, 1, 'the record kept its revision mark');
 		assert.equal(isUnitSettled(story(fx.repo)), false);
 		const linksBefore = t.calls.link.length;
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
@@ -448,9 +438,9 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		const t = fakeTracker();
 		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
-		const lld = fx.read(lldArtifactId(HASH, 's1'));
-		lld.meta.envelope.binding.pendingLink = { parent: ref('acme/demo#1'), childId: 77 };
-		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
+		const head = fx.read(storyHead);
+		head.meta.envelope.binding.pendingLink = { parent: ref('acme/demo#1'), childId: 77 };
+		writeFileSync(fx.json(storyHead), JSON.stringify(head));
 		const resolvesBefore = t.calls.resolve.length;
 		const linksBefore = t.calls.link.length;
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);

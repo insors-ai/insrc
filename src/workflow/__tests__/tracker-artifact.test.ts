@@ -113,3 +113,34 @@ test('renderTrackerMarkdown surfaces failed checklist items with notes', () => {
 	assert.ok(md.includes('taskList'));
 	assert.ok(md.includes('no task list in Epic body'));
 });
+
+// ---------------------------------------------------------------------------
+// The tracker lines of the design documents read the binding of the unit's head
+// ---------------------------------------------------------------------------
+
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { renderDefineMarkdown } from '../artifacts/define.js';
+import { renderHldMarkdown } from '../artifacts/hld.js';
+import { renderLldMarkdown } from '../artifacts/lld.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
+
+test('tracker-artifact.test.ts: the tracker lines read the binding, not the older refs', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-lines-'));
+	const HASH = 'a3f4b8c9d1e2f3a4';
+	try {
+		const base = { runId: 'r', repoPath: repo, epicHash: HASH, epicSlug: 'demo', createdAt: '2026-07-17T00:00:00.000Z', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
+		// the older refs a document's meta once carried name other issues, and are not read
+		const stale = { epicRef: 'acme/demo#900', storyRef: 'acme/demo#901', storyRefs: { s1: 'acme/demo#902' } };
+		const define = { meta: { ...base, workflow: 'define', tracker: stale }, body: { flavor: 'enhancement', problem: 'p', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] }, citations: [] } as never;
+		const hld = { meta: { ...base, workflow: 'design.epic', tracker: stale }, body: { frameworkSummary: 'f', architectureShape: 'a', sharedContracts: [], storyBoundaries: [], nonFunctional: {}, rolloutOverview: { phases: [], orderingRationale: '', riskyBits: [] }, alternativesConsidered: [], chosenAlternative: 'a1', openQuestions: [] }, citations: [] } as never;
+		const lld = { meta: { ...base, workflow: 'design.story', storyId: 's1', hldBaseRunId: 'h', hldEffectiveHash: 'e', hldAmendmentsApplied: [], tracker: stale }, body: { hldContextSlice: { frameworkSummary: 'f', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's1', owns: [], depends: [], internal: '' }, adjacentBoundaries: [], rolloutPhase: 'p', nonFunctional: {} }, contractDetails: { surfaceLevel: 'internal', api: [] }, dataModelChanges: [], interactionWithShared: [], errorPaths: { errorCases: [], edgeCases: [], invariantsToPreserve: [] }, testStrategy: { testLevels: [], acceptanceMapping: [], testFramework: 'node:test' }, alternativesConsidered: [], chosenAlternative: 'a1', openQuestions: [] }, citations: [] } as never;
+		for (const md of [renderDefineMarkdown(define), renderHldMarkdown(hld), renderLldMarkdown(lld)]) assert.doesNotMatch(md, /\*\*Tracker:\*\*/);
+		seedBoundUnits(repo, HASH, 'acme/demo#3', { s1: 'acme/demo#4' });
+		assert.match(renderDefineMarkdown(define), /\*\*Tracker:\*\* \[acme\/demo#3\]/);
+		assert.match(renderHldMarkdown(hld), /\*\*Tracker:\*\* \[acme\/demo#3\]/);
+		assert.match(renderLldMarkdown(lld), /\*\*Tracker:\*\* \[acme\/demo#4\]/);
+		assert.doesNotMatch(renderLldMarkdown(lld), /#90\d/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});

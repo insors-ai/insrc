@@ -531,19 +531,10 @@ export interface EpicDefinitionCore {
 	/** Which artifact headed the work item. Set only by
 	 *  {@link readEpicDefinitionCore}, never by a single-artifact read. */
 	readonly headKind?:   WorkItemHeadKind;
-	/** The head's `meta.tracker` block (issue refs), when it carries one. */
-	readonly tracker?:    TrackerBlock;
 }
 
 /** The artifact kinds that can head a work item, in precedence order. */
 export type WorkItemHeadKind = 'DEF' | 'ISSUE' | 'LLD';
-
-/** The tracker refs a workflow artifact carries in `meta.tracker`. */
-export interface TrackerBlock {
-	readonly epicRef?:   string;
-	readonly storyRef?:  string;
-	readonly storyRefs?: Readonly<Record<string, string>>;
-}
 
 /** Read `meta.createdAt` + `meta.epicSlug` + `meta.standalone` from a canonical
  *  artifact JSON. Best-effort — returns `{}` when absent/unreadable.
@@ -557,20 +548,15 @@ function readArtifactCore(repoPath: string, artifactId: string): EpicDefinitionC
 	if (!existsSync(json)) return {};
 	try {
 		const parsed = JSON.parse(readFileSync(json, 'utf8')) as {
-			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown; tracker?: unknown };
+			meta?: { createdAt?: unknown; epicSlug?: unknown; standalone?: unknown };
 		};
 		const createdAt  = typeof parsed.meta?.createdAt  === 'string'  ? parsed.meta.createdAt  : undefined;
 		const epicSlug   = typeof parsed.meta?.epicSlug   === 'string'  ? parsed.meta.epicSlug   : undefined;
 		const standalone = typeof parsed.meta?.standalone === 'boolean' ? parsed.meta.standalone : undefined;
-		// The tracker block rides along so the tracker resolver can take its
-		// identity from this reader without losing issue refs. It is not one of the
-		// "usable" fields: a head is still judged on the three above.
-		const tracker    = isPlainObject(parsed.meta?.tracker) ? parsed.meta.tracker as TrackerBlock : undefined;
 		return {
 			...(createdAt  !== undefined ? { createdAt }  : {}),
 			...(epicSlug   !== undefined ? { epicSlug }   : {}),
 			...(standalone !== undefined ? { standalone } : {}),
-			...(tracker    !== undefined ? { tracker }    : {}),
 		};
 	} catch {
 		return {};
@@ -651,9 +637,6 @@ function hasUsableField(core: EpicDefinitionCore): boolean {
 	return core.createdAt !== undefined || core.epicSlug !== undefined || core.standalone !== undefined;
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** The artifact id of the work item's lowest-ordinal Story LLD (`s1` before
  *  `s2`), or undefined when it has none. Ordinals compare

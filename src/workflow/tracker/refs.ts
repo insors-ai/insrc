@@ -51,15 +51,11 @@ export interface UnitRef {
 export interface TrackerMeta {
 	readonly adapter?:       TrackerKind | undefined;
 	readonly units?:         Readonly<Record<string, UnitIssue>> | undefined;
-	readonly epicRef?:       string;                        // on HLD / Define
-	readonly storyRef?:      string;                        // on LLD
 	readonly issueRef?:      string;                        // on a bugfix IssueArtifact — its OWN created GH issue (S005/sc-none)
-	readonly storyRefs?:     Readonly<Record<string, string>>;  // aggregate on the Epic (batch push)
 	readonly milestoneRef?:  string;
 	readonly labelsCreated?: readonly string[];
 	readonly epicStatus?:    string;
 	readonly storyStatus?:   Readonly<Record<string, string>>;
-	readonly pushedAt?:      string;
 	readonly lastSyncedAt?:  string;
 }
 

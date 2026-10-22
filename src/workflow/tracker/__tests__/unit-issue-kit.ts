@@ -8,6 +8,7 @@ import type { ResolvedGithubConfig } from '../../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
 import { draftMeta } from '../../__tests__/lifecycle-fixtures.js';
+import { seedUnitHeads } from '../../__tests__/helpers/task-heads.js';
 
 export const HASH = 'a3f4b8c9d1e2f3a4';
 export const CREATED = '2026-07-17T07:42:28.275Z';
@@ -113,7 +114,7 @@ export function fakeTracker(over: {
 	return { port, issues, calls, shared: { issues, next: counter } };
 }
 
-/** The issue an Epic's Define or a Story's LLD is bound to (s6): meta.envelope.binding. */
+/** The issue an Epic's EPIC head or a Story's STORY head is bound to: meta.envelope.binding. */
 export const bound = (fx: ReturnType<typeof seed>, id: string): string | undefined => fx.read(id).meta.envelope?.binding?.reference?.entityId;
 export const ref = (entityId: string) => ({ entityId, type: 'github:issue', relation: 'tracked-by' });
 
@@ -121,7 +122,7 @@ export const ref = (entityId: string) => ({ entityId, type: 'github:issue', rela
 // A repo with a Define, HLD, LLD and plan
 // ---------------------------------------------------------------------------
 
-export function seed(opts: { readonly taskHead?: boolean } = {}): { repo: string; json: (id: string) => string; read: (id: string) => any; cleanup: () => void } {
+export function seed(opts: { readonly taskHead?: boolean; readonly unitHeads?: boolean } = {}): { repo: string; json: (id: string) => string; read: (id: string) => any; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-unit-issue-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	const put = (id: string, doc: unknown): void => writeFileSync(artifactJsonPath(repo, id), JSON.stringify(doc, null, 2) + '\n');
@@ -142,6 +143,8 @@ export function seed(opts: { readonly taskHead?: boolean } = {}): { repo: string
 		body: { tasks: [{ id: 't1', title: 'Add the filter', summary: 'Add it', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['it filters'], derivedFrom: ['c1'], tests: [] }] },
 		citations: [],
 	});
+	// the heads the conversion makes: the Epic's and the Story's issue is bound on them
+	if (opts.unitHeads !== false) seedUnitHeads(repo, HASH, ['s1'], CREATED);
 	// the Task artifact the plan's approval made for row t1: a Task's issue is recorded on it
 	if (opts.taskHead !== false) {
 		put(`TASK-${HASH}-s1-t1`, {
@@ -158,3 +161,6 @@ export function seed(opts: { readonly taskHead?: boolean } = {}): { repo: string
 export const epic = (repo: string): UnitRef => ({ unit: 'epic', repoPath: repo, epicHash: HASH });
 export const story = (repo: string): UnitRef => ({ unit: 'story', repoPath: repo, epicHash: HASH, storyId: 's1' });
 export const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHash: HASH, storyId: 's1', taskId: 't1' });
+
+export const epicHead = `EPIC-${HASH}`;
+export const storyHead = `STORY-${HASH}-s1`;

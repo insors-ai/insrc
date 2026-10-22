@@ -53,6 +53,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/workflow-step/phases/synthesize.ts', class: 'content', via: 'both', note: 'the draft pair: json is content, markdown a render' },
 	{ file: 'src/daemon/workflow-rpc.ts', class: 'content', via: 'both', note: 'the server-side draft pair' },
 	{ file: 'src/workflow/resolve-comment.ts', class: 'content', via: 'writeArtifact', note: 'appends the comment to body.openQuestions' },
+	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
 	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', via: 'both', note: 'the BUILD record is regenerated on each persist' },
 	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
 	{ file: 'src/daemon/steps/code-review-step/handler.ts', class: 'content', via: 'injected', note: 'injects the runner\'s revision-minting writer (writeRecordFile) into the runner; it has no raw writer of its own' },

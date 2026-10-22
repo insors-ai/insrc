@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { artifactJsonPath, lldArtifactId } from '../../storage.js';
+import { artifactJsonPath } from '../../storage.js';
 import type { PortResult, TrackerComment } from '../port.js';
 import type { UnitRef } from '../refs.js';
 import { runUnitExtras, type ExtraName, type ExtraStep } from '../unit-issue.js';
@@ -30,7 +30,7 @@ function withStory(fn: (unit: UnitRef, marks: () => Record<string, string>) => v
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-unit-extras-'));
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-		const path = artifactJsonPath(repo, lldArtifactId(HASH, 's1'));
+		const path = artifactJsonPath(repo, `STORY-${HASH}-s1`);
 		writeFileSync(path, JSON.stringify({
 			meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', envelope: { binding: { reference: { entityId: 'acme/demo#8', type: 'github:issue', relation: 'tracked-by' }, createdAtRevision: 1, posted: [] } } },
 			body: {}, citations: [],
@@ -42,7 +42,7 @@ function withStory(fn: (unit: UnitRef, marks: () => Record<string, string>) => v
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
-const marker = (name: ExtraName): string => `<!-- insrc:post:LLD-${HASH}-s1:${name === 'designComment' ? 'design' : name === 'reviewComment' ? 'review' : 'task-list'} -->`;
+const marker = (name: ExtraName): string => `<!-- insrc:post:STORY-${HASH}-s1:${name === 'designComment' ? 'design' : name === 'reviewComment' ? 'review' : 'task-list'} -->`;
 
 /** The unit's issue as a thread of comments: each comment step posts its marker into it, and the lister reads it back. */
 function thread() {

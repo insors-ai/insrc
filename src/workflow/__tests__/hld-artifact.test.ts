@@ -25,6 +25,10 @@ import {
 	type HldArtifact,
 	type HldBody,
 } from '../artifacts/hld.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
+import { mkdtempSync as mkRepoDir, rmSync as rmRepoDir } from 'node:fs';
+import { tmpdir as osTmp } from 'node:os';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Fixture
@@ -97,12 +101,16 @@ test('renderHldMarkdown emits all sections', () => {
 	assert.match(md, /## \d+\. References/);
 });
 
-test('renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set', () => {
-	const meta = { workflow: 'design.epic', runId: 'r', repoPath: '/', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
-	const base = { meta, body: fixtureBody(), citations: [] } as unknown as HldArtifact;
-	assert.doesNotMatch(renderHldMarkdown(base), /\*\*Tracker:\*\*/);
-	const linked = { meta: { ...meta, tracker: { epicRef: 'acme/demo#7' } }, body: fixtureBody(), citations: [] } as unknown as HldArtifact;
-	assert.match(renderHldMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#7\]\(https:\/\/github\.com\/acme\/demo\/issues\/7\)/);
+test('renderHldMarkdown adds a Tracker link only when the Epic head is bound to an issue', () => {
+	const repo = mkRepoDir(join(osTmp(), 'insrc-hld-render-'));
+	try {
+		const meta = { workflow: 'design.epic', runId: 'r', repoPath: repo, epicHash: 'a3f4b8c9d1e2f3a4', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
+		const art = (m: object) => ({ meta: m, body: fixtureBody(), citations: [] } as unknown as HldArtifact);
+		assert.doesNotMatch(renderHldMarkdown(art(meta)), /\*\*Tracker:\*\*/);
+		assert.doesNotMatch(renderHldMarkdown(art({ ...meta, tracker: { epicRef: 'acme/demo#9' } })), /\*\*Tracker:\*\*/, 'the older ref is not read');
+		seedBoundUnits(repo, 'a3f4b8c9d1e2f3a4', 'acme/demo#7');
+		assert.match(renderHldMarkdown(art(meta)), /\*\*Tracker:\*\* \[acme\/demo#7\]\(https:\/\/github\.com\/acme\/demo\/issues\/7\)/);
+	} finally { rmRepoDir(repo, { recursive: true, force: true }); }
 });
 
 // ---------------------------------------------------------------------------

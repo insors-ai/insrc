@@ -5,8 +5,7 @@
 
 /**
  * The default CompletionEvidence (sc4, owned by s3): what the records say about a Task's build and a Story's code review.
- * It only reads. The Task side reads the latest build round on the Task's own log; the BUILD record's per-task results are read
- * only for a Task that has no head (a Story planned before s7, until s9 gives it Task heads).
+ * It only reads. The Task side reads the latest build round on the Task's own log: a Task with no head has no round, so its build has not passed.
  */
 
 import { existsSync, readFileSync } from 'node:fs';

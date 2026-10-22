@@ -22,6 +22,10 @@ import {
 	type DefineBody,
 	type DefineStory,
 } from '../artifacts/define.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
 // Fixture
@@ -100,11 +104,17 @@ test('renderDefineMarkdown produces expected sections', () => {
 	assert.ok(md.includes('**Extends:**'));
 });
 
-test('renderDefineMarkdown adds a Tracker link only when meta.tracker.epicRef is set', () => {
-	const meta = { workflow: 'define', runId: 'run-1', repoPath: '/tmp/x', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
-	assert.doesNotMatch(renderDefineMarkdown({ meta, body: fixture(), citations: [] } as unknown as Parameters<typeof renderDefineMarkdown>[0]), /\*\*Tracker:\*\*/);
-	const linked = { meta: { ...meta, tracker: { epicRef: 'acme/demo#3' } }, body: fixture(), citations: [] } as unknown as Parameters<typeof renderDefineMarkdown>[0];
-	assert.match(renderDefineMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#3\]/);
+test('renderDefineMarkdown adds a Tracker link only when the Epic head is bound to an issue', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-define-render-'));
+	try {
+		const meta = { workflow: 'define', runId: 'run-1', repoPath: repo, epicHash: 'a3f4b8c9d1e2f3a4', createdAt: '', model: 'client', elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1 };
+		const art = (m: object) => ({ meta: m, body: fixture(), citations: [] } as unknown as Parameters<typeof renderDefineMarkdown>[0]);
+		assert.doesNotMatch(renderDefineMarkdown(art(meta)), /\*\*Tracker:\*\*/);
+		// the older ref on the meta is not read
+		assert.doesNotMatch(renderDefineMarkdown(art({ ...meta, tracker: { epicRef: 'acme/demo#9' } })), /\*\*Tracker:\*\*/);
+		seedBoundUnits(repo, 'a3f4b8c9d1e2f3a4', 'acme/demo#3');
+		assert.match(renderDefineMarkdown(art(meta)), /\*\*Tracker:\*\* \[acme\/demo#3\]/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
 test('renderDefineMarkdown escapes pipes in constraint text', () => {

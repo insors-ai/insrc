@@ -103,10 +103,11 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 		const doc: Doc = { meta: { workflow: 'define', epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, revision: 7 }, body: { stories: [] }, citations: [] };
 		const fx = repoWith(defineArtifactId(HASH), doc);
 		try {
-			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'o/r#1', storyRefs: { s1: 'o/r#2' }, labelsCreated: ['l'] } as never);
+			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'o/r#1', storyRefs: { s1: 'o/r#2' }, labelsCreated: ['l'] } as never);   // refs are bound by the linkage, not written here
 			let after = read(fx.json);
 			sameBodyAndRevision(doc, after, 7);
-			assert.equal((after.meta['tracker'] as Record<string, unknown>)['epicRef'], 'o/r#1');
+			assert.deepEqual((after.meta['tracker'] as Record<string, unknown>)['labelsCreated'], ['l']);
+			assert.equal((after.meta['tracker'] as Record<string, unknown>)['epicRef'], undefined, 'the Epic issue is not written onto the Define');
 			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.sync', { epicStatus: 'open', storyStatus: { s1: 'open' }, syncedAt: 's' } as never);
 			after = read(fx.json);
 			sameBodyAndRevision(doc, after, 7);

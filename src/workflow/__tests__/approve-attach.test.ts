@@ -42,7 +42,7 @@ function repoWithGit(repo: string): void {
 /** The fixtures carry no folder anchor; give each the Epic's creation time, as a stored record has. */
 function anchorAll(repo: string): void {
 	const dir = join(repo, '.insrc', 'artifacts');
-	for (const name of readdirSync(dir)) {
+	for (const name of readdirSync(dir).filter(n => n.endsWith('.json'))) {
 		const p = join(dir, name);
 		const doc = JSON.parse(readFileSync(p, 'utf8'));
 		doc.meta.epicCreatedAt = CREATED;
@@ -77,7 +77,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		assert.equal(epic.attachCommit?.committed, true, JSON.stringify(epic.attachCommit));
 		assert.match(git(repo(fx), 'log', '-1', '--format=%s'), /record the attached documents/);
 		assert.equal(git(fx.repo, 'status', '--porcelain', '--', rel), '');
-		assert.equal(readAttachments(fx.repo, `DEF-${HASH}`).length, 1);
+		assert.equal(readAttachments(fx.repo, `EPIC-${HASH}`).length, 1);
 
 		// LLD approval links the LLD to the Story's issue
 		stampOtherPartyReview(fx.lld);

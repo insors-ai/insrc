@@ -18,7 +18,7 @@ import {
 	hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, testsArtifactId, testsArtifactPaths,
 	resolveEpicAnchor, workItemKindOf,
 } from '../storage.js';
-import { attachDocuments, unitArtifactId } from './attach.js';
+import { attachDocuments, unitArtifactId, unitDocumentId } from './attach.js';
 import type { AttachOutcome, AttachTarget } from './attach.js';
 import { readBinding } from './binding.js';
 import type { TrackerPort } from './port.js';
@@ -29,10 +29,10 @@ export type AttachScope = 'documents' | 'records' | 'all';
 
 interface Folder { readonly anchor: string; readonly kind: ReturnType<typeof workItemKindOf>; readonly slug: string }
 
-/** The work item's folder arguments, read from the unit's own head (the Define or the LLD). */
+/** The work item's folder arguments, read from the unit's own document (the Define or the LLD). */
 function folderOf(unit: UnitRef): Folder | { readonly error: string } {
 	try {
-		const own = unitArtifactId(unit);
+		const own = unitDocumentId(unit);
 		if (own === undefined) return { error: `a ${unit.unit} unit has no documents of its own to attach yet` };
 		const meta = (JSON.parse(readFileSync(artifactJsonPath(unit.repoPath, own), 'utf8')) as { meta?: { epicCreatedAt?: string; standalone?: boolean; epicSlug?: string } }).meta ?? {};
 		const anchor = meta.epicCreatedAt ?? resolveEpicAnchor(unit.repoPath, unit.epicHash);

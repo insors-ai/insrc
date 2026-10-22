@@ -11,8 +11,8 @@
  * show what the attachment records.
  *
  * Nothing here is posted twice: a (target, revision) already recorded is skipped, and a link already in the issue's comments
- * (a post whose record was lost) is recorded without posting again. The Attachment records go on the head of the unit's own
- * artifact (the Define for an Epic, the LLD for a Story), the one that holds the binding, through `recordAttachment` below, a meta-only patch like the binding module's (it moves no revision and is refused while the store has a write staged).
+ * (a post whose record was lost) is recorded without posting again. The Attachment records go on the head of the unit
+ * (the EPIC head for an Epic, the STORY head for a Story), the one that holds the binding, through `recordAttachment` below, a meta-only patch like the binding module's (it moves no revision and is refused while the store has a write staged).
  */
 
 import { execFileSync } from 'node:child_process';
@@ -26,6 +26,7 @@ import { hasStagedWrite, isObject, readAttachments, readBinding, readHead } from
 import { gitOriginOwnerRepo } from './github.js';
 import type { TrackerComment, TrackerPort } from './port.js';
 import type { UnitRef } from './refs.js';
+import { unitHeadId } from './unit-head.js';
 
 const log = getLogger('workflow:tracker-attach');
 
@@ -53,8 +54,13 @@ export interface AttachOutcome {
 
 const git = (repoPath: string, args: readonly string[]): string => execFileSync('git', ['-C', repoPath, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
-/** The artifact that holds the unit's binding: the Define for an Epic, the LLD for a Story; a Task has none until s7. */
+/** The artifact that holds the unit's binding: the EPIC head of an Epic, the STORY head of a Story; a Task's is its own artifact, found elsewhere. */
 export function unitArtifactId(unit: UnitRef): string | undefined {
+	return unitHeadId(unit);
+}
+
+/** The unit's own document, the one that places its folder: the Define of an Epic, the LLD of a Story. */
+export function unitDocumentId(unit: UnitRef): string | undefined {
 	if (unit.unit === 'epic') return defineArtifactId(unit.epicHash);
 	if (unit.unit === 'story' && unit.storyId !== undefined) return lldArtifactId(unit.epicHash, unit.storyId);
 	return undefined;

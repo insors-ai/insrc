@@ -36,7 +36,7 @@ afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); })
 
 const git = (cwd: string, ...a: string[]): string => execFileSync('git', a, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const put = (repo: string, id: string, doc: unknown): string => { const p = artifactJsonPath(repo, id); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, JSON.stringify(doc)); return p; };
-const meta = (workflow: string, revision?: number) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', ...(revision !== undefined ? { revision } : {}) });
+const meta = (workflow: string, revision?: number) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: '2026-10-18T00:00:00.000Z', epicCreatedAt: '2026-10-18T00:00:00.000Z', ...(revision !== undefined ? { revision } : {}) });
 const hldBody = {
 	frameworkSummary: 'x', architectureShape: 'x',
 	sharedContracts: [{ id: 'sc1', name: 'API', purpose: 'p', interfaceSketch: 'interface API { fn(): void; }', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
@@ -163,9 +163,9 @@ test('resumeCheck refuses an unregistered receiving path and a clone of a differ
 			amendment: { type: 'sharedContract.fieldAdd', contractId: 'sc1', field: { name: 'batchSize', type: 'number', optional: true, purpose: 'batching' }, breaking: false },
 			rationale: 'r', citations: [], proposedBy: { workflow: 'design.story', runId: 'x', storyId: 's2', stepId: 's4' }, proposedAt: new Date().toISOString(), status: 'pending',
 		};
-		proposeAmendment(w.recv, amendment);
+		await proposeAmendment(w.recv, amendment);
 		assert.equal((await check(w)).kind, 'resume', 'a pending amendment changes nothing');
-		approveAmendment(w.recv, amendment.id, 'bob');
+		await approveAmendment(w.recv, amendment.id, 'bob');
 		const movedHld = await check(w);
 		assert.equal(movedHld.kind, 'refused');
 		assert.match(reason(movedHld), /the upstream moved since this run started: .*HLD-a3f4b8c9d1e2f3a4@\w+ @ revision 5 \(parked\).*HLD-a3f4b8c9d1e2f3a4@\w+ @ revision 5 \(now\)/);

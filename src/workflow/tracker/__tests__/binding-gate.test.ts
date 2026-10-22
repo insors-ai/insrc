@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 
 import { _setGateDepsForTests, teamContext } from '../../team/gate.js';
 import type { PolicyReader, TeamPolicy } from '../../team/types.js';
-import { lldArtifactId } from '../../storage.js';
-import { bindArtifact } from '../binding.js';
+import { seedBoundUnits } from '../../__tests__/helpers/task-heads.js';
 import type { PortResult, TrackerPort } from '../port.js';
 import { HASH, seed, story } from './unit-issue-kit.js';
 
@@ -15,7 +14,7 @@ const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsE
 test("the team gate resolves a bound unit's issue synchronously from the binding with no tracker call", () => {
 	const fx = seed();
 	try {
-		assert.ok(bindArtifact(fx.repo, lldArtifactId(HASH, 's1'), 'acme/demo#12').ok);
+		seedBoundUnits(fx.repo, HASH, undefined, { s1: 'acme/demo#12' });
 		const calls: string[] = [];
 		const port = new Proxy({ kind: 'github', capabilities: new Set(['claim']), whoAmI: (): PortResult<string> => { calls.push('whoAmI'); return { ok: true, value: 'alice' }; } }, {
 			get: (target, key: string) => (key in target ? (target as Record<string, unknown>)[key] : (): never => { calls.push(String(key)); throw new Error(`unexpected tracker call: ${String(key)}`); }),

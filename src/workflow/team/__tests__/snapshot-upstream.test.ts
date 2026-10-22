@@ -45,7 +45,7 @@ const hldBody = {
 };
 
 function seedChain(repo: string, revisions: { def?: number; hld?: number; lld?: number }): void {
-	const meta = (workflow: string, revision: number | undefined) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'e', storyId: 's1', ...(revision !== undefined ? { revision } : {}) });
+	const meta = (workflow: string, revision: number | undefined) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'e', storyId: 's1', createdAt: '2026-10-18T00:00:00.000Z', epicCreatedAt: '2026-10-18T00:00:00.000Z', ...(revision !== undefined ? { revision } : {}) });
 	seed(repo, defineArtifactId(HASH), { meta: meta('define', revisions.def), body: {}, citations: [] });
 	seed(repo, hldArtifactId(HASH), { meta: meta('design.epic', revisions.hld), body: hldBody, citations: [] });
 	seed(repo, lldArtifactId(HASH, 's1'), { meta: meta('design.story', revisions.lld), body: {}, citations: [] });
@@ -58,7 +58,7 @@ const amendment = (id: string): AmendmentRecord => ({
 	proposedAt: new Date().toISOString(), status: 'pending',
 });
 
-test('snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail', () => {
+test('snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-snap-'));
 	try {
 		seedChain(repo, { def: 3, hld: 5, lld: undefined });   // the LLD has no revision at all
@@ -78,9 +78,9 @@ test('snapshotUpstream lists the artifacts each workflow reads, including the De
 
 		// the effective HLD is keyed by its approved amendments: approving one changes the entry
 		const before = snapshotUpstream(repo, 'design.story', { epicHash: HASH });
-		proposeAmendment(repo, amendment(`AMD-${HASH}-1`));
+		await proposeAmendment(repo, amendment(`AMD-${HASH}-1`));
 		assert.deepEqual(snapshotUpstream(repo, 'design.story', { epicHash: HASH }), before, 'a pending amendment does not change the snapshot');
-		approveAmendment(repo, `AMD-${HASH}-1`, 'alice');
+		await approveAmendment(repo, `AMD-${HASH}-1`, 'alice');
 		const after = snapshotUpstream(repo, 'design.story', { epicHash: HASH });
 		assert.notDeepEqual(after, before, 'an approved amendment changes the effective HLD entry');
 		const hldEntry = after.find(u => u.artifactId.startsWith(hldArtifactId(HASH)));

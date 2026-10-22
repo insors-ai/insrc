@@ -31,7 +31,7 @@ const DEF_MADE     = '2026-09-01T08:00:00.000Z';
 const ISSUE_MADE   = '2026-09-02T08:00:00.000Z';
 const LLD_MADE     = '2026-09-03T08:00:00.000Z';
 const LLD_ANCHOR   = '2026-09-02T23:00:00.000Z';
-const TRACKER      = { epicRef: '#12', storyRefs: { S001: '#13' } };
+const TRACKER      = { epicRef: '#12', storyRefs: { S001: '#13' } };   // an older block a head may still carry: the reader no longer reports it
 
 function repo(): { repo: string; seed: (id: string, meta: Record<string, unknown>) => void; cleanup: () => void } {
 	const r = mkdtempSync(join(tmpdir(), 'insrc-lld-head-'));
@@ -46,7 +46,7 @@ function repo(): { repo: string; seed: (id: string, meta: Record<string, unknown
 // unit: readEpicDefinitionCore head precedence, LLD fallback, standalone:true and tracker
 // ---------------------------------------------------------------------------
 
-test('c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF with its tracker', () => {
+test('c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF without any tracker block', () => {
 	const r = repo();
 	try {
 		r.seed(`DEF-${HASH}`,        { createdAt: DEF_MADE, epicSlug: 'the-def', tracker: TRACKER });
@@ -57,17 +57,17 @@ test('c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF wit
 		assert.equal(core.epicSlug, 'the-def');
 		assert.equal(core.createdAt, DEF_MADE);
 		assert.equal(core.standalone, undefined, 'an epic DEF must not acquire a standalone flag');
-		assert.deepEqual(core.tracker, TRACKER, 'the DEF\'s tracker block rides along');
+		assert.equal('tracker' in core, false, 'the DEF\'s older tracker block is not reported');
 	} finally { r.cleanup(); }
 });
 
-test('c00559b7 — an ISSUE beats an LLD, keeps its own fields and carries its tracker', () => {
+test('c00559b7 — an ISSUE beats an LLD and keeps its own fields', () => {
 	const r = repo();
 	try {
 		r.seed(`ISSUE-${HASH}`,    { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true, tracker: TRACKER });
 		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicSlug: 'the-lld', standalone: true });
 		const core = readEpicDefinitionCore(r.repo, HASH);
-		assert.deepEqual(core, { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true, tracker: TRACKER, headKind: 'ISSUE' });
+		assert.deepEqual(core, { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true, headKind: 'ISSUE' });
 	} finally { r.cleanup(); }
 });
 

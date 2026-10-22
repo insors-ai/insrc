@@ -41,8 +41,8 @@ test('the three approve-time pushes run one path in team mode and in individual 
 			// the Story: its first link under the Epic fails, so it stays pending; the issue, the binding and the posts are made
 			const story = run(() => autoPushStoryOnLld(fx.lld));
 			assert.equal(story.status, 'created', mode);
-			assert.equal(readBinding(fx.repo, defineArtifactId(HASH))?.reference.entityId, 'acme/demo#1', `${mode}: the Epic is bound`);
-			const binding = readBinding(fx.repo, lldArtifactId(HASH, 's1'));
+			assert.equal(readBinding(fx.repo, `EPIC-${HASH}`)?.reference.entityId, 'acme/demo#1', `${mode}: the Epic is bound`);
+			const binding = readBinding(fx.repo, `STORY-${HASH}-s1`);
 			assert.equal(binding?.reference.entityId, 'acme/demo#2', `${mode}: the Story is bound`);
 			assert.deepEqual(binding?.pendingLink && [binding.pendingLink.parent.entityId, binding.pendingLink.childId], ['acme/demo#1', 1002], `${mode}: the failed link is pending`);
 			const posts = () => w.t.log.comments.filter(([ref]) => ref === 'acme/demo#2').length;
@@ -52,7 +52,7 @@ test('the three approve-time pushes run one path in team mode and in individual 
 			// the next approve retries the link and posts nothing again
 			const again = run(() => autoPushStoryOnLld(fx.lld));
 			assert.equal(again.status, 'already-exists', mode);
-			assert.equal(readBinding(fx.repo, lldArtifactId(HASH, 's1'))?.pendingLink, undefined, `${mode}: the link was retried and cleared`);
+			assert.equal(readBinding(fx.repo, `STORY-${HASH}-s1`)?.pendingLink, undefined, `${mode}: the link was retried and cleared`);
 			assert.equal(posts(), 2, `${mode}: nothing posted twice`);
 
 			// the Task issues: team mode makes one per Task whatever pushTasks says; individual mode keeps the setting

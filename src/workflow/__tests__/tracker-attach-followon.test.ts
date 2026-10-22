@@ -34,7 +34,7 @@ function setup() {
 	_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port });
 	// every record carries the folder anchor a stored one has
 	for (const name of ['DEF-', 'HLD-', 'LLD-', 'PLAN-']) {
-		for (const f of execFileSync('ls', [join(fx.repo, '.insrc', 'artifacts')], { encoding: 'utf8' }).split('\n').filter(n => n.startsWith(name))) {
+		for (const f of execFileSync('ls', [join(fx.repo, '.insrc', 'artifacts')], { encoding: 'utf8' }).split('\n').filter(n => n.startsWith(name) && n.endsWith('.json'))) {
 			const p = join(fx.repo, '.insrc', 'artifacts', f);
 			const doc = JSON.parse(readFileSync(p, 'utf8')); doc.meta.epicCreatedAt = CREATED; writeFileSync(p, JSON.stringify(doc, null, 2) + '\n');
 		}
@@ -88,7 +88,7 @@ test('the design document, plan and build, review and test records are attached 
 
 		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 3);
-		const first = readAttachments(fx.repo, `LLD-${HASH}-s1`);
+		const first = readAttachments(fx.repo, `STORY-${HASH}-s1`);
 		assert.deepEqual(first.map(a => a.target.fragment).sort(), [...docs.map(rel), rel(mds.build), rel(mds.review), rel(mds.tests)].sort());
 
 		// a second approval of unchanged records posts nothing; a new revision of the build record gets its own link and keeps the first
@@ -98,6 +98,6 @@ test('the design document, plan and build, review and test records are attached 
 		writeFileSync(mds.build, '# build, revision 2\n'); git(fx.repo, 'add', '--', rel(mds.build)); git(fx.repo, 'commit', '-q', '-m', 'build r2');
 		followOnTrackerAttach(approvedOf(buildJson), fx.repo);
 		assert.equal(links.length, 4);
-		assert.equal(readAttachments(fx.repo, `LLD-${HASH}-s1`).filter(a => a.target.fragment === rel(mds.build)).length, 2, 'one link per revision');
+		assert.equal(readAttachments(fx.repo, `STORY-${HASH}-s1`).filter(a => a.target.fragment === rel(mds.build)).length, 2, 'one link per revision');
 	} finally { fx.cleanup(); }
 });

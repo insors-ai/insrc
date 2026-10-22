@@ -9,7 +9,7 @@ import { defineArtifactId, lldArtifactId, planArtifactId } from '../../storage.j
 import { readBinding } from '../binding.js';
 import type { Capability, PortResult, TrackerPort } from '../port.js';
 import { ensureUnitIssueDetailed, isUnitSettled, unitLabel } from '../unit-issue.js';
-import { CFG, HASH, MEMBERSHIP, bound, deps, epic, fakeTracker, ref, seed, story, task } from './unit-issue-kit.js';
+import { CFG, HASH, MEMBERSHIP, bound, deps, epic, fakeTracker, ref, seed, story, task , epicHead, storyHead } from './unit-issue-kit.js';
 
 afterEach(() => _setGateDepsForTests());
 
@@ -23,13 +23,13 @@ test('ensureUnitIssueDetailed binds an issue a person created first and an issue
 		const t = fakeTracker();
 		assert.ok(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok);
 		assert.ok(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok);
-		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#1');
-		assert.equal(bound(fx, lldArtifactId(HASH, 's1')), 'acme/demo#2');
-		assert.deepEqual(fx.read(lldArtifactId(HASH, 's1')).meta.envelope.binding, { reference: ref('acme/demo#2'), createdAtRevision: 2, posted: [] });
-		assert.equal(readBinding(fx.repo, defineArtifactId(HASH))?.reference.entityId, 'acme/demo#1');
-		// the units record is no longer written for an Epic or a Story
-		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units, undefined);
-		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units, undefined);
+		assert.equal(bound(fx, epicHead), 'acme/demo#1');
+		assert.equal(bound(fx, storyHead), 'acme/demo#2');
+		assert.deepEqual(fx.read(storyHead).meta.envelope.binding, { reference: ref('acme/demo#2'), createdAtRevision: 1, posted: [] });
+		assert.equal(readBinding(fx.repo, epicHead)?.reference.entityId, 'acme/demo#1');
+		// nothing is written on the Define or the LLD: no unit record and no older ref
+		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker, undefined);
+		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker, undefined);
 
 		// a Task unit is bound on its Task artifact, with no record and no binding on the Plan
 		assert.ok(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok);
@@ -53,8 +53,8 @@ test('ensureUnitIssueDetailed binds an issue a person created first and an issue
 		assert.deepEqual(e.ok && [e.value.issue, e.value.created], ['acme/demo#21', false]);
 		assert.deepEqual(s.ok && [s.value.issue, s.value.created], ['acme/demo#22', false]);
 		assert.equal(t.calls.create, 0, 'the issues a person made are adopted, not duplicated');
-		assert.equal(bound(fx, defineArtifactId(HASH)), 'acme/demo#21');
-		assert.equal(bound(fx, lldArtifactId(HASH, 's1')), 'acme/demo#22');
+		assert.equal(bound(fx, epicHead), 'acme/demo#21');
+		assert.equal(bound(fx, storyHead), 'acme/demo#22');
 	} finally { fx.cleanup(); }
 
 	// a repository with no tracker has no binding, and nothing is looked up or created
@@ -64,7 +64,7 @@ test('ensureUnitIssueDetailed binds an issue a person created first and an issue
 		const none = ensureUnitIssueDetailed(epic(fx.repo), t.port, { ...deps, readConfig: () => ({ type: 'none', source: 'per-repo-config' }) });
 		assert.equal(none.ok, false);
 		assert.deepEqual([t.calls.find, t.calls.create], [0, 0]);
-		assert.equal(readBinding(fx.repo, defineArtifactId(HASH)), undefined);
+		assert.equal(readBinding(fx.repo, epicHead), undefined);
 		assert.equal(fx.read(defineArtifactId(HASH)).meta.envelope, undefined);
 	} finally { fx.cleanup(); }
 });
@@ -75,7 +75,7 @@ test('a failed link under the parent is stored as the binding\'s pending link, r
 		const t = fakeTracker({ failLink: 1 });
 		assert.ok(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok);
 		assert.ok(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, 'the issue is still returned');
-		assert.deepEqual(readBinding(fx.repo, lldArtifactId(HASH, 's1'))?.pendingLink, { parent: ref('acme/demo#1'), childId: 1002 });
+		assert.deepEqual(readBinding(fx.repo, storyHead)?.pendingLink, { parent: ref('acme/demo#1'), childId: 1002 });
 		assert.equal(isUnitSettled(story(fx.repo)), false);
 
 		const links = t.calls.link.length;
@@ -83,14 +83,14 @@ test('a failed link under the parent is stored as the binding\'s pending link, r
 		assert.ok(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok);
 		assert.equal(t.calls.link.length, links + 1, 'the retry linked once');
 		assert.equal(t.calls.create, creates, 'no new issue');
-		assert.equal(readBinding(fx.repo, lldArtifactId(HASH, 's1'))?.pendingLink, undefined, 'cleared');
+		assert.equal(readBinding(fx.repo, storyHead)?.pendingLink, undefined, 'cleared');
 		assert.equal(isUnitSettled(story(fx.repo)), true);
 
 		// done: a further ensure makes no link call
 		ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
 		assert.equal(t.calls.link.length, links + 1, 'not retried again');
 		// the binding is still one issue
-		assert.equal(bound(fx, lldArtifactId(HASH, 's1')), 'acme/demo#2');
+		assert.equal(bound(fx, storyHead), 'acme/demo#2');
 	} finally { fx.cleanup(); }
 });
 
@@ -120,24 +120,19 @@ test('the draft hook and the handoff check read the binding for an Epic or Story
 		assert.equal(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#2');
 	} finally { fx.cleanup(); }
 
-	// a pre-s6 head: only the older storyRef, no binding. It resolves and is bound once from that ref; no issue is created or looked up
+	// a head with only the older storyRef and no binding on the STORY head: the older ref is not read, so the Story has no issue yet
 	const old = seed();
 	try {
 		const lld = old.read(lldArtifactId(HASH, 's1'));
 		lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#5' };
 		writeFileSync(old.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
-		assert.equal(readBinding(old.repo, lldArtifactId(HASH, 's1')), undefined);
+		assert.equal(readBinding(old.repo, storyHead), undefined);
 		const t = fakeTracker();
 		const port = { ...t.port, whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }) } as unknown as TrackerPort;
 		_setGateDepsForTests({ readPolicy: policy, loadTracker: () => ({ ok: true, value: port }) });
 		const ctx = teamContext(old.repo, story(old.repo), { createIssue: false });
-		assert.ok(ctx.ok && ctx.team);
-		assert.equal(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#5', 'resolved from the older ref');
-		assert.equal(bound(old, lldArtifactId(HASH, 's1')), 'acme/demo#5', 'and bound from it, once');
-		const bindingText = JSON.stringify(readBinding(old.repo, lldArtifactId(HASH, 's1')));
-		teamContext(old.repo, story(old.repo), { createIssue: false });
-		assert.equal(JSON.stringify(readBinding(old.repo, lldArtifactId(HASH, 's1'))), bindingText, 'a second read changes nothing');
+		assert.notEqual(ctx.ok && ctx.team ? ctx.issue : null, 'acme/demo#5', 'the older ref is not resolved');
+		assert.equal(readBinding(old.repo, storyHead), undefined, 'and nothing is bound from it');
 		assert.deepEqual([t.calls.find, t.calls.create, t.calls.list], [0, 0, 0], 'no lookup and no new issue');
-		assert.ok(readFileSync(old.json(lldArtifactId(HASH, 's1')), 'utf8').includes('"storyRef"'), 'the older ref is still there for the renderers');
 	} finally { old.cleanup(); }
 });

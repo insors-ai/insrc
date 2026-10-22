@@ -26,6 +26,7 @@ import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../t
 import { artifactJsonPath, planArtifactPaths } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 import { seedTaskHeads } from './helpers/task-heads.js';
+import { readBinding } from '../tracker/binding.js';
 
 const HASH = 'a1b2c3d4e5f60718';
 const SLUG = 'demo-feature';
@@ -124,7 +125,7 @@ function trackerOf(jsonPath: string): Record<string, unknown> {
 // Tests
 // ---------------------------------------------------------------------------
 
-test('HLD approve creates the Epic issue, links docs, and writes nested meta.tracker', () => {
+test('HLD approve creates the Epic issue, binds it on the Epic head and links docs', () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
@@ -133,9 +134,10 @@ test('HLD approve creates the Epic issue, links docs, and writes nested meta.tra
 		assert.equal(r.status, 'created');
 		assert.equal(r.status === 'created' ? r.epicRef : '', 'acme/demo#1');
 
-		// nested meta.tracker on BOTH the HLD and the Define (aggregate).
-		assert.equal(trackerOf(s.hldJson)['epicRef'], 'acme/demo#1');
-		assert.equal(trackerOf(s.defineJson)['epicRef'], 'acme/demo#1');
+		// the issue is the binding of the Epic's head; the HLD and the Define carry no ref.
+		assert.equal(readBinding(s.repo, `EPIC-${HASH}`)?.reference.entityId, 'acme/demo#1');
+		assert.equal(trackerOf(s.hldJson)['epicRef'], undefined);
+		assert.equal(trackerOf(s.defineJson)['epicRef'], undefined);
 
 		// doc → issue: the Define markdown gained a Tracker link.
 		const defineMd = readFileSync(join(s.repo, EPIC_FOLDER, 'DEF.md'), 'utf8');
@@ -148,7 +150,7 @@ test('HLD approve creates the Epic issue, links docs, and writes nested meta.tra
 	} finally { s.cleanup(); }
 });
 
-test('LLD approve creates the Story issue + aggregates into the Define; links the LLD doc', () => {
+test('LLD approve creates the Story issue and binds it on the Story head; links the LLD doc', () => {
 	const gh = makeFakeGh();
 	_setTrackerExecForTests(gh.fn);
 	const s = setup();
@@ -158,8 +160,9 @@ test('LLD approve creates the Story issue + aggregates into the Define; links th
 		assert.equal(r.status, 'created');
 		assert.equal(r.status === 'created' ? r.storyRef : '', 'acme/demo#2');
 
-		assert.equal(trackerOf(s.lldJson)['storyRef'], 'acme/demo#2');
-		assert.deepEqual(trackerOf(s.defineJson)['storyRefs'], { s1: 'acme/demo#2' });
+		assert.equal(readBinding(s.repo, `STORY-${HASH}-s1`)?.reference.entityId, 'acme/demo#2');
+		assert.equal(trackerOf(s.lldJson)['storyRef'], undefined);
+		assert.equal(trackerOf(s.defineJson)['storyRefs'], undefined);
 	} finally { s.cleanup(); }
 });
 
@@ -186,7 +189,7 @@ test('duplicate guard adopts an existing Epic issue instead of creating one', ()
 		assert.equal(r.status, 'already-exists');
 		assert.equal(r.status === 'already-exists' ? r.epicRef : '', 'acme/demo#9');
 		assert.equal(gh.createCount(), 0);       // adopted, not created
-		assert.equal(trackerOf(s.hldJson)['epicRef'], 'acme/demo#9');
+		assert.equal(readBinding(s.repo, `EPIC-${HASH}`)?.reference.entityId, 'acme/demo#9');
 	} finally { s.cleanup(); }
 });
 
@@ -317,13 +320,13 @@ test('the three push functions run one path through the adapter: the issues, the
 		assert.ok(shapes.includes('api -X POST repos/acme/demo/issues/1/sub_issues -F sub_issue_id=1002'), 'the Story is linked under the Epic');
 		assert.ok(shapes.includes('api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1003'), 'and the Tasks under the Story');
 		const strip = (jsonPath: string): Record<string, unknown> => { const { pushedAt: _p, ...rest } = trackerOf(jsonPath) as Record<string, unknown>; return rest; };
-		assert.deepEqual(strip(s.hldJson), { adapter: 'github', epicRef: 'acme/demo#1' });
-		assert.deepEqual(strip(s.lldJson), { adapter: 'github', storyRef: 'acme/demo#2' });
+		assert.deepEqual(strip(s.hldJson), {}, 'the HLD holds no ref');
+		assert.deepEqual(strip(s.lldJson), {}, 'the LLD holds no ref');
 		assert.deepEqual(strip(s.planJson), {}, 'the plan holds no Task record');
-		// the Epic's Define and the Story's LLD are bound to their issues
+		// the Epic's head and the Story's head are bound to their issues
 		const bound = (path: string): string | undefined => (JSON.parse(readFileSync(path, 'utf8')) as { meta: { envelope?: { binding?: { reference: { entityId: string } } } } }).meta.envelope?.binding?.reference.entityId;
-		assert.equal(bound(s.defineJson), 'acme/demo#1');
-		assert.equal(bound(s.lldJson), 'acme/demo#2');
+		assert.equal(bound(artifactJsonPath(s.repo, `EPIC-${HASH}`)), 'acme/demo#1');
+		assert.equal(bound(artifactJsonPath(s.repo, `STORY-${HASH}-s1`)), 'acme/demo#2');
 		// and each Task to its issue, on its Task artifact
 		assert.equal(bound(artifactJsonPath(s.repo, `TASK-${HASH}-s1-t1`)), 'acme/demo#3');
 		assert.equal(bound(artifactJsonPath(s.repo, `TASK-${HASH}-s1-t2`)), 'acme/demo#4');

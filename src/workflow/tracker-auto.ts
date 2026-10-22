@@ -14,13 +14,13 @@
  * On HLD approve → create/adopt the Epic issue; on LLD approve →
  * create/adopt the Story issue + splice it into the Epic task list.
  * In both cases the framework then:
- *   - writes the ref into the artifact's `meta.tracker` (nested; the
- *     chain report + coarse-handoff runners read there too),
+ *   - binds the issue on the unit's head (the EPIC head, the STORY head), where
+ *     every reader of the unit's issue finds it,
  *   - RE-RENDERS the human-facing `.md` so the doc shows a
  *     `**Tracker:** owner/repo#N` link back to the issue (doc → issue),
  *   - posts the design summary as an issue comment.
  *
- * Idempotent + fail-open: an existing ref (in meta or discoverable by
+ * Idempotent + fail-open: an existing ref (bound or discoverable by
  * label) is adopted, not duplicated; missing `gh`/config/auth → skip
  * without undoing the approve.
  */
@@ -41,7 +41,7 @@ import { ghAuthOk } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
 import type { IssueOps, PortResult, TrackerComment, TrackerPort } from './tracker/port.js';
 import { renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList } from './tracker/conventions.js';
-import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
+import type { UnitRef } from './tracker/refs.js';
 import { ensureUnitIssueDetailed, postMarker, resolveUnitIssueLocal, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
@@ -69,7 +69,6 @@ interface MetaShape {
 	readonly epicHash?:  string;
 	readonly epicSlug?:  string;
 	readonly storyId?:   string;
-	readonly tracker?:   TrackerMeta;
 	readonly [k: string]: unknown;
 }
 
@@ -242,10 +241,8 @@ function pushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Aut
 	if (!ensured.ok) return failedResult(`the Epic issue could not be ensured: ${ensured.reason}`);
 	const epicRef = ensured.value.issue;
 
-	const now = new Date().toISOString();
-	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now });
+	// the issue is bound on the Epic's head; the documents are re-rendered with its link
 	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
-	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
 	relink(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
@@ -285,7 +282,6 @@ function pushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): Au
 	if (!ensured.ok) return failedResult(`the Story issue could not be ensured: ${ensured.reason}`);
 	const storyRef = ensured.value.issue;
 
-	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 
 	const ops = port.issueOps;

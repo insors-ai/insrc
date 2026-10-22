@@ -28,6 +28,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary, SharedContextRef } from './format/types.js';
 import { renderFromFormat, deriveHldContextRef, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, epicLabelLine, frBodyLines, companionBodyLines, uxCompanionBodyLines } from './format/bindings.js';
+import { unitIssueOf } from '../tracker/unit-head.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { BoundaryFinding } from '../synthesizer.js';
 import type { ErDefinition } from './companion/er.js';
@@ -333,7 +334,8 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 		if (typeof meta.hldEffectiveHash === 'string' && meta.hldEffectiveHash.length > 0) out.push(`**HLD effective hash:** \`${meta.hldEffectiveHash.slice(0, 12)}...\``);
 		const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
 		if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) out.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
-		const storyRef = (meta as { tracker?: { storyRef?: string } }).tracker?.storyRef;
+		// the Story's issue is the binding of its STORY head
+		const storyRef = eh !== undefined && typeof meta.repoPath === 'string' ? unitIssueOf(meta.repoPath, eh, meta.storyId) : undefined;
 		if (typeof storyRef === 'string' && storyRef.includes('#')) out.push(trackerRefLine(storyRef));
 		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);
 		return out;

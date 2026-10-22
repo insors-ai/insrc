@@ -22,6 +22,7 @@ import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
 import { listAmendments } from './amendments/store.js';
+import { unitIssueOf } from './tracker/unit-head.js';
 import { scanLldStaleness } from './amendments/staleness.js';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +88,7 @@ export function buildChainReport(repoPath: string, epicHash: string): ChainRepor
 	const hld    = readHldIfPresent(repoPath, epicHash);
 	const stories = readStoryLldStatus(repoPath, epicHash, define, hld);
 	const amendments = countAmendments(repoPath, epicHash);
-	const tracker = readTrackerMeta(define.artifact);
+	const tracker = readTrackerMeta(repoPath, epicHash, define.artifact);
 	const nextAction = computeNextAction(epicHash, {
 		define, hld, stories, amendments, tracker,
 	});
@@ -204,14 +205,16 @@ function countAmendments(repoPath: string, epicHash: string): ChainReport['amend
 	return { pending, approved, rejected };
 }
 
-function readTrackerMeta(define?: DefineArtifact): ChainReport['tracker'] {
+/** The Epic's issue is the binding of its EPIC head; the time of the last sync is the Define's `meta.tracker`. */
+function readTrackerMeta(repoPath: string, epicHash: string, define?: DefineArtifact): ChainReport['tracker'] {
 	if (define === undefined) return { pushed: false };
-	const meta = define.meta as { tracker?: { epicRef?: string; lastSyncedAt?: string } };
-	if (meta.tracker === undefined || typeof meta.tracker.epicRef !== 'string') return { pushed: false };
+	const epicRef = unitIssueOf(repoPath, epicHash);
+	if (epicRef === undefined) return { pushed: false };
+	const meta = define.meta as { tracker?: { lastSyncedAt?: string } };
 	return {
 		pushed:  true,
-		epicRef: meta.tracker.epicRef,
-		...(typeof meta.tracker.lastSyncedAt === 'string' ? { lastSyncedAt: meta.tracker.lastSyncedAt } : {}),
+		epicRef,
+		...(typeof meta.tracker?.lastSyncedAt === 'string' ? { lastSyncedAt: meta.tracker.lastSyncedAt } : {}),
 	};
 }
 

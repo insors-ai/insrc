@@ -4,9 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * A re-draft replaces the artifact file, but the tracker refs it carried survive
- * (writeArtifact carries the whole prior meta.tracker block), so tracker sync, the
- * chain report and the Task approval still find the Epic and Story issues.
+ * A re-draft replaces the artifact file, but the Epic's and the Story's issues are
+ * bound on their own heads, which it does not touch, and the tracker block it carried
+ * survives (writeArtifact carries the whole prior meta.tracker block), so tracker sync,
+ * the chain report and the Task approval still find the Epic and Story issues.
  *
  * Run: npx tsx --test src/workflow/__tests__/redraft-preserves-tracker.test.ts
  */
@@ -22,15 +23,14 @@ import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId, writ
 import { _setAutoPushDepsForTests, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 import { syncTracker } from '../tracker/sync.js';
+import { readBinding } from '../tracker/binding.js';
+import { seedBoundUnits, seedTaskHeads } from './helpers/task-heads.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const SLUG = 'tag-filtering';
 const CREATED = '2026-07-17T07:42:28.275Z';
 
-const tracker = {
-	adapter: 'github', epicRef: 'acme/demo#1', storyRefs: { s1: 'acme/demo#2' }, pushedAt: '2026-10-18T00:00:00.000Z',
-	units: { epic: { unit: 'epic', unitId: HASH, issue: 'acme/demo#1', createdAtRevision: 1, extrasDone: { designComment: '2026-10-18T00:00:00.000Z' } } },
-};
+const tracker = { adapter: 'github', labelsCreated: ['insrc:epic'], lastSyncedAt: '2026-10-18T00:00:00.000Z' };
 
 const define = (withTracker: boolean) => ({
 	meta: { workflow: 'define', runId: 'd1', repoPath: '', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1, ...(withTracker ? { tracker } : {}) },
@@ -42,7 +42,7 @@ const define = (withTracker: boolean) => ({
 	citations: [],
 });
 
-test('a re-draft keeps epicRef and storyRefs for sync, chain report and Task approval', () => {
+test('a re-draft keeps the bound Epic and Story issues and the tracker block for sync, chain report and Task approval', () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-redraft-'));
 	const cfg = join(repo, 'github.json');
 	const prior = process.env['INSRC_GITHUB_CONFIG'];
@@ -60,14 +60,17 @@ test('a re-draft keeps epicRef and storyRefs for sync, chain report and Task app
 			body: { tasks: [{ id: 't1', title: 'Add the input', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: [], tests: [] }] }, citations: [],
 		}));
 
+		// the Epic's and the Story's issues are bound on their heads, and the plan has its Task artifact
+		seedBoundUnits(repo, HASH, 'acme/demo#1', { s1: 'acme/demo#2' }, CREATED);
+		seedTaskHeads(repo, HASH, 's1', ['t1'], CREATED);
+
 		// re-draft the Define: a fresh file with no tracker block, written as content
 		const fresh = define(false);
 		writeArtifact(defineJson, { ...fresh, meta: { ...fresh.meta, repoPath: repo } }, 'content');
 		const after = JSON.parse(readFileSync(defineJson, 'utf8')).meta.tracker;
-		assert.equal(after.epicRef, 'acme/demo#1');
-		assert.deepEqual(after.storyRefs, { s1: 'acme/demo#2' });
-		assert.equal(after.units.epic.issue, 'acme/demo#1');
-		assert.deepEqual(Object.keys(after.units.epic.extrasDone), ['designComment'], 'the extras marks survive too');
+		assert.deepEqual(after.labelsCreated, ['insrc:epic'], 'the tracker block survives');
+		assert.equal(after.epicRef, undefined, 'and holds no issue ref');
+		assert.equal(readBinding(repo, `EPIC-${HASH}`)?.reference.entityId, 'acme/demo#1');
 
 		const calls: string[][] = [];
 		let n = 10;

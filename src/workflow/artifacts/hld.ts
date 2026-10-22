@@ -24,6 +24,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines, companionBodyLines, uxCompanionBodyLines } from './format/bindings.js';
+import { unitIssueOf } from '../tracker/unit-head.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 import type { ErDefinition } from './companion/er.js';
 import type { UxDefinition } from './companion/ux.js';
@@ -146,7 +147,8 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 
 	const summaryLines = (): string[] => {
 		const out: string[] = [];
-		const epicRef = (meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
+		// the Epic's issue is the binding of its EPIC head
+		const epicRef = eh !== undefined && typeof meta.repoPath === 'string' ? unitIssueOf(meta.repoPath, eh) : undefined;
 		if (typeof epicRef === 'string' && epicRef.includes('#')) out.push(trackerRefLine(epicRef));
 		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) { if (out.length > 0) out.push(''); out.push(body.summary.prose); }
 		return out;

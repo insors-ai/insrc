@@ -11,6 +11,8 @@ import type { UnitRef } from '../refs.js';
 export { H, alice };
 export const TASK = `TASK-${H}-s1-t1`;
 export const LLD = `LLD-${H}-s1`;
+/** The Story's head: its issue is bound on it and its comments are recorded on it. */
+export const STORY = `STORY-${H}-s1`;
 export const ISSUE = 'acme/demo#7';
 
 export interface FakeTracker {
@@ -53,13 +55,14 @@ export interface SyncKit {
 	done(): void;
 }
 
-/** A repository with a Define, an LLD bound to #2 and a Task (plan row t1) bound to #7, and the feedback service over the same history. */
+/** A repository with a Define, a Story head bound to #2 and a Task (plan row t1) bound to #7, and the feedback service over the same history. */
 export async function syncKit(): Promise<SyncKit> {
 	const k = durableKit();
 	await k.store.write(artifact(`DEF-${H}`), alice);
 	await k.store.write(artifact(TASK), alice);
 	await k.store.write(artifact(LLD), alice);
-	if (!bindArtifact(k.repo, TASK, ISSUE).ok || !bindArtifact(k.repo, LLD, 'acme/demo#2').ok) throw new Error('the fixtures could not be bound');
+	await k.store.write(artifact(STORY), alice);
+	if (!bindArtifact(k.repo, TASK, ISSUE).ok || !bindArtifact(k.repo, STORY, 'acme/demo#2').ok) throw new Error('the fixtures could not be bound');
 	const history = new History(k.sidecar);
 	// each entry a millisecond after the last, so entries sort in the order they were made
 	let tick = 0;

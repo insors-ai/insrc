@@ -35,6 +35,7 @@ import type { QuestionResolution } from '../types.js';
 import { _setTrackerExecForTests } from '../tracker/github.js';
 import { getLogger } from '../../shared/logger.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -203,13 +204,10 @@ test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', () =>
 
 afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
-/** A repo whose HLD carries an Epic ref and whose github.json targets acme/demo for it. */
+/** A repo whose Epic head is bound to an issue and whose github.json targets acme/demo for it. */
 function seedTrackedHld(repo: string): void {
 	seedHld(repo, ['[sc1 / missed] Case-insensitive tags?']);
-	const path = join(artifactsDir(repo), `${hldArtifactId(HASH)}.json`);
-	const hld = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
-	hld.meta['tracker'] = { adapter: 'github', epicRef: 'acme/demo#5' };
-	writeFileSync(path, JSON.stringify(hld, null, 2));
+	seedBoundUnits(repo, HASH, 'acme/demo#5', {}, CREATED_AT);
 	const cfg = join(repo, 'github.json');
 	writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { owner: 'acme', repo: 'demo' } } }));
 	process.env['INSRC_GITHUB_CONFIG'] = cfg;

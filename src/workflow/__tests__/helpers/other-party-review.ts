@@ -77,7 +77,7 @@ export function stampOtherPartyReview(jsonPath: string): StampedReview {
 	};
 	const artifactId = basename(jsonPath).replace(/\.json$/, '');
 	const repo = dirname(dirname(dirname(jsonPath)));
-	const report = recordReviewSync(repo, artifactId, review);
+	const report = recordReviewSync(repo, artifactId, review, `other-party-review-${artifactId}`);
 	const revision = typeof artifact.meta['revision'] === 'number' ? artifact.meta['revision'] : 0;
 	const fresh = lifecycleMeta({ status: 'draft', review: { verdict: 'pass', counts: review.counts, party: reviewedBy, reviewer: { id: `insrc:${reviewedBy}`, kind: 'agent', properties: {} }, report } }, { revision, at });
 	// a head that has a lifecycle already (approved, rejected) keeps it and gains the review

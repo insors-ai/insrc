@@ -59,6 +59,7 @@ import {
 } from './storage.js';
 import { GhCommandError, commitAndPushArtifacts } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
+import { unitIssueOf } from './tracker/unit-head.js';
 
 const log = getLogger('workflow:questions');
 
@@ -274,7 +275,6 @@ export function renderResolvedQuestionsSection(
 interface QuestionArtifact {
 	readonly meta:      {
 		readonly epicSlug?: string;
-		readonly tracker?:  { readonly epicRef?: string; readonly storyRef?: string };
 		readonly questionResolutions?: Readonly<Record<string, QuestionResolution>>;
 	} & Record<string, unknown>;
 	readonly body:      { readonly openQuestions?: readonly string[] } & Record<string, unknown>;
@@ -289,8 +289,8 @@ interface ArtifactLocation {
 	readonly renderMd:  (a: QuestionArtifact, resolutions: Readonly<Record<string, QuestionResolution>>) => string;
 }
 
-/** Resolve the on-disk artifact + its renderer for a kind. `epicSlug` and
- *  the tracker ref are read from the artifact's own meta. */
+/** Resolve the on-disk artifact + its renderer for a kind. `epicSlug` is read
+ *  from the artifact's own meta and the tracker ref from the unit's binding. */
 function locateArtifact(
 	repoPath:     string,
 	kind:         QuestionArtifactKind,
@@ -307,7 +307,6 @@ function locateArtifact(
 			: artifactJsonPath(repoPath, lldArtifactId(epicHash, storyId!));
 	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as QuestionArtifact;
 	const epicSlug = artifact.meta.epicSlug;
-	const tracker = artifact.meta.tracker;
 	// The QuestionArtifact meta type is narrowed to the question fields; the
 	// sc2 folder anchor + split fields live on the underlying artifact meta.
 	const folderMeta = artifact.meta as unknown as { readonly createdAt: string; readonly epicCreatedAt?: string; readonly standalone?: boolean };
@@ -316,7 +315,7 @@ function locateArtifact(
 			artifact,
 			jsonPath,
 			mdPath:     defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
-			trackerRef: tracker?.epicRef,
+			trackerRef: unitIssueOf(repoPath, epicHash),
 			renderMd:   (a, res) => {
 				const art = a as unknown as DefineArtifact;
 				return renderDefineMarkdown(art) + renderResolvedQuestionsSection(res) + renderCitationBlock(art.citations);
@@ -328,7 +327,7 @@ function locateArtifact(
 			artifact,
 			jsonPath,
 			mdPath:     hldArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
-			trackerRef: tracker?.epicRef,
+			trackerRef: unitIssueOf(repoPath, epicHash),
 			renderMd:   (a, res) => {
 				const art = a as unknown as HldArtifact;
 				return renderHldMarkdown(art) + renderResolvedQuestionsSection(res) + renderCitationBlock(art.citations);
@@ -339,7 +338,7 @@ function locateArtifact(
 		artifact,
 		jsonPath,
 		mdPath:     lldArtifactPaths(repoPath, epicHash, storyId!, workItemAnchorCreatedAt(folderMeta), workItemKindOf(folderMeta), epicSlug).md,
-		trackerRef: tracker?.storyRef,
+		trackerRef: unitIssueOf(repoPath, epicHash, storyId!),
 		renderMd:   (a, res) => {
 			const art = a as unknown as LldArtifact;
 			return renderLldMarkdown(art) + renderResolvedQuestionsSection(res) + renderCitationBlock(art.citations);

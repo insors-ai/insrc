@@ -24,6 +24,7 @@ import { dirname, join } from 'node:path';
 
 import { resolveWorkflowRef, workflowIdForIssue } from '../tracker/resolve.js';
 import type { PlanTask } from '../artifacts/plan.js';
+import { seedBoundTaskHead, seedBoundUnits } from './helpers/task-heads.js';
 
 const LLD_HASH   = '0a1b2c3d4e5f6a7b';     // the standalone feature: LLD + PLAN only
 const LLD_HASH_2 = '0a1b2c3d99999999';     // a second standalone feature
@@ -69,18 +70,20 @@ function seedStandalone(dir: string, hash: string, slug: string, opts: { flagged
 }
 
 function seedEpic(dir: string): void {
+	const repo = join(dir, '..', '..');
 	writeJson(join(dir, `DEF-${DEF_HASH}.json`), {
 		meta: {
 			workflow: 'define', epicHash: DEF_HASH, epicSlug: 'the-epic', createdAt: DEF_MADE,
-			tracker: { epicRef: 'acme/demo#1', storyRefs: { s1: 'acme/demo#2' } },
 		},
 		body: { stories: [{ id: 's1', title: 'One' }] },
 	});
 	writeJson(join(dir, `PLAN-${DEF_HASH}-s1.json`), {
-		meta: { workflow: 'plan', epicHash: DEF_HASH, epicSlug: 'the-epic', storyId: 's1', createdAt: DEF_MADE,
-			tracker: { taskRefs: { t1: 'acme/demo#3' } } },
+		meta: { workflow: 'plan', epicHash: DEF_HASH, epicSlug: 'the-epic', storyId: 's1', createdAt: DEF_MADE },
 		body: { tasks: [{ ...TASK, title: 'The epic task' }], testStrategyCoverage: [] },
 	});
+	// the issues are the bindings of the Epic's, the Story's and the Task's heads
+	seedBoundUnits(repo, DEF_HASH, 'acme/demo#1', { s1: 'acme/demo#2' }, DEF_MADE);
+	seedBoundTaskHead(repo, DEF_HASH, 's1', 't1', 'acme/demo#3', DEF_MADE);
 }
 
 function seedBugfix(dir: string): void {
@@ -120,13 +123,13 @@ test('c00559b7 — a hash with an ISSUE and an LLD is headed by the ISSUE and en
 	} finally { r.cleanup(); }
 });
 
-test('c00559b7 — a DEF head keeps its tracker refs through the shared reader', () => {
+test('c00559b7 — a DEF epic resolves its issues through the bindings of its heads', () => {
 	const r = mkRepo();
 	try {
 		seedEpic(r.dir);
 		const ref = resolveWorkflowRef(r.repo, 's1', { epicHash: DEF_HASH });
 		assert.equal(ref?.epicRef, 'acme/demo#1');
-		assert.equal(ref?.storyRef, 'acme/demo#2', 'the DEF storyRefs still answer for a story with no LLD ref');
+		assert.equal(ref?.storyRef, 'acme/demo#2', 'the binding of the STORY head answers');
 	} finally { r.cleanup(); }
 });
 

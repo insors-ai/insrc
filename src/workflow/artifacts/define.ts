@@ -26,6 +26,7 @@ import { renderFunctionalRequirementsSection } from './functional-definition.js'
 import type { DocumentSummary } from './format/types.js';
 import { renderFromFormat, type SectionBindings, type SectionItem } from './format/engine.js';
 import { citationBodyLines, frBodyLines } from './format/bindings.js';
+import { unitIssueOf } from '../tracker/unit-head.js';
 import { resolveDocumentFormat } from './format/template-loader.js';
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,8 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 		const out: string[] = [`**Flavor:** ${body.flavor}`];
 		const seededFromSpec = (meta as { seededFromSpec?: string }).seededFromSpec;
 		if (typeof seededFromSpec === 'string' && seededFromSpec.length > 0) out.push(`**Seeded from:** \`SPEC-${seededFromSpec}\``);
-		const epicRef = (meta as { tracker?: { epicRef?: string } }).tracker?.epicRef;
+		// the Epic's issue is the binding of its EPIC head
+		const epicRef = eh !== undefined && typeof meta.repoPath === 'string' ? unitIssueOf(meta.repoPath, eh) : undefined;
 		if (typeof epicRef === 'string' && epicRef.includes('#')) out.push(trackerRefLine(epicRef));
 		if (body.summary?.prose !== undefined && body.summary.prose.length > 0) out.push('', body.summary.prose);
 		return out;

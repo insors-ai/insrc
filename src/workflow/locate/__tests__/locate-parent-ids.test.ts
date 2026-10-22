@@ -27,6 +27,7 @@ import { resolveWorkflowRef } from '../../tracker/resolve.js';
 import { deriveMdPath } from '../../pending.js';
 import type { Entity } from '../../../shared/types.js';
 import { approvedMeta } from '../../__tests__/lifecycle-fixtures.js';
+import { seedBoundUnits } from '../../__tests__/helpers/task-heads.js';
 
 const HASH_A = '1111aaaa2222bbbb';
 const HASH_B = '3333cccc4444dddd';
@@ -47,15 +48,15 @@ function twoEpics(): { repo: string; cleanup: () => void } {
 		[HASH_B, 'beta-epic', CREATED_B, 'acme/demo#20', 'acme/demo#25'],
 	] as const) {
 		writeJson(join(dir, `DEF-${hash}.json`), {
-			meta: { workflow: 'define', epicHash: hash, epicSlug: slug, createdAt: created, epicCreatedAt: created, schemaVersion: 1,
-				tracker: { adapter: 'github', epicRef, storyRefs: { s1: storyRef } } },
+			meta: { workflow: 'define', epicHash: hash, epicSlug: slug, createdAt: created, epicCreatedAt: created, schemaVersion: 1 },
 			body: { stories: [{ id: 's1' }] }, citations: [],
 		});
 		writeJson(join(dir, `LLD-${hash}-s1.json`), {
-			meta: { workflow: 'design.story', epicHash: hash, epicSlug: slug, storyId: 's1', createdAt: created, epicCreatedAt: created, schemaVersion: 1,
-				tracker: { adapter: 'github', storyRef } },
+			meta: { workflow: 'design.story', epicHash: hash, epicSlug: slug, storyId: 's1', createdAt: created, epicCreatedAt: created, schemaVersion: 1 },
 			body: {},
 		});
+		// the issues are the bindings of the Epic's and the Story's heads
+		seedBoundUnits(repo, hash, epicRef, { s1: storyRef }, created);
 	}
 	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }

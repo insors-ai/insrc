@@ -37,8 +37,8 @@ const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree fo
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
-import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { unitIssueOf } from '../../../../workflow/tracker/unit-head.js';
 
 interface Envelope { readonly content: readonly { readonly type: 'text'; readonly text: string }[]; readonly isError?: boolean }
 function payload(env: Envelope): Record<string, unknown> {
@@ -80,7 +80,7 @@ function seedApprovedEpic(repo: string, epicHash: string, opts: { withGithubConf
 	mkdirSync(dirname(paths.json), { recursive: true });
 	const path = paths.json;
 	writeFileSync(path, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag.',
@@ -94,8 +94,7 @@ function seedApprovedEpic(repo: string, epicHash: string, opts: { withGithubConf
 		},
 		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'todos module' }],
 	}, null, 2));
-	stampOtherPartyReview(path);   // approval requires an other-party review
-	approveArtifactByJsonPath(path);
+	markApprovedSync(path);
 	return disposer;
 }
 
@@ -208,7 +207,7 @@ async function walk(
 // Tests
 // ---------------------------------------------------------------------------
 
-test('tracker.push: happy path patches Epic meta.tracker with refs', async () => {
+test('tracker.push: happy path binds the Epic and Story heads to the pushed issues', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-e2e-'));
@@ -221,8 +220,9 @@ test('tracker.push: happy path patches Epic meta.tracker with refs', async () =>
 
 		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.equal(epic.meta.tracker.adapter, 'github');
-		assert.equal(epic.meta.tracker.epicRef, 'myorg/myrepo#100');
-		assert.deepEqual(epic.meta.tracker.storyRefs, { s1: 'myorg/myrepo#101', s2: 'myorg/myrepo#102' });
+		assert.equal(unitIssueOf(repo, slug), 'myorg/myrepo#100');
+		assert.equal(unitIssueOf(repo, slug, 's1'), 'myorg/myrepo#101');
+		assert.equal(unitIssueOf(repo, slug, 's2'), 'myorg/myrepo#102');
 		assert.deepEqual(epic.meta.tracker.labelsCreated, ['insrc:epic', 'insrc:story', 'epic:tag-filtering']);
 
 		// The tracker run report lives outside the repo.
@@ -272,8 +272,8 @@ test('tracker.sync: happy path merges status + lastSyncedAt into meta.tracker', 
 		assert.deepEqual(epic.meta.tracker.storyStatus, { s1: 'in-progress', s2: 'open' });
 		assert.equal(epic.meta.tracker.epicStatus, 'in-progress');
 		assert.equal(epic.meta.tracker.lastSyncedAt, '2026-07-12T02:00:00Z');
-		// Refs from push should still be there.
-		assert.equal(epic.meta.tracker.epicRef, 'myorg/myrepo#100');
+		// Refs from push should still be there, on the heads.
+		assert.equal(unitIssueOf(repo, slug), 'myorg/myrepo#100');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -328,7 +328,7 @@ test('tracker.push: refuses when Epic is unapproved', async () => {
 		// the github-config check, so we don't need to stub either.
 		const _def=defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering'); mkdirSync(dirname(_def.json), { recursive: true });
 		writeFileSync(_def.json, JSON.stringify({
-			meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, createdAt: CREATED },
+			meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, createdAt: CREATED, epicCreatedAt: CREATED },
 			body: {
 				flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 				stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }],

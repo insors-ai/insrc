@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { syncUnitComments } from '../comment-sync.js';
-import { LLD, TASK, alice, comment, fakeTracker, syncKit } from './comment-sync-kit.js';
+import { STORY, TASK, alice, comment, fakeTracker, syncKit } from './comment-sync-kit.js';
 
 describe('comment-sync-inbound', () => {
 	it('a human comment is recorded once as feedback with the tracker user as author, framework comments are never recorded, an edited comment is not mirrored, and a tracker failure is reported without failing the call', async () => {
@@ -82,11 +82,11 @@ describe('comment-sync-inbound', () => {
 			const next = await syncUnitComments(s.task, t.port, s.deps);
 			assert.deepEqual([next.recorded, next.known, next.failed], [['1'], ['2'], []]);
 
-			// a Story's comments are recorded on its LLD, the artifact that holds its binding
+			// a Story's comments are recorded on its STORY head, the artifact that holds its binding
 			t.comments = [comment(31, 'on the story')];
 			const story = await syncUnitComments(s.story, t.port, s.deps);
-			assert.deepEqual([story.artifactId, story.issue, story.recorded], [LLD, 'acme/demo#2', ['31']]);
-			assert.equal((await s.history.feedback(LLD)).length, 1);
+			assert.deepEqual([story.artifactId, story.issue, story.recorded], [STORY, 'acme/demo#2', ['31']]);
+			assert.equal((await s.history.feedback(STORY)).length, 1);
 
 			// no artifact, and an artifact with no binding: a note, nothing recorded, nothing thrown
 			const none = await syncUnitComments({ ...s.task, taskId: 't9' }, t.port, s.deps);

@@ -28,6 +28,10 @@ import {
 	type LldBody,
 } from '../artifacts/lld.js';
 import type { HldArtifact, HldBody } from '../artifacts/hld.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
+import { mkdtempSync as mkRepoDir, rmSync as rmRepoDir } from 'node:fs';
+import { tmpdir as osTmp } from 'node:os';
+import { join } from 'node:path';
 
 /** Single-story HLD variant (no siblings) for the adjacentBoundaries no-op path. */
 function singleStoryHldFixture(): HldArtifact {
@@ -473,16 +477,20 @@ test('renderLldMarkdown omits the adjacent-scope subsection for a single-story L
 	assert.ok(!renderLldMarkdown(artifact).includes('Adjacent scope'));
 });
 
-test('renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set', () => {
-	const meta = {
-		workflow: 'design.story', runId: 'lld-run-1', repoPath: '/', createdAt: '', model: 'client',
-		elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1, epicSlug: 'tag-filtering', storyId: 's1',
-		hldBaseRunId: 'hld-run-1', hldEffectiveHash: computeHldEffectiveHash('hld-run-1', []), hldAmendmentsApplied: [],
-	};
-	const base = { meta, body: lldBodyFixture(), citations: [] } as unknown as LldArtifact;
-	assert.doesNotMatch(renderLldMarkdown(base), /\*\*Tracker:\*\*/);
-	const linked = { meta: { ...meta, tracker: { storyRef: 'acme/demo#11' } }, body: lldBodyFixture(), citations: [] } as unknown as LldArtifact;
-	assert.match(renderLldMarkdown(linked), /\*\*Tracker:\*\* \[acme\/demo#11\]/);
+test('renderLldMarkdown adds a Tracker link only when the Story head is bound to an issue', () => {
+	const repo = mkRepoDir(join(osTmp(), 'insrc-lld-render-'));
+	try {
+		const meta = {
+			workflow: 'design.story', runId: 'lld-run-1', repoPath: repo, createdAt: '', model: 'client', epicHash: 'a3f4b8c9d1e2f3a4',
+			elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1, epicSlug: 'tag-filtering', storyId: 's1',
+			hldBaseRunId: 'hld-run-1', hldEffectiveHash: computeHldEffectiveHash('hld-run-1', []), hldAmendmentsApplied: [],
+		};
+		const art = (m: object) => ({ meta: m, body: lldBodyFixture(), citations: [] } as unknown as LldArtifact);
+		assert.doesNotMatch(renderLldMarkdown(art(meta)), /\*\*Tracker:\*\*/);
+		assert.doesNotMatch(renderLldMarkdown(art({ ...meta, tracker: { storyRef: 'acme/demo#9' } })), /\*\*Tracker:\*\*/, 'the older ref is not read');
+		seedBoundUnits(repo, 'a3f4b8c9d1e2f3a4', undefined, { s1: 'acme/demo#11' });
+		assert.match(renderLldMarkdown(art(meta)), /\*\*Tracker:\*\* \[acme\/demo#11\]/);
+	} finally { rmRepoDir(repo, { recursive: true, force: true }); }
 });
 
 test('renderLldMarkdown includes Migration section for enhancement (when present)', () => {

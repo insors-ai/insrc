@@ -8,6 +8,8 @@ import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planA
 import { _setTrackerExecForTests } from '../tracker/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerComment, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
+import { recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
+import { seedTaskHeads } from './helpers/task-heads.js';
 
 export const HASH = 'a3f4b8c9d1e2f3a4';
 export const SLUG = 'tag-filtering';
@@ -72,7 +74,7 @@ export function fakeTracker(over: { failFind?: boolean; failComment?: string } =
 
 export interface Fx { repo: string; hld: string; lld: string; plan: string; cleanup: () => void }
 
-export function seed(opts: { pushTasks?: boolean } = {}): Fx {
+export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): Fx {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-approve-fallback-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	const cfg = join(repo, 'github.json');
@@ -80,7 +82,7 @@ export function seed(opts: { pushTasks?: boolean } = {}): Fx {
 	const prior = process.env['INSRC_GITHUB_CONFIG'];
 	process.env['INSRC_GITHUB_CONFIG'] = cfg;
 	const put = (id: string, doc: unknown): string => { const p = artifactJsonPath(repo, id); writeFileSync(p, JSON.stringify(doc, null, 2) + '\n'); return p; };
-	const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED };
+	const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED };
 	put(defineArtifactId(HASH), {
 		meta: { workflow: 'define', runId: 'd1', ...base, schemaVersion: 1 },
 		body: {
@@ -90,22 +92,26 @@ export function seed(opts: { pushTasks?: boolean } = {}): Fx {
 		},
 		citations: [],
 	});
-	const review = { artifact: 'LLD', stage: 'design.story', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 }, reviewedAt: '2026-07-21T00:00:00.000Z', model: 'm' };
+	// the reviews are lifecycle reviews whose reports are entries of the heads' logs
+	const report = { artifact: 'LLD', stage: 'design.story', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 }, reviewedAt: '2026-07-21T00:00:00.000Z', model: 'm' } as const;
+	const reviewed = (id: string) => reviewedMeta({ report: recordReviewSync(repo, id, report) });
 	const hld = put(hldArtifactId(HASH), {
 		meta: { workflow: 'design.epic', runId: 'h1', ...base, schemaVersion: 1 },
 		body: { frameworkSummary: 'A tag filter.', chosenAlternative: 'a1', sharedContracts: [], rolloutOverview: { phases: [] }, openQuestions: [] }, citations: [],
 	});
 	const lld = put(lldArtifactId(HASH, 's1'), {
-		meta: { workflow: 'design.story', runId: 'l1', ...base, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe0000', hldAmendmentsApplied: [], schemaVersion: 1, review },
+		meta: { workflow: 'design.story', runId: 'l1', ...base, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe0000', hldAmendmentsApplied: [], schemaVersion: 1, ...reviewed(lldArtifactId(HASH, 's1')) },
 		body: { chosenAlternative: 'a1', contractDetails: { surfaceLevel: 'internal', api: [] }, testStrategy: { testFramework: 'node:test', testLevels: [] } }, citations: [],
 	});
 	const plan = put(planArtifactId(HASH, 's1'), {
-		meta: { workflow: 'plan', runId: 'p1', ...base, storyId: 's1', schemaVersion: 1, review },
+		meta: { workflow: 'plan', runId: 'p1', ...base, storyId: 's1', schemaVersion: 1, ...reviewed(planArtifactId(HASH, 's1')) },
 		body: { tasks: [
 			{ id: 't1', title: 'Add the input', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: [], tests: [] },
 			{ id: 't2', title: 'Filter the list', summary: 's', size: 'S', order: 2, dependsOn: ['t1'], acceptanceChecks: ['filters'], derivedFrom: [], tests: [] },
 		], testStrategyCoverage: [] }, citations: [],
 	});
+	// the Task artifacts the approval of the plan makes
+	if (opts.taskHeads !== false) seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
 	return {
 		repo, hld, lld, plan,
 		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; _setTrackerExecForTests(); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },

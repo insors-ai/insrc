@@ -20,8 +20,8 @@
  *
  * Disambiguation:
  *
- *   issue#  Scan every PLAN (`taskRefs`), LLD (`storyRef`) and DEF
- *           (`storyRefs` / `epicRef`) for the number; the level is the
+ *   issue#  Scan every Task artifact, STORY head and EPIC head for the number (the issue
+ *           is the binding of each); the level is the
  *           one it matched under. Issue numbers are globally unique so a
  *           number resolves to exactly one node.
  *   artifact id  The id names the work item by its epic hash (a SPEC or ISSUE id
@@ -37,7 +37,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { ARTIFACTS_DIR, readEpicDefinitionCore, type TrackerBlock } from '../storage.js';
+import { ARTIFACTS_DIR, readEpicDefinitionCore } from '../storage.js';
+import { unitIssueOf } from './unit-head.js';
 import { ArtifactIds, type ArtifactKey } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
 import { taskHeadsIn } from '../tasks/lookup.js';
@@ -61,7 +62,7 @@ export interface ResolvedRef {
 	 *  `WorkItemRef.slug` round-trips through `resolveWorkflowRef`. */
 	readonly slug:       string;
 	/** The tracker issue ref (`owner/repo#N`) at the RESOLVED level:
-	 *  task → its taskRef, story → its storyRef, epic → its epicRef. */
+	 *  task → its Task binding, story → its STORY binding, epic → its EPIC binding. */
 	readonly issueRef?:  string | undefined;
 	readonly storyRef?:  string | undefined;
 	readonly epicRef?:   string | undefined;
@@ -82,6 +83,8 @@ const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
 // Every route mints the lowercase `s<n>` story id; an uppercase file name is not an artifact until the s9 conversion.
 const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
 const TASK_RE = /^TASK-([0-9a-f]{16})-(s\d+)-t\d+\.json$/;
+const STORY_RE = /^STORY-([0-9a-f]{16})-(s\d+)\.json$/;
+const EPIC_RE = /^EPIC-([0-9a-f]{16})\.json$/;
 
 // ---------------------------------------------------------------------------
 // Minimal artifact reads
@@ -94,7 +97,6 @@ interface ArtifactShape {
 		readonly epicSlug?:  string;
 		readonly createdAt?: string;
 		readonly storyId?:   string;
-		readonly tracker?:   TrackerBlock;
 	};
 	readonly body?: {
 		readonly tasks?:   readonly PlanTask[];
@@ -110,7 +112,6 @@ interface ArtifactShape {
 interface EpicIdentity {
 	readonly epicSlug:  string;
 	readonly createdAt: string;
-	readonly tracker?:  TrackerBlock | undefined;
 }
 
 function artifactsDir(repoPath: string): string {
@@ -177,7 +178,7 @@ function listEpicHashes(dir: string): readonly string[] {
 function readEpicIdentity(dir: string, epicHash: string): EpicIdentity | null {
 	const head = readEpicDefinitionCore(repoPathOf(dir), epicHash);
 	if (head.epicSlug === undefined || head.createdAt === undefined) return null;
-	return { epicSlug: head.epicSlug, createdAt: head.createdAt, tracker: head.tracker };
+	return { epicSlug: head.epicSlug, createdAt: head.createdAt };
 }
 
 /** The repo root an artifacts dir belongs to (the inverse of {@link artifactsDir}). */
@@ -309,7 +310,6 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	const createdAt = dmeta.createdAt;
 	// An anchor that is not a date cannot place the work item's folder: the node is unaddressable.
 	if (Number.isNaN(Date.parse(createdAt))) return null;
-	const defTracker = dmeta.tracker;
 
 	// Mint the artifact id. A key that is not a valid id (an uppercase story) makes the node unaddressable → null.
 	// A Task that has its own artifact is found by its number, else by the plan row it was made from; the row id is what the
@@ -330,13 +330,10 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 		return null;
 	}
 
-	const epicRef = defTracker?.epicRef ?? readTrackerBlock(join(dir, `HLD-${epicHash}.json`))?.epicRef;
-
-	let storyRef: string | undefined;
-	if (storyId !== undefined) {
-		storyRef = readTrackerBlock(storyArtifactPath(dir, 'LLD', epicHash, storyId))?.storyRef
-			?? defTracker?.storyRefs?.[storyId];
-	}
+	// the Epic's and the Story's issues are the bindings of their EPIC and STORY heads
+	const repoPath = repoPathOf(dir);
+	const epicRef = unitIssueOf(repoPath, epicHash);
+	const storyRef = storyId !== undefined ? unitIssueOf(repoPath, epicHash, storyId) : undefined;
 
 	let taskRef: string | undefined;
 	let task: PlanTask | undefined;
@@ -366,16 +363,11 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	};
 }
 
-function readTrackerBlock(path: string): TrackerBlock | undefined {
-	return readArtifact(path)?.meta?.tracker;
-}
-
 // ---------------------------------------------------------------------------
 // Per-form resolution
 // ---------------------------------------------------------------------------
 
-/** issue# → node. Scans the Task artifacts, then stories (LLD + DEF storyRefs),
- *  then epics (DEF / HLD epicRef). */
+/** issue# → node. Scans the Task artifacts, then the STORY heads, then the EPIC heads: the issue is the binding of each. */
 function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 	const files = listFiles(dir);
 
@@ -387,29 +379,20 @@ function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 		if (head !== undefined && head.status !== 'withdrawn' && head.issue !== undefined && refNumber(head.issue) === number) return buildRef(dir, m[1]!, m[2]!, head.number);
 	}
 
-	// Stories — LLD storyRef.
+	// Stories — the binding of the STORY head.
 	for (const f of files) {
-		const m = LLD_RE.exec(f);
+		const m = STORY_RE.exec(f);
 		if (m === null) continue;
-		const epicHash = m[1]!;
-		const storyId  = m[2]!;
-		const storyRef = readArtifact(join(dir, f))?.meta?.tracker?.storyRef;
-		if (storyRef !== undefined && refNumber(storyRef) === number) return buildRef(dir, epicHash, storyId);
+		const issue = unitIssueOf(repoPathOf(dir), m[1]!, m[2]!);
+		if (issue !== undefined && refNumber(issue) === number) return buildRef(dir, m[1]!, m[2]!);
 	}
 
-	// Stories + epics — the DEF aggregate (storyRefs) and epicRef.
+	// Epics — the binding of the EPIC head.
 	for (const f of files) {
-		const m = DEF_RE.exec(f);
+		const m = EPIC_RE.exec(f);
 		if (m === null) continue;
-		const epicHash = m[1]!;
-		const tracker  = readArtifact(join(dir, f))?.meta?.tracker;
-		const storyRefs = tracker?.storyRefs ?? {};
-		for (const [storyId, ref] of Object.entries(storyRefs)) {
-			if (refNumber(ref) === number) return buildRef(dir, epicHash, storyId);
-		}
-		if (tracker?.epicRef !== undefined && refNumber(tracker.epicRef) === number) {
-			return buildRef(dir, epicHash);
-		}
+		const issue = unitIssueOf(repoPathOf(dir), m[1]!);
+		if (issue !== undefined && refNumber(issue) === number) return buildRef(dir, m[1]!);
 	}
 
 	return null;

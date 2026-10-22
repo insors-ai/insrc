@@ -23,6 +23,7 @@ import { _setTrackerExecForTests } from '../tracker/github.js';
 import type { ResolvedGithubConfig } from '../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortFailureKind, type PortResult, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
+import { seedBoundUnits } from './helpers/task-heads.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const SLUG = 'tag-filtering';
@@ -222,12 +223,7 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 	const fx = seed();
 	try {
 		// the Story (and its record) exist, the Epic ref is nowhere: the plan still resolves with no tracker load
-		const lld = JSON.parse(readFileSync(fx.lld, 'utf8'));
-		lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#2', units: { 'story:s1': { unit: 'story', unitId: 's1', issue: 'acme/demo#2', createdAtRevision: 1 } } };
-		writeFileSync(fx.lld, JSON.stringify(lld));
-		const plan = JSON.parse(readFileSync(fx.plan, 'utf8'));
-		plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } };
-		writeFileSync(fx.plan, JSON.stringify(plan));
+		seedBoundUnits(fx.repo, HASH, undefined, { s1: 'acme/demo#2' });
 		const h = harness();
 		const r = ensureDraftIssues(fx.plan, h.deps());
 		assert.equal(r.status, 'ready');
@@ -235,7 +231,7 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 		assert.equal(h.seen.creates, 0);
 	} finally { fx.cleanup(); }
 
-	// the record cannot be written (read-only artifacts folder): the issue is created, and the result says it was not recorded
+	// the unit's head cannot be written (read-only artifacts folder): nothing is created, because the issue could not be recorded
 	const fy = seed();
 	try {
 		const h = harness();
@@ -244,7 +240,7 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755);
 		if (process.getuid?.() === 0) return;   // root ignores the mode
 		assert.equal(r.status, 'not-ready');
-		assert.match(r.status === 'not-ready' ? r.message : '', /exists for epic but could not be recorded/);
-		assert.doesNotMatch(r.status === 'not-ready' ? r.message : '', /no issue was created/);
+		assert.match(r.status === 'not-ready' ? r.message : '', /no issue was created for epic because the head of EPIC-[0-9a-f]+ could not be made/);
+		assert.equal(h.seen.creates, 0);
 	} finally { chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755); fy.cleanup(); }
 });

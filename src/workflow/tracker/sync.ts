@@ -5,8 +5,9 @@
 
 /**
  * Deterministic tracker sync — pulls current GitHub issue state + labels
- * for an Epic and its Stories, maps them to statuses, and writes them
- * into the Define's `meta.tracker` (which the chain report reads).
+ * for an Epic and its Stories (the issues bound on their EPIC and STORY
+ * heads), maps them to statuses, and writes them into the Define's
+ * `meta.tracker` (which the chain report reads).
  * Read-only against GitHub; never edits issues.
  */
 
@@ -14,7 +15,9 @@ import { GithubConfigError, resolveGithubConfig } from '../config/github.js';
 import { artifactJsonPath, defineArtifactId } from '../storage.js';
 import { ghAuthOk, ghGetIssueState } from './github.js';
 import { mapIssueStatus, type TrackerStatus } from './conventions.js';
-import { patchTrackerMeta, readTrackerMeta } from './refs.js';
+import { patchTrackerMeta } from './refs.js';
+import { unitIssueOf } from './unit-head.js';
+import { readDefineArtifact } from '../gates.js';
 
 export type SyncResult =
 	| { readonly status: 'synced';  readonly epicStatus: TrackerStatus; readonly storyStatus: Readonly<Record<string, TrackerStatus>> }
@@ -23,10 +26,9 @@ export type SyncResult =
 
 export function syncTracker(repoPath: string, epicHash: string): SyncResult {
 	const defineJson = artifactJsonPath(repoPath, defineArtifactId(epicHash));
-	const tracker = readTrackerMeta(defineJson);
-	const epicRef = tracker?.epicRef;
+	const epicRef = unitIssueOf(repoPath, epicHash);
 	if (typeof epicRef !== 'string' || epicRef.length === 0) {
-		return { status: 'skipped', reason: 'Epic not pushed yet (no epicRef in meta.tracker)' };
+		return { status: 'skipped', reason: 'Epic not pushed yet (its head is not bound to an issue)' };
 	}
 
 	let cfgType: string;
@@ -49,13 +51,20 @@ export function syncTracker(repoPath: string, epicHash: string): SyncResult {
 		const es = ghGetIssueState(owner, repo, epicRef);
 		const epicStatus = mapIssueStatus(es.state, es.labels);
 		const storyStatus: Record<string, TrackerStatus> = {};
-		for (const [storyId, ref] of Object.entries(tracker?.storyRefs ?? {})) {
+		for (const story of storiesOf(repoPath, epicHash)) {
+			const ref = unitIssueOf(repoPath, epicHash, story);
+			if (ref === undefined) continue;
 			const s = ghGetIssueState(owner, repo, ref);
-			storyStatus[storyId] = mapIssueStatus(s.state, s.labels);
+			storyStatus[story] = mapIssueStatus(s.state, s.labels);
 		}
 		patchTrackerMeta(defineJson, { epicStatus, storyStatus, lastSyncedAt: new Date().toISOString() });
 		return { status: 'synced', epicStatus, storyStatus };
 	} catch (err) {
 		return { status: 'failed', reason: err instanceof Error ? err.message : String(err) };
 	}
+}
+
+/** The ids of the Stories the Epic's Define lists; none when it cannot be read. */
+function storiesOf(repoPath: string, epicHash: string): string[] {
+	try { return readDefineArtifact(repoPath, epicHash).body.stories.map(s => s.id); } catch { return []; }
 }

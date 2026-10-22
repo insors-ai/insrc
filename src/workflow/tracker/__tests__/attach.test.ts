@@ -12,6 +12,7 @@ import type { PortResult, TrackerComment, TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
 
 const LLD = `LLD-${H}-s6`;
+const STORY = `STORY-${H}-s6`;
 const MD = 'docs/epics/demo/S006/LLD.md';
 const DIAGRAM = 'docs/epics/demo/S006/sequence.html';
 const git = (repo: string, ...args: string[]): string => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
@@ -39,6 +40,7 @@ async function seeded() {
 	git(k.repo, 'remote', 'add', 'origin', 'https://github.com/acme/demo.git');
 	await k.store.write(artifact(`DEF-${H}`), alice);
 	await k.store.write(artifact(LLD), alice);
+	await k.store.write(artifact(STORY), alice);   // the unit's head: the issue and the attachments are recorded on it
 	mkdirSync(join(k.repo, 'docs/epics/demo/S006'), { recursive: true });
 	writeFileSync(join(k.repo, MD), '# LLD v1\n');
 	git(k.repo, 'add', '-A'); git(k.repo, 'commit', '-q', '-m', 'v1');
@@ -57,14 +59,14 @@ describe('attach', () => {
 			const unbound = attachDocuments(unit, fake.port, [target]);
 			assert.deepEqual(unbound.failed.map(f => f.reason), ['the unit is not bound to an issue yet']);
 			assert.deepEqual(fake.calls, []);
-			assert.ok(bindArtifact(k.repo, LLD, 'acme/demo#7').ok);
+			assert.ok(bindArtifact(k.repo, STORY, 'acme/demo#7').ok);
 
 			// the link names the last commit that touched the file
 			const sha1 = git(k.repo, 'log', '-1', '--format=%H', '--', MD);
 			const first = attachDocuments(unit, fake.port, [target], { now: () => '2026-10-21T10:00:00.000Z' });
 			assert.deepEqual(first.attached, [`https://github.com/acme/demo/blob/${sha1}/${MD}`]);
 			assert.deepEqual(fake.calls, ['list', `attach:https://github.com/acme/demo/blob/${sha1}/${MD}`]);
-			const recorded = readAttachments(k.repo, LLD);
+			const recorded = readAttachments(k.repo, STORY);
 			assert.equal(recorded.length, 1);
 			assert.deepEqual(recorded[0], { target: { entityId: LLD, type: 'LLD', relation: 'documents', fragment: MD }, revision: 1, at: '2026-10-21T10:00:00.000Z', externalId: '101' });
 
@@ -83,7 +85,7 @@ describe('attach', () => {
 			assert.match(dirty.failed.find(f => f.target === MD)?.reason ?? '', /has uncommitted changes: commit the file first/);
 			assert.match(dirty.failed.find(f => f.target === DIAGRAM)?.reason ?? '', /is not tracked by git: commit the file first/);
 			assert.equal(fake.calls.some(c => c.startsWith('attach:')), false, 'nothing is posted for a file that is not clean');
-			assert.equal(readAttachments(k.repo, LLD).length, 1, 'nothing is recorded for it');
+			assert.equal(readAttachments(k.repo, STORY).length, 1, 'nothing is recorded for it');
 
 			// committed, the revision gets a new link and the old attachment stays
 			git(k.repo, 'add', '-A'); git(k.repo, 'commit', '-q', '-m', 'v2');
@@ -92,7 +94,7 @@ describe('attach', () => {
 			const second = attachDocuments(unit, fake.port, [target, { artifactId: LLD, relPath: DIAGRAM }]);
 			assert.equal(second.attached.length, 2);
 			assert.ok(second.attached.includes(`https://github.com/acme/demo/blob/${sha2}/${MD}`));
-			const all = readAttachments(k.repo, LLD);
+			const all = readAttachments(k.repo, STORY);
 			assert.equal(all.length, 3);
 			assert.deepEqual(all.map(a => [a.target.fragment, a.revision]), [[MD, 1], [MD, 2], [DIAGRAM, 2]], 'the old attachment stays, the diagram is its own target');
 
@@ -106,19 +108,19 @@ describe('attach', () => {
 			const found = attachDocuments(unit, fake.port, [target]);
 			assert.deepEqual(found.reconciled, [link3]);
 			assert.equal(fake.calls.some(c => c.startsWith('attach:')), false, 'not posted again');
-			assert.equal(readAttachments(k.repo, LLD).at(-1)?.externalId, '555');
+			assert.equal(readAttachments(k.repo, STORY).at(-1)?.externalId, '555');
 
 			// a failing tracker is reported and nothing is recorded: a comment list that cannot be read posts nothing, an attach that fails records nothing
 			await bump(k, 'four');
 			writeFileSync(join(k.repo, MD), '# LLD v4\n'); git(k.repo, 'add', '-A'); git(k.repo, 'commit', '-q', '-m', 'v4');
-			const count = readAttachments(k.repo, LLD).length;
+			const count = readAttachments(k.repo, STORY).length;
 			fake.comments = []; fake.calls.length = 0;
 			fake.failList = true;
 			assert.match(attachDocuments(unit, fake.port, [target]).failed[0]?.reason ?? '', /could not be read \(unreachable\)/);
 			assert.equal(fake.calls.some(c => c.startsWith('attach:')), false);
 			fake.failList = false; fake.failAttach = true;
 			assert.match(attachDocuments(unit, fake.port, [target]).failed[0]?.reason ?? '', /could not attach .*\(rejected\)/);
-			assert.equal(readAttachments(k.repo, LLD).length, count);
+			assert.equal(readAttachments(k.repo, STORY).length, count);
 			// no GitHub origin: nothing to link to
 			assert.match(attachDocuments(unit, fake.port, [target], { repoSlug: () => null }).failed[0]?.reason ?? '', /no GitHub origin/);
 			// a Task unit has no artifact to hold attachments yet

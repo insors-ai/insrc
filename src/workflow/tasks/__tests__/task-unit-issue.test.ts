@@ -24,7 +24,7 @@ function writeHead(repo: string, id: string, rowId: string, status?: string): vo
 }
 
 test("a Task's issue is created under the Story's issue and bound on its Task head with no record on the Plan, the draft hook claims the Epic and the Story only, and a Task with no head is not resolved through the Plan", () => {
-	const fx = seed({ pushTasks: false });
+	const fx = seed({ pushTasks: false, taskHeads: false });
 	try {
 		const t = fakeTracker();
 		const u = (id: string) => ({ ...unit(id), repoPath: fx.repo });
@@ -63,7 +63,7 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 	} finally { fx.cleanup(); }
 
 	// the plan draft claims the Epic and the Story only: no Task issue is made before the plan is approved
-	const fy = seed({ pushTasks: false });
+	const fy = seed({ pushTasks: false, taskHeads: false });
 	try {
 		const t = fakeTracker();
 		const r = ensureDraftIssues(fy.plan, { readPolicy: teamPolicy, loadTracker: () => ({ ok: true, value: t.port }) });
@@ -73,7 +73,7 @@ test("a Task's issue is created under the Story's issue and bound on its Task he
 	} finally { fy.cleanup(); }
 
 	// a Task with no head is not resolved through a record the Plan holds, and the Plan is not changed by the lookup
-	const fz = seed({ pushTasks: false });
+	const fz = seed({ pushTasks: false, taskHeads: false });
 	try {
 		patchTrackerMeta(fz.plan, { units: { 'task:s1/t1': { unit: 'task', unitId: 't1', issue: 'acme/demo#9', createdAtRevision: 1 } } });
 		const before = readFileSync(fz.plan, 'utf8');

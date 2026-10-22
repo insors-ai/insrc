@@ -52,7 +52,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 		assert.equal(via(t)(() => autoPushStoryOnLld(fx.lld)).status, 'already-exists');
 		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'already-exists');
 		assert.deepEqual({ comments: t.log.comments.length, writes: t.log.writeBodies }, before, 'a second approve posts nothing');
-		assert.deepEqual((JSON.parse(readFileSync(fx.lld, 'utf8')).meta.envelope.binding.posted as Array<{ kind: string }>).map(p => p.kind).sort(), ['design', 'review', 'task-list'], 'the binding records what was posted');
+		assert.deepEqual((JSON.parse(readFileSync(artifactJsonPath(fx.repo, `STORY-${HASH}-s1`), 'utf8')).meta.envelope.binding.posted as Array<{ kind: string }>).map(p => p.kind).sort(), ['design', 'review', 'task-list'], 'the binding records what was posted');
 
 		// the draft hook also made both Task issues: the plan approve adopts them and creates none
 		for (const taskId of ['t1', 't2']) {
@@ -103,7 +103,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 		healed.issues.push(...t.issues);
 		const second = via(healed)(() => autoPushStoryOnLld(part.lld));
 		assert.equal(second.status, 'already-exists');
-		assert.deepEqual(healed.log.comments.map(([, b]) => b.split('\n').slice(0, 2)), [[`<!-- insrc:post:LLD-${HASH}-s1:design -->`, '## LLD — Story s1']], 'the comment carries its post marker first');
+		assert.deepEqual(healed.log.comments.map(([, b]) => b.split('\n').slice(0, 2)), [[`<!-- insrc:post:STORY-${HASH}-s1:design -->`, '## LLD — Story s1']], 'the comment carries its post marker first');
 		assert.equal(healed.log.writeBodies, 0, 'the marked task-list splice is not repeated');
 	} finally { part.cleanup(); }
 });

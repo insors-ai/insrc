@@ -24,7 +24,7 @@ function writeHead(repo: string, id: string, rowId: string, status?: string): vo
 }
 
 test("an issue number resolves to a Task through its head's binding, the tracker runner's dedup read and the orchestrator's push result use the head, and a Task with no head is not resolved through the Plan", () => {
-	const fx = seed({ pushTasks: true });
+	const fx = seed({ pushTasks: true, taskHeads: false });
 	try {
 		// plan row t2 became Task t4 (bound to #7); row t1 has no Task artifact, and a record the plan holds for it (#9) is not read
 		writeHead(fx.repo, HEAD, 't2');

@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T08:48:38.137Z",
+    "updatedAt": "2026-10-22T08:55:51.332Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -1289,6 +1289,85 @@
               },
               {
                 "title": "daemon.status answers with storeFailure when store health is locks-lost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "b4c98ee7",
+        "ranAt": "2026-10-22T08:55:51.332Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "each indexing-class method runs on the code-indexing worker's thread id",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a file change is indexed while a session request spins the main thread",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9928,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
                 "result": "pass"
               }
             ],

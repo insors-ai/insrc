@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -307,3 +307,32 @@ Run at 2026-10-22T08:48:38.137Z on commit `791ba857`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/settings-catalog.test.ts` | 0 | 4 | 0.4 s |  |
 | `src/daemon/threads/__tests__/admin-worker.test.ts` | 0 | 4 | 6.6 s |  |
+
+## t11
+
+Run at 2026-10-22T08:55:51.332Z on commit `b4c98ee7`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: each indexing-class method runs on the code-indexing worker's thread id**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each indexing-class method runs on the code-indexing worker's thread id | `src/daemon/threads/__tests__/indexing-worker.test.ts` |
+
+**integration: a file change is indexed while a session request spins the main thread**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a file change is indexed while a session request spins the main thread | `src/daemon/threads/__tests__/indexing-worker.test.ts` |
+
+**integration: recorded responses of repo.stats and daemon.compact equal the single-thread daemon's**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | recorded responses of repo.stats and daemon.compact equal the single-thread daemon's | `src/daemon/threads/__tests__/indexing-worker.test.ts` |
+| pass | the store slot is published before the queue starts and after every registry change | `src/daemon/threads/__tests__/indexing-worker.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.9 s |  |

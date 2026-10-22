@@ -32,6 +32,7 @@ import { planArtifactPaths, ARTIFACT_ID_MARKER_RE, writeAtomic } from '../storag
 import { jsonPathForMd } from '../gates.js';
 import { validateCitations } from '../synthesizer.js';
 import { approveJson } from './helpers/approve.js';
+import { seedTaskHeads } from './helpers/task-heads.js';
 import { approvalStateOf } from '../artifact-core/approval-view.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -194,7 +195,7 @@ test('renderPlanMarkdown: leads with the PLAN- marker, renders the ordered task 
 	assert.equal(m![1], `PLAN-${HASH}-s1`);
 	// The title leads with the Story's artifact id.
 	assert.ok(md.includes(`# Plan: STORY-${HASH}-s1`), md.split('\n').find(l => l.startsWith('# Plan:')));
-	assert.ok(md.includes('| # | Task | Size | Depends on | Tests | Derived from |'));
+	assert.ok(md.includes('| # | Task | Size | Status | Depends on | Tests | Derived from |'));
 	assert.ok(md.includes('[[c1]]'), 'task derivedFrom not rendered as a citation ref');
 	assert.match(md, /## \d+\. Test-strategy coverage/);   // sc3 (S002): numbered section
 });
@@ -231,4 +232,16 @@ test('isPlanBody guards the tasks + testStrategyCoverage shape', () => {
 	assert.equal(isPlanBody({ tasks: [], testStrategyCoverage: [] }), true);
 	assert.equal(isPlanBody({ tasks: [] }), false);
 	assert.equal(isPlanBody(null), false);
+});
+
+test('plan-artifact.test.ts: the PLAN task table shows each Task\'s status and revision from its head', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-table-'));
+	try {
+		const art = fixtureArtifact();
+		const meta = { ...art.meta, repoPath: repo };
+		const withRepo = { ...art, meta };
+		assert.match(renderPlanMarkdown(withRepo), /\| S \| — \|/, 'a row with no Task head shows no status');
+		seedTaskHeads(repo, HASH, 's1', ['t1'], CREATED);
+		assert.match(renderPlanMarkdown(withRepo), /\| S \| draft r1 \|/);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

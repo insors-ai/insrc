@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { ARTIFACTS_DIR } from '../storage.js';
 
 interface HeadShape {
-	readonly meta?: { readonly lifecycle?: { readonly status?: unknown }; readonly envelope?: { readonly binding?: { readonly reference?: { readonly entityId?: unknown } } } } | undefined;
+	readonly meta?: { readonly revision?: unknown; readonly lifecycle?: { readonly status?: unknown }; readonly envelope?: { readonly binding?: { readonly reference?: { readonly entityId?: unknown } } } } | undefined;
 	readonly body?: { readonly planTaskId?: unknown } | undefined;
 }
 
@@ -26,6 +26,8 @@ export interface TaskHeadInfo {
 	readonly number:     string;
 	readonly planTaskId: string;
 	readonly status:     string | undefined;
+	/** The head's revision number, when it carries one. */
+	readonly revision:   number | undefined;
 	/** The issue ref (`owner/repo#N`) on the Task's binding, when it has one. */
 	readonly issue:      string | undefined;
 }
@@ -46,7 +48,7 @@ export function taskHeadsIn(artifactsDir: string, epicHash: string, storyId: str
 			if (typeof planTaskId !== 'string') continue;
 			const id = name.slice(0, -'.json'.length);
 			const issue = head.meta?.envelope?.binding?.reference?.entityId;
-			out.push({ id, number: name.slice(prefix.length - 1, -'.json'.length), planTaskId, status: typeof head.meta?.lifecycle?.status === 'string' ? head.meta.lifecycle.status : undefined, issue: typeof issue === 'string' && issue.length > 0 ? issue : undefined });
+			out.push({ id, number: name.slice(prefix.length - 1, -'.json'.length), planTaskId, status: typeof head.meta?.lifecycle?.status === 'string' ? head.meta.lifecycle.status : undefined, revision: typeof head.meta?.revision === 'number' ? head.meta.revision : undefined, issue: typeof issue === 'string' && issue.length > 0 ? issue : undefined });
 		} catch { /* an unreadable head is not a Task */ }
 	}
 	return out;

@@ -26,7 +26,9 @@
  * (retryable) on violation, never mutating anything.
  */
 
-import { artifactIdMarker, planArtifactId } from '../storage.js';
+import { join } from 'node:path';
+import { ARTIFACTS_DIR, artifactIdMarker, planArtifactId } from '../storage.js';
+import { taskHeadsIn } from '../tasks/lookup.js';
 import { ArtifactIds } from '../artifact-ids.js';
 import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
@@ -121,12 +123,20 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	};
 
 	const taskTable = (): string[] => {
-		const l = ['| # | Task | Size | Depends on | Tests | Derived from |', '| :--- | :--- | :--- | :--- | :--- | :--- |'];
+		const l = ['| # | Task | Size | Status | Depends on | Tests | Derived from |', '| :--- | :--- | :--- | :--- | :--- | :--- | :--- |'];
+		// each Task's status and revision come from its own head
+		const heads = eh !== undefined && typeof meta.repoPath === 'string' && meta.repoPath.length > 0
+			? taskHeadsIn(join(meta.repoPath, ARTIFACTS_DIR), eh, meta.storyId).filter(h => h.status !== 'withdrawn')
+			: [];
+		const statusOf = (rowId: string): string => {
+			const h = heads.find(x => x.planTaskId.toLowerCase() === rowId.toLowerCase());
+			return h === undefined || h.status === undefined ? '—' : `${h.status}${h.revision !== undefined ? ` r${h.revision}` : ''}`;
+		};
 		for (const t of ordered) {
 			const deps  = t.dependsOn.length > 0 ? t.dependsOn.map(d => `\`${d}\``).join(', ') : '—';
 			const tests = t.tests.length > 0 ? t.tests.map(x => `${x.level}: ${escapePipes(x.name)}`).join('; ') : '—';
 			const cites = t.derivedFrom.map(c => `[[${c}]]`).join(' ');
-			l.push(`| ${t.order} | **\`${t.id}\`** ${escapePipes(t.title)} | ${t.size} | ${deps} | ${escapePipes(tests)} | ${cites} |`);
+			l.push(`| ${t.order} | **\`${t.id}\`** ${escapePipes(t.title)} | ${t.size} | ${statusOf(t.id)} | ${deps} | ${escapePipes(tests)} | ${cites} |`);
 		}
 		return l;
 	};

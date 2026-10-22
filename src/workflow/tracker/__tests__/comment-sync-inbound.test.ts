@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { syncUnitComments } from '../comment-sync.js';
+import { artifactOfUnit, syncUnitComments } from '../comment-sync.js';
 import { STORY, TASK, alice, comment, fakeTracker, syncKit } from './comment-sync-kit.js';
 
 describe('comment-sync-inbound', () => {
@@ -96,6 +96,19 @@ describe('comment-sync-inbound', () => {
 			await s.k.store.write((await import('../../artifact-core/__tests__/store-kit.js')).artifact(unbound, { payload: { body: { title: 'a task', summary: 'one', size: 'S', order: 2, acceptanceChecks: ['done'], tests: [], planTaskId: 't2' }, citations: [] } }), alice);
 			const noBinding = await syncUnitComments({ ...s.task, taskId: 't2' }, t.port, s.deps);
 			assert.match(noBinding.note ?? '', /not bound to an issue/);
+		} finally { s.done(); }
+	});
+
+	it('comment-sync-inbound.test.ts: comment sync reads and posts on the STORY head', async () => {
+		const s = await syncKit();
+		try {
+			const t = fakeTracker();
+			assert.equal(artifactOfUnit(s.story), STORY, 'a Story answers its STORY head, not its LLD');
+			t.comments = [comment(41, 'a comment on the story')];
+			await s.feedback.add(STORY, { text: 'entered here on the story' }, alice);
+			const r = await syncUnitComments(s.story, t.port, s.deps);
+			assert.deepEqual([r.artifactId, r.recorded, r.posted.length, r.failed], [STORY, ['41'], 1, []]);
+			assert.equal(t.posts.length, 1);
 		} finally { s.done(); }
 	});
 });

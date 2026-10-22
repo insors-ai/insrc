@@ -77,7 +77,7 @@ export interface CommentSyncResult {
 
 const empty = (): CommentSyncResult => ({ recorded: [], framework: [], known: [], posted: [], reconciled: [], failed: [] });
 
-/** The artifact that holds the unit's feedback and binding: the Task's own artifact, the Story's LLD, the Epic's Define. */
+/** The artifact that holds the unit's feedback and binding: the head of the Task, the STORY head, the EPIC head. */
 export function artifactOfUnit(unit: UnitRef): string | undefined {
 	if (unit.unit === 'task') return unit.storyId !== undefined && unit.taskId !== undefined ? taskHeadIdOf(unit.repoPath, unit.epicHash, unit.storyId, unit.taskId) : undefined;
 	return unitArtifactId(unit);

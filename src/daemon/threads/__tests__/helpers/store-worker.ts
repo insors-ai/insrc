@@ -48,7 +48,8 @@ type Op =
 	| { op: 'read-config-and-artifact'; tags: string[] }
 	| { op: 'throwing-txn' }
 	| { op: 'open-live' }
-	| { op: 'lock-probe'; name: string };
+	| { op: 'lock-probe'; name: string }
+	| { op: 'hold-write-txn'; ms: number };
 
 const errorOf = (e: unknown): { name: string; message: string } =>
 	e instanceof Error ? { name: e.name, message: e.message } : { name: 'unknown', message: String(e) };
@@ -97,6 +98,16 @@ parentPort!.on('message', async (m: Op) => {
 				blockedBy: blockedBy.map(b => ({ mode: b.mode, threadId: b.threadId })),
 			}));
 			parentPort!.postMessage({ op: m.op, ok: true, ...outcome });
+		} else if (m.op === 'hold-write-txn') {
+			// An LMDB write transaction kept open for `ms` (this thread is blocked meanwhile).
+			const s = await getGraphStore();
+			parentPort!.postMessage({ op: m.op, started: true });
+			s.root.transactionSync(() => {
+				s.meta.put('held-write-txn', Buffer.from([1]));
+				const end = Date.now() + m.ms;
+				while (Date.now() < end) { /* the transaction stays open */ }
+			});
+			parentPort!.postMessage({ op: m.op, ok: true });
 		} else if (m.op === 'open-live') {
 			const graph = await getGraphStore().then(() => null, errorOf);
 			const lance = await getLanceConn().then(() => null, errorOf);

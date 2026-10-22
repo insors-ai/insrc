@@ -13,7 +13,7 @@
 
 import { execFileSync, spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { appendFileSync, existsSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -70,8 +70,13 @@ export async function startDaemon(home: string): Promise<RunningDaemon> {
 		cwd: REPO_ROOT, env: childEnv(home), stdio: ['ignore', 'ignore', 'pipe'],
 	});
 	let stderr = '';
-	child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
-	const exited = new Promise<void>(r => child.once('exit', () => r()));
+	// Diagnosis: with INSRC_TEST_DAEMON_STDERR set to a file, the daemon's stderr is also appended there.
+	const copyTo = process.env['INSRC_TEST_DAEMON_STDERR'];
+	child.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); if (copyTo) appendFileSync(copyTo, d); });
+	const exited = new Promise<void>(r => child.once('exit', (code, signal) => {
+		if (copyTo) appendFileSync(copyTo, `\n[the daemon exited: code=${code} signal=${signal}]\n`);
+		r();
+	}));
 	const sock = sockOf(home);
 	const deadline = Date.now() + 60_000;
 	for (;;) {

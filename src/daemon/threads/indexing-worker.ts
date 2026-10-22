@@ -19,6 +19,7 @@ import { ConfigStore } from '../../config/store.js';
 import { getDb } from '../../db/client.js';
 import { listRepos } from '../../db/repos.js';
 import { IndexerService } from '../../indexer/index.js';
+import { onIndexRunsChanged } from '../../indexer/run-record.js';
 import { Watcher } from '../../indexer/watcher.js';
 import { getLogger } from '../../shared/logger.js';
 import { withBackgroundHold } from '../../shared/locks/maintenance-lock.js';
@@ -62,6 +63,16 @@ hub.onPush(SUMMARY_PORT_OP, port => {
 	else summaries = summaryRunner(port as MessagePort);
 });
 indexer = new IndexerService(db, queue, watcher, configStore);
+// The running full indexes, for the under-index refusals answered on other threads.
+// A full index's status and completeness change as it starts (status 'indexing',
+// then its state unfinished before it counts its files) and as it ends, so the
+// store slot is published at each of those steps too, not only after the job.
+let running = '';
+onIndexRunsChanged(runs => {
+	board.publishIndexRuns(runs);
+	const now = runs.map(r => `${r.repoPath}:${r.filesSelected !== undefined}`).sort().join('\n');
+	if (now !== running) { running = now; void publishStore(); }
+});
 const service = indexer;
 
 /** Publish the store slot; publishes run one after another, so the board never goes back to an older list. */

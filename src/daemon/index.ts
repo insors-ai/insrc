@@ -63,6 +63,7 @@ import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
 import type { ForwardRequest } from './server.js';
 import { Supervisor } from './threads/supervisor.js';
 import { startIndexingWorkers } from './threads/indexing-workers.js';
+import { setIndexRunSource } from '../indexer/run-record.js';
 import type { MethodClass } from './threads/channel.js';
 import { getActiveEmbedderBackend } from '../indexer/embedder.js';
 import { schedulePruneTimer } from './prune-timer.js';
@@ -258,6 +259,8 @@ async function main(): Promise<void> {
 		routed.add('indexing');
 		const workers = new Supervisor({ services: threadServices, router, shutdown: reason => shutdownDaemon(reason) });
 		supervisor = workers;
+		// The full index runs on the code-indexing worker: its run records come from the board.
+		setIndexRunSource(repoPath => threadServices.board.indexRun(repoPath));
 		const testHoldMs = process.env['INSRC_TEST_HOOKS'] === '1' ? Number(process.env['INSRC_TEST_MAINTENANCE_HOLD_MS'] ?? 0) : 0;
 		maintenance = new MaintenanceController({
 			config: maintenanceConfig(),

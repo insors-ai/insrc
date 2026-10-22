@@ -12,6 +12,7 @@
  */
 
 import type { AttachedClient, RegisteredRepo, RepoCompleteness, UnattributedUnwritableCount } from '../../shared/types.js';
+import type { IndexRunView } from '../../indexer/run-record.js';
 import { getLogger } from '../../shared/logger.js';
 import type { HubClient, HubHandlers, MethodClass, SessionId } from './channel.js';
 
@@ -75,6 +76,7 @@ export class StatusBoard {
 	private indexing: IndexingStatus = IDLE_INDEXING;
 	private clients: readonly AttachedClientSnapshot[] = [];
 	private store: StoreStatusSnapshot = { publishedAt: 0 };
+	private indexRunList: readonly IndexRunView[] = [];
 
 	publish(status: ThreadStatus): void { this.threads.set(status.threadId, status); }
 	publishIndexing(status: IndexingStatus): void { this.indexing = status; }
@@ -92,6 +94,9 @@ export class StatusBoard {
 	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.clients = clients; }
 	publishStore(store: StoreStatusSnapshot): void { this.store = store; }
+	/** The running full indexes, as the code-indexing worker last published them (an additive s2 slot). */
+	publishIndexRuns(runs: readonly IndexRunView[]): void { this.indexRunList = runs; }
+	indexRun(repoPath: string): IndexRunView | undefined { return this.indexRunList.find(r => r.repoPath === repoPath); }
 
 	/** Inserts or replaces the record with that runId; a record whose frames would shrink is refused. */
 	publishRun(run: RunRecord): void {
@@ -124,6 +129,7 @@ export class StatusBoard {
 const OPS = {
 	publish: 'board.publish', publishIndexing: 'board.publishIndexing', publishLane: 'board.publishLane', publishClients: 'board.publishClients',
 	publishRun: 'board.publishRun', publishStore: 'board.publishStore', snapshot: 'board.snapshot',
+	publishIndexRuns: 'board.publishIndexRuns',
 } as const;
 
 /** The main thread's hub services for the board. */
@@ -136,6 +142,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 		[OPS.publishRun]:      a => board.publishRun(a as RunRecord),
 		[OPS.publishStore]:    a => board.publishStore(a as StoreStatusSnapshot),
 		[OPS.snapshot]:        () => board.snapshot(),
+		[OPS.publishIndexRuns]: a => board.publishIndexRuns(a as readonly IndexRunView[]),
 	};
 }
 
@@ -150,5 +157,6 @@ export class StatusBoardClient {
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.hub.send(OPS.publishClients, clients); }
 	publishRun(run: RunRecord): void { this.hub.send(OPS.publishRun, run); }
 	publishStore(store: StoreStatusSnapshot): void { this.hub.send(OPS.publishStore, store); }
+	publishIndexRuns(runs: readonly IndexRunView[]): void { this.hub.send(OPS.publishIndexRuns, runs); }
 	snapshot(): Promise<StatusSnapshot> { return this.hub.request<StatusSnapshot>(OPS.snapshot, null); }
 }

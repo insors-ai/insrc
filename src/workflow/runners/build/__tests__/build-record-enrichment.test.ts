@@ -5,13 +5,11 @@
 
 /**
  * E202609309b72686c:S003 — the BUILD record gains an additive narrative
- * `## Summary` and captures build-cycle feedback into `body.feedback`.
+ * `## Summary`.
  *
- * Both additions are OMIT-SLOT: a plan-driven record that carries neither a
- * summary nor feedback renders byte-identically to the pre-S003 output (k4). The
- * in-cycle feedback capture reuses the existing append-only appendFeedback writer
- * (no new writer), and persistBuildRecord's mergeWithPrior is untouched, so a
- * re-validate that omits the summary preserves the prior one.
+ * The addition is an OMIT-SLOT: a plan-driven record that carries no summary
+ * renders byte-identically to the pre-S003 output (k4). A re-validate that omits
+ * the summary preserves the prior one.
  *
  * Run: npx tsx --test --test-force-exit src/workflow/runners/build/__tests__/build-record-enrichment.test.ts
  */
@@ -23,7 +21,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { persistBuildRecord, renderBuildRecordMd, type BuildRecord } from '../standalone-record.js';
-import { appendFeedback } from '../../../artifacts/provenance/writer.js';
+import { approvedMeta } from '../../../__tests__/lifecycle-fixtures.js';
 import { ARTIFACTS_DIR } from '../../../storage.js';
 
 const HASH = 'd4e5f6a7b8c9d0e1';
@@ -51,14 +49,10 @@ test('render: an empty / whitespace body.summary -> NO `## Summary` section (omi
 	assert.doesNotMatch(renderBuildRecordMd(planRecord({ summary: '   ' })), /## Summary/);
 });
 
-test('render: a summary XOR feedback -> only the present section renders', () => {
+test('render: a summary renders its section and no feedback section (feedback is the sidecar\'s, not the body\'s)', () => {
 	const withSummary = renderBuildRecordMd(planRecord({ summary: 'A narrative.' }));
 	assert.match(withSummary, /## Summary/);
 	assert.doesNotMatch(withSummary, /## Feedback/);
-
-	const withFeedback = renderBuildRecordMd(planRecord({ feedback: [{ id: 'f1', author: 'reviewer', timestamp: CREATED, target: { file: 'src/x.ts' }, comment: 'nit' }] }));
-	assert.match(withFeedback, /## Feedback/);
-	assert.doesNotMatch(withFeedback, /## Summary/);
 });
 
 test('render: neither summary nor feedback -> no new sections, byte-identical to the pre-S003 render (ac3/k4)', () => {
@@ -81,7 +75,7 @@ test('render: neither summary nor feedback -> no new sections, byte-identical to
 });
 
 // ---------------------------------------------------------------------------
-// integration — persist + appendFeedback on the persisted BUILD json
+// integration — persist the BUILD record
 // ---------------------------------------------------------------------------
 
 function mkRepoWithDef(): string {
@@ -91,7 +85,7 @@ function mkRepoWithDef(): string {
 	// A minimal DEF so persistBuildRecord's buildRecordFolderArgs (standalone:false
 	// reads the DEF for the folder anchor) resolves.
 	writeFileSync(join(dir, `DEF-${HASH}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'enrich-epic', createdAt: CREATED, approvedAt: CREATED },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'enrich-epic', createdAt: CREATED, ...approvedMeta({ at: CREATED }) },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}, null, 2));
@@ -105,26 +99,6 @@ test('persist: a record with body.summary -> the json carries it and the .md ren
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as BuildRecord;
 		assert.equal(rec.body.summary, 'Enriched the BUILD record with a summary.');
 		assert.match(readFileSync(md, 'utf8'), /## Summary/);
-	} finally { rmSync(repo, { recursive: true, force: true }); }
-});
-
-test('appendFeedback: build-cycle feedback accretes on the persisted BUILD json and renders `## Feedback` (ac2)', async () => {
-	const repo = mkRepoWithDef();
-	try {
-		const { json } = await persistBuildRecord(repo, planRecord({ summary: 'A summary.' }));
-		const res = appendFeedback({
-			artifactPath: json,
-			entry: { author: 'reviewer', comment: 'The summary reads well.', target: { file: 'src/workflow/runners/build/standalone-record.ts' } },
-		});
-		assert.equal(res.total, 1);
-		const rec = JSON.parse(readFileSync(json, 'utf8')) as BuildRecord;
-		assert.equal(rec.body.feedback?.length, 1);
-		assert.equal(rec.body.feedback![0]!.comment, 'The summary reads well.');
-		// The renderer shows the captured feedback (and the summary alongside it).
-		const md = renderBuildRecordMd(rec);
-		assert.match(md, /## Feedback/);
-		assert.match(md, /The summary reads well\./);
-		assert.match(md, /## Summary/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

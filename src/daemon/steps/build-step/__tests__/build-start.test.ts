@@ -32,7 +32,10 @@ import { tmpdir } from 'node:os';
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
-import { approveArtifactByJsonPath, approveWorkflowTarget } from '../../../../workflow/gates.js';
+import { approveWorkflowTarget } from '../../../../workflow/gates.js';
+import { approvedMeta } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { ARTIFACTS_DIR, buildArtifactId, codeReviewArtifactId, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
@@ -80,7 +83,7 @@ function writeArtifact(fx: Fx, id: string, doc: unknown): string {
  *  `tasks`. Committed, so the tree is clean. */
 function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>): void {
 	writeArtifact(fx, `DEF-${HASH}`, {
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, ...approvedMeta({ at: CREATED_AT }) },
 		body: { problem: 'p', stories: Object.keys(stories).map(id => ({ id, title: `Story ${id}` })) },
 		citations: [],
 	});
@@ -90,7 +93,7 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 				workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
 				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 				hldBaseRunId: 'hld-1', hldEffectiveHash: `basis-${storyId}`, hldAmendmentsApplied: [],
-				approvedAt: CREATED_AT,
+				...approvedMeta({ at: CREATED_AT }),
 			},
 			body: { openQuestions: [] }, citations: [],
 		});
@@ -114,9 +117,9 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 
 /** Approve every plan while HEAD stands still — one sweep, one shared
  *  approval-time base — then commit the rewrite so the tree is clean again. */
-function approvePlansInOneSweep(fx: Fx, storyIds: readonly string[]): string {
+async function approvePlansInOneSweep(fx: Fx, storyIds: readonly string[]): Promise<string> {
 	const sharedBase = fx.git('rev-parse', 'HEAD');
-	for (const s of storyIds) approveArtifactByJsonPath(artifact(fx, planArtifactId(HASH, s)));
+	for (const s of storyIds) await approveJson(artifact(fx, planArtifactId(HASH, s)));
 	for (const s of storyIds) {
 		const meta = (JSON.parse(readFileSync(artifact(fx, planArtifactId(HASH, s)), 'utf8')) as { meta: { rangeBase?: string } }).meta;
 		assert.equal(meta.rangeBase, sharedBase, `fixture precondition: ${s}'s plan carries the shared approval-time base`);
@@ -178,7 +181,7 @@ test('T30/T31: two Stories approved in ONE sweep, built in turn — each change 
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'], s2: ['t1'] });
-		const sharedBase = approvePlansInOneSweep(fx, ['s1', 's2']);
+		const sharedBase = await approvePlansInOneSweep(fx, ['s1', 's2']);
 
 		assert.equal((await implement(fx, 's1/t1'))['next'], 'implement');
 		const s1Start = fx.git('rev-parse', 'HEAD');
@@ -206,7 +209,7 @@ test('T32: the build-start file left UNCOMMITTED (untracked) with nothing else d
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
 		work(fx, 'story-one.ts', 'source-only');
 		assert.ok(fx.git('status', '--porcelain').includes('build-start'), 'fixture precondition: the build-start file is uncommitted');
@@ -219,7 +222,7 @@ test('T32 (tracked and modified): a build-start file that is the ONLY dirty trac
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
 		const base = stampedBase(fx, 's1');
 		work(fx, 'story-one.ts', 'everything');           // the file is now TRACKED
@@ -239,7 +242,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1', 't2'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 
 		await implement(fx, 's1/t1');
 		const start = stampedBase(fx, 's1');
@@ -252,7 +255,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		// A batch approval of the epic, aimed at anything else, sweeps this BUILD record up.
 		const swept = await approveWorkflowTarget({ repoPath: fx.repo, epicHash: HASH });
 		assert.ok(swept.approved.some(a => a.path.endsWith(`${buildArtifactId(HASH, 's1')}.json`)), 'fixture precondition: the sweep approved the half-built Story\'s BUILD record');
-		assert.equal(typeof buildRecord(fx, 's1').meta['approvedAt'], 'string');
+		assert.equal(approvalStateOf(buildRecord(fx, 's1').meta), 'approved');
 		commitRecords(fx, 'the approval rewrite');
 
 		await implement(fx, 's1/t2');
@@ -271,7 +274,7 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1', 't2'] });
-		const approvalBase = approvePlansInOneSweep(fx, ['s1']);
+		const approvalBase = await approvePlansInOneSweep(fx, ['s1']);
 
 		await implement(fx, 's1/t1');
 		work(fx, 'task-one.ts', 'source-only');
@@ -291,7 +294,7 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 		// excluded. Both task files are there, which is what a moved base would lose.
 		const log = changeLog(fx, 's1');
 		assert.ok(log.includes('task-one.ts') && log.includes('task-two.ts'), `both tasks' files must be listed, got ${JSON.stringify(log)}`);
-		assert.deepEqual(log, [`${ARTIFACTS_DIR}/${planArtifactId(HASH, 's1')}.json`, 'task-one.ts', 'task-two.ts'].sort());
+		assert.deepEqual(log, [`${ARTIFACTS_DIR}/${planArtifactId(HASH, 's1')}.json`, `${ARTIFACTS_DIR}/${planArtifactId(HASH, 's1')}.log.jsonl`, 'task-one.ts', 'task-two.ts'].sort());
 	} finally { fx.cleanup(); }
 });
 
@@ -299,7 +302,7 @@ test('T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild\'s 
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
 		const firstStart = stampedBase(fx, 's1');
 		work(fx, 'first-build.ts', 'everything');
@@ -307,7 +310,7 @@ test('T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild\'s 
 		assert.deepEqual(changeLog(fx, 's1'), ['first-build.ts']);
 		stampOtherPartyReview(artifact(fx, buildArtifactId(HASH, 's1')));   // completion requires an other-party code review
 		commitRecords(fx, 'build record');
-		approveArtifactByJsonPath(artifact(fx, buildArtifactId(HASH, 's1')));   // the Story is complete
+		await approveJson(artifact(fx, buildArtifactId(HASH, 's1')));   // the Story is complete
 		commitRecords(fx, 'BUILD approved');
 
 		await implement(fx, 's1/t1');
@@ -328,7 +331,7 @@ test('T36 (plan-driven): implement writes NO BUILD record, and a batch approval 
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
 		assert.equal(readBuildStart(fx.repo, HASH, 's1').kind, 'valid', 'the build did start');
 		assert.equal(existsSync(artifact(fx, buildArtifactId(HASH, 's1'))), false, 'no BUILD record until validate');
@@ -352,7 +355,7 @@ function seedStandaloneLld(fx: Fx): void {
 		meta: {
 			workflow: 'design.story', runId: 'lld-s1', schemaVersion: 1,
 			epicHash: HASH, epicSlug: 'range-base', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
-			standalone: true, approvedAt: CREATED_AT,
+			standalone: true, ...approvedMeta({ at: CREATED_AT }),
 		},
 		body: { openQuestions: [] }, citations: [],
 	});
@@ -431,7 +434,7 @@ test('fail-open: a stamp that cannot be written leaves the implement result unch
 	const planDriven = mkGit();
 	try {
 		seedEpic(planDriven, { s1: ['t1'] });
-		approvePlansInOneSweep(planDriven, ['s1']);
+		await approvePlansInOneSweep(planDriven, ['s1']);
 		block(planDriven);
 		const blocked = await implement(planDriven, 's1/t1');
 		assert.equal(blocked['next'], 'implement', 'the build is not refused or failed');
@@ -471,7 +474,7 @@ test('T37: the completion writer excludes a COMMITTED build-start file — exact
 	const fx = mkGit();
 	try {
 		seedEpic(fx, { s1: ['t1'] });
-		approvePlansInOneSweep(fx, ['s1']);
+		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
 		work(fx, 'story-one.ts', 'everything');
 		assert.ok(fx.git('ls-files').split('\n').includes(buildStartRelPath(HASH, 's1')), 'fixture precondition: the build-start file is in the range');

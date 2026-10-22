@@ -15,7 +15,7 @@
  * report back.
  */
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { convertLegacyFeedback } from '../artifact-core/feedback-convert.js';
@@ -74,6 +74,12 @@ export const approvedMeta = (opts: FixtureOptions = {}): Record<string, unknown>
 
 /** A rejected head. */
 export const rejectedMeta = (opts: FixtureOptions = {}): Record<string, unknown> => lifecycleMeta({ status: 'rejected' }, opts);
+
+/** Approve the head at `jsonPath` the way a fixture would have it already: its meta gains an approved lifecycle. Sync, for a fixture builder. */
+export function markApprovedSync(jsonPath: string, opts: FixtureOptions = {}): void {
+	const head = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+	writeFileSync(jsonPath, JSON.stringify({ ...head, meta: { ...head.meta, ...approvedMeta(opts) } }, null, 2) + '\n');
+}
 
 /** A head that is not decided yet: a draft. */
 export const draftMeta = (opts: FixtureOptions = {}): Record<string, unknown> => lifecycleMeta({ status: 'draft' }, opts);

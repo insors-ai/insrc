@@ -9,11 +9,11 @@
  * A plan-driven build writes its BUILD record at the validate phase
  * (src/daemon/steps/build-step/phases/validate.ts), but a CONTROLLER-side build that
  * skips validate would otherwise complete with no BUILD ledger trace. This hook
- * — called from the approve path BEFORE the artifact is stamped — CREATE-or-MERGES
+ * — called from the approve path BEFORE the artifact is approved — CREATE-or-MERGES
  * a `BUILD-<epicHash>-<storyId>` record from the current git changed set, reusing
  * the unchanged {@link persistBuildRecord} writer + {@link collectBuildChangeLog}
  * collector. `persistBuildRecord` is a read-merge-write UPSERT, so on a build that
- * already wrote its record this is idempotent (prior fields, incl. `approvedAt`,
+ * already wrote its record this is idempotent (prior fields, incl. the head's lifecycle,
  * are preserved). Every failure is swallowed — completion must never fail because
  * the ledger record could not be written.
  */

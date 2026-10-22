@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path';
 
 import { buildStartRelPath, readBuildStart, resolveStoryRangeBase, stampBuildStart } from '../range-base.js';
 import { ARTIFACTS_DIR, buildArtifactId, lldArtifactId, planArtifactId } from '../../../storage.js';
+import { approvedMeta } from '../../../__tests__/lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 const SHA40 = /^[0-9a-f]{40}$/;
@@ -104,7 +105,7 @@ test('t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT
 test('t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story\'s own LLD was in', () => {
 	const s = mkRepo();
 	try {
-		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', approvedAt: '2026-10-02T00:00:00.000Z' });
+		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', ...approvedMeta({ at: '2026-10-02T00:00:00.000Z' }) });
 		// Never committed, and no stamp (a pre-t5 approval).
         let out: string | undefined | 'threw';
         try { out = resolveStoryRangeBase(s.repo, HASH, 's1'); } catch { out = 'threw'; }
@@ -333,7 +334,7 @@ function seedStamp(fx: Fx, storyId = 's1'): string {
 }
 
 function seedBuild(fx: Fx, o: { approvedAt?: string; tasks?: unknown }, storyId = 's1'): void {
-	seedArtifact(fx.repo, buildArtifactId(HASH, storyId), { workflow: 'build', epicHash: HASH, storyId, ...(o.approvedAt !== undefined ? { approvedAt: o.approvedAt } : {}) });
+	seedArtifact(fx.repo, buildArtifactId(HASH, storyId), { workflow: 'build', epicHash: HASH, storyId, ...(o.approvedAt !== undefined ? approvedMeta({ at: o.approvedAt }) : {}) });
 	const p = join(fx.repo, ARTIFACTS_DIR, `${buildArtifactId(HASH, storyId)}.json`);
 	const doc = JSON.parse(readFileSync(p, 'utf8')) as { body: Record<string, unknown> };
 	if (o.tasks !== undefined) doc.body['tasks'] = o.tasks;

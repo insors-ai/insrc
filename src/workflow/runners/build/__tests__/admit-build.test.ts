@@ -28,7 +28,6 @@ import { tmpdir } from 'node:os';
 import { admitBuild } from '../admission.js';
 import * as buildAdmission from '../admission.js';
 import { approvalVerdict, driftVerdict } from '../admission.js';
-import { approveArtifactByJsonPath } from '../../../gates.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
 import { artifactJsonPath, lldArtifactId, planArtifactId } from '../../../storage.js';
 import { ArtifactShapeError } from '../../../artifact-core/types.js';
@@ -69,8 +68,9 @@ function planObject(storyId: string, lldEffectiveHash: string): PlanArtifact {
 function seedPlan(repo: string, opts: SeedPlanOpts): void {
 	const json = artifactJsonPath(repo, planArtifactId(HASH, opts.storyId));
 	mkdirSync(dirname(json), { recursive: true });
-	writeFileSync(json, JSON.stringify(planObject(opts.storyId, opts.lldEffectiveHash), null, 2));
-	if (opts.approved) approveArtifactByJsonPath(json);
+	const plan = planObject(opts.storyId, opts.lldEffectiveHash);
+	const head = opts.approved ? { ...plan, meta: { ...plan.meta, ...approvedMeta({ at: '2026-07-18T00:00:00.000Z' }) } } : plan;
+	writeFileSync(json, JSON.stringify(head, null, 2));
 }
 
 /** Seed a corrupt (undecodable) plan body at the plan's json path. */

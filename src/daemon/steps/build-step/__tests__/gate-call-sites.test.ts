@@ -20,7 +20,9 @@ import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
+import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { _setGateDepsForTests, type PolicyReader } from '../../../../workflow/team/gate.js';
 import type { TeamPolicy } from '../../../../workflow/team/types.js';
@@ -52,7 +54,7 @@ function writeArtifact(fx: Fx, id: string, doc: unknown): string {
  *  `tasks`. Committed, so the tree is clean. */
 function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>): void {
 	writeArtifact(fx, `DEF-${HASH}`, {
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, ...approvedMeta({ at: CREATED_AT }) },
 		body: { problem: 'p', stories: Object.keys(stories).map(id => ({ id, title: `Story ${id}` })) },
 		citations: [],
 	});
@@ -62,7 +64,7 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 				workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
 				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT,
 				hldBaseRunId: 'hld-1', hldEffectiveHash: `basis-${storyId}`, hldAmendmentsApplied: [],
-				approvedAt: CREATED_AT,
+				...approvedMeta({ at: CREATED_AT }),
 			},
 			body: { openQuestions: [] }, citations: [],
 		});
@@ -86,7 +88,7 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 
 /** Approve the plans, then commit the rewrite so the tree is clean again. */
 function approvePlansInOneSweep(fx: Fx, storyIds: readonly string[]): void {
-	for (const s of storyIds) approveArtifactByJsonPath(artifact(fx, planArtifactId(HASH, s)));
+	for (const s of storyIds) markApprovedSync(artifact(fx, planArtifactId(HASH, s)));
 	fx.git('add', '-A'); fx.git('commit', '-qm', 'approve the plans');
 }
 

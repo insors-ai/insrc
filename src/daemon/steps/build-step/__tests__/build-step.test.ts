@@ -24,7 +24,10 @@ import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
 import { ReviewSessionTimeoutError } from '../../../../agent/providers/cli-provider.js';
-import { approveArtifactByJsonPath, jsonPathForMd } from '../../../../workflow/gates.js';
+import { jsonPathForMd } from '../../../../workflow/gates.js';
+import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { ARTIFACTS_DIR, buildArtifactId, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
 import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
@@ -63,7 +66,7 @@ function artifactsDir(repo: string): string {
 
 function seedDef(repo: string): void {
 	writeFileSync(join(artifactsDir(repo), `DEF-${HASH}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, ...approvedMeta({ at: CREATED_AT }) },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}, null, 2));
@@ -75,7 +78,7 @@ function seedLld(repo: string, openQuestions: readonly string[] = []): void {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
 			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
-			approvedAt: CREATED_AT,
+			...approvedMeta({ at: CREATED_AT }),
 			tracker: { storyRef: 'acme/widgets#10' },
 		},
 		body: { openQuestions }, citations: [],
@@ -100,7 +103,7 @@ function seedPlan(repo: string, approved: boolean): string {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
-	if (approved) approveArtifactByJsonPath(json);
+	if (approved) markApprovedSync(json);
 	return json;
 }
 
@@ -109,7 +112,7 @@ function seedPlan(repo: string, approved: boolean): string {
 function seedSecondEpic(repo: string): void {
 	const dir = artifactsDir(repo);
 	writeFileSync(join(dir, `DEF-${HASH2}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: HASH2, epicSlug: 'other-epic', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2, approvedAt: CREATED_AT2 },
+		meta: { workflow: 'define', epicHash: HASH2, epicSlug: 'other-epic', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2, ...approvedMeta({ at: CREATED_AT2 }) },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}, null, 2));
@@ -118,7 +121,7 @@ function seedSecondEpic(repo: string): void {
 			workflow: 'design.story', runId: 'lld-run-2', schemaVersion: 1,
 			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2,
 			hldBaseRunId: 'hld-run-2', hldEffectiveHash: 'basis-hash-222', hldAmendmentsApplied: [],
-			approvedAt: CREATED_AT2, tracker: { storyRef: 'acme/widgets#20' },
+			...approvedMeta({ at: CREATED_AT2 }), tracker: { storyRef: 'acme/widgets#20' },
 		},
 		body: { openQuestions: [] }, citations: [],
 	}, null, 2));
@@ -139,7 +142,7 @@ function seedSecondEpic(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
-	approveArtifactByJsonPath(planJson);
+	markApprovedSync(planJson);
 }
 
 function mkRepo(): string {
@@ -185,7 +188,7 @@ test('implement: does NOT gate on the LLD open questions (resolved at stage-star
 				workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
 				epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1',
 				hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
-				approvedAt: CREATED_AT,
+				...approvedMeta({ at: CREATED_AT }),
 				questionResolutions: {
 					sc2: { question: 'Case sensitivity?', status: 'resolved', choice: 'Case-insensitive match', resolvedAt: CREATED_AT },
 				},
@@ -449,9 +452,9 @@ test('validate[standalone]: the persisted record is approvable by the completion
 		// The completion act: approve the persisted BUILD record by its json path.
 		const { json } = buildArtifactPaths(repo, HASH, 's1', CREATED_AT, 'epic', 'tag-filtering');
 		stampOtherPartyReview(json);   // completion requires an other-party code review
-		approveArtifactByJsonPath(json);
+		await approveJson(json);
 		const rec = JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> };
-		assert.equal(typeof rec.meta['approvedAt'], 'string', 'approval stamps approvedAt on the standalone BUILD record');
+		assert.equal(approvalStateOf(rec.meta), 'approved', 'approval approves the standalone BUILD record head');
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });
@@ -1131,7 +1134,7 @@ function seedStandaloneIssue(repo: string): void {
 	writeFileSync(join(artifactsDir(repo), `ISSUE-${HASH}.json`), JSON.stringify({
 		meta: {
 			workflow: 'issue', issueHash: HASH, epicSlug: 'tag-filtering',
-			createdAt: CREATED_AT, approvedAt: CREATED_AT,
+			createdAt: CREATED_AT, ...approvedMeta({ at: CREATED_AT }),
 			standalone: true, magnitude: 'small',
 		},
 		body: { title: 't', reproduction: 'r', rootCause: 'rc', fixIntent: 'fi' },
@@ -1199,7 +1202,7 @@ function seedStandaloneLldOnly(repo: string): void {
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
 			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
-			standalone: true, approvedAt: CREATED_AT,
+			standalone: true, ...approvedMeta({ at: CREATED_AT }),
 		},
 		body: { openQuestions: [] }, citations: [],
 	}, null, 2));
@@ -1547,7 +1550,7 @@ function mappedRepo(tests: readonly { level: string; name: string }[] = [{ level
 		] },
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
-	approveArtifactByJsonPath(json);
+	markApprovedSync(json);
 	for (const [rel, body] of [
 		[FILTER_TEST, "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\ntest('narrows by one tag', () => {});\ntest('narrows by two tags', () => {});\ntest('breaks on an empty tag', () => { assert.fail('boom'); });\n"],
 		[OTHER_TEST, "import { test } from 'node:test';\ntest('another case', () => {});\n"],
@@ -2067,7 +2070,7 @@ test("on the standalone routes: a wrong mapping on a small build is refused with
 	const SUBJECT = 'the filter narrows results by tag';
 	try {
 		writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
-			meta: { workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, standalone: true, approvedAt: CREATED_AT },
+			meta: { workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, standalone: true, ...approvedMeta({ at: CREATED_AT }) },
 			body: { openQuestions: [], testStrategy: { testFramework: 'node:test', testLevels: [{ level: 'unit', purpose: 'p', subjects: [SUBJECT] }, { level: 'live', purpose: 'p', subjects: ['works against the daemon'] }], acceptanceMapping: [] } },
 			citations: [],
 		}, null, 2));
@@ -2133,7 +2136,7 @@ function seedStandaloneLldPlan(repo: string): void {
 			epicHash: SA_HASH, epicSlug: 'a-standalone-feature', storyId: 's1',
 			createdAt: SA_CREATED, epicCreatedAt: SA_CREATED,
 			hldBaseRunId: 'standalone', hldEffectiveHash: 'basis-sa', hldAmendmentsApplied: [],
-			approvedAt: SA_CREATED,
+			...approvedMeta({ at: SA_CREATED }),
 		},
 		body: { openQuestions: [] }, citations: [],
 	}, null, 2));
@@ -2154,7 +2157,7 @@ function seedStandaloneLldPlan(repo: string): void {
 		},
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}, null, 2));
-	approveArtifactByJsonPath(planJson);
+	markApprovedSync(planJson);
 }
 
 test('c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)', async () => {

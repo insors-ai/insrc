@@ -26,8 +26,8 @@ import { getLogger } from '../../../shared/logger.js';
 import { execFileSync } from 'node:child_process';
 
 import { writeArtifact, writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
-import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
-import type { FileChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
+import { changeLogBodyLines } from '../../artifacts/format/bindings.js';
+import type { FileChangeLog } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
 import { hasReadableHead, storeRound, withStoredModel } from './round-writer.js';
@@ -48,9 +48,8 @@ export interface BuildRecordTask {
 /**
  * The story-level BUILD ledger record (S001 generalization). `standalone` is a
  * boolean: `true` for a Trivial standalone build, `false` for a plan-driven one.
- * The completion/rejection stamps are carried so an upsert can PRESERVE them —
- * `approveArtifactByJsonPath` writes `approvedAt` directly on this record's json,
- * and a later re-validate must never clobber a completed story.
+ * Approval and rejection are the head's lifecycle, which an upsert carries over
+ * with the rest of the prior meta, so a later re-validate never un-completes a story.
  */
 export interface BuildRecord {
 	readonly meta: {
@@ -79,11 +78,6 @@ export interface BuildRecord {
 		/** The party that wrote the code. Stamped by the build-step writers;
 		 *  absent on older records, whose author is unknown. */
 		readonly authoredBy?: 'controller' | 'daemon' | undefined;
-		/** Written by the approval gate; preserved verbatim across an upsert. */
-		readonly approvedAt?:     string | undefined;
-		readonly rejectedAt?:     string | undefined;
-		readonly rejectReason?:   string | undefined;
-		readonly reviewOverride?: { readonly reason: string; readonly at: string } | undefined;
 	};
 	readonly body: {
 		readonly focus?:       string | undefined;
@@ -95,11 +89,6 @@ export interface BuildRecord {
 		 *  changed set, collected at the validate phase. Absent → no `## Changes`
 		 *  section (omit-slot, byte-identity preserved for a no-change build). */
 		readonly changeLog?:   FileChangeLog | undefined;
-		/** S002 (provenance/feedback): append-only, human-authored feedback on the
-		 *  build's changed code (populated out-of-band via `appendFeedback`, never by
-		 *  this writer). Absent → no `## Feedback` section (omit-slot). S003 starts
-		 *  capturing build-cycle feedback into this same slot via `appendFeedback`. */
-		readonly feedback?:    FeedbackRecord | undefined;
 		/** S003 (harden-artifact-flows): an optional human-readable narrative
 		 *  "what changed and why" for the build, distinct from the per-file
 		 *  `changeLog`. Absent / empty → no `## Summary` section (omit-slot,
@@ -208,7 +197,6 @@ export function renderBuildRecordMd(rec: BuildRecord): string {
 		lines.push('', `**Tests:** [${target}](${target}) — what the gate ran for each Task, and what each test case did.`);
 	}
 	section('## Changes', changeLogBodyLines(rec.body.changeLog));
-	section('## Feedback', feedbackBodyLines(rec.body.feedback));
 
 	lines.push('');
 	return lines.join('\n');
@@ -227,7 +215,7 @@ export function renderStandaloneBuildRecordMd(rec: StandaloneBuildRecord): strin
  * Persist (upsert) a BUILD ledger record — the general writer. READS any
  * existing `BUILD-<epicHash>-<storyId>.json` and MERGES on top: unions
  * `body.tasks[]` by id (the new write's `passed` wins), preserves the original
- * `createdAt` + the approval/rejection stamps (never un-completing a story), and
+ * `createdAt` and the head's lifecycle (never un-completing a story), and
  * refreshes `updatedAt`. A malformed / absent prior file fails OPEN to a fresh
  * write. Returns the written json + md paths (from `buildArtifactPaths`).
  *
@@ -459,7 +447,7 @@ function repoPathOfArtifactJson(jsonPath: string): string {
 }
 
 /** Merge a new record on top of any prior on-disk record (the upsert core).
- *  Prior `createdAt` + completion/rejection stamps win; tasks union; everything
+ *  Prior `createdAt` wins and the prior lifecycle rides in the prior meta; tasks union; everything
  *  else takes the new write. */
 function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
 	const prior = readPriorRecord(jsonPath);
@@ -477,12 +465,6 @@ function mergeWithPrior(jsonPath: string, rec: BuildRecord): BuildRecord {
 		// From here down, PRIOR deliberately wins — the opposite of the rule
 		// above, and not to be flattened into it.
 		createdAt: prior.meta.createdAt,
-		// Completion/rejection stamps: prior wins — a later validate must never
-		// clobber a completed (or rejected) story.
-		...(prior.meta.approvedAt     !== undefined ? { approvedAt:     prior.meta.approvedAt     } : {}),
-		...(prior.meta.rejectedAt     !== undefined ? { rejectedAt:     prior.meta.rejectedAt     } : {}),
-		...(prior.meta.rejectReason   !== undefined ? { rejectReason:   prior.meta.rejectReason   } : {}),
-		...(prior.meta.reviewOverride !== undefined ? { reviewOverride: prior.meta.reviewOverride } : {}),
 	};
 	const body: BuildRecord['body'] = {
 		...prior.body,

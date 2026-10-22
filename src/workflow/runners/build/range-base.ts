@@ -55,6 +55,7 @@ import { getLogger } from '../../../shared/logger.js';
 // a runtime dependency on the approval gate (erased at compile).
 import type { ApprovableArtifactMeta } from '../../gates.js';
 import { ARTIFACTS_DIR, buildArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
+import { approvedAtOf } from '../../artifact-core/approval-view.js';
 
 const log = getLogger('workflow:build:range-base');
 
@@ -161,8 +162,9 @@ function readBuildFacts(repoPath: string, epicHash: string, storyId: string): Bu
 	const p = join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`);
 	if (!existsSync(p)) return { exists: false, unreadable: false, approvedAt: undefined, tasks: [] };
 	try {
-		const parsed = JSON.parse(readFileSync(p, 'utf8')) as { meta?: { approvedAt?: unknown }; body?: { tasks?: unknown } };
-		const approvedAt = typeof parsed.meta?.approvedAt === 'string' && parsed.meta.approvedAt.length > 0 ? parsed.meta.approvedAt : undefined;
+		const parsed = JSON.parse(readFileSync(p, 'utf8')) as { meta?: unknown; body?: { tasks?: unknown } };
+		// the approval is the head's lifecycle approval; the BUILD record carries no other stamp
+		const approvedAt = approvedAtOf(parsed.meta);
 		const rawTasks = parsed.body?.tasks;
 		if (rawTasks !== undefined && !Array.isArray(rawTasks)) return { exists: true, unreadable: true, approvedAt, tasks: [] };
 		const tasks: Array<{ id: string; passed: boolean }> = [];

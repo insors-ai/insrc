@@ -15,7 +15,9 @@ import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
 import type { ValidationCheckResults } from '../validation-checks.js';
 import { createCompletionEvidence } from '../../../../workflow/artifact-core/completion-evidence.js';
-import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
+import { approvedMeta, markApprovedSync } from '../../../../workflow/__tests__/lifecycle-fixtures.js';
+import { approveJson } from '../../../../workflow/__tests__/helpers/approve.js';
+import { approvalStateOf } from '../../../../workflow/artifact-core/approval-view.js';
 import { ARTIFACTS_DIR, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { lifecycleFor } from '../../../lifecycle-registry.js';
 
@@ -37,15 +39,15 @@ function repoWith(head: boolean): string {
 	const dir = join(repo, ARTIFACTS_DIR);
 	mkdirSync(dir, { recursive: true });
 	const meta = { epicHash: HASH, epicSlug: 'tag-filtering', createdAt: AT, epicCreatedAt: AT };
-	writeFileSync(join(dir, `DEF-${HASH}.json`), JSON.stringify({ meta: { workflow: 'define', ...meta, approvedAt: AT }, body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] }, citations: [] }));
-	writeFileSync(join(dir, `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({ meta: { workflow: 'design.story', runId: 'l', schemaVersion: 1, ...meta, storyId: 's1', hldBaseRunId: 'h', hldEffectiveHash: 'x', hldAmendmentsApplied: [], approvedAt: AT, tracker: { storyRef: 'acme/widgets#10' } }, body: { openQuestions: [] }, citations: [] }));
+	writeFileSync(join(dir, `DEF-${HASH}.json`), JSON.stringify({ meta: { workflow: 'define', ...meta, ...approvedMeta({ at: AT }) }, body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] }, citations: [] }));
+	writeFileSync(join(dir, `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({ meta: { workflow: 'design.story', runId: 'l', schemaVersion: 1, ...meta, storyId: 's1', hldBaseRunId: 'h', hldEffectiveHash: 'x', hldAmendmentsApplied: [], ...approvedMeta({ at: AT }), tracker: { storyRef: 'acme/widgets#10' } }, body: { openQuestions: [] }, citations: [] }));
 	const plan = join(dir, `${planArtifactId(HASH, 's1')}.json`);
 	writeFileSync(plan, JSON.stringify({
 		meta: { workflow: 'plan', runId: 'p', schemaVersion: 1, ...meta, storyId: 's1', lldRunId: 'l', lldEffectiveHash: 'x', tracker: { taskRefs: { t1: 'acme/widgets#42' } } },
 		body: { tasks: [{ id: 't1', title: 'Wire the filter', summary: 'Add the filter.', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['narrows'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'unit: narrows' }] }] },
 		citations: [{ id: 'c1', kind: 'prior-artifact', ref: 'LLD' }],
 	}));
-	approveArtifactByJsonPath(plan);
+	markApprovedSync(plan);
 	if (head) {
 		writeFileSync(join(dir, `${TASK}.json`), JSON.stringify({
 			meta: { workflow: 'plan', runId: 't', schemaVersion: 1, ...meta, storyId: 's1', repoPath: repo, revision: 1 },

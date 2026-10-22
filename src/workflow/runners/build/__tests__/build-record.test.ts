@@ -41,6 +41,8 @@ import {
 	PATHOLOGICAL_RECORD, PATHOLOGICAL_GOLDEN,
 } from './fixtures/build-record-goldens.js';
 import { stampOtherPartyReview } from '../../../__tests__/helpers/other-party-review.js';
+import { approvalStateOf, lifecycleOfMeta } from '../../../artifact-core/approval-view.js';
+import { approvedMeta, rejectedMeta } from '../../../__tests__/lifecycle-fixtures.js';
 
 const HASH = 'abc123def4567890';
 
@@ -101,22 +103,21 @@ test('re-validating the same task refreshes its passed without duplicating the r
 });
 
 // ---------------------------------------------------------------------------
-// preserve approval/rejection stamps across an upsert
+// preserve the head's lifecycle across an upsert
 // ---------------------------------------------------------------------------
 
-test('an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)', async () => {
+test('an existing lifecycle approval (+ its override) is PRESERVED across an upsert (never un-complete a story)', async () => {
 	await withRepo(async (repo) => {
 		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
-		// Simulate the approval gate stamping the record.
+		// Simulate the approval gate approving the head.
 		const stamped = readJson(json);
-		stamped.meta['approvedAt'] = '2026-01-05T00:00:00.000Z';
-		stamped.meta['reviewOverride'] = { reason: 'manual', at: '2026-01-05T00:00:00.000Z' };
+		Object.assign(stamped.meta, approvedMeta({ at: '2026-01-05T00:00:00.000Z', override: 'manual' }));
 		writeFileSync(json, JSON.stringify(stamped, null, 2) + '\n');
-		// A later re-validate must not clobber the completion stamps.
-		await persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-01-06T00:00:00.000Z'));
+		// A later re-run that finds the same content must not clobber the approval.
+		await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-06T00:00:00.000Z'));
 		const rec = readJson(json);
-		assert.equal(rec.meta['approvedAt'], '2026-01-05T00:00:00.000Z', 'approvedAt preserved');
-		assert.deepEqual(rec.meta['reviewOverride'], { reason: 'manual', at: '2026-01-05T00:00:00.000Z' });
+		assert.equal(approvalStateOf(rec.meta), 'approved', 'approval preserved');
+		assert.equal((lifecycleOfMeta(rec.meta)?.['approval'] as { override: { reason: string } }).override.reason, 'manual');
 	});
 });
 
@@ -188,11 +189,35 @@ test('approveWorkflowTarget completes the persisted plan-driven BUILD record (ke
 	await withRepo(async (repo) => {
 		const { json } = await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-01-01T00:00:00.000Z'));
 		stampOtherPartyReview(json);   // completion requires an other-party code review
-		// enforce off → the code-review gate is advisory; completion proceeds + stamps approvedAt.
+		// enforce off → the code-review gate is advisory; completion proceeds + approves the head.
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.deepEqual(out.approved.map(a => a.path), [json], 'the BUILD record is approved');
 		assert.equal(out.skipped.length, 0);
-		assert.equal(typeof readJson(json).meta['approvedAt'], 'string', 'meta.approvedAt stamped');
+		assert.equal(approvalStateOf(readJson(json).meta), 'approved', 'the head is approved');
+		assert.equal(readJson(json).meta['approvedAt'], undefined, 'and no legacy stamp is written');
+	});
+});
+
+test('build-record.test.ts: the completion record needs no legacy stamp', async () => {
+	await withRepo(async (repo) => {
+		// the completion hook writes the record, and the approval that follows lands on the lifecycle
+		const paths = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.ok(paths !== undefined);
+		const written = readJson(paths.json);
+		for (const key of ['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride', 'review', 'approvedBy']) {
+			assert.equal(written.meta[key], undefined, `a fresh completion record carries no ${key}`);
+		}
+		stampOtherPartyReview(paths.json);
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: paths.json }, { enforce: false });
+		assert.equal(out.skipped.length, 0);
+		const approved = readJson(paths.json);
+		assert.equal(approvalStateOf(approved.meta), 'approved');
+		for (const key of ['approvedAt', 'rejectedAt', 'rejectReason', 'reviewOverride']) {
+			assert.equal(approved.meta[key], undefined, `and approving it writes no ${key}`);
+		}
+		// a second completion over the approved record leaves the approval standing
+		await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
+		assert.equal(approvalStateOf(readJson(paths.json).meta), 'approved');
 	});
 });
 
@@ -292,38 +317,25 @@ test('t9: a write that OMITS standalone keeps the prior true (the carry-forward 
 	});
 });
 
-test('the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write', async () => {
+test('the PRIOR-wins exceptions are untouched: createdAt and the lifecycle still beat the new write', async () => {
 	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
-		await persistBuildRecord(repo, {
-			meta: {
-				...standaloneRec('2026-01-01T00:00:00.000Z').meta,
-				approvedAt: '2026-01-05T00:00:00.000Z',
-				rejectedAt: '2026-01-06T00:00:00.000Z',
-				rejectReason: 'the original reason',
-				reviewOverride: { reason: 'the original override', at: '2026-01-07T00:00:00.000Z' },
-			},
-			body: standaloneRec('2026-01-01T00:00:00.000Z').body,
-		});
+		await persistBuildRecord(repo, standaloneRec('2026-01-01T00:00:00.000Z'));
+		const rejected = readJson(json);
+		Object.assign(rejected.meta, rejectedMeta({ at: '2026-01-06T00:00:00.000Z' }));
+		writeFileSync(json, JSON.stringify(rejected, null, 2) + '\n');
 		// A later write that tries to overwrite every prior-wins field.
 		await persistBuildRecord(repo, {
 			meta: {
 				workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1',
 				createdAt: '2026-09-09T00:00:00.000Z', updatedAt: '2026-09-09T00:00:00.000Z',
-				approvedAt: '2026-09-09T00:00:00.000Z',
-				rejectedAt: '2026-09-09T00:00:00.000Z',
-				rejectReason: 'a clobbering reason',
-				reviewOverride: { reason: 'a clobbering override', at: '2026-09-09T00:00:00.000Z' },
 			},
-			body: { tasks: [{ id: 's1', passed: true }] },
+			body: standaloneRec('2026-01-01T00:00:00.000Z').body,
 		});
 
 		const m = readJson(json).meta;
 		assert.equal(m['createdAt'], '2026-01-01T00:00:00.000Z', 'createdAt stays prior (the md folder anchor depends on it)');
-		assert.equal(m['approvedAt'], '2026-01-05T00:00:00.000Z', 'approvedAt stays prior — never un-complete a story');
-		assert.equal(m['rejectedAt'], '2026-01-06T00:00:00.000Z');
-		assert.equal(m['rejectReason'], 'the original reason');
-		assert.deepEqual(m['reviewOverride'], { reason: 'the original override', at: '2026-01-07T00:00:00.000Z' });
+		assert.equal(approvalStateOf(m), 'rejected', 'the rejection stays — a re-run with the same content never changes the decision');
 	});
 });
 
@@ -526,7 +538,7 @@ test('t7: the three hand-filled records prove the gap was real — and are now w
 // ---------------------------------------------------------------------------
 // t8 (ISSUE-93081bff91ae5108 / S001) — the CONVERGED renderer.
 //
-// Two parts always render (title, meta line) and SEVEN are omit-slots. The count
+// Two parts always render (title, meta line) and SIX are omit-slots. The count
 // is asserted here rather than inherited: the LLD's test strategy says "eight".
 // ---------------------------------------------------------------------------
 
@@ -539,7 +551,6 @@ const FULL: BuildRecord = {
 		focus: 'The scope statement.', producesLld: false, commit: 'abc1234',
 		summary: 'What the build did.', tasks: [{ id: 't1', passed: true }],
 		changeLog: [{ target: { file: 'src/a.ts' }, author: 'insrc-build', timestamp: '2026-02-02T00:00:00.000Z' }],
-		feedback: [{ id: 'f1', author: 'reviewer', timestamp: '2026-02-02T00:00:00.000Z', target: { file: 'src/a.ts' }, comment: 'nit' }],
 	},
 };
 
@@ -554,7 +565,7 @@ test('t8: the TWO unconditional parts always render, even on a record carrying n
 	assert.match(md, /\*\*Standalone:\*\* no  ·  \*\*Created:\*\* 2026-01-01T00:00:00\.000Z/, 'and the meta line');
 });
 
-test('t8: each of the SEVEN omit-slots renders when populated — one assertion per section', () => {
+test('t8: each of the SIX omit-slots renders when populated — one assertion per section', () => {
 	const md = renderBuildRecordMd(FULL);
 	const checks: [string, RegExp][] = [
 		['Commit',           /\*\*Commit:\*\* abc1234/],
@@ -563,15 +574,14 @@ test('t8: each of the SEVEN omit-slots renders when populated — one assertion 
 		['Summary',          /## Summary\n\nWhat the build did\./],
 		['Tasks validated',  /## Tasks validated\n\n- ✓ `t1`/],
 		['Changes',          /## Changes\n\n- `src\/a\.ts`/],
-		['Feedback',         /## Feedback/],
 	];
-	assert.equal(checks.length, 7, 'SEVEN omit-slots — counted, not the LLD\'s unverified "eight"');
+	assert.equal(checks.length, 6, 'SIX omit-slots — counted, not the LLD\'s unverified "eight"');
 	for (const [name, re] of checks) assert.match(md, re, `${name} must render when populated`);
 });
 
-test('t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section', () => {
+test('t8: each of the SIX omit-slots is ABSENT when its content is — one assertion per section', () => {
 	const md = renderBuildRecordMd(MINIMAL);
-	for (const heading of ['**Commit:**', '## Scope', '## Triage rationale', '## Summary', '## Tasks validated', '## Changes', '## Feedback']) {
+	for (const heading of ['**Commit:**', '## Scope', '## Triage rationale', '## Summary', '## Tasks validated', '## Changes']) {
 		assert.ok(!md.includes(heading), `${heading} must be absent on a record with no such content`);
 	}
 });

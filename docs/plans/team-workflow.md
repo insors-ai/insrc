@@ -281,3 +281,13 @@ The standalone LLD `LLD-72b1bee074ba2dab-S001` ("Link an adopted unit issue unde
 ## S4-5 decision: the policy read on a repeat draft write (2026-10-19)
 
 A repeat write of a draft whose units all have recorded issues makes **no tracker call and no network call**. It still reads the team policy through `policyReader`, which is local git (the remote-tracking ref), because the policy can change between writes and a stale answer would treat a team repo as solo or the reverse. The read is **not cached**: the gate and the reader deliberately never cache. The S4 PLAN's t9 acceptance wording ("runs no command") is amended to match.
+
+## s8 LLD approval and decisions on its open questions (2026-10-23)
+
+`LLD-315d510cb28100e2-s8` ("Revise a signoff request after reviewers ask for changes") passed the daemon review on the last round of its second cycle and was approved with amendments AMD-27 (sc1: `readSignoffRequest`, `readSignoffState(ref, since)`) and AMD-28 (sc3: the content write keeps the Signoff history; unchanged content keeps the whole prior lifecycle). AMD-18 to AMD-26 are stale drafts from earlier authorings and are not approved.
+
+Decisions on the LLD's three open questions:
+
+1. **Model change, done now, in s8.** The lifecycle table (`src/workflow/artifact-core/lifecycle.ts`) gets a step so `open-signoff` is also allowed from `changes-requested` when the artifact's approval and other-party review are still of its current revision (unchanged content). An artifact the reviewers did not object to then rejoins the request unchanged, and the LLD's revise-together rule no longer applies to it. The s8 plan carries the table change, its tests, and the changes to the tests that assumed an unchanged changes-requested artifact is refused. Reason: leaving it for later would mean reworking the s8 build.
+2. **Deferred: `define` on an existing Epic is not a claim unit.** A DEF in signoff is not gated against changes by non-holders. Options considered: an Epic-level claim, a dedicated DEF claim unit, freezing the DEF while in signoff, detecting a change at approval. Not decided; to be designed as its own follow-up.
+3. **Deferred, as an s8 follow-up: gate the other content writers.** `resolveComment` (`src/workflow/resolve-comment.ts:248-251`, reached from the `workflow.resolveComment` handler at `src/daemon/index.ts:739-745`) and `appendStoryToDefine` (`src/workflow/gates.ts:209-220`) change a DEF, HLD or LLD body with no team gate, and a content change returns the artifact to draft, so a non-holder can move an artifact in signoff to draft through them. s8 gates the authoring runs only. The follow-up should prefer one shared chokepoint at the draft reset over a call at each writer, if every writer goes through one function.

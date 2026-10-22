@@ -236,6 +236,11 @@
         "rationale": "CLAUDE.md states it and the artifact-core tests use it.",
         "resolvedAt": "2026-10-22T06:16:05.171Z"
       }
+    },
+    "approvedAt": "2026-10-22T06:16:09.568Z",
+    "reviewOverride": {
+      "reason": "Owner approved after three review rounds (3H/3M, 1H/4M, 1H/2M). The three remaining findings (convert feedback before the migration write, verify source, meta.rangeBase) are recorded as binding requirements 1 to 3 in docs/plans/core-data-model.md, section 's9 LLD approved with an override'.",
+      "at": "2026-10-22T06:16:09.567Z"
     }
   },
   "body": {

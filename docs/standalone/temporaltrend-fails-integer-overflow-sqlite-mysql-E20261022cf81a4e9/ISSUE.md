@@ -12,7 +12,7 @@ Engines without native REGR_* (SQLite, MySQL, MSSQL) compute the regression from
 
 ## Fix intent
 
-Compute the moments in a numeric type that cannot overflow at these magnitudes: promote x and y to a non-integer numeric before they are multiplied and summed (REAL on SQLite, exact DECIMAL on MySQL and MSSQL). The query shape, the result fields and the native REGR path stay as they are. The existing test passes and recovers slope 3, R² 1 and n 10.
+Compute the regression moments so they can neither overflow nor lose the slope to rounding: take them on the timestamps centred on their earliest value (within the same filtered rows) and sum them as non-integers, then move the intercept back by that earliest value when the result is read. Promoting to non-integers alone is not enough: the moments of raw epoch seconds are about 3e19 and differ only in their last digits, so a floating-point sum returns a wrong slope (0.06 instead of 3 on the test data). The query therefore gains a derived table with a window function (MIN ... OVER ()), which needs SQLite 3.25+, MySQL 8.0+ or any MSSQL, and the reader shifts the intercept. The result fields and the native REGR path stay as they are. The existing sqlite-driver temporalTrend test passes and also checks the intercept.
 
 ## Citations
 

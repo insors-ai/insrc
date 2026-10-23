@@ -17,6 +17,7 @@
  * gating in a generic form when tool-loop wiring lands.
  */
 
+import type { TSchema } from '@sinclair/typebox';
 import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import type { TodosApi } from '../../shared/todos.js';
 
@@ -29,6 +30,23 @@ export type ToolFormat =
 	| 'text' | 'markdown' | 'code' | 'json' | 'diff' | 'table';
 
 export interface ToolInput { [key: string]: unknown }
+
+/** Why a tool call failed, as a callable kind (sc5). */
+export type ToolFailureKind =
+	| 'missing-tool' | 'missing-signin' | 'unreachable' | 'timed-out'
+	| 'rejected' | 'conversion-failed' | 'schema-mismatch' | 'denied';
+
+/** Why an approval was not given. Declared here so the executor does not depend on the approval broker. */
+export type ToolDenialReason = 'declined' | 'timed-out' | 'no-client' | 'cancelled';
+
+export interface ToolFailure {
+	kind: ToolFailureKind;
+	message: string;
+	/** The tool's own output, truncated, kept for diagnosis. */
+	original?: string | undefined;
+	/** Present only when kind is 'denied'. */
+	denial?: ToolDenialReason | undefined;
+}
 
 export interface ToolResult {
 	/** Rendered output surfaced to the caller. */
@@ -45,6 +63,13 @@ export interface ToolResult {
 	 * reasoning without re-parsing the rendered text).
 	 */
 	data?: unknown;
+	/** Typed failure kind; present on a failed result produced by the executor or a typed tool. */
+	failure?: ToolFailure | undefined;
+}
+
+/** Providers for the two text-conversion roles, resolved by the conversion module. */
+export interface ConversionProviders {
+	resolveProvider(role: 'tools.convert' | 'tools.convert.escalate'): LLMProvider;
 }
 
 export interface ToolDeps {
@@ -78,6 +103,12 @@ export interface ToolDeps {
 	 * when missing.
 	 */
 	closureRepos?: readonly string[] | undefined;
+	/**
+	 * Providers convertText uses to turn a text-only tool's output into its
+	 * declared shape. Optional; a text-only tool fails with 'conversion-failed'
+	 * when it is missing.
+	 */
+	conversion?: ConversionProviders | undefined;
 }
 
 export interface ToolApprovalGate {
@@ -106,6 +137,13 @@ export interface Tool {
 	 * enforced by the executor.
 	 */
 	readonly inputSchema: Record<string, unknown>;
+
+	/**
+	 * Optional typebox schema of the result placed in ToolResult.data. A tool
+	 * that declares it has its input and data checked by the executor and can
+	 * be called through callTool. Required only for tools that code calls.
+	 */
+	readonly outputSchema?: TSchema;
 
 	/**
 	 * When truthy, the executor fires an Approve / Skip / Edit gate before

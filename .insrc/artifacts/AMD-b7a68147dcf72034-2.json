@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-2296ae15-f670-4061-879d-573e6fe4eac3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T10:40:27.453Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2a3ee03165b0c8db03888f450b7222b3756f2c847a0d41fb6f7238ab37659d37",
+        "at": "2026-10-23T10:40:27.453Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-2",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc5",
+      "field": {
+        "name": "ToolResult.failure, ToolFailure.original and ToolDenialReason",
+        "type": "ToolResult.failure?: ToolFailure; ToolFailure.original?: string (the tool's raw output, truncated, kept for diagnosis); type ToolDenialReason = 'declined' | 'timed-out' | 'no-client', which ToolFailure.denial uses in place of the ApprovalDenial type from sc4",
+        "optional": true,
+        "purpose": "The Story's second functional requirement says a conversion that fails the check is reported as the tool's failure with the original output available for diagnosis, and the executor has to carry a typed failure on the ToolResult that agents and code both receive. sc5's sketch types denial with ApprovalDenial, owned by s3 (sc4), but s2 has no dependency on s3 in the Epic graph and so cannot compile against it; declaring the three-value union in sc5 removes the dependency, and s3 reuses it. All three additions are optional or additive; a caller that ignores them sees today's success, output and error fields."
+      },
+      "breaking": false
+    },
+    "rationale": "Without these additions the failure kinds cannot reach callers, the diagnosis requirement cannot be met, and s2 cannot compile for lack of the ApprovalDenial type it does not own.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792751713295-iuawxm",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-23T10:40:27.453Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/types.ts:33-48"
+    }
+  ]
+}

@@ -1,0 +1,412 @@
+<!-- insrc:artifact LLD-b7a68147dcf72034-s2 -->
+
+# LLD: STORY-b7a68147dcf72034-s2
+
+## Summary
+
+**Epic:** `one-tool-registry-git-gh-jira`
+**HLD base run:** `wf-1792748380403-lgvbgd`
+**HLD effective hash:** `49d9b4a4eaf4...`
+
+This Story lets a tool declare the shape of its input and result, and makes the executor check both before the tool runs and before anything sees its result. It adds a typed call helper so workflow code gets a result whose type comes from the declared shape, a conversion library that turns text-only CLI output into that shape with a cheap model and checks the key values against the raw text, and one set of failure kinds. A tool that code never calls keeps its text output and is not checked.
+
+## Contents
+
+1. [HLD context](#1-hld-context)
+2. [Contract details](#2-contract-details)
+3. [Data model changes](#3-data-model-changes)
+4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
+5. [Error paths](#5-error-paths)
+6. [Test strategy](#6-test-strategy)
+7. [Migration](#7-migration)
+8. [Alternatives considered](#8-alternatives-considered)
+9. [References](#9-references)
+10. [Open questions](#10-open-questions)
+
+## 1. HLD context
+
+> See **HLD-b7a68147dcf72034** § 2. Framework summary
+
+**Rollout phase:** Phase A — executor pipeline stages
+**Owns:** `sc2` (Tool output schema and typed call), `sc3` (Text conversion with cross-check), `sc5` (CLI failure kinds)
+
+**Adjacent scope (owned by other stories — do NOT implement here):**
+- `s1`: The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step. — owns `sc1`
+- `s3`: The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own. — owns `sc4`
+- `s4`: The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning.
+- `s5`: The list of gh operation families, their schemas (read from gh --json where it exists, converted from text otherwise, for example gh pr diff and gh run view --log), which of the 27 gh operations that need approval are in the destructive class, and the 120 second time limit and its message. Existing gh ids keep their meaning.
+- `s6`: The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported.
+- `s7`: The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before.
+
+## 2. Contract details
+
+**Surface level:** internal-shared
+
+### 2.1 `callTool`
+
+```typescript
+export type TypedTool = Tool & { readonly inputSchema: TSchema; readonly outputSchema: TSchema }; export function callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>
+```
+
+**Parameters:**
+- `tool: T extends TypedTool` — The tool definition object the caller imports; its type carries both schemas, so the input and the result are typed from it. A tool whose inputSchema or outputSchema is not a typebox schema does not satisfy TypedTool and is a compile error.
+- `input: Static<T['inputSchema']>` — The tool's input, typed from its inputSchema.
+- `deps: ToolDeps` — The tool dependencies; text-only tools read deps.conversion, deps.repoPath and deps.signal from it.
+
+**Returns:** `Promise<TypedToolResult<Static<T['outputSchema']>>>` — On success, success true and data typed as the output schema's static type. On any failure, success false, no data, and error holding a ToolFailure with a kind.
+
+**Errors:**
+- `ToolFailure kind 'rejected'` when No tool is registered under tool.id, or the input does not fit the tool's inputSchema (the message names the failing fields and the tool is not run).
+- `ToolFailure kind 'schema-mismatch'` when The tool succeeded but its data does not match its outputSchema, or it succeeded without data.
+- `ToolFailure kinds from the tool` when missing-tool, missing-signin, unreachable, timed-out, rejected or conversion-failed, as the tool reports them; denied comes from the approval step of s3.
+
+**Preconditions:**
+- The tool is registered under tool.id (the same definition object is registered at start-up).
+- tool.inputSchema and tool.outputSchema are typebox schemas, which the type TypedTool enforces at compile time.
+
+**Postconditions:**
+- callTool never throws for a tool failure; every failure is returned as a ToolFailure.
+- When success is true, the input and data have passed validation against the schemas, so the cast-free types are true.
+- callTool adds no model call; a conversion happens only inside a tool that calls convertText.
+
+### 2.2 `executeTool`
+
+```typescript
+export function executeTool(toolId: string, input: ToolInput, deps: ToolDeps): Promise<ToolResult>
+```
+
+**Parameters:**
+- `toolId: string` — Unchanged: the registered id or alias.
+- `input: ToolInput` — Unchanged.
+- `deps: ToolDeps` — Unchanged signature; ToolDeps gains the optional conversion field.
+
+**Returns:** `Promise<ToolResult>` — The tool's result. For a tool that declares an outputSchema, this Story adds two checks: the input is validated against inputSchema before the tool runs, and data is validated against outputSchema after it runs (step 4 of the pipeline). A tool without an outputSchema is run and returned exactly as before.
+
+**Errors:**
+- `ToolResult with success false and failure.kind 'rejected'` when The tool declares an outputSchema and the input does not fit its inputSchema; the message names the failing fields and the tool is not run.
+- `ToolResult with success false and failure.kind 'schema-mismatch'` when The tool declares an outputSchema and data is missing or does not match it; the message names the ajv errors, data is dropped, output is replaced by the message, and failure.original keeps the tool's own output, truncated.
+
+**Preconditions:**
+- Steps 1 to 3 of the pipeline order (resolve, approval, run) belong to the executor and s3; this Story owns the input check that comes with step 1 for schematized tools and the output check at step 4.
+
+**Postconditions:**
+- A tool with no outputSchema returns exactly what it returns today, so every existing builtin and the agent loop at src/agent/read-only-tool-loop.ts:78 behave unchanged.
+- A failed or denied result is returned untouched and is not validated.
+- Nothing the hook stage of s1 runs sees an unchecked result.
+
+### 2.3 `convertText`
+
+```typescript
+export function convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>
+```
+
+**Parameters:**
+- `req: ConversionRequest<S>` — { toolId, rawText, schema: S, keyValues: (value: Static<S>) => string[] }. keyValues is required, so a caller cannot ask for a conversion without naming the values to cross-check.
+- `deps: ToolDeps` — convertText reads deps.conversion (the provider resolver), deps.repoPath and deps.signal; the first is the new optional field, the others exist today.
+
+**Returns:** `Promise<ConversionResult<Static<S>>>` — { ok: true, value, tier } when a value fits the schema and every key value appears in the raw text; otherwise { ok: false, failure } with a ConversionFailure kind and detail, and the raw text left with the caller.
+
+**Errors:**
+- `ConversionFailure 'shape-mismatch'` when No attempt produced a value that fits the schema.
+- `ConversionFailure 'value-not-in-text'` when A value fits the schema but a key value is not found in the raw text after normalising (whitespace collapsed, case folded, surrounding quotes dropped).
+- `ConversionFailure 'retries-exhausted'` when The cheap tier and then the escalated tier both used their attempts without an accepted value, a provider call failed, no deps.conversion is configured ('no conversion provider configured'), the input is too large (the InputTooLargeError case), or the caller cancelled ('cancelled').
+
+**Preconditions:**
+- rawText is non-empty and was produced by a CLI that gives no structured output.
+- keyValues returns only non-empty strings that are expected to occur verbatim in rawText, such as identifiers, numbers, paths and status words.
+
+**Postconditions:**
+- Calls run one after another through a module-level queue, so no two conversions reach a provider at once, whatever the number of concurrent tool calls (k3).
+- At most two attempts on the cheap tier and, only if those fail, two on the escalated tier; the attempt count is a constant in the module, not a setting.
+- A per-attempt deadline surfaces as an ordinary 'timed out' error inside the provider call, so withStructuredRetry retries it; only a caller cancellation surfaces as AbortError and ends the conversion as 'cancelled'.
+- convertText never throws for a conversion failure.
+
+## 3. Data model changes
+
+### 3.1 `Tool` — field-add
+
+Adds an optional outputSchema holding a typebox TSchema. A tool with the field puts its result in ToolResult.data and its text for agents in output, and has its input and data checked by the executor. The HLD sketch said JsonSchema with a phantom output type; typebox derives the type from the schema, so the two cannot disagree. inputSchema keeps its current type on Tool; the type TypedTool requires it to be a typebox schema, which only callers of callTool need. No existing builtin is changed.
+
+```
+readonly outputSchema?: TSchema
+```
+
+**Call sites:**
+- `src/daemon/tools/types.ts:96-152`
+- `src/daemon/tools/registry.ts`
+
+### 3.2 `ToolResult` — field-add
+
+Adds an optional failure of type ToolFailure so a failed result carries its kind. success, error and output stay as they are, so the agent loop reads the same fields it reads today.
+
+```
+failure?: ToolFailure | undefined
+```
+
+**Call sites:**
+- `src/daemon/tools/types.ts:33-48`
+- `src/daemon/tools/executor.ts:23-59`
+- `src/agent/read-only-tool-loop.ts:78`
+
+### 3.3 `ToolFailure` — new
+
+{ kind: ToolFailureKind; message: string; original?: string; denial?: ToolDenialReason }. ToolFailureKind is the union in sc5: missing-tool, missing-signin, unreachable, timed-out, rejected, conversion-failed, schema-mismatch, denied. ToolDenialReason is 'declined' | 'timed-out' | 'no-client', declared here so that this Story does not depend on s3; s3 reuses it. original is the tool's raw output, truncated, kept for diagnosis. TypedToolResult<O> is { success: boolean; data?: O; error?: ToolFailure }.
+
+**Call sites:**
+- `src/daemon/tools/types.ts:33-48`
+
+### 3.4 `ToolDeps` — field-add
+
+Adds one optional field, conversion, holding { resolveProvider(role: 'tools.convert' | 'tools.convert.escalate'): LLMProvider }. A small helper in the conversion module builds it from an AnalyzeConfig, the repoPath and RoleRouter.resolveProviderForRole, which is synchronous. convertText reads it together with the existing repoPath and signal. A ToolDeps built without it makes a text-only tool fail with 'no conversion provider configured'. Four production places build a ToolDeps today: src/analyze/context/driver.ts:1132, src/agent/providers/ollama.ts:686, src/workflow/code-review/grounding.ts:370 and src/workflow/runners/build/changed-files.ts:110. This Story changes none of them, since the field is optional and none of them runs a text-only tool yet. s7 fills the field in the two workflow-side builders (grounding.ts and changed-files.ts) when it gives them text-only tools.
+
+```
+conversion?: ConversionProviders | undefined
+```
+
+**Call sites:**
+- `src/daemon/tools/types.ts:50-81`
+- `src/analyze/context/driver.ts:1132`
+- `src/agent/providers/ollama.ts:686`
+- `src/workflow/code-review/grounding.ts:370`
+- `src/workflow/runners/build/changed-files.ts:110`
+- `src/analyze/context/role-router.ts:79`
+
+### 3.5 `RoleTaxonomy` — field-add
+
+Adds two roles to the closed registry in the role taxonomy: tools.convert (peripheral, default tier cheap) for the first conversion attempts, and tools.convert.escalate (peripheral, default tier mid) for the single escalation. Both resolve through the RoleRouter and can be reassigned by the user's roleTiers like any role, so the escalation tier is a setting, and mid is only the default. The coreFloor does not apply to peripheral roles.
+
+```
+{ id: 'tools.convert', criticality: 'peripheral', defaultTier: 'cheap' }; { id: 'tools.convert.escalate', criticality: 'peripheral', defaultTier: 'mid' }
+```
+
+**Call sites:**
+- `src/config/role-taxonomy.ts`
+- `src/analyze/context/role-router.ts`
+
+### 3.6 `PortFailureKind` — invariant-change
+
+The tracker port's type stays at its four kinds (missing-tool, missing-signin, unreachable, rejected); the port, its stored results and its tests are not changed. Where a tracker adapter calls a tool (s7), it maps a ToolFailureKind onto the port as: missing-tool to missing-tool, missing-signin to missing-signin, unreachable to unreachable, timed-out to unreachable (as src/workflow/tracker/github.ts maps a timeout today, keeping the message 'timed out after N s'), and rejected, conversion-failed, schema-mismatch and denied to rejected, with the tool's message as the reason. This settles review finding 5.
+
+**Call sites:**
+- `src/workflow/tracker/port.ts:23`
+- `src/workflow/tracker/github.ts:51`
+- `src/workflow/tracker/github.ts:71-79`
+- `src/workflow/tracker/__tests__/unit-issue.test.ts:390`
+
+## 4. Interaction with shared contracts
+
+| Contract | Role | How |
+| :--- | :--- | :--- |
+| `sc2` | implements | Implements the output-schema field, the executor's input and output checks for schematized tools, and callTool. Refines the HLD sketch: outputSchema is a typebox TSchema, callTool takes a definition typed TypedTool and returns Static of the schemas, and the input is typed from inputSchema, in place of JsonSchema plus a phantom type and an untyped input; consumers s4 to s7 take the definition object, as the HLD already says. |
+| `sc3` | implements | Implements convertText as the sketch states: cheap tier first, deterministic cross-check of the key values, one escalation, one serial queue. Refinements: keyValues is required, the schema is a typebox TSchema, and the function takes the ToolDeps (repoPath, signal and the new conversion field) that the sketch left out and that the RoleRouter call needs. |
+| `sc5` | implements | Implements the failure kinds as the sketch states and adds the mapping onto the tracker port's four kinds. Adds ToolResult.failure, ToolFailure.original and a ToolDenialReason union that ToolFailure.denial uses in place of the ApprovalDenial type owned by s3; proposed to the HLD as a sharedContract.fieldAdd amendment. |
+
+## 5. Error paths
+
+**Error cases**
+
+- **The input given to a schematized tool does not fit its inputSchema.** (terminal)
+  - Detection: Before running a tool that declares an outputSchema, executeTool calls validateAgainstSchema(inputSchema, input) and it returns ok false with the ajv error list.
+  - Response: Do not run the tool. Return success false with failure kind 'rejected' and a message naming the failing fields; log the tool id.
+  - User impact: A wrong argument from a workflow stage is reported by name and nothing is run, instead of reaching the CLI.
+- **A tool with an outputSchema returns success true but no data.** (terminal)
+  - Detection: After the run step, executeTool sees the tool has an outputSchema, result.success is true and result.data is undefined.
+  - Response: Return success false with failure kind 'schema-mismatch' and the message "tool <id> returned no data for its declared output schema"; drop data; keep the tool's own output in failure.original, truncated.
+  - User impact: The caller gets a named failure, not an untyped success; an agent that called the tool sees the message in output. This is a bug in the tool and is found by its test.
+- **A tool's data does not fit its outputSchema.** (terminal)
+  - Detection: validateAgainstSchema(outputSchema, data) returns ok false with its list of ajv error messages.
+  - Response: Return success false with failure kind 'schema-mismatch'; the message names the failing paths from the ajv errors; data is dropped; failure.original keeps the tool's output, truncated at a fixed limit (a constant in the module); the failure is logged with the tool id.
+  - User impact: The unmatched result is never passed on (ac2). A workflow stage that needed it fails with a message that says which field is wrong.
+- **A tool throws.** (recoverable)
+  - Detection: The existing try/catch in executeTool around tool.execute.
+  - Response: Unchanged: return success false with the message in output and error, and now also failure kind 'rejected' with the same message. No schema check runs on a failed result.
+  - User impact: Same text as today for agents; code callers get a typed kind.
+- **callTool is given a tool whose id is not registered.** (terminal)
+  - Detection: executeTool's getTool lookup returns undefined (the existing 'Unknown tool' path).
+  - Response: Return success false with failure kind 'rejected' and the existing message "No tool registered for '<id>'".
+  - User impact: A wiring mistake at start-up shows as a named failure on first use, not a crash.
+- **A tool declares a schema that ajv cannot compile.** (terminal)
+  - Detection: validateAgainstSchema throws or reports a compile error the first time the inputSchema or outputSchema is used.
+  - Response: Treat as a defect in the tool: return success false with failure kind 'rejected' and the message "tool <id> declares an invalid input or output schema", log at error level with the compile message, and do not cache a result for that schema.
+  - User impact: Every call to that tool fails the same way until it is fixed; its test fails first.
+- **A text-only tool calls convertText on a ToolDeps that has no conversion field, for example one built by a workflow-side builder that s7 has not yet updated.** (terminal)
+  - Detection: convertText finds deps.conversion undefined before it takes a queue slot.
+  - Response: Return conversion failure 'retries-exhausted' with detail 'no conversion provider configured'; no model call is made; the tool returns failure kind 'conversion-failed'.
+  - User impact: A mis-wired ToolDeps shows as a named failure on the first text-only call, not as a silent fall back to unconverted text.
+- **The cheap tier returns a value that does not fit the schema.** (recoverable)
+  - Detection: validateAgainstSchema returns ok false on the model's output.
+  - Response: Retry within withStructuredRetry with the ajv errors appended to the prompt, up to two attempts on the tier; if both fail, escalate once to the tools.convert.escalate role for up to two attempts.
+  - User impact: None visible when a later attempt succeeds; the result records tier 'escalated'.
+- **A converted value fits the schema but a key value is not in the raw text.** (terminal)
+  - Detection: After validation, each string from keyValues is searched in the normalised raw text (whitespace collapsed, case folded, surrounding quotes dropped); one is missing.
+  - Response: Count the attempt as failed with kind 'value-not-in-text' and retry with the missing values named; after the escalated attempts also fail, return conversion failure 'retries-exhausted' with the last detail; the tool returns failure kind 'conversion-failed' with the raw text in failure.original.
+  - User impact: A made-up identifier or count never reaches a caller (ac6); the caller gets conversion-failed and the original text to read.
+- **No provider can be built for the conversion role, or a provider call fails.** (recoverable)
+  - Detection: RoleRouter.resolveProviderForRole throws, or the provider call rejects, on every attempt.
+  - Response: Return conversion failure 'retries-exhausted' with detail naming the role and the cause; do not fall back to the unconverted text or to a direct REST call (k1); the tool returns failure kind 'conversion-failed'.
+  - User impact: A text-only tool fails when no local or CLI model is available; tools with structured output are unaffected.
+- **A provider call hangs.** (recoverable)
+  - Detection: A per-attempt deadline (a constant in the module) expires while the queue slot is held.
+  - Response: Abort the provider call, but raise an ordinary Error with the message 'timed out' from inside the call closure, not an AbortError, so withStructuredRetry treats it as a failed attempt and retries; release the queue slot at the end of every attempt.
+  - User impact: One slow conversion delays the queue by at most the deadline per attempt and cannot block it for good, and a timeout does not end the retry budget.
+- **The caller cancels while a conversion is queued or running.** (recoverable)
+  - Detection: deps.signal is aborted before the queue slot is taken (checked when the slot is granted) or during a provider call (an AbortError raised from the caller's signal, not from the deadline).
+  - Response: A queued conversion is dropped without calling a provider; a running one is aborted and the AbortError is allowed to end withStructuredRetry; both return conversion failure 'retries-exhausted' with detail 'cancelled'.
+  - User impact: A cancelled workflow stage stops without spending model calls.
+- **The raw text is longer than the model accepts.** (terminal)
+  - Detection: The provider raises an error named InputTooLargeError, which withStructuredRetry rethrows without resending.
+  - Response: Return conversion failure 'retries-exhausted' with detail 'input too large'; do not truncate or retry; the tool decides whether to split the text or fail.
+  - User impact: A very long log fails with a clear reason and can be split by the tool's author.
+
+**Edge cases**
+
+| Input | Expected |
+| :--- | :--- |
+| A tool with an outputSchema returns success false. | The result passes through unchanged and is not validated; its failure kind and message reach the caller. |
+| A tool with no outputSchema is called through executeTool with any input. | The input is not validated and the result is not checked, exactly as today; callTool does not compile for that tool. |
+| The tool is called through an alias such as a legacy name. | executeTool resolves the alias, runs and checks the canonical tool; callTool uses the definition's own id. |
+| keyValues returns an empty array because the output has nothing checkable, for example 'nothing to commit'. | The value is accepted on schema alone and the log line says no key value was checked; ac6 applies only when a value can be checked. |
+| A key value '12' and raw text 'issue 123 created'. | The match is on token boundaries for alphanumeric values, so '12' is not found in '123' and the attempt fails. |
+| A key value 'Fix-Login' and raw text 'fix-login' on a line with extra spaces. | Whitespace and case are normalised, so the value is found. |
+| Two tool calls ask for a conversion at the same moment. | They run one after another through the module queue in arrival order; neither reaches a provider while the other is in flight. |
+| A conversion succeeds on the escalated tier after two cheap failures. | The result is ok with tier 'escalated', and a log line records the escalation and the role that served it. |
+| The schema allows additional properties and the model adds an extra field. | validateAgainstSchema does not remove it (removeAdditional is off); tool schemas are written with additionalProperties false, so the extra field fails the check. |
+
+**Invariants to preserve**
+
+- A tool with no outputSchema returns exactly what it returns today, its input is not validated, and the agent loop keeps reading output, success and error. [[c1]]
+- A throw inside tool.execute is caught by executeTool and returned as a failed result, never propagated to the caller. [[c1]]
+- The existing ToolResult fields (output, format, success, error, data) keep their meaning; failure is additive and optional, and the existing ToolDeps fields keep theirs. [[c1]]
+- getTool honours aliases and registerTool keeps its overwrite-with-warning behaviour; this Story adds no registration rule. [[c2]]
+- The four production places that build a ToolDeps keep compiling and behaving as they do, because the conversion field is optional. [[c2]]
+- validateAgainstSchema does not mutate the payload (removeAdditional off) and caches compiled validators per schema object, so the executor and convertText must pass the same schema object. [[c3]]
+- withStructuredRetry rethrows AbortError and InputTooLargeError at once and retries any other thrown error, so the conversion must raise a deadline as an ordinary error and let only a real cancellation surface as AbortError. [[c3]]
+- Reasoning models are built only through the RoleRouter, CliProvider or Ollama, never a direct REST call, and never run in parallel. [[c4]]
+- The tracker port's PortFailureKind stays the four kinds and the existing unit-issue test that iterates them keeps passing. [[c5]]
+- Test files stay node:test files under __tests__ run by tsx, which does not type-check; type-level assertions therefore live in a file the build compiles. [[c6]]
+
+## 6. Test strategy
+
+**Test framework:** `node:test run with tsx (npx tsx --test), flat test() calls with node:assert/strict, files named *.test.ts under __tests__ next to the code, each with a header comment naming the Story and a 'Run: npx tsx --test <path>' line; live tests gated on INSRC_LIVE_TESTS=1 and skipped cleanly when unset. tsx does not type-check and tsconfig.json excludes **/__tests__/**, so the type-level assertions for ac5 are written as // @ts-expect-error lines in src/daemon/tools/call-tool.type-test.ts, a file outside __tests__ that npm run build (tsc) compiles; it exports nothing and is never imported.`
+
+**Test levels**
+
+- **unit** — Prove the executor's input and output checks in isolation: a registered fake tool with and without an outputSchema, given valid and invalid input, returning valid data, invalid data, no data and a failure.
+  - Subjects: `executeTool: valid input and valid data on a schematized tool pass through unchanged`, `executeTool: input that does not fit the inputSchema returns rejected naming the fields, and the tool is not run`, `executeTool: data that does not fit returns schema-mismatch, names the ajv paths, drops data, keeps failure.original truncated`, `executeTool: success without data on a schematized tool returns schema-mismatch`, `executeTool: a failed result is not validated and passes through`, `executeTool: a tool with no outputSchema is run and returned exactly as today, with its input unchecked`, `executeTool: a thrown error still returns a failed result, now with failure kind rejected`, `executeTool: an invalid inputSchema or outputSchema returns rejected and is logged`, `failure kinds: the mapping of each ToolFailureKind onto PortFailureKind, one test per kind`
+  - Fixtures: `A fake Tool factory that returns a chosen ToolResult and records whether it ran`, `Small typebox schemas (an object with strings and numbers, one with additionalProperties false)`, `A test registry reset between tests`
+- **unit** — Prove convertText with fake providers injected through deps.conversion: tiers, retries, escalation, the cross-check, the serial queue, the deadline and cancellation.
+  - Subjects: `convertText: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation`, `convertText: an invalid first attempt is retried with the ajv errors appended`, `convertText: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted`, `convertText: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries`, `convertText: key-value matching normalises whitespace and case and drops surrounding quotes`, `convertText: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'`, `convertText: an empty keyValues result is accepted on schema alone`, `convertText: two concurrent calls reach the fake provider one after another, in arrival order`, `convertText: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call`, `convertText: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback`, `convertText: a hung provider call times out as an ordinary error, is retried, and releases the queue slot`, `convertText: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'`, `convertText: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent`
+  - Fixtures: `A fake LLMProvider with scripted completeStructured answers and a call log with timestamps`, `A fake ConversionProviders (resolveProvider) injected as deps.conversion`, `Fake timers for the per-attempt deadline`
+- **contract** — Prove the compile-time guard and the cast-free input and result types of callTool, in a file the build type-checks.
+  - Subjects: `callTool accepts a definition with typebox inputSchema and outputSchema and returns data typed as Static of the output schema`, `callTool types its input as Static of the inputSchema, so a wrong input type is an error (// @ts-expect-error)`, `callTool does not compile for a tool with no outputSchema (// @ts-expect-error)`, `TypedToolResult data is absent when success is false`, `a runtime test that imports the same two fake definitions and checks the values at run time`
+  - Fixtures: `Two typebox-typed fake tool definitions, one with and one without a schema`, `src/daemon/tools/call-tool.type-test.ts compiled by npm run build`
+- **integration** — Prove the pieces together through the real registry, executor and role taxonomy: a fake text-only tool that calls convertText, called through callTool.
+  - Subjects: `a tool with structured output called through callTool returns typed data and the fake provider log is empty`, `a text-only tool called through callTool converts, checks and returns typed data`, `a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original`, `the agent loop path (runReadOnlyToolLoop with the real executeTool) still receives output, success and error for a schematized tool and for a tool without a schema`, `the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them`
+  - Fixtures: `Registered fake tools`, `The real role taxonomy and router with a test config`, `A fake provider injected at the router seam`
+- **live** — Show the conversion works on real CLI output with a real cheap model; gated on INSRC_LIVE_TESTS=1.
+  - Subjects: `convertText on captured gh and git text-only outputs (for example the text of 'gh pr diff --stat' and 'gh run view') returns values whose key values are in the text`, `convertText on a deliberately truncated and a deliberately altered output fails the cross-check or the schema`
+  - Fixtures: `A corpus of captured real CLI outputs under the test folder, with the expected schema values`, `Ollama or a CLI provider available`
+
+**Acceptance mapping**
+
+| Criterion | Proving tests |
+| :--- | :--- |
+| `ac1` | `src/daemon/tools/__tests__/output-schema.test.ts: valid input and valid data on a schematized tool pass through unchanged after the checks`, `src/daemon/tools/__tests__/output-schema.test.ts: the check runs before the result is returned to the caller`, `src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data` |
+| `ac2` | `src/daemon/tools/__tests__/output-schema.test.ts: data that does not fit returns schema-mismatch with the failing paths named, and data dropped`, `src/daemon/tools/__tests__/output-schema.test.ts: success without data on a schematized tool returns schema-mismatch`, `src/daemon/tools/__tests__/output-schema.test.ts: input that does not fit the inputSchema returns rejected and the tool is not run`, `src/daemon/tools/__tests__/output-schema.test.ts: a thrown error and an invalid schema each return a typed failure` |
+| `ac3` | `src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty` |
+| `ac4` | `src/daemon/tools/__tests__/convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap`, `src/daemon/tools/__tests__/convert-text.test.ts: two concurrent calls reach the fake provider one after another`, `src/daemon/tools/__tests__/convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted`, `src/daemon/tools/__tests__/convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot`, `src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data` |
+| `ac5` | `src/daemon/tools/call-tool.type-test.ts: callTool returns data typed as Static of the output schema, with no cast (compiled by npm run build)`, `src/daemon/tools/call-tool.type-test.ts: callTool does not compile for a tool with no outputSchema (// @ts-expect-error, compiled by npm run build)`, `src/daemon/tools/__tests__/call-tool.test.ts: the runtime values of the same fake definitions are what the types say` |
+| `ac6` | `src/daemon/tools/__tests__/convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text`, `src/daemon/tools/__tests__/convert-text.test.ts: key-value matching normalises whitespace and case`, `src/daemon/tools/__tests__/convert-text.test.ts: an alphanumeric key value matches on token boundaries`, `src/daemon/tools/__tests__/convert-text.live.test.ts: a deliberately altered output fails the cross-check` |
+
+## 7. Migration
+
+**State before:** executeTool in src/daemon/tools/executor.ts looks a tool up, runs it inside a try/catch and returns its ToolResult (output string, format, success, error, data typed unknown). Tool in src/daemon/tools/types.ts has no output schema, and the executor does not validate input or output although the Tool.inputSchema comment says it validates input. ToolResult has no failure kind and ToolDeps has no conversion field; four production places build a ToolDeps (src/analyze/context/driver.ts:1132, src/agent/providers/ollama.ts:686, src/workflow/code-review/grounding.ts:370, src/workflow/runners/build/changed-files.ts:110). No conversion library exists, and the role taxonomy in src/config/role-taxonomy.ts has no tool-conversion role. The only production caller of executeTool is src/agent/read-only-tool-loop.ts:78, which reads the text output. The tracker port keeps four failure kinds in src/workflow/tracker/port.ts:23. The build excludes **/__tests__/** from type-checking.
+
+**State after:** Tool has an optional typebox outputSchema, ToolResult has an optional failure and ToolDeps has an optional conversion field. For a tool that declares an outputSchema, executeTool validates the input before the tool runs and the data after, and returns a typed failure on a mismatch; a tool without a schema behaves exactly as before. callTool returns data typed from the definition's schemas and does not compile for a tool without them, and its type-level tests live in a file the build compiles. convertText converts text-only CLI output through the cheap tier then one escalation, cross-checks the key values against the raw text, runs through one serial queue and retries a timeout while ending on a cancellation. Two new peripheral roles, tools.convert and tools.convert.escalate, exist in the role taxonomy. The tracker port's four failure kinds are unchanged, and a stated mapping takes the new kinds onto them. No existing builtin has an output schema, and none of the four ToolDeps builders sets a conversion value; the git, gh and Jira family Stories add schemas, and s7 fills the conversion field in the two workflow-side builders.
+
+**Zero downtime:** yes — **Data rewrite:** no
+
+**Steps**
+
+1. Add the optional outputSchema field to Tool, the optional failure field to ToolResult and the optional conversion field to ToolDeps, with the ToolFailure, ToolFailureKind and ToolDenialReason types. Nothing reads them yet, and none of the four ToolDeps builders changes. — ↩ rollbackable
+2. Add the two conversion roles to the role taxonomy as peripheral roles with default tiers cheap and mid. Add a taxonomy test that the closed registry lists them and that the coreFloor does not clamp them. — ↩ rollbackable
+3. Add the conversion module: the serial queue, the key-value normalisation and token-boundary match, the cheap attempts, the single escalation, the per-attempt deadline raised as an ordinary error, the cancellation handling and the helper that builds the conversion field from a config and the RoleRouter. Add its unit tests with fake providers. No tool calls it yet. — ↩ rollbackable
+4. Add the input check and the output check to executeTool, applied only to a tool that declares an outputSchema, and attach failure kind rejected to the existing thrown-error and unknown-tool results. Add the executor unit tests, and run the existing agent-loop and tool tests unchanged. — ↩ rollbackable
+5. Add callTool and the TypedTool type, with the type-level test file that the build compiles and the runtime test beside it. No production code calls it until s4 to s7. — ↩ rollbackable
+6. Record the mapping of the new failure kinds onto the tracker port's four kinds in the contract notes for s7, and keep the port type and its tests unchanged. Record there that s7 fills the conversion field in the two workflow-side ToolDeps builders. — ↩ rollbackable
+7. Apply the approved HLD amendment that adds ToolResult.failure, ToolFailure.original and ToolDenialReason to the sc5 sketch, so the consuming Stories read the final shape and s3 reuses the denial union. — ↩ rollbackable
+
+**Backward compat:** Every addition is optional: Tool.outputSchema, ToolResult.failure, ToolFailure.original and ToolDeps.conversion. A tool without an outputSchema is run and returned exactly as before, with its input unchecked, so the roughly 110 existing builtins and the agent loop at src/agent/read-only-tool-loop.ts:78 see no change. The only visible difference is on error results: the existing thrown-error and unknown-tool results now also carry failure kind 'rejected'; output, success and error keep their text. The tracker port, its results and its tests are unchanged. The two new taxonomy roles are additive and the router resolves them like any role. The four existing builders of ToolDeps need no change.
+
+## 8. Alternatives considered
+
+### 8.1 a1: Optional typebox schemas on Tool, a conversion library that tools call, inputs supplied through one optional ToolDeps field — **CHOSEN**
+
+Add optional typebox output and input schemas to Tool; the executor validates input and output only for tools that declare an output schema; callTool is typed from the definition; text-only tools call convertText, which gets its providers through one optional ToolDeps field.
+
+Tool in src/daemon/tools/types.ts gains one optional field, outputSchema, holding a typebox schema (TSchema). A tool that declares one puts its structured result in ToolResult.data and its human text in output. For such a tool, and only such a tool, the executor first validates the input against its inputSchema and refuses to run the tool on a mismatch (failure kind 'rejected', the failing field names in the message), and after the run validates data against the outputSchema with the existing validateAgainstSchema helper, turning a mismatch into a failed ToolResult of kind schema-mismatch. A tool with no outputSchema is run and returned exactly as today, so the roughly 110 builtins with loose inputSchemas are untouched. callTool takes a definition typed as TypedTool, a Tool whose inputSchema and outputSchema are both typebox schemas, so an unschematized tool is a compile error at the call site, the input is typed as Static of the inputSchema and the result as Static of the outputSchema (ac5). The failure kinds (sc5) are one union plus a ToolFailure that rides on ToolResult.failure, and a three-value denial union is declared here so that s2 does not depend on s3.
+
+A tool whose CLI gives only text calls convertText(req, deps) while it builds its result (ac4). ToolDeps gains one optional field, conversion, holding a resolveProvider(role) function; a small helper builds it from an AnalyzeConfig, the repoPath and RoleRouter.resolveProviderForRole, which is synchronous. convertText reads deps.conversion, deps.repoPath and deps.signal, runs behind a module-level serial queue (k3), tries the tools.convert role for up to two attempts and the tools.convert.escalate role for up to two more, validates every attempt with the same ajv helper, and checks each key value against the normalised raw text. A per-attempt deadline is turned into an ordinary 'timed out' error inside the provider call so withStructuredRetry retries it; only a caller cancellation is allowed to surface as AbortError and ends the conversion as 'cancelled'. A tool with structured CLI output (gh --json, git porcelain, acli --json) parses it directly and never touches the model (ac3). The type-level tests for ac5 live in a file that tsc compiles, since the build excludes the __tests__ folders. This Story fills no conversion value in any of the four production ToolDeps builders; s7 fills it in the two workflow-side ones.
+
+### 8.2 a2: defineTypedTool factory that makes the schemas and the typed result required by construction
+
+A defineTypedTool factory takes typebox input and output schemas and a run function that returns the typed value, and builds the Tool, so a schematized tool cannot omit data or its schemas.
+
+A factory, defineTypedTool({ id, description, inputSchema, outputSchema, run, render }), is added next to Tool. run(input, deps) returns Promise<Static<Output> | ToolFailure>; render(value) produces the text that agents read. The factory returns a Tool whose execute calls run, sets ToolResult.data to the value and ToolResult.output to render(value), and attaches a brand so that callTool accepts only tools made this way. The executor still validates the input and the data, because both come from outside the type system, but the compile-time shape of the tool is guaranteed. Failure kinds are the return type, so a tool cannot throw a bare string for a known failure.
+
+Conversion is offered as a factory option: a tool can declare textOnly: { keyValues } and receive raw CLI text, and the factory calls convertText on its behalf, so no author has to call it or remember the cross-check. Existing builtins stay plain Tool objects; only the git, gh and Jira families, and any tool that code calls, use the factory.
+
+**Rejected because:** Partial on sc2: it adds a factory and a brand that consumers must use, which the contract does not state, and it is the larger change for a Story that gates s4 to s6.
+
+### 8.3 a3: Plain JSON Schema plus a hand-written output type (the HLD sketch)
+
+Keep outputSchema as a plain JSON Schema object and carry the TypeScript type as a separate phantom parameter on the tool definition.
+
+Follow the HLD sketch literally: OutputSchemaField<O> has outputSchema?: JsonSchema and a phantom readonly outputType?: O, and callTool infers O from the tool object. Each tool author writes the schema as JSON Schema and, separately, the TypeScript type O, and assigns them to the same definition. The executor validates data with the same ajv helper. Nothing derives one from the other, so the schema and the type are two statements of the same shape. Conversion and failure kinds are the same as in a1.
+
+**Rejected because:** Partial on ac5 and k2: the type a caller receives is hand-written and can disagree with the schema the check enforces.
+
+### 8.4 a4: Conversion as an executor stage for tools that declare text-only output
+
+A tool that gets only text declares textOnly and returns raw text; the executor converts and validates it before the tool's result reaches anyone.
+
+Tool gains an optional outputSchema as in a1 and a second optional declaration, textOnly: { keyValues }. A tool with textOnly returns its raw CLI text in ToolResult.output and no data; after the run the executor sees the declaration, calls convertText with the tool's schema, validates, and either sets data to the converted value or fails the call. Tools with structured output set data themselves and skip conversion. The model dependency moves into the executor, which resolves the two providers through the RoleRouter and owns the process-wide serial queue. callTool is typed as in a1.
+
+**Rejected because:** Partial on ac4 (the conversion happens after the tool returns, not while it builds its result) and sc3 (the executor, not the tool, calls the conversion, which changes how s4 to s6 consume it).
+
+## 9. References
+
+- **[[c1]]** `analyze-bundle` `s1: the executor and the Tool contract s2 extends (src/daemon/tools/executor.ts:23-59, src/daemon/tools/types.ts:33-48, 50-81, 96-152)`
+- **[[c2]]** `analyze-bundle` `s1: registry, the single production caller, and every place a ToolDeps is built (src/daemon/tools/registry.ts, src/agent/read-only-tool-loop.ts:78, src/analyze/context/driver.ts:1132, src/agent/providers/ollama.ts:686, src/workflow/code-review/grounding.ts:370, src/workflow/runners/build/changed-files.ts:110)`
+- **[[c3]]** `analyze-bundle` `s1: reusable validation and retry helpers and how aborts are handled (src/agent/providers/structured-output.ts:215, src/shared/types.ts:228)`
+- **[[c4]]** `analyze-bundle` `s1: model routing for the conversion step (src/analyze/context/role-router.ts:79, src/config/role-taxonomy.ts, src/config/core-floor-guard.ts)`
+- **[[c5]]** `analyze-bundle` `s1: the failure kinds the tracker port uses today (src/workflow/tracker/port.ts:23, src/workflow/tracker/github.ts:51, 71-79, src/workflow/tracker/__tests__/unit-issue.test.ts:390)`
+- **[[c6]]** `analyze-bundle` `s1: how tests are built and type-checked (package.json, tsconfig.json)`
+- **[[c7]]** `doc` `docs/plans/tool-registry.md`
+
+## 10. Open questions
+
+- The sc2 and sc3 refinements (a typebox TSchema in place of JsonSchema plus a phantom type, a typed input, a ToolDeps parameter on convertText) differ from the HLD sketches. Only the sc5 additions (ToolResult.failure, ToolFailure.original, ToolDenialReason) are proposed as an HLD amendment, because one proposal is allowed per run; the sc2 and sc3 refinements need their own amendment or a back-flow (audit item sbdry3, partial).
+- DEF S002 FR001 ('a tool without a declared result shape cannot be registered') and FR004 ('every tool declares the shape of its result') are narrowed by the recorded decision in docs/plans/tool-registry.md that only tools code calls need a schema, enforced at the callTool type. The amendment tool handles HLD amendments only and cannot amend DEF text, so this LLD keeps registration unchanged and asks the reviewer or the user to accept that decision record as the amendment.
+- The carrier for caller identity (review round 3 finding 4) is not decided here: this Story adds only the conversion field to ToolDeps. It belongs to s1 (the hook context) and s3 (the approval mode).
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-23T10:48:41.974Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| boundaries | MED | The shared contracts sc2 and sc3, as consumed by s4–s7, match what the LLD implements. | In HLD-b7a68147dcf72034.json:112 the sc2 sketch is `outputSchema?: JsonSchema; readonly outputType?: O … callTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps)`. At :129 the sc3 sketch is `convertText<O>(req: ConversionRequest<O>)`, which takes no deps and uses schema: JsonSchema. The LLD changes both: a typebox TSchema, the TypedTool constraint, Static input, and a deps parameter on convertText. No amendment is filed: every AMD for this epic targets sc5 only. LLD §10 admits this. Consumers s4–s7 reading the HLD would build against the old signatures. [files: .insrc/artifacts/HLD-b7a68147dcf72034.json] | File sharedContract amendments for sc2 and sc3 (or a back-flow) carrying the typebox/TypedTool/deps refinements before s4–s7 are designed. |
+| error-paths | MED | A conversion makes at most two attempts per tier, each bounded by a per-attempt deadline, with retries counted by withStructuredRetry. | LLMProvider.completeStructured retries internally: shared/types.ts:290-291 `maxAttempts … Default 3`, and :322-325 `internalRetry … Absent or true: today's retries`. It also has its own `timeoutMs` (:320-321) and `signal` (:293). The LLD wraps the provider call in withStructuredRetry with two attempts but never says it passes `maxAttempts: 1` / `internalRetry: false`. With the defaults, each of the LLD's 'attempts' becomes up to three provider attempts plus transient retries. That breaks the 'at most two attempts per tier' postcondition, and the per-attempt deadline would cover several hidden retries. [files: src/shared/types.ts, src/agent/providers/structured-output.ts] | State that convertText calls completeStructured with internalRetry:false (and maxAttempts:1), passes a signal combining the deadline and deps.signal, and uses withStructuredRetry as the only retry loop. Add a unit test asserting the fake provider sees exactly 2+2 calls. |
+
+#### Could not verify (does not block)
+
+_None._

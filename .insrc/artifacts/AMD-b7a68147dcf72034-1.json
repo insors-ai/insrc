@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-947aba4a-c990-4bf0-84c0-dc37060f9a59",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T10:32:17.933Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6074aff1d958fca2419b74a124aea4ef032d670eb2aec6a000e435ea50d568c",
+        "at": "2026-10-23T10:32:17.933Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-1",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc5",
+      "field": {
+        "name": "ToolFailure.original and ToolResult.failure",
+        "type": "ToolFailure.original?: string (the tool's raw output, truncated, kept for diagnosis); ToolResult.failure?: ToolFailure",
+        "optional": true,
+        "purpose": "The Story's second functional requirement says a conversion that fails the check is reported as the tool's failure with the original output available for diagnosis, and the executor has to carry a typed failure on the ToolResult that agents and code both receive. Both fields are optional and additive; a caller that ignores them sees today's success, output and error fields."
+      },
+      "breaking": false
+    },
+    "rationale": "sc5 sketches ToolFailure with kind, message and denial only, and says nothing about how it rides on the result or where the raw output goes. Without these two optional fields the failure kinds cannot reach callers and the diagnosis requirement cannot be met.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792751124818-60h5j5",
+      "storyId": "s2",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-23T10:32:17.932Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/types.ts:33-48"
+    }
+  ]
+}

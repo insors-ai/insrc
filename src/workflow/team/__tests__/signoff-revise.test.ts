@@ -8,7 +8,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { _setSignoffDepsForTests, openSignoff, type SignoffDeps } from '../signoff.js';
+import { _setSignoffDepsForTests, openSignoff, settleSignoff, type SignoffDeps } from '../signoff.js';
 import type { LifecycleService } from '../../artifact-core/lifecycle-service.js';
 import type { PortResult, SignoffRequestRef, SignoffRequestSpec, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
@@ -217,4 +217,57 @@ test('a changes-requested request resubmitted with one revised and one unchanged
 	// the unchanged artifact is recorded again at its own, unchanged revision
 	const hld = s.heads[HLD] as { lifecycle: { signoffs: Array<{ revision: number; state: string }> } };
 	assert.deepEqual(hld.lifecycle.signoffs.map(e => [e.revision, e.state]), [[1, 'changes-requested'], [1, 'open']]);
+});
+
+test("settleSignoff passes the last entry's at as since and records signoff-changes only for a request made after it", async () => {
+	const SUBMITTED = '2026-07-02T00:00:00Z';
+	const waiting = (ref: string, at: string) => headOf({ status: 'in-signoff', revision: 2, signoffs: [entryOf(1, ref, 'changes-requested', '2026-07-01T00:00:00Z'), entryOf(2, ref, 'open', at)] });
+	function world(heads: Record<string, unknown>, changesRequestedAt: string | undefined, merged = false) {
+		const w = { sinces: [] as Array<string | undefined>, applied: [] as Array<[string, string]>, released: 0, deps: {} as SignoffDeps, heads };
+		const port = {
+			whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
+			// the tracker counts a request for changes only when it was made after `since`, as the GitHub adapter does
+			readSignoffState: (_r: SignoffRequestRef, since?: string) => {
+				w.sinces.push(since);
+				const state = merged ? 'completed' : changesRequestedAt !== undefined && (since === undefined || changesRequestedAt > since) ? 'changes-requested' : 'open';
+				return { ok: true, value: state } as PortResult<'open' | 'changes-requested' | 'completed'>;
+			},
+			setAssignee: (): PortResult<void> => { w.released += 1; return { ok: true, value: undefined }; },
+		} as unknown as TrackerPort;
+		const service = {
+			apply: async (id: string, op: string) => { w.applied.push([id, op]); },
+			completeIfRolledUp: async () => ({ completed: [] }),
+		} as unknown as LifecycleService;
+		w.deps = {
+			readPolicy: () => ({ ok: true, value: policy() }),
+			readHead: (_repo, id) => w.heads[id],
+			loadTracker: () => ({ ok: true, value: port }),
+			resolveIssue: () => 'acme/demo#1',
+			lifecycleFor: () => service,
+		};
+		return w;
+	}
+	const both = (at: string, at2 = at) => ({ [DEF]: waiting('acme/demo#9', at), [HLD]: waiting('acme/demo#9', at2) });
+
+	// the since is the latest submission of the heads waiting on the request, read once for the request
+	let w = world(both(SUBMITTED, '2026-07-02T00:00:05Z'), undefined);
+	assert.deepEqual(await settleSignoff('/repo', EPIC_UNIT, w.deps), []);
+	assert.deepEqual(w.sinces, ['2026-07-02T00:00:05Z']);
+	assert.deepEqual(w.applied, []);
+
+	// a request for changes made before the latest submission is the old push's: the heads stay in signoff
+	w = world(both(SUBMITTED), '2026-07-01T12:00:00Z');
+	assert.deepEqual(await settleSignoff('/repo', EPIC_UNIT, w.deps), []);
+	assert.deepEqual(w.applied, []);
+	// and a later merge is recorded signed-off on every head, with the claim released
+	w = world(both(SUBMITTED), '2026-07-01T12:00:00Z', true);
+	await settleSignoff('/repo', EPIC_UNIT, w.deps);
+	assert.deepEqual(w.applied, [[DEF, 'signed-off'], [HLD, 'signed-off']]);
+	assert.equal(w.released, 1);
+
+	// a request for changes made after it moves every waiting head to changes-requested together
+	w = world(both(SUBMITTED), '2026-07-03T00:00:00Z');
+	await settleSignoff('/repo', EPIC_UNIT, w.deps);
+	assert.deepEqual(w.applied, [[DEF, 'signoff-changes'], [HLD, 'signoff-changes']]);
+	assert.equal(w.released, 0);
 });

@@ -593,7 +593,7 @@ async function recordOpened(repo: string, unrecorded: readonly Submission[], req
 const SETTLE_ACTOR: Actor = { id: 'insrc:settle', kind: 'system', properties: {} };
 
 /** A head waiting on a request: its id and the request ref it is waiting on. */
-interface Waiting { readonly artifactId: string; readonly ref: string }
+interface Waiting { readonly artifactId: string; readonly ref: string; readonly at: string }
 
 /** The heads of the unit's listed stages that are in signoff, with the open request each waits on. */
 function waitingHeads(repo: string, unit: UnitRef, policy: TeamPolicy, d: SignoffDeps): Waiting[] {
@@ -601,7 +601,7 @@ function waitingHeads(repo: string, unit: UnitRef, policy: TeamPolicy, d: Signof
 	for (const { artifactId, meta } of listedHeads(repo, unit, policy, d)) {
 		if (lifecycleOfMeta(meta)?.['status'] !== 'in-signoff') continue;
 		const view = signoffViewOf(meta);
-		if (view.state === 'open' && view.request !== null) waiting.push({ artifactId, ref: view.request.ref });
+		if (view.state === 'open' && view.request !== null) waiting.push({ artifactId, ref: view.request.ref, at: signoffsOfMeta(meta).at(-1)?.at ?? '' });
 		else log.warn({ artifactId }, 'a head is in signoff but names no open request; it stays blocked');
 	}
 	return waiting;
@@ -645,7 +645,9 @@ export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDe
 			const refs = [...new Set(waiting.map(w => w.ref))];
 			for (const ref of refs) {
 				const group = waiting.filter(w => w.ref === ref);
-				const state = port.readSignoffState({ ref });
+				// only a request for changes made after the latest submission counts: the tracker keeps the decision made on an earlier push
+				const since = group.map(w => w.at).reduce((latest, at) => (at > latest ? at : latest), '');
+				const state = port.readSignoffState({ ref }, since.length > 0 ? since : undefined);
 				if (!state.ok) {
 					log.warn({ ref, kind: state.kind, reason: state.reason }, 'a signoff request could not be read; the stage stays blocked');
 					problems.push(`request ${ref} could not be read (${state.reason})`);

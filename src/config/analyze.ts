@@ -106,6 +106,16 @@ export type TierName = 'core' | 'mid' | 'cheap';
 export interface TierModel {
 	readonly runner: AnalyzeShaperProviderKind;
 	readonly model:  string;
+	/** The reasoning effort the tier's CLI runs at; absent: the CLI's own default.
+	 *  Set on the global tiers only (a per-repo tier never carries one). */
+	readonly effort?: TierEffort | undefined;
+}
+
+/** The reasoning efforts both CLIs accept (claude --effort; codex model_reasoning_effort). */
+export const TIER_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type TierEffort = typeof TIER_EFFORTS[number];
+export function isTierEffort(x: unknown): x is TierEffort {
+	return typeof x === 'string' && (TIER_EFFORTS as readonly string[]).includes(x);
 }
 
 /** Sparse RoleId → tier map; a role absent here uses its RoleDescriptor.defaultTier. */
@@ -132,6 +142,10 @@ export interface TieringOverride {
 	readonly tiers?:     Readonly<Partial<Record<TierName, TierModel>>> | undefined;
 	readonly roleTiers?: RoleTierAssignment | undefined;
 	readonly coreFloor?: TierName | undefined;
+	/** Global scope only: each tier entry's valid effort, kept even when the tier
+	 *  itself was dropped (an empty or invalid model), so a DEFAULT_TIERS fallback
+	 *  still runs at the configured effort. */
+	readonly efforts?:   Readonly<Partial<Record<TierName, TierEffort>>> | undefined;
 }
 
 /** The full parsed models.* tiering shape (sc1). Always present on
@@ -177,6 +191,10 @@ export interface AnalyzeConfig {
 	/** Summariser model. DERIVED from `models.tiers.cheap.model` (`haiku` by
 	 *  default). */
 	readonly summariserModel:    string;
+	/** The core tier's reasoning effort (DERIVED from `models.tiers.core.effort`). */
+	readonly shaperEffort?:      TierEffort | undefined;
+	/** The cheap tier's reasoning effort (DERIVED from `models.tiers.cheap.effort`). */
+	readonly summariserEffort?:  TierEffort | undefined;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
 	/** Per-role model tiering (sc1). `tiers` is always fully populated (parsed
@@ -223,10 +241,17 @@ let cached: AnalyzeConfig | undefined;
  */
 function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
 	return {
-		core:  tiering.tiers?.core  ?? DEFAULT_TIERS.core,
-		mid:   tiering.tiers?.mid   ?? DEFAULT_TIERS.mid,
-		cheap: tiering.tiers?.cheap ?? DEFAULT_TIERS.cheap,
+		core:  resolveTier(tiering, 'core'),
+		mid:   resolveTier(tiering, 'mid'),
+		cheap: resolveTier(tiering, 'cheap'),
 	};
+}
+
+/** The configured tier, else DEFAULT_TIERS[tier] at the tier's configured effort
+ *  (so an effort set beside an empty or invalid model still applies). */
+export function resolveTier(tiering: TieringOverride, tier: TierName): TierModel {
+	const effort = tiering.efforts?.[tier];
+	return tiering.tiers?.[tier] ?? { ...DEFAULT_TIERS[tier], ...(effort !== undefined ? { effort } : {}) };
 }
 
 /**
@@ -251,6 +276,8 @@ export function assembleConfig(
 		shaperModelExplicit:     (tiering.tiers?.core?.model ?? '') !== '',
 		summariserProvider:      tiers.cheap.runner,
 		summariserModel:         tiers.cheap.model,
+		...(tiers.core.effort  !== undefined ? { shaperEffort:     tiers.core.effort }  : {}),
+		...(tiers.cheap.effort !== undefined ? { summariserEffort: tiers.cheap.effort } : {}),
 		shaper,
 		maxPlanDepth,
 		tiering: { ...tiering, tiers },
@@ -335,25 +362,43 @@ function isRunner(x: unknown): x is AnalyzeShaperProviderKind {
 	return x === 'ollama' || x === 'cli-claude' || x === 'cli-codex';
 }
 
+/** A tier entry's effort: a valid one on the global tiers; '' or absent is none. An
+ *  invalid value, or any effort on a per-repo tier, is dropped with a warning. */
+function effortOf(raw: unknown, where: string, tier: TierName): TierEffort | undefined {
+	if (raw === undefined || raw === '') return undefined;
+	if (where !== 'global') {
+		log.warn({ where, tier, effort: raw }, 'models.byRepo[repo].tiers[tier].effort: effort is set on the global model tiers only; ignored');
+		return undefined;
+	}
+	if (isTierEffort(raw)) return raw;
+	log.warn({ where, tier, effort: raw }, `models.tiers[tier].effort: expected one of ${TIER_EFFORTS.join('|')}; ignored`);
+	return undefined;
+}
+
 /** Parse one TieringOverride (tiers / tasks / coreFloor) from a config object.
  *  Note: the on-disk key is `tasks`; the internal AnalyzeTiering field is
  *  `roleTiers` (the RoleRouter + core-floor guard consume `roleTiers`). */
 function parseTieringOverride(src: Record<string, unknown>, where: string): TieringOverride {
-	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName } = {};
+	const out: { tiers?: Partial<Record<TierName, TierModel>>; roleTiers?: Record<string, TierName>; coreFloor?: TierName; efforts?: Partial<Record<TierName, TierEffort>> } = {};
 
 	if (isObject(src['tiers'])) {
 		const tiers: Partial<Record<TierName, TierModel>> = {};
+		const efforts: Partial<Record<TierName, TierEffort>> = {};
 		for (const [tier, val] of Object.entries(src['tiers'])) {
 			if (!isTierName(tier)) { log.warn({ where, tier }, 'models.tiers: unknown tier name; ignored'); continue; }
 			const runner = isObject(val) ? val['runner'] : undefined;
 			const model  = isObject(val) ? val['model']  : undefined;
+			// The effort belongs to the global tiers only; a per-repo tier chooses runner and model.
+			const effort = effortOf(isObject(val) ? val['effort'] : undefined, where, tier);
+			if (effort !== undefined) efforts[tier] = effort;
 			if (!isRunner(runner) || typeof model !== 'string' || model.length === 0) {
 				log.warn({ where, tier }, 'models.tiers[tier]: expected { runner: ollama|cli-claude|cli-codex, model: string }; ignored');
 				continue;
 			}
-			tiers[tier] = { runner, model };
+			tiers[tier] = { runner, model, ...(effort !== undefined ? { effort } : {}) };
 		}
 		if (Object.keys(tiers).length > 0) out.tiers = tiers;
+		if (Object.keys(efforts).length > 0) out.efforts = efforts;
 	}
 
 	if (isObject(src['tasks'])) {

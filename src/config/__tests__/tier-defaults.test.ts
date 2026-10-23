@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assembleConfig, DEFAULT_TIERS } from '../analyze.js';
+import { assembleConfig, DEFAULT_TIERS, parseTiering } from '../analyze.js';
 import { CONFIG_CATALOG } from '../config-catalog.js';
 import { buildSummariserProvider } from '../../analyze/context/shaper-provider.js';
 import { CliProvider } from '../../agent/providers/cli-provider.js';
@@ -68,4 +68,22 @@ test('src/config/__tests__/tier-defaults.test.ts: the installer\'s claude choice
 
 test('src/config/__tests__/tier-defaults.test.ts: the plugin\'s copy of the installer is identical to the script', () => {
   assert.equal(read('vscode-plugin/assets/insrc-daemon-install.sh'), read('scripts/insrc-daemon-install.sh'));
+});
+
+test("a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)", () => {
+  // The catalog default for core.model is '', which drops the core tier.
+  const tiering = parseTiering({ tiers: { core: { runner: 'cli-codex', model: '', effort: 'high' }, cheap: { runner: 'bogus', model: 'x', effort: 'low' } } });
+  assert.equal(tiering.tiers, undefined, 'both tiers are dropped as before');
+  const cfg = assembleConfig(tiering, SHAPER, DEPTH);
+  assert.deepEqual(cfg.tiering.tiers?.core, { ...DEFAULT_TIERS.core, effort: 'high' });
+  assert.deepEqual(cfg.tiering.tiers?.cheap, { ...DEFAULT_TIERS.cheap, effort: 'low' });
+  assert.equal(cfg.shaperEffort, 'high');
+  assert.equal(cfg.summariserEffort, 'low');
+  assert.equal(cfg.shaperProviderExplicit, false, 'a fallback is still not explicit');
+  assert.equal(cfg.shaperModelExplicit, false);
+  // A kept tier carries its own effort; no effort configured gives none.
+  const kept = assembleConfig(parseTiering({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b', effort: 'medium' } } }), SHAPER, DEPTH);
+  assert.equal(kept.summariserEffort, 'medium');
+  assert.equal(kept.shaperEffort, undefined);
+  assert.equal('shaperEffort' in assembleConfig({}, SHAPER, DEPTH), false);
 });

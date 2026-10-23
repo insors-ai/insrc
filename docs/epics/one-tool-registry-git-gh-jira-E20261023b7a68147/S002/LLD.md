@@ -390,23 +390,17 @@ Tool gains an optional outputSchema as in a1 and a second optional declaration, 
 - DEF S002 FR001 ('a tool without a declared result shape cannot be registered') and FR004 ('every tool declares the shape of its result') are narrowed by the recorded decision in docs/plans/tool-registry.md that only tools code calls need a schema, enforced at the callTool type. The amendment tool handles HLD amendments only and cannot amend DEF text, so this LLD keeps registration unchanged and asks the reviewer or the user to accept that decision record as the amendment.
 - The carrier for caller identity (review round 3 finding 4) is not decided here: this Story adds only the conversion field to ToolDeps. It belongs to s1 (the hook context) and s3 (the approval mode).
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q1b796a94` — The sc2 and sc3 refinements (a typebox TSchema in place of JsonSchema plus a phantom type, a typed input, a ToolDeps parameter on convertText) differ from the HLD sketches. Only the sc5 additions (ToolResult.failure, ToolFailure.original, ToolDenialReason) are proposed as an HLD amendment, because one proposal is allowed per run; the sc2 and sc3 refinements need their own amendment or a back-flow (audit item sbdry3, partial).
+  - **resolved**: Second HLD amendment run — Done in the s3 run: AMD-b7a68147dcf72034-6 (sc2) and -7 (sc3) are filed and approved; -3 and -5 cover the sc5 additions. _(2026-10-23T12:28:14.573Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-23T10:48:41.974Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| boundaries | MED | The shared contracts sc2 and sc3, as consumed by s4–s7, match what the LLD implements. | In HLD-b7a68147dcf72034.json:112 the sc2 sketch is `outputSchema?: JsonSchema; readonly outputType?: O … callTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps)`. At :129 the sc3 sketch is `convertText<O>(req: ConversionRequest<O>)`, which takes no deps and uses schema: JsonSchema. The LLD changes both: a typebox TSchema, the TypedTool constraint, Static input, and a deps parameter on convertText. No amendment is filed: every AMD for this epic targets sc5 only. LLD §10 admits this. Consumers s4–s7 reading the HLD would build against the old signatures. [files: .insrc/artifacts/HLD-b7a68147dcf72034.json] | File sharedContract amendments for sc2 and sc3 (or a back-flow) carrying the typebox/TypedTool/deps refinements before s4–s7 are designed. |
-| error-paths | MED | A conversion makes at most two attempts per tier, each bounded by a per-attempt deadline, with retries counted by withStructuredRetry. | LLMProvider.completeStructured retries internally: shared/types.ts:290-291 `maxAttempts … Default 3`, and :322-325 `internalRetry … Absent or true: today's retries`. It also has its own `timeoutMs` (:320-321) and `signal` (:293). The LLD wraps the provider call in withStructuredRetry with two attempts but never says it passes `maxAttempts: 1` / `internalRetry: false`. With the defaults, each of the LLD's 'attempts' becomes up to three provider attempts plus transient retries. That breaks the 'at most two attempts per tier' postcondition, and the per-attempt deadline would cover several hidden retries. [files: src/shared/types.ts, src/agent/providers/structured-output.ts] | State that convertText calls completeStructured with internalRetry:false (and maxAttempts:1), passes a signal combining the deadline and deps.signal, and uses withStructuredRetry as the only retry loop. Add a unit test asserting the fake provider sees exactly 2+2 calls. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1: the executor and the Tool contract s2 extends (src/daemon/tools/executor.ts:23-59, src/daemon/tools/types.ts:33-48, 50-81, 96-152)`
+- **[[c2]]** `analyze-bundle` `s1: registry, the single production caller, and every place a ToolDeps is built (src/daemon/tools/registry.ts, src/agent/read-only-tool-loop.ts:78, src/analyze/context/driver.ts:1132, src/agent/providers/ollama.ts:686, src/workflow/code-review/grounding.ts:370, src/workflow/runners/build/changed-files.ts:110)`
+- **[[c3]]** `analyze-bundle` `s1: reusable validation and retry helpers and how aborts are handled (src/agent/providers/structured-output.ts:215, src/shared/types.ts:228)`
+- **[[c4]]** `analyze-bundle` `s1: model routing for the conversion step (src/analyze/context/role-router.ts:79, src/config/role-taxonomy.ts, src/config/core-floor-guard.ts)`
+- **[[c5]]** `analyze-bundle` `s1: the failure kinds the tracker port uses today (src/workflow/tracker/port.ts:23, src/workflow/tracker/github.ts:51, 71-79, src/workflow/tracker/__tests__/unit-issue.test.ts:390)`
+- **[[c6]]** `analyze-bundle` `s1: how tests are built and type-checked (package.json, tsconfig.json)`
+- **[[c7]]** `doc` `docs/plans/tool-registry.md`

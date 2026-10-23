@@ -72,3 +72,9 @@ Call a wrapper (15 more files): runGit users anchor-finder.ts, handoff.ts, polic
 Total: about 32 production files, plus 31 test files that import a github.js module.
 
 Open scope question for s7 (the Epic says "the workflow library, the daemon and the terminal client's approval service" for the move, and "the backend" for the build check): the indexer, the design corpus reader, the analyze ignore filter, the understanding identity and the daemon self-update (installed-commit, maintenance) are independent subsystems that read git for their own purposes. Either they move onto the registry too, or the check carries a named allowlist with a reason per entry.
+
+## Decisions after HLD review round 2 (2026-10-23)
+
+1. Scope of the cutover (s7): every direct git, gh and acli spawn in the backend moves onto the registry, with no allowlist. The indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup, installed-commit and the maintenance self-update are included. Inventory above (about 32 production files).
+2. Approval has two classes. Common operations (tools that declare requiresApproval today and are not destructive: commit, stage, pull and the like) follow one global approval setting. Destructive operations ask every time and no setting can skip that. The global setting's default is the s3 LLD's to settle; the HLD proposes `auto` for common operations so existing behaviour holds (they run today as approved) and `ask` is an opt-in, which keeps unattended workflows running. This reads DEF s3 ac6 ("a tool that declares it needs approval asks") as "asks when the setting is ask"; confirm at approval.
+3. The typed helper takes the tool definition object (callers import it), not a string id, so the result type follows from the definition.

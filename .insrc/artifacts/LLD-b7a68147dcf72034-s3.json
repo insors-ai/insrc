@@ -78,6 +78,13 @@
         "choice": "Accept the direct reads as grounding",
         "rationale": "The invariants are enforced by per-task checks (previous answer); the direct reads of the code are concrete.",
         "resolvedAt": "2026-10-23T14:06:10.568Z"
+      },
+      "q0a9521fc": {
+        "question": "DEF reading for s3 ac6: 'a tool that needs approval asks when the effective mode says ask (manual, edit-auto), and a destructive tool always asks'; the amendment tool is HLD-only, so this is recorded here only.",
+        "status": "resolved",
+        "choice": "Adopt it and pin it with a mode × tool test matrix",
+        "rationale": "Recorded in docs/plans/tool-registry.md as the ac6 reading; the DEF cannot be amended with the HLD-only tool.",
+        "resolvedAt": "2026-10-23T14:06:50.614Z"
       }
     }
   },

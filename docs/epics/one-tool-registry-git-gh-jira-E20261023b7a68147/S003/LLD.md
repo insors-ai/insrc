@@ -373,6 +373,8 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
   - **resolved**: Carry the mapping into the plan — One invariant covers every entry; a per-task check enforces it where the work is verified. _(2026-10-23T14:05:26.709Z)_
 - `qeab4c947` — ep3 (partial): the invariants rest on direct code reads recorded in the s1 bundles, not on insrc_analyze_step output.
   - **resolved**: Accept the direct reads as grounding — The invariants are enforced by per-task checks (previous answer); the direct reads of the code are concrete. _(2026-10-23T14:06:10.568Z)_
+- `q0a9521fc` — DEF reading for s3 ac6: 'a tool that needs approval asks when the effective mode says ask (manual, edit-auto), and a destructive tool always asks'; the amendment tool is HLD-only, so this is recorded here only.
+  - **resolved**: Adopt it and pin it with a mode × tool test matrix — Recorded in docs/plans/tool-registry.md as the ac6 reading; the DEF cannot be amended with the HLD-only tool. _(2026-10-23T14:06:50.614Z)_
 
 ## Citations
 

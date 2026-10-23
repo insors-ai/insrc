@@ -576,7 +576,8 @@ function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[],
 	const mismatch = (branch: string): PortResult<SignoffRequestRef> => rejected(`the request ${earlier.request.ref} is open from the branch '${earlier.branch}' but this checkout is on '${branch}': switch to '${earlier.branch}' to resubmit`);
 	// checked before the files are committed, so a wrong branch is left as it was
 	const on = (d.currentBranch ?? currentBranchOf)(repo);
-	if (on !== undefined && on !== earlier.branch) return mismatch(on);
+	if (on === undefined) return rejected(`the current branch cannot be read (a detached HEAD?): switch to '${earlier.branch}', the branch of the request ${earlier.request.ref}, to resubmit`);
+	if (on !== earlier.branch) return mismatch(on);
 	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
 	const message = `docs: resubmit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
 	const published = (d.publishBranch ?? publishArtifactsBranch)(repo, artifacts.map(a => artifactJsonPath(repo, a.artifactId)), message);

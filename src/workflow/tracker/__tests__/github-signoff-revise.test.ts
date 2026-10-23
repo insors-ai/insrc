@@ -86,6 +86,10 @@ test("readSignoffState with since uses each reviewer's latest decisive review an
 	assert.deepEqual(stateSince([review('bob', 'CHANGES_REQUESTED', '2026-10-23T09:00:00Z'), review('bob', 'COMMENTED', '2026-10-23T12:00:00Z')]), { ok: true, value: 'open' });
 	// reviews are read in any order
 	assert.deepEqual(stateSince([review('bob', 'APPROVED', '2026-10-23T12:00:00Z'), review('bob', 'CHANGES_REQUESTED', '2026-10-23T11:00:00Z')]), { ok: true, value: 'open' });
+	// whole seconds from GitHub against a local stamp with milliseconds are compared as instants, not as text
+	assert.deepEqual(stateSince([review('bob', 'CHANGES_REQUESTED', '2026-10-23T10:00:05Z')], {}, '2026-10-23T10:00:05.900Z'), { ok: true, value: 'open' });
+	assert.deepEqual(stateSince([review('bob', 'CHANGES_REQUESTED', '2026-10-23T10:00:06Z')], {}, '2026-10-23T10:00:05.900Z'), { ok: true, value: 'changes-requested' });
+	assert.match(failureOf(stateSince([review('bob', 'CHANGES_REQUESTED', '2026-10-23T10:00:06Z')], {}, 'not a time')).reason, /is not a time/);
 	// merged is completed and a closed request that was not merged is changes-requested, whatever the reviews
 	assert.deepEqual(stateSince([], { state: 'MERGED', mergedAt: '2026-10-23T13:00:00Z' }), { ok: true, value: 'completed' });
 	assert.deepEqual(stateSince([review('bob', 'APPROVED', '2026-10-23T12:00:00Z')], { state: 'CLOSED' }), { ok: true, value: 'changes-requested' });

@@ -187,17 +187,24 @@ function parsePullRequestJson<T>(raw: string, ref: string): T {
 
 interface PullReview { author?: { login?: string | undefined } | null | undefined; state?: string | undefined; submittedAt?: string | null | undefined }
 
-/** Whether a reviewer's latest decisive review (approved, changes requested or dismissed; a comment is neither) made after `since` asks for changes. */
+/**
+ * Whether a reviewer's latest decisive review (approved, changes requested or dismissed; a comment is neither) made after `since` asks
+ * for changes. The times are compared as instants: GitHub stamps whole seconds and the local stamp may carry milliseconds, which
+ * sort wrongly as text.
+ */
 function changesRequestedSince(reviews: readonly PullReview[], since: string): boolean {
-	const latest = new Map<string, PullReview>();
+	const sinceMs = Date.parse(since);
+	if (Number.isNaN(sinceMs)) throw new GhCommandError('rejected', `the submission time '${since}' is not a time`);
+	const latest = new Map<string, { review: PullReview; at: number }>();
 	for (const r of reviews) {
 		if (r.state !== 'APPROVED' && r.state !== 'CHANGES_REQUESTED' && r.state !== 'DISMISSED') continue;
-		if (typeof r.submittedAt !== 'string' || r.submittedAt <= since) continue;
+		const at = typeof r.submittedAt === 'string' ? Date.parse(r.submittedAt) : Number.NaN;
+		if (Number.isNaN(at) || at <= sinceMs) continue;
 		const who = r.author?.login ?? '';
 		const seen = latest.get(who);
-		if (seen === undefined || (seen.submittedAt as string) <= r.submittedAt) latest.set(who, r);
+		if (seen === undefined || seen.at <= at) latest.set(who, { review: r, at });
 	}
-	return [...latest.values()].some(r => r.state === 'CHANGES_REQUESTED');
+	return [...latest.values()].some(v => v.review.state === 'CHANGES_REQUESTED');
 }
 
 /**

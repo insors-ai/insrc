@@ -188,11 +188,11 @@ test("a resubmission pushes to the request's branch, opens no second request and
 	s.branch = 'feature/other';
 	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /open from the branch 'feature\/signoff' but this checkout is on 'feature\/other'/);
 	assert.deepEqual([s.published.length, s.opened.length, s.applied.length], [0, 0, 0]);
-	// and so is a branch that can only be read after the files are published
-	s = submit({ [LLD]: headOf({ revision: 2, signoffs: [REQUEST] }) }, { ok: true, value: { branch: 'feature/signoff-2', open: true } });
+	// and so is a checkout whose branch cannot be read: nothing is committed to a branch that may be the wrong one
+	s = submit({ [LLD]: headOf({ revision: 2, signoffs: [REQUEST] }) }, open);
 	s.branch = undefined;
-	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /branch 'feature\/signoff-2' but this checkout is on 'feature\/signoff'/);
-	assert.deepEqual([s.opened.length, s.applied.length], [0, 0]);
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /current branch cannot be read .*switch to 'feature\/signoff'/);
+	assert.deepEqual([s.published.length, s.opened.length, s.applied.length], [0, 0, 0]);
 
 	// a recording that fails part-way is finished by a repeat, against the same request and without a pull request
 	const sent = () => headOf({ revision: 2, signoffs: [entryOf(1, 'acme/demo#9', 'changes-requested')] });

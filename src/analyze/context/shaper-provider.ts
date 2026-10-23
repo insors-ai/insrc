@@ -33,7 +33,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { AnalyzeConfig, AnalyzeShaperProviderKind } from '../../config/analyze.js';
+import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
@@ -75,6 +75,10 @@ export interface ShaperProviderOverrides {
 	 *  non-core tier pin a CLI/Ollama model the single `shaperModel` cannot
 	 *  express. Absent for every legacy caller. */
 	readonly roleModel?: string | undefined;
+	/** The routed role's reasoning effort, set by the RoleRouter on every routed
+	 *  call: a value, or null when the role's tier has none. Absent for callers
+	 *  outside the router, which run at the core tier's effort (cfg.shaperEffort). */
+	readonly roleEffort?: TierEffort | null | undefined;
 }
 
 /**
@@ -240,13 +244,15 @@ export function buildShaperProvider(
 		// degrade to the CLI's own default here, not to a broken subprocess.
 		const model = candidate !== undefined && !isOllamaModelId(candidate) ? candidate : undefined;
 		const source = roleRunner !== undefined ? 'role' : repoOverride !== undefined ? 'repo' : globalExplicit !== undefined ? 'config' : 'client';
+		const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
 		log.info(
-			{ kind, model: model ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
+			{ kind, model: model ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
 			'shaper provider: routing through CliProvider',
 		);
 		return new CliProvider({
 			kind,
 			...(model !== undefined ? { model } : {}),
+			...(effort !== undefined ? { effort } : {}),
 			...(overrides?.cliTimeoutMs !== undefined ? { timeoutMs: overrides.cliTimeoutMs } : {}),
 		});
 	}
@@ -290,7 +296,7 @@ export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
 		const model = usable ? configured : SUMMARISER_CLI_FALLBACK[kind];
 		if (!usable) log.warn({ kind: cliKind, configured, model }, 'summariser provider: the cheap tier model is not a CLI model id; using the built-in cheap model');
 		log.info({ kind: cliKind, model }, 'summariser provider: routing through CliProvider');
-		return new CliProvider({ kind: cliKind, model });
+		return new CliProvider({ kind: cliKind, model, ...(cfg.summariserEffort !== undefined ? { effort: cfg.summariserEffort } : {}) });
 	}
 	log.info({ model: cfg.summariserModel, numCtx: cfg.shaper.ollamaNumCtx }, 'summariser provider: routing through OllamaProvider (local)');
 	const local = loadLocalProviderConfig();

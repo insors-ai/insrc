@@ -47,12 +47,16 @@ interface Submit {
 	heads: Record<string, unknown>;
 	opened: SignoffRequestSpec[];
 	applied: Array<{ id: string; op: string; request: unknown }>;
+	/** The refs the tracker was asked about, and what it answers (undefined: it cannot read a request). */
+	read: string[];
+	earlier: PortResult<{ branch: string; open: boolean }> | undefined;
 	deps: SignoffDeps;
 }
 
-function submit(heads: Record<string, unknown>): Submit {
-	const s: Submit = { heads: { ...heads }, opened: [], applied: [], deps: {} };
+function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Submit {
+	const s: Submit = { heads: { ...heads }, opened: [], applied: [], read: [], earlier, deps: {} };
 	const port = {
+		...(earlier !== undefined ? { readSignoffRequest: (r: SignoffRequestRef) => { s.read.push(r.ref); return s.earlier; } } : {}),
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
 		readAssignee: (): PortResult<string | null> => ({ ok: true, value: 'alice' }),
 		openSignoffRequest: (spec: SignoffRequestSpec): PortResult<SignoffRequestRef> => { s.opened.push(spec); return { ok: true, value: { ref: `acme/demo#${40 + s.opened.length}` } }; },
@@ -100,4 +104,55 @@ test('prerequisiteFailure refuses a stale review including an override-approved 
 		s = submit({ [LLD]: headOf({ status }) });
 		assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), new RegExp(`not approved \\(status ${status}\\)`), status);
 	}
+});
+
+const REQUEST = entryOf(1, 'acme/demo#9', 'changes-requested');
+const stale = (over: Parameters<typeof headOf>[0] = {}) => headOf({ status: 'changes-requested', revision: 2, signoffs: [REQUEST], ...over });
+
+test("the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one", async () => {
+	// the entry is of revision 1 and the head is at revision 2: the last entry of any revision names the request
+	let s = submit({ [LLD]: stale() }, { ok: true, value: { branch: 'feature/signoff', open: true } });
+	await openSignoff('/repo', STORY, [LLD], s.deps);
+	assert.deepEqual(s.read, ['acme/demo#9']);
+	// a head at revision 1 with an open entry, then one whose last entry is the later of two
+	s = submit({ [LLD]: stale({ signoffs: [entryOf(1, 'acme/demo#3', 'completed'), entryOf(2, 'acme/demo#9', 'open')] }) }, { ok: true, value: { branch: 'b', open: true } });
+	await openSignoff('/repo', STORY, [LLD], s.deps);
+	assert.deepEqual(s.read, ['acme/demo#9']);
+
+	// a read that fails is returned and no request is opened or recorded
+	s = submit({ [LLD]: stale() }, { ok: false, kind: 'unreachable', reason: 'gh timed out' });
+	const failed = await openSignoff('/repo', STORY, [LLD], s.deps);
+	assert.equal(failed.ok, false);
+	assert.equal(failed.ok ? '' : failed.kind, 'unreachable');
+	assert.deepEqual([s.opened.length, s.applied.length], [0, 0]);
+
+	// a merged or closed request, a tracker that cannot read a request, an entry that is completed and no entry at all each open a new one
+	const cases: Array<[string, Record<string, unknown>, Submit['earlier']]> = [
+		['merged or closed', { [LLD]: stale() }, { ok: true, value: { branch: 'b', open: false } }],
+		['no readSignoffRequest', { [LLD]: stale() }, undefined],
+		['a completed entry', { [LLD]: stale({ signoffs: [entryOf(1, 'acme/demo#9', 'completed')] }) }, { ok: true, value: { branch: 'b', open: true } }],
+		['no entry', { [LLD]: headOf() }, { ok: true, value: { branch: 'b', open: true } }],
+	];
+	for (const [label, heads, earlier] of cases) {
+		s = submit(heads, earlier);
+		assert.equal((await openSignoff('/repo', STORY, [LLD], s.deps)).ok, true, label);
+		assert.equal(s.opened.length, 1, label);
+		assert.equal(s.applied.length, 1, label);
+	}
+	// nothing is asked of the tracker for a first submission
+	s = submit({ [LLD]: headOf() }, { ok: true, value: { branch: 'b', open: true } });
+	await openSignoff('/repo', STORY, [LLD], s.deps);
+	assert.deepEqual(s.read, []);
+});
+
+test('artifacts naming different earlier open requests are refused as a whole', async () => {
+	const HLD = `HLD-${EPIC}`;
+	const DEF = `DEF-${EPIC}`;
+	const s = submit({
+		[DEF]: headOf({ status: 'changes-requested', revision: 2, signoffs: [entryOf(1, 'acme/demo#9', 'changes-requested')] }),
+		[HLD]: headOf({ status: 'changes-requested', revision: 2, signoffs: [entryOf(1, 'acme/demo#10', 'changes-requested')] }),
+	}, { ok: true, value: { branch: 'b', open: true } });
+	const r = await openSignoff('/repo', { unit: 'epic', repoPath: '/repo', epicHash: EPIC }, [DEF, HLD], s.deps);
+	assert.match(reasonOf(r), /different earlier requests \(acme\/demo#9, acme\/demo#10\): submit them separately/);
+	assert.deepEqual([s.read.length, s.opened.length, s.applied.length], [0, 0, 0]);
 });

@@ -477,11 +477,39 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 		request = { ref: openRef };
 		if (unrecorded.length === 0) return { ok: true, value: request };
 	} else {
+		// artifacts sent to a request before are sent back to it while it is open; this finds that request and never lets a failure to read it open a second one
+		const earlier = earlierRequestOf(unrecorded, port);
+		if (!earlier.ok) return earlier;
 		const opened = openRequest(repo, unit, artifacts.value, port, issue, d);
 		if (!opened.ok) return opened;
 		request = opened.value;
 	}
 	return recordOpened(repo, unrecorded, request, personOf(who.value), d);
+}
+
+/** The request an earlier submission of these artifacts was sent to, and the branch it was opened from, while it can still take a push. */
+interface EarlierRequest { readonly request: SignoffRequestRef; readonly branch: string }
+
+/**
+ * Which earlier request the artifacts being submitted belong to, decided before anything is published. It is the request of the LAST
+ * Signoff entry of each head whatever its revision (a revised head has no entry of its current revision yet), when that entry is open
+ * or changes-requested. Undefined means open a new request, as for a first submission: no such entry, the request is merged or
+ * closed, or the tracker cannot read a request. Artifacts that name different requests are refused as a whole, and a failed read is
+ * returned: a new request is never opened because the earlier one could not be read.
+ */
+function earlierRequestOf(artifacts: readonly Submission[], port: TrackerPort): PortResult<EarlierRequest | undefined> {
+	const refs = new Set<string>();
+	for (const a of artifacts) {
+		const last = signoffsOfMeta(a.meta).at(-1);
+		const ref = last === undefined || last.state === 'completed' ? null : signoffRefOf(last.request);
+		if (ref !== null) refs.add(ref.ref);
+	}
+	if (refs.size > 1) return rejected(`these artifacts were sent to different earlier requests (${[...refs].join(', ')}): submit them separately`);
+	const [ref] = refs;
+	if (ref === undefined || port.readSignoffRequest === undefined) return { ok: true, value: undefined };
+	const read = port.readSignoffRequest({ ref });
+	if (!read.ok) return read;
+	return { ok: true, value: read.value.open ? { request: { ref }, branch: read.value.branch } : undefined };
 }
 
 /** An artifact chosen for submission, with its head. */

@@ -118,3 +118,9 @@ Supersedes the previous section's "no separate flag". There is a global approval
 ## Decision: existing `destructive: true` builtins map to the destructive class (2026-10-23)
 
 Resolves HLD review round 3 finding 3. s3 maps the 8 builtins that set `destructive: true` today (az/vm.ts, k8s/index.ts, aws/s3.ts, gcp/compute.ts, aws/cloudformation.ts, gcp/run.ts, gcp/storage.ts, aws/ec2.ts) to the destructive class, so they ask every time, whatever the flag or chat mode. The old `Tool.destructive` field is retired in favour of the single approval field (or kept as an alias that s3 maps, its choice); s3 also states how the existing `buildApprovalGate` relates to the new approval request.
+
+## s2 LLD review (2026-10-23): three rounds, state
+
+LLD-b7a68147dcf72034-s2 (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/LLD.md). Round 1: 1 HIGH, 4 MED. Round 2: 1 MED (incomplete ToolDeps builder inventory, fixed). Round 3: 2 MED, 0 HIGH, still open:
+1. sc2 and sc3 refinements (typebox TSchema instead of JsonSchema plus a phantom type; callTool over TypedTool with a typed input; convertText takes a deps parameter) differ from the HLD sketches and no amendment is filed; only sc5 amendments exist (AMD-b7a68147dcf72034-1, -2, -3, all draft; -1 is superseded and -2 is a duplicate of -3). One amendment proposal is allowed per design.story step run (s4 and s5 can each carry one), so sc2 and sc3 need their own proposals in a new run.
+2. convertText must call `LLMProvider.completeStructured` with `internalRetry: false` and `maxAttempts: 1` (src/shared/types.ts:290-291, 322-325), pass a signal that combines the per-attempt deadline and `deps.signal`, and use withStructuredRetry as the only retry loop; otherwise each "attempt" hides up to three provider attempts and breaks "at most two attempts per tier". Add a unit test that the fake provider sees exactly 2 + 2 calls.

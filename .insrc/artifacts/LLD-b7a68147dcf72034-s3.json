@@ -85,6 +85,13 @@
         "choice": "Adopt it and pin it with a mode × tool test matrix",
         "rationale": "Recorded in docs/plans/tool-registry.md as the ac6 reading; the DEF cannot be amended with the HLD-only tool.",
         "resolvedAt": "2026-10-23T14:06:50.614Z"
+      },
+      "q063d966a": {
+        "question": "Open design details left to the plan: the exact terminal-client and editor prompt UI, and whether the terminal client and editor open approval.subscribe at attach or on demand.",
+        "status": "resolved",
+        "choice": "Attach-time subscribe, inline prompt",
+        "rationale": "A destructive request expires after 300 s, so the user must see it at once; a passive indicator risks a timeout nobody noticed. Revisit the UI in the build if the user prefers otherwise.",
+        "resolvedAt": "2026-10-23T14:07:19.197Z"
       }
     }
   },

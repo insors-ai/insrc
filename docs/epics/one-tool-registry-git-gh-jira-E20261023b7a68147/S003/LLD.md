@@ -375,6 +375,8 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
   - **resolved**: Accept the direct reads as grounding — The invariants are enforced by per-task checks (previous answer); the direct reads of the code are concrete. _(2026-10-23T14:06:10.568Z)_
 - `q0a9521fc` — DEF reading for s3 ac6: 'a tool that needs approval asks when the effective mode says ask (manual, edit-auto), and a destructive tool always asks'; the amendment tool is HLD-only, so this is recorded here only.
   - **resolved**: Adopt it and pin it with a mode × tool test matrix — Recorded in docs/plans/tool-registry.md as the ac6 reading; the DEF cannot be amended with the HLD-only tool. _(2026-10-23T14:06:50.614Z)_
+- `q063d966a` — Open design details left to the plan: the exact terminal-client and editor prompt UI, and whether the terminal client and editor open approval.subscribe at attach or on demand.
+  - **resolved**: Attach-time subscribe, inline prompt — A destructive request expires after 300 s, so the user must see it at once; a passive indicator risks a timeout nobody noticed. Revisit the UI in the build if the user prefers otherwise. _(2026-10-23T14:07:19.197Z)_
 
 ## Citations
 

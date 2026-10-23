@@ -1,0 +1,650 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792742642323-ru89zj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-23T08:04:02.324Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 2688347,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/delivery-handler-contract.test.ts",
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/__tests__/list-models.test.ts",
+        "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+        "src/daemon/__tests__/server-registry.test.ts",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/index.ts",
+        "src/mcp/__tests__/import-graph.test.ts",
+        "src/daemon/threads/__tests__/helpers/method-class-worker.ts",
+        "src/daemon/threads/__tests__/method-class.test.ts",
+        "src/daemon/threads/method-class.ts",
+        "src/daemon/__tests__/server-forward.test.ts",
+        "src/daemon/__tests__/store-failure-dispatch.test.ts",
+        "src/daemon/__tests__/understanding-rpc.test.ts",
+        "src/daemon/__tests__/update-handlers.test.ts",
+        "src/daemon/server.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/db/graph/__tests__/helpers/store-child.ts",
+        "src/mcp/__tests__/forward-step.test.ts",
+        "src/mcp/__tests__/mcp-process-e2e.test.ts",
+        "src/daemon/status.ts",
+        "src/daemon/threads/__tests__/board-amendments.test.ts",
+        "src/daemon/threads/channel.ts",
+        "src/daemon/threads/status-board.ts",
+        "src/shared/types.ts",
+        "src/db/graph/__tests__/compact.test.ts",
+        "src/db/graph/store.ts",
+        "src/indexer/__tests__/doc-summary-sweep.test.ts",
+        "src/indexer/doc-summary-sweep.ts",
+        "src/indexer/index.ts",
+        "src/daemon/__tests__/queue-threads.test.ts",
+        "src/daemon/queue.ts",
+        "src/daemon/threads/indexing-block.ts",
+        "src/config/__tests__/config-catalog-contract.test.ts",
+        "src/config/__tests__/settings-catalog.test.ts",
+        "src/config/config-catalog.ts",
+        "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts",
+        "src/daemon/threads/__tests__/helpers/request-worker.ts",
+        "src/daemon/threads/__tests__/main-services.test.ts",
+        "src/daemon/threads/main-services.ts",
+        "src/daemon/threads/worker-entry.ts",
+        "src/daemon/threads/worker-requests.ts",
+        "src/workflow/__tests__/artifact-content.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts",
+        "src/daemon/threads/__tests__/router.test.ts",
+        "src/daemon/threads/router.ts",
+        "src/daemon/admin-handlers.ts",
+        "src/daemon/threads/__tests__/admin-worker.test.ts",
+        "src/daemon/threads/admin-status.ts",
+        "src/daemon/threads/admin-worker.ts",
+        "src/daemon/threads/workers.ts",
+        "src/daemon/threads/__tests__/indexing-worker.test.ts",
+        "src/daemon/threads/indexing-port.ts",
+        "src/daemon/threads/indexing-worker.ts",
+        "src/daemon/repo-stats.ts",
+        "src/daemon/steps/daemon-client.ts",
+        "src/daemon/threads/__tests__/indexing-port.test.ts",
+        "src/daemon/threads/__tests__/threads-boot.test.ts",
+        "src/workflow/code-review/freshness.ts",
+        "src/daemon/threads/__tests__/summary-worker.test.ts",
+        "src/daemon/threads/summary-link.ts",
+        "src/daemon/threads/summary-worker.ts",
+        "src/daemon/threads/__tests__/helpers/exit-worker.ts",
+        "src/daemon/threads/__tests__/helpers/hold-worker.ts",
+        "src/daemon/threads/__tests__/summary-link.test.ts",
+        "src/daemon/threads/__tests__/supervisor.test.ts",
+        "src/daemon/threads/indexing-workers.ts",
+        "src/daemon/threads/supervisor.ts",
+        "src/shared/locks/lock-manager.ts",
+        "src/daemon/prune-timer.ts",
+        "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+        "src/daemon/threads/maintenance-entry.ts",
+        "src/daemon/todos-rpc.ts",
+        "src/daemon/understanding-rpc.ts",
+        "src/shared/locks/maintenance-lock.ts",
+        "src/db/graph/__tests__/compact-crash-recovery.test.ts",
+        "src/daemon/threads/maintenance.ts",
+        "src/daemon/threads/__tests__/helpers/deaf-worker.ts",
+        "src/daemon/threads/__tests__/helpers/store-worker.ts",
+        "src/daemon/threads/__tests__/maintenance.test.ts",
+        "src/shared/locks/__tests__/lock-manager.test.ts",
+        "src/daemon/threads/__tests__/latency-isolation.test.ts",
+        "src/indexer/run-record.ts",
+        "src/mcp/__tests__/helpers/mcp-e2e.ts",
+        "package-lock.json",
+        "package.json",
+        "src/db/lance/__tests__/helpers/cross-thread-writer.ts",
+        "src/db/lance/__tests__/lance-cross-thread.test.ts",
+        "src/db/lance/entity-vec.ts",
+        "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/config/__tests__/config-catalog-contract.test.ts",
+        "src/config/config-catalog.ts",
+        "src/daemon/steps/__tests__/step-host.test.ts",
+        "src/mcp/__tests__/forward-step.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts"
+      ],
+      "excludedFromScope": [
+        "docs/mocks/ontology-editor.html",
+        "docs/mocks/ontology-source/ontology.template.html",
+        "docs/mocks/ontology-source/render.mjs",
+        "docs/mocks/ontology-viewer.html",
+        "docs/ontology-builder-prd.html",
+        "docs/ontology-builder-prd.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/method-class.ts:1",
+            "message": "The notes establish the registry module and interface but show no implementation of classOf's required frozen, handler-independent classification table, prescribed admin/indexing assignments, session fallback for other served methods, or undefined result for unserved methods. This required implementation remains unaccounted for.",
+            "expectationRef": "LLD contract 1: MethodClassRegistry.classOf"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/__tests__/method-class.test.ts:35",
+            "message": "The evidence establishes method-list comparison helpers, but does not show the required test using fully constructed runtime handler tables after the update-handler and understanding-route merges. That mandatory coverage remains unimplemented on the supplied evidence.",
+            "expectationRef": "LLD contract 2: MethodClassRegistry.entries"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/server.ts:274",
+            "message": "No note shows the required top-level maintenance guard: acquire a shared lock with ifAvailable, reject immediately with the holder's metadata when unavailable, and retain the hold until completion, exempting only daemon.status and daemon.compact.",
+            "expectationRef": "LLD contract 3: IpcServer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/server.ts:60",
+            "message": "No note shows underHold propagation for nested cross-class requests or the receiving worker skipping reacquisition. This required behavior prevents pending maintenance from refusing a request part-way through.",
+            "expectationRef": "LLD contract 3: IpcServer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/server.ts:198",
+            "message": "Registry-change callbacks are evidenced, but publication through StatusBoard.publishClients on connect, close, and message updates before forwarding is not. The required caller-visible lastMethod ordering remains unimplemented in the supplied evidence.",
+            "expectationRef": "LLD contract 3: IpcServer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/server.ts:69",
+            "message": "The directDispatch factory is evidenced, but no note shows the required compatibility behavior: unknown-method lookup, stream-to-unary fallback, failureMessage handling, and abort on cancellation, or migration of construction sites to that dispatcher.",
+            "expectationRef": "LLD contract 3: IpcServer"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/status-board.ts:88",
+            "message": "The supplied evidence establishes the signature and dispatch but shows no implementation of lane-slot replacement or recomputing idle from both lanes' depths and processing flags. These required postconditions remain unimplemented on the provided evidence.",
+            "expectationRef": "LLD contract 5: StatusBoard.publishLane"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/status.ts:60",
+            "message": "Calling composeQueueLanes does not establish the required numerical mapping. No note shows queueDepth summing both lane depths or each running flag reflecting its lane's processing flag, leaving this required status mapping unimplemented on the provided evidence.",
+            "expectationRef": "LLD contract 5: StatusBoard.publishLane"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/server.ts:194",
+            "message": "The evidence shows a registry listener and a board setter, but no binding that publishes attachedClients() after connect, close, and metadata updates. This required integration remains unimplemented in the supplied evidence, leaving the admin worker's clients snapshot unsynchronized.",
+            "expectationRef": "LLD contract 6: StatusBoard.publishClients"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/router.ts:1",
+            "message": "No evidence shows the required worker-exit integration calling StoreGuard.reclaim(threadId) on every exit and awaiting it before starting the replacement. This required integration is unimplemented in the supplied evidence; reclaim must also retain responsibility for logging and marking unhealthy stores.",
+            "expectationRef": "LLD contract 7: StoreGuard.reclaim"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/queue.ts:301",
+            "message": "The evidence shows drain/yield coordination and queue-state accessors, but no implementation of the required shared code-busy/stopping word updates or publishLane calls. These required state-publication behaviors remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD contract 9: IndexQueue.start"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/indexer/doc-summary-sweep.ts:79",
+            "message": "The evidence establishes asynchronous takeDocSummaryEdit, but does not show the required sweep-side implementation: an async takeEdit hook, an awaited call, and shouldStop/isCodeIdle guards after the last await immediately before summarise. This required integration remains unimplemented in the supplied evidence.",
+            "expectationRef": "LLD contract 10: IndexerService.processJob"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/db/graph/store.ts:861",
+            "message": "The evidence establishes the optional hook parameter but shows no implementation of its required safety path: await beforeRename after root.close() and before renaming; on false, remove the compacted copy, reopen the original, and reject with the specified LmdbStoreError without touching graph.lmdb or its lock file.",
+            "expectationRef": "LLD contract 11: compactGraphStore"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:491",
+            "message": "The supplied evidence establishes createShutdown wiring but does not show the required worker stop semantics, drain completion on report or exit, or client flush/disconnect followed by worker exit waits before main-thread store closure. These shutdown sequencing requirements remain unimplemented in the evidence.",
+            "expectationRef": "LLD contract 12: createShutdown"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:531",
+            "message": "The supplied evidence does not show daemon.shutdown and daemon.update reaching shutdown through a router hub operation, or shutdown waiting for active compaction to finish subject to the hard-exit backstop. These required postconditions remain unimplemented in the evidence.",
+            "expectationRef": "LLD contract 12: createShutdown"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/steps/daemon-client.ts:96",
+            "message": "The evidence establishes dependency scaffolding and local call helpers, but shows no class-based dispatch through the router. The required behavior—routing nested indexing/admin calls to their workers while keeping session calls in-process—is therefore unimplemented in the supplied evidence.",
+            "expectationRef": "LLD contract 14: createInDaemonClient"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/queue.ts:262",
+            "message": "The evidence shows shared-block allocation and accessors, but no binding that publishes IndexQueue lane changes to the code-busy word or connects both indexing workers to that block. The required cross-thread isIndexIdle/isStopping and waitForIndexIdle integration is therefore unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 2: Indexing shared block"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/indexing-port.ts:71",
+            "message": "depthForRepo remains synchronous rather than making the required internal request to the code-indexing worker. Implement the channel request and propagate its asynchronous result through the dependency contract.",
+            "expectationRef": "LLD data-model change 3: Main-thread indexing port"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/indexing-port.ts:41",
+            "message": "The evidence establishes port interfaces and method shapes, but shows no implementation of the required main-thread replacement, board-backed status reads, or exclusion of indexing-class handlers from the main thread. These required parts of the clause remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 3: Main-thread indexing port"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/main-services.ts:75",
+            "message": "The notes establish DaemonInfo and a size helper, but show no implementation of the required main-thread daemon.info hub operation returning startedAt, modelState, installedCommit, lmdbFileSizeMb, and optional maintenance.",
+            "expectationRef": "LLD data-model change 4: Router daemon.info hub op and maintenance state"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:154",
+            "message": "The notes establish status()'s return type, but show no implementation deriving {state: 'compacting', since, activity, reason} from LockManager.query holder metadata while the maintenance lock is held exclusively.",
+            "expectationRef": "LLD data-model change 4: Router daemon.info hub op and maintenance state"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/db/graph/store.ts:855",
+            "message": "The evidence establishes the optional callback signature only; it does not show implementation of invoking it between close and rename, or aborting the rename and reopening the original when it returns false. These required behaviors remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 9: compactGraphStore pre-rename hook"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/channel.ts:35",
+            "message": "The evidence establishes router support for underHold, but shows no implementation of the required in-daemon client propagation or receiving worker maintenance-lock bypass. These required parts of the contract remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD data-model change 10: RequestEnvelope.underHold"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/indexing-workers.ts:58",
+            "message": "The evidence shows run/abandon helpers and failure coordination, but no implemented path that rejects the pending remote job when the summary worker exits and starts a replacement before the next handoff. These required recovery steps are missing from the evidence, leaving summary-lane continuation unimplemented.",
+            "expectationRef": "LLD error case 3: The document-summary worker exits mid-summary."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/supervisor.ts:1",
+            "message": "Unimplemented expectation: no evidence shows a worker-exit path that reclaims the DuckDB permit, logs and marks released or unhealthy outcomes after the quiescence limit, and starts a replacement while daemon.status remains responsive.",
+            "expectationRef": "LLD error case 4: A worker exits holding the DuckDB permit."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/index.ts:491",
+            "message": "Unimplemented expectation in the supplied evidence: lock-loss shutdown must skip both draining and store closure, then terminate with SIGKILL. Store health checks and status conversion do not establish this shutdown behavior.",
+            "expectationRef": "LLD error case 5: The graph store loses its locks."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/maintenance.ts:149",
+            "message": "Unimplemented expectation in the supplied evidence: maintenance must refuse to start while store health is unhealthy, and active maintenance must stop waiting on lock loss and enter the fatal shutdown path.",
+            "expectationRef": "LLD error case 5: The graph store loses its locks."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/threads/maintenance.ts:208",
+            "message": "The timeout warning omits the shared holders. Include the LockTimeoutError diagnostics so the warning identifies which requests prevented maintenance.",
+            "expectationRef": "LLD error case 6: Requests already running do not finish within the pause limit after maintenance asked for the lock."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:209",
+            "message": "The timeout produces a different error message, and the evidence shows no manual-response translation. A timed-out daemon.compact must return {error: 'daemon.compact: the daemon did not become idle within <limit>; try again later'}.",
+            "expectationRef": "LLD error case 6: Requests already running do not finish within the pause limit after maintenance asked for the lock."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/worker-requests.ts:83",
+            "message": "The evidence establishes a shared post wrapper but shows no implementation of the required DataCloneError recovery. The reply path must catch clone failures and send a ReplyEnvelope with \"the result of <method> could not be returned: <message>\" or a stream error frame, ensuring the request receives an answer.",
+            "expectationRef": "LLD error case 8: A worker's reply or frame cannot be structured-cloned."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/router.ts:227",
+            "message": "The evidence establishes cancellation plumbing but does not show the required behavior implemented: stream cancellation must send a CancelEnvelope and abort the worker handler’s AbortSignal, while unary cancellation must let the handler finish and drop its late reply.",
+            "expectationRef": "LLD error case 9: The socket closes while its request runs on a worker."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:100",
+            "message": "The supplied evidence does not show the required exclusion of daemon.status polls from activity accounting. Accepting the method and class in requestArrived, and checking idleForMs during maintenance, does not establish that repeated polls preserve the 30-minute idle window.",
+            "expectationRef": "LLD edge case 1: daemon.status polls arrive every few seconds from the TUI and plugins while the daemon is otherwise idle."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/status.ts:77",
+            "message": "The evidence supports request-refusal plumbing but shows no implementation of the required daemon.status maintenance state: compacting with the same activity and reason used in the refusal. This status-reporting portion of the expectation remains unimplemented in the supplied evidence.",
+            "expectationRef": "LLD edge case 2: A session request arrives during maintenance."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/admin-handlers.ts:1",
+            "message": "Unimplemented expectation: no evidence shows daemon.compact refusing while the queue has work with 'daemon.compact: indexer is busy (queue=N, processing=...)'.",
+            "expectationRef": "LLD edge case 3: daemon.compact while the queue has work."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:120",
+            "message": "The notes show threshold-capable interfaces and test fixtures, but no implementation that skips maintenance when either reclaimable-space threshold is unmet and checks again after the next idle period. This required edge case remains unimplemented in the supplied evidence.",
+            "expectationRef": "LLD edge case 4: The idle timer fires but reclaimable space is below 25% or 256 MB."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/server.ts:69",
+            "message": "The evidence shows no implementation of the required stream-to-unary fallback. A stream request for a unary-only method must invoke the unary handler and return exactly one {id, result} line; accepting both handler tables does not establish that behavior.",
+            "expectationRef": "LLD edge case 6: A stream request for a unary-only method."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/steps/daemon-client.ts:106",
+            "message": "The evidence establishes generic class-directed forwarding but does not show `repo.reindex` selecting the code-indexing worker. The required nested-call routing and worker-reply return are therefore unimplemented in the supplied evidence; main-thread exclusion is not established.",
+            "expectationRef": "LLD edge case 7: A step handler on the main thread makes a nested call to repo.reindex."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/queue.ts:310",
+            "message": "The evidence establishes a waiting lock helper and queue job-start control, but shows no binding between them. The required behavior—waiting while maintenance holds the lock and starting the indexing job after release—remains unimplemented in the evidenced job loop.",
+            "expectationRef": "LLD edge case 10: An indexing job is due while maintenance holds the lock."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance-entry.ts:27",
+            "message": "The supplied evidence shows refresh-locking surfaces but does not show the required stream-lifetime exemptions or maintenance skip/resume behavior implemented. These are needed so long-lived subscriptions permit daemon idleness and maintenance.",
+            "expectationRef": "LLD edge case 11: A client keeps an understanding.watch or todos.subscribe stream open for hours."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:491",
+            "message": "The evidence shows shutdown delegation and stopping hooks, but no implementation of the required re-entrancy, 20-second backstop, drain-before-close ordering, or locks-lost path that skips draining and closing and terminates with SIGKILL. These shutdown guarantees remain unimplemented in the supplied evidence.",
+            "expectationRef": "LLD invariant 3: Shutdown is re-entrant, keeps the 20 s backstop, closes the stores after the queue drained, and on locks-lost skips the drain and close and ends by SIGKILL."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/summary-link.ts:169",
+            "message": "The supplied evidence shows MessagePort rebinding and asynchronous summary-job serving, but no implementation of shared RequestEnvelope/ReplyEnvelope consumption for those jobs. sc3 requires summary-job execution between indexing workers to use the shared envelopes.",
+            "expectationRef": "LLD shared contract sc3 (consumes)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/worker-entry.ts:53",
+            "message": "The evidence shows worker startup and shared-store health wiring, but no implementation of the required router guard-block installation through startDaemonWorker.",
+            "expectationRef": "LLD shared contract sc1 (consumes)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/supervisor.ts:117",
+            "message": "The evidence shows supervised exit handling, but no implementation of the required dead-worker lock reclamation before starting its replacement.",
+            "expectationRef": "LLD shared contract sc1 (consumes)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/admin-status.ts:71",
+            "message": "The notes show admin status consuming daemon information, but no implementation of the required daemon.info hub operation. Add that operation and its binding to supply the admin reader.",
+            "expectationRef": "LLD migration step 4: Add publishLane and its hub binding to the board, the daemon.info hub op, and the admin module reading them, with recorded-response tests against the single-thread answers."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/__tests__/board-amendments.test.ts:38",
+            "message": "The represented board harness does not satisfy the required recorded-response comparisons against single-thread answers. Add those comparisons for the migrated admin responses, including daemon.info-derived fields.",
+            "expectationRef": "LLD migration step 4: Add publishLane and its hub binding to the board, the daemon.info hub op, and the admin module reading them, with recorded-response tests against the single-thread answers."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/workers.ts:60",
+            "message": "Admin-worker startup and routing structure are present, but the evidence does not show the required daemon.threads.enabled gate implemented. Wire admin-worker activation and dispatch behind that flag so the migration remains optional and rollbackable.",
+            "expectationRef": "LLD migration step 5: Start the admin worker and route admin methods to it behind daemon.threads.enabled."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/supervisor.ts:136",
+            "message": "The evidence shows worker replacement but no restart limit, leaving the required bounded-restart behavior unimplemented.",
+            "expectationRef": "LLD migration step 7: Add worker supervision (exit handling, lock reclaim, restart limits) and rewire shutdown to stop the workers, wait for the drain and close the stores on the main thread after they exit."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/supervisor.ts:117",
+            "message": "The evidence shows exit handling but no completed lock reclamation after worker exit, leaving the required lock-recovery behavior unimplemented.",
+            "expectationRef": "LLD migration step 7: Add worker supervision (exit handling, lock reclaim, restart limits) and rewire shutdown to stop the workers, wait for the drain and close the stores on the main thread after they exit."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/index.ts:491",
+            "message": "Shutdown integration and asynchronous worker termination are shown, but no evidence implements waiting for the drain and worker exits before closing stores on the main thread, as required.",
+            "expectationRef": "LLD migration step 7: Add worker supervision (exit handling, lock reclaim, restart limits) and rewire shutdown to stop the workers, wait for the drain and close the stores on the main thread after they exit."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/shared/locks/lock-manager.ts:810",
+            "message": "The evidence establishes watchWorker's lock reclamation, but shows no registration of every worker with it. This leaves the required worker-lifecycle integration unimplemented; unreclaimed holds can prevent exclusive maintenance after a worker exits.",
+            "expectationRef": "LLD migration step 8: Add the maintenance controller on the daemon maintenance lock (lock framework afcfa027): every request takes it shared with no wait and is refused with the activity and reason while maintenance holds it; idle detection, the reclaimable estimate, the exclusive request with the pause limit, handle close, compaction and release; route daemon.compact through it, keeping today's responses; register every worker with watchWorker."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:177",
+            "message": "The evidence establishes maintenance execution, but shows no implementation routing daemon.compact through the controller while preserving its existing responses. The manual RPC integration required by this clause remains unaccounted for.",
+            "expectationRef": "LLD migration step 8: Add the maintenance controller on the daemon maintenance lock (lock framework afcfa027): every request takes it shared with no wait and is refused with the activity and reason while maintenance holds it; idle detection, the reclaimable estimate, the exclusive request with the pause limit, handle close, compaction and release; route daemon.compact through it, keeping today's responses; register every worker with watchWorker."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/db/graph/store.ts:855",
+            "message": "Only the optional hook parameter is established as implemented. The required invocation between close and rename, and the false-result path that removes the compacted copy, reopens the original store, preserves graph.lmdb and its lock file, and rejects with the specified LmdbStoreError, are not shown implemented. The parameter alone does not provide the planned pre-rename safeguard.",
+            "expectationRef": "PLAN task t5: compactGraphStore pre-rename hook"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/indexer/doc-summary-sweep.ts:89",
+            "message": "The evidence establishes async edit integration but does not show the required ordering: await takeEdit, then perform the final shouldStop/isCodeIdle checks immediately before summarise with no intervening await. This leaves t6's edit-priority and code-idle guarantees unimplemented in the supplied evidence.",
+            "expectationRef": "PLAN task t6: Async takeEdit in the document-summary sweep"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/queue.ts:70",
+            "message": "No supplied note shows implementation of the required summary-lane processor hook. IndexQueue must accept and invoke a processor that hands summary jobs elsewhere while preserving lane ordering, summary yielding, and stop/drain behavior.",
+            "expectationRef": "PLAN task t7: IndexQueue: shared indexing block, lane publishing, pause/resume, remote summary processor"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/main-services.ts:41",
+            "message": "threadsEnabled enables threading when configuration is absent, the key is unset, or parsing fails. Task t8 requires the feature gate to default off, preserving single-threaded behavior until explicitly enabled.",
+            "expectationRef": "PLAN task t8: Main-thread thread services and the worker request entry"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/indexing-port.ts:71",
+            "message": "depthForRepo throws instead of issuing the required internal request to the code-indexing worker. Implement worker-backed retrieval so the main-thread indexing port can return the repository's queue depth, as task t12 requires.",
+            "expectationRef": "PLAN task t12: Main-thread indexing port and routed in-daemon client"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/shared/locks/maintenance-lock.ts:70",
+            "message": "The evidence establishes maintenance helpers but does not show the required bindings for todo-retention timers, watcher work, every indexing job, understanding.watch/todos.subscribe refreshes, or getGraphStore. These entry-point protections remain unimplemented in the supplied evidence; defining helpers alone does not ensure those operations wait, skip, or reject during compaction.",
+            "expectationRef": "PLAN task t15: Daemon maintenance lock at every entry point"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/main-services.ts:50",
+            "message": "The evidence shows a numeric configuration reader, but no implementation of the four required configuration schema keys with defaults of 30 minutes, 25%, 256 MB, and 10 minutes.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/db/graph/store.ts:977",
+            "message": "The estimation interfaces are evidenced, but neither summing pages in use across every named database nor requiring both reclaimable thresholds is shown implemented.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/maintenance.ts:185",
+            "message": "The notes establish a shared compaction path, but do not show the required health gate, exclusive daemon.maintenance request with activity/reason metadata, or bounded pause that abandons before closing handles.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/maintenance.ts:199",
+            "message": "Worker closing and a pre-rename callback are evidenced, but acknowledgement validation feeding that callback is not. The required refusal to rename when any live worker has not acknowledged graph.close remains unimplemented in the supplied evidence.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:149",
+            "message": "A manual controller entry point is shown, but no note establishes daemon.compact forwarding from the code-indexing worker, preserving its busy refusal, and returning CompactResult or the not-idle-in-time error.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/maintenance.ts:154",
+            "message": "The status interface is evidenced, but daemon.status reporting maintenance from LockManager.query is not shown implemented.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "src/daemon/threads/maintenance.ts:170",
+            "message": "No supplied note shows shutdown waiting for active maintenance or integration with the hard-exit backstop, leaving the required protection against shutdown interrupting compaction unimplemented in the evidence.",
+            "expectationRef": "PLAN task t16: Maintenance controller and daemon.compact through it"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/threads/__tests__/latency-isolation.test.ts:58",
+            "message": "The latency and session checks call Router.forward directly, bypassing the Unix socket. Task t17 requires the cross-cutting proof on a temporary HOME and socket, so these checks do not validate responsiveness through the actual daemon IPC transport.",
+            "expectationRef": "PLAN task t17: End-to-end validation, smoke and enabling threads by default"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 84,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/threads/channel.ts:1",
+            "message": "serveHub is present but failing/unverified: its reaching test file, src/db/graph/__tests__/store-health-threads.test.ts, is absent from the test record, so passing execution cannot be confirmed.",
+            "expectationRef": "serveHub",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "618321"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/server.ts:1",
+            "message": "The promised regression coverage is present but failing/unverified in part: the server, dispatch, update, understanding, step and MCP records pass, but the grounded store-health-threads test has no recorded result confirming the store-child portion.",
+            "expectationRef": "existing server, dispatch, update, understanding, step and MCP suites and the store-child suites pass with servers built through directDispatch",
+            "confidence": "observation",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/repo-stats.ts:1",
+            "message": "The promised regression coverage is present but failing/unverified in part: status, shutdown, queue and MCP suites have passing records, but no repo-stats suite result is supplied, and the records do not confirm that all these existing suites ran with threads enabled.",
+            "expectationRef": "existing status, shutdown, repo-stats, queue and MCP suites pass unchanged in meaning with threads enabled",
+            "confidence": "observation",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 13,
+      "med": 54,
+      "low": 1
+    }
+  }
+}

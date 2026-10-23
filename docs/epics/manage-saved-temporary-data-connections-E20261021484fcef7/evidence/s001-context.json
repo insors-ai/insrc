@@ -1,0 +1,104 @@
+{
+  "bundle": {
+    "system": "code-shaper: S001 APIs anchored on /Users/subhagho/work/projects/insors/insrc/src/daemon/db-rpc.ts.",
+    "focus": "S001 foundational LLD: existing saved config/provider signatures, DriverPool callers, converter layout and daemon lifecycle. Shared sc1/sc2/sc3/sc8 remain proposed interfaces.",
+    "summary": "Symbol lookup found saveConnectionRpc, loadConnections, saveConnections, acquirePool, DriverPool, setSecret and getKey. ConnectionConfig is located in shared/db-driver.ts, but the graph lists no fields or callers; direct source inspection is required. Four acquirePool graph callers include schema-drift and db tools; coverage is incomplete. The converters directory has six TypeScript files and 42 entities; daemon/lifecycle exports running/PID and model bootstrap helpers.",
+    "structure": "src/daemon/db/drivers/converters: avro.ts, bson.ts, fixed-width.ts, shared.ts, types.ts, xlsx.ts.\n## Tests\nThe generic subject db was not distinctive enough for test.locate; no test search was made. Use source file lookup to find actual tests.\n## Diagnostics\n49 missing-source relationships; caller inventory is not exhaustive.",
+    "surface": "saveConnectionRpc(params): Promise<SaveConnectionResult | { error: string }>\nloadConnections(repoPath): Promise<LoadedConnections>\nsaveConnections(repoPath,file): Promise<string>\nacquirePool(repoPath): Promise<DriverPool>\nDriverPool\nsetSecret(ref,value): Promise<void>\ngetKey(name): Promise<string | null>\nisAlreadyRunning\nwritePid\nclearPid",
+    "artefacts": "cite: { kind: 'entity', entityId: '038d5f4d63e76ffc1f5c3262ab91b735' }\ncite: { kind: 'entity', entityId: 'fb8611baf3c3f6e216b838820392130b' }\ncite: { kind: 'entity', entityId: 'd1b819b0ceb417072018e3561eda2d90' }\ncite: { kind: 'entity', entityId: '4401ca420a5ed47be50d0d21898373f7' }",
+    "upstream": ""
+  },
+  "sourceInventory": {
+    "basis": "rg over production src excluding tests, followed by source reads; graph output has incomplete relationships. Build must add static import/alias coverage and reject newly unclassified routes.",
+    "entries": [
+      {
+        "file": "src/analyze/runtimes/data/_shared.ts",
+        "role": "pool alias/test seam",
+        "migration": "Replace PoolSource/acquireDataPool with context-bound resolver port; test seams cannot bypass validation."
+      },
+      {
+        "file": "src/analyze/runtimes/data/discovery-connections.ts",
+        "role": "metadata listing",
+        "migration": "Safe config snapshot only; no driver needed; preserve own-directory scope."
+      },
+      {
+        "file": "src/analyze/runtimes/data/discovery-objects.ts",
+        "role": "driver acquire and list",
+        "migration": "Hold lease through complete enumeration and async result consumption."
+      },
+      {
+        "file": "src/analyze/runtimes/data/schema-table.ts",
+        "role": "driver acquire/describe",
+        "migration": "Hold revision lease through all schema/shape operations."
+      },
+      {
+        "file": "src/analyze/measure.ts",
+        "role": "pool lookup and direct acquire",
+        "migration": "Metadata measure remains safe snapshot; driver-based measures hold lease through all target probes."
+      },
+      {
+        "file": "src/analyze/explore/db-connections-list.ts",
+        "role": "injected acquire alias",
+        "migration": "Inject safe list port, preserve deterministic exploration output."
+      },
+      {
+        "file": "src/analyze/explore/db-tables-list.ts",
+        "role": "injected acquire alias and driver use",
+        "migration": "Use injected resolver lease callback across table discovery."
+      },
+      {
+        "file": "src/analyze/explore/db-table-describe.ts",
+        "role": "injected acquire alias and driver use",
+        "migration": "Use injected resolver lease callback across describe."
+      },
+      {
+        "file": "src/daemon/tools/builtins/db/index.ts",
+        "role": "access-policy metadata, discovery, acquireDriver, file listing",
+        "migration": "Separate metadata-only snapshot from leased Driver callbacks; migrate all acquireDriver consumers, including async iteration."
+      },
+      {
+        "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+        "role": "direct acquire and long probe",
+        "migration": "Hold lease across whole drift collection, release on error/cancel."
+      },
+      {
+        "file": "src/daemon/db/pool-cache.ts",
+        "role": "DriverPool construction/cache",
+        "migration": "Keep canonical lookupRoot cache; no user temporary registration into shared saved cache."
+      },
+      {
+        "file": "src/daemon/db/pool.ts",
+        "role": "factory, idle close, registerEphemeral",
+        "migration": "Internal construction covered by lease; idle close respects active counts; ephemeral entry point requires future validated overlay or test-only/private owner, never shared user state."
+      },
+      {
+        "file": "src/daemon/db-rpc.ts",
+        "role": "direct transient factory",
+        "migration": "S001 exposes bounded private resource/materialization port; S002 later replaces test orchestration. Legacy test must use safe memory-only policy immediately."
+      },
+      {
+        "file": "src/daemon/db/index.ts",
+        "role": "barrel re-export",
+        "migration": "Do not let old acquirePool barrel imports bypass tracked resolver; restrict raw pool entry points to internal audited callers."
+      },
+      {
+        "file": "src/daemon/db/registry.ts",
+        "role": "factory registry",
+        "migration": "Metadata registration only; getFactory consumers above are audited construction boundaries."
+      },
+      {
+        "file": "src/daemon/db/drivers/mssql.ts",
+        "role": "driver-internal pool.acquire",
+        "migration": "Library pool use, not management DriverPool; entire operation remains inside outer connection lease."
+      }
+    ]
+  },
+  "supplementalSources": [
+    "src/daemon/db/config.ts:148",
+    "src/daemon/server.ts:154",
+    "src/cli/services/daemon.ts:171",
+    "src/daemon/db/drivers/converters/types.ts:39",
+    "src/analyze/runtimes/data/_shared.ts:53",
+    "src/daemon/db/__tests__/config.test.ts:95"
+  ]
+}

@@ -1,0 +1,981 @@
+{
+  "artifact": "define",
+  "stage": "define",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "p01",
+      "ref": "c1",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "The referenced product requirements document exists at docs/connection-management-prd.html.",
+      "evidence": "docs/connection-management-prd.html:1 was found and contains `<!doctype html>`, confirming the file exists at the cited path.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read confirms the existence claim."
+      }
+    },
+    {
+      "claimId": "p02",
+      "ref": "4/c1",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD and its clickable mock define the CM01\u2013CM08 experience on which this definition relies.",
+      "evidence": "docs/connection-management-prd.html:11\u201318 explicitly define CM01\u2013CM08. However, the supplied matches and the line 1 doctype read do not establish a clickable mock or its alignment with those requirements. DEF.md:56 repeats the assertion but does not independently verify it.",
+      "action": "Supply evidence identifying the clickable mock and its CM01\u2013CM08 coverage, or narrow the premise to the verified PRD.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The PRD coverage is verified; the clickable-mock portion remains unverifiable from the supplied evidence.",
+        "options": [
+          "Retain the premise and supply evidence of the clickable mock and its CM01\u2013CM08 coverage.",
+          "Narrow the premise to state that the PRD defines the intended CM01\u2013CM08 experience."
+        ]
+      }
+    },
+    {
+      "claimId": "p03",
+      "ref": "3/c1",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD release boundary excludes new drivers, automatic configuration discovery, ontology generation, and team-shared credentials.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:1, contains '<!doctype html>'. It provides no evidence about the release boundary or any of the four claimed exclusions; the premise is unverifiable.",
+      "action": "Gather the PRD's release-boundary or exclusions passages and verify all four exclusions before relying on this premise.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither confirming nor correcting the claimed exclusions.",
+        "options": [
+          "Supply PRD passages establishing all four exclusions and retain the premise if confirmed.",
+          "Mark the release-boundary premise as unverified pending substantive PRD evidence."
+        ]
+      }
+    },
+    {
+      "claimId": "p04",
+      "ref": "c2",
+      "kind": "citation",
+      "severity": "MED",
+      "premise": "src/daemon/db-rpc.ts is the cited code anchor for the existing connection IPC contract.",
+      "evidence": "Unverifiable: src/daemon/db-rpc.ts:1 contains only '/**', confirming the file exists but revealing no IPC contract. The truncated grep results show unrelated connections, including SQLite usage at camon/src/camon/storage.py:68\u201375, and no matches establishing the cited file's role.",
+      "action": "Gather the connection IPC handler definitions from src/daemon/db-rpc.ts to verify the anchor before retaining or correcting the citation.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither verifies nor contradicts the anchor's claimed role; no replacement anchor is supported.",
+        "options": [
+          "Read the relevant handlers in src/daemon/db-rpc.ts and retain the citation if confirmed.",
+          "Run a scoped connection IPC search under src/daemon and correct the citation if another anchor is established."
+        ]
+      }
+    },
+    {
+      "claimId": "p05",
+      "ref": "c3",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The scope.assess analyzeBundles[0] artifact contains the CM01\u2013CM08 structural grounding referenced by all five stories.",
+      "evidence": "UNVERIFIABLE: docs/connection-management-prd.html:11\u201318 lists CM01\u2013CM08 requirements, but the supplied matches do not show the claimed scope.assess analyzeBundles[0] contents or its references from stories s1\u2013s5. Other analyzeBundles matches concern unrelated artifacts. The grep output is truncated at 50 matches, so absence here does not establish nonexistence.",
+      "action": "Provide the specific scope.assess analyzeBundles[0] artifact contents and the corresponding references from all five stories to verify structural grounding and coverage.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence confirms the requirement identifiers but cannot establish the claimed cross-artifact relationship; no evidence-derived replacement is available.",
+        "options": [
+          "Supply the bundle contents and each story\u2019s reference, then reassess the premise.",
+          "Qualify the structural-grounding and five-story coverage claim as unverified pending those records."
+        ]
+      }
+    },
+    {
+      "claimId": "p06",
+      "ref": "4/c1",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "Reuse of the IDE-fork connection pane requires confirmation in the separate IDE repository before integration implementation.",
+      "evidence": "AGENTS.md:27 assigns workbench ownership to the IDE fork. docs/connection-management-prd.html:8 reports an existing Data Sources editor and add/edit/remove/test commands; :30 lists IDE-side source references, including browser/dbDrivers/dbDriversPane.ts. However, no IDE implementation or explicit pre-integration confirmation requirement is supplied. The separate ownership is supported; reuse feasibility and the claimed prerequisite remain unverifiable. No concrete build-breaking contradiction is established.",
+      "action": "Retain confirmation as a pending integration check and verify the cited IDE sources before treating reuse as established.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports a separate IDE surface but cannot establish its current reuse contract or whether confirmation is a documented mandatory gate.",
+        "options": [
+          "Retain the premise as an explicit project-imposed verification gate, pending inspection of the cited IDE sources.",
+          "Reword the premise to distinguish the PRD's reported existing surface from its unverified current reuse feasibility."
+        ]
+      }
+    },
+    {
+      "claimId": "p07",
+      "ref": "E20261021484fcef7:FR001",
+      "kind": "inventory",
+      "severity": "MED",
+      "premise": "Connection management must cover every driver supported by the daemon for both saved and temporary connections.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and do not expose the daemon's driver inventory or saved/temporary connection support. design/analyze-framework-data.md:11 mentions connection RPCs, and docs/connection-management-prd.html:35 shows sample postgres and csv connections, but neither establishes exhaustive driver coverage. The only source read, src/daemon/db-rpc.ts:1, contains only '/**'. No concrete build-breaking contradiction is established.",
+      "action": "Gather the authoritative driver registrations and the saved and temporary connection handling paths, then verify that FR001 and s5/ac1 cover every supported driver.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot establish the inventory; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Re-run targeted probes against daemon driver registrations and both connection paths to verify exhaustive coverage.",
+          "Obtain an authoritative driver inventory and use it to define explicit saved and temporary connection acceptance checks."
+        ]
+      }
+    },
+    {
+      "claimId": "p08",
+      "ref": "E20261021484fcef7:FR002",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Every saved and temporary connection is scoped to a repository.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and provide no saved or temporary connection models or scoping logic. AGENTS.md:138 addresses graph-search repository scoping; AGENTS.md:141 and README.md:126\u2013127 address entity registration. README.md:227 mentions MCP connections but establishes no repository ownership. None confirms or contradicts the premise.",
+      "action": "Gather targeted evidence for saved and temporary connection models, persistence, and creation paths to verify repository ownership in both cases.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot support a factual replacement or establish a concrete build-breaking failure.",
+        "options": [
+          "Retain the premise pending targeted evidence establishing repository scoping for both connection types.",
+          "With human approval, label repository scoping as a required behavior whose current implementation remains unverified."
+        ]
+      }
+    },
+    {
+      "claimId": "p09",
+      "ref": "k1",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "The daemon owns connection persistence and secrets, and clients access connection operations exclusively through IPC.",
+      "evidence": "AGENTS.md:132,136 and CLAUDE.md:132,136 establish daemon-owned DB access through IPC, but do not establish connection persistence or secret ownership specifically. The anchor reads expose only `<!doctype html>` at docs/connection-management-prd.html:1 and `/**` at src/daemon/db-rpc.ts:1. The truncated grep provides no connection-specific handlers, persistence implementation, secret storage, or client call paths. The full premise is therefore unverifiable; no concrete failure is demonstrated.",
+      "action": "Gather targeted evidence for connection persistence, secret ownership, IPC handler registration, and client connection calls before treating this premise as verified.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports the general DB-access boundary but cannot verify the stronger connection-specific contract.",
+        "options": [
+          "Retain the premise pending targeted implementation and client-call evidence.",
+          "Narrow the premise to the documented rule that the daemon owns DB access and CLI, MCP, and workbench clients communicate through IPC."
+        ]
+      }
+    },
+    {
+      "claimId": "p10",
+      "ref": "k1",
+      "kind": "closed-union",
+      "severity": "MED",
+      "premise": "No client-facing connection response exposes stored secret values.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and show no connection-response implementation. camon/README.md:83 concerns excluded logging data, not connection responses. The only supplied read, src/daemon/db-rpc.ts:1, contains only '/**'. This evidence neither establishes complete response coverage nor demonstrates secret exposure.",
+      "action": "Gather targeted evidence for all client-facing connection response handlers, their returned fields, and any sanitization before judging the universal claim.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot support a factual correction or establish a concrete implementation failure.",
+        "options": [
+          "Retain the premise pending targeted handler, response-shape, and sanitization evidence.",
+          "Reword the premise as a required acceptance invariant whose current implementation remains unverified."
+        ]
+      }
+    },
+    {
+      "claimId": "p11",
+      "ref": "k2",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Connection registry read failures and rejected stale mutations preserve both existing registry contents and credentials.",
+      "evidence": "Unverifiable: the truncated grep results contain no connection-registry implementation or tests establishing preservation on read failures or stale mutation rejection. docs/apm-integration-prd.md:68 and :148 concern APM mutations, not connection registry contents or credentials. The only supplied read of docs/connection-management-prd.html:1 is '<!doctype html>', which does not address the premise.",
+      "action": "Gather targeted reads of connection-registry loading, revision validation, mutation persistence, and credential writes/deletes, plus tests demonstrating that read failures and stale rejections leave both stores unchanged.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither verification nor an evidence-derived artifact correction.",
+        "options": [
+          "Provide implementation and test evidence covering preservation of both registry contents and credentials for each failure path.",
+          "If this is a desired invariant rather than established behavior, explicitly frame it as a requirement with acceptance tests."
+        ]
+      }
+    },
+    {
+      "claimId": "p12",
+      "ref": "k2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "An uncertain mutation response must be reconciled idempotently before another mutation is issued.",
+      "evidence": "docs/connection-management-prd.html:18 requires idempotent retry/reconciliation after an uncertain response. Line 58 guards form submission with `if(operation||!validDraft())return`; line 60 describes reconciliation without repeating creation. These partial prototype matches support the intended ordering, but do not verify mutation-path enforcement or idempotent reconciliation in the implementation. The capped search provides no reads resolving k2, s1/ac3, or s4/ac2. No concrete build-breaking contradiction is established.",
+      "action": "Obtain targeted evidence for the mutation guard and reconciliation contract, including whether unresolved outcomes block every relevant mutation.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot establish the complete ordering guarantee or support an exact artifact correction.",
+        "options": [
+          "Verify the invariant using targeted implementation and acceptance-test reads.",
+          "Specify this as a required implementation invariant, with acceptance checks for blocked mutations and duplicate-free reconciliation."
+        ]
+      }
+    },
+    {
+      "claimId": "p13",
+      "ref": "k3",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "A temporary connection is visible and resolvable only in its originating workbench session and repository.",
+      "evidence": "Unverifiable. Matches at camon/mitmproxy-linux-bootstrap/lib/common.sh:162\u2013178 concern temporary bootstrap processes; design/analyze-framework-data.md:107\u2013119 documents connectionId inputs but no session or repository isolation. The truncated results provide no implementation evidence for temporary-connection visibility or resolution scoping.",
+      "action": "Gather targeted evidence for temporary-connection storage, listing, and resolution, including how each enforces originating workbench session and repository boundaries.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the isolation contract; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide implementation evidence showing session and repository checks for both listing and resolution.",
+          "If this is intended behavior rather than an existing guarantee, identify it as a requirement and specify cross-session and cross-repository acceptance checks."
+        ]
+      }
+    },
+    {
+      "claimId": "p14",
+      "ref": "k3",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Temporary connection configurations and credentials are held only in memory.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and contain no implementation evidence for temporary connection configurations or credentials. AGENTS.md:39 describes DuckDB's in-memory query engine, while camon/README.md:5 describes default payload persistence; neither establishes this premise. Temporary log files at camon/mitmproxy-linux-bootstrap/lib/common.sh:168\u2013177 do not establish whether connection credentials are persisted.",
+      "action": "Gather targeted evidence for temporary connection creation, storage, logging, and cleanup before asserting memory-only retention.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts memory-only retention; no evidence-derived correction is available.",
+        "options": [
+          "Retain the premise as unverified pending targeted implementation evidence.",
+          "Reframe memory-only retention as a requirement to implement and validate, rather than an established property."
+        ]
+      }
+    },
+    {
+      "claimId": "p15",
+      "ref": "k3",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Workbench session termination or daemon restart expires temporary connection configurations, secrets, and resources.",
+      "evidence": "Unverifiable: README.md:216,233 list daemon lifecycle commands but establish no expiration behavior. camon/mitmproxy-linux-bootstrap/lib/common.sh:170\u2013174 and camon/mitmproxy-macos-bootstrap/lib/common.sh:213\u2013217 clean up bootstrap processes and temporary logs, not workbench connection configurations, secrets, or resources. The grep output is truncated and contains no evidence tying either claimed trigger to connection cleanup.",
+      "action": "Gather targeted evidence for workbench session termination and daemon restart, tracing each trigger to expiration of temporary connection configurations, secrets, and resources before relying on k3 or s3/ac2.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied matches neither verify nor contradict the claimed lifecycle guarantee; no mechanical correction is supported.",
+        "options": [
+          "Retain the premise pending targeted evidence establishing cleanup for both triggers and all three state categories.",
+          "Recast the statement as a required lifecycle behavior to implement and validate, rather than an established guarantee."
+        ]
+      }
+    },
+    {
+      "claimId": "p16",
+      "ref": "k4",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Deleting or discarding a connection removes its registration without deleting source files or database data.",
+      "evidence": "Unverifiable as implemented behavior. docs/connection-management-prd.html:18 specifies registration-only removal, and :62 shows a prototype removing a connection from its in-memory data array. Neither establishes production deletion/discard behavior. The supplied search is truncated at 50 matches and includes no production connection-removal handler or downstream implementation; the camon DELETE/unlink matches concern unrelated retention and cleanup.",
+      "action": "Gather the production delete/discard handlers and their downstream registry, credential, and driver operations to verify that removal preserves source files and database data.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports intended behavior and prototype behavior, but cannot establish the production guarantee or justify a mechanical correction.",
+        "options": [
+          "Retain the premise pending targeted evidence of production removal paths and preservation tests.",
+          "Reword the premise as a required deletion/discard invariant, citing the PRD, rather than an established implementation fact."
+        ]
+      }
+    },
+    {
+      "claimId": "p17",
+      "ref": "k4",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Connection removal must reject a busy connection before mutating its registration or credentials.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and include no source implementation establishing busy-check ordering. docs/daemon.md:856 says a connection may stay busy; docs/connection-management-prd.html:18 describes removal requirements, but its in-use clause is truncated. The prototype removeConnection at docs/connection-management-prd.html:62 checks revision before filtering rows, but shows no connection-busy guard or credential mutation sequence. These matches neither confirm nor contradict the premise.",
+      "action": "Gather targeted source reads covering connection removal, busy-state checks, and registration/credential mutations to verify their ordering.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot establish implementation ordering, and supplies no safe mechanical correction.",
+        "options": [
+          "Retain the ordering requirement and obtain source evidence plus a test proving busy rejection leaves registration and credentials unchanged.",
+          "Explicitly describe the ordering as a required invariant whose implementation remains unverified."
+        ]
+      }
+    },
+    {
+      "claimId": "p18",
+      "ref": "k5",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "The connection IPC evolution must explicitly preserve existing clients and synchronize the contract with the separate IDE repository.",
+      "evidence": "Unverifiable from the supplied evidence. The grep results are truncated at 50 matches and show no connection IPC contract or separate IDE synchronization requirement. README.md:227 and :292 mention MCP connections, but do not establish compatibility obligations. The only read, src/daemon/db-rpc.ts:1, contains '/**' and reveals no contract. No concrete build-breaking contradiction is established.",
+      "action": "Gather targeted evidence for the connection IPC handlers, existing client payloads, and the separate IDE contract synchronization requirement before treating this premise as verified.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence does not support a mechanical correction or establish that the premise is false.",
+        "options": [
+          "Retain the premise pending targeted evidence of existing clients and mirrored IPC contracts.",
+          "Present compatibility and IDE synchronization as proposed requirements pending confirmation of the external contract."
+        ]
+      }
+    },
+    {
+      "claimId": "p19",
+      "ref": "s1/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Adding or editing a saved connection requires a registered repository and a daemon-supported driver.",
+      "evidence": "Unverifiable from the supplied truncated matches. AGENTS.md:141 and README.md:127 establish registration requirements for entity upserts, not saved-connection creation or editing. design/analyze-framework-data.md:60 describes driver compatibility checks for template dispatch, not connection persistence. No supplied source lines show createConnection/updateConnection or their repository and driver validation.",
+      "action": "Obtain targeted source evidence for saved-connection create and update handlers, including repository-registration and supported-driver checks, before treating this premise as verified.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence neither confirms nor contradicts the stated connection requirements; no mechanical correction is supported.",
+        "options": [
+          "Retain the premise pending targeted evidence confirming both checks on create and update.",
+          "If this is intended new behavior, explicitly frame both checks as requirements to implement and verify rather than existing guarantees."
+        ]
+      }
+    },
+    {
+      "claimId": "p20",
+      "ref": "s1/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Creating a saved connection rejects a duplicate ID, while editing preserves the existing connection ID and driver.",
+      "evidence": "docs/connection-management-prd.html:12 requires unique IDs and prohibits adds silently updating existing IDs; :13 requires fixed ID and driver during editing. These document intended behavior, but the truncated matches contain no implementation or tests verifying enforcement. The premise is unverifiable as current behavior.",
+      "action": "Obtain create/update implementation and test evidence for duplicate rejection and preservation of ID and driver, or identify the premise explicitly as a requirement.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports the documented requirement but does not establish implemented behavior.",
+        "options": [
+          "Retain the premise pending implementation and test evidence confirming both behaviors.",
+          "Reword as a documented requirement: saved-connection creation must reject duplicate IDs, and editing must preserve the existing ID and driver."
+        ]
+      }
+    },
+    {
+      "claimId": "p21",
+      "ref": "s1/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Editing a saved connection populates its non-secret fields and preserves supported fields unknown to the editor.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and contain no connection-editor loading or saving implementation. design/analyze-context-builder.md:130 describes data-shaper enumeration and sample-data redaction, not saved-connection editing. None of the supplied lines establishes non-secret field population or preservation of supported fields unknown to the editor.",
+      "action": "Gather targeted evidence for saved-connection retrieval, editor initialization, save-payload construction, and persistence merging to verify both claims.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither confirmation nor a safe artifact correction.",
+        "options": [
+          "Provide targeted source reads covering connection loading and the full save path.",
+          "Provide tests demonstrating field population and round-trip preservation of supported fields unknown to the editor."
+        ]
+      }
+    },
+    {
+      "claimId": "p22",
+      "ref": "s1/ac1",
+      "kind": "closed-union",
+      "severity": "LOW",
+      "premise": "Credential edits expose the three explicit operations Keep, Replace, and Clear.",
+      "evidence": "docs/connection-management-prd.html:13 explicitly specifies Keep stored / Replace / Clear for credential edits, including their respective semantics. docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md:81 repeats Keep/Replace/Clear in s1/ac1. This confirms the three prescribed operations; it does not establish an existing implementation union.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The evidence confirms the stated credential-edit requirement."
+      }
+    },
+    {
+      "claimId": "p23",
+      "ref": "s1/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Cancelling an add or edit leaves saved configuration and credentials unchanged.",
+      "evidence": "Unverifiable from the supplied capped results. docs/connection-management-prd.html:55 shows Cancel calling discard(), resetForm(), and clearRecovery(); :42 shows discard() only checks dirty state and asks for confirmation. These mock handlers support the intended behavior, but the evidence does not include resetForm()/clearRecovery() implementations, production add/edit handlers, or credential persistence paths. It therefore cannot establish that saved configuration and credentials remain unchanged.",
+      "action": "Gather production add/edit cancellation and persistence paths, including credential writes, and verify that cancelling either flow leaves saved state unchanged.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports cancellation intent but does not verify persistence behavior; no mechanical artifact correction is justified.",
+        "options": [
+          "Retain the acceptance criterion and obtain implementation evidence plus cancellation tests covering configuration and credentials.",
+          "Describe cancellation preservation as a required behavior pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p24",
+      "ref": "s1/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "A stale edit cannot overwrite a newer connection revision or recreate a deleted connection.",
+      "evidence": "Unverifiable from the supplied evidence. docs/connection-management-prd.html:18 requires revision checks; :58 shows a truncated prototype save-conflict condition involving missing entries and version mismatch; :62 checks versions before prototype removal. These document/prototype matches do not establish authoritative connection-update behavior or atomic ordering with deletion. The search was capped at 50 matches and supplies no relevant backend implementation.",
+      "action": "Provide targeted backend reads showing revision validation, rejection of updates to missing connections, and atomic ordering of updates against concurrent saves/deletes, plus corresponding concurrency tests.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The evidence neither verifies nor contradicts the backend guarantee; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Supply backend mutation and concurrency-test evidence to verify the guarantee.",
+          "Treat the statement as an acceptance requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p25",
+      "ref": "s1/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Simultaneous create operations for the same scoped connection ID produce exactly one successful creation.",
+      "evidence": "UNVERIFIABLE: the grep results are truncated at 50 matches and contain no scoped connection creation implementation or concurrency test. camon/src/camon/addon_runtime.py:222,329 concerns a logging lock; design/analyze-framework-data.md:544 describes conversion serialization, not connection creation. Neither establishes exactly one successful creation.",
+      "action": "Gather targeted evidence for the scoped connection creation path, its atomic duplicate protection, and a concurrent same-ID creation test before validating s1/ac2.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the concurrency guarantee; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide creation-path and storage atomicity evidence plus a concurrent same-scoped-ID test.",
+          "Retain this as an acceptance requirement and mark its implementation grounding unverified pending targeted probes."
+        ]
+      }
+    },
+    {
+      "claimId": "p26",
+      "ref": "s1/ac3",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Save outcomes distinguish persistence, activation, and refresh so that activation or refresh failure does not imply persistence failure.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no implementation or outcome handling for saveConnection. design/analyze-framework-data.md:11 lists db.saveConnection as live but does not describe persistence, activation, or refresh failure semantics. camon/src/camon/tui.py:252\u2013253 and :440\u2013441 show refresh calls only; they do not establish separate save outcomes.",
+      "action": "Gather targeted source reads covering saveConnection, its callers, outcome types, and error handling to verify that activation or refresh failures preserve the reported persistence result.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the claimed outcome separation; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide targeted implementation and test evidence establishing separate persistence, activation, and refresh outcomes.",
+          "Treat the premise as an unverified requirement until the relevant save and failure-handling paths are inspected."
+        ]
+      }
+    },
+    {
+      "claimId": "p27",
+      "ref": "s1/ac3",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Retrying activation or refresh after a successful create does not issue another create.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and supplies no relevant create-success or activation/refresh retry control flow. camon/src/camon/tui.py:252\u2013253 schedules and invokes refresh_data; :381\u2013384 handles tab activation and focus. Neither establishes whether retries issue another create. The supplied matches do not confirm or contradict s1/ac3.",
+      "action": "Gather scoped evidence for the create operation, retained success state, and activation/refresh retry handlers; verify that retries after successful creation bypass create.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence does not support a mechanical artifact correction or establish a concrete failure.",
+        "options": [
+          "Provide scoped source reads covering creation success and subsequent activation/refresh retries.",
+          "Provide a focused test demonstrating that activation and refresh retries after successful creation leave the create-call count at one."
+        ]
+      }
+    },
+    {
+      "claimId": "p28",
+      "ref": "s2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Story s2 depends on story s1.",
+      "evidence": "DEF.md:32,36,71,85 identify S001 and S002 and their titles, but none of the five supplied matches states a dependency or prerequisite relationship. The claimed s2 \u2192 s1 ordering is unverifiable from this evidence.",
+      "action": "Obtain evidence establishing whether S002 requires an output of S001 before retaining the dependency.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "Story identifiers and listing order alone do not establish a dependency; no evidence-derived text correction is available.",
+        "options": [
+          "Retain the dependency if additional evidence establishes that S002 requires S001.",
+          "Remove the dependency if review confirms the stories can be implemented independently."
+        ]
+      }
+    },
+    {
+      "claimId": "p29",
+      "ref": "s2/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Testing a draft uses the same merged configuration and retained or replacement credentials that Save would use.",
+      "evidence": "Unverifiable from the supplied truncated grep results. docs/connection-management-prd.html:13 specifies matching Test/Save endpoint and credential behavior, but does not demonstrate implementation. Lines 20 and 57 describe a simulated test without daemon or credential-storage access. design/analyze-framework-data.md:11 lists db.saveConnection and db.testConnection as live, but no supplied source lines show their configuration merging or credential resolution.",
+      "action": "Gather source evidence for both Test and Save paths, including configuration merging and retained/replacement credential resolution, to establish parity.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence establishes intended behavior, but neither verifies nor contradicts implementation parity; no mechanical artifact correction is supported.",
+        "options": [
+          "Supply implementation reads tracing Test and Save through configuration merging and credential resolution.",
+          "Frame parity as a required acceptance condition pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p30",
+      "ref": "s2/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Testing a draft persists neither draft configuration nor draft secrets.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no implementation reads tracing draft testing or secret/configuration writes. design/analyze-framework-data.md:11 lists db.saveConnection and db.testConnection as live, but does not establish whether testing persists draft configuration or secrets. camon/tests/test_extract.py:4 concerns payload persistence, not draft connection testing.",
+      "action": "Gather targeted implementation evidence for the draft-test entry point, its handler and downstream configuration/secret operations, plus tests asserting neither is persisted.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the premise; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Trace the draft-test execution path and verify that it performs no configuration or secret writes.",
+          "Provide tests demonstrating unchanged configuration and secret storage after successful and failed draft tests."
+        ]
+      }
+    },
+    {
+      "claimId": "p31",
+      "ref": "s2/ac1",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "A connection test reports reachability rather than guaranteeing schema completeness.",
+      "evidence": "Unverifiable: the supplied grep results are truncated at 50 matches and contain no connection-test implementation or contract. AGENTS.md:165 concerns tool input schemas; design/analyze-context-builder.md:69 concerns context schema enforcement. Neither establishes whether a connection test reports reachability or guarantees schema completeness.",
+      "action": "Provide targeted evidence for the connection-test implementation, its success criteria, and any schema-introspection calls before accepting s2/ac1.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither confirmation nor a safe textual correction.",
+        "options": [
+          "Supply the connection-test implementation and tests establishing what success means.",
+          "Supply an authoritative connection-test contract distinguishing reachability from schema completeness."
+        ]
+      }
+    },
+    {
+      "claimId": "p32",
+      "ref": "s2/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Connection test results include elapsed duration and sanitize errors before exposing them to clients.",
+      "evidence": "Unverifiable from the truncated 50-match probe. design/analyze-framework-data.md:11 lists db.testConnection as live but provides no result shape or error-handling implementation. camon/src/camon/addon_runtime.py:261 calculates traffic duration, and camon/src/camon/models.py:30 defines duration_ms; neither establishes connection-test behavior. No supplied source lines show connection-test timing or sanitization before client exposure.",
+      "action": "Provide targeted source reads of db.testConnection, its result construction, and its error-to-client path to verify both elapsed duration and error sanitization.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the premise; no mechanical artifact correction is supported.",
+        "options": [
+          "Gather targeted implementation evidence for both timing and error sanitization, then reassess the premise.",
+          "Reword the artifact to identify timing and sanitization as requirements pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p33",
+      "ref": "s2/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Draft changes, repository switches, and form closure invalidate pending connection test results.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and provides no source implementation of connection-test result invalidation. design/analyze-framework-data.md:11 lists db.testConnection as live; docs/connection-management-prd.html:27 and :29 discuss connection management and testing, but do not establish ordering on draft changes, repository switches, or form closure.",
+      "action": "Gather targeted source reads covering connection-test completion and all three invalidation events, then verify that stale results cannot update form state.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the ordering guarantee; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide targeted implementation evidence for result guards and all three invalidation events.",
+          "Clarify that this is required acceptance behavior awaiting implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p34",
+      "ref": "s2/ac2",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "A pending connection test disables repeated tests until completion or a 10-second timeout permits retry.",
+      "evidence": "docs/connection-management-prd.html:14 explicitly requires disabling repeated Test while pending and timing out after 10 seconds with retry. Line 57 corroborates the ordering in the prototype: it guards against pending tests, sets pending=true and disables Test, then clears pending and re-enables Test in the result callback. This confirms the prescribed behavior; the truncated prototype excerpt does not independently establish its timer duration.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The premise matches the explicit connection-testing requirement."
+      }
+    },
+    {
+      "claimId": "p35",
+      "ref": "s2/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Connection testing releases transient resources after completion, cancellation, or timeout.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and include no connection-testing implementation or lifecycle tests. design/analyze-framework-data.md:11 lists db.testConnection as live but establishes no cleanup behavior. camon/src/camon/storage.py:74\u201375 shows finally/connection.close(), without linking it to the connection-testing path or cancellation and timeout handling.",
+      "action": "Gather targeted source reads for the connection-test handler, its driver calls, and cleanup tests covering completion, cancellation, and timeout before asserting this guarantee.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the cleanup guarantee and supports no safe artifact correction.",
+        "options": [
+          "Provide implementation and test evidence establishing cleanup for all three terminal paths.",
+          "Keep this as an explicit acceptance requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p36",
+      "ref": "s3",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Story s3 depends on story s1.",
+      "evidence": "DEF.md:71 identifies S001 as managing saved endpoints and credentials; DEF.md:100 identifies S003 as using temporary connections within a workbench session. Matches at lines 32 and 40 identify their requirements, and line 1 identifies the artifact. None establishes that s3 depends on s1, so the ordering premise is unverifiable.",
+      "action": "Provide an explicit dependency declaration or evidence that s3 requires an output of s1 before retaining this ordering.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence establishes story identities but provides no dependency relationship.",
+        "options": [
+          "Retain the dependency after supplying evidence that s3 requires s1.",
+          "Mark the dependency as unverified pending confirmation of the stories\u2019 implementation requirements."
+        ]
+      }
+    },
+    {
+      "claimId": "p37",
+      "ref": "s3/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Temporary connection creation rejects an ID already present in any connection scope visible to the originating session and repository.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no temporary-connection creation or duplicate-ID validation logic. camon/src/camon/setup.py:146\u2013150 concerns temporary files; design/analyze-framework-data.md:107\u2013109 documents discovery operations accepting connectionId, not creation or scope visibility. These matches neither confirm nor contradict the premise.",
+      "action": "Gather targeted source reads for temporary-connection creation, duplicate-ID checks, and connection-scope visibility for the originating session and repository, then reassess s3/ac1.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports no safe artifact correction.",
+        "options": [
+          "Provide creation-handler and scope-resolution evidence to verify the claimed rejection behavior.",
+          "If this states intended behavior, identify it as a requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p38",
+      "ref": "s3/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Closing the connection panel or switching repositories retains temporary connections until their workbench session ends.",
+      "evidence": "Unverifiable: the supplied grep is truncated at 50 matches and shows no connection-panel, repository-switch, or workbench-session lifecycle implementation. Matches such as camon/src/camon/setup.py:146\u2013150 concern temporary files, and camon/mitmproxy-linux-bootstrap/lib/common.sh:170\u2013174 concern temporary-process cleanup; neither establishes temporary-connection retention.",
+      "action": "Gather targeted evidence for temporary-connection ownership and cleanup on panel closure, repository switching, and workbench-session termination before treating s3/ac2 as grounded.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the lifecycle claim and supports no safe artifact correction.",
+        "options": [
+          "Provide targeted lifecycle source reads and reassess the premise.",
+          "Treat retention as an explicit requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p39",
+      "ref": "s3/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The interface explains temporary connection lifetime before the user adds a temporary connection.",
+      "evidence": "Unverifiable: the supplied search is truncated at 50 matches and contains no temporary-connection interface or ordering evidence. camon/GETTING_STARTED.md:215\u2013216 describes retention of CAMON records; camon/mitmproxy-linux-bootstrap/lib/common.sh:162\u2013178 concerns temporary ports and processes. Neither establishes that lifetime guidance appears before adding a temporary connection.",
+      "action": "Provide targeted interface reads showing the lifetime explanation and the add-connection action, including their display order and visibility conditions.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the ordering premise; no evidence-derived text correction is safe.",
+        "options": [
+          "Retain the premise pending targeted evidence of the interface ordering.",
+          "Recast the statement as a required acceptance behavior rather than a verified existing behavior."
+        ]
+      }
+    },
+    {
+      "claimId": "p40",
+      "ref": "s4",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Story s4 depends on both story s1 and story s3.",
+      "evidence": "DEF.md:71, :100, and :115 identify S001, S003, and S004 respectively; :32, :40, and :44 list their requirements. None of the seven supplied matches states a dependency or ordering relationship, so s4's dependency on both s1 and s3 is unverifiable.",
+      "action": "Supply dependency declarations or prerequisite evidence establishing that s4 requires both s1 and s3.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "Story identities and titles alone do not establish dependency edges; no evidence-derived text correction is available.",
+        "options": [
+          "Provide explicit dependency declarations for s4 \u2192 s1 and s4 \u2192 s3.",
+          "Present the dependency ordering as a proposed design decision pending confirmation."
+        ]
+      }
+    },
+    {
+      "claimId": "p41",
+      "ref": "s4/ac1",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Delete and Discard require confirmation identifying the connection ID and scope, and cancellation preserves the connection.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no relevant Delete/Discard connection handlers, confirmation prompts, or cancellation paths. README.md:64 concerns workflow approval gates; camon/mitmproxy-macos-bootstrap/uninstall.sh:41 concerns certificate deletion; design/analyze-context-builder.md:197 only declares scopeRef. None establishes the claimed ordering, displayed connection ID and scope, or preservation on cancellation.",
+      "action": "Gather targeted source reads for connection Delete and Discard handlers, their confirmation prompts, and cancellation branches, including where mutation occurs.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither verifies nor contradicts the premise; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide targeted handler and prompt evidence to verify both operations and cancellation behavior.",
+          "If this describes intended behavior, identify it explicitly as an acceptance requirement and provide checks for confirmation content and cancellation preservation."
+        ]
+      }
+    },
+    {
+      "claimId": "p42",
+      "ref": "s4/ac1",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Successful connection removal checks the expected revision, removes only the registration and its owned credentials, and releases idle resources.",
+      "evidence": "Unverifiable from the supplied evidence. docs/connection-management-prd.html:18 specifies revision checks and removal of registration and owned credentials, but is a requirement, not implementation evidence. Line 62 shows a revision comparison before mock-row removal; line 20 explicitly states the mock performs no credential storage or persistent writes. The truncated search provides no production removal-handler evidence establishing revision-check ordering, credential ownership boundaries, or idle-resource release.",
+      "action": "Gather targeted production removal-handler reads and their credential/resource cleanup callees to verify revision validation precedes mutation, only owned registration and credentials are removed, and idle resources are released.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports the intended requirement but cannot establish actual removal behavior; no mechanical artifact correction is justified.",
+        "options": [
+          "Retain the premise pending targeted production-handler and cleanup evidence.",
+          "Reword the premise as a required acceptance behavior rather than an established implementation fact."
+        ]
+      }
+    },
+    {
+      "claimId": "p43",
+      "ref": "s4/ac2",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Busy or stale removal failures retain the connection row and provide retry guidance.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no connection-removal implementation or tests. docs/apm-integration-prd.md:68 discusses rejecting stale APM requests, and design/indexer.html:316\u2013317 discusses stale PID cleanup; neither establishes connection-row retention or retry guidance on removal failure.",
+      "action": "Gather targeted evidence for connection-removal failure handling and tests covering row retention and retry guidance for both busy and stale failures.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the premise, so no evidence-derived artifact edit is safe.",
+        "options": [
+          "Provide implementation and test excerpts verifying both failure cases.",
+          "Treat the statement as an acceptance requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p44",
+      "ref": "s4/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "After successful removal, new analysis operations cannot resolve the removed connection.",
+      "evidence": "Unverifiable: the 50-match truncated search supplies no source reads establishing removal completion or subsequent analysis resolution. docs/connection-management-prd.html:62 shows a UI removal function filtering its data array; it does not establish daemon behavior. docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S006/CR.md:50 describes connection lookup loops but provides no removal ordering or invalidation evidence. The unknown-connection test at docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t3-suites.md:1082 is skipped.",
+      "action": "Gather targeted source reads for removal completion, connection resolution, and any cached connection state; verify that analysis started after successful removal rejects the removed connection.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the ordering guarantee; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Retain the acceptance criterion and supply source evidence plus a passing remove-then-analyze test.",
+          "Mark the guarantee as unverified pending targeted removal and resolution probes."
+        ]
+      }
+    },
+    {
+      "claimId": "p45",
+      "ref": "s5",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "Story s5 depends on stories s1, s2, s3, and s4.",
+      "evidence": "The supplied DEF.md matches identify S001\u2013S005 at lines 71, 85, 100, 115, and 130, and their requirements at lines 32\u201348. None states dependency edges or ordering constraints. The claim that s5 depends on all four preceding stories is therefore unverifiable from this evidence.",
+      "action": "Provide explicit dependency declarations or prerequisite evidence establishing each of s5's four claimed dependencies.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "Story identities and titles alone cannot establish dependency ordering; no evidence-derived correction is available.",
+        "options": [
+          "Supply dependency declarations confirming all four edges.",
+          "Review the prerequisites for s5 and revise its dependency list to the supported edges."
+        ]
+      }
+    },
+    {
+      "claimId": "p46",
+      "ref": "E20261021484fcef7:S005:FR001",
+      "kind": "inventory",
+      "severity": "LOW",
+      "premise": "The two client integration targets are the VS Code extension and the separate IDE fork.",
+      "evidence": "docs/connection-management-prd.html:8 explicitly distinguishes the separate insrc IDE fork from the standalone VS Code extension. Line 30 lists source references for both integrations. AGENTS.md:27 identifies the IDE fork as owning the VSCode workbench, and README.md:287 identifies the VS Code extension. These confirm the two stated integration targets; README.md:68 also mentioning JetBrains does not contradict this task's scoped targets.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports both named client integration targets."
+      }
+    },
+    {
+      "claimId": "p47",
+      "ref": "s5/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Searching Settings for insrc connections exposes a Manage Connections entry point.",
+      "evidence": "Unverifiable: docs/connection-management-prd.html:7,11 prescribe the Settings entry and search behavior; line 20 explicitly identifies fictional mock screens. docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md:142 repeats the desired acceptance behavior. vscode-plugin/src/extension.ts:106 and src/surfaces/command-registry.ts:55 show generic command registration, but no supplied evidence establishes a searchable Settings contribution or its Manage Connections action.",
+      "action": "Supply Settings contribution and action-wiring evidence, or clarify that this is required future behavior and validate it through an acceptance test.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence establishes product intent, not implemented Settings discoverability; it does not establish a concrete contradictory failure.",
+        "options": [
+          "Retain this as a future acceptance requirement and require a Settings search/navigation acceptance test.",
+          "If this describes existing behavior, provide the Settings contribution and Manage Connections handler evidence before relying on it."
+        ]
+      }
+    },
+    {
+      "claimId": "p48",
+      "ref": "s5/ac1",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The connection editor retains the selected registered repository and requires explicit repository selection in multi-root workspaces.",
+      "evidence": "Unverifiable: the supplied grep results are truncated and contain no connection-editor implementation or tests establishing selection retention or explicit selection in multi-root workspaces. AGENTS.md:141 establishes repository registration through repo.add; README.md:219 describes the Repos pane. Neither verifies the claimed editor behavior.",
+      "action": "Gather targeted connection-editor source and test evidence for retained repository selection and mandatory explicit selection in multi-root workspaces before treating this premise as established.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The evidence neither confirms nor contradicts the editor behavior, so no evidence-derived artifact correction is safe.",
+        "options": [
+          "Provide connection-editor state and persistence evidence plus multi-root selection validation tests.",
+          "Treat the behavior as an unverified acceptance requirement pending implementation verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p49",
+      "ref": "s5/ac1",
+      "kind": "closed-union",
+      "severity": "MED",
+      "premise": "Existing command-palette and editor entry points share connection-management behavior with the Settings entry point.",
+      "evidence": "Unverifiable: docs/connection-management-prd.html:26 prescribes shared management behavior, and docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md:142 repeats that acceptance requirement. The implementation matches at vscode-plugin/src/extension.ts:106 and vscode-plugin/src/surfaces/command-registry.ts:46,55 show generic command registration only; they do not identify connection commands, editor entry points, Settings routing, or a shared handler. These matches neither verify shared behavior nor establish that the targeted entry points do not exist.",
+      "action": "Identify the actual connection command registrations, editor entry point, and Settings route, then verify their handler wiring; distinguish required future behavior from established implementation.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports a product requirement, but not a claim about existing implementation. No mechanical correction is established.",
+        "options": [
+          "Reword the premise as required behavior: Settings and existing palette/editor entry points must share connection-management behavior.",
+          "Retain the implementation claim pending source evidence identifying the entry points and their shared handler."
+        ]
+      }
+    },
+    {
+      "claimId": "p50",
+      "ref": "s5/ac2",
+      "kind": "closed-union",
+      "severity": "MED",
+      "premise": "Connection list filters expose All, Saved, and Temporary views with scope badges and counts matching the selected repository and filter.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and provides no connection filter definition, badge rendering, or repository-filtered count logic. README.md:21\u201325 concerns documentation badges; AGENTS.md:247 concerns diagram scope; camon/src/camon/__pycache__/storage.cpython-312.pyc:124 concerns request/session counts. These do not establish or contradict s5/ac2.",
+      "action": "Gather targeted source reads for the connection filter type, view controls, scope badges, and repository/filter count calculation before judging this premise.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence does not support a mechanical correction or a concrete build-breaking failure.",
+        "options": [
+          "Provide focused source evidence establishing the filter variants, badges, and counts.",
+          "Clarify whether s5/ac2 specifies new acceptance behavior rather than asserting an existing closed union."
+        ]
+      }
+    },
+    {
+      "claimId": "p51",
+      "ref": "s5/ac2",
+      "kind": "inventory",
+      "severity": "MED",
+      "premise": "The connection manager distinguishes loading, empty registry, empty filter, failed read, and offline states.",
+      "evidence": "Unverifiable: the capped search supplies requirements and mockup references, not connection-manager implementation. docs/connection-management-prd.html:11 requires distinct loading, failed-read, and empty states; :16 distinguishes read failure from an empty registry and requires unavailable-daemon handling; :21 lists mock screens. These do not establish that the manager implements all five states, including empty filter.",
+      "action": "Supply targeted implementation evidence showing the manager's state derivation and rendering for all five states, or clarify that this is a required behavior rather than an existing inventory.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports intended behavior but cannot verify implemented state distinctions; no mechanical correction is justified.",
+        "options": [
+          "Retain the premise and provide implementation reads demonstrating all five distinct states.",
+          "Recast the premise as an acceptance requirement, with implementation verification still pending."
+        ]
+      }
+    },
+    {
+      "claimId": "p52",
+      "ref": "s5/ac2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "A newly added connection becomes visible in the connection manager after successful creation.",
+      "evidence": "Unverifiable: the search is truncated at 50 matches and provides no connection-creation success handler or connection-manager update path. camon/src/camon/tui.py:252\u2013253 shows periodic refresh, but does not establish refresh after connection creation. design/analyze-framework-data.md:11 lists db.listConnections and db.saveConnection in documentation; it does not demonstrate creation-to-display ordering.",
+      "action": "Gather source evidence for successful connection creation, the subsequent list refresh or state update, and connection-manager rendering to verify the ordering.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied matches neither confirm nor contradict the required visibility after creation; no evidence-derived artifact correction is safe.",
+        "options": [
+          "Trace the creation success handler through the manager's refresh or state update and rendering.",
+          "Provide an integration test demonstrating that a successfully created connection appears in the manager."
+        ]
+      }
+    },
+    {
+      "claimId": "p53",
+      "ref": "s5/ac2",
+      "kind": "ordering",
+      "severity": "LOW",
+      "premise": "Navigating away from a dirty connection form offers Discard and Cancel before abandoning edits.",
+      "evidence": "docs/connection-management-prd.html:16 explicitly requires discard/cancel when switching repository or closing a dirty form. Line 42 checks dirty and requests confirmation before proceeding. Lines 47 and 53 guard navigation and repository changes before resetForm(), restoring the selection when canceled. Line 55 guards form cancellation and routes closing through the guarded show('settings'). These matches confirm the required ordering.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence confirms confirmation occurs before edits are abandoned."
+      }
+    },
+    {
+      "claimId": "p54",
+      "ref": "s5/ac3",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "Both client integrations provide labeled controls and visible keyboard focus under dark and light themes.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and do not establish labeled controls or visible keyboard focus in both client integrations under both themes. camon/src/camon/tui.py:329,347,384 show focus handling; :189 shows a background token. camon/tests/test_config.py:7 concerns a dark-navy default. None verifies the complete premise, and no reads resolving s5/ac3 or s5/ac1 were supplied.",
+      "action": "Identify both client integrations and supply scoped source evidence for control labels and focus styling, plus keyboard validation under dark and light themes.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the contract; no mechanical artifact correction is supported.",
+        "options": [
+          "Retain the criterion pending scoped evidence and keyboard validation for both integrations in both themes.",
+          "Reword the statement as an explicit acceptance requirement awaiting verification rather than an established capability."
+        ]
+      }
+    },
+    {
+      "claimId": "p55",
+      "ref": "s5/ac3",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Connection-management errors retain the current draft while secret inputs remain masked.",
+      "evidence": "Unverifiable: the grep output is truncated at 50 matches and supplies no connection-management draft state or secret-input rendering evidence. camon/src/camon/tui.py:433\u2013434, 462\u2013463, and 486\u2013487 show exception handling and error notifications, but do not establish draft retention or masking.",
+      "action": "Gather focused evidence for connection-management error handlers, draft-state updates, and secret-input rendering before asserting this behavior.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied matches neither confirm nor contradict the premise; no evidence-derived artifact correction is available.",
+        "options": [
+          "Provide targeted source reads showing draft retention on connection-management errors and secret-input masking.",
+          "Frame this behavior as an acceptance requirement awaiting implementation verification rather than an established property."
+        ]
+      }
+    },
+    {
+      "claimId": "p56",
+      "ref": "s5/ac3",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "Compatibility behavior for mixed client and daemon versions must be verified in both extension and IDE-fork integration.",
+      "evidence": "Unverifiable: the grep results are truncated at 50 matches and show no relevant client/daemon compatibility contract or integration checks. README.md:302 concerns extension installation; camon/pyproject.toml:7 supplies an unrelated version. The only read, src/daemon/db-rpc.ts:1, contains '/**' and establishes no behavior. This evidence neither confirms nor contradicts the premise.",
+      "action": "Gather targeted evidence for mixed-version behavior and integration checks in both clients, including relevant daemon handlers and expected outcomes.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence cannot establish the external contract or support a mechanical artifact correction.",
+        "options": [
+          "Retain the requirement pending targeted evidence from both client integrations and daemon handlers.",
+          "Explicitly mark compatibility behavior as unresolved until supported version combinations and expected outcomes are established."
+        ]
+      }
+    },
+    {
+      "claimId": "p57",
+      "ref": "5",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD citation c1 supports constraints k1, k2, k3, and k4 concerning secret ownership, mutation safety, temporary lifetime, and safe removal.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:1, contains '<!doctype html>'. It provides no content for c1 or k1\u2013k4 and cannot verify that the citation supports secret ownership, mutation safety, temporary lifetime, or safe removal.",
+      "action": "Provide the text of c1 and k1\u2013k4 and the relevant PRD passages, then verify support for each constraint.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the claimed support; no evidence-derived artifact edit is safe.",
+        "options": [
+          "Supply c1, k1\u2013k4, and the relevant PRD passages for verification.",
+          "Revisit the citation mapping after inspecting the PRD, retaining only constraints supported by its text."
+        ]
+      }
+    },
+    {
+      "claimId": "p58",
+      "ref": "6",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Each story-level functional requirement maps to the corresponding numbered story, and every operationalizes reference names a constraint defined in this artifact.",
+      "evidence": "DEF.md:32,36,40,44,48 list S001\u2013S005 functional requirements whose identifiers and descriptions match the corresponding story headings at lines 71,85,100,115,130. However, the supplied evidence contains no operationalizes references or definitions of k1\u2013k5, so the constraint-reference claim is unverifiable.",
+      "action": "Gather the artifact's operationalizes references and constraint definitions, then verify that every referenced constraint is defined.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The story mapping is supported, but the evidence does not establish constraint-reference integrity or support a safe text correction.",
+        "options": [
+          "Provide all operationalizes references and constraint definitions to verify the full premise.",
+          "Split the premise into story mapping and constraint-reference integrity claims, retaining the latter as unverified pending evidence."
+        ]
+      }
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 53,
+    "low": 5
+  },
+  "reviewedAt": "2026-10-21T05:34:46.504Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

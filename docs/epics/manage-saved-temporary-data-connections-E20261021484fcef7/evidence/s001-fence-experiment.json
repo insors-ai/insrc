@@ -1,0 +1,8 @@
+{
+  "sameUid": true,
+  "uid": 501,
+  "platform": "darwin",
+  "legacyWriteError": "EACCES",
+  "detachedFdDidNotChangeManagedFile": true,
+  "scope": "temporary directory on this host only; deployment preflight remains mandatory"
+}

@@ -1,0 +1,4 @@
+@prefix ex: <urn:insrc:eval:> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+ex:CustomerShape a sh:NodeShape ; sh:targetClass ex:Customer ;
+ sh:property [ sh:path ex:tenantId ; sh:minCount 1 ] .

@@ -1,0 +1,3 @@
+@prefix ex: <urn:insrc:eval:> .
+ex:accepted { ex:Customer ex:domain "Commerce" . }
+ex:proposed { ex:Customer ex:domain "Identity" . }

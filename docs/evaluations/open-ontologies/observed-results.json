@@ -1,0 +1,317 @@
+{
+  "release": "v2.0.1",
+  "sha256": "268ca690b893c8f33f1d4491084fc1e8fc7e0adbbddda59595a419f943c4552b",
+  "platform": "macOS arm64",
+  "runs": [
+    {
+      "name": "syntax-valid",
+      "args": [
+        "validate",
+        "<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl"
+      ],
+      "exitCode": 0,
+      "seconds": 0.044,
+      "stdout": "{\"ok\":true,\"statements\":7,\"triples\":7}\n",
+      "stderr": ""
+    },
+    {
+      "name": "syntax-invalid",
+      "args": [
+        "validate",
+        "-"
+      ],
+      "exitCode": 1,
+      "seconds": 0.014,
+      "stdout": "{\"error\":\"Parser error at line 1 column 36: [ is not a valid predicate\"}\n",
+      "stderr": ""
+    },
+    {
+      "name": "shacl",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.05,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl\",\"triples_loaded\":7},\"seq\":0}\n{\"command\":\"shacl\",\"result\":{\"conforms\":false,\"focus_nodes\":1,\"scope\":{\"complete\":true,\"default_graph\":true,\"note\":\"every graph in the store, the default graph included. On a store that keeps several versions of an entity in several named graphs this union is a state that held at no instant.\",\"selector\":\"whole-store\",\"semantics_version\":\"temporal/2\"},\"unmatched_shapes\":[],\"violation_count\":1,\"violations\":[{\"constraint\":\"minCount\",\"focus_node\":\"urn:insrc:eval:one\",\"message\":\"Property <urn:insrc:eval:tenantId> has fewer than 1 values\",\"node_shape\":\"urn:insrc:eval:CustomerShape\",\"path\":\"urn:insrc:eval:tenantId\",\"result_path\":\"urn:insrc:eval:tenantId\",\"severity\":\"Violation\",\"source_constraint_component\":\"http://www.w3.org/ns/shacl#MinCountConstraintComponent\",\"source_shape\":\"_:a3ae16e5f921e82244177f7d823c2e41\"}]},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "reasoning",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.024,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl\",\"triples_loaded\":7},\"seq\":0}\n{\"command\":\"reason\",\"result\":{\"final_triples\":8,\"fixpoint_reached\":true,\"inferred_count\":1,\"initial_triples\":7,\"iterations\":2,\"profile_used\":\"rdfs\",\"sample_inferences\":[\"<urn:insrc:eval:one> a <urn:insrc:eval:Party>\"],\"scope\":{\"complete\":true,\"default_graph\":true,\"note\":\"every graph in the store, the default graph included. On a store that keeps several versions of an entity in several named graphs this union is a state that held at no instant.\",\"selector\":\"whole-store\",\"semantics_version\":\"temporal/2\"}},\"seq\":1}\n{\"command\":\"query\",\"result\":{\"result\":true},\"seq\":2}\n",
+      "stderr": ""
+    },
+    {
+      "name": "graphs",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.014,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/provenance.trig\",\"triples_loaded\":2},\"seq\":0}\n{\"command\":\"query\",\"result\":{\"results\":[{\"g\":\"<urn:insrc:eval:proposed>\",\"value\":\"\\\"Identity\\\"\"},{\"g\":\"<urn:insrc:eval:accepted>\",\"value\":\"\\\"Commerce\\\"\"}],\"variables\":[\"g\",\"value\"]},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "scope",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.011,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/provenance.trig\",\"triples_loaded\":2},\"seq\":0}\n{\"command\":\"query\",\"result\":{\"results\":[{\"value\":\"\\\"Commerce\\\"\"}],\"variables\":[\"value\"]},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "plan",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.021,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl\",\"triples_loaded\":7},\"seq\":0}\n{\"command\":\"plan\",\"result\":{\"added_classes\":[],\"added_individuals\":[],\"added_properties\":[],\"blast_radius\":{\"triples_affected\":0},\"conservativity\":{\"base_certificate\":{\"asserted\":7,\"checker_exit\":null,\"checker_report\":null,\"derivations\":1,\"iteration_cap\":64,\"iterations\":2,\"reached_fixpoint\":true,\"skipped\":\"oo-cert not found (looked at $OO_CERT, ./lean/.lake/build/bin/oo-cert, /Users/runner/work/open-ontologies/open-ontologies/lean/.lake/build/bin/oo-cert, and $PATH). install elan from https://github.com/leanprover/elan; lean/lean-toolchain pins the version, then `cd lean && lake build` (oo-cert and oo-horn are in defaultTargets). Or set OO_CERT to the binary.\",\"theorem\":null,\"verdict\":\"engine_opinion\"},\"base_signature_size\":3,\"base_triples_the_proposal_drops\":0,\"conservative_under_rule_table\":true,\"conservativity_verdict\":\"conservative_under_rule_table\",\"dropped_examples\":[],\"engine_soundness_gate_skipped\":null,\"engine_soundness_violations\":[],\"exit_code\":0,\"extended_certificate\":{\"asserted\":7,\"checker_exit\":null,\"checker_report\":null,\"derivations\":1,\"iteration_cap\":64,\"iterations\":2,\"reached_fixpoint\":true,\"skipped\":\"oo-cert not found (looked at $OO_CERT, ./lean/.lake/build/bin/oo-cert, /Users/runner/work/open-ontologies/open-ontologies/lean/.lake/build/bin/oo-cert, and $PATH). install elan from https://github.com/leanprover/elan; lean/lean-toolchain pins the version, then `cd lean && lake build` (oo-cert and oo-horn are in defaultTargets). Or set OO_CERT to the binary.\",\"theorem\":null,\"verdict\":\"engine_opinion\"},\"finding_not_an_error\":\"a non-conservative extension is a FINDING, not a failure. Adding axioms that change what the ontology says about existing terms is often exactly the intended change; the point of reporting it is that it should be intended rather than discovered later. Each row names the rule that produced it and the premises the base did not have, so the decision can be made on the derivation rather than on the verdict word.\",\"format\":\"oo-conservativity/1\",\"headline\":\"conservative_under_rule_table: 0 new consequence(s) over the 3 name(s) the base already used, out of 0 new consequence(s) in total, under the owl-rl rule table. Extended certificate: engine_opinion. this is conservativity WITH RESPECT TO THE RULE TABLE named in rule_table, and nothing else. It is computed as closure(base \u222a extension) minus closure(base) under that table, restricted to triples every name of which the base already used. It is NOT deductive conservativity in a description logic (ExpTime-complete for EL, 2ExpTime-complete for ALC, and UNDECIDABLE for ALCQIO) and it is NOT model conservativity (undecidable already for EL). The asymmetry is the point: a new consequence reported here IS a real change to what this engine derives over the old names, while finding none establishes only that this rule table derives nothing new, and never that the extension is conservative in any logic.\",\"is_an_extension\":true,\"mode\":\"replacement\",\"new_consequences_over_old_signature\":[],\"new_consequences_over_old_signature_total\":0,\"new_consequences_total\":0,\"not_compared_blank_node_bearing\":0,\"not_examined\":0,\"ran\":true,\"rule_table\":\"owl-rl\",\"seconds\":0.007993333,\"signature_added\":[],\"signature_added_total\":0,\"what_this_is_not\":\"this is conservativity WITH RESPECT TO THE RULE TABLE named in rule_table, and nothing else. It is computed as closure(base \u222a extension) minus closure(base) under that table, restricted to triples every name of which the base already used. It is NOT deductive conservativity in a description logic (ExpTime-complete for EL, 2ExpTime-complete for ALC, and UNDECIDABLE for ALCQIO) and it is NOT model conservativity (undecidable already for EL). The asymmetry is the point: a new consequence reported here IS a real change to what this engine derives over the old names, while finding none establishes only that this rule table derives nothing new, and never that the extension is conservative in any logic.\"},\"locked_violations\":[],\"plan_id\":\"plan-18e1139749f24e30\",\"removed_classes\":[],\"removed_individuals\":[],\"removed_properties\":[],\"risk_score\":\"low\",\"triple_delta\":{\"deletions\":0,\"insertions\":0,\"strategy\":\"delta\"}},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "separate-process",
+      "args": [
+        "stats"
+      ],
+      "exitCode": 0,
+      "seconds": 0.012,
+      "stdout": "{\"classes\":0,\"data_properties\":0,\"individuals\":0,\"object_properties\":0,\"properties\":0,\"triples\":0}\n",
+      "stderr": ""
+    },
+    {
+      "name": "verified-unavailable",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 1,
+      "seconds": 0.011,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl\",\"triples_loaded\":7},\"seq\":0}\n{\"command\":\"shacl\",\"result\":{\"error\":\"the verified SHACL evaluator was not found. Build it with `cd lean && lake build oo-shacl` (it is in defaultTargets, so a bare `lake build` is enough), or set OO_SHACL. Looked in /Users/runner/work/open-ontologies/open-ontologies/lean/.lake/build/bin/oo-shacl\",\"note\":\"no verdict. A missing checker is not a conformance answer.\",\"verified\":false},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "state-union",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.053,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/state-leak.trig\",\"triples_loaded\":2},\"seq\":0}\n{\"command\":\"shacl\",\"result\":{\"conforms\":true,\"focus_nodes\":1,\"scope\":{\"complete\":true,\"default_graph\":true,\"note\":\"every graph in the store, the default graph included. On a store that keeps several versions of an entity in several named graphs this union is a state that held at no instant.\",\"selector\":\"whole-store\",\"semantics_version\":\"temporal/2\"},\"unmatched_shapes\":[],\"violation_count\":0,\"violations\":[]},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "fragment-plan",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.023,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<repo>/docs/evaluations/open-ontologies/fixtures/base.ttl\",\"triples_loaded\":7},\"seq\":0}\n{\"command\":\"plan\",\"result\":{\"added_classes\":[],\"added_individuals\":[],\"added_properties\":[],\"blast_radius\":{\"triples_affected\":9},\"conservativity\":{\"base_certificate\":{\"asserted\":7,\"checker_exit\":null,\"checker_report\":null,\"derivations\":1,\"iteration_cap\":64,\"iterations\":2,\"reached_fixpoint\":true,\"skipped\":\"oo-cert not found (looked at $OO_CERT, ./lean/.lake/build/bin/oo-cert, /Users/runner/work/open-ontologies/open-ontologies/lean/.lake/build/bin/oo-cert, and $PATH). install elan from https://github.com/leanprover/elan; lean/lean-toolchain pins the version, then `cd lean && lake build` (oo-cert and oo-horn are in defaultTargets). Or set OO_CERT to the binary.\",\"theorem\":null,\"verdict\":\"engine_opinion\"},\"base_signature_size\":3,\"base_triples_the_proposal_drops\":7,\"conservative_under_rule_table\":null,\"conservativity_verdict\":\"undecided_not_an_extension\",\"dropped_examples\":[\"<urn:insrc:eval:Customer> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class>\",\"<urn:insrc:eval:Customer> <http://www.w3.org/2000/01/rdf-schema#label> \\\"Customer\\\"\",\"<urn:insrc:eval:Customer> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <urn:insrc:eval:Party>\",\"<urn:insrc:eval:Party> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Class>\",\"<urn:insrc:eval:Party> <http://www.w3.org/2000/01/rdf-schema#label> \\\"Party\\\"\",\"<urn:insrc:eval:one> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <urn:insrc:eval:Customer>\",\"<urn:insrc:eval:one> <http://www.w3.org/2000/01/rdf-schema#label> \\\"First customer\\\"\"],\"engine_soundness_gate_skipped\":null,\"engine_soundness_violations\":[],\"exit_code\":2,\"extended_certificate\":{\"asserted\":8,\"checker_exit\":null,\"checker_report\":null,\"derivations\":1,\"iteration_cap\":64,\"iterations\":2,\"reached_fixpoint\":true,\"skipped\":\"oo-cert not found (looked at $OO_CERT, ./lean/.lake/build/bin/oo-cert, /Users/runner/work/open-ontologies/open-ontologies/lean/.lake/build/bin/oo-cert, and $PATH). install elan from https://github.com/leanprover/elan; lean/lean-toolchain pins the version, then `cd lean && lake build` (oo-cert and oo-horn are in defaultTargets). Or set OO_CERT to the binary.\",\"theorem\":null,\"verdict\":\"engine_opinion\"},\"finding_not_an_error\":\"a non-conservative extension is a FINDING, not a failure. Adding axioms that change what the ontology says about existing terms is often exactly the intended change; the point of reporting it is that it should be intended rather than discovered later. Each row names the rule that produced it and the premises the base did not have, so the decision can be made on the derivation rather than on the verdict word.\",\"format\":\"oo-conservativity/1\",\"headline\":\"undecided_not_an_extension: 0 new consequence(s) over the 3 name(s) the base already used, out of 1 new consequence(s) in total, under the owl-rl rule table. Extended certificate: engine_opinion. this is conservativity WITH RESPECT TO THE RULE TABLE named in rule_table, and nothing else. It is computed as closure(base \u222a extension) minus closure(base) under that table, restricted to triples every name of which the base already used. It is NOT deductive conservativity in a description logic (ExpTime-complete for EL, 2ExpTime-complete for ALC, and UNDECIDABLE for ALCQIO) and it is NOT model conservativity (undecidable already for EL). The asymmetry is the point: a new consequence reported here IS a real change to what this engine derives over the old names, while finding none establishes only that this rule table derives nothing new, and never that the extension is conservative in any logic.\",\"is_an_extension\":false,\"mode\":\"replacement\",\"new_consequences_over_old_signature\":[],\"new_consequences_over_old_signature_total\":0,\"new_consequences_total\":1,\"not_compared_blank_node_bearing\":0,\"not_examined\":0,\"ran\":true,\"rule_table\":\"owl-rl\",\"seconds\":0.006276917,\"signature_added\":[\"urn:insrc:eval:domain\"],\"signature_added_total\":1,\"what_this_is_not\":\"this is conservativity WITH RESPECT TO THE RULE TABLE named in rule_table, and nothing else. It is computed as closure(base \u222a extension) minus closure(base) under that table, restricted to triples every name of which the base already used. It is NOT deductive conservativity in a description logic (ExpTime-complete for EL, 2ExpTime-complete for ALC, and UNDECIDABLE for ALCQIO) and it is NOT model conservativity (undecidable already for EL). The asymmetry is the point: a new consequence reported here IS a real change to what this engine derives over the old names, while finding none establishes only that this rule table derives nothing new, and never that the extension is conservative in any logic.\"},\"locked_violations\":[],\"plan_id\":\"plan-18e1139ff9329690\",\"removed_classes\":[\"urn:insrc:eval:Customer\",\"urn:insrc:eval:Party\"],\"removed_individuals\":[\"urn:insrc:eval:one\"],\"removed_properties\":[],\"risk_score\":\"high\",\"triple_delta\":{\"deletions\":7,\"insertions\":1,\"strategy\":\"delta\"}},\"seq\":1}\n",
+      "stderr": ""
+    },
+    {
+      "name": "large-smoke",
+      "args": [
+        "batch",
+        "-"
+      ],
+      "exitCode": 0,
+      "seconds": 0.047,
+      "stdout": "{\"command\":\"load\",\"result\":{\"ok\":true,\"path\":\"<evaluation-temp>/large.ttl\",\"triples_loaded\":30000},\"seq\":0}\n{\"command\":\"query\",\"result\":{\"results\":[{\"s\":\"<urn:insrc:eval:e9983>\"},{\"s\":\"<urn:insrc:eval:e9963>\"},{\"s\":\"<urn:insrc:eval:e9943>\"},{\"s\":\"<urn:insrc:eval:e9923>\"},{\"s\":\"<urn:insrc:eval:e9903>\"},{\"s\":\"<urn:insrc:eval:e9883>\"},{\"s\":\"<urn:insrc:eval:e9863>\"},{\"s\":\"<urn:insrc:eval:e9843>\"},{\"s\":\"<urn:insrc:eval:e9823>\"},{\"s\":\"<urn:insrc:eval:e9803>\"},{\"s\":\"<urn:insrc:eval:e9783>\"},{\"s\":\"<urn:insrc:eval:e9763>\"},{\"s\":\"<urn:insrc:eval:e9743>\"},{\"s\":\"<urn:insrc:eval:e9723>\"},{\"s\":\"<urn:insrc:eval:e9703>\"},{\"s\":\"<urn:insrc:eval:e9683>\"},{\"s\":\"<urn:insrc:eval:e9663>\"},{\"s\":\"<urn:insrc:eval:e9643>\"},{\"s\":\"<urn:insrc:eval:e9623>\"},{\"s\":\"<urn:insrc:eval:e9603>\"},{\"s\":\"<urn:insrc:eval:e9583>\"},{\"s\":\"<urn:insrc:eval:e9563>\"},{\"s\":\"<urn:insrc:eval:e9543>\"},{\"s\":\"<urn:insrc:eval:e9523>\"},{\"s\":\"<urn:insrc:eval:e9503>\"}],\"variables\":[\"s\"]},\"seq\":1}\n",
+      "stderr": ""
+    }
+  ],
+  "mcp": [
+    {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "protocolVersion": "2024-11-05",
+        "capabilities": {
+          "prompts": {},
+          "tools": {}
+        },
+        "serverInfo": {
+          "name": "rmcp",
+          "version": "1.4.0"
+        },
+        "instructions": "Open Ontologies: AI-native ontology engine, an RDF/OWL/SPARQL MCP server with 5 tools and 6 workflow prompts for ontology engineering, validation, comparison, alignment, data ingestion, and exploration. 2 further tools are compiled in but NOT advertised, because this build lacks the Cargo feature each one needs and a tool that is guaranteed to fail should not appear in tools/list: onto_import_schema (--features postgres or duckdb), onto_sql_ingest (--features postgres or duckdb). Rebuild with the feature to get them."
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "result": {
+        "tools": [
+          {
+            "name": "onto_load",
+            "description": "Load an RDF file or inline Turtle content into the in-memory ontology store. When given a file path, the parsed graph is also written to a fast N-Triples compile cache (in `[cache] dir`) so subsequent loads from the same source skip parsing. Optional `name`, `auto_refresh`, and `force_recompile` flags control caching/refresh behavior.",
+            "inputSchema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "properties": {
+                "auto_refresh": {
+                  "description": "When true, every subsequent read tool checks the source file's mtime\nand recompiles if it changed. Has no effect for inline turtle.",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "force_recompile": {
+                  "description": "When true, ignore the on-disk compile cache and re-parse from source.",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "description": "Optional name for this ontology in the registry. Defaults to the file\nstem of `path`. When omitted for inline turtle, defaults to \"default\".",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "path": {
+                  "description": "Path to RDF file, OR inline Turtle/RDF content",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "turtle": {
+                  "description": "Inline Turtle content to load (alternative to path)",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "title": "OntoLoadInput",
+              "type": "object"
+            }
+          },
+          {
+            "name": "onto_shacl",
+            "description": "Validate the loaded ontology data against SHACL shapes. Checks the core constraint components written under `sh:property`, including `sh:minCount`, `sh:maxCount`, `sh:datatype`, `sh:class`, `sh:nodeKind`, `sh:pattern`, `sh:in`, `sh:hasValue`, `sh:or` and `sh:not`, plus `sh:sparql`. A constraint it cannot execute is listed in `skipped_constraints` and the verdict is null rather than true. An entry there is one CONSTRAINT-EVALUATION SITE and not one shape: a single `sh:property` block carrying both `sh:minCount` and `sh:node` can produce a violation from the first and a skip entry from the second, so the SAME shape can appear in `violations` and in `skipped_constraints` at once and that is not a contradiction. Every entry names the `shape` it was written on and the `constraint` predicate that was not evaluated, which is what separates a constraint that did not run from one that ran and selected nothing. Returns a conformance report with violations, `focus_nodes` and `unmatched_shapes`, plus `scope`, which names the graphs the run READ. By default every graph in the store is read. Over a store that describes its named graphs with the temporal vocabulary (https://open-ontologies.org/temporal#) that union is a state that held at no instant, so a run with no instant named is REFUSED rather than answered: pass `valid_at` (what was TRUE then), `as_of` (what was KNOWN then) or `all_versions: true` to say the union is what you meant. A scoped run evaluates every data-side query, `sh:sparql` included, against the in-scope named graphs plus the default graph and nothing else. A snapshot that selects no graph returns `conforms: null` with its own reason rather than conforming vacuously. Class and property DECLARATION lookups are never scoped: a declaration is context-free and has the same answer at every instant.",
+            "inputSchema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "properties": {
+                "all_versions": {
+                  "description": "Validate every version at once, over a store that has versions. A real\nquestion (\"does ANY version violate this shape\") and a different one\nfrom any snapshot's, so it is said out loud. Refused together with\n`valid_at` or `as_of`. On a store that uses no temporal vocabulary this\nchanges nothing: every graph is read either way.",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "as_of": {
+                  "description": "Validate the snapshot that was KNOWN at this instant, the recorded-time\naxis. Combines with `valid_at`; either may be given alone.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "inline": {
+                  "description": "If true, treat shapes as inline Turtle content",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "shapes": {
+                  "description": "Path to SHACL shapes file OR inline SHACL Turtle content",
+                  "type": "string"
+                },
+                "valid_at": {
+                  "description": "Validate the snapshot that was TRUE at this instant. Read like\n`onto_temporal_snapshot`'s `valid_at`: `xsd:date`, `xsd:dateTime`,\n`xsd:gYearMonth` or `xsd:gYear`, no offset meaning UTC.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "verified": {
+                  "description": "Run the VERIFIED evaluator instead of the SPARQL one.\n\n`Shacl/` is a mechanised SHACL Core evaluator whose soundness is a\nmachine-checked theorem, `Shacl.validate_spec`. Setting this runs\n`oo-shacl` over the same store and shapes and returns its verdict,\nwhich is covered by that theorem, together with the theorem's name and\nwhat it does not cover.\n\nIt answers a DIFFERENT set of questions from the default path, not a\nlarger one. This evaluator covers SHACL Core and REFUSES `sh:sparql`\nand user-defined constraint components outright rather than skipping\nthem, so where the default path would list a `skipped_constraints`\nentry this one returns `conforms: null` with a reason. That refusal is\nthe point: \"everything conforms\" and \"I did not check everything\" are\ndifferent answers and this path will not collapse them.\n\nNeeds `oo-shacl` on disk: `cd lean && lake build`, or set `OO_SHACL`.\nTemporal scoping is not applied on this path and a scope argument\nalongside it is refused rather than silently ignored.",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "shapes"
+              ],
+              "title": "OntoShaclInput",
+              "type": "object"
+            }
+          },
+          {
+            "name": "onto_stats",
+            "description": "Get statistics about the loaded ontology (triple count, classes, properties, individuals)",
+            "inputSchema": {
+              "properties": {},
+              "type": "object"
+            }
+          },
+          {
+            "name": "onto_status",
+            "description": "Returns health status of the Open Ontologies server",
+            "inputSchema": {
+              "properties": {},
+              "type": "object"
+            }
+          },
+          {
+            "name": "onto_validate",
+            "description": "Validate RDF/OWL syntax. Accepts a file path or inline Turtle content.",
+            "inputSchema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "properties": {
+                "inline": {
+                  "description": "If true, treat input as inline content rather than a file path",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "input": {
+                  "description": "Path to an RDF file OR inline Turtle content",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "input"
+              ],
+              "title": "OntoValidateInput",
+              "type": "object"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"classes\":0,\"data_properties\":0,\"individuals\":0,\"object_properties\":0,\"properties\":0,\"triples\":0}"
+          }
+        ],
+        "isError": false
+      }
+    }
+  ]
+}

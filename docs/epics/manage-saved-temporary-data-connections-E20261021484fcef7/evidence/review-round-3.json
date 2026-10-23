@@ -1,0 +1,483 @@
+{
+  "artifact": "define",
+  "stage": "define",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "p01",
+      "ref": "c1",
+      "kind": "citation",
+      "severity": "MED",
+      "premise": "Reference c1 identifies the product requirements baseline at docs/connection-management-prd.html lines 51\u2013145.",
+      "evidence": "The supplied read confirms only that docs/connection-management-prd.html:51 contains `<td>CM01</td>`. It does not establish that lines 51\u2013145 contain the product requirements baseline; the premise is unverifiable from this evidence.",
+      "action": "Read lines 51\u2013145 with surrounding section context to verify the cited baseline before retaining or correcting the reference.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The single table-cell read supports neither verification of the full range nor an evidence-derived replacement anchor.",
+        "options": [
+          "Gather the full cited range and section context to verify the baseline.",
+          "Mark c1 as unverified pending additional evidence."
+        ]
+      }
+    },
+    {
+      "claimId": "p02",
+      "ref": "\u00a74",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The referenced PRD defines requirements CM01 through CM08 as the product baseline for this Epic.",
+      "evidence": "docs/connection-management-prd.html:51 contains <td>CM01</td>. This confirms only CM01's presence; the supplied evidence does not establish CM02\u2013CM08 or that these requirements constitute this Epic's product baseline. The premise is unverifiable, not contradicted.",
+      "action": "Provide the PRD requirement definitions for CM01\u2013CM08 and evidence establishing their baseline relationship to this Epic.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The single supplied line cannot support the full cross-artifact claim or an evidence-derived replacement.",
+        "options": [
+          "Supply evidence covering all eight requirements and their applicability to this Epic.",
+          "Narrow the premise to CM01's verified presence, leaving the full baseline claim unverified."
+        ]
+      }
+    },
+    {
+      "claimId": "p03",
+      "ref": "\u00a74",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD's embedded mock illustrates interactions rather than verifying production acceptance criteria.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. It does not establish what the embedded mock illustrates or whether it verifies production acceptance criteria. The premise is unverifiable from this evidence.",
+      "action": "Gather the mock implementation and relevant acceptance criteria from the cited range before retaining or revising the premise.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied line supports neither verification nor contradiction; no evidence-derived text correction is safe.",
+        "options": [
+          "Provide the cited mock implementation and acceptance criteria to verify the premise.",
+          "Mark the premise as unverified pending supporting evidence."
+        ]
+      }
+    },
+    {
+      "claimId": "p04",
+      "ref": "\u00a73",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The PRD release boundary excludes new drivers, automatic configuration discovery, ontology generation, and team-shared credentials.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. It does not establish any of the four claimed release exclusions; the premise is unverifiable from this evidence.",
+      "action": "Provide PRD passages establishing the release boundary and verify each claimed exclusion against them.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither verification nor a safe text correction.",
+        "options": [
+          "Supply PRD passages explicitly supporting all four exclusions.",
+          "Reconcile the premise with the documented release boundary once the relevant PRD passages are available."
+        ]
+      }
+    },
+    {
+      "claimId": "p05",
+      "ref": "c2",
+      "kind": "citation",
+      "severity": "MED",
+      "premise": "Reference c2 identifies existing daemon IPC implementation at src/daemon/db-rpc.ts lines 131\u2013167 as grounding for compatibility constraint k5.",
+      "evidence": "src/daemon/db-rpc.ts:131 contains `export async function saveConnectionRpc(params: {`, confirming a function at the cited start line. The supplied evidence includes neither the remaining implementation through line 167 nor constraint k5, so its support for that compatibility constraint is unverifiable.",
+      "action": "Provide constraint k5 and the cited implementation at lines 131\u2013167 to verify whether c2 grounds the constraint.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The single declaration line cannot establish compatibility semantics or support an evidence-derived citation correction.",
+        "options": [
+          "Supply k5 and the complete cited range for verification.",
+          "Defer reliance on c2 as compatibility grounding until the missing evidence is available."
+        ]
+      }
+    },
+    {
+      "claimId": "p06",
+      "ref": "c3",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "Reference c3 resolves to the Epic's grounding evidence document beginning at line 1.",
+      "evidence": "Reading docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1 returned '# Connection-management grounding and review remediation', confirming c3 resolves to the grounding evidence document beginning at line 1.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied read confirms the citation."
+      }
+    },
+    {
+      "claimId": "p07",
+      "ref": "c4",
+      "kind": "citation",
+      "severity": "MED",
+      "premise": "Reference c4 identifies the IDE fork's connection service implementation at insrcDbConnectionsServiceImpl.ts line 34.",
+      "evidence": "The read of /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts:34 returned NOT FOUND, and grep /\\bInsrcDbConnectionsService\\w*\\b/ returned 0 matches. The citation is unverifiable; the supplied evidence establishes no concrete build-breaking consequence.",
+      "action": "Locate and verify the IDE connection service implementation before relying on reference c4.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "No verified replacement path or line was supplied, so a mechanical citation correction is unsupported.",
+        "options": [
+          "Provide evidence for the correct implementation path and line, then update c4.",
+          "Mark c4 as unverified pending access to the IDE source."
+        ]
+      }
+    },
+    {
+      "claimId": "p08",
+      "ref": "\u00a74",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The separate IDE fork already has a connection pane and an IPC service for connections.",
+      "evidence": "The read of /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts:34 returned NOT FOUND. docs/connection-management-prd.html:401 lists the IDE pane and service files, and docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:17 reports service RPC calls, but these are documentary assertions, not source verification. The truncated grep supplies no IDE implementation. The premise is unverifiable; this does not establish that the integration is nonexistent or a concrete build failure.",
+      "action": "Obtain source reads verifying both the IDE connection pane and its IPC service, or qualify \u00a74 as an unverified external integration dependency.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports documentary references but cannot confirm the external implementation.",
+        "options": [
+          "Retain the premise pending successful source reads of the IDE pane and IPC service.",
+          "Reword \u00a74 to identify the pane and service as documented external integration surfaces whose implementation remains unverified."
+        ]
+      }
+    },
+    {
+      "claimId": "p09",
+      "ref": "E20261021484fcef7:FR001",
+      "kind": "inventory",
+      "severity": "MED",
+      "premise": "The delivery scope is the existing daemon-supported driver set, whose members must determine the connection manager's available drivers.",
+      "evidence": "Registrations confirm several driver kinds: mysql/mariadb at src/daemon/db/drivers/mysql.ts:455\u2013456, postgres/cockroachdb at pg.ts:468\u2013469, and redis/valkey at redis.ts:226\u2013227. However, both searches are truncated, and the supplied src/daemon/db-rpc.ts:131 read only shows saveConnectionRpc's declaration. The evidence does not establish the complete daemon-supported inventory or how it is exposed to the connection manager. No concrete build-breaking contradiction is demonstrated.",
+      "action": "Verify the complete production registration inventory and the db.listDriverKinds implementation before treating the available-driver scope as grounded.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports an existing driver registry but cannot verify its complete runtime membership or enumeration contract.",
+        "options": [
+          "Retain the premise and obtain complete production registration and db.listDriverKinds evidence.",
+          "Clarify that available drivers must follow the daemon's runtime enumeration, subject to verifying that RPC contract."
+        ]
+      }
+    },
+    {
+      "claimId": "p10",
+      "ref": "k1",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The cited PRD supports k1's proposed requirement that the daemon own persistence and secrets while IPC clients never receive stored secret values.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. This requirement identifier does not establish daemon ownership of persistence or secrets, or prohibit IPC clients from receiving stored secret values. The premise is unverifiable from the supplied evidence.",
+      "action": "Provide the PRD passages establishing both ownership and secret-disclosure requirements, then reassess k1's claimed support.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the requirement; no evidence-derived text correction is available.",
+        "options": [
+          "Supply PRD passages supporting both parts of k1's requirement.",
+          "Treat k1 as a proposed requirement pending confirmation rather than claiming verified PRD support."
+        ]
+      }
+    },
+    {
+      "claimId": "p11",
+      "ref": "k2",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The cited PRD supports k2's proposed requirement to preserve registry and credentials on read failures or stale mutations and reconcile uncertain responses idempotently.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. It does not establish requirements for preserving registry or credentials on read failures or stale mutations, or for idempotent reconciliation of uncertain responses. The premise is unverifiable from this evidence.",
+      "action": "Provide the relevant PRD requirement text and verify each claimed behavior before asserting that the PRD supports k2.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied requirement identifier alone neither confirms nor contradicts the claimed requirements; no evidence-derived text correction is available.",
+        "options": [
+          "Supply the relevant PRD passages supporting each behavior and retain the premise if verified.",
+          "Reword k2 to identify these behaviors as proposed requirements pending confirmation of PRD support."
+        ]
+      }
+    },
+    {
+      "claimId": "p12",
+      "ref": "k3",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The cited PRD supports k3's proposed memory-only temporary connection scope isolated by repository and workbench session and expiring at session end or daemon restart.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. It provides no evidence for memory-only storage, repository/workbench-session isolation, or expiration at session end or daemon restart. The premise is unverifiable from the supplied evidence.",
+      "action": "Obtain the relevant PRD requirement text and verify each scope and lifetime claim before asserting PRD support.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied requirement identifier cannot establish the claimed semantics or support an exact text correction.",
+        "options": [
+          "Supply PRD passages supporting each claimed storage, isolation, and expiration behavior.",
+          "Reword the scope and lifetime as proposed design decisions requiring confirmation rather than established PRD requirements."
+        ]
+      }
+    },
+    {
+      "claimId": "p13",
+      "ref": "k4",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The cited PRD supports k4's proposed requirement that removal preserve source files and database data and refuse busy connections.",
+      "evidence": "The only supplied read, docs/connection-management-prd.html:51, contains `<td>CM01</td>`. It does not establish that removal preserves source files or database data, or refuses busy connections. The premise is unverifiable from this evidence.",
+      "action": "Provide the PRD requirement text supporting all three removal constraints, then reassess k4's attribution.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the constraints; no evidence-derived artifact correction is available.",
+        "options": [
+          "Supply the relevant PRD lines establishing all three constraints.",
+          "Reword k4 to identify these constraints as proposed requirements pending PRD verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p14",
+      "ref": "k5",
+      "kind": "external-contract",
+      "severity": "MED",
+      "premise": "Existing IPC consumers and the separate IDE fork contract must be accounted for when defining backward-compatible connection management behavior.",
+      "evidence": "src/daemon/db-rpc.ts:131 confirms saveConnectionRpc exists. However, the read of the IDE service at insrcDbConnectionsServiceImpl.ts:34 returned NOT FOUND. grounding.md:17 reports list/save/remove/test RPC calls, but provides no independently verified consumer code or payload contract here. The truncated db.* search cannot establish the consumer inventory. The external compatibility premise is therefore not fully verifiable; no concrete build-breaking contradiction is established.",
+      "action": "Obtain readable IDE consumer call sites and their request/response types, then document compatibility requirements against the daemon handlers.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supports a daemon entry point but does not independently verify the separate IDE contract; a failed anchor read does not prove the consumer is nonexistent.",
+        "options": [
+          "Supply direct IDE service and contract reads to verify the existing premise.",
+          "Mark the IDE compatibility contract as an unresolved integration requirement pending consumer verification."
+        ]
+      }
+    },
+    {
+      "claimId": "p15",
+      "ref": "s1",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Story S001's saved endpoint and credential management scope extends evidence recorded in c3.",
+      "evidence": "The only supplied read, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1, contains the heading '# Connection-management grounding and review remediation'. It supplies neither c3's evidence nor Story S001's scope, so the claimed relationship is unverifiable.",
+      "action": "Provide the contents of c3 and Story S001's saved endpoint and credential management scope, then compare their coverage.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied heading supports no substantive correction to the cross-artifact claim.",
+        "options": [
+          "Supply c3 and Story S001 excerpts to verify the claimed extension.",
+          "Reassess the premise after gathering evidence for both referenced artifacts."
+        ]
+      }
+    },
+    {
+      "claimId": "p16",
+      "ref": "s2",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Story S002's draft testing scope extends evidence recorded in c3.",
+      "evidence": "The only supplied read, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1, confirms the heading '# Connection-management grounding and review remediation'. It provides neither c3's evidence nor Story S002's testing scope, so the claimed relationship is unverifiable.",
+      "action": "Supply the text of c3 and S002's draft testing scope, then verify that the scope extends the recorded evidence.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied heading cannot establish the cross-artifact relationship; no evidence-derived text replacement is available.",
+        "options": [
+          "Provide c3 and S002 testing-scope excerpts for comparison.",
+          "Mark the relationship as unverified pending those excerpts."
+        ]
+      }
+    },
+    {
+      "claimId": "p17",
+      "ref": "s3",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Story S003's temporary connection scope extends evidence recorded in c3.",
+      "evidence": "The sole read, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1, contains only the heading '# Connection-management grounding and review remediation'. It provides neither c3's evidence nor Story S003's scope, so the claimed relationship is unverifiable.",
+      "action": "Provide the text of c3 and Story S003's temporary connection scope, with precise anchors, to verify the claimed extension.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied heading cannot establish the cross-artifact relationship or support a safe text correction.",
+        "options": [
+          "Supply c3 and S003 excerpts to substantiate the relationship.",
+          "Reassess the claimed extension after comparing both artifacts."
+        ]
+      }
+    },
+    {
+      "claimId": "p18",
+      "ref": "s4",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Story S004's connection removal scope extends evidence recorded in c3.",
+      "evidence": "The only supplied read, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1, contains the heading '# Connection-management grounding and review remediation'. It provides neither c3's evidence nor Story S004's scope, so the claimed relationship is unverifiable.",
+      "action": "Provide the text of c3 and Story S004's connection removal scope, with source anchors, to verify the claimed extension.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The heading alone cannot establish the cross-artifact relationship or support an exact text correction.",
+        "options": [
+          "Supply c3 and S004 excerpts and verify their scope relationship.",
+          "Mark the claimed relationship as unverified pending those excerpts."
+        ]
+      }
+    },
+    {
+      "claimId": "p19",
+      "ref": "s5",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "Story S005's Settings integration scope across the extension and IDE fork extends evidence recorded in c3.",
+      "evidence": "The only supplied read, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1, contains the heading '# Connection-management grounding and review remediation'. It provides no S005 scope, c3 evidence, or connection between them. The premise is unverifiable.",
+      "action": "Provide S005's Settings integration scope and the c3 evidence it extends, with precise supporting anchors.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied heading cannot establish the cross-artifact relationship or support a safe text correction.",
+        "options": [
+          "Supply S005 and c3 excerpts demonstrating the claimed scope relationship.",
+          "Reassess the premise after gathering evidence for Settings integration in both the extension and IDE fork."
+        ]
+      }
+    },
+    {
+      "claimId": "p20",
+      "ref": "s2",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The Epic declares S001 a prerequisite of S002 because draft testing must use the same merged configuration as Save.",
+      "evidence": "No probes were run. No matches or read lines establish the S001 \u2192 S002 prerequisite or the shared merged-configuration requirement; the premise is unverifiable.",
+      "action": "Gather the Epic's S001 and S002 dependency declarations and S002/ac1 to verify the ordering and its rationale.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports no artifact correction.",
+        "options": [
+          "Verify the prerequisite and rationale against the cited Epic sections.",
+          "If those sections do not establish the dependency, obtain a design decision before revising the ordering."
+        ]
+      }
+    },
+    {
+      "claimId": "p21",
+      "ref": "s3",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The Epic declares S001 a prerequisite of S003's temporary connection delivery.",
+      "evidence": "No probes were run. No matches or read lines establish a prerequisite relationship between E20261021484fcef7:S001 and E20261021484fcef7:S003; the premise is unverifiable.",
+      "action": "Inspect the Epic's S001 and S003 dependency declarations to verify the claimed ordering before relying on it.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports neither confirmation nor a safe text correction.",
+        "options": [
+          "Gather the Epic's dependency declarations and confirm the prerequisite if explicitly supported.",
+          "If the Epic does not establish this ordering, resolve the dependency with the artifact owner and revise the premise."
+        ]
+      }
+    },
+    {
+      "claimId": "p22",
+      "ref": "s4",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The Epic declares S001 and S003 prerequisites of S004's saved and temporary connection removal delivery.",
+      "evidence": "No probes were run and no Epic excerpts were supplied. The claimed S001 and S003 prerequisites of S004 are unverifiable.",
+      "action": "Read the Epic's S001, S003, and S004 dependency declarations to verify the claimed ordering before relying on it.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "No evidence supports a text correction or establishes a concrete failure.",
+        "options": [
+          "Supply the Epic dependency declarations and reassess the premise.",
+          "Leave the ordering claim explicitly unverified pending evidence."
+        ]
+      }
+    },
+    {
+      "claimId": "p23",
+      "ref": "s5",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The Epic declares S001, S002, S003, and S004 prerequisites of S005's Settings integration delivery.",
+      "evidence": "No probes were run for premise s5. No matches or read lines establish that S001\u2013S004 are prerequisites of S005; the ordering claim is unverifiable.",
+      "action": "Gather the Epic's dependency declarations for S005 and verify whether each of S001\u2013S004 is a prerequisite.",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The supplied evidence supports no correction to the dependency ordering.",
+        "options": [
+          "Provide the Epic's explicit S005 prerequisite declarations for verification.",
+          "If the Epic does not specify this ordering, resolve the intended prerequisites before revising the premise."
+        ]
+      }
+    },
+    {
+      "claimId": "p24",
+      "ref": "\u00a74",
+      "kind": "ordering",
+      "severity": "MED",
+      "premise": "The HLD must verify the IDE connection service contract and determine reuse changes before treating that implementation as compatible with the proposed manager.",
+      "evidence": "The read of /Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts:34 returned NOT FOUND. No evidence for k5 was supplied. The service contract and required reuse changes are therefore unverifiable; this does not establish a concrete failure in the prescribed verification-first ordering.",
+      "action": "Supply a resolvable implementation anchor and contract evidence, then verify compatibility and identify reuse changes before accepting the implementation as compatible.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The evidence supplies no verified replacement anchor or contract details, so a mechanical correction is unsupported.",
+        "options": [
+          "Provide the correct implementation anchor and rerun the contract probes.",
+          "Keep compatibility explicitly unresolved until the IDE implementation and its contract can be inspected."
+        ]
+      }
+    },
+    {
+      "claimId": "p25",
+      "ref": "Evidence and revision status",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The relative grounding link and reference c3 identify the same Epic evidence document containing implementation observations and finding dispositions.",
+      "evidence": "The read at docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1 confirms only the heading '# Connection-management grounding and review remediation'. No supplied evidence resolves the relative link or c3, or shows implementation observations and finding dispositions.",
+      "action": "Provide the relative link's source location, the c3 reference definition, and document lines showing implementation observations and finding dispositions to verify the premise.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied heading establishes the document's existence but cannot establish reference equivalence or the claimed contents.",
+        "options": [
+          "Supply reference-resolution evidence and relevant document contents, then reassess the premise.",
+          "Narrow the premise to the verified existence and title of the Epic evidence document."
+        ]
+      }
+    },
+    {
+      "claimId": "p26",
+      "ref": "Evidence and revision status",
+      "kind": "citation",
+      "severity": "LOW",
+      "premise": "The prior round-2 review report exists at the Epic-relative path evidence/review-round-2.json beginning at line 1.",
+      "evidence": "The read of docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-round-2.json:1 returned '{', confirming the cited file exists and begins at line 1.",
+      "action": "none \u2014 verified sound",
+      "fixability": "manual",
+      "proposedFix": {
+        "rationale": "The evidence confirms the premise; no correction is needed."
+      }
+    },
+    {
+      "claimId": "p27",
+      "ref": "Evidence and revision status",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The retained review applies to a previous revision rather than establishing independent review of the current definition.",
+      "evidence": "UNVERIFIABLE: review-round-2.json:1 contains only `{`, and grounding.md:1 contains only `# Connection-management grounding and review remediation`. Neither establishes which revision was reviewed or whether the current definition received independent review.",
+      "action": "Provide review revision identifiers and the current definition's revision identifier, plus evidence of reviewer independence, to establish whether the retained review applies.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied lines establish file presence but do not support the claimed revision mismatch.",
+        "options": [
+          "Supply revision-linked review evidence and reassess the premise.",
+          "Reword the premise to state that the supplied evidence does not establish independent review of the current definition."
+        ]
+      }
+    },
+    {
+      "claimId": "p28",
+      "ref": "Evidence and revision status",
+      "kind": "cross-artifact",
+      "severity": "MED",
+      "premise": "The current revision's finding dispositions contain no author override.",
+      "evidence": "The supplied reads show only the heading at docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/grounding.md:1 and an opening brace at docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/evidence/review-round-2.json:1. Neither exposes finding dispositions or identifies the current revision, so the absence of an author override is unverifiable.",
+      "action": "Gather the current revision identifier and its complete finding dispositions, including override fields, then reassess the claim.",
+      "fixability": "assisted",
+      "proposedFix": {
+        "rationale": "The supplied evidence neither confirms nor contradicts the claim; no factual text correction is supported.",
+        "options": [
+          "Supply revision-linked disposition records that establish whether any author override exists.",
+          "Qualify the premise as unverified pending inspection of the current revision's complete dispositions."
+        ]
+      }
+    }
+  ],
+  "counts": {
+    "high": 0,
+    "med": 26,
+    "low": 2
+  },
+  "reviewedAt": "2026-10-21T06:02:37.454Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

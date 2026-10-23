@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>insrc · Connection management PRD</title>
+<style>
+:root{color-scheme:dark;--bg:#101614;--panel:#19211e;--text:#e1e8e3;--muted:#a3b2aa;--line:#33423a;--accent:#b9df61}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1160px;margin:auto;padding:40px 30px 64px}header{border-bottom:1px solid var(--line);padding-bottom:24px}.brand{display:flex;align-items:center;gap:9px;font-size:22px;font-weight:650}.brand img{width:32px;height:32px;object-fit:contain}h1{font-size:32px;line-height:1.2;margin:20px 0 12px}h2{font-size:21px;margin:32px 0 12px}h3{font-size:16px}p{max-width:960px}a{color:var(--accent)}.meta,.muted{color:var(--muted)}.pill{border:1px solid var(--line);padding:3px 9px;border-radius:20px;font-size:12px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:500}.note{padding:14px 18px;border-left:3px solid var(--accent);background:var(--panel)}code{font-size:12px;overflow-wrap:anywhere}.mock-caption{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:18px 0 10px}.mock-caption select{width:auto}.studio{--editor:#1f1f1f;--side:#181818;--field:#313131;--border:#454545;--fg:#ccc;--sub:#9d9d9d;--blue:#0078d4;background:var(--editor);color:var(--fg);border:1px solid #484848;border-radius:7px;overflow:hidden;font:13px/1.5 "Segoe UI",sans-serif}.studio.light{--editor:#fff;--side:#f3f3f3;--field:#fff;--border:#c8c8c8;--fg:#333;--sub:#666;color-scheme:light}.titlebar{height:35px;background:var(--side);display:flex;justify-content:center;align-items:center;border-bottom:1px solid var(--border);color:var(--sub)}.workbench{display:grid;grid-template-columns:44px 180px minmax(0,1fr);min-height:610px}.activity{background:var(--side);border-right:1px solid var(--border);text-align:center;font-size:19px;padding-top:16px}.activity div{margin-bottom:25px}.tree{padding:18px 10px;background:var(--side)}.tree strong{font-size:11px;letter-spacing:1px}.tree div{padding:6px 8px}.tree .selected{background:#37373d;color:#fff;border-left:2px solid #b9df61}.screen{min-width:0}.tab{padding:9px 18px;border-bottom:1px solid var(--border)}.settings{padding:22px 26px}.search{background:var(--field);border:1px solid var(--border);padding:6px 10px;margin-bottom:12px}.scope{border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:22px}.scope span{border-bottom:2px solid var(--blue);padding:9px 5px}.settings h2{font-size:21px;margin:14px 0}.settings h3{font-size:15px;margin:18px 0 4px}.settings p{margin:5px 0 14px;color:var(--sub)}button,select,input{font:inherit}button{cursor:pointer;background:#303030;border:1px solid #666;color:#eee;padding:6px 12px;border-radius:2px}button.primary{background:#0078d4;border-color:#0078d4;color:#fff}button:disabled{opacity:.45;cursor:default}button:hover:not(:disabled){filter:brightness(1.15)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #75beff;outline-offset:2px}.studio input,.studio select{width:100%;padding:6px 8px;background:var(--field);color:var(--fg);border:1px solid var(--border)}.studio label{display:block;margin:10px 0 4px}.repo{max-width:440px}.tools{display:flex;gap:8px;align-items:center;margin:18px 0}.tools strong{margin-right:auto}.rows{border:1px solid var(--border)}.row{padding:13px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center}.row:last-child{border:0}.row .info{flex:1;min-width:0}.row small{display:block;color:var(--sub)}.badge{font-size:11px;color:#a7d47a}.badge.unknown{color:var(--sub)}.form{max-width:570px;border-top:1px solid var(--border);margin-top:18px;padding-top:4px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.actions{display:flex;gap:8px;margin-top:18px}.feedback{min-height:22px;margin-top:12px;color:#a7d47a}.feedback.error{color:#f48771}.studio.light .feedback{color:#36721d}.studio.light .feedback.error{color:#b50000}.statusbar{padding:3px 12px;background:#17442a;color:#e0eadd;font-size:11px}.hint{font-size:12px;color:var(--sub)}[hidden]{display:none!important}.mock-only{font-size:12px;color:var(--muted)}@media(max-width:760px){main{padding:24px 14px}.workbench{grid-template-columns:35px minmax(0,1fr)}.tree{display:none}.settings{padding:16px}.row{flex-wrap:wrap}.fields{grid-template-columns:1fr}.mock-caption{align-items:flex-start;flex-direction:column}}@media print{.studio{break-inside:avoid}button{display:none}body{background:white;color:black}.meta,.muted{color:#555}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="brand">
+<img src="../site/insrc-icon-transparent-128.png" alt="">insrc</div>
+<h1>Connection management in Settings</h1>
+<div class="meta">Product requirements · 21 October 2026 · <span class="pill">Draft for review</span>
+</div>
+<p>
+Make registered data sources easy to find and maintain from VS Code’s insrc Settings, so data analysis and the
+future ontology builder can use them.
+</p>
+</header>
+<h2>1. Scope and current product</h2>
+<p>Add an <strong>insrc → Data Connections</strong> settings entry with a clear <strong>Manage Connections</strong>
+action. Open a themed connection manager in the editor, retaining the selected repository. Users can view,
+add, update, test, and remove connections without editing JSON. Repository selection determines data
+visibility; each connection also has an explicit lifetime scope: Saved repository or Temporary session.
+Temporary connections support one-off CSV/JSON/Parquet analysis and any other daemon-supported driver; the
+native User/Workspace settings tabs do not change connection ownership.
+</p>
+<div class="note">
+<strong>Existing implementation:</strong>
+The separate insrc IDE fork already registers a Data Sources editor and add/edit/remove/test commands. This
+work improves Settings discoverability and the management interaction, reusing that surface and the daemon.
+The standalone VS Code extension has Settings contributions but no equivalent connection management wiring
+found during inspection.
+</div>
+<p class="muted">
+Visual basis: existing insrc configuration groups, native VS Code Settings search/category layout, and the
+IDE’s theme-token-based Data Sources editor with repository sections. The mocks show proposed additions; they
+are not screenshots of shipping UI.
+</p>
+<h2>2. Required behavior</h2>
+<p>Product baseline: CM01 discovery/listing; CM02 add; CM03 safe editing/credentials; CM04 draft tests; CM05 save outcomes; CM06 repository/error handling; CM07 saved/temporary lifetimes and filters; CM08 discard/delete. These are required outcomes, not assertions of existing production behavior.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Acceptance</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>CM01</td><td>Discover and list</td><td>Searching “insrc connections” exposes the settings entry. Manage Connections lists the selected registered repository’s connection ID, label, driver, family and lifetime scope. Loading, failed read, and empty are distinct states.</td></tr>
+<tr><td>CM02</td><td>Add a connection</td><td>Pick a driver returned by the daemon, then supply a unique ID, optional label, and the driver’s URL or file path. Required fields and duplicate IDs show inline errors. An add must never silently update an existing ID.</td></tr>
+<tr><td>CM03</td><td>Update a connection</td><td>Open the selected connection with existing non-secret fields populated. ID and driver are fixed in this release. Populate the endpoint without its password. Credentials have explicit Keep stored / Replace / Clear actions; Keep stored is the edit default and survives endpoint changes, Replace requires a masked new password, and Clear explicitly removes it. Add supports Replace or no password. Test and Save apply the same endpoint and credential patch. Cancel makes no changes. Unknown supported configuration fields survive a basic edit.</td></tr>
+<tr><td>CM04</td><td>Test without saving</td><td>Test the current form and show success/failure and time. Editing any connection field invalidates the result. Bind each request to its repository, draft revision, and request ID; ignore late results after edits, repository switches, form closure, or a newer request. Show a pending state, disable repeated Test while pending, and time out after 10 seconds with retry. Cancel or ignore obsolete requests and always release transient drivers. “Saved” never means “reachable”; test success does not establish schema completeness or permission for every probe.</td></tr>
+<tr><td>CM05</td><td>Save and refresh</td><td>For Saved repository scope, show success only after the daemon confirms persistence. For Temporary session scope, show “Added for this session” only after daemon registration in session memory; do not claim persistence. Refresh the authoritative list and activate the connection for analyzer use. Report persistence, activation, and list refresh separately: if persistence succeeds but activation or refresh fails, show “Saved; activation/refresh failed” with retry of only the failed operation. Never repeat create to recover refresh. Retain the draft on failed or uncertain persistence. A lost save response shows “Save outcome unknown”; reconcile using a stable operation ID before allowing a new mutation. Test is recommended, not mandatory, for saving.</td></tr>
+<tr><td>CM06</td><td>Scope and failure handling</td><td>Multi-root workspaces require explicit registered-repository selection. No repository offers registration guidance; unavailable daemon offers retry. A read failure cannot be shown as “no connections.” Switching repository or closing a dirty form offers discard/cancel. A registry read failure blocks all mutations, including direct RPC calls, and leaves registry bytes and credentials unchanged; a missing registry is a valid empty registry.</td></tr>
+<tr><td>CM07</td><td>Choose and filter lifetime scope</td><td>Add offers Saved repository (default) and Temporary session, independently of driver family. Scope is fixed during edit. Temporary connections are bound to the originating workbench session and selected repository, visible to analysis only with that session context; closing the manager or switching repositories does not discard them. Ending the workbench session or restarting the daemon expires them; show this before adding. Store temporary configs and credentials only in daemon memory, never the saved registry or keychain. IDs are unique across both scopes within the session’s repository view; duplicate IDs fail instead of shadowing a saved connection. Filter the panel by All / Saved repository / Temporary session, with scope badges, matching counts, and a distinct “No connections match this filter” state. Adding reveals the new connection even when the previous filter excluded its scope.</td></tr>
+<tr><td>CM08</td><td>Discard and delete</td><td>Each temporary row offers Discard; each saved row offers Delete. Confirm the connection ID and scope, state that source files and database data are never deleted, and offer Cancel. Delete removes the saved registry entry and its owned credentials; Discard removes session registration and credentials from memory. Require revision checks, retain the row on failure, and support idempotent retry/reconciliation after an uncertain response. In-use connections return a clear busy error without removal; users retry after analysis completes. Successful removal prevents new analysis from resolving the connection and releases idle driver resources. A dirty form requires discard confirmation before removal.</td></tr>
+</tbody>
+</table>
+<h2>3. Clickable mock screens</h2>
+<p class="mock-only">
+Fictional fixtures. Use the screen picker, Manage Connections, Add Connection, Edit, Test Connection, and Save. No network, daemon, credential storage, or persistent writes are performed. The simulated test result is
+selectable.
+</p>
+<div class="mock-caption">
+<label>Screen <select id="scenario" aria-label="Mock screen">
+<option value="settings">Settings entry</option>
+<option value="list">Connection list</option>
+<option value="add">Add connection</option>
+<option value="edit">Update connection</option>
+<option value="empty">Empty repository</option>
+<option value="offline">Daemon unavailable</option>
+<option value="read-error">Registry read failed</option>
+<option value="no-repo">No registered repository</option>
+</select>
+</label>
+<button id="theme">Switch to light theme</button>
+</div>
+<div class="studio" id="studio">
+<div class="titlebar">insrc — Visual Studio Code</div>
+<div class="workbench">
+<aside class="activity" aria-hidden="true">
+<div>▱</div>
+<div>⌕</div>
+<div>⑂</div>
+<img src="../site/insrc-icon-transparent-128.png" width="26" height="26" alt="">
+<div style="margin-top:220px">⚙</div>
+</aside>
+<aside class="tree">
+<strong>SETTINGS</strong>
+<div>Commonly Used</div>
+<div>Text Editor</div>
+<div>Workbench</div>
+<div>Extensions</div>
+<div style="padding-left:18px">⌄ insrc</div>
+<div>General</div>
+<div>Workflow &amp; review</div>
+<div>Models</div>
+<div class="selected">Data Connections</div>
+</aside>
+<section class="screen">
+<div class="tab" id="tab">⚙ Settings</div>
+<div class="settings">
+<section id="entry">
+<div class="search">insrc connections</div>
+<div class="scope">
+<span>User</span>　Workspace</div>
+<h2>insrc › Data Connections</h2>
+<h3>Data Connections: Manage</h3>
+<p>Connect your repositories to databases, key-value stores, and data files for schema and data analysis.</p>
+<button class="primary" id="manage">Manage Connections</button>
+<p class="hint">Connections belong to a registered repository. Choose saved or temporary session lifetime when adding.</p>
+</section>
+<section id="manager" hidden>
+<h2>Data Connections</h2>
+<p>Manage data sources available to insrc analysis.</p>
+<label for="repo">Repository</label>
+<select class="repo" id="repo">
+<option value="billing">billing-service</option>
+<option value="identity">identity-service</option>
+</select>
+<p class="hint">
+Connections apply to this repository. Temporary connections expire at session end or daemon restart, not when
+this panel closes.
+</p>
+<div class="tools">
+<strong id="count">2 connections</strong>
+<button id="refresh">Refresh</button>
+<button class="primary" id="add">Add Connection</button>
+</div>
+<label for="scope-filter">Filter by scope</label>
+<select id="scope-filter">
+<option value="all">All scopes</option>
+<option value="saved">Saved repository</option>
+<option value="temporary">Temporary session</option>
+</select>
+<div id="rows" class="rows">
+</div>
+<form id="form" class="form" hidden>
+<h3 id="form-title">Add connection</h3>
+<div class="fields">
+<div>
+<label for="cid">Connection ID *</label>
+<input id="cid" required pattern="[a-zA-Z0-9_-]+" value="warehouse" autocomplete="off">
+</div>
+<div>
+<label for="driver">Driver *</label>
+<select id="driver">
+<option value="postgres">PostgreSQL</option>
+<option value="mongodb">MongoDB</option>
+<option value="csv">CSV file</option>
+<option value="json">JSON file</option>
+<option value="parquet">Parquet file</option>
+</select>
+</div>
+</div>
+<label for="connection-scope">Connection scope</label>
+<select id="connection-scope">
+<option value="saved">Saved repository</option>
+<option value="temporary">Temporary session</option>
+</select>
+<p class="hint">
+Temporary connections stay in session memory and expire when the workbench session ends or the daemon
+restarts. Source files are never deleted.
+</p>
+<label for="label">Label</label>
+<input id="label" value="Analytics warehouse">
+<label for="target" id="target-label">Connection URL *</label>
+<input id="target" required type="password" placeholder="Enter connection URL" autocomplete="off">
+<div id="credential" class="hint">Endpoints contain no passwords. Choose credential handling below.</div>
+<label for="credential-mode">Password action</label>
+<select id="credential-mode">
+<option value="keep">Keep stored password</option>
+<option value="replace">Replace password</option>
+<option value="clear">Clear password</option>
+</select>
+<label for="password">New password</label>
+<input id="password" type="password" autocomplete="new-password" disabled>
+<p class="hint">Keep retains the stored password even when the endpoint changes. Clear removes it explicitly.</p>
+<div class="actions">
+<button type="button" id="test">Test Connection</button>
+<button class="primary" type="submit">Save Connection</button>
+<button type="button" id="cancel">Cancel</button>
+<button type="button" id="close">Close manager</button>
+</div>
+<label class="hint" for="simulate">Prototype test outcome (delayed response)</label>
+<select id="simulate">
+<option value="ok">Success after 1.5 seconds</option>
+<option value="error">Authentication failed after 1.5 seconds</option>
+<option value="timeout">Timeout after 10 seconds</option>
+</select>
+<label class="hint" for="save-outcome">Prototype save outcome</label>
+<select id="save-outcome">
+<option value="ok">Success</option>
+<option value="read-error">Registry read fails during save</option>
+<option value="conflict">Newer version / concurrent create</option>
+<option value="deleted">Connection deleted during edit</option>
+<option value="activation">Saved; activation fails</option>
+<option value="refresh">Saved; list refresh fails</option>
+<option value="lost">Saved; response lost</option>
+</select>
+</form>
+<div class="actions">
+<button id="recover" hidden>Retry</button>
+<button id="reload" hidden>Reload latest</button>
+</div>
+<div id="feedback" class="feedback" role="status" aria-live="polite">
+</div>
+</section>
+</div>
+</section>
+</div>
+<div class="statusbar">insrc　 •　 Settings prototype　　　　　　　　　　　　Local fixtures only</div>
+</div>
+<h2>4. Interaction and implementation contract</h2>
+<p>
+Use native Settings for discovery and a themed editor for the rich list/form; a command link in the setting
+description should open the manager. Do not introduce a plaintext connections array in
+<code>settings.json</code>
+. Keep existing palette commands and the Data Sources editor routed to the same management behavior. Use VS
+Code theme tokens, native spacing, visible focus, associated labels, and keyboard-accessible controls. The
+standalone extension needs equivalent command/webview wiring; the IDE fork should extend its existing
+pane/service.
+</p>
+<table>
+<thead>
+<tr>
+<th>Reuse</th>
+<th>Required adjustment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>db.listConnections</code>, <code>db.listDriverKinds</code>
+</td>
+<td>
+Populate authoritative list and driver choices. The current list returns ID/kind/family/label only and swallows read errors into an empty list; add distinguishable errors and a safe editable-config read contract.
+</td>
+</tr>
+<tr>
+<td>
+<code>db.saveConnection</code>
+</td>
+<td>
+Retain daemon-owned persistence and secret extraction. Add explicit create/update semantics, conflict
+detection and credential preservation; existing upsert alone cannot protect duplicate adds or concurrent
+edits. Use an atomic per-repository mutation with create-if-absent and revision-checked update/delete. A stale
+update must neither overwrite a newer version nor recreate a deleted connection; preserve the draft, explain
+the conflict, and offer reload with discard confirmation. Simultaneous creates for one ID yield exactly one
+success. Check registry readability and revision before changing secrets; failure must preserve both registry
+and credentials, with rollback or transactional staging. Stable operation IDs make retries/reconciliation
+idempotent, including lost responses. Never return secret values to the renderer.
+</td>
+</tr>
+<tr>
+<td>
+<code>db.testConnection</code>
+</td>
+<td>
+Reuse transient driver test; test current draft without persistence. Resolve Keep stored / Replace / Clear
+server-side without exposing stored secrets. Apply the same merged configuration and revision checks as Save,
+without persisting draft secrets. Return sanitized errors and support a 10-second deadline and cleanup.
+</td>
+</tr>
+<tr>
+<td>Existing registry and driver pool</td>
+<td>Retain per-repository <code>~/.insrc/repos/&lt;repo-id&gt;/db-connections.json</code>
+and credential references. Re-read after save. Return separate persisted and activated outcomes and provide
+activation retry plus operation-status reconciliation. Keep saved connections in this registry. Add a daemon-
+owned ephemeral session overlay, not a second persistent registry; carry session identity through
+list/read/test/create/update/remove and analyzer resolution. Expire its configs, secrets, and idle resources
+on session end or daemon restart. Reuse db.deleteConnection for saved deletion with revision and operation-ID
+support; temporary discard uses the same removal contract against session memory. Session isolation must be
+enforced by the daemon.
+</td>
+</tr>
+</tbody>
+</table>
+<p>
+Inspect credential handling for each supported family before release; the current save path extracts URL
+passwords and is not a blanket guarantee for every secret in arbitrary driver options. Keep credentials out of
+workspace settings, logs, mock fixtures, telemetry, and error text.
+</p>
+<h2>5. Release boundary and verification</h2>
+<p>
+<strong>In scope:</strong>
+Settings entry, repository-scoped list, add/update forms, driver-specific required inputs, testing, safe saved-config editing, truthful errors, lifetime selection/filtering, and confirmed discard/delete. Existing removal commands share these semantics; automatic application-config discovery, new drivers, ontology generation, and team-shared credentials are outside this small release.
+</p>
+<p>
+Verify scope filters, empty-filter state, temporary session isolation/expiry, absence of temporary
+disk/keychain writes, discard/delete cancellation, busy/failure/stale-removal handling, source-file
+preservation, and ID collisions across scopes. Verify list/add/update across a SQL driver, KV driver, and file
+source; duplicate IDs; preserved and replaced credentials; unsupported configuration fields; stale/concurrent
+updates and deletion during edit; simultaneous duplicate creates; registry-read failure during save with byte-
+for-byte registry and credential preservation; lost save responses and idempotent reconciliation; activation
+and refresh failure after persistence; late test responses, timeout and repeated clicks; canceled edits;
+repository switching; daemon outage; invalid registry; and list refresh after save. Confirm the analyzer
+discovers the saved ID. Validate dark/light themes, keyboard navigation, masked credentials, and client/daemon
+contract compatibility. No live production data is required for UI testing.
+</p>
+<h2>6. Source references</h2>
+<ul>
+<li>
+<a href="../vscode-plugin/package.json">VS Code extension Settings contributions</a>
+</li>
+<li>
+<a href="../src/daemon/db-rpc.ts">Daemon connection management</a> and <a href="../src/daemon/db/config.ts">registry persistence</a>
+</li>
+<li>IDE fork: <code>src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts</code>; <code>browser/dbDrivers/dbDriversPane.ts</code>; <code>dbConnectionCommands.ts</code>; <code>insrcDbConnectionsServiceImpl.ts</code>. Verified locally; separate repository.</li>
+<li>
+<a href="ontology-builder-prd.html">Ontology PRD</a> · <a href="../plans/ontology-builder-implementation.md">Ontology delivery plan</a>
+</li>
+</ul>
+<p class="meta">
+Draft product artifact only. No connection APIs, settings contributions, or application code are changed by
+this document.
+</p>
+</main><script>
+const $=id=>document.getElementById(id);
+let mode='settings',editing=null,dirty=false,revision=0,request=0,pending=false,recovery=null,operation=null,opCounter=0,repoBefore='billing';
+const initial=[{id:'billing-db',label:'Billing database',driver:'postgres',target:'postgresql://analyst@localhost/billing',hasPassword:true,version:1,status:'Not tested',repo:'billing'},{id:'events',scope:'temporary',label:'Event archive',driver:'csv',target:'data/events.csv',hasPassword:false,version:1,status:'Not tested',repo:'billing'}];
+let data=initial.map(x=>({...x}));
+const names={postgres:'PostgreSQL · SQL',mongodb:'MongoDB · KV',csv:'CSV · File',json:'JSON · File',parquet:'Parquet · File'};
+function feedback(t,error=false){$('feedback').textContent=t;$('feedback').classList.toggle('error',error)}
+function invalidate(){revision++;request++;pending=false;$('test').disabled=false}
+function clearRecovery(){recovery=null;$('recover').hidden=true;$('reload').hidden=true}
+function resetForm(){invalidate();$('form').hidden=true;editing=null;dirty=false;$('password').value=''}
+function discard(){return !dirty||confirm('Discard unsaved changes?')}
+function render(){const rows=$('rows');rows.replaceChildren();const all=data.filter(c=>c.repo===$('repo').value);const list=all.filter(c=>$('scope-filter').value==='all'||(c.scope||'saved')===$('scope-filter').value);$('count').textContent=list.length+' connection'+(list.length===1?'':'s');if(!list.length){const p=document.createElement('p');p.style.padding='14px';p.textContent=all.length?'No connections match this filter.':'No connections yet. Add a data source to start analyzing schemas.';rows.append(p)}for(const c of list){const row=document.createElement('div');row.className='row';const info=document.createElement('div');info.className='info';const title=document.createElement('strong');title.textContent=c.label||c.id;const sub=document.createElement('small');sub.textContent=c.id+' · '+names[c.driver]+' · '+(c.scope==='temporary'?'Temporary session':'Saved repository');info.append(title,sub);const badge=document.createElement('span');badge.className='badge unknown';badge.textContent=c.status;const edit=document.createElement('button');edit.textContent='Edit';edit.disabled=!!operation;edit.onclick=()=>openForm(c);const remove=document.createElement('button');remove.textContent=c.scope==='temporary'?'Discard':'Delete';remove.disabled=!!operation;remove.onclick=()=>removeConnection(c);row.append(info,badge,edit,remove);rows.append(row)}}
+function credentialsUI(){const file=$('driver').value==='csv'||['json','parquet'].includes($('driver').value);$('credential-mode').disabled=file||!!operation;$('password').disabled=file||$('credential-mode').value!=='replace'||!!operation;$('password').required=!file&&$('credential-mode').value==='replace';if($('password').disabled)$('password').value=''}
+function targetUI(){const file=$('driver').value==='csv'||['json','parquet'].includes($('driver').value);$('target-label').textContent=file?'File or directory path *':'Endpoint URL (without password) *';$('target').type='text';$('target').placeholder=file?'data/export.csv':'postgresql://user@host/database';$('target').required=true;$('credential').textContent=file?'Paths resolve against the selected repository.':editing&&editing.hasPassword?'A stored password is available; its value is never displayed.':'No stored password.';const keep=$('credential-mode').querySelector('option[value="keep"]');keep.disabled=!editing;$('credential-mode').value=editing?'keep':'clear';credentialsUI()}
+function openForm(c=null){if(operation||!discard())return;resetForm();clearRecovery();editing=c?{...c}:null;$('form').hidden=false;$('form-title').textContent=c?'Update connection':'Add connection';$('cid').value=c?c.id:'warehouse';$('cid').disabled=!!c;$('driver').value=c?c.driver:'postgres';$('driver').disabled=!!c;$('connection-scope').value=c?(c.scope||'saved'):'saved';$('connection-scope').disabled=!!c;$('label').value=c?c.label:'Analytics warehouse';$('target').value=c?c.target:'';$('password').value='';targetUI();feedback('');(c?$('label'):$('cid')).focus()}
+function show(s){if(operation||!discard()){$('scenario').value=mode;return}resetForm();clearRecovery();mode=s;$('scenario').value=s;$('entry').hidden=s!=='settings';$('manager').hidden=s==='settings';$('tab').textContent=s==='settings'?'⚙ Settings':'Data Connections';$('repo').disabled=false;$('add').disabled=false;feedback('');$('repo').value=s==='empty'?'identity':'billing';repoBefore=$('repo').value;render();if(s==='add')openForm();if(s==='edit')openForm(data.find(c=>c.repo==='billing')||null);if(['offline','read-error','no-repo'].includes(s)){$('rows').replaceChildren();$('count').textContent='Connections unavailable';$('add').disabled=true;feedback(s==='offline'?'insrc daemon unavailable. Retry to reconnect.':s==='read-error'?'Registry read failed. Mutations blocked; existing data is unchanged.':'No registered repositories. Register a repository before adding connections.',true);if(s==='no-repo')$('repo').disabled=true}}
+function lockUnknown(lock){for(const id of ['scenario','repo','add','refresh','cid','driver','label','target','credential-mode','password','test','cancel','close','connection-scope','scope-filter'])$(id).disabled=lock;if(!lock){$('cid').disabled=!!editing;$('driver').disabled=!!editing;$('connection-scope').disabled=!!editing;credentialsUI()}$('form').querySelector('[type="submit"]').disabled=lock}
+function recoveryButton(kind,label){recovery=kind;$('recover').textContent=label;$('recover').hidden=false}
+$('scenario').onchange=()=>show($('scenario').value);$('manage').onclick=()=>show('list');$('add').onclick=()=>openForm();
+$('driver').onchange=()=>{targetUI();$('target').value='';invalidate();dirty=true;feedback('Form changed. Test result cleared.')};
+$('credential-mode').onchange=credentialsUI;
+$('repo').onchange=()=>{if(operation||!discard()){$('repo').value=repoBefore;return}repoBefore=$('repo').value;resetForm();clearRecovery();feedback('');render()};
+$('form').oninput=e=>{if(['simulate','save-outcome'].includes(e.target.id))return;invalidate();dirty=true;clearRecovery();feedback('Form changed. Test result cleared.')};
+$('cancel').onclick=()=>{if(!discard())return;resetForm();clearRecovery();feedback('Changes canceled.')};$('close').onclick=()=>show('settings');
+function validDraft(){if(!$('form').reportValidity())return false;if(!['csv','json','parquet'].includes($('driver').value)){try{const u=new URL($('target').value);if(u.password){feedback('Remove the password from the endpoint; use Replace password.',true);return false}}catch{feedback('Enter a valid endpoint URL.',true);return false}}return true}
+$('test').onclick=()=>{if(pending||!validDraft())return;const ticket=++request,rev=revision,repo=$('repo').value,outcome=$('simulate').value;pending=true;$('test').disabled=true;feedback('Testing current draft…');const start=performance.now();setTimeout(()=>{if(ticket!==request||rev!==revision||repo!==$('repo').value||$('form').hidden)return;pending=false;$('test').disabled=false;feedback(outcome==='timeout'?'Test timed out after 10 seconds. Retry available.':outcome==='ok'?'Simulated test succeeded · '+Math.round(performance.now()-start)+' ms · Current draft only; not saved.':'Simulated authentication failure. Check credentials and retry.',outcome!=='ok')},outcome==='timeout'?10000:1500)};
+$('form').onsubmit=e=>{e.preventDefault();if(operation||!validDraft())return;invalidate();clearRecovery();const id=$('cid').value.trim(),repo=$('repo').value,outcome=$('save-outcome').value;const existing=data.find(c=>c.id===id&&c.repo===repo);if(outcome==='read-error'){feedback('Registry read failed. Save blocked; registry and stored credentials unchanged. Draft retained.',true);return}if(outcome==='conflict'||outcome==='deleted'||(!editing&&existing)||(editing&&(!existing||existing.version!==editing.version))){if(outcome==='deleted'&&editing)data=data.filter(c=>!(c.id===id&&c.repo===repo));else if(outcome==='conflict'&&existing)existing.version++;else if(outcome==='conflict'&&!existing)data.push({id,repo,label:'Concurrent connection',driver:$('driver').value,target:$('target').value,hasPassword:false,version:1,status:'Not tested'});feedback('Conflict: connection changed, already exists, or was deleted. Nothing from this draft was saved. Reload latest to reconcile; draft retained.',true);$('reload').hidden=false;return}const action=$('credential-mode').value;const c={id,repo,scope:$('connection-scope').value,label:$('label').value.trim(),driver:$('driver').value,target:$('target').value,hasPassword:$('driver').value==='csv'||['json','parquet'].includes($('driver').value)?false:action==='keep'?!!existing?.hasPassword:action==='replace',version:(existing?.version||0)+1,status:'Not tested'};const operationId='mock-operation-'+(++opCounter);data=data.filter(x=>!(x.id===id&&x.repo===repo));data.push(c);$('scope-filter').value='all';$('password').value='';if(outcome==='lost'){operation={id:operationId,connection:c};lockUnknown(true);render();feedback('Save outcome unknown. Draft retained; reconcile this operation before another mutation.',true);recoveryButton('reconcile','Reconcile save outcome');return}resetForm();if(outcome==='activation'){render();feedback('Saved; activation failed. Analyzer availability is not confirmed.',true);recoveryButton('activation','Retry activation only')}else if(outcome==='refresh'){feedback('Saved and activated; list refresh failed. Displayed list may be stale.',true);recoveryButton('refresh','Retry list refresh only')}else{render();feedback((c.scope==='temporary'?'Added for this session; not persisted.':'Saved repository connection.')+' Activated and list refreshed in prototype memory. Connection has not been tested.')}};
+$('reload').onclick=()=>{if(!discard())return;const id=$('cid').value,repo=$('repo').value;const latest=data.find(c=>c.id===id&&c.repo===repo);dirty=false;if(latest)openForm(latest);else{resetForm();clearRecovery();render();feedback('Connection was deleted. Draft discarded; use Add to create a new connection.')}};
+$('recover').onclick=()=>{const kind=recovery;clearRecovery();if(kind==='reconcile'){const id=operation.id;operation=null;lockUnknown(false);resetForm();render();feedback('Operation '+id+' confirmed persisted and activated. List refreshed; create was not repeated.')}else{render();feedback(kind==='activation'?'Saved connection activated. No persistence repeated.':'Authoritative fixture list refreshed. No persistence repeated.')}};
+$('refresh').onclick=()=>{if(['offline','read-error'].includes(mode)){show('list');feedback('Simulated recovery: authoritative fixture list loaded.');return}if(mode==='no-repo'){feedback('Register a repository first.',true);return}render();feedback('Fixture list refreshed.')};
+function removeConnection(c){if(operation||!discard())return;if(!confirm((c.scope==='temporary'?'Discard temporary connection ':'Delete saved connection ')+c.id+'? Source files and database data will not be deleted.'))return;const latest=data.find(x=>x.id===c.id&&x.repo===c.repo);if(!latest||latest.version!==c.version){feedback('Removal conflict. Refresh before retrying.',true);return}resetForm();clearRecovery();data=data.filter(x=>x!==latest);render();feedback((c.scope==='temporary'?'Discarded temporary connection ':'Deleted saved connection ')+c.id+'. Source files and database data unchanged. Prototype memory only.')}
+$('scope-filter').value='all';$('scope-filter').onchange=render;
+$('theme').onclick=()=>{const light=$('studio').classList.toggle('light');$('theme').textContent=light?'Switch to dark theme':'Switch to light theme'};show('settings');
+</script></body></html>
+
+<!-- Delivery invariant: daemon owns connection persistence and secrets; clients use IPC; stored secret values must never be returned to clients. This is required behavior, not a claim of current implementation. -->
+
+<!-- Required mutation guarantee: failed registry reads and rejected stale mutations must preserve registry contents and stored credentials unchanged. Unknown mutation responses must reconcile idempotently using the same operation ID before another mutation; activation/refresh retries must not repeat creation. -->
+<!-- Required compatibility guarantee: connection IPC changes must preserve existing clients through an explicit compatibility strategy, and method names and payload shapes must remain synchronized with the separate IDE fork through mirrored types. Existing-client behavior is a design/build validation gate, not assumed compatibility. -->

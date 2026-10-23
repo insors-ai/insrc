@@ -1,0 +1,245 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "a27df0280289e6c6",
+    "storyId": "S001",
+    "createdAt": "2026-10-23T06:20:58.215Z",
+    "updatedAt": "2026-10-23T07:00:48.894Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-23T05:44:08.424Z",
+    "epicSlug": "add-per-tier-reasoning-effort-setting"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": false
+      }
+    ],
+    "summary": "Live checks show both CLIs honour the effort flag; the full sweep passed (the one contention failure passes with the live daemon stopped); the config sets core high and mid medium and the one updated daemon (108a8579) runs with it.",
+    "testRecord": {
+      "md": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/config/__tests__/analyze-tiering.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/tier-defaults.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/config/analyze.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/fixtures/legacy-config.baseline.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-review-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/tier-effort-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/role-router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/shaper-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/model-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ModelTiersPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/model-tiers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/__tests__/tier-effort.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/models/model-tier-picker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t7-jetbrains-gradle.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/model-tiers-effort-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-live-effort.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-effort.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-full-sweep.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T07:00:48.894Z"
+      }
+    ],
+    "commit": "3c7e94e1"
+  }
+}

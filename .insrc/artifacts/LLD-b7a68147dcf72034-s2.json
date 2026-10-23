@@ -86,6 +86,13 @@
         "choice": "Second HLD amendment run",
         "rationale": "Done in the s3 run: AMD-b7a68147dcf72034-6 (sc2) and -7 (sc3) are filed and approved; -3 and -5 cover the sc5 additions.",
         "resolvedAt": "2026-10-23T12:28:14.573Z"
+      },
+      "qfd86b70f": {
+        "question": "DEF S002 FR001 ('a tool without a declared result shape cannot be registered') and FR004 ('every tool declares the shape of its result') are narrowed by the recorded decision in docs/plans/tool-registry.md that only tools code calls need a schema, enforced at the callTool type. The amendment tool handles HLD amendments only and cannot amend DEF text, so this LLD keeps registration unchanged and asks the reviewer or the user to accept that decision record as the amendment.",
+        "status": "resolved",
+        "choice": "Accept the decision record as the amendment",
+        "rationale": "The user decided this (\"only tools that code calls need a typed output\") and approved the s2 LLD with the narrowing recorded in docs/plans/tool-registry.md.",
+        "resolvedAt": "2026-10-23T12:28:52.297Z"
       }
     }
   },

@@ -394,6 +394,8 @@ Tool gains an optional outputSchema as in a1 and a second optional declaration, 
 
 - `q1b796a94` — The sc2 and sc3 refinements (a typebox TSchema in place of JsonSchema plus a phantom type, a typed input, a ToolDeps parameter on convertText) differ from the HLD sketches. Only the sc5 additions (ToolResult.failure, ToolFailure.original, ToolDenialReason) are proposed as an HLD amendment, because one proposal is allowed per run; the sc2 and sc3 refinements need their own amendment or a back-flow (audit item sbdry3, partial).
   - **resolved**: Second HLD amendment run — Done in the s3 run: AMD-b7a68147dcf72034-6 (sc2) and -7 (sc3) are filed and approved; -3 and -5 cover the sc5 additions. _(2026-10-23T12:28:14.573Z)_
+- `qfd86b70f` — DEF S002 FR001 ('a tool without a declared result shape cannot be registered') and FR004 ('every tool declares the shape of its result') are narrowed by the recorded decision in docs/plans/tool-registry.md that only tools code calls need a schema, enforced at the callTool type. The amendment tool handles HLD amendments only and cannot amend DEF text, so this LLD keeps registration unchanged and asks the reviewer or the user to accept that decision record as the amendment.
+  - **resolved**: Accept the decision record as the amendment — The user decided this ("only tools that code calls need a typed output") and approved the s2 LLD with the narrowing recorded in docs/plans/tool-registry.md. _(2026-10-23T12:28:52.297Z)_
 
 ## Citations
 

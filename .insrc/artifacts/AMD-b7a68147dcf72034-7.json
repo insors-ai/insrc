@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-790d3dd9-6fad-4673-9cb3-f3c8b841454f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T11:51:49.846Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "20180d32bee926723b029cb25b3406f890cd5564dd8477db51d1221c6c248209",
+        "at": "2026-10-23T11:51:49.847Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:24:34.985Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-7",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc3",
+      "field": {
+        "name": "convertText takes ToolDeps; keyValues required",
+        "type": "convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>; ConversionRequest.keyValues is required",
+        "optional": false,
+        "purpose": "Refines the sc3 sketch as approved in the s2 LLD (requirement R2): deps supplies repoPath, signal and the optional conversion setting."
+      },
+      "breaking": false
+    },
+    "rationale": "Refines the sc3 sketch as approved in the s2 LLD (requirement R2): deps supplies repoPath, signal and the optional conversion setting.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792753489483-m36f90",
+      "storyId": "s3",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-23T11:51:49.845Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S003/LLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md"
+    }
+  ]
+}

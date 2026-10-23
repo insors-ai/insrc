@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-521ea8ec-da0a-41c6-8a23-c17f185d0841",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T11:51:49.837Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "92519c288526e76231d61708f0e8670e59bb74b3c14c237faf197d7d90789e36",
+        "at": "2026-10-23T11:51:49.837Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:24:23.713Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-b7a68147dcf72034-6",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc2",
+      "field": {
+        "name": "outputSchema is a typebox TSchema; TypedTool; callTool signature",
+        "type": "outputSchema?: TSchema (typebox); TypedTool = Tool & { inputSchema: TSchema; outputSchema: TSchema }; callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>",
+        "optional": false,
+        "purpose": "Refines the sc2 sketch as approved in the s2 LLD (requirement R2): typebox instead of JsonSchema plus a phantom type, and a typed input."
+      },
+      "breaking": false
+    },
+    "rationale": "Refines the sc2 sketch as approved in the s2 LLD (requirement R2): typebox instead of JsonSchema plus a phantom type, and a typed input.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1792753489483-m36f90",
+      "storyId": "s3",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-23T11:51:49.834Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S003/LLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md"
+    }
+  ]
+}

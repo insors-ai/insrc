@@ -137,3 +137,14 @@ R2. sc2 and sc3 refinements (finding 1). The LLD refines two HLD sketches, and c
 The HLD amendments for these two contracts are filed in the s3 design run (a step can carry one proposal each), and are approved before the s4 LLD is written. Until then this section is the authority.
 
 Amendment housekeeping: AMD-b7a68147dcf72034-1 (superseded) and -2 (duplicate of -3) are rejected; -3 is approved with the s3 amendments.
+
+## s3 LLD review (2026-10-23): six rounds, approved with override
+
+LLD-b7a68147dcf72034-s3 (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S003/LLD.md). Cycle 1: 6 MED, then 1 HIGH + 3 MED, then 4 MED. Cycle 2: 2 MED, 1 MED, 2 MED. Every finding but the DEF ac6 one was fixed in the LLD (the last round's retire-`permissions.mode` test and fixture sites were added after the override decision).
+
+Decisions the LLD carries: broker plus `approval.subscribe` / `approval.answer` (alternative a1); 300 second wait; `Tool.approval` replaces `requiresApproval` and `destructive` (true to common, predicate to per-input, false or absent to none); flag `tools.commonApproval` in the on-disk config catalog (default auto); `permissions.mode` retired, not migrated; `caller` and `approvalMode` fields of the tool-call IPC belong to sc4 and s7 builds the method against them; an aborted approval is denied with reason `cancelled`; the streaming method on `IpcClient` is optional.
+
+Binding on the s3 plan and build:
+- AMD-b7a68147dcf72034-4 (sc4), -5 (sc5 `cancelled`), -6 (sc2) and -7 (sc3) are approved before the s3 and s2 plans.
+- DEF s3 ac6 is read as: a tool that needs approval asks when the effective mode is manual or edit-auto, and a destructive tool always asks; under the default auto a common tool runs without asking. The amendment tool is HLD-only, so this note is the record. The s3 build's code review checks the design against this reading.
+- s7 builds the tool-call IPC with `caller` and optional `approvalMode`.

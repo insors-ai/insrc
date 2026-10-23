@@ -74,6 +74,15 @@
           "reason": "Daemon review round 1 blocked with 0 HIGH and 11 MED, all grounding gaps rather than wrong claims. The factual premises were checked by hand against the code on 2026-10-23 (executeTool is the single run path; the approval gate auto-approves with no dispatcher; git_push/git_reset flag approval on every call; call-site counts) and recorded in docs/plans/tool-registry.md, to be carried into design.epic. User approved with override."
         }
       }
+    },
+    "questionResolutions": {
+      "q94cc9d82": {
+        "question": "Item a2: the acli command surface is unchecked; before the Jira stories are designed, install acli and record its subcommands and output for transitions, comments, assignment and projects, and how a missing install differs from a missing sign-in.",
+        "status": "resolved",
+        "choice": "Probe acli now, before HLD",
+        "rationale": "Done 2026-10-23: acli 1.3.39 installed and probed; results in docs/plans/tool-registry.md (acli probe section).",
+        "resolvedAt": "2026-10-23T09:20:13.483Z"
+      }
     }
   },
   "body": {

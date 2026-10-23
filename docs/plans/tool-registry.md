@@ -124,3 +124,16 @@ Resolves HLD review round 3 finding 3. s3 maps the 8 builtins that set `destruct
 LLD-b7a68147dcf72034-s2 (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/LLD.md). Round 1: 1 HIGH, 4 MED. Round 2: 1 MED (incomplete ToolDeps builder inventory, fixed). Round 3: 2 MED, 0 HIGH, still open:
 1. sc2 and sc3 refinements (typebox TSchema instead of JsonSchema plus a phantom type; callTool over TypedTool with a typed input; convertText takes a deps parameter) differ from the HLD sketches and no amendment is filed; only sc5 amendments exist (AMD-b7a68147dcf72034-1, -2, -3, all draft; -1 is superseded and -2 is a duplicate of -3). One amendment proposal is allowed per design.story step run (s4 and s5 can each carry one), so sc2 and sc3 need their own proposals in a new run.
 2. convertText must call `LLMProvider.completeStructured` with `internalRetry: false` and `maxAttempts: 1` (src/shared/types.ts:290-291, 322-325), pass a signal that combines the per-attempt deadline and `deps.signal`, and use withStructuredRetry as the only retry loop; otherwise each "attempt" hides up to three provider attempts and breaks "at most two attempts per tier". Add a unit test that the fake provider sees exactly 2 + 2 calls.
+
+## s2: requirements the PLAN and BUILD must carry (captured at LLD approval with override, 2026-10-23)
+
+These two review round 3 findings are not in the s2 LLD text. They bind the s2 plan and build, and the build's code review checks them.
+
+R1. Conversion retries (finding 2). `convertText` calls `LLMProvider.completeStructured` with `internalRetry: false` and `maxAttempts: 1` (src/shared/types.ts:290-291, 322-325). It passes a signal that combines the per-attempt deadline and `deps.signal`, and `withStructuredRetry` is the only retry loop. So "at most two attempts per tier" is exact: the cheap role gets 2 provider calls, the escalation role 2 more, 4 in all. A unit test with a fake provider asserts exactly 2 + 2 calls when every attempt fails, and exactly 1 call on first-attempt success.
+
+R2. sc2 and sc3 refinements (finding 1). The LLD refines two HLD sketches, and consumers s4 to s7 must read the refined shapes, not the HLD sketches:
+- sc2: `outputSchema` is a typebox `TSchema` (no `JsonSchema` plus phantom type); `TypedTool = Tool & { inputSchema: TSchema; outputSchema: TSchema }`; `callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>`.
+- sc3: `convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>`; `keyValues` is required; `deps` supplies `repoPath`, `signal` and the new optional `conversion`.
+The HLD amendments for these two contracts are filed in the s3 design run (a step can carry one proposal each), and are approved before the s4 LLD is written. Until then this section is the authority.
+
+Amendment housekeeping: AMD-b7a68147dcf72034-1 (superseded) and -2 (duplicate of -3) are rejected; -3 is approved with the s3 amendments.

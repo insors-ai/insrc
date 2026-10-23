@@ -71,6 +71,13 @@
         "choice": "Carry the mapping into the plan",
         "rationale": "One invariant covers every entry; a per-task check enforces it where the work is verified.",
         "resolvedAt": "2026-10-23T14:05:26.709Z"
+      },
+      "qeab4c947": {
+        "question": "ep3 (partial): the invariants rest on direct code reads recorded in the s1 bundles, not on insrc_analyze_step output.",
+        "status": "resolved",
+        "choice": "Accept the direct reads as grounding",
+        "rationale": "The invariants are enforced by per-task checks (previous answer); the direct reads of the code are concrete.",
+        "resolvedAt": "2026-10-23T14:06:10.568Z"
       }
     }
   },

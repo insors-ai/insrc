@@ -25,7 +25,23 @@ Epic: `one-tool-registry-git-gh-jira` (DEF-b7a68147dcf72034, docs/epics/one-tool
 
 ## Open
 
-- acli's command surface is unchecked (install it and record transitions, comments, assignment, projects, and how not-installed differs from not-signed-in) before the Jira stories are designed.
 - Which values the cheap-model conversion cross-checks against the raw CLI text, and what happens when its retries run out.
 - Which gh operations are text-only (for example `gh pr diff`, `gh run view --log`) and need the conversion path.
 - The team-signoff Epic's s9 Story (tracker refresh after a pull or push) is parked on this Epic and is updated after it is done.
+
+## acli probe (2026-10-23, acli 1.3.39-stable, signed in via OAuth to insors.atlassian.net)
+
+- Top level: `admin auth confluence guard jira rovodev config`. `acli jira`: `auth board dashboard field filter project sprint workitem`.
+- `workitem`: archive, assign, attachment, clone, comment (create, delete, list, update, visibility), create, create-bulk, delete, edit, link, list-watchers, search, transition, unarchive, view, watcher.
+- `transition --key K1,K2 | --jql | --filter --status "<name>" [--yes] [--json] [--ignore-errors]`: the target is a status name, not a transition id.
+- `assign --key | --jql | --filter | --from-file --assignee <email|accountId|@me|default> | --remove-assignee [--yes] [--json]`.
+- `view KEY [--json] [--fields ...]`; `search --jql ... [--limit N | --paginate | --count] [--json | --csv]`; `project list|view|create|update|archive|restore|delete`.
+- `--json` exists on view, search, transition, assign and `project list` (a JSON array of REST-shaped objects with `key`); comment commands not probed yet.
+- Mutating commands prompt unless `--yes` is passed, so tool calls must always pass it.
+- Some reads refuse to run unbounded: `project list` needs one of `--recent|--limit|--paginate`; `workitem search` rejects a JQL with no restriction ("Unbounded JQL queries are not allowed").
+- Failure modes (all exit 1 except missing install):
+  - not installed: shell exit 127, "command not found" (detect with a PATH lookup, not by output);
+  - signed out: `acli jira auth status` prints "unauthorized: use 'acli jira auth login' to authenticate", exit 1; other commands only say e.g. "failed to list projects", exit 1, so sign-in must be checked with `auth status` first, not inferred from the failing command;
+  - bad key or no permission: "Issue does not exist or you do not have permission to see it.", exit 1 (not told apart from each other).
+- Errors are plain text on the output, not JSON, even with `--json`; so error classification is by text and exit code, and the conversion path is needed there.
+- Not probed: comment create/list JSON, `workitem create --json`, link and watcher output.

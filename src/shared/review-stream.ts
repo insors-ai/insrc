@@ -169,6 +169,10 @@ export interface ReviewStreamHandle {
 /** How a client sends one stream request and hears its frames. */
 export type ReviewStreamTransport = (sink: ReviewStreamSink) => ReviewStreamHandle;
 
+/** The `reason` of a 'timeout' failure: which limit ran out. */
+export const CEILING_TIMEOUT = 'ceiling';
+export const IDLE_TIMEOUT = 'idle';
+
 /** Test seam: the timer the wait limit uses. */
 export interface ReviewStreamTimers {
 	readonly setTimer?:   ((fn: () => void, ms: number) => unknown) | undefined;
@@ -218,14 +222,14 @@ export function runReviewStream<T>(
 		if (opts.signal?.aborted) { onAbort(); return; }
 		opts.signal?.addEventListener('abort', onAbort);
 		timer = setTimer(
-			() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`),
+			() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`, CEILING_TIMEOUT),
 			opts.timeoutMs,
 		);
 		const idleMs = opts.idleMs !== undefined && opts.idleMs > 0 && opts.idleMs < opts.timeoutMs ? opts.idleMs : undefined;
 		const armIdle = (): void => {
 			if (idleMs === undefined) return;
 			if (idleTimer !== undefined) clearTimer(idleTimer);
-			idleTimer = setTimer(() => failWith('timeout', `${method}: no progress from the daemon for ${waitText(idleMs)}`), idleMs);
+			idleTimer = setTimer(() => failWith('timeout', `${method}: no progress from the daemon for ${waitText(idleMs)}`, IDLE_TIMEOUT), idleMs);
 		};
 		armIdle();
 

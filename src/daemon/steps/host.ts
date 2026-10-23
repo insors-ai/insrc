@@ -54,7 +54,8 @@ export interface StepHostOptions {
 }
 
 /** The table of the seven tools. Only the review and code-review waits take
- *  the signal; the other handlers run to completion. */
+ *  the signal, and only the code-review wait reports progress; the other
+ *  handlers run to completion. */
 export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepToolRunner> {
 	// The workflow step runs the workflow runners, which the daemon otherwise
 	// registers only for its own workflow requests (workflow-rpc.ts). The MCP
@@ -68,7 +69,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
 		insrc_review_step:      (args, signal) => handleReviewStep(args, { signal }),
-		insrc_code_review_step: (args, signal) => handleCodeReviewStep(args, { ...withStepClient(codeReviewBase), signal }),
+		insrc_code_review_step: (args, signal, progress) => handleCodeReviewStep(args, { ...withStepClient(codeReviewBase), signal, ...(progress !== undefined ? { progress } : {}) }),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
 	return { ...table, ...opts.tools } as Record<string, StepToolRunner>;

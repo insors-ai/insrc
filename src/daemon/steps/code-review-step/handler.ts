@@ -30,7 +30,7 @@ import type { LLMProvider } from '../../../shared/types.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { PATHS } from '../../../shared/paths.js';
 import { resolveCodeReviewSubject } from '../../../workflow/code-review/subject.js';
-import { ReviewStreamError } from '../../../shared/review-stream.js';
+import { CEILING_TIMEOUT, IDLE_TIMEOUT, ReviewStreamError } from '../../../shared/review-stream.js';
 import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../shared/review-stream.js';
 import { stepDaemonClient } from '../daemon-client.js';
 import type { StepDaemonClient } from '../daemon-client.js';
@@ -103,6 +103,10 @@ export interface CodeReviewStepDeps {
 	readonly client?: 'claude' | 'codex' | undefined;
 	/** Aborts the daemon code-review wait, and with it the review run. */
 	readonly signal?: AbortSignal | undefined;
+	/** The step tool's progress callback: each frame of the daemon review is relayed to it. */
+	readonly progress?: ((data: unknown) => void) | undefined;
+	/** The daemon code-review wait limits. Default: codeReviewWaitLimits() from config. */
+	readonly waitLimits?: (() => CodeReviewWaitLimits) | undefined;
 }
 
 /** The fixed poll interval for the block-and-poll (an internal constant, NOT a
@@ -710,10 +714,36 @@ function authorOf(repo: string, epicHash: string, storyId: string, deps: CodeRev
 	return (deps.readBuildAuthor ?? buildAuthorParty)(repo, epicHash, storyId);
 }
 
-/** How long the tool waits for the daemon's code review. Daemon code reviews
- *  have taken up to about two and a half minutes. Tripled from 10 minutes on
- *  2026-10-08 with every other review limit. */
-export const DAEMON_CODE_REVIEW_WAIT_MS = 30 * 60_000;
+/** How long the tool waits for the daemon's code review: at most `ceilingMs` in
+ *  all, and at most `idleMs` without a progress frame (ISSUE-1973e125). A large
+ *  Story's review runs for hours while reporting a call about once a minute. */
+export interface CodeReviewWaitLimits {
+	readonly ceilingMs: number;
+	readonly idleMs:    number;
+}
+
+const CEILING_KEY = 'codeReview.daemonReviewCeilingMs';
+const IDLE_KEY = 'codeReview.daemonReviewIdleMs';
+const DEFAULT_CEILING_MS = 14_400_000;
+const DEFAULT_IDLE_MS = 1_200_000;
+
+/** The wait limits from `config` (default: `~/.insrc/config.json`). Fail-safe as
+ *  readFreshnessTimeoutMs: a missing, non-positive or non-numeric value is its
+ *  default, and the idle limit is at most the ceiling. Never throws. */
+export function codeReviewWaitLimits(config?: unknown): CodeReviewWaitLimits {
+	let raw = config;
+	if (raw === undefined) {
+		try {
+			raw = existsSync(PATHS.config) ? JSON.parse(readFileSync(PATHS.config, 'utf8')) : {};
+		} catch {
+			raw = {};
+		}
+	}
+	const section = (raw as { codeReview?: { daemonReviewCeilingMs?: unknown; daemonReviewIdleMs?: unknown } } | null)?.codeReview;
+	const valid = (v: unknown, dflt: number): number => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : dflt);
+	const ceilingMs = valid(section?.daemonReviewCeilingMs, DEFAULT_CEILING_MS);
+	return { ceilingMs, idleMs: Math.min(valid(section?.daemonReviewIdleMs, DEFAULT_IDLE_MS), ceilingMs) };
+}
 
 /** The retryable causes: the same call can succeed once the cause is gone. */
 const RETRYABLE_DAEMON_FAILURES: ReadonlySet<string> = new Set(['unreachable', 'closed', 'timeout']);
@@ -733,11 +763,16 @@ async function reviewByDaemon(
 	reason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const { repoPath: repo, epicHash, storyId } = subject;
-	log.info({ repo, epicHash, storyId, mode }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
+	const limits = (deps.waitLimits ?? codeReviewWaitLimits)();
+	log.info({ repo, epicHash, storyId, mode, ...limits }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
 	try {
 		const res = await (deps.reviewByDaemon ?? stepDaemonClient().codeReviewStream)(
 			{ repo, epicHash, storyId, groundingMode: mode, ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(deps.client !== undefined ? { client: deps.client } : {}) },
-			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
+			{
+				timeoutMs: limits.ceilingMs, idleMs: limits.idleMs,
+				...(deps.progress !== undefined ? { onFrame: (_stream: 'progress' | 'delta', data: unknown) => deps.progress!(data) } : {}),
+				...(deps.signal !== undefined ? { signal: deps.signal } : {}),
+			},
 		);
 		// `codeReview.run` is older than the grounding mode and the reviewer stamp, so
 		// a daemon that predates them accepts this request and silently ignores both:
@@ -769,7 +804,12 @@ async function reviewByDaemon(
 		};
 	} catch (err) {
 		const failure = err instanceof ReviewStreamError ? err.failure : 'failed';
-		const cause = err instanceof Error ? err.message : String(err);
+		let cause = err instanceof Error ? err.message : String(err);
+		// A timeout names the setting to raise.
+		if (failure === 'timeout' && err instanceof ReviewStreamError) {
+			if (err.reason === IDLE_TIMEOUT) cause += ` (the idle limit, ${IDLE_KEY})`;
+			else if (err.reason === CEILING_TIMEOUT) cause += ` (the overall limit, ${CEILING_KEY})`;
+		}
 		log.warn({ repo, epicHash, storyId, mode, failure, cause }, 'insrc_code_review_step: the daemon review did not complete; nothing stamped');
 		return errorResult(
 			`daemon-review-${failure}`,

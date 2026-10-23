@@ -85,8 +85,8 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 43 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
-	assert.equal(FROM_CONFIG.length, 43);
+test('the real CONFIG_CATALOG has 45 rows (flat models.* surface; shaper*/summariser* now derived; + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows)', () => {
+	assert.equal(FROM_CONFIG.length, 45);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
 	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
@@ -180,4 +180,10 @@ test('enrichment (S001): every enum row carries a non-empty enumValues; every no
 			);
 		}
 	}
+});
+
+test('the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults', () => {
+	const row = (path: string) => FROM_CONFIG.find(r => r.path === path);
+	assert.deepEqual([row('codeReview.daemonReviewCeilingMs')?.type, row('codeReview.daemonReviewCeilingMs')?.default], ['number', 14_400_000]);
+	assert.deepEqual([row('codeReview.daemonReviewIdleMs')?.type, row('codeReview.daemonReviewIdleMs')?.default], ['number', 1_200_000]);
 });

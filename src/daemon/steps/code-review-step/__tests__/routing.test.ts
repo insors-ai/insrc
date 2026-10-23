@@ -22,7 +22,7 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDim
 import type { PartyOrUnknown } from '../../../../workflow/review/party.js';
 import { codeReviewStream, ReviewStreamError } from '../../../../mcp/daemon-stream.js';
 import type { CodeReviewStreamParams, CodeReviewStreamResult, ReviewStreamOpts } from '../../../../mcp/daemon-stream.js';
-import { DAEMON_CODE_REVIEW_WAIT_MS, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
+import { codeReviewWaitLimits, handleCodeReviewStep, type CodeReviewStepDeps } from '../handler.js';
 import { _clearCodeReviewStateStoreForTests } from '../state-store.js';
 import type { CodeReviewStepOutput } from '../types.js';
 
@@ -284,45 +284,91 @@ for (const [failure, error, retryable] of FAILURES) {
 	});
 }
 
-test('T11 the tool waits 30 minutes: with a daemon that never answers it fails when that limit fires', async () => {
+test('codeReviewWaitLimits reads both keys, falls back to the defaults on a bad value and clamps idle to the ceiling', () => {
+	const DEFAULTS = { ceilingMs: 240 * MIN, idleMs: 20 * MIN };
+	assert.deepEqual(codeReviewWaitLimits({}), DEFAULTS, 'absent keys: the defaults');
+	assert.deepEqual(codeReviewWaitLimits(null), DEFAULTS);
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 60 * MIN, daemonReviewIdleMs: 5 * MIN } }), { ceilingMs: 60 * MIN, idleMs: 5 * MIN });
+	for (const bad of [0, -1, 'x', Number.NaN, Number.POSITIVE_INFINITY, null]) {
+		assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: bad, daemonReviewIdleMs: 7 * MIN } }), { ceilingMs: 240 * MIN, idleMs: 7 * MIN }, `ceiling ${String(bad)}`);
+		assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 90 * MIN, daemonReviewIdleMs: bad } }), { ceilingMs: 90 * MIN, idleMs: 20 * MIN }, `idle ${String(bad)}`);
+	}
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 10 * MIN, daemonReviewIdleMs: 30 * MIN } }), { ceilingMs: 10 * MIN, idleMs: 10 * MIN }, 'idle clamped to the ceiling');
+	assert.deepEqual(codeReviewWaitLimits({ codeReview: { daemonReviewCeilingMs: 10 * MIN } }), { ceilingMs: 10 * MIN, idleMs: 10 * MIN }, 'the default idle, clamped too');
+});
+
+test('reviewByDaemon passes the limits as timeoutMs and idleMs to codeReviewStream and relays every progress frame to deps.progress', async () => {
 	await reset();
-	assert.equal(DAEMON_CODE_REVIEW_WAIT_MS, 30 * MIN);
-	const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
-	const sockets: Socket[] = [];
-	let requests = 0;
-	const server = createServer((socket) => {
-		sockets.push(socket);
-		socket.on('data', () => { requests += 1; /* never answers */ });
-		socket.on('error', () => { /* client vanished */ });
+	const relayed: unknown[] = [];
+	const FRAMES = [{ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' }, { kind: 'stage', stageLabel: 'call · adherence · judge reviewer #2' }];
+	const h = harness('controller', {
+		waitLimits: () => ({ ceilingMs: 90 * MIN, idleMs: 7 * MIN }),
+		progress: (data) => { relayed.push(data); },
+		reviewByDaemon: async (params, opts) => {
+			h.asked.push({ params, opts });
+			for (const f of FRAMES) opts.onFrame?.('progress', f);
+			return daemonAnswer('full');
+		},
 	});
-	await new Promise<void>((res) => server.listen(sock, () => res()));
-	try {
-		// The real stream helper over a real socket, with a timer this test fires.
-		const armed: number[] = [];
-		let fire: (() => void) | undefined;
-		const h = harness('controller', {
-			reviewByDaemon: (params, opts) => codeReviewStream(params, opts, {
-				connect: () => createConnection(sock),
-				setTimer: (fn, ms) => { armed.push(ms); fire = fn; return 1; },
-				clearTimer: () => { fire = undefined; },
-			}),
+	const out = await start(h.deps);
+	assert.ok(out.next === 'done', JSON.stringify(out));
+	assert.equal(h.asked[0]!.opts.timeoutMs, 90 * MIN);
+	assert.equal(h.asked[0]!.opts.idleMs, 7 * MIN);
+	assert.deepEqual(relayed, FRAMES, 'every frame, in order');
+
+	// Without waitLimits: the configured limits (the defaults when the config sets none).
+	await reset();
+	const d = harness('controller');
+	await start(d.deps);
+	const want = codeReviewWaitLimits();
+	assert.equal(d.asked[0]!.opts.timeoutMs, want.ceilingMs);
+	assert.equal(d.asked[0]!.opts.idleMs, want.idleMs);
+});
+
+test("a ceiling or idle timeout answers next:'error' naming the config key to raise", async () => {
+	for (const which of ['idle', 'ceiling'] as const) {
+		await reset();
+		const sock = join(tmpdir(), `insrc-crr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.sock`);
+		const sockets: Socket[] = [];
+		let requests = 0;
+		const server = createServer((socket) => {
+			sockets.push(socket);
+			socket.on('data', () => { requests += 1; /* never answers */ });
+			socket.on('error', () => { /* client vanished */ });
 		});
-		const pending = start(h.deps);
-		let settled = false;
-		pending.then(() => { settled = true; }, () => { settled = true; });
-		while (requests === 0) await new Promise(r => setImmediate(r));
-		assert.deepEqual(armed, [30 * MIN], 'the 30 minute limit is the one armed');
-		assert.equal(settled, false, 'still waiting before the limit');
-		fire?.();
-		const out = await pending;
-		assert.ok(out.next === 'error');
-		assert.equal(out.error.code, 'daemon-review-timeout');
-		assert.match(out.error.message, /within 30 minutes/);
-		assert.equal(out.error.retryable, true);
-	} finally {
-		for (const s of sockets) s.destroy();
-		await new Promise<void>((res) => server.close(() => res()));
-		try { rmSync(sock); } catch { /* ignore */ }
+		await new Promise<void>((res) => server.listen(sock, () => res()));
+		try {
+			// The real stream helper over a real socket, with timers this test fires.
+			const armed = new Map<number, () => void>();
+			const h = harness('controller', {
+				waitLimits: () => codeReviewWaitLimits({}),
+				reviewByDaemon: (params, opts) => codeReviewStream(params, opts, {
+					connect: () => createConnection(sock),
+					setTimer: (fn, ms) => { armed.set(ms, fn); return ms; },
+					clearTimer: (handle) => { armed.delete(handle as number); },
+				}),
+			});
+			const pending = start(h.deps);
+			let settled = false;
+			pending.then(() => { settled = true; }, () => { settled = true; });
+			while (requests === 0) await new Promise(r => setImmediate(r));
+			assert.deepEqual([...armed.keys()], [240 * MIN, 20 * MIN], 'the 4 hour ceiling and the 20 minute idle limit are armed');
+			assert.equal(settled, false, 'still waiting before a limit');
+			armed.get(which === 'idle' ? 20 * MIN : 240 * MIN)!();
+			const out = await pending;
+			assert.ok(out.next === 'error');
+			assert.equal(out.error.code, 'daemon-review-timeout');
+			assert.equal(out.error.retryable, true);
+			if (which === 'idle') {
+				assert.match(out.error.message, /no progress from the daemon for 20 minutes \(the idle limit, codeReview\.daemonReviewIdleMs\)/);
+			} else {
+				assert.match(out.error.message, /within 240 minutes \(the overall limit, codeReview\.daemonReviewCeilingMs\)/);
+			}
+		} finally {
+			for (const s of sockets) s.destroy();
+			await new Promise<void>((res) => server.close(() => res()));
+			try { rmSync(sock); } catch { /* ignore */ }
+		}
 	}
 });
 

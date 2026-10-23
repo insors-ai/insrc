@@ -232,6 +232,18 @@
             "markdownDescription": "max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting",
             "scope": "machine"
           },
+          "insrc.codeReview.daemonReviewCeilingMs": {
+            "type": "number",
+            "default": 14400000,
+            "markdownDescription": "max ms insrc_code_review_step waits in total for a daemon code review, progress or not",
+            "scope": "machine"
+          },
+          "insrc.codeReview.daemonReviewIdleMs": {
+            "type": "number",
+            "default": 1200000,
+            "markdownDescription": "max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)",
+            "scope": "machine"
+          },
           "insrc.designReview.premises.issue": {
             "type": "number",
             "default": 8,

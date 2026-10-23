@@ -328,6 +328,24 @@ test('cancellation: closing the stream during a design-review wait and during a 
 	}
 });
 
+test("insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'", async () => {
+	const FRAME = { kind: 'stage', operation: 'codeReview.run', stageId: 'call', stageLabel: 'call · adherence · judge reviewer #1', index: 0, total: null };
+	const host = createStepCallHandler(stepToolTable({ codeReviewDeps: {
+		...crDeps,
+		readBuildAuthor: () => 'controller',
+		fetchGrounding: async () => ({ ok: true, grounding: GROUNDING }),
+		fetchFreshness: async () => ({ ok: true, isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: [] }),
+		reviewByDaemon: async (_params, opts) => {
+			opts.onFrame?.('progress', FRAME);
+			return { runId: 'cr', artifact: { meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 }, groundingMode: 'full' } } as never };
+		},
+	} }));
+	const frames = await collect(host, { tool: 'insrc_code_review_step', args: { phase: 'start', epicHash: 'e1a2b3c4d5e6f7a8', storyId: 's8', repo: '/repo' }, context: CTX });
+	assert.deepEqual(frames.map(f => f.stream), ['progress', 'done']);
+	assert.deepEqual(frames[0]!.data, FRAME);
+	assert.match(JSON.stringify(frames[1]!.data), /\\"next\\": \\"done\\"/);
+});
+
 // --- the state stores' miss message -------------------------------------------------
 
 test('state store miss: each of the four stores says the daemon was restarted and the run must be started again', async () => {

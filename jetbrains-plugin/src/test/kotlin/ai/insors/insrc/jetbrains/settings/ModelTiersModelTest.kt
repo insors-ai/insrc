@@ -207,4 +207,57 @@ class ModelTiersModelTest {
         val m = ModelTiersModel(cat, emptyMap())
         assertNull(runCatching { m.currentRunner("bogus") }.getOrNull())
     }
+
+    // --- reasoning effort (Story a27df028 S001) -------------------------------
+
+    private fun effortOption(tier: String, current: String? = null): ConfigOptionDto = ConfigOptionDto(
+        path = "models.tiers.$tier.effort", type = "enum", default = "", desc = "effort",
+        enumValues = listOf("", "low", "medium", "high", "xhigh", "max"), group = "Models — tiers",
+        currentValue = current, isSet = current != null,
+    )
+
+    @Test
+    fun `JetBrains ModelTiersModel seeds effort from the catalog, tracks a pending effort and collectWrites emits the effort write, ModelTiersSection shows an effort combo per tier, with no effort row in the daemon's catalog it shows no effort combo and emits no effort write`() {
+        val cat = catalog(
+            *tierOptions("core", "cli-codex", "", runnerOverride = "cli-codex", modelOverride = "gpt-6.1-sol").toTypedArray(),
+            effortOption("core", current = "medium"),
+            *tierOptions("mid", "cli-claude", "sonnet").toTypedArray(),
+            effortOption("mid"),
+            *tierOptions("cheap", "cli-claude", "haiku").toTypedArray(), // no effort row: an older daemon
+        )
+        val m = ModelTiersModel(cat, emptyMap())
+        assertEquals(listOf("", "low", "medium", "high", "xhigh", "max"), m.effortOptions("core"))
+        assertEquals("medium", m.currentEffort("core"), "seeded from the catalog's current value")
+        assertEquals("", m.currentEffort("mid"), "an unset effort is the CLI default")
+        assertFalse(m.isModified())
+
+        m.selectEffort("core", "high")
+        m.selectEffort("mid", "nonsense") // not in the catalog's list: ignored
+        assertTrue(m.isModified())
+        assertEquals(
+            listOf(PendingWrite(listOf("models", "tiers", "core", "effort"), WriteOp.Set("high"))),
+            m.collectWrites(),
+        )
+        // A runner switch keeps the effort; saving advances the baseline; revert restores it.
+        m.selectRunner("core", "cli-claude")
+        assertEquals("high", m.currentEffort("core"))
+        m.onSaved("core")
+        assertTrue(m.collectWrites().none { it.segments.last() == "effort" })
+        m.selectEffort("core", "")
+        assertEquals(WriteOp.Set(""), m.collectWrites().single { it.segments.last() == "effort" }.op, "the CLI default is written as ''")
+        m.revert()
+        assertEquals("high", m.currentEffort("core"))
+
+        // No effort row in the daemon's catalog: no choices, and nothing to write.
+        assertTrue(m.effortOptions("cheap").isEmpty())
+        m.selectEffort("cheap", "high")
+        assertEquals("", m.currentEffort("cheap"))
+        assertTrue(m.collectWrites().none { it.segments == listOf("models", "tiers", "cheap", "effort") })
+
+        // The section adds the effort combo per tier only when the catalog offers choices.
+        val section = java.io.File("src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt").readText()
+        assertTrue(section.contains("val efforts = model.effortOptions(tier)"), "one effort combo per tier row")
+        assertTrue(section.contains("if (efforts.isNotEmpty()) controls.add(effortCombo)"), "hidden when the catalog declares no effort")
+        assertTrue(section.contains("model.selectEffort(tier, sel)"), "a pick goes to the model")
+    }
 }

@@ -304,3 +304,8 @@ BUILD-315d510cb28100e2-s8 approved by the user after two review rounds (round 1 
 - LOW `lifecycle-resignoff.test.ts`: add the header comment and use flat `test()`.
 
 Still deferred from the s8 decisions: gating `define` on an existing Epic; gating the other content writers (`resolveComment`, `appendStoryToDefine`) with 'revise'. Open question outside s8: raw design-run writes (`writeArtifact` in synthesize.ts) append no revision-bearing log entry, so review/approve of a redrafted head may hit `head-ahead-of-log` (core-data-model.md item 3).
+
+## s9 decisions on the LLD's open questions (2026-10-23)
+
+1. **k4 and ac2 (decided by the user):** issues must be created at first draft in a repo with no team policy whenever the existing tracker setting is on (type github, not none). This epic replaces the old fix that created issues only from the terminal approve, so there is no new switch: the existing tracker setting is the switch, and k4 ("a repo without the policy file behaves as today") does not cover issue creation. A repo whose tracker is `none` still makes no tracker call (ac3).
+2. **Git run outside the daemon's tools (not yet answered):** the LLD assumes the daemon's git_pull and git_push tools plus the explicit refresh are enough for ac5, and that a git-hook installer, if wanted, is a later Story. Confirm or change before the plan.

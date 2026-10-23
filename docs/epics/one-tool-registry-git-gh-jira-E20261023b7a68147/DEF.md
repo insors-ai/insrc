@@ -235,6 +235,8 @@ The workflow, the daemon and the terminal client's approval service follow the s
   - **resolved**: Probe acli now, before HLD — Done 2026-10-23: acli 1.3.39 installed and probed; results in docs/plans/tool-registry.md (acli probe section). _(2026-10-23T09:20:13.483Z)_
 - `q62d221cb` — Item a2: the cheap-model conversion is only checked for structure by the shape check; the design stage must decide which values are cross-checked against the raw CLI text, whether a deterministic parser or a higher-tier model is used when retries run out, and how the conversion is tested on representative CLI outputs.
   - **resolved**: Deterministic cross-check, then escalate to a higher-tier model _(2026-10-23T09:20:52.280Z)_
+- `qd905ba9f` — Item s1c: the later stories depend on earlier ones, so they are testable only once their dependencies exist; the dependencies are explicit in dependsOn.
+  - **resolved**: Sequence HLD stories by dependsOn _(2026-10-23T09:21:27.582Z)_
 
 ## Citations
 

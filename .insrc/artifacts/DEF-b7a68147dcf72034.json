@@ -88,6 +88,12 @@
         "status": "resolved",
         "choice": "Deterministic cross-check, then escalate to a higher-tier model",
         "resolvedAt": "2026-10-23T09:20:52.280Z"
+      },
+      "qd905ba9f": {
+        "question": "Item s1c: the later stories depend on earlier ones, so they are testable only once their dependencies exist; the dependencies are explicit in dependsOn.",
+        "status": "resolved",
+        "choice": "Sequence HLD stories by dependsOn",
+        "resolvedAt": "2026-10-23T09:21:27.582Z"
       }
     }
   },

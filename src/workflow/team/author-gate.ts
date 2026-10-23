@@ -14,8 +14,9 @@
 
 import type { WorkflowIntent } from '../types.js';
 import type { UnitRef } from '../tracker/refs.js';
-import { teamGate, TeamGateRefusedError } from './gate.js';
-import { settleForAttempt } from './signoff.js';
+import { readHolder, teamContext, teamGate, TeamGateRefusedError } from './gate.js';
+import type { GuardedAction, RefusedOutcome } from './gate.js';
+import { isUnderSignoff, settleForAttempt } from './signoff.js';
 
 /**
  * The stage unit an authoring run changes: a design.epic run changes the Epic, a design.story
@@ -34,14 +35,37 @@ export function authorUnitOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath
 	return undefined;
 }
 
+/**
+ * The action an authoring run asks the gate for. A design.epic run writes the HLD and a design.story run the LLD: while that artifact
+ * is in signoff or was sent back from it, the run revises work other people are reviewing, which is the 'revise' action (Story s8).
+ * A define run and a plan run are not covered: neither has a signoff stage of its own to revise.
+ */
+function authorActionOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath'>, unit: UnitRef): GuardedAction {
+	const stage = intent.workflow === 'design.epic' ? 'HLD' : intent.workflow === 'design.story' ? 'LLD' : undefined;
+	return stage !== undefined && isUnderSignoff(intent.repoPath, unit, stage) ? 'revise' : 'author';
+}
+
 /** Throws TeamGateRefusedError when the actor may not author this run's stage. A repo with no policy is untouched. */
 export function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): void {
 	const unit = authorUnitOf(intent);
 	if (unit === undefined) return;
-	const outcome = teamGate(intent.repoPath, unit, 'author', intent.workflow);
-	if (outcome.kind === 'allowed') return;
+	const action = authorActionOf(intent, unit);
+	const outcome = teamGate(intent.repoPath, unit, action, intent.workflow);
 	if (outcome.kind === 'no-issue' && outcome.allowFirstAuthor) return;   // the first draft is what creates the issue
-	throw new TeamGateRefusedError(outcome);
+	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
+	if (action === 'revise') assertHeld(intent.repoPath, unit);
+}
+
+/** The gate lets 'revise' through on an unassigned stage, as it does every action but the claiming ones; revising must not take the claim, so nobody holding the stage is refused. */
+function assertHeld(repo: string, unit: UnitRef): void {
+	const ctx = teamContext(repo, unit, { createIssue: false });
+	if (!ctx.ok) throw new TeamGateRefusedError(ctx.outcome as RefusedOutcome);
+	if (!ctx.team) return;
+	const read = readHolder(ctx, unit, () => new Date().toISOString());
+	if (!read.ok) throw new TeamGateRefusedError(read.outcome as RefusedOutcome);
+	if (read.state.holder === null) {
+		throw new TeamGateRefusedError({ kind: 'refused', reason: `nobody holds ${ctx.issue}: claim it before revising work that is in signoff` });
+	}
 }
 
 /**

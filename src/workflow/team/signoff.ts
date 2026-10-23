@@ -245,6 +245,18 @@ export function readHeadMeta(repo: string, artifactId: string): unknown | undefi
 	}
 }
 
+/**
+ * Whether the stage artifact of a unit is waiting on, or was sent back from, signoff: its head is in-signoff or changes-requested.
+ * Re-authoring it then revises work other people are reviewing (Story s8). False for an absent head or an unknown stage.
+ */
+export function isUnderSignoff(repo: string, unit: UnitRef, stage: SignoffStage, deps: SignoffDeps = {}): boolean {
+	const d: SignoffDeps = { ...testDeps, ...deps };
+	const artifactId = stageArtifactId(unit, stage);
+	if (artifactId === undefined) return false;
+	const status = lifecycleOfMeta((d.readHead ?? readHeadMeta)(repo, artifactId))?.['status'];
+	return status === 'in-signoff' || status === 'changes-requested';
+}
+
 /** The heads of the stages a unit holds that exist on disk. */
 export function headsOfUnit(repo: string, unit: UnitRef, deps: SignoffDeps = {}): HeadMeta[] {
 	const read = deps.readHead ?? testDeps.readHead ?? readHeadMeta;

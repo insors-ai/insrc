@@ -377,6 +377,8 @@ Write the effort into the model string (e.g. 'gpt-6.1-sol@high'); the CLI provid
 
 - `q8faa690b` — Resolved (user, 2026-10-23): no per-repo effort. The effort is set only on the global model tiers; per-repo config only chooses which tier a function uses.
   - **resolved**: Effort on global tiers only (as resolved) — User 2026-10-23: no per-repo override; per-repo config only chooses which tier a function uses. _(2026-10-23T06:14:55.148Z)_
+- `qd6e582c7` — ts1 (partial): the Story declares no acceptanceCriteria; the test strategy maps four criteria (ac1-ac4) derived from the story text: per-tier parsing on the global tiers, passing the effort to the CLI, unchanged behaviour when unset, and every settings surface.
+  - **resolved**: Accept derived ac1-ac4 as-is — User 2026-10-23 (proceed on recommendation): standalone story with no Define to amend; plan against the derived ac1-ac4 and record that they are derived. _(2026-10-23T06:15:08.314Z)_
 
 ## Citations
 

@@ -209,6 +209,13 @@
         "choice": "Effort on global tiers only (as resolved)",
         "rationale": "User 2026-10-23: no per-repo override; per-repo config only chooses which tier a function uses.",
         "resolvedAt": "2026-10-23T06:14:55.148Z"
+      },
+      "qd6e582c7": {
+        "question": "ts1 (partial): the Story declares no acceptanceCriteria; the test strategy maps four criteria (ac1-ac4) derived from the story text: per-tier parsing on the global tiers, passing the effort to the CLI, unchanged behaviour when unset, and every settings surface.",
+        "status": "resolved",
+        "choice": "Accept derived ac1-ac4 as-is",
+        "rationale": "User 2026-10-23 (proceed on recommendation): standalone story with no Define to amend; plan against the derived ac1-ac4 and record that they are derived.",
+        "resolvedAt": "2026-10-23T06:15:08.314Z"
       }
     }
   },

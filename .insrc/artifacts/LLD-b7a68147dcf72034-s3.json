@@ -56,6 +56,15 @@
           "reason": "Daemon review ran six rounds in two cycles (cycle 1: 6 MED; 1 HIGH + 3 MED; 4 MED. Cycle 2: 2 MED; 1 MED; 2 MED) and never returned a clean verdict. Every finding was fixed in the LLD except DEF s3 ac6, which needs a DEF amendment the amendment tool cannot file (HLD-only); the ac6 reading and the final round's retire-permissions.mode test and fixture sites are recorded in docs/plans/tool-registry.md. AMD-4 to AMD-7 are prerequisites for the s2 and s3 plans. User approved with override."
         }
       }
+    },
+    "questionResolutions": {
+      "q57e86d4a": {
+        "question": "Amendments filed, pending the user's approval: AMD-b7a68147dcf72034-4 (sc4 request fields, three chat modes, approval.subscribe), -5 (sc5 'cancelled' denial reason), -6 (sc2 typebox outputSchema, TypedTool, callTool), -7 (sc3 convertText takes ToolDeps, keyValues required). -1 (superseded) and -2 (duplicate of -3) are to be rejected.",
+        "status": "resolved",
+        "choice": "Approve -4..-7, reject -1/-2, then plan",
+        "rationale": "Done: AMD-3 to AMD-7 approved and AMD-1 and AMD-2 rejected by the user's instruction on 2026-10-23.",
+        "resolvedAt": "2026-10-23T14:04:23.531Z"
+      }
     }
   },
   "body": {

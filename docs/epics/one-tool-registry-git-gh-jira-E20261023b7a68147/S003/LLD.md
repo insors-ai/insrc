@@ -200,7 +200,7 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc4` | implements | s3 owns sc4: builds the class field, the global flag, ApprovalRequest/Answer/Denial, the broker, the timeout and the two IPC methods, and refines the sketch as in the amendment proposal. Carrier decision: the tool-call IPC that CLI-process and chat callers use is built by s7, but its request fields are defined here as part of sc4: caller ('agent' | 'daemon' | 'workflow') and an optional approvalMode ('manual' | 'edit-auto' | 'auto'); the daemon sets deps.caller and deps.approvalMode from them. This is a requirement on s7: build the method against these fields. A chat sends its session's PermissionMode as approvalMode on each such call. The chat does not call registry tools today, so ac6's chat clause is met at the client level (the chat opens approval.subscribe and answers) and for chat-originated calls once s7's method exists. |
+| `sc4` | implements | s3 owns sc4: builds the class field, the global flag, ApprovalRequest/Answer/Denial, the broker, the timeout and the two IPC methods, and refines the sketch as in the amendment proposal. Carrier decision: the tool-call IPC that CLI-process and chat callers use is built by s7, but its request fields are defined here as part of sc4: caller ('agent' \| 'daemon' \| 'workflow') and an optional approvalMode ('manual' \| 'edit-auto' \| 'auto'); the daemon sets deps.caller and deps.approvalMode from them. This is a requirement on s7: build the method against these fields. A chat sends its session's PermissionMode as approvalMode on each such call. The chat does not call registry tools today, so ac6's chat clause is met at the client level (the chat opens approval.subscribe and answers) and for chat-originated calls once s7's method exists. |
 | `sc2` | consumes | Returns denials as s2's ToolFailure with kind 'denied' and ToolDenialReason; adds caller and approvalMode to ToolDeps beside s2's conversion field. The value 'cancelled' (an aborted approval) is not in s2's ToolDenialReason: it is raised as amendment AMD-b7a68147dcf72034-5 on sc5, which must be approved before the s3 build. |
 | `sc1` | consumes | Approval runs at step 2 before the hook stage at step 5; a denied call is not run and so fires no hook. |
 
@@ -295,8 +295,8 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
 | `ac3` | `src/daemon/tools/__tests__/approval-broker.test.ts: no open stream resolves no-client at once`, `src/daemon/tools/__tests__/approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored`, `src/daemon/tools/__tests__/executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run` |
 | `ac4` | `src/daemon/tools/__tests__/executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called` |
 | `ac5` | `src/daemon/tools/__tests__/executor-approval.test.ts: a destructive tool asks under every approvalMode, every global flag value, any caller and any argument values`, `src/daemon/tools/__tests__/approval-class-mapping.test.ts: a per-input function that throws is treated as destructive` |
-| `ac6` | `src/daemon/tools/__tests__/approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, every former false or absent tool resolves to none (no read-only tool asks), and none keeps the old fields`, `src/daemon/tools/__tests__/approval-class-mapping.test.ts: the eight destructive builtins are destructive`, `src/daemon/tools/__tests__/executor-approval.test.ts: a common tool asks in manual and edit-auto and runs without asking in auto, with the call mode over the global flag`; `src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer`; `vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer` |
-| `ac7` | `src/daemon/tools/__tests__/approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer`, `src/daemon/tools/__tests__/approval-ipc.test.ts: an answer for an unknown request id returns accepted false`; `src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer`; `vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer` |
+| `ac6` | `src/daemon/tools/__tests__/approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, every former false or absent tool resolves to none (no read-only tool asks), and none keeps the old fields`, `src/daemon/tools/__tests__/approval-class-mapping.test.ts: the eight destructive builtins are destructive`, `src/daemon/tools/__tests__/executor-approval.test.ts: a common tool asks in manual and edit-auto and runs without asking in auto, with the call mode over the global flag`, `src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer`, `vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer` |
+| `ac7` | `src/daemon/tools/__tests__/approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer`, `src/daemon/tools/__tests__/approval-ipc.test.ts: an answer for an unknown request id returns accepted false`, `src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer`, `vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer` |
 
 ## 7. Migration
 
@@ -363,24 +363,16 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
 - ep3 (partial): the invariants rest on direct code reads recorded in the s1 bundles, not on insrc_analyze_step output.
 - DEF reading for s3 ac6: 'a tool that needs approval asks when the effective mode says ask (manual, edit-auto), and a destructive tool always asks'; the amendment tool is HLD-only, so this is recorded here only.
 - Open design details left to the plan: the exact terminal-client and editor prompt UI, and whether the terminal client and editor open approval.subscribe at attach or on demand.
+- Amendments filed, pending the user's approval: AMD-b7a68147dcf72034-4 (sc4 request fields, three chat modes, approval.subscribe), -5 (sc5 'cancelled' denial reason), -6 (sc2 typebox outputSchema, TypedTool, callTool), -7 (sc3 convertText takes ToolDeps, keyValues required). -1 (superseded) and -2 (duplicate of -3) are to be rejected.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q57e86d4a` — Amendments filed, pending the user's approval: AMD-b7a68147dcf72034-4 (sc4 request fields, three chat modes, approval.subscribe), -5 (sc5 'cancelled' denial reason), -6 (sc2 typebox outputSchema, TypedTool, callTool), -7 (sc3 convertText takes ToolDeps, keyValues required). -1 (superseded) and -2 (duplicate of -3) are to be rejected.
+  - **resolved**: Approve -4..-7, reject -1/-2, then plan — Done: AMD-3 to AMD-7 approved and AMD-1 and AMD-2 rejected by the user's instruction on 2026-10-23. _(2026-10-23T14:04:23.531Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-23T11:58:28.997Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | MED | DEF s3 ac6 (a tool that today declares it needs approval asks before it runs, in the terminal client, the editor and a chat) is designed. | DEF line 391-397 ac6: given 'a tool that today declares it needs approval and is run as if approved', then 'it asks for approval before it runs'. The LLD maps requiresApproval:true to 'common', and the common class follows tools.commonApproval with default 'auto', so under the default these tools still run without asking (§7 Backward compat: 'Under the default auto mode common calls still run without asking'). The LLD says this reading is 'recorded here only' (§10). Of the amendments AMD-b7a68147dcf72034-4..7, none mentions ac6; all are drafts. The latest commit message (f24619f3) says the ac6 DEF amendment is to be raised at the start of s3. [files: .insrc/artifacts/DEF-b7a68147dcf72034.json, .insrc/artifacts/LLD-b7a68147dcf72034-s3.json] | Raise the DEF amendment that rewrites s3 ac6 to the effective-mode reading (manual/edit-auto ask; destructive always asks), or make the default ask. Do this before the LLD is approved, so ac6 and the design agree. |
-| change-sites | MED | Retiring permissions.mode needs only the listed test updates: the RETIRED_PATHS count in config-catalog-contract.test.ts (6→7) and the permissions.mode assertion in config-boot-reconcile.test.ts. | src/config/__tests__/config-reconcile-smoke.test.ts:89: assert.deepEqual(written['permissions'], literal['permissions']), where the fixture daemon-defaults-literal.json:6-8 holds { "permissions": { "mode": "validate" } }. Once permissions.mode is retired, first boot no longer writes it, so this assertion fails. Neither the test nor the fixture is in §3.5's call sites or migration step 2. fixtures/PROVENANCE.md:16 also names permissions.mode as surviving. [files: src/config/__tests__/config-reconcile-smoke.test.ts, src/config/__tests__/fixtures/daemon-defaults-literal.json, src/config/__tests__/fixtures/PROVENANCE.md] | Add config-reconcile-smoke.test.ts (assert that permissions is absent, or drop the line), the daemon-defaults-literal fixture handling, and the PROVENANCE note to §3.5 and migration step 2. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/daemon/server.ts:242-290`
+- **[[c2]]** `code` `vscode-plugin/src/chat/protocol.ts:79`
+- **[[c3]]** `code` `src/daemon/tools/executor.ts:41-48`
+- **[[c4]]** `doc` `docs/plans/tool-registry.md`

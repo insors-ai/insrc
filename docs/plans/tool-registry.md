@@ -51,3 +51,24 @@ Epic: `one-tool-registry-git-gh-jira` (DEF-b7a68147dcf72034, docs/epics/one-tool
 - Approval-flagged builtins today: git has `requiresApproval: true` on amend, checkout, cherry-pick, commit, merge, pull, push, rebase, reset, revert and stage, and an input-dependent predicate on branch, remote, stash, tag and worktree; it is false on blame, diff, fetch, log, show and status. gh has true on 27 operations (actions 3, issue 5, project 4, pr 7, release 4, repo 4). Other families (file, cloud, k8s, ...) carry the flag too. So once the gate is real, commit, stage and pull would also ask until the family Stories narrow the marker.
 - Production files that import src/workflow/tracker/github.ts: 11 (src/cli/services/workflow.ts, src/workflow/bugfix/tracker.ts, src/workflow/config/github.ts, src/workflow/questions.ts, src/workflow/resolve-comment.ts, src/workflow/team/signoff.ts, src/workflow/tracker-auto.ts, src/workflow/tracker/attach.ts, src/workflow/tracker/github-adapter.ts, src/workflow/tracker/setup.ts, src/workflow/tracker/sync.ts); the file has 45 exports, about 30 of them shell-out wrappers. With the runGit users under src/workflow/team (anchor-finder, handoff, policy-reader, policy-refresh, sighting-store, signoff, and git.ts itself) the cutover touches about 17 production files, plus tests (31 test files import a github.js module).
 - About 110 builtins have no output schema; `ToolResult.output` is a string, so `outputSchema` has to be optional.
+
+## Direct git / gh spawn inventory (2026-10-23, HLD review round 2)
+
+Found by a source search of src (tests excluded, src/daemon/tools excluded) for git, gh or acli as a spawn target in any form (first argument, first array element, or a wrapper's first argument). Counts are sites per file. This replaces the earlier "about 17 files" figure; the s7 LLD rebuilds it again with the build check itself, because a text search misses indirect forms.
+
+Spawn the CLI directly (17 files):
+- src/workflow/tracker/github.ts (21; the gh and git wrappers, commitAndPushArtifacts)
+- src/cli/services/maintenance.ts (17; the daemon self-update and repo sync)
+- src/workflow/runners/build/story-commits.ts (3), range-base.ts (3), standalone-record.ts (1)
+- src/daemon/steps/build-step/validation-checks.ts (3)
+- src/understanding/identity.ts (4; git config user.email, gh identity)
+- src/workflow/team/git.ts (1; runGit), src/workflow/team/git-async.ts (1)
+- src/workflow/tracker/attach.ts (1; its own git helper), src/workflow/gates.ts (1), src/workflow/convert/plan.ts (1), src/workflow/artifacts/companion/header.ts (1), src/daemon/installed-commit.ts (1)
+- src/design/corpus/sources/git-reader.ts (1; a hardened bounded reader with its own environment and limits)
+- src/indexer/index.ts (line 91) and src/analyze/context/repo-ignore-filter.ts (line 112; git ls-files for ignore handling)
+
+Call a wrapper (15 more files): runGit users anchor-finder.ts, handoff.ts, policy-reader.ts, policy-refresh.ts, sighting-store.ts, signoff.ts (all under src/workflow/team); importers of tracker/github.ts: src/cli/services/workflow.ts, src/workflow/bugfix/tracker.ts, src/workflow/config/github.ts, src/workflow/questions.ts, src/workflow/resolve-comment.ts, src/workflow/tracker-auto.ts, src/workflow/tracker/github-adapter.ts, src/workflow/tracker/setup.ts, src/workflow/tracker/sync.ts.
+
+Total: about 32 production files, plus 31 test files that import a github.js module.
+
+Open scope question for s7 (the Epic says "the workflow library, the daemon and the terminal client's approval service" for the move, and "the backend" for the build check): the indexer, the design corpus reader, the analyze ignore filter, the understanding identity and the daemon self-update (installed-commit, maintenance) are independent subsystems that read git for their own purposes. Either they move onto the registry too, or the check carries a named allowlist with a reason per entry.

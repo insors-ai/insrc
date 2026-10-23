@@ -171,24 +171,63 @@ function openSignoffRequest(owner: string, repo: string, spec: SignoffRequestSpe
 	});
 }
 
+/** The pull request's number and repo of a signoff request reference, rejecting a malformed one. */
+function parseRequestRef(request: SignoffRequestRef): { owner: string; repo: string; number: string } {
+	if (!ISSUE_REF_RE.test(request.ref)) throw new GhCommandError('rejected', `malformed signoff request reference '${request.ref}' (expected owner/repo#N)`);
+	return parseIssueRef(request.ref);
+}
+
+function parsePullRequestJson<T>(raw: string, ref: string): T {
+	try {
+		return JSON.parse(raw) as T;
+	} catch {
+		throw new GhCommandError('rejected', `gh returned unexpected pull request JSON for ${ref}: '${raw.slice(0, 120)}'`);
+	}
+}
+
+interface PullReview { author?: { login?: string | undefined } | null | undefined; state?: string | undefined; submittedAt?: string | null | undefined }
+
+/** Whether a reviewer's latest decisive review (approved, changes requested or dismissed; a comment is neither) made after `since` asks for changes. */
+function changesRequestedSince(reviews: readonly PullReview[], since: string): boolean {
+	const latest = new Map<string, PullReview>();
+	for (const r of reviews) {
+		if (r.state !== 'APPROVED' && r.state !== 'CHANGES_REQUESTED' && r.state !== 'DISMISSED') continue;
+		if (typeof r.submittedAt !== 'string' || r.submittedAt <= since) continue;
+		const who = r.author?.login ?? '';
+		const seen = latest.get(who);
+		if (seen === undefined || (seen.submittedAt as string) <= r.submittedAt) latest.set(who, r);
+	}
+	return [...latest.values()].some(r => r.state === 'CHANGES_REQUESTED');
+}
+
 /**
  * The state of a request from its pull request: merged is completed; a closed pull request that was not merged, or one with
- * changes requested, is changes-requested (the holder revises and submits again); anything else is open.
+ * changes requested, is changes-requested (the holder revises and submits again); anything else is open. With `since`, changes
+ * requested means a reviewer's latest decisive review after it asks for them, since GitHub keeps the decision of an old push.
  */
-function readSignoffState(request: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> {
+function readSignoffState(request: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'> {
 	return attempt(() => {
-		if (!ISSUE_REF_RE.test(request.ref)) throw new GhCommandError('rejected', `malformed signoff request reference '${request.ref}' (expected owner/repo#N)`);
-		const { owner, repo, number } = parseIssueRef(request.ref);
-		const raw = runGh(['pr', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'state,mergedAt,reviewDecision']);
-		let parsed: { state?: string | undefined; mergedAt?: string | null | undefined; reviewDecision?: string | null | undefined };
-		try {
-			parsed = JSON.parse(raw) as typeof parsed;
-		} catch {
-			throw new GhCommandError('rejected', `gh returned unexpected pull request JSON for ${request.ref}: '${raw.slice(0, 120)}'`);
-		}
+		const { owner, repo, number } = parseRequestRef(request);
+		const fields = since === undefined ? 'state,mergedAt,reviewDecision' : 'state,mergedAt,reviews';
+		const raw = runGh(['pr', 'view', number, '--repo', `${owner}/${repo}`, '--json', fields]);
+		const parsed = parsePullRequestJson<{ state?: string | undefined; mergedAt?: string | null | undefined; reviewDecision?: string | null | undefined; reviews?: PullReview[] | undefined }>(raw, request.ref);
 		if (parsed.state === 'MERGED' || (typeof parsed.mergedAt === 'string' && parsed.mergedAt.length > 0)) return 'completed';
-		if (parsed.state === 'CLOSED' || parsed.reviewDecision === 'CHANGES_REQUESTED') return 'changes-requested';
-		return 'open';
+		if (parsed.state === 'CLOSED') return 'changes-requested';
+		const asked = since === undefined ? parsed.reviewDecision === 'CHANGES_REQUESTED' : changesRequestedSince(Array.isArray(parsed.reviews) ? parsed.reviews : [], since);
+		return asked ? 'changes-requested' : 'open';
+	});
+}
+
+/** The branch the request's pull request is from, and whether it is still open. */
+function readSignoffRequest(request: SignoffRequestRef): PortResult<{ branch: string; open: boolean }> {
+	return attempt(() => {
+		const { owner, repo, number } = parseRequestRef(request);
+		const raw = runGh(['pr', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'headRefName,state']);
+		const parsed = parsePullRequestJson<{ headRefName?: string | undefined; state?: string | undefined }>(raw, request.ref);
+		if (typeof parsed.headRefName !== 'string' || parsed.headRefName.length === 0 || typeof parsed.state !== 'string') {
+			throw new GhCommandError('rejected', `gh returned no branch or state for ${request.ref}: '${raw.slice(0, 120)}'`);
+		}
+		return { branch: parsed.headRefName, open: parsed.state === 'OPEN' };
 	});
 }
 
@@ -258,6 +297,7 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 
 		openSignoffRequest: (spec: SignoffRequestSpec) => openSignoffRequest(owner, repo, spec),
 		readSignoffState,
+		readSignoffRequest,
 	};
 }
 

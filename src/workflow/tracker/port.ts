@@ -110,7 +110,10 @@ export interface TrackerPort {
 	/** Make `artifact`'s file reachable from the issue through `link`. A tracker without an attachment API (GitHub) posts one comment holding the link; `externalId` is that comment's id (s6). */
 	attach(issue: IssueRef, artifact: Reference, link: string): PortResult<{ externalId?: string }>;
 	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;
-	readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;
+	/** With `since` (ISO time), only a request for changes made after it counts, so one made on an earlier push does not hold a resubmission (s8). */
+	readSignoffState(ref: SignoffRequestRef, since?: string): PortResult<'open' | 'changes-requested' | 'completed'>;
+	/** The branch a signoff request was opened from and whether it can still take a push. A tracker without it cannot resubmit to a request (s8). */
+	readSignoffRequest?(ref: SignoffRequestRef): PortResult<{ branch: string; open: boolean }>;
 }
 
 /** Whether an issue title names the artifact id `token`: the title is the token, or the token then ` — ` and a

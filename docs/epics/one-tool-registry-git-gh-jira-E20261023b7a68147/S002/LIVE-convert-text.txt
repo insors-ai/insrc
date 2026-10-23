@@ -1,0 +1,14 @@
+Live run of src/daemon/tools/__tests__/convert-text.live.test.ts, 2026-10-23, INSRC_LIVE_TESTS=1, default tiers (tools.convert = the cheap CLI model, tools.convert.escalate = mid).
+Both tests passed. The first took 49 s and logged ajv/retry warnings before the accepted value; the second failed as intended.
+Caveat: in the second test the escalation tier also returned 'claude envelope had is_error=false but no structured_output field', so its failure is not purely the cross-check.
+
+ℹ pass 4
+ℹ fail 0
+✔ convert-text.live.test.ts: convertText on captured gh and git text-only outputs returns values whose key values are in the text (49136.565968ms)
+    error: "claude envelope had is_error=false but no structured_output field"
+✔ convert-text.live.test.ts: a deliberately altered output fails the cross-check (79324.402776ms)
+    error: "claude envelope had is_error=false but no structured_output field"
+    detail: "the provider call for role tools.convert.escalate failed: claude envelope had is_error=false but no structured_output field"
+ℹ pass 2
+ℹ fail 0
+ℹ skipped 0

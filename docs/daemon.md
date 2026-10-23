@@ -1346,6 +1346,32 @@ The test record is a record of what was run. It cannot be approved or rejected:
 `insrc_workflow_approve` returns its path in `skipped[]` with a reason that
 begins `not-approvable:`.
 
+## Typed tool results and failure kinds
+
+The daemon's tool registry is the one layer that runs git, gh, Jira and the other external tools. Code that calls a tool (a workflow stage, a daemon service) does not parse text: it gets a typed result, or a typed failure.
+
+### Only tools that code calls need an output schema
+
+A tool may declare an `outputSchema` (a typebox schema) beside its `inputSchema`. The rule:
+
+- A tool that **code** calls must declare both schemas. `callTool(tool, input, deps)` takes the tool *definition*; the input and the result are typed from its schemas with no cast, and a tool with no `outputSchema` does not compile (`src/daemon/tools/call-tool.type-test.ts` proves it, and `npm run build` checks it).
+- A tool that only an **agent** calls (the model reads its text) needs no output schema and is run and returned exactly as before. Registration is unchanged.
+
+For a tool that declares an `outputSchema`, `executeTool` checks the input before the tool runs (a bad argument is reported by field name and nothing is run) and checks `ToolResult.data` after it. A result that does not fit is never passed on: it comes back as a failed result with `failure.kind` `schema-mismatch`, the failing paths in the message, the data dropped and the tool's own output, truncated, in `failure.original`.
+
+### Text-only CLIs: `convertText`
+
+A tool whose CLI gives no structured output turns its text into the declared shape with `convertText` inside the tool. It never trusts the model:
+
+1. The first two attempts run on the `tools.convert` role (default tier `cheap`). Only if both fail, two more run on `tools.convert.escalate` (default `mid`). Both roles can be reassigned with `roleTiers` like any role.
+2. Every value must fit the schema **and** every key value the caller names (identifiers, numbers, paths, status words) must occur in the raw text (case and whitespace ignored, token boundaries respected, so `12` is not found in `123`). A value that fails is retried with the problem named, and a made-up value never reaches the caller.
+3. Conversions run one after another, never in parallel.
+4. With no conversion provider configured, or a failure on every attempt, the tool fails with `conversion-failed` and the raw text in `failure.original`. There is no fallback to unconverted text.
+
+### Failure kinds
+
+A failed result carries `failure: { kind, message, original?, denial? }`. `kind` is one of `missing-tool`, `missing-signin`, `unreachable`, `timed-out`, `rejected`, `conversion-failed`, `schema-mismatch`, `denied`. A `denied` failure also names why: `declined`, `timed-out`, `no-client` or `cancelled`. The `output`, `success` and `error` fields keep their old meaning, so the agent loop reads what it always read. The tracker adapters map these onto the tracker port's four kinds with `toPortFailure` (`src/daemon/tools/failure-mapping.ts`).
+
 ## CLI reference
 
 All CLI subcommands live under `~/.insrc/daemon/src/insrc/`.

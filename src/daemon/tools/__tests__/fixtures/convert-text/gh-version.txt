@@ -1,0 +1,2 @@
+gh version 2.46.0 (2025-12-13 Ubuntu 2.46.0-4)
+https://github.com/cli/cli/releases/tag/v2.46.0

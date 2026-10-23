@@ -1,0 +1,430 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1792748380403-lgvbgd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T09:43:01.456Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 198379,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "authoredBy": "controller",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "revision": 3,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "92feedf2401768e1f54fc7d4fe368673064f64741359631b75c8263b28660a2b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 3,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 7,
+          "low": 5
+        },
+        "at": "2026-10-23T09:45:10.453Z",
+        "report": {
+          "entityId": "HLD-b7a68147dcf72034",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-ef65bda005ac6659f2804e6555ea4681"
+        }
+      },
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T10:13:55.343Z",
+        "override": {
+          "reason": "Daemon review rounds 1-3 all blocked (5 MED; 1 HIGH + 2 MED; 7 MED, 0 HIGH in round 3). Rounds 1 and 2 were fixed in the HLD. The 7 round-3 findings are Story-level design or DEF amendments, recorded in docs/plans/tool-registry.md with the user's decisions of 2026-10-23 (optional output schemas for agent-only tools, CLI-process callers go through the daemon IPC, the daemon self-update stays outside the registry); they are carried into the Story LLDs and the DEF amendments. User approved with override."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Every git, gh and Jira operation becomes a tool in the daemon's registry, and every caller (an agent, the daemon, the workflow) runs it through the same executor. The executor gains a fixed sequence: ask the user first when the call needs it, run the tool, check the result against its declared shape, then run the rules registered for that tool. Destructive calls always ask; other calls that need approval follow one global setting. A rule such as refreshing tracker status after a push is therefore written once. The old direct git and gh calls are removed in one change and a build check keeps them out.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "Alternative a1: the executor in src/daemon/tools/executor.ts becomes the one pipeline for all external operations, and git, gh and Jira (acli) are registry tool families with an optional declared output schema and an approval class (none, common or destructive). Workflow and daemon code call tools through a typed helper that takes the tool definition; about 32 production files that spawn git or gh, or call a wrapper that does, move onto it in one change.",
+    "architectureShape": "Pipeline order inside executeTool (fixed, and the same for every caller): (1) resolve the tool and validate input; (2) resolve the call's approval class: a destructive call always sends an approval request over the daemon's IPC to the attached client and waits, and no setting, argument or caller can skip it; a common call asks only when the one global approval setting says 'ask', and runs without asking when it says 'auto'; a call with class none never asks; a request is denied on decline, on timeout or when no client is attached; (3) run the tool; (4) if the tool declares an output schema, check the result against it and fail the call on a mismatch; (5) only if the call succeeded, run the hooks registered for that tool id one after another in registration order, collecting any hook failure into a report on the result; (6) return. A failed or denied call never reaches step 5.\n\nApproval today: the executor treats a tool's requiresApproval flag as approved and runs it (src/daemon/tools/executor.ts), so no tool asks. The flag is set on 11 git tools (amend, checkout, cherry-pick, commit, merge, pull, push, rebase, reset, revert, stage), as a predicate on 5 more (branch, remote, stash, tag, worktree), on 27 gh operations, and on tools in the file, cloud and other families. s3 maps every existing flag to the common class, for every family, so nothing is left inert: a flag that is true becomes common and a predicate becomes a function from the input to a class. The global setting proposed for the common class defaults to 'auto', which is how those tools behave today, so unattended workflows keep running; 'ask' is opt-in. The default is settled in the s3 LLD. s4, s5 and s6 then mark as destructive the operations that can destroy work, which ask every time whatever the setting. This reads the DEF's s3 ac6 as: a tool that needs approval asks when the setting is 'ask', and always asks when it is destructive.\n\nTool layer: git (extend the 22 existing ids), gh (extend the gh_* and gh:project:* ids) and Jira (new family over acli) each register one tool per operation family with an approval class, and an output schema where the tool returns data a caller uses; about 110 builtins have no schema today and stay unchecked until their family Story adds one. The existing ids stay as they are, including the mixed 'git:cherry-pick' and 'gh:project:*' forms. Where the CLI gives structured output (gh --json, git porcelain, acli --json) the tool reads it directly; where it gives only text, a conversion step uses the cheap model, checks the key values against the raw text, and may escalate once to a higher-tier model; conversions run serially. Failures from a missing CLI, a missing sign-in, a time-out or a rejection are returned in one shared set of kinds (the same kinds the tracker port already uses), so a missing acli is told apart from a signed-out acli by 'acli jira auth status' and a PATH lookup, not by parsing a failing command.\n\nCaller side: a typed helper takes the tool definition object, which the caller imports, plus the input, and returns a result typed from the definition's schema; a string id alone carries no type. Cutover: every direct git, gh and acli spawn in the backend moves onto the registry, with no allowlist. The inventory in docs/plans/tool-registry.md lists about 32 production files: 17 that spawn the CLI themselves (src/workflow/tracker/github.ts, src/cli/services/maintenance.ts, src/workflow/team/git.ts and git-async.ts, the build runners story-commits.ts, range-base.ts and standalone-record.ts, src/daemon/steps/build-step/validation-checks.ts, src/understanding/identity.ts, src/workflow/tracker/attach.ts, gates.ts, convert/plan.ts, companion/header.ts, src/daemon/installed-commit.ts, src/design/corpus/sources/git-reader.ts, src/indexer/index.ts and src/analyze/context/repo-ignore-filter.ts) and 15 that call a wrapper; 31 test files import a github.js module. A text search misses indirect forms, so the list is a floor: s7 first builds the repository check that fails on any git, gh or acli spawn outside src/daemon/tools, and takes the final inventory from what that check finds. The plugin's own git runner is outside scope.\n\nGlossary (the spec's terms, tied to the code): 'executor' is executeTool in src/daemon/tools/executor.ts; 'registry' is the tool registry in src/daemon/tools/registry.ts with its builtins under src/daemon/tools/builtins; 'cheap model' is a peripheral-tier model role under the per-role model tiering in docs/daemon.md#model-tiering, which the coreFloor never serves to the critical roles; 'rule' is a hook registered on a tool id; 'destructive' is a tool or call whose approval class says it can destroy work; 'client' is any process attached to the daemon's socket (the terminal client, the editor, a chat).",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Tool hook registry",
+        "purpose": "Lets a rule be registered against a tool id once and run after that tool succeeds for every caller, with failures reported on the result and not thrown.",
+        "interfaceSketch": "interface ToolHook { id: string; toolId: string; run(ctx: ToolHookContext): Promise<void> }\ninterface ToolHookContext { toolId: string; input: unknown; result: ToolResult; caller: 'agent' | 'daemon' | 'workflow' }\ninterface HookFailure { hookId: string; message: string }\ninterface ToolResultHookReport { hookFailures?: HookFailure[] }\nregisterToolHook(hook: ToolHook): void",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s7"
+        ],
+        "assumptions": [
+          "c2"
+        ]
+      },
+      {
+        "id": "sc2",
+        "name": "Tool output schema and typed call",
+        "purpose": "Lets a tool declare its result shape, has the executor check it when declared, and gives callers a result typed from the tool definition they pass.",
+        "interfaceSketch": "interface OutputSchemaField<O> { outputSchema?: JsonSchema; readonly outputType?: O }\ntype ToolOutput<T> = T extends OutputSchemaField<infer O> ? O : unknown\ninterface TypedToolResult<O> { success: boolean; data?: O; error?: ToolFailure }\ncallTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps: ToolDeps): Promise<TypedToolResult<ToolOutput<T>>>",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "assumptions": [
+          "c2",
+          "c3"
+        ]
+      },
+      {
+        "id": "sc3",
+        "name": "Text conversion with cross-check",
+        "purpose": "Turns text-only CLI output into the declared shape using the cheap model, cross-checks the key values against the raw text, and escalates once to a higher-tier model; conversions run serially.",
+        "interfaceSketch": "interface ConversionRequest<O> { toolId: string; rawText: string; schema: JsonSchema; keyValues: (value: O) => string[] }\ninterface ConversionResult<O> { ok: boolean; value?: O; tier: 'cheap' | 'escalated'; failure?: ConversionFailure }\ninterface ConversionFailure { kind: 'shape-mismatch' | 'value-not-in-text' | 'retries-exhausted'; detail: string }\nconvertText<O>(req: ConversionRequest<O>): Promise<ConversionResult<O>>",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6"
+        ],
+        "assumptions": [
+          "c2"
+        ]
+      },
+      {
+        "id": "sc4",
+        "name": "Approval class and approval exchange",
+        "purpose": "Defines the one field that gives a tool or call its approval class, the global setting that governs the common class, the request the executor sends to the attached client, the answer, the timeout and the denial reasons, so that every client implements the same exchange.",
+        "interfaceSketch": "type ApprovalClass = 'none' | 'common' | 'destructive'\ninterface ApprovalField<I> { approval?: ApprovalClass | ((input: I) => ApprovalClass) }\ntype CommonApprovalMode = 'auto' | 'ask'\ninterface ApprovalRequest { requestId: string; toolId: string; approvalClass: 'common' | 'destructive'; inputSummary: string; reason: string; expiresAt: string }\ninterface ApprovalAnswer { requestId: string; decision: 'approve' | 'decline' }\ntype ApprovalDenial = 'declined' | 'timed-out' | 'no-client'\ninterface ApprovalGate { ask(req: ApprovalRequest): Promise<ApprovalAnswer | ApprovalDenial> }\n// IPC methods: approval.request (daemon to client), approval.answer (client to daemon)",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "assumptions": [
+          "c4"
+        ]
+      },
+      {
+        "id": "sc5",
+        "name": "CLI failure kinds",
+        "purpose": "One set of failure kinds returned by every git, gh and acli tool so callers tell a missing CLI, a missing sign-in, a time-out and a rejection apart.",
+        "interfaceSketch": "type ToolFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'timed-out' | 'rejected' | 'conversion-failed' | 'schema-mismatch' | 'denied'\ninterface ToolFailure { kind: ToolFailureKind; message: string; denial?: ApprovalDenial }",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "assumptions": [
+          "c3"
+        ]
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc2",
+          "sc3",
+          "sc5"
+        ],
+        "depends": [],
+        "internal": "The optional output-schema field and the check at step 4 of the pipeline, the typed call helper that takes a tool definition, the serial conversion queue, the key-value cross-check and the one-time escalation, and the shared failure kinds. It includes the choice of schema language and the way an input-to-tool mismatch is reported. It does not declare or read the approval class."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The list of gh operation families, their schemas (read from gh --json where it exists, converted from text otherwise, for example gh pr diff and gh run view --log), which of the 27 gh operations that need approval are in the destructive class, and the 120 second time limit and its message. Existing gh ids keep their meaning."
+      },
+      {
+        "storyId": "s6",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported."
+      },
+      {
+        "storyId": "s7",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "gh commands time out after 120 seconds (decided with the user; the daemon is expected to become multi-threaded so a slow gh will not block it). The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+      "security": "No argument, setting, environment variable or caller identity can skip the approval for a destructive call; with no client attached the call is denied. Common calls follow one global setting. Approval requests travel only over the daemon's Unix socket. No credentials are read or stored: gh, git and acli use the user's own CLI sessions. A tool that declares an output schema and returns a result that does not match it fails and its result is not passed on. Today the executor runs every tool flagged requiresApproval as approved (11 git tools, 5 more by predicate, 27 gh operations and other families), so nothing asks; this Epic makes destructive calls ask every time and puts the rest under the global setting.",
+      "observability": "The executor logs each stage per call with the tool id, the caller, the approval class and decision and its reason, the schema check result, and each hook outcome. Hook failures, denials and conversion escalations are returned to the caller as part of the result, not only logged.",
+      "durability": "Pending approval requests are held in memory by the daemon and are lost on restart; a request left open at restart is treated as denied. Hooks are registered in code at start-up, not stored. The global approval setting is stored in the daemon's config. The cutover leaves artifacts, commits and tracker records unchanged."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — executor pipeline stages",
+          "includesStories": [
+            "s1",
+            "s2",
+            "s3"
+          ],
+          "rationale": "The three stages of the executor pipeline (hooks, result check with conversion, approval) have no dependencies on each other in the Epic graph and own all five shared contracts the later phases consume. They are built one after another in the order s2, s3, s1, because s2 and s3 are what s4 to s6 wait on, and s1 only has a consumer in s7.",
+          "backwardCompat": "Agents keep calling every tool id the same way and get the same result shape. A tool with no output schema is not checked until its family Story adds one. s3 maps every existing requiresApproval flag to the common class, and the global setting for that class defaults to 'auto', which is how those tools behave today, so no tool starts to ask in this phase and unattended workflows keep running. Destructive marking comes with the family Stories.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — tool families",
+          "includesStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "rationale": "The git, gh and Jira families each need the output-schema check, the conversion contract, the failure kinds and the approval exchange from phase A. They do not depend on each other and can be built in any order; git first, because s7 moves the most call sites onto it, then gh, then Jira, which has no call sites yet and so can trail.",
+          "backwardCompat": "Every existing git_* and gh_* id keeps its name and meaning (k7). s4 and s5 put the operations that can destroy work into the destructive class, so those start to ask every time; the rest stay in the common class under the global setting. New operations are added as new tools; an existing tool's input and output stay as they are unless the declared schema only names what it already returned.",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — cutover",
+          "includesStories": [
+            "s7"
+          ],
+          "rationale": "The cutover needs the hook stage (s1), the typed helper and failure kinds (s2), the approval exchange (s3) and the git and gh families (s4, s5) so that every call site has a tool to move to. It is one change with no shims (k6), so it lands only when the families are complete, and it starts with the repository check that finds every direct spawn.",
+          "backwardCompat": "Workflow stages produce the same artifacts, commits and tracker records as before; the existing tests of those stages are the check. runGit, commitAndPushArtifacts and the github.ts wrappers are deleted in the same change.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "The order follows the Epic's dependsOn edges: s1, s2 and s3 have none; s4, s5 and s6 each depend on s2 and s3; s7 depends on s1 to s5. Contract ownership agrees with it: sc1 (s1) is consumed only by s7; sc2, sc3 and sc5 (s2) and sc4 (s3) are consumed by s4 to s7, all of which come later. s6 is not a dependency of s7, so it can land before or after the cutover.",
+      "riskyBits": [
+        {
+          "area": "Executor blast radius",
+          "why": "executeTool runs every external operation; the three new stages change it for every agent, daemon and workflow call at once, and a fault in the stage order could skip an approval or run a hook on a failed call.",
+          "mitigation": "Pin the stage order with tests that assert it directly (a denied call never runs the tool, a failed or mismatching call never runs a hook, a hook failure does not change success), and keep the pipeline in one function with no per-caller branches."
+        },
+        {
+          "area": "Approval starts to ask where it never asked",
+          "why": "Today the executor runs approval-flagged tools as approved, so agent loops and workflow stages run them without a prompt. Destructive calls will now wait for a client and be denied when none is attached, which can stop an unattended loop or workflow stage that worked before; the common class has the same effect for anyone who sets the global setting to 'ask'.",
+          "mitigation": "Keep the common-class default at 'auto' so behaviour is unchanged until a user opts in; narrow the destructive class to operations that can destroy work; list in each family Story's LLD which workflow stages can reach a destructive tool and what they do on denial; s7's acceptance criterion fails the stage with the denial reported."
+        },
+        {
+          "area": "One-change cutover",
+          "why": "About 32 production files and 31 test files that import a github.js module move at once with no shims (k6), including subsystems that read git for their own purposes (the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update), and a text search misses indirect forms (the graph is also missing 57 relationships).",
+          "mitigation": "Build the repository check first and take the inventory from what it finds, not from a text search; keep the inventory in docs/plans/tool-registry.md; size s7 from it before the rewrite begins; the check then fails the build on any file the rewrite missed."
+        },
+        {
+          "area": "Text conversion accuracy",
+          "why": "A cheap model can return a value that fits the schema but is wrong; the cross-check only covers the key values it is told about.",
+          "mitigation": "Prefer structured CLI output (gh --json, git porcelain, acli --json) so the model path is the exception; each text-only tool declares its key values; tests replay captured real CLI output through both the cheap and the escalated path, including truncated and made-up values."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Executor pipeline with a typed call helper",
+        "oneLineSummary": "Every git, gh and Jira operation is a registry tool; executeTool becomes a fixed pipeline (approval, run, result check, hooks) and workflow code calls it through a typed helper that takes the tool definition.",
+        "approach": "executeTool in src/daemon/tools/executor.ts becomes the one pipeline every caller passes through: resolve the tool, ask for approval when the call needs it (destructive calls always, common calls according to one global approval setting), run it, check the result against the tool's declared output schema when it has one, then run the hooks registered for that tool name one after another. The tool families (git, gh, Jira) are registry builtins, one tool per operation family, each with an optional output schema and an approval class. Workflow and daemon code call a typed helper that takes the tool definition object (imported by the caller) and returns a result typed from its schema, so no caller parses text.\n\nThe approval request goes over the daemon's IPC to the attached client and is denied on timeout or when no client is attached. Output built from text goes through a conversion step: the CLI's structured output is read directly where it exists, and otherwise a cheap model converts the text, the key values are checked against the raw text, and one escalation to a higher-tier model is allowed. The cutover replaces every direct git, gh and acli spawn in the backend, and the runGit, commitAndPushArtifacts and github.ts wrappers, in one change, and a repository check fails the build on a new direct call outside the registry.",
+        "pros": [
+          "One place for every cross-cutting rule: a hook registered on git_push runs for the agent loop, the daemon and the workflow, so the s9 refresh needs no second implementation.",
+          "No new API surface besides the typed helper: the 22 runGit calls and the 5 commitAndPushArtifacts callers move onto the registry that agents already use.",
+          "Matches the approved SPEC decisions (registry as the single layer, executor-level hooks, schema validated by the executor) with no translation layer to keep in step.",
+          "Approval, result check and hooks have a fixed order, so a destructive call is gated before it runs and no hook sees an unchecked result."
+        ],
+        "cons": [
+          "The executor becomes a larger, security-relevant module: one fault in the pipeline affects every external operation, so it needs the heaviest tests of the Epic.",
+          "Workflow code that today calls plain functions must go through async tool calls; callers import the tool definition so the type is carried, and a tool addressed only by a string id gets no type.",
+          "The cutover in one change touches about 32 production files (17 that spawn the CLI directly and 15 that call a wrapper) and 31 test files that import a github.js module, so the change set is large and hard to bisect."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c2",
+          "c3",
+          "c4"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Typed service facade over the registry",
+        "oneLineSummary": "Workflow and daemon code call small typed services (a git service, a gh service, a Jira service) that internally call registry tools; the executor stays close to today's shape.",
+        "approach": "A thin typed module per CLI (for example a git service with methods such as push, pull and commit) is written for workflow and daemon code. Each method calls executeTool with the matching tool id and converts the generic ToolResult to a method-specific type. Hooks and the approval exchange are still added to the executor, so the cross-cutting rules still apply to calls that go through it.\n\nAgents keep calling tool ids directly. The facade gives workflow authors named methods and compile-time types without a generic typed helper, and it keeps the large call-site rewrite mechanical: runGit(args) becomes a named method. Output schemas stay on the tools; the facade adds a second, hand-written layer of types on top of them.",
+        "pros": [
+          "Call sites read as named methods (git.push(...)) and give workflow authors editor completion and a place to hold per-operation defaults.",
+          "The executor change is smaller than in a1, because typing is done in the facade instead of by a generic helper.",
+          "The facade can be adopted per module, so the call-site rewrite can be reviewed in smaller pieces."
+        ],
+        "cons": [
+          "Two descriptions of every operation exist, the tool's output schema and the facade's hand-written type; they can drift apart, which breaks the accuracy-first rule when a type no longer matches the result.",
+          "A facade method is a second path to add for each new operation: a new git tool is not reachable from workflow code until its method is written, which brings back the 'added twice or missed' problem the Epic removes.",
+          "The facade is a new place where someone can add a direct spawn of git, so the build-time check needs to guard two layers, not one.",
+          "Adds roughly one module per CLI family (three) and their tests on top of the work in a1."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c2",
+          "c3"
+        ],
+        "reasonRejected": "Partial on k2 (hand-written types can drift from the declared schema) and k6 (the facade is a second place a direct call can be added); it gets the same rule placement as a1 but adds a second type layer to keep in step."
+      },
+      {
+        "id": "a3",
+        "name": "Shared typed library under both the registry and the workflow",
+        "oneLineSummary": "A typed git, gh and Jira library holds the real logic; the registry tools and the workflow code are both thin callers of it, and hooks and approval are applied inside the library.",
+        "approach": "The logic that runs git, gh and acli moves into one typed library module with the result checks, the cheap-model conversion, the approval request and the hooks inside it. The registry builtins become thin adapters that call the library and return its result as a ToolResult, and the workflow code calls the library directly, without the executor.\n\nBecause the rules live in the library, they apply to any caller of the library whether it comes through the registry or not. Agents keep using the tool ids; the executor itself is changed little, since approval and hooks are no longer its job.",
+        "pros": [
+          "Workflow code gets native TypeScript types and plain function calls, with no tool-id strings and no ToolResult wrapping.",
+          "The executor stays small, so a change to it cannot affect every external operation.",
+          "The library can be unit-tested without the registry or the executor."
+        ],
+        "cons": [
+          "Departs from the approved SPEC decision that the daemon's tool registry is the single layer: the registry becomes an adapter and the library becomes the real layer, so the SPEC and the DEF would need an amendment.",
+          "Any code that reaches an external CLI through the executor but not through the library, such as a tool defined outside the git, gh and Jira families, would skip the rules; the registry no longer guarantees that every external operation is covered.",
+          "Approval and hooks tied to a tool name do not exist at the registry level, so the rule 'every tool gets the same treatment' has to be re-implemented for each adapter.",
+          "Rewrites the existing tools into adapters over a new library, which is more rewriting than a1 for the same call-site cutover."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "reasonRejected": "Partial on k2, k4, k5 and k6: the rules sit in a library beside the registry instead of in the registry's executor, which also contradicts the approved SPEC decision that the registry is the single layer."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The DEF's s3 ac6 says a tool that needs approval 'asks'; this HLD reads it as 'asks when the global setting is ask, and always asks when destructive', following the user's decision of 2026-10-23. The DEF may need an amendment to ac6 to match (audit item sbdry4, partial)."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/executor.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/registry.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/types.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/read-only-tool-loop.ts:78"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/team/git.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/tracker/github.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/cli/services/maintenance.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/design/corpus/sources/git-reader.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/daemon.md#model-tiering"
+    }
+  ]
+}

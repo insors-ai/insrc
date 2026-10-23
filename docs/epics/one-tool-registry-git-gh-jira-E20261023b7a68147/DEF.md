@@ -233,6 +233,8 @@ The workflow, the daemon and the terminal client's approval service follow the s
 
 - `q94cc9d82` — Item a2: the acli command surface is unchecked; before the Jira stories are designed, install acli and record its subcommands and output for transitions, comments, assignment and projects, and how a missing install differs from a missing sign-in.
   - **resolved**: Probe acli now, before HLD — Done 2026-10-23: acli 1.3.39 installed and probed; results in docs/plans/tool-registry.md (acli probe section). _(2026-10-23T09:20:13.483Z)_
+- `q62d221cb` — Item a2: the cheap-model conversion is only checked for structure by the shape check; the design stage must decide which values are cross-checked against the raw CLI text, whether a deterministic parser or a higher-tier model is used when retries run out, and how the conversion is tested on representative CLI outputs.
+  - **resolved**: Deterministic cross-check, then escalate to a higher-tier model _(2026-10-23T09:20:52.280Z)_
 
 ## Citations
 

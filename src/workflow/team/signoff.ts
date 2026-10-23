@@ -393,15 +393,20 @@ const personOf = (login: string): Actor => ({ id: `github:${login}`, kind: 'pers
 
 /** Why one artifact cannot be submitted, or undefined when its prerequisites hold. */
 function prerequisiteFailure(repo: string, unit: UnitRef, artifactId: string, stage: SignoffStage, meta: unknown, d: SignoffDeps): string | undefined {
-	if (approvalStateOf(meta) !== 'approved' || lifecycleOfMeta(meta)?.['status'] !== 'approved') {
-		return `${artifactId} is not approved (status ${String(lifecycleOfMeta(meta)?.['status'] ?? 'unknown')}): approve it locally first`;
+	const status = lifecycleOfMeta(meta)?.['status'];
+	// a head the reviewers asked changes of can be submitted again unchanged while its approval and review are still of its current revision
+	const resubmission = status === 'changes-requested';
+	if (approvalStateOf(meta) !== 'approved' || (status !== 'approved' && !resubmission)) {
+		return `${artifactId} is not approved (status ${String(status ?? 'unknown')}): approve it locally first`;
 	}
 	const lifecycle = lifecycleOfMeta(meta);
 	const approval = lifecycle?.['approval'];
 	const approvedRevision = typeof approval === 'object' && approval !== null ? (approval as Record<string, unknown>)['revision'] : undefined;
 	const revision = revisionOfMeta(meta);
-	if (typeof approvedRevision === 'number' && revision !== undefined && approvedRevision !== revision) {
-		return `${artifactId} was approved at revision ${approvedRevision} but is at revision ${revision}: approve it again first`;
+	if ((typeof approvedRevision === 'number' || resubmission) && revision !== undefined && approvedRevision !== revision) {
+		return resubmission
+			? `${artifactId} is in changes-requested and its approval is not of its current revision ${revision}: review and approve it again first, or leave it out of the submission`
+			: `${artifactId} was approved at revision ${approvedRevision} but is at revision ${revision}: approve it again first`;
 	}
 	const author = authorPartyOf(meta);
 	if (stage === 'BUILD') {
@@ -414,6 +419,10 @@ function prerequisiteFailure(repo: string, unit: UnitRef, artifactId: string, st
 	}
 	const review = lifecycleReviewOf(meta);
 	if (review === undefined) return `${artifactId} has no other-party review: review it first`;
+	const reviewedRevision = review['revision'];
+	if (typeof reviewedRevision === 'number' && revision !== undefined && reviewedRevision !== revision) {
+		return `the review of ${artifactId} is of revision ${reviewedRevision} but it is at revision ${revision}: review it again first`;
+	}
 	const reviewer = reviewerPartyOf(review);
 	if (author !== 'unknown' && reviewer === author) return `the review of ${artifactId} was run by the ${author}, who wrote it: it needs the other party`;
 	return undefined;

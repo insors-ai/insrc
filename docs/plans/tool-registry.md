@@ -98,3 +98,8 @@ Resolves HLD review round 3 finding 1. A tool that workflow or daemon code calls
 DEF wording to amend (S002:FR001 and FR004): "Every tool that workflow or daemon code calls declares the shape of its result, and the executor checks each result against it" in place of "A tool without a declared result shape cannot be registered" and "Every tool declares the shape of its result". k2 is unchanged for any tool that declares a schema.
 
 Still open from round 3: findings 2 to 7, and the s3 ac6 reading.
+
+## Decisions on HLD review round 3 finding 6 (2026-10-23)
+
+- The daemon self-update (src/cli/services/maintenance.ts, and the installed-commit check it relies on) is not a code sync for registered repos. It stays outside the registry. This is the one named exemption to "no allowlist"; the s7 build check lists it explicitly with this reason. Every other spawn moves.
+- CLI-process callers (src/cli/services/workflow.ts and any other terminal-client code that runs git or gh on a registered repo) send the call to the daemon over IPC through a new tool-call request. The daemon runs the one executor, so hooks, the approval gate and the schema check are the same for every caller, and the attached TUI answers approval requests as a client. If the daemon is down the call fails with a clear message; these paths already need the daemon for workflow runs. The IPC method's shape and its `caller` value (see finding 4) are s3 and s7 design.

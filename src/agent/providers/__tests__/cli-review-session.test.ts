@@ -279,3 +279,51 @@ test('a size refusal in a claude session envelope is now an InputTooLargeError, 
 		assert.equal(codex.calls().length, 1, 'a size refusal is never resent');
 	} finally { codex.cleanup(); }
 });
+
+// --- reasoning effort (Story a27df028 S001) -------------------------------------
+
+test('with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions', async () => {
+	const c = fakeCli([{ out: claudeOk({ ok: true }) }]);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: c.bin, model: 'opus', effort: 'high' });
+		await p.complete([{ role: 'user', content: 'hi' }]);
+		await p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA);
+		await p.runEditSession('edit', { cwd: c.dir });
+		await p.runReviewSession('P', SCHEMA, { cwd: c.dir, deadlineMs: 20_000 });
+		const argvs = c.calls().map(x => x.argv);
+		assert.equal(argvs.length, 4);
+		for (const argv of argvs) assert.deepEqual(argv.slice(-4), ['--model', 'opus', '--effort', 'high'], argv.join(' '));
+		assert.deepEqual(argvs[3], claudeReviewSessionArgs(SCHEMA, ['--model', 'opus', '--effort', 'high']));
+	} finally { c.cleanup(); }
+
+	const x = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: x.bin, model: 'gpt-6.1-sol', effort: 'medium' });
+		await p.complete([{ role: 'user', content: 'hi' }]);
+		await p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA);
+		await p.runEditSession('edit', { cwd: x.dir });
+		await p.runReviewSession('P', SCHEMA, { cwd: x.dir, deadlineMs: 20_000 });
+		const argvs = x.calls().map(y => y.argv);
+		assert.equal(argvs.length, 4);
+		for (const argv of argvs) assert.deepEqual(argv.slice(-4), ['--model', 'gpt-6.1-sol', '-c', 'model_reasoning_effort=medium'], argv.join(' '));
+		assert.deepEqual(argvs[3]!.slice(0, 2), ['exec', '--output-schema']);
+	} finally { x.cleanup(); }
+});
+
+test("without effort every argv is byte-identical to today's", async () => {
+	const x = fakeCli([{ out: codexOk('{"ok":true}') }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: x.bin, model: 'gpt-6.1-sol' });
+		await p.complete([{ role: 'user', content: 'hi' }]);
+		await p.runEditSession('edit', { cwd: x.dir });
+		const [complete, edit] = x.calls().map(y => y.argv);
+		assert.deepEqual(complete, ['exec', '--json', '--model', 'gpt-6.1-sol']);
+		assert.deepEqual(edit, ['exec', '--json', '--full-auto', '--model', 'gpt-6.1-sol']);
+	} finally { x.cleanup(); }
+	// No model and no effort: no extra arguments at all.
+	const c = fakeCli([{ out: claudeOk({ ok: true }) }]);
+	try {
+		await new CliProvider({ kind: 'claude', binPath: c.bin }).complete([{ role: 'user', content: 'hi' }]);
+		assert.deepEqual(c.calls()[0]!.argv, ['--print', '--output-format', 'json']);
+	} finally { c.cleanup(); }
+});

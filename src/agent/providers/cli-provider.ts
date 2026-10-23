@@ -51,6 +51,7 @@ import type {
 	StructuredCompletionOpts,
 	StructuredSchema,
 } from '../../shared/types.js';
+import type { TierEffort } from '../../config/analyze.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
 import type { ProcessGroupOpts } from '../../shared/process-group.js';
@@ -146,6 +147,9 @@ export interface CliProviderOpts {
 	readonly embedDelegate?: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
 	/** How long a codex run may show no model output before it is treated as stalled. Default CODEX_FIRST_OUTPUT_MS. */
 	readonly codexFirstOutputMs?: number | undefined;
+	/** Reasoning effort for every call: claude `--effort <e>`, codex `-c model_reasoning_effort=<e>`.
+	 *  Absent: the CLI's own default. */
+	readonly effort?: TierEffort | undefined;
 }
 
 
@@ -185,6 +189,8 @@ export class CliProvider implements LLMProvider {
 	/** The `--model` id this provider forwards to the CLI, or undefined when it
 	 *  lets the CLI use its own default. Public for logging + testability. */
 	readonly defaultModel: string | undefined;
+	/** The reasoning effort this provider forwards to the CLI, if any. */
+	readonly effort: TierEffort | undefined;
 	private readonly binPath: string;
 	private readonly timeoutMs: number;
 	private readonly codexFirstOutputMs: number;
@@ -196,6 +202,7 @@ export class CliProvider implements LLMProvider {
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined;
 		this.defaultModel = opts.model;
+		this.effort = opts.effort;
 		this.binPath = opts.binPath ?? opts.kind;
 		// 10 min default: agentic `claude`/`codex --print` calls that generate a
 		// full artifact or a deep analyze bundle routinely exceed the old 120 s
@@ -504,14 +511,15 @@ export class CliProvider implements LLMProvider {
 
 	private modelArgs(opts?: CompletionOpts | StructuredCompletionOpts): string[] {
 		const model = this.defaultModel;
-		if (model === undefined || model.length === 0) return [];
 		// Both binaries support `--model <name>` / `-m <name>`. Use the long
 		// form for parity. `opts` is reserved for future per-call model
 		// overrides; currently the caller picks the model via the provider's
 		// default at construction time (which the model-class router on the
 		// caller side resolves before constructing the provider).
 		void opts;
-		return ['--model', model];
+		const modelArgs = model === undefined || model.length === 0 ? [] : ['--model', model];
+		if (this.effort === undefined) return modelArgs;
+		return [...modelArgs, ...(this.kind === 'claude' ? ['--effort', this.effort] : ['-c', `model_reasoning_effort=${this.effort}`])];
 	}
 
 

@@ -259,7 +259,7 @@ export async function runDimensionJob(
 	// prepared, so a job that fails still leaves its plan, and once as finished, after any
 	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
 	logPlan('prepared', job, subject);
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onCall: ctx?.onCall, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
 }
 
 function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {

@@ -45,7 +45,8 @@ import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme
 import { assertLegalStatusChange, contentHash, reconcileLifecycle } from './artifact-core/lifecycle.js';
 import type { ContentView } from './artifact-core/lifecycle.js';
 import { ArtifactShapeError } from './artifact-core/types.js';
-import type { Actor, Lifecycle, Status } from './artifact-core/types.js';
+import type { Actor, Lifecycle, Signoff, Status } from './artifact-core/types.js';
+import { emptyLifecycle } from './artifact-core/decode.js';
 
 // ---------------------------------------------------------------------------
 // Repo-relative dir constants
@@ -212,6 +213,29 @@ function reconcileLifecycleOf(
 	return reconcileLifecycle(priorView, nextView, unchanged ? priorView.lifecycle.revision.number : revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString());
 }
 
+/** The Signoff entries a head's lifecycle carries (none when it has no lifecycle). */
+function signoffsOfHead(meta: Record<string, unknown> | undefined): readonly Signoff[] {
+	const lifecycle = meta?.['lifecycle'];
+	return isRecord(lifecycle) && Array.isArray(lifecycle['signoffs']) ? lifecycle['signoffs'] as Signoff[] : [];
+}
+
+/**
+ * The lifecycle a content write stores when the prior head has Signoff entries and the next head carries none (s8): the entries
+ * are history the write must not lose, or the request a revision is sent back to could no longer be found. A next head with
+ * no lifecycle gets the prior lifecycle when the content is unchanged, and a draft one holding the entries when it changed
+ * (approval and review belong to the revision they were made at, so they are not carried). Undefined leaves the write as it was.
+ */
+function lifecycleKeepingSignoffs(prior: Record<string, unknown>, next: Record<string, unknown>, meta: Record<string, unknown>): Lifecycle | undefined {
+	const priorMeta = isRecord(prior['meta']) ? prior['meta'] : undefined;
+	const history = signoffsOfHead(priorMeta);
+	if (history.length === 0 || signoffsOfHead(meta).length > 0) return undefined;
+	if (isRecord(meta['lifecycle'])) return { ...meta['lifecycle'] as unknown as Lifecycle, signoffs: [...history] };
+	const priorView = contentViewOf(prior, readRevision(prior));
+	const nextView = contentViewOf({ ...next, meta }, readRevision(prior));
+	if (contentHash(priorView.description, priorView.payload) === contentHash(nextView.description, nextView.payload)) return priorView.lifecycle;
+	return { ...emptyLifecycle(readRevision(prior) + 1), signoffs: [...history] };
+}
+
 /** What a write would put on disk. */
 export interface PreparedArtifactWrite {
 	/** The exact file text. */
@@ -248,6 +272,9 @@ export function prepareArtifactWrite(
 		// anything bound to it.
 		// A head that carries meta.lifecycle is judged by the canonical hash of its description, body and
 		// citations instead, so metadata and key order cannot mint a revision.
+		// A prior head with Signoff entries keeps them through the write (s8).
+		const kept = prior === undefined ? undefined : lifecycleKeepingSignoffs(prior, next, meta);
+		if (kept !== undefined) meta['lifecycle'] = kept;
 		const unchanged = !isRecord(meta['lifecycle']) && prior !== undefined && sameApartFromRevision(prior, { ...next, meta });
 		if (isRecord(meta['lifecycle'])) {
 			const reconciled = reconcileLifecycleOf(prior, next, meta, readRevision(prior) + 1, opts);

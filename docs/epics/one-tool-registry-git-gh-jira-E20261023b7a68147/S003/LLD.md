@@ -369,6 +369,8 @@ approval.subscribe is a stream handler pushing 'gate' frames to the client; appr
 
 - `q57e86d4a` — Amendments filed, pending the user's approval: AMD-b7a68147dcf72034-4 (sc4 request fields, three chat modes, approval.subscribe), -5 (sc5 'cancelled' denial reason), -6 (sc2 typebox outputSchema, TypedTool, callTool), -7 (sc3 convertText takes ToolDeps, keyValues required). -1 (superseded) and -2 (duplicate of -3) are to be rejected.
   - **resolved**: Approve -4..-7, reject -1/-2, then plan — Done: AMD-3 to AMD-7 approved and AMD-1 and AMD-2 rejected by the user's instruction on 2026-10-23. _(2026-10-23T14:04:23.531Z)_
+- `q284f2b99` — dm2 (partial): the dataModel entries do not each cite the invariant they might break; the invariant that tool ids and schemas stay unchanged is listed under invariantsToPreserve.
+  - **resolved**: Carry the mapping into the plan — One invariant covers every entry; a per-task check enforces it where the work is verified. _(2026-10-23T14:05:26.709Z)_
 
 ## Citations
 

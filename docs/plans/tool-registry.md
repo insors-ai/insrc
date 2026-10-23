@@ -90,3 +90,11 @@ Round 3 returned `block` with 0 HIGH and 7 MED after rounds 1 (5 MED) and 2 (1 H
 5. s2/s7: sc5's new failure kinds (`timed-out`, `conversion-failed`, `schema-mismatch`, `denied`) need a stated mapping onto the tracker port's `PortFailureKind` (`missing-tool | missing-signin | unreachable | rejected`, src/workflow/tracker/port.ts:23; github.ts:76 maps a timeout to `unreachable`; unit-issue.test.ts:390 iterates the four kinds), or the port type is widened and its consumers updated.
 6. s3/s7: src/cli/services/maintenance.ts runs in the terminal client process, never starts the daemon, and does git checkout/merge/remote set-url when the daemon may be down; cli/services/workflow.ts calls commitAndPushArtifacts. Which process runs the executor for CLI-process callers, and what the approval gate does when no daemon is running (a destructive call would always be `no-client`), must be decided; the self-update path is the hard case.
 7. s7: DEF S007:FR001 requires a registry-path test per replaced call site; the HLD says only that the existing stage tests are the check. Add to s7 that every inventoried site, including the indexer, the ignore filter and the identity lookup, gets a test through the registry or the typed helper with a recorded executor.
+
+## Decision: output schemas are required only for tools that code calls (2026-10-23)
+
+Resolves HLD review round 3 finding 1. A tool that workflow or daemon code calls must declare an output schema; `callTool` accepts only a tool definition that has one (a compile-time guard), so using an unschematized tool from code is a type error. A tool used only by agents needs no schema: the agent reads the text `output`, and the executor skips the check. A tool that later gets used from code gets its schema then. The roughly 110 builtins outside the git, gh and Jira families (file, cloud, k8s and so on) are not touched by this Epic.
+
+DEF wording to amend (S002:FR001 and FR004): "Every tool that workflow or daemon code calls declares the shape of its result, and the executor checks each result against it" in place of "A tool without a declared result shape cannot be registered" and "Every tool declares the shape of its result". k2 is unchanged for any tool that declares a schema.
+
+Still open from round 3: findings 2 to 7, and the s3 ac6 reading.

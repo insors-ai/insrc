@@ -40,7 +40,7 @@ export const LIFECYCLE_TABLE: Readonly<Record<LifecycleOperation, Step>> = Objec
 	'review':          { from: ['draft', 'pending-review'], to: 'draft' },
 	'approve':         { from: ['draft'], to: 'approved' },
 	'reject':          { from: ['draft', 'approved', 'in-signoff'], to: 'rejected' },
-	'open-signoff':    { from: ['approved'], to: 'in-signoff' },
+	'open-signoff':    { from: ['approved', 'changes-requested'], to: 'in-signoff' },
 	'signoff-changes': { from: ['in-signoff'], to: 'changes-requested' },
 	'signed-off':      { from: ['in-signoff'], to: 'signed-off' },
 	'complete':        { from: ['approved', 'signed-off'], to: 'completed' },

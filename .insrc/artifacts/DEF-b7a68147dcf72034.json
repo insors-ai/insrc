@@ -1,0 +1,807 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792744989436-xn6qnn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T08:45:36.624Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 147184,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf9549f92ed5df4a8ec46f9aa68c526fd5f164aeffbf2f5dfa703f26159cc65a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 11,
+          "low": 7
+        },
+        "at": "2026-10-23T08:52:47.839Z",
+        "report": {
+          "entityId": "DEF-b7a68147dcf72034",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-18dc035ab800b0003fbe3d31e42257f8"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T08:59:01.234Z",
+        "override": {
+          "reason": "Daemon review round 1 blocked with 0 HIGH and 11 MED, all grounding gaps rather than wrong claims. The factual premises were checked by hand against the code on 2026-10-23 (executeTool is the single run path; the approval gate auto-approves with no dispatcher; git_push/git_reset flag approval on every call; call-site counts) and recorded in docs/plans/tool-registry.md, to be carried into design.epic. User approved with override."
+        }
+      }
+    }
+  },
+  "body": {
+    "title": "One tool registry for git, gh, Jira",
+    "summary": {
+      "audience": "product",
+      "prose": "Every git, GitHub and Jira operation goes through one tool layer that agents, the daemon and the workflow all use, so a rule such as refreshing tracker status after a pull or push is written once and applies everywhere. The layer covers the full set of operations the underlying tools offer, adds Jira, gives callers checked result types, and asks the user before any destructive step, which today runs unasked."
+    },
+    "flavor": "enhancement",
+    "problem": "Git, GitHub and Jira are reached in two unrelated ways. The daemon offers agents a registry of git and GitHub tools that returns loosely typed results, while the workflow library, the daemon and the terminal client's approval service run git and GitHub commands themselves through their own wrappers, in more than twenty places. Because the same operation can be run by either path, there is no single point where behaviour that must follow every pull, push or issue change can live, so the rule that tracker status should be refreshed after a pull or push cannot be enforced, and each new rule has to be added twice or missed. The registry covers only part of what the underlying tools can do, has no Jira support at all, gives workflow code no checked result types, and leaves the safety of destructive operations to each tool's own approval flag, which the executor currently honours by running the tool as if it were approved, so no destructive step asks anyone.",
+    "nonGoals": [
+      {
+        "text": "A second typed library beside the tool registry",
+        "rationale": "The registry is meant to be the only layer, so one set of rules applies to every caller."
+      },
+      {
+        "text": "A hook mechanism outside the tool executor",
+        "rationale": "Hooks must fire for every caller and cannot be left to workflow code or to individual wrappers."
+      },
+      {
+        "text": "A tool per CLI subcommand, or a raw passthrough tool",
+        "rationale": "Hooks and approval key on a named tool, so a mutating operation must not hide behind a generic argument."
+      },
+      {
+        "text": "Direct Jira REST calls, stored Jira tokens, or Jira CLIs other than Atlassian's acli",
+        "rationale": "Authentication stays with the user's local CLI session and the daemon holds no cloud credentials."
+      },
+      {
+        "text": "A phased migration or compatibility shims for the old shell-outs",
+        "rationale": "A leftover path could bypass the hooks and the approval rule."
+      },
+      {
+        "text": "A blanket allow-all for destructive operations, or approving them when no client answers",
+        "rationale": "Every destructive call is approved by the user each time, and with nobody to ask it is denied."
+      },
+      {
+        "text": "Capturing git run in a terminal or IDE outside the daemon",
+        "rationale": "No hook can see commands the daemon does not run."
+      },
+      {
+        "text": "The git runner inside the editor plugin's own process",
+        "rationale": "It runs outside the daemon and the backend, so the daemon's registry cannot carry it; the migration covers the backend only."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Atlassian's acli can be installed and signed in on the machines that use the Jira tools, and it exposes the operations the tools need, including issue transitions, comments, assignment and projects; its command surface has not been checked yet.",
+        "confidence": "low",
+        "source": "c4"
+      },
+      {
+        "text": "The tool executor can host a hook stage and a result-shape check inside its single entry point without changing the way agents call a tool; this is a design assertion to be confirmed when the stories are designed.",
+        "confidence": "med",
+        "source": "c3"
+      },
+      {
+        "text": "A cheap model can convert the text output of a CLI into a declared shape often enough to be useful, and the shape check rejects output that is structurally wrong; the check does not catch values that fit the shape but are wrong, so the value checks are a design question.",
+        "confidence": "low",
+        "source": "c4"
+      },
+      {
+        "text": "During interactive use at least one client (the terminal client, the editor or a chat) is attached to the daemon and can be asked a question over its connection; no such question-and-answer exchange exists yet and the Epic builds it.",
+        "confidence": "med",
+        "source": "c3"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Cloud access goes through the user's locally installed CLI sessions; no direct cloud REST calls and no stored credentials in the daemon.",
+        "type": "convention",
+        "source": "c2"
+      },
+      {
+        "id": "k2",
+        "text": "Accuracy is the first principle: a tool result that does not match its declared schema is a failure and is never passed on.",
+        "type": "invariant",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "text": "Nothing that reaches an LLM provider runs in parallel; model calls, including the cheap-model conversion, run one after another.",
+        "type": "convention",
+        "source": "c2"
+      },
+      {
+        "id": "k4",
+        "text": "The daemon owns all state and access; clients reach it only through IPC, including approval requests.",
+        "type": "convention",
+        "source": "c2"
+      },
+      {
+        "id": "k5",
+        "text": "Every destructive operation is approved by the user each time; there is no global opt-in, and with no client attached the call is denied.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k6",
+        "text": "The cutover is complete in one change: the old runGit, commitAndPushArtifacts and github.ts shell-outs are removed with no shims.",
+        "type": "stakeholder",
+        "source": "c4"
+      },
+      {
+        "id": "k7",
+        "text": "Every tool id that agents use today keeps working, including the mixed naming such as git_pull, git:cherry-pick, gh_pr_create and gh:project:item-add, with the same meaning.",
+        "type": "invariant",
+        "source": "c3"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Run a rule once after a tool succeeds, for every caller",
+        "userValue": "A rule that must follow an operation, such as refreshing tracker status after a push, is written once and applies whoever ran the tool.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a rule is registered for a named tool",
+            "when": "that tool succeeds for any caller (an agent, the daemon or the workflow)",
+            "then": "the rule runs once after the tool result is known",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a rule fails after its tool succeeded",
+            "when": "the caller receives the result",
+            "then": "the tool result is returned as a success together with a clear report of the rule's failure",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a tool fails or is denied",
+            "when": "the executor finishes the call",
+            "then": "no rule registered for that tool runs",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "several rules are registered for one tool",
+            "when": "the tool succeeds",
+            "then": "they run one after another in registration order and one failing rule does not stop the next",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "an agent calls a tool the way it does today",
+            "when": "the rule stage is added to the executor",
+            "then": "the agent's way of calling the tool and the shape of what it gets back are unchanged apart from the report of a failed rule",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "sizeEstimate": "M",
+        "functionalRequirements": [
+          {
+            "statement": "Rules are registered against a tool name in one place and cannot be attached by individual callers."
+          },
+          {
+            "statement": "A rule's failure is reported with the tool result and never changes whether the tool is counted as succeeded."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Give every tool a checked, typed result",
+        "userValue": "Callers get results they can trust and use without parsing text, and a result that is wrong is never passed on.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a tool declares the shape of its result",
+            "when": "the tool returns",
+            "then": "the result is checked against that shape before any caller or rule sees it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a result does not match its declared shape",
+            "when": "the check runs",
+            "then": "the call fails with a message naming the mismatch and the unmatched result is not passed on",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a tool's underlying CLI gives structured output",
+            "when": "the tool builds its result",
+            "then": "the structured output is read directly and no model is used",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "a tool's underlying CLI gives only text",
+            "when": "the tool builds its result",
+            "then": "a cheap model converts the text to the declared shape, the conversions run one after another, and the check in ac1 decides whether the conversion is accepted",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "workflow code calls a tool through the executor",
+            "when": "the call returns",
+            "then": "the code receives a result whose type follows from the tool's declared shape without a cast",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "a model conversion produced output that fits the declared shape",
+            "when": "a value in it can be checked against the raw CLI text",
+            "then": "the key values are cross-checked against that text and a mismatch fails the call",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "sizeEstimate": "L",
+        "functionalRequirements": [
+          {
+            "statement": "A tool without a declared result shape cannot be registered."
+          },
+          {
+            "statement": "A model conversion that fails the check is reported as the tool's failure, with the original output available for diagnosis."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Ask the user before any destructive operation, every time",
+        "userValue": "No tool run by an agent or workflow can destroy work without the user saying yes to that exact call, which no tool asks today.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a tool is marked destructive",
+            "when": "any caller invokes it",
+            "then": "the executor sends an approval request describing the exact call to the attached client and waits for an answer",
+            "operationalizes": [
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the user approves one destructive call",
+            "when": "the same or another destructive call is made later",
+            "then": "that later call asks for its own approval",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "no client answers within the timeout, or none is attached",
+            "when": "the request expires",
+            "then": "the call is denied and the caller is told it was denied for lack of an answer",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the user declines",
+            "when": "the answer arrives",
+            "then": "the call is denied and nothing is changed",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "any setting, argument or caller identity",
+            "when": "a destructive call is made",
+            "then": "none of them can skip the approval",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "a tool that today declares it needs approval and is run as if approved",
+            "when": "the change is complete",
+            "then": "it asks for approval before it runs, in the terminal client, the editor and a chat alike",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac7",
+            "given": "a client attaches to the daemon",
+            "when": "an approval request is raised",
+            "then": "the client can show the exact call and send back an answer over its connection",
+            "operationalizes": [
+              "k4"
+            ]
+          }
+        ],
+        "sizeEstimate": "L",
+        "functionalRequirements": [
+          {
+            "statement": "The approval request names the tool, the repository and the arguments it would run with."
+          },
+          {
+            "statement": "The exchange between the daemon and an attached client for asking and answering an approval is built as part of this Story."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Cover every git operation with a named, typed tool",
+        "userValue": "Anything git can do is available through the registry, and each mutating operation is a distinct tool the rules can see.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an operation that git supports",
+            "when": "the registry's git tools are listed",
+            "then": "the operation is reachable through a named tool for its family, with no raw passthrough",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a git tool is invoked",
+            "when": "it returns",
+            "then": "its result follows the declared shape from the checked-result story",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a git operation can destroy work (force push, hard reset, clean, deleting a branch or tag)",
+            "when": "the registry is read",
+            "then": "that operation is marked destructive so the approval story applies",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the git tools that exist today, including git_pull, git_push, git_reset and git:cherry-pick",
+            "when": "the family is complete",
+            "then": "each keeps its current id and meaning, so agents using it keep working",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The coverage of the git family is recorded as a list of operation families against tool names that a reviewer can check."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Cover every GitHub CLI operation with a named, typed tool",
+        "userValue": "Anything gh can do is available through the registry with the same rules as git, so issues, pull requests, releases and the rest are handled uniformly.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an operation that gh supports",
+            "when": "the registry's gh tools are listed",
+            "then": "the operation is reachable through a named tool for its family, with no raw passthrough",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a gh tool is invoked",
+            "when": "it returns",
+            "then": "its result follows the declared shape from the checked-result story",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a gh operation can destroy work (closing or deleting an issue, deleting a release or branch, merging a pull request)",
+            "when": "the registry is read",
+            "then": "that operation is marked destructive so the approval story applies",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "gh is missing or not signed in",
+            "when": "a gh tool is invoked",
+            "then": "the call fails with a message saying which, using the user's own gh session",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a gh command does not finish",
+            "when": "its time limit passes",
+            "then": "the call ends with a message saying it timed out",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the gh tools that exist today, including gh_pr_create, gh_issue_comment, gh_release_delete and gh:project:item-add",
+            "when": "the family is complete",
+            "then": "each keeps its current id and meaning, so agents using it keep working",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The coverage of the gh family is recorded as a list of operation families against tool names that a reviewer can check."
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Offer Jira operations as tools through Atlassian's acli",
+        "userValue": "Agents and workflows can read and change Jira issues, move them through their workflow and comment on them, on the user's own Jira session.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an operation that acli supports on Jira issues, projects, transitions, comments and assignment",
+            "when": "the registry's Jira tools are listed",
+            "then": "the operation is reachable through a named tool for its family",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "acli is not installed or not signed in",
+            "when": "a Jira tool is invoked",
+            "then": "the call fails with a message saying which and no credentials are asked for or stored by the daemon",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a Jira tool is invoked",
+            "when": "it returns",
+            "then": "its result follows the declared shape from the checked-result story",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a Jira operation can destroy work (deleting an issue, comment or project)",
+            "when": "the registry is read",
+            "then": "that operation is marked destructive so the approval story applies",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "the user has a CLI other than acli for Jira",
+            "when": "a Jira tool is invoked",
+            "then": "it does not use that CLI",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "an operation that acli does not offer",
+            "when": "the registry's Jira tools are listed",
+            "then": "it is absent and is named as unsupported instead of being approximated",
+            "operationalizes": []
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "functionalRequirements": [
+          {
+            "statement": "Before the Jira tool families are designed, acli's own command list and output are checked and recorded, and each family cites it."
+          },
+          {
+            "statement": "The Jira tools expose issue transitions, so a project that signs off through a workflow transition can be driven."
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "Move every direct git and gh call onto the registry and remove the old paths",
+        "userValue": "The workflow, the daemon and the terminal client's approval service follow the same rules as agents, and no backend code path can run git or gh around them.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "each place in the workflow library, the daemon and the terminal client's approval service that runs git or gh itself today",
+            "when": "the change is complete",
+            "then": "it performs the operation by calling a registry tool through the executor",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the old runGit, commitAndPushArtifacts and github.ts shell-outs",
+            "when": "the change is complete",
+            "then": "they no longer exist and a check fails the build if a new direct git or gh call appears in the backend outside the registry",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a workflow stage that pushes, signs off or hands over",
+            "when": "it runs after the change",
+            "then": "it produces the same artifacts, commits and tracker records as before",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "a rule registered on a tool",
+            "when": "a workflow call to that tool succeeds",
+            "then": "the rule runs as it does for an agent call",
+            "operationalizes": [
+              "k4"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a workflow call to a destructive tool with no client attached",
+            "when": "the approval request expires",
+            "then": "the workflow stage fails with the denial reported and does not continue",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "the list of call sites taken from a complete search of the backend source",
+            "when": "the change is complete",
+            "then": "every site on the list has moved, and the list is kept with the change so none is missed",
+            "operationalizes": [
+              "k6"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1",
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "sizeEstimate": "XL",
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The list of replaced call sites is recorded and each one is covered by a test that runs through the registry."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: the acli command surface is unchecked; before the Jira stories are designed, install acli and record its subcommands and output for transitions, comments, assignment and projects, and how a missing install differs from a missing sign-in.",
+      "Item a2: the cheap-model conversion is only checked for structure by the shape check; the design stage must decide which values are cross-checked against the raw CLI text, whether a deterministic parser or a higher-tier model is used when retries run out, and how the conversion is tested on representative CLI outputs.",
+      "Item s1c: the later stories depend on earlier ones, so they are testable only once their dependencies exist; the dependencies are explicit in dependsOn.",
+      "Item sb1: the criteria use the terms executor, registry and cheap model, the product's own vocabulary from the approved spec; a reviewer may want them kept as is."
+    ],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261023b7a68147:FR001",
+          "statement": "Agents, the daemon and the workflow library perform git, GitHub and Jira operations only through the tool registry.",
+          "scope": "doc",
+          "rationale": "One path means one place for rules that must follow every operation."
+        },
+        {
+          "id": "E20261023b7a68147:FR002",
+          "statement": "The registry offers a named, typed tool for each operation family of git, gh and Jira, covering every operation the underlying tool supports.",
+          "scope": "doc",
+          "rationale": "Hooks and approval key on a tool name."
+        },
+        {
+          "id": "E20261023b7a68147:FR003",
+          "statement": "A rule registered once on the executor runs after the matching tool succeeds for every caller, and a failure in that rule is reported with the tool result without failing the call.",
+          "scope": "doc",
+          "rationale": "The tracker refresh must follow every pull and push."
+        },
+        {
+          "id": "E20261023b7a68147:FR004",
+          "statement": "Every tool declares the shape of its result, the executor checks each result against it, and workflow code receives results typed from that declaration.",
+          "scope": "doc",
+          "rationale": "Workflow code relies on typed values today."
+        },
+        {
+          "id": "E20261023b7a68147:FR005",
+          "statement": "Where a tool's CLI gives no structured output, a cheap model converts the response to the declared shape, and a response that does not match is a tool failure.",
+          "scope": "doc",
+          "rationale": "Accuracy first: the check is the safety net."
+        },
+        {
+          "id": "E20261023b7a68147:FR006",
+          "statement": "Jira operations are available as agent-facing tools that run through Atlassian's acli.",
+          "scope": "doc",
+          "rationale": "Jira is a tracker the product must support."
+        },
+        {
+          "id": "E20261023b7a68147:FR007",
+          "statement": "A destructive operation asks the attached client for approval each time and is denied if nobody answers in time.",
+          "scope": "doc",
+          "rationale": "Agents and workflows now share the tools, so the safety rule has to be uniform; today the executor approves them without asking."
+        },
+        {
+          "id": "E20261023b7a68147:FR008",
+          "statement": "The old direct shell-outs in the workflow library, the daemon and the terminal client's approval service are removed once their callers use the registry.",
+          "scope": "doc",
+          "rationale": "A leftover path could bypass the rules."
+        },
+        {
+          "id": "E20261023b7a68147:S001:FR001",
+          "statement": "Rules are registered against a tool name in one place and cannot be attached by individual callers.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261023b7a68147:S001:FR002",
+          "statement": "A rule's failure is reported with the tool result and never changes whether the tool is counted as succeeded.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261023b7a68147:S002:FR001",
+          "statement": "A tool without a declared result shape cannot be registered.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261023b7a68147:S002:FR002",
+          "statement": "A model conversion that fails the check is reported as the tool's failure, with the original output available for diagnosis.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261023b7a68147:S003:FR001",
+          "statement": "The approval request names the tool, the repository and the arguments it would run with.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261023b7a68147:S003:FR002",
+          "statement": "The exchange between the daemon and an attached client for asking and answering an approval is built as part of this Story.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261023b7a68147:S004:FR001",
+          "statement": "The coverage of the git family is recorded as a list of operation families against tool names that a reviewer can check.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261023b7a68147:S005:FR001",
+          "statement": "The coverage of the gh family is recorded as a list of operation families against tool names that a reviewer can check.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261023b7a68147:S006:FR001",
+          "statement": "Before the Jira tool families are designed, acli's own command list and output are checked and recorded, and each family cites it.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261023b7a68147:S006:FR002",
+          "statement": "The Jira tools expose issue transitions, so a project that signs off through a workflow transition can be driven.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261023b7a68147:S007:FR001",
+          "statement": "The list of replaced call sites is recorded and each one is covered by a test that runs through the registry.",
+          "scope": "item",
+          "itemRef": "s7"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/standalone/one-tool-registry-git-gh-jira-E202610230b8e0235/SPEC.md"
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "CLAUDE.md"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "The user's decisions in the brainstorm of 2026-10-23, recorded in SPEC-0b8e02355ad3f578"
+    }
+  ]
+}

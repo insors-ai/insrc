@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1973e125995f971e",
+    "storyId": "s1",
+    "createdAt": "2026-10-23T04:20:17.176Z",
+    "updatedAt": "2026-10-23T04:31:23.456Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-22T16:27:41.638Z",
+    "epicSlug": "large-story-s-code-review-cancelled"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "An end-to-end test over the real step, in-daemon client, codeReview.run handler and runner on a fake clock proves a 40-minute review completes and a silent one fails at the idle limit with no record.",
+    "testRecord": {
+      "md": "docs/standalone/large-story-s-code-review-cancelled-E202610221973e125/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/call-progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/runner.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/forward-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/__tests__/routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/__tests__/long-review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T04:31:23.456Z"
+      }
+    ],
+    "commit": "2400f8c5"
+  }
+}

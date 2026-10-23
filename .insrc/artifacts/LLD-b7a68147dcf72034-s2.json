@@ -93,6 +93,13 @@
         "choice": "Accept the decision record as the amendment",
         "rationale": "The user decided this (\"only tools that code calls need a typed output\") and approved the s2 LLD with the narrowing recorded in docs/plans/tool-registry.md.",
         "resolvedAt": "2026-10-23T12:28:52.297Z"
+      },
+      "qc2526c55": {
+        "question": "The carrier for caller identity (review round 3 finding 4) is not decided here: this Story adds only the conversion field to ToolDeps. It belongs to s1 (the hook context) and s3 (the approval mode).",
+        "status": "resolved",
+        "choice": "Defer to s1 and s3, plan s2 as is",
+        "rationale": "Settled in the s3 LLD: ToolDeps gains caller and approvalMode there (sc4); s2 adds only conversion.",
+        "resolvedAt": "2026-10-23T12:29:15.604Z"
       }
     }
   },

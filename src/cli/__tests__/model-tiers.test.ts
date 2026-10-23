@@ -151,3 +151,19 @@ test('nextRoleTiers does not mutate the input map', () => {
 	assert.deepEqual(current, { synthesize: 'cheap' });   // untouched
 	assert.notEqual(next, current);
 });
+
+test("computeEffectiveTiers shows a tier's effort, including tiering.efforts on a DEFAULT_TIERS fallback: core.model '' with core.effort 'high' shows effort high", async () => {
+	const { parseTiering } = await import('../../config/analyze.js');
+	const { computeEffectiveTiers: effective, nextEffort, EFFORT_CYCLE } = await import('../panes/model-tiers.js');
+	const eff = effective(parseTiering({ tiers: {
+		core: { runner: 'cli-codex', model: '', effort: 'high' },
+		mid:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'medium' },
+	} }));
+	assert.equal(eff.tiers.core.effort, 'high', 'the dropped core tier shows its configured effort');
+	assert.equal(eff.tierSource.core, 'default');
+	assert.equal(eff.tiers.mid.effort, 'medium');
+	assert.equal(eff.tiers.cheap.effort, undefined);
+	// The pane's cycle: CLI default → low → medium → high → xhigh → max → CLI default.
+	assert.deepEqual([...EFFORT_CYCLE], ['', 'low', 'medium', 'high', 'xhigh', 'max']);
+	assert.deepEqual([undefined, 'low', 'medium', 'high', 'xhigh', 'max'].map(e => nextEffort(e as never)), ['low', 'medium', 'high', 'xhigh', 'max', '']);
+});

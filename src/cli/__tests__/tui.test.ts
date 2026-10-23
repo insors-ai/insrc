@@ -465,3 +465,42 @@ test('the TUI tests run with fakeServices carrying the team entry', () => {
 	assert.equal(typeof svc.team.teamInit, 'function');
 	assert.equal(typeof svc.team.teamRefresh, 'function');
 });
+
+test('TUI ModelTiersPane shows an effort row per tier, cycles CLI default/low/medium/high/xhigh/max and writes models.tiers.<tier>.effort', async () => {
+	const svc = fakeServices();
+	const writes: Array<[string, unknown]> = [];
+	let tiers: Record<string, unknown> = {
+		core: { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'xhigh' },
+		mid:  { runner: 'cli-codex', model: 'gpt-6.1-sol', effort: 'max' },
+	};
+	svc.config.show = async () => ({ models: { tiers } });
+	svc.config.write = async (path: string, value: unknown) => {
+		writes.push([path, value]);
+		const [, , tier, field] = path.split('.');
+		tiers = { ...tiers, [tier!]: { ...(tiers[tier!] as object), [field!]: value } };
+		return { ok: true };
+	};
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('5');          // → Model Tiers pane
+	await settle();
+	const frame = lastFrame() ?? '';
+	assert.match(frame, /runner \/ model \/ effort/);
+	assert.match(frame, /core\s+.*cli-codex.*gpt-6\.1-sol.*xhigh/);
+	assert.match(frame, /mid\s+.*max/);
+	assert.match(frame, /cheap\s+.*\(cli default effort\)/);
+
+	stdin.write('j'); await settle(); stdin.write('j'); await settle();   // core.runner → core.model → core.effort
+	stdin.write('e'); await settle();
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'max']);
+	stdin.write('e'); await settle();
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', ''], 'max wraps to the CLI default');
+	stdin.write('e'); await settle();
+	assert.deepEqual(writes.at(-1), ['models.tiers.core.effort', 'low']);
+
+	// The rows below still edit their own keys: the coreFloor is now row 10.
+	for (let i = 0; i < 7; i++) { stdin.write('j'); await settle(); }
+	stdin.write('e'); await settle();
+	assert.match(lastFrame() ?? '', /coreFloor \(core\/mid\/cheap\):/);
+	unmount();
+});

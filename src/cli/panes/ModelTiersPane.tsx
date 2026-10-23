@@ -22,7 +22,7 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
 import {
 	computeEffectiveTiers, tierFieldPath, roleTierPath, CORE_FLOOR_PATH, isTierName,
-	ROLE_TIERS_PATH, nextRoleTiers,
+	ROLE_TIERS_PATH, nextRoleTiers, nextEffort,
 	type EffectiveTiers, type EffectiveRole,
 } from './model-tiers.js';
 
@@ -32,7 +32,7 @@ function isObj(v: unknown): v is Record<string, unknown> {
 
 /** A flat, navigable editable row over the effective tiers. */
 type Row =
-	| { kind: 'tier'; tier: TierName; field: 'runner' | 'model'; label: string; value: string; path: string }
+	| { kind: 'tier'; tier: TierName; field: 'runner' | 'model' | 'effort'; label: string; value: string; path: string }
 	| { kind: 'floor'; label: string; value: string; path: string }
 	| { kind: 'role'; role: EffectiveRole; label: string; value: string; path: string };
 
@@ -41,6 +41,7 @@ function buildRows(eff: EffectiveTiers): Row[] {
 	for (const tier of ['core', 'mid', 'cheap'] as const) {
 		rows.push({ kind: 'tier', tier, field: 'runner', label: `${tier}.runner`, value: eff.tiers[tier].runner, path: tierFieldPath(tier, 'runner') });
 		rows.push({ kind: 'tier', tier, field: 'model',  label: `${tier}.model`,  value: eff.tiers[tier].model  || '(cli default)', path: tierFieldPath(tier, 'model') });
+		rows.push({ kind: 'tier', tier, field: 'effort', label: `${tier}.effort`, value: eff.tiers[tier].effort ?? '', path: tierFieldPath(tier, 'effort') });
 	}
 	rows.push({ kind: 'floor', label: 'coreFloor', value: eff.coreFloor, path: CORE_FLOOR_PATH });
 	for (const r of eff.roles) {
@@ -120,6 +121,10 @@ export function ModelTiersPane(): ReactElement {
 			value = nextRoleTiers(current, row.role.id, clear ? null : v);
 		}
 		setEditing(undefined); ui.capture(false);
+		save(path, value);
+	};
+
+	const save = (path: string, value: unknown): void => {
 		void svc.config.write(path, value)
 			.then(res => res.ok ? svc.config.reload() : Promise.reject(new Error('write rejected')))
 			.then(() => { ui.toast(`saved ${path}`); setNonce(n => n + 1); })
@@ -130,6 +135,11 @@ export function ModelTiersPane(): ReactElement {
 		if (rows.length === 0) return;
 		if (key.upArrow || input === 'k') { setSel(s => Math.max(0, s - 1)); return; }
 		if (key.downArrow || input === 'j') { setSel(s => Math.min(rows.length - 1, s + 1)); return; }
+		// The effort row cycles CLI default → low → … → max and saves each step.
+		if (input === 'e' && cur?.kind === 'tier' && cur.field === 'effort' && eff !== undefined) {
+			save(cur.path, nextEffort(eff.tiers[cur.tier].effort));
+			return;
+		}
 		if (input === 'e' && cur !== undefined) {
 			const initial = cur.kind === 'role' ? cur.role.assignedTier : (cur.kind === 'tier' && cur.field === 'model' ? '' : cur.value);
 			setEditing({ ...cur, value: initial });
@@ -163,7 +173,7 @@ export function ModelTiersPane(): ReactElement {
 	}
 
 	// Window the role rows around the selection so the list fits the terminal.
-	const CONFIG_ROWS = 7; // 6 tier fields + coreFloor
+	const CONFIG_ROWS = 10; // 9 tier fields + coreFloor
 	const roleSel = Math.max(0, sel - CONFIG_ROWS);
 	const start = Math.max(0, Math.min(roleSel - Math.floor(ROLE_WINDOW / 2), Math.max(0, eff.roles.length - ROLE_WINDOW)));
 	const shown = eff.roles.slice(start, start + ROLE_WINDOW);
@@ -176,10 +186,11 @@ export function ModelTiersPane(): ReactElement {
 		<Panel title="Model Tiers" active>
 			{malformed && <Text color="yellow">⚠ models.analyze is malformed — showing built-in defaults; editing writes fresh keys</Text>}
 			<Box flexDirection="column">
-				<Text bold>Tiers <Text dimColor>(runner / model)</Text></Text>
+				<Text bold>Tiers <Text dimColor>(runner / model / effort)</Text></Text>
 				{(['core', 'mid', 'cheap'] as const).map(t => {
 					const iR = rows.findIndex(r => r.kind === 'tier' && r.tier === t && r.field === 'runner');
 					const iM = iR + 1;
+					const iE = iR + 2;
 					const src = eff.tierSource[t];
 					return (
 						<Text key={t}>
@@ -187,6 +198,8 @@ export function ModelTiersPane(): ReactElement {
 							<Text {...hi(sel === iR)}>{rowMark(iR)}{eff.tiers[t].runner}</Text>
 							{' / '}
 							<Text {...hi(sel === iM)}>{rowMark(iM)}{eff.tiers[t].model || '(cli default)'}</Text>
+							{' / '}
+							<Text {...hi(sel === iE)}>{rowMark(iE)}{eff.tiers[t].effort ?? '(cli default effort)'}</Text>
 							<Text dimColor> {src === 'default' ? '(default)' : '(set)'}</Text>
 						</Text>
 					);
@@ -194,7 +207,7 @@ export function ModelTiersPane(): ReactElement {
 			</Box>
 			<Box marginTop={1}>
 				<Text>coreFloor  </Text>
-				<Text {...hi(sel === 6)}>{rowMark(6)}{eff.coreFloor}</Text>
+				<Text {...hi(sel === CONFIG_ROWS - 1)}>{rowMark(CONFIG_ROWS - 1)}{eff.coreFloor}</Text>
 				<Text dimColor> {eff.coreFloorSource === 'default' ? '(default)' : '(set)'} · critical roles never resolve below this</Text>
 			</Box>
 			<Box flexDirection="column" marginTop={1}>

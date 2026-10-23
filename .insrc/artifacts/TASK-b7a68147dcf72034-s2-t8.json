@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c333117a-c6a4-4aa9-be87-6c6ec515c9ef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:37:53.077Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Integration and live tests, then docs",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cc2f9558cee32de2b65b25a48428e15054a9fdff3eec0e7ca0d87b84f7a115ba",
+        "at": "2026-10-23T12:37:53.077Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:37:53.078Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration and live tests, then docs",
+    "summary": "Add the integration tests that run registered fake tools (structured and text-only) through callTool with the real executor, role taxonomy and router seam, proving too that the executor and convertText share one schema object, and the live test over a corpus of captured gh and git text outputs gated on INSRC_LIVE_TESTS=1. Update docs/daemon.md with the output-schema rule, callTool, convertText and the failure kinds.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "a structured tool called through callTool leaves the fake provider log empty",
+      "a text-only tool converts, checks and returns typed data, and a failed conversion returns conversion-failed with the raw text in failure.original",
+      "the live test skips cleanly when INSRC_LIVE_TESTS is unset",
+      "docs/daemon.md describes the rule that only code-called tools need an output schema"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original"
+      },
+      {
+        "level": "live",
+        "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: convertText on captured gh and git text-only outputs returns values whose key values are in the text"
+      },
+      {
+        "level": "live",
+        "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: a deliberately altered output fails the cross-check"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

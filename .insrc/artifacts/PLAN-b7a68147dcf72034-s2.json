@@ -1,0 +1,637 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792758568107-6swyy3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:33:25.752Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 232609,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s2",
+    "lldRunId": "wf-1792752202899-gfo488",
+    "lldEffectiveHash": "49d9b4a4eaf49a4ea089366bc177dcf5b15c8736c685b2f7d5791b69785d2a00",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1efb1b6337906d4bb4986081355422f5c832f7db239f1e4e53a4ce9b2b2523f1",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:37:51.034Z"
+      }
+    },
+    "rangeBase": "0397a51214588466ddb0c5477884b98641e489c2"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds the types first, then the executor's input and output checks and the conversion pieces in parallel, then callTool and the tracker mapping, and ends with the integration and live tests and the docs. Existing tools and the agent loop must behave exactly as before, so the unchanged-behaviour checks sit with the executor task. Conversion retries follow requirement R1, with an exact 2+2 call test."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare the failure, output-schema and conversion types",
+        "summary": "In src/daemon/tools/types.ts add ToolFailureKind (missing-tool, missing-signin, unreachable, timed-out, rejected, conversion-failed, schema-mismatch, denied), ToolDenialReason (declined, timed-out, no-client, and cancelled from AMD-5), ToolFailure { kind, message, original?, denial? }, the optional Tool.outputSchema (typebox TSchema), the optional ToolResult.failure, ConversionProviders { resolveProvider(role) } and the optional ToolDeps.conversion. All additions are optional so the four ToolDeps builders keep compiling.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "npm run build compiles with the four ToolDeps builders unchanged",
+          "ToolDenialReason has exactly the four values declined, timed-out, no-client and cancelled",
+          "no existing ToolResult or ToolDeps field changes meaning"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/failure-types.test.ts: ToolDenialReason and ToolFailureKind hold exactly the declared values"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the two conversion roles and the provider helper",
+        "summary": "Add tools.convert (peripheral, cheap) and tools.convert.escalate (peripheral, mid) to the closed registry in src/config/role-taxonomy.ts, and a small helper that builds ConversionProviders from an AnalyzeConfig, the repoPath and RoleRouter.resolveProviderForRole (src/analyze/context/role-router.ts:79). The coreFloor does not apply to them.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "both roles resolve through the RoleRouter at their default tiers and can be reassigned by roleTiers",
+          "the helper returns a provider for each role from a test config",
+          "existing role-taxonomy and role-router tests still pass"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/conversion-roles.test.ts: the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/conversion-roles.test.ts: the helper returns a provider for each role from a test config"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the input and output checks to executeTool",
+        "summary": "In src/daemon/tools/executor.ts, for a tool that declares an outputSchema, validate the input against inputSchema before running (failure kind rejected naming the fields, tool not run) and the data against outputSchema after a successful run (schema-mismatch, data dropped, output replaced by the message, failure.original keeps the tool output truncated at a module constant). A thrown tool error also carries failure kind rejected. A tool with no outputSchema, a failed result and the existing unknown-tool path behave exactly as before; a schema ajv cannot compile is a rejected failure logged at error level.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a tool without outputSchema returns exactly what it returned before and its input is not validated",
+          "data that does not fit returns schema-mismatch with the failing paths named and the unmatched data not passed on",
+          "success without data on a schematized tool returns schema-mismatch",
+          "the validator for a schema object is compiled once across calls",
+          "src/agent/read-only-tool-loop.ts:78 still receives output, success and error unchanged through the real executeTool"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: valid input and valid data on a schematized tool pass through unchanged after the checks"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: the check runs before the result is returned to the caller"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: input that does not fit the inputSchema returns rejected and the tool is not run"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: data that does not fit returns schema-mismatch with the failing paths named, and data dropped"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: success without data on a schematized tool returns schema-mismatch"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a failed result is not validated and passes through"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a tool with no outputSchema is run and returned exactly as today, with its input unchecked"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a thrown error and an invalid schema each return a typed failure"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts: the agent loop path still receives output, success and error for a schematized tool and for a tool without a schema"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Build the key-value cross-check",
+        "summary": "Add the pure cross-check used by convertText: normalise the raw text and each key value (whitespace collapsed, case folded, surrounding quotes dropped), match alphanumeric values on token boundaries, accept an empty keyValues list on schema alone with a log line saying nothing was checked, and report the missing values by name.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "'12' is not found in 'issue 123 created'",
+          "'Fix-Login' is found in 'fix-login' with extra spaces",
+          "an empty keyValues list is accepted and logged as unchecked",
+          "the missing values are returned by name"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: key-value matching normalises whitespace and case and drops surrounding quotes"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: an empty keyValues result is accepted on schema alone"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: the missing values are returned by name"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Build convertText",
+        "summary": "Add the conversion module around the cross-check: a module-level serial queue, up to two attempts on tools.convert then, only if those fail, two on tools.convert.escalate, schema validation with the ajv errors appended on retry, a per-attempt deadline raised as an ordinary timed-out error, caller cancellation as AbortError ending as retries-exhausted with detail cancelled, and the named ConversionFailure kinds. Per requirement R1 it calls completeStructured with internalRetry false and maxAttempts 1 and uses withStructuredRetry as the only retry loop. It validates against the same schema object the executor uses.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "with a fake provider that always fails the provider sees exactly 2 calls on the cheap role then 2 on the escalate role, and exactly 1 call when the first attempt succeeds",
+          "two concurrent conversions reach the provider one after another",
+          "a value whose key value is absent from the raw text fails with value-not-in-text and never reaches the caller",
+          "a missing deps.conversion returns retries-exhausted with detail no conversion provider configured and makes no model call",
+          "a deadline is retried as an ordinary error and a caller cancellation ends as cancelled",
+          "no direct REST call exists in the module"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an invalid first attempt is retried with the ajv errors appended"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: the fake provider sees exactly 2 calls on the cheap role then 2 on the escalate role when every attempt fails, and exactly 1 call on first-attempt success"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: two concurrent calls reach the fake provider one after another, in arrival order"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add callTool and the compile-time guard",
+        "summary": "Add TypedTool, TypedToolResult and callTool in the tools module: callTool takes the tool definition, types its input as Static of inputSchema and its data as Static of outputSchema, calls executeTool and returns a ToolFailure on any failure without throwing. Add src/daemon/tools/call-tool.type-test.ts, compiled by npm run build, with @ts-expect-error lines proving that a tool without an outputSchema and a wrongly typed input do not compile.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "data is typed from the output schema with no cast",
+          "callTool does not compile for a tool with no outputSchema",
+          "a failure result has no data and a ToolFailure with a kind",
+          "npm run build passes with the type-test file"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/call-tool.test.ts: the runtime values of the fake definitions are what the types say"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/call-tool.test.ts: TypedToolResult data is absent when success is false"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Map tool failure kinds onto the tracker port kinds",
+        "summary": "Add a pure mapping from ToolFailureKind to the tracker port's four PortFailureKind values (missing-tool, missing-signin, unreachable, rejected; timed-out maps to unreachable as src/workflow/tracker/github.ts:71-79 does today), for s7's adapters to use. The port type, its stored results and its tests are not changed.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "every ToolFailureKind maps to one of the four port kinds",
+          "src/workflow/tracker/__tests__/unit-issue.test.ts still passes unchanged"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/failure-mapping.test.ts: each ToolFailureKind maps onto a PortFailureKind, one test per kind"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Integration and live tests, then docs",
+        "summary": "Add the integration tests that run registered fake tools (structured and text-only) through callTool with the real executor, role taxonomy and router seam, proving too that the executor and convertText share one schema object, and the live test over a corpus of captured gh and git text outputs gated on INSRC_LIVE_TESTS=1. Update docs/daemon.md with the output-schema rule, callTool, convertText and the failure kinds.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a structured tool called through callTool leaves the fake provider log empty",
+          "a text-only tool converts, checks and returns typed data, and a failed conversion returns conversion-failed with the raw text in failure.original",
+          "the live test skips cleanly when INSRC_LIVE_TESTS is unset",
+          "docs/daemon.md describes the rule that only code-called tools need an output schema"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original"
+          },
+          {
+            "level": "live",
+            "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: convertText on captured gh and git text-only outputs returns values whose key values are in the text"
+          },
+          {
+            "level": "live",
+            "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: a deliberately altered output fails the cross-check"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "executeTool: valid input and valid data on a schematized tool pass through unchanged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: input that does not fit the inputSchema returns rejected naming the fields, and the tool is not run",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: data that does not fit returns schema-mismatch, names the ajv paths, drops data, keeps failure.original truncated",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: success without data on a schematized tool returns schema-mismatch",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: a failed result is not validated and passes through",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: a tool with no outputSchema is run and returned exactly as today, with its input unchecked",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: a thrown error still returns a failed result, now with failure kind rejected",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executeTool: an invalid inputSchema or outputSchema returns rejected and is logged",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "failure kinds: the mapping of each ToolFailureKind onto PortFailureKind, one test per kind",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: an invalid first attempt is retried with the ajv errors appended",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: key-value matching normalises whitespace and case and drops surrounding quotes",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: an empty keyValues result is accepted on schema alone",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: two concurrent calls reach the fake provider one after another, in arrival order",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: a hung provider call times out as an ordinary error, is retried, and releases the queue slot",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "callTool accepts a definition with typebox inputSchema and outputSchema and returns data typed as Static of the output schema",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "callTool types its input as Static of the inputSchema, so a wrong input type is an error (// @ts-expect-error)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "callTool does not compile for a tool with no outputSchema (// @ts-expect-error)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "TypedToolResult data is absent when success is false",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a runtime test that imports the same two fake definitions and checks the values at run time",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "a tool with structured output called through callTool returns typed data and the fake provider log is empty",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a text-only tool called through callTool converts, checks and returns typed data",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the agent loop path (runReadOnlyToolLoop with the real executeTool) still receives output, success and error for a schematized tool and for a tool without a schema",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText on captured gh and git text-only outputs (for example the text of 'gh pr diff --stat' and 'gh run view') returns values whose key values are in the text",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "convertText on a deliberately truncated and a deliberately altered output fails the cross-check or the schema",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 callTool, TypedTool and the compile-time guard (contract 2.1, acceptance ac5)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 executeTool input and output checks (contract 2.2, acceptance ac1 and ac2)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 convertText and the key-value cross-check (contract 2.3, acceptance ac4 and ac6)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 data model changes: Tool.outputSchema, ToolResult.failure, ToolFailure, ToolDeps.conversion (section 3)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 RoleTaxonomy roles tools.convert and tools.convert.escalate (section 3.5)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 error paths, edge cases and invariants (section 5)"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md#s2-requirements-the-plan-and-build-must-carry-captured-at-lld-approval-with-override-2026-10-23"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 PortFailureKind mapping (section 3.6)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 test strategy and migration (sections 6 and 7)"
+    }
+  ]
+}

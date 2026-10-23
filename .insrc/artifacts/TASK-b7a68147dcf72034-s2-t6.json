@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-725d7306-0d52-405d-b517-152e521d4878",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:37:53.074Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Add callTool and the compile-time guard",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "acc79f8aad6bb85ca5d77e8c2e5d16b92438822280b5963b409ef71f710b6841",
+        "at": "2026-10-23T12:37:53.074Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:37:53.075Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add callTool and the compile-time guard",
+    "summary": "Add TypedTool, TypedToolResult and callTool in the tools module: callTool takes the tool definition, types its input as Static of inputSchema and its data as Static of outputSchema, calls executeTool and returns a ToolFailure on any failure without throwing. Add src/daemon/tools/call-tool.type-test.ts, compiled by npm run build, with @ts-expect-error lines proving that a tool without an outputSchema and a wrongly typed input do not compile.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "data is typed from the output schema with no cast",
+      "callTool does not compile for a tool with no outputSchema",
+      "a failure result has no data and a ToolFailure with a kind",
+      "npm run build passes with the type-test file"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/call-tool.test.ts: the runtime values of the fake definitions are what the types say"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/call-tool.test.ts: TypedToolResult data is absent when success is false"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-62e1a76d-9ef6-4036-996e-0f8c9b625c1f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:37:53.066Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Declare the failure, output-schema and conversion types",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0a25780acfb55fcf4525a8c3b38d18dee2264917275ebbf5f18bf5fed6ff171",
+        "at": "2026-10-23T12:37:53.066Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:37:53.067Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Declare the failure, output-schema and conversion types",
+    "summary": "In src/daemon/tools/types.ts add ToolFailureKind (missing-tool, missing-signin, unreachable, timed-out, rejected, conversion-failed, schema-mismatch, denied), ToolDenialReason (declined, timed-out, no-client, and cancelled from AMD-5), ToolFailure { kind, message, original?, denial? }, the optional Tool.outputSchema (typebox TSchema), the optional ToolResult.failure, ConversionProviders { resolveProvider(role) } and the optional ToolDeps.conversion. All additions are optional so the four ToolDeps builders keep compiling.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "npm run build compiles with the four ToolDeps builders unchanged",
+      "ToolDenialReason has exactly the four values declined, timed-out, no-client and cancelled",
+      "no existing ToolResult or ToolDeps field changes meaning"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/failure-types.test.ts: ToolDenialReason and ToolFailureKind hold exactly the declared values"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

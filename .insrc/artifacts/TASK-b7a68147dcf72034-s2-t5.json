@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-58d49f02-00f0-4a7f-936a-cc3f2f602ce3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:37:53.073Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Build convertText",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "528956b5119b7378c7f50827ce7bbbc9ea4b1f370cb96c9340ac1d4729c85b17",
+        "at": "2026-10-23T12:37:53.073Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T12:37:53.073Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build convertText",
+    "summary": "Add the conversion module around the cross-check: a module-level serial queue, up to two attempts on tools.convert then, only if those fail, two on tools.convert.escalate, schema validation with the ajv errors appended on retry, a per-attempt deadline raised as an ordinary timed-out error, caller cancellation as AbortError ending as retries-exhausted with detail cancelled, and the named ConversionFailure kinds. Per requirement R1 it calls completeStructured with internalRetry false and maxAttempts 1 and uses withStructuredRetry as the only retry loop. It validates against the same schema object the executor uses.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "with a fake provider that always fails the provider sees exactly 2 calls on the cheap role then 2 on the escalate role, and exactly 1 call when the first attempt succeeds",
+      "two concurrent conversions reach the provider one after another",
+      "a value whose key value is absent from the raw text fails with value-not-in-text and never reaches the caller",
+      "a missing deps.conversion returns retries-exhausted with detail no conversion provider configured and makes no model call",
+      "a deadline is retried as an ordinary error and a caller cancellation ends as cancelled",
+      "no direct REST call exists in the module"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: an invalid first attempt is retried with the ajv errors appended"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: the fake provider sees exactly 2 calls on the cheap role then 2 on the escalate role when every attempt fails, and exactly 1 call on first-attempt success"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: two concurrent calls reach the fake provider one after another, in arrival order"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/convert-text.test.ts: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

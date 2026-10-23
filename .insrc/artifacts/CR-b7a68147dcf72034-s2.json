@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f6defe55f0782bbd9bee38751ce4669cda817ce263e15219f3e319e2c334c27d",
+        "at": "2026-10-23T13:43:56.475Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792762925867-zhoox8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T13:42:12.037Z",
+    "model": "claude:opus",
+    "elapsedMs": 104427,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/daemon.md",
+        "src/config/role-taxonomy.ts",
+        "src/daemon/tools/__tests__/_fakes.ts",
+        "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts",
+        "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+        "src/daemon/tools/__tests__/call-tool.test.ts",
+        "src/daemon/tools/__tests__/conversion-roles.test.ts",
+        "src/daemon/tools/__tests__/convert-text.live.test.ts",
+        "src/daemon/tools/__tests__/convert-text.test.ts",
+        "src/daemon/tools/__tests__/cross-check.test.ts",
+        "src/daemon/tools/__tests__/failure-mapping.test.ts",
+        "src/daemon/tools/__tests__/failure-types.test.ts",
+        "src/daemon/tools/__tests__/fixtures/convert-text/gh-version.txt",
+        "src/daemon/tools/__tests__/fixtures/convert-text/git-log-oneline.txt",
+        "src/daemon/tools/__tests__/fixtures/convert-text/git-show-stat.txt",
+        "src/daemon/tools/__tests__/output-schema.test.ts",
+        "src/daemon/tools/call-tool.ts",
+        "src/daemon/tools/call-tool.type-test.ts",
+        "src/daemon/tools/conversion-providers.ts",
+        "src/daemon/tools/convert-text.ts",
+        "src/daemon/tools/cross-check.ts",
+        "src/daemon/tools/executor.ts",
+        "src/daemon/tools/failure-mapping.ts",
+        "src/daemon/tools/types.ts",
+        "vscode-plugin/package.json"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        ".insrc/artifacts/LLD-b7a68147dcf72034-s2.log.jsonl"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/tools/__tests__/convert-text.live.test.ts:49",
+            "message": "The live test named 'a deliberately altered output fails the cross-check' does not alter any output. It feeds the unmodified git-log-oneline.txt fixture with a schema whose required `ticket` pattern (^ZZ-[0-9]+$) cannot match the text. It then asserts only `r.ok === false`, so it passes whether the schema check or the cross-check rejects the value. It does not show that a value the model drew from altered text is caught by the key-value cross-check. The LLD's live level also names a deliberately truncated output, and no test covers that case.",
+            "expectationRef": "PLAN t8 test 'convert-text.live.test.ts: a deliberately altered output fails the cross-check' / LLD testStrategy live: 'convertText on a deliberately truncated and a deliberately altered output fails the cross-check or the schema' (ac6 proving test)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/tools/convert-text.ts:199",
+            "message": "convertText always returns ConversionFailure kind 'retries-exhausted' when it gives up. The failure kinds 'shape-mismatch' and 'value-not-in-text' are declared but never returned; the last cause appears only as a prefix in the `detail` string. The LLD's convertText error contract says 'shape-mismatch' is returned when no attempt produced a value that fits the schema, and 'value-not-in-text' when a value fits but a key value is missing. Callers cannot tell these causes apart by kind. The LLD's errorCases entry for the cross-check does say 'retries-exhausted with the last detail', so the LLD contradicts itself and the code follows only one side.",
+            "expectationRef": "LLD contractDetails.api convertText errors: ConversionFailure 'shape-mismatch' (no attempt fit the schema) and 'value-not-in-text' (key value not found in raw text)"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/types.ts:146",
+            "message": "The new optional property `readonly outputSchema?: TSchema;` on the `Tool` interface is not declared `| undefined`. The repo rule under exactOptionalPropertyTypes requires it, and the other optional fields added in this same diff follow it (`failure?: ToolFailure | undefined`, `conversion?: ConversionProviders | undefined`, `original?: string | undefined`, `denial?: ToolDenialReason | undefined`). It should read `readonly outputSchema?: TSchema | undefined;`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/tools/convert-text.ts:109",
+            "message": "In the `TierOutcome` failure branch, the optional property `readonly stop?: 'cancelled' | 'input too large'` is not declared `| undefined`, which goes against the documented rule for optional properties. This is a module-local type literal, so the practical impact is small.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/tools/convert-text.ts:94",
+            "message": "Correctness risk to the serial-queue rule (k3). When the per-attempt deadline fires, boundedCall aborts the controller and rejects with 'timed out' right away, without waiting for the provider call to finish. The retry, and the next queued conversion once release() runs, can then start while the timed-out call is still running. Nothing checks that the provider honours the AbortSignal, and a CLI subprocess that ignores it or is slow to stop leaves two conversions reaching a provider at once, which the module header says never happens. Consider waiting for the aborted call to settle (with a hard cap) before retrying or releasing the slot, or stating the assumption that providers honour the signal."
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/tools/call-tool.ts:31",
+            "message": "Correctness risk: callTool types its result from the definition the caller passes, but executeTool looks up and validates against whatever is registered under tool.id. If the registered tool is a different definition with the same id (registered twice, replaced, or registered without an outputSchema), the data is checked against another schema or not at all. callTool then casts it to Static<T['outputSchema']>, so unchecked data reaches the caller with a trusted type. Consider checking that getTool(tool.id) is the same object as `tool` (or has the same outputSchema), and failing with 'rejected' if not.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/tools/executor.ts:69",
+            "message": "The input-schema check runs after the approval gate. For a schematized tool that requires approval, the user is asked to approve a call whose input is then rejected and never run. Running the input check before the gate would avoid prompting for a call that cannot go ahead.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/tools/convert-text.ts:188",
+            "message": "A conversion cancelled while it waits in the queue is only noticed after it gets the slot. A caller that aborts can wait for every earlier conversion to finish (up to 4 attempts × 120 s each) before getting 'cancelled'. Consider listening for the abort while waiting for the slot.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/tools/call-tool.ts:36",
+            "message": "callTool repeats the executor's 'returned no data for its declared output schema' schema-mismatch failure, with the same message text. The executor already turns a successful result with no data on a schematized tool into a failed result carrying failure, so this branch is mostly unreachable and the two copies can drift apart.",
+            "counterpartRef": "executeTool",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 3,
+      "low": 6
+    }
+  },
+  "citations": []
+}

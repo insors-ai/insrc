@@ -1,0 +1,833 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "c6176074743d17a37f6cfc3454d82ed5a6696a267ffd75fc06d9b50e6a7c43a1",
+        "at": "2026-10-23T13:02:24.116Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "createdAt": "2026-10-23T12:39:41.311Z",
+    "updatedAt": "2026-10-23T13:02:23.867Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5c29e577",
+        "ranAt": "2026-10-23T12:39:41.311Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/failure-types.test.ts: ToolDenialReason and ToolFailureKind hold exactly the declared values",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/failure-types.test.ts",
+                "title": "failure-types.test.ts: ToolDenialReason and ToolFailureKind hold exactly the declared values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/failure-types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1024,
+            "titles": [
+              {
+                "title": "failure-types.test.ts: ToolDenialReason and ToolFailureKind hold exactly the declared values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e75d2938",
+        "ranAt": "2026-10-23T12:42:31.078Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/conversion-roles.test.ts: the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/conversion-roles.test.ts",
+                "title": "conversion-roles.test.ts: the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/conversion-roles.test.ts: the helper returns a provider for each role from a test config",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/conversion-roles.test.ts",
+                "title": "conversion-roles.test.ts: the helper returns a provider for each role from a test config",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/conversion-roles.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1425,
+            "titles": [
+              {
+                "title": "conversion-roles.test.ts: the two new roles resolve through the real RoleRouter and role taxonomy, and the coreFloor does not clamp them",
+                "result": "pass"
+              },
+              {
+                "title": "conversion-roles.test.ts: the helper returns a provider for each role from a test config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ac075e53",
+        "ranAt": "2026-10-23T12:46:24.164Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: valid input and valid data on a schematized tool pass through unchanged after the checks",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: valid input and valid data on a schematized tool pass through unchanged after the checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: the check runs before the result is returned to the caller",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: the check runs before the result is returned to the caller",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: input that does not fit the inputSchema returns rejected and the tool is not run",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: input that does not fit the inputSchema returns rejected and the tool is not run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: data that does not fit returns schema-mismatch with the failing paths named, and data dropped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: data that does not fit returns schema-mismatch with the failing paths named, and data dropped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: success without data on a schematized tool returns schema-mismatch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: success without data on a schematized tool returns schema-mismatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a failed result is not validated and passes through",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: a failed result is not validated and passes through",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a tool with no outputSchema is run and returned exactly as today, with its input unchecked",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: a tool with no outputSchema is run and returned exactly as today, with its input unchecked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/output-schema.test.ts: a thrown error and an invalid schema each return a typed failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+                "title": "output-schema.test.ts: a thrown error and an invalid schema each return a typed failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts: the agent loop path still receives output, success and error for a schematized tool and for a tool without a schema",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts",
+                "title": "agent-loop-unchanged.test.ts: the agent loop path still receives output, success and error for a schematized tool and for a tool without a schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 999,
+            "titles": [
+              {
+                "title": "agent-loop-unchanged.test.ts: the agent loop path still receives output, success and error for a schematized tool and for a tool without a schema",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/__tests__/output-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 869,
+            "titles": [
+              {
+                "title": "output-schema.test.ts: valid input and valid data on a schematized tool pass through unchanged after the checks",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: the check runs before the result is returned to the caller",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: input that does not fit the inputSchema returns rejected and the tool is not run",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: data that does not fit returns schema-mismatch with the failing paths named, and data dropped",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: success without data on a schematized tool returns schema-mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: a failed result is not validated and passes through",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: a tool with no outputSchema is run and returned exactly as today, with its input unchecked",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: a thrown error and an invalid schema each return a typed failure",
+                "result": "pass"
+              },
+              {
+                "title": "output-schema.test.ts: the validator for a schema object is compiled once across calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "be889694",
+        "ranAt": "2026-10-23T12:48:26.134Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: key-value matching normalises whitespace and case and drops surrounding quotes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/cross-check.test.ts",
+                "title": "cross-check.test.ts: key-value matching normalises whitespace and case and drops surrounding quotes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/cross-check.test.ts",
+                "title": "cross-check.test.ts: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: an empty keyValues result is accepted on schema alone",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/cross-check.test.ts",
+                "title": "cross-check.test.ts: an empty keyValues result is accepted on schema alone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/cross-check.test.ts: the missing values are returned by name",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/cross-check.test.ts",
+                "title": "cross-check.test.ts: the missing values are returned by name",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/cross-check.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3374,
+            "titles": [
+              {
+                "title": "cross-check.test.ts: key-value matching normalises whitespace and case and drops surrounding quotes",
+                "result": "pass"
+              },
+              {
+                "title": "cross-check.test.ts: an alphanumeric key value matches on token boundaries, so '12' is not found in '123'",
+                "result": "pass"
+              },
+              {
+                "title": "cross-check.test.ts: an empty keyValues result is accepted on schema alone",
+                "result": "pass"
+              },
+              {
+                "title": "cross-check.test.ts: the missing values are returned by name",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3119245b",
+        "ranAt": "2026-10-23T12:51:42.716Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an invalid first attempt is retried with the ajv errors appended",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: an invalid first attempt is retried with the ajv errors appended",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: the fake provider sees exactly 2 calls on the cheap role then 2 on the escalate role when every attempt fails, and exactly 1 call on first-attempt success",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: the fake provider sees exactly 2 calls on the cheap role then 2 on the escalate role when every attempt fails, and exactly 1 call on first-attempt success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: two concurrent calls reach the fake provider one after another, in arrival order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: two concurrent calls reach the fake provider one after another, in arrival order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.test.ts: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+                "title": "convert-text.test.ts: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/convert-text.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1331,
+            "titles": [
+              {
+                "title": "convert-text.test.ts: a first-attempt valid value on the cheap tier returns ok with tier cheap and no escalation",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: an invalid first attempt is retried with the ajv errors appended",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: two failed cheap attempts escalate once, and two failed escalated attempts return retries-exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: the fake provider sees exactly 2 calls on the cheap role then 2 on the escalate role when every attempt fails, and exactly 1 call on first-attempt success",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: a value that fits the schema but has a key value missing from the raw text fails with value-not-in-text and retries",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: two concurrent calls reach the fake provider one after another, in arrival order",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: a ToolDeps with no conversion field returns 'no conversion provider configured' without a model call",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: a provider that rejects on every attempt returns retries-exhausted naming the role, with no fallback",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: a hung provider call times out as an ordinary error, is retried, and releases the queue slot",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: an aborted deps.signal drops a queued conversion without calling a provider and ends a running one as 'cancelled'",
+                "result": "pass"
+              },
+              {
+                "title": "convert-text.test.ts: an InputTooLargeError from the provider returns retries-exhausted with 'input too large' and is not resent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a7191841",
+        "ranAt": "2026-10-23T12:55:02.301Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.test.ts: the runtime values of the fake definitions are what the types say",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.test.ts",
+                "title": "call-tool.test.ts: the runtime values of the fake definitions are what the types say",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.test.ts: TypedToolResult data is absent when success is false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.test.ts",
+                "title": "call-tool.test.ts: TypedToolResult data is absent when success is false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/call-tool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2310,
+            "titles": [
+              {
+                "title": "call-tool.test.ts: the runtime values of the fake definitions are what the types say",
+                "result": "pass"
+              },
+              {
+                "title": "call-tool.test.ts: TypedToolResult data is absent when success is false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "81655c2e",
+        "ranAt": "2026-10-23T12:57:09.830Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/failure-mapping.test.ts: each ToolFailureKind maps onto a PortFailureKind, one test per kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/failure-mapping.test.ts",
+                "title": "failure-mapping.test.ts: each ToolFailureKind maps onto a PortFailureKind, one test per kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/failure-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1535,
+            "titles": [
+              {
+                "title": "missing-tool",
+                "result": "pass"
+              },
+              {
+                "title": "missing-signin",
+                "result": "pass"
+              },
+              {
+                "title": "unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "timed-out",
+                "result": "pass"
+              },
+              {
+                "title": "rejected",
+                "result": "pass"
+              },
+              {
+                "title": "conversion-failed",
+                "result": "pass"
+              },
+              {
+                "title": "schema-mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "denied",
+                "result": "pass"
+              },
+              {
+                "title": "failure-mapping.test.ts: each ToolFailureKind maps onto a PortFailureKind, one test per kind",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "c0e11db2",
+        "ranAt": "2026-10-23T13:02:23.867Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+                "title": "call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+                "title": "call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+                "title": "call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/call-tool.integration.test.ts: a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+                "title": "call-tool.integration.test.ts: a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: convertText on captured gh and git text-only outputs returns values whose key values are in the text",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/LIVE-convert-text.txt (run with INSRC_LIVE_TESTS=1, 49 s, real cheap-tier CLI model)"
+            }
+          },
+          {
+            "name": "src/daemon/tools/__tests__/convert-text.live.test.ts: a deliberately altered output fails the cross-check",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/LIVE-convert-text.txt (same run; the escalation tier also returned a claude envelope error, noted there)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1344,
+            "titles": [
+              {
+                "title": "call-tool.integration.test.ts: a tool with structured output called through callTool returns typed data",
+                "result": "pass"
+              },
+              {
+                "title": "call-tool.integration.test.ts: a tool with structured output called through callTool leaves the fake provider log empty",
+                "result": "pass"
+              },
+              {
+                "title": "call-tool.integration.test.ts: a text-only tool called through callTool converts, checks and returns typed data",
+                "result": "pass"
+              },
+              {
+                "title": "call-tool.integration.test.ts: a text-only tool whose conversion fails returns a conversion-failed ToolFailure with the raw text in failure.original",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

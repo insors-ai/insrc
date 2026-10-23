@@ -148,3 +148,14 @@ Binding on the s3 plan and build:
 - AMD-b7a68147dcf72034-4 (sc4), -5 (sc5 `cancelled`), -6 (sc2) and -7 (sc3) are approved before the s3 and s2 plans.
 - DEF s3 ac6 is read as: a tool that needs approval asks when the effective mode is manual or edit-auto, and a destructive tool always asks; under the default auto a common tool runs without asking. The amendment tool is HLD-only, so this note is the record. The s3 build's code review checks the design against this reading.
 - s7 builds the tool-call IPC with `caller` and optional `approvalMode`.
+
+## s2 BUILD approved (2026-10-23): code review warn, follow-ups
+
+s2 built t1 to t8 (commits tagged `Insrc-Story: b7a68147dcf72034/s2`); BUILD approved on a degraded-grounding code review: warn, 0 HIGH, 3 MED, 6 LOW (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/CR.md). Full sweep: no new failures (the failures seen also fail on the pre-s2 baseline, except two LMDB lock tests in `db` that were not re-run on it).
+
+Follow-ups, not yet done:
+- MED, **before s7**: `callTool` must check that the registered tool under `tool.id` is the definition passed (same object or same `outputSchema`) and fail `rejected` otherwise; today unchecked data can reach the caller with a trusted type.
+- MED: `convertText`'s deadline path should wait (hard cap) for the aborted provider call to settle before retrying or releasing the queue slot, or state that providers must honour the signal.
+- MED: the live test 'a deliberately altered output fails the cross-check' alters nothing; add a truly altered and a truncated output case.
+- LOW: `| undefined` on `Tool.outputSchema` and `TierOutcome.stop`; `convertText` returns only `retries-exhausted` (the LLD contradicts itself on returning `shape-mismatch` / `value-not-in-text`); input check runs after the approval gate (s3 should run it first); a queued conversion notices cancellation only after getting the slot; `callTool` duplicates the executor's no-data failure.
+- Added beyond the plan: two `insrc.models.tasks.tools.convert*` settings in vscode-plugin/package.json (a taxonomy test requires one per role).

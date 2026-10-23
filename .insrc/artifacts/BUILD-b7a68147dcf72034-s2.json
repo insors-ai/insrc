@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 9,
+        "contentHash": "eb44ca3cbdb0464f9bd7eb1c9f29c5aac3d3cb318be62edfb73819d1406ae61e",
+        "at": "2026-10-23T13:56:00.495Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T13:56:18.433Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-311b89d8-8c00-408e-a49b-a98084aec155",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T12:39:41.311Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s2",
+    "revision": 9,
+    "updatedAt": "2026-10-23T13:55:46.087Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Added the four integration tests (real executor and role taxonomy, a fake provider at the RoleRouter seam), the live test file with a corpus of real git and gh text output under fixtures/convert-text/, and the 'Typed tool results and failure kinds' section in docs/daemon.md. I ran the live tests once with INSRC_LIVE_TESTS=1 against the real cheap and mid CLI models: both passed. The altered-output test also hit a claude envelope error on the escalation tier, so its failure is not purely the cross-check; this is noted in the evidence file.",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/failure-types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/conversion-roles.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/conversion-providers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/_fakes.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/agent-loop-unchanged.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/output-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/cross-check.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/cross-check.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/convert-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/convert-text.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/call-tool.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/call-tool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/call-tool.type-test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/failure-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/failure-mapping.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S002/LIVE-convert-text.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/call-tool.integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/convert-text.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/fixtures/convert-text/gh-version.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/fixtures/convert-text/git-log-oneline.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/fixtures/convert-text/git-show-stat.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T13:55:46.087Z"
+      }
+    ],
+    "commit": "c0e11db2"
+  },
+  "citations": []
+}

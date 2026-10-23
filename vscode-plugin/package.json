@@ -687,6 +687,28 @@
             "markdownDescription": "Model tier for the `tracker.render.summary` role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
+          "insrc.models.tasks.tools.convert": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "cheap",
+            "markdownDescription": "Model tier for the `tools.convert` role (peripheral): converts the text output of a tool into its declared shape. Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.tools.convert.escalate": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `tools.convert.escalate` role (peripheral): the one escalation when the first conversion attempts fail. Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
           "insrc.models.tasks.analyze.decompose": {
             "type": "string",
             "enum": [

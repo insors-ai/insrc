@@ -91,6 +91,11 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'analyze.aggregate',             criticality: 'peripheral', defaultTier: 'mid'  },  // runtimes/shared/aggregator
 	{ id: 'analyze.narrow',                criticality: 'peripheral', defaultTier: 'cheap' }, // explore probes (capability-reuse-check, doc-decision-trace, doc-constraint-enumerate)
 
+	// (B) Tool-output conversion — PERIPHERAL. tools.convert runs the first attempts
+	// on the cheap tier; tools.convert.escalate is the single escalation (mid by default).
+	{ id: 'tools.convert',                criticality: 'peripheral', defaultTier: 'cheap' },
+	{ id: 'tools.convert.escalate',        criticality: 'peripheral', defaultTier: 'mid'  },
+
 	// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default).
 	{ id: 'indexer.summarise',             criticality: 'peripheral', defaultTier: 'cheap' }, // summariser
 	{ id: 'understanding.classify', criticality: 'critical', defaultTier: 'core' },

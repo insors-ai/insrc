@@ -313,6 +313,13 @@
             "markdownDescription": "core-tier model id (empty \u21d2 CLI default, e.g. opus)",
             "scope": "machine"
           },
+          "insrc.models.tiers.core.effort": {
+            "type": "string",
+            "default": "",
+            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "markdownDescription": "core-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "scope": "machine"
+          },
           "insrc.models.tiers.mid.runner": {
             "type": "string",
             "default": "cli-claude",
@@ -330,6 +337,13 @@
             "markdownDescription": "mid-tier model id (e.g. sonnet)",
             "scope": "machine"
           },
+          "insrc.models.tiers.mid.effort": {
+            "type": "string",
+            "default": "",
+            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "markdownDescription": "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "scope": "machine"
+          },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
             "default": "cli-claude",
@@ -345,6 +359,13 @@
             "type": "string",
             "default": "haiku",
             "markdownDescription": "cheap-tier model id (e.g. haiku)",
+            "scope": "machine"
+          },
+          "insrc.models.tiers.cheap.effort": {
+            "type": "string",
+            "default": "",
+            "enum": ["", "low", "medium", "high", "xhigh", "max"],
+            "markdownDescription": "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)",
             "scope": "machine"
           },
           "insrc.models.coreFloor": {

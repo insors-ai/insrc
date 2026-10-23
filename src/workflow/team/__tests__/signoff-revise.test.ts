@@ -49,12 +49,16 @@ interface Submit {
 	applied: Array<{ id: string; op: string; request: unknown }>;
 	/** The refs the tracker was asked about, and what it answers (undefined: it cannot read a request). */
 	read: string[];
+	/** The files committed for a submission, the branch the checkout is on (undefined: cannot be read) and the id whose recording fails once. */
+	published: string[][];
+	branch: string | undefined;
+	failApplyOn: string | undefined;
 	earlier: PortResult<{ branch: string; open: boolean }> | undefined;
 	deps: SignoffDeps;
 }
 
 function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Submit {
-	const s: Submit = { heads: { ...heads }, opened: [], applied: [], read: [], earlier, deps: {} };
+	const s: Submit = { heads: { ...heads }, opened: [], applied: [], read: [], published: [], branch: 'feature/signoff', failApplyOn: undefined, earlier, deps: {} };
 	const port = {
 		...(earlier !== undefined ? { readSignoffRequest: (r: SignoffRequestRef) => { s.read.push(r.ref); return s.earlier; } } : {}),
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
@@ -62,7 +66,14 @@ function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Su
 		openSignoffRequest: (spec: SignoffRequestSpec): PortResult<SignoffRequestRef> => { s.opened.push(spec); return { ok: true, value: { ref: `acme/demo#${40 + s.opened.length}` } }; },
 	} as unknown as TrackerPort;
 	const service = {
-		apply: async (id: string, op: string, _by: unknown, detail: { request?: unknown }) => { s.applied.push({ id, op, request: detail.request }); },
+		apply: async (id: string, op: string, _by: unknown, detail: { request?: unknown }) => {
+			if (s.failApplyOn === id) { s.failApplyOn = undefined; throw new Error('injected failure'); }
+			s.applied.push({ id, op, request: detail.request });
+			// the head is in signoff on the request, as the lifecycle service would leave it
+			const before = s.heads[id] as { lifecycle: { revision: { number: number }; signoffs: unknown[] } };
+			const request = detail.request as { entityId: string };
+			s.heads[id] = headOf({ status: 'in-signoff', revision: before.lifecycle.revision.number, signoffs: [...before.lifecycle.signoffs, entryOf(before.lifecycle.revision.number, request.entityId, 'open')] });
+		},
 	} as unknown as LifecycleService;
 	s.deps = {
 		readPolicy: () => ({ ok: true, value: policy() }),
@@ -70,7 +81,8 @@ function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Su
 		loadTracker: () => ({ ok: true, value: port }),
 		resolveIssue: () => 'acme/demo#2',
 		lifecycleFor: () => service,
-		publishBranch: () => ({ ok: true, value: 'feature/signoff' }),
+		publishBranch: (_repo, paths) => { s.published.push([...paths]); return { ok: true, value: 'feature/signoff' }; },
+		currentBranch: () => s.branch,
 		readCodeReview: () => ({ verdict: 'pass', party: 'daemon' }),
 	};
 	return s;
@@ -155,4 +167,54 @@ test('artifacts naming different earlier open requests are refused as a whole', 
 	const r = await openSignoff('/repo', { unit: 'epic', repoPath: '/repo', epicHash: EPIC }, [DEF, HLD], s.deps);
 	assert.match(reasonOf(r), /different earlier requests \(acme\/demo#9, acme\/demo#10\): submit them separately/);
 	assert.deepEqual([s.read.length, s.opened.length, s.applied.length], [0, 0, 0]);
+});
+
+const EPIC_UNIT: UnitRef = { unit: 'epic', repoPath: '/repo', epicHash: EPIC };
+const DEF = `DEF-${EPIC}`;
+const HLD = `HLD-${EPIC}`;
+const open = { ok: true, value: { branch: 'feature/signoff', open: true } } as const;
+
+test("a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest", async () => {
+	// the artifact was revised, reviewed and approved again at revision 2; its earlier request is still open
+	let s = submit({ [LLD]: headOf({ revision: 2, signoffs: [REQUEST] }) }, open);
+	let r = await openSignoff('/repo', STORY, [LLD], s.deps);
+	assert.deepEqual(r, { ok: true, value: { ref: 'acme/demo#9' } });
+	assert.equal(s.published.length, 1, 'the files are pushed to the request\'s branch');
+	assert.equal(s.opened.length, 0, 'no second request');
+	assert.deepEqual(s.applied, [{ id: LLD, op: 'open-signoff', request: { entityId: 'acme/demo#9', type: 'signoff-request', relation: 'tracked-by' } }]);
+
+	// a checkout on another branch is refused naming both, before anything is committed or recorded
+	s = submit({ [LLD]: headOf({ revision: 2, signoffs: [REQUEST] }) }, open);
+	s.branch = 'feature/other';
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /open from the branch 'feature\/signoff' but this checkout is on 'feature\/other'/);
+	assert.deepEqual([s.published.length, s.opened.length, s.applied.length], [0, 0, 0]);
+	// and so is a branch that can only be read after the files are published
+	s = submit({ [LLD]: headOf({ revision: 2, signoffs: [REQUEST] }) }, { ok: true, value: { branch: 'feature/signoff-2', open: true } });
+	s.branch = undefined;
+	assert.match(reasonOf(await openSignoff('/repo', STORY, [LLD], s.deps)), /branch 'feature\/signoff-2' but this checkout is on 'feature\/signoff'/);
+	assert.deepEqual([s.opened.length, s.applied.length], [0, 0]);
+
+	// a recording that fails part-way is finished by a repeat, against the same request and without a pull request
+	const sent = () => headOf({ revision: 2, signoffs: [entryOf(1, 'acme/demo#9', 'changes-requested')] });
+	s = submit({ [DEF]: sent(), [HLD]: sent() }, open);
+	s.failApplyOn = HLD;
+	assert.match(reasonOf(await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], s.deps)), /HLD.* could not be recorded .*the request acme\/demo#9 is open, submit again/);
+	assert.deepEqual(s.applied.map(a => a.id), [DEF]);
+	r = await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], s.deps);
+	assert.deepEqual(r, { ok: true, value: { ref: 'acme/demo#9' } });
+	assert.deepEqual(s.applied.map(a => a.id), [DEF, HLD]);
+	assert.equal(s.opened.length, 0);
+});
+
+test('a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request', async () => {
+	const s = submit({
+		[DEF]: headOf({ revision: 2, signoffs: [entryOf(1, 'acme/demo#9', 'changes-requested')] }),
+		[HLD]: headOf({ status: 'changes-requested', revision: 1, signoffs: [entryOf(1, 'acme/demo#9', 'changes-requested')] }),
+	}, open);
+	assert.deepEqual(await openSignoff('/repo', EPIC_UNIT, [DEF, HLD], s.deps), { ok: true, value: { ref: 'acme/demo#9' } });
+	assert.equal(s.opened.length, 0);
+	assert.deepEqual(s.applied.map(a => [a.id, (a.request as { entityId: string }).entityId]), [[DEF, 'acme/demo#9'], [HLD, 'acme/demo#9']]);
+	// the unchanged artifact is recorded again at its own, unchanged revision
+	const hld = s.heads[HLD] as { lifecycle: { signoffs: Array<{ revision: number; state: string }> } };
+	assert.deepEqual(hld.lifecycle.signoffs.map(e => [e.revision, e.state]), [[1, 'changes-requested'], [1, 'open']]);
 });

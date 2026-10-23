@@ -215,6 +215,8 @@ export interface SignoffDeps {
 	readonly lifecycleFor?:  ((repo: string) => LifecycleService) | undefined;
 	/** Commit and push the artifact files and answer the branch that holds them. */
 	readonly publishBranch?: ((repo: string, paths: readonly string[], message: string) => PortResult<string>) | undefined;
+	/** The branch the checkout is on, undefined when it cannot be read; a resubmission checks it before anything is committed. */
+	readonly currentBranch?: ((repo: string) => string | undefined) | undefined;
 	/** A Story's code-review record: its verdict and the party that ran it; undefined when there is none. */
 	readonly readCodeReview?: ((repo: string, epicHash: string, storyId: string) => CodeReviewRecord | undefined) | undefined;
 }
@@ -477,12 +479,14 @@ export async function openSignoff(repo: string, unit: UnitRef, artifactIds: read
 		request = { ref: openRef };
 		if (unrecorded.length === 0) return { ok: true, value: request };
 	} else {
-		// artifacts sent to a request before are sent back to it while it is open; this finds that request and never lets a failure to read it open a second one
+		// artifacts sent to a request before are sent back to it while it is open; a failure to read it never opens a second one
 		const earlier = earlierRequestOf(unrecorded, port);
 		if (!earlier.ok) return earlier;
-		const opened = openRequest(repo, unit, artifacts.value, port, issue, d);
-		if (!opened.ok) return opened;
-		request = opened.value;
+		const sent = earlier.value === undefined
+			? openRequest(repo, unit, artifacts.value, port, issue, d)
+			: resubmit(repo, unit, artifacts.value, earlier.value, d);
+		if (!sent.ok) return sent;
+		request = sent.value;
 	}
 	return recordOpened(repo, unrecorded, request, personOf(who.value), d);
 }
@@ -546,6 +550,27 @@ function openRequest(repo: string, unit: UnitRef, artifacts: readonly Submission
 		branch: published.value,
 		issue,
 	});
+}
+
+/** The branch the checkout is on, or undefined when it cannot be read or HEAD is detached. */
+function currentBranchOf(repo: string): string | undefined {
+	const head = runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
+	const branch = head.ok ? head.stdout.trim() : '';
+	return branch.length === 0 || branch === 'HEAD' ? undefined : branch;
+}
+
+/** Publish the revised artifact files to the branch of the request they were sent to before, which is the pull request itself: no second request is opened. */
+function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[], earlier: EarlierRequest, d: SignoffDeps): PortResult<SignoffRequestRef> {
+	const mismatch = (branch: string): PortResult<SignoffRequestRef> => rejected(`the request ${earlier.request.ref} is open from the branch '${earlier.branch}' but this checkout is on '${branch}': switch to '${earlier.branch}' to resubmit`);
+	// checked before the files are committed, so a wrong branch is left as it was
+	const on = (d.currentBranch ?? currentBranchOf)(repo);
+	if (on !== undefined && on !== earlier.branch) return mismatch(on);
+	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');
+	const message = `docs: resubmit the ${stages} of ${unit.unit} ${unit.storyId ?? unit.epicHash} for signoff`;
+	const published = (d.publishBranch ?? publishArtifactsBranch)(repo, artifacts.map(a => artifactJsonPath(repo, a.artifactId)), message);
+	if (!published.ok) return published;
+	if (published.value !== earlier.branch) return mismatch(published.value);
+	return { ok: true, value: earlier.request };
 }
 
 /** Record every artifact with the same request; a failure part-way is finished by a repeat. */

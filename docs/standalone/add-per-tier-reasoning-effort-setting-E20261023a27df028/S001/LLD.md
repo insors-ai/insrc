@@ -373,22 +373,18 @@ Write the effort into the model string (e.g. 'gpt-6.1-sol@high'); the CLI provid
 - ts1 (partial): the Story declares no acceptanceCriteria; the test strategy maps four criteria (ac1-ac4) derived from the story text: per-tier parsing on the global tiers, passing the effort to the CLI, unchanged behaviour when unset, and every settings surface.
 - Resolved (user, 2026-10-23): no per-repo effort. The effort is set only on the global model tiers; per-repo config only chooses which tier a function uses.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q8faa690b` — Resolved (user, 2026-10-23): no per-repo effort. The effort is set only on the global model tiers; per-repo config only chooses which tier a function uses.
+  - **resolved**: Effort on global tiers only (as resolved) — User 2026-10-23: no per-repo override; per-repo config only chooses which tier a function uses. _(2026-10-23T06:14:55.148Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 12 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-23T06:04:20.314Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| error-paths | codex exits 1 with HTTP 400 on an unsupported reasoning effort, while claude warns 'Unknown --effort value ... ignoring it' and exits 0. Both CLIs accept the five values (codex lists low..max for gpt-6.1-sol). | The design cites probes of codex 0.164 and claude. No shell tool was available in this review to run the CLIs, and the repo contains no record of these probes. CliProvider's existing non-zero-exit handling is the stated detection, which is plausible, but I could not confirm the CLI behaviour itself. [files: src/agent/providers/cli-provider.ts] | Confirm with the live tests in section 5 (codex with effort high; claude with an unknown --effort) before relying on the error-path claims. |
+- **[[c1]]** `analyze-bundle` `s1 data-model.trace: TierModel and tier parsing (src/config/analyze.ts:106-109, src/config/analyze.ts:341-375)`
+- **[[c2]]** `analyze-bundle` `s1 symbol.locate: config catalog tier rows and reconcile (src/config/config-catalog.ts:113-118, src/config/reconcile.ts:370-400)`
+- **[[c3]]** `analyze-bundle` `s1 usage.example: tier to CliProvider path (src/analyze/context/role-router.ts:135-136, src/analyze/context/shaper-provider.ts:247-251)`
+- **[[c4]]** `analyze-bundle` `s1 symbol.locate: CliProvider argument building (src/agent/providers/cli-provider.ts:505-515) and exact-argv tests (src/agent/providers/__tests__/cli-review-session.test.ts)`
+- **[[c5]]** `analyze-bundle` `s1 usage.example: TUI model-tiers pane (src/cli/panes/ModelTiersPane.tsx:89-127, src/cli/panes/model-tiers.ts:95-97)`
+- **[[c6]]** `analyze-bundle` `s1 usage.example: VS Code tier picker and settings sync (vscode-plugin/src/models/model-tier-picker.ts:272-306, vscode-plugin/src/config/__tests__/manifest-catalog.test.ts:39-69)`
+- **[[c7]]** `analyze-bundle` `s1 usage.example: JetBrains tier settings (jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:36-64)`
+- **[[c8]]** `analyze-bundle` `s1 test.locate: tests pinning tier shapes and CLI args`

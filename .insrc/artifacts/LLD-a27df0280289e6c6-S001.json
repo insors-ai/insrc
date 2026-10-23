@@ -201,7 +201,16 @@
       "reviewedBy": "daemon"
     },
     "approvedAt": "2026-10-23T06:07:07.371Z",
-    "rangeBase": "33c245174ea10222e02f924b055e7d08363b2610"
+    "rangeBase": "33c245174ea10222e02f924b055e7d08363b2610",
+    "questionResolutions": {
+      "q8faa690b": {
+        "question": "Resolved (user, 2026-10-23): no per-repo effort. The effort is set only on the global model tiers; per-repo config only chooses which tier a function uses.",
+        "status": "resolved",
+        "choice": "Effort on global tiers only (as resolved)",
+        "rationale": "User 2026-10-23: no per-repo override; per-repo config only chooses which tier a function uses.",
+        "resolvedAt": "2026-10-23T06:14:55.148Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -7,8 +7,9 @@
  * The step host: the daemon's `step.call` stream request (Epic c2ba6fa6,
  * Story s11). It runs one of the seven moved step handlers for an MCP
  * forwarder, inside the caller's StepCallContext and with the stream's signal,
- * and answers with one 'done' frame whose data is the handler's reply envelope,
- * unchanged, or one 'error' frame:
+ * sends what the handler reports through its progress callback as 'progress'
+ * frames (ISSUE-1973e125), and answers with one 'done' frame whose data is the
+ * handler's reply envelope, unchanged, or one 'error' frame:
  *
  *   - `step-unknown-tool`: the tool is not in this daemon's table (a forwarder
  *     newer than the daemon);
@@ -42,7 +43,8 @@ export interface StepEnvelope {
 	readonly isError?: boolean | undefined;
 }
 
-export type StepToolRunner = (args: unknown, signal: AbortSignal) => Promise<StepEnvelope>;
+/** `progress`: report progress, sent as a 'progress' frame before the reply. */
+export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void) => Promise<StepEnvelope>;
 
 export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
@@ -103,15 +105,28 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			return;
 		}
 		const run = table[p.tool]!;
+		// Never fails the step: a send that throws (the caller went away) is logged and dropped,
+		// and progress reported after the reply is ignored.
+		let answered = false;
+		const progress = (data: unknown): void => {
+			if (answered) return;
+			try {
+				send({ id: 0, stream: 'progress', data });
+			} catch (err) {
+				log.debug({ tool: p.tool, err: err instanceof Error ? err.message : String(err) }, 'step.call: a progress frame was not sent');
+			}
+		};
 		let envelope: StepEnvelope;
 		try {
-			envelope = await runInStepContext(ctx, () => run(p.args, signal));
+			envelope = await runInStepContext(ctx, () => run(p.args, signal, progress));
 		} catch (err) {
+			answered = true;
 			const message = err instanceof Error ? err.message : String(err);
 			log.warn({ tool: p.tool, err: message }, 'step.call: the handler threw');
 			fail('step-failed', message);
 			return;
 		}
+		answered = true;
 		send({ id: 0, stream: 'done', data: envelope });
 	};
 }

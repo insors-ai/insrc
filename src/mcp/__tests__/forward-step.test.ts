@@ -173,6 +173,31 @@ test('forwarder progress: frames relayed only with a progress token; the done en
 	}
 });
 
+test('MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame', async () => {
+	const ENVELOPE = { content: [{ type: 'text' as const, text: '{"next":"done"}' }] };
+	// The real step host: the code-review step reports two calls through its progress callback.
+	const host = createStepCallHandler({
+		insrc_code_review_step: async (_args, _signal, progress) => {
+			for (const n of [1, 2]) progress?.({ kind: 'stage', operation: 'codeReview.run', stageId: 'call', stageLabel: `call · adherence · judge reviewer #${n}`, index: n, total: null });
+			return ENVELOPE;
+		},
+	});
+	const daemon = await standInDaemon({ 'step.call': host });
+	_setForwardConnectForTests(daemon.connect);
+	try {
+		const { client, close } = await mcpClient('claude-code');
+		try {
+			const got: (string | undefined)[] = [];
+			const out = await client.callTool({ name: 'insrc_code_review_step', arguments: { phase: 'start', epicHash: 'abcd', storyId: 's1' } }, undefined, { onprogress: (p) => { got.push(p.message); } });
+			assert.deepEqual(out.content, ENVELOPE.content);
+			assert.deepEqual(got, ['▸ call · adherence · judge reviewer #1', '▸ call · adherence · judge reviewer #2']);
+		} finally { await close(); }
+	} finally {
+		_setForwardConnectForTests(undefined);
+		await daemon.close();
+	}
+});
+
 test('MCP tool surface: the thirteen tools keep their names, descriptions and input schemas', async () => {
 	// The golden file was captured from the server before the tools became forwarders (at e30638e5).
 	const golden = JSON.parse(readFileSync(join(HERE, 'fixtures', 'tool-surface.golden.json'), 'utf8')) as { name: string }[];

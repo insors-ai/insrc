@@ -91,6 +91,36 @@ test("step host: done frame carries the handler's envelope unchanged; unknown to
 	assert.deepEqual(Object.keys(stepToolTable()).sort(), [...STEP_TOOL_NAMES].sort());
 });
 
+test("step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored", async () => {
+	let late: ((data: unknown) => void) | undefined;
+	const host = createStepCallHandler({
+		...stepToolTable(),
+		insrc_code_review_step: async (_args, _signal, progress) => {
+			progress?.({ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' });
+			progress?.('a plain line');
+			late = progress;
+			return ENVELOPE;
+		},
+	});
+
+	const frames = await collect(host, { tool: 'insrc_code_review_step', args: {}, context: CTX });
+	assert.deepEqual(frames.map(f => f.stream), ['progress', 'progress', 'done']);
+	assert.deepEqual(frames.slice(0, 2).map(f => f.data), [{ kind: 'stage', stageLabel: 'call · adherence · judge reviewer #1' }, 'a plain line']);
+	assert.equal(frames[2]!.data, ENVELOPE);
+	// After the reply: ignored, nothing sent.
+	late!('too late');
+	assert.equal(frames.length, 3);
+
+	// A send that throws for progress (the caller went away): the step still answers.
+	const sent: IpcStreamMessage[] = [];
+	await host({ tool: 'insrc_code_review_step', args: {}, context: CTX }, (m) => {
+		if (m.stream === 'progress') throw new Error('stream closed');
+		sent.push(m);
+	}, new AbortController().signal);
+	assert.deepEqual(sent.map(f => f.stream), ['done']);
+	assert.equal(sent[0]!.data, ENVELOPE);
+});
+
 // --- equivalence on a temporary store ---------------------------------------------
 
 /** The envelope with the fresh state token, the one field two identical calls differ in, replaced. */

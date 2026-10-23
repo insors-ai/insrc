@@ -74,6 +74,14 @@
           "reason": "Daemon review rounds 1-3 all blocked (5 MED; 1 HIGH + 2 MED; 7 MED, 0 HIGH in round 3). Rounds 1 and 2 were fixed in the HLD. The 7 round-3 findings are Story-level design or DEF amendments, recorded in docs/plans/tool-registry.md with the user's decisions of 2026-10-23 (optional output schemas for agent-only tools, CLI-process callers go through the daemon IPC, the daemon self-update stays outside the registry); they are carried into the Story LLDs and the DEF amendments. User approved with override."
         }
       }
+    },
+    "questionResolutions": {
+      "q6953cb69": {
+        "question": "The DEF's s3 ac6 says a tool that needs approval 'asks'; this HLD reads it as 'asks when the global setting is ask, and always asks when destructive', following the user's decision of 2026-10-23. The DEF may need an amendment to ac6 to match (audit item sbdry4, partial).",
+        "status": "deferred",
+        "rationale": "ac6 belongs to s3. Per the user, the DEF amendments (s3 ac6; S002 FR001/FR004) are raised at the start of s2 and s3. Raise the ac6 amendment at the start of s3; the S002 amendment now.",
+        "resolvedAt": "2026-10-23T10:25:06.188Z"
+      }
     }
   },
   "body": {

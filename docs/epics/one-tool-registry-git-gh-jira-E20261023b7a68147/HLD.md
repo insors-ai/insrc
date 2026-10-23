@@ -308,28 +308,20 @@ Because the rules live in the library, they apply to any caller of the library w
 
 - The DEF's s3 ac6 says a tool that needs approval 'asks'; this HLD reads it as 'asks when the global setting is ask, and always asks when destructive', following the user's decision of 2026-10-23. The DEF may need an amendment to ac6 to match (audit item sbdry4, partial).
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q6953cb69` — The DEF's s3 ac6 says a tool that needs approval 'asks'; this HLD reads it as 'asks when the global setting is ask, and always asks when destructive', following the user's decision of 2026-10-23. The DEF may need an amendment to ac6 to match (audit item sbdry4, partial).
+  - **deferred**: deferred for review — ac6 belongs to s3. Per the user, the DEF amendments (s3 ac6; S002 FR001/FR004) are raised at the start of s2 and s3. Raise the ac6 amendment at the start of s3; the S002 amendment now. _(2026-10-23T10:25:06.188Z)_
 
-### ⛔ Review `BLOCK` — design.epic (design.epic)
+## Citations
 
-**7 do not hold · 0 could not be verified · 5 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-23T09:43:17.307Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | MED | The HLD designs every DEF requirement on result shapes: the output schema is optional and about 110 builtins 'stay unchecked until their family Story adds one'. | DEF S002:FR001 says 'A tool without a declared result shape cannot be registered.' FR004 says 'Every tool declares the shape of its result, the executor checks each result against it'. The HLD's sc2 has `outputSchema?: JsonSchema` and §3 says the builtins without one 'stay unchecked'. tool-registry.md:53 records why ('ToolResult.output is a string, so outputSchema has to be optional'). The HLD's Open questions list only the ac6 reading, so this departure from S002:FR001/FR004 is neither designed nor flagged for a DEF amendment. [files: docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md, docs/plans/tool-registry.md] | Add an open question or DEF amendment for S002:FR001/FR004 (optional schema, unchecked builtins), or design how registration rejects a tool with no schema. |
-| coverage-of-intent | MED | The sc4 ApprovalRequest carries what the DEF requires the approval request to name. | DEF S003:FR001: 'The approval request names the tool, the repository and the arguments it would run with.' The sc4 sketch has `{ requestId; toolId; approvalClass; inputSummary; reason; expiresAt }`. There is no repository field, and the arguments appear only as a free-form 'inputSummary'. [files: docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md] | Add the repository (repoPath from ToolDeps) and the exact arguments to ApprovalRequest in sc4. |
-| new-versus-reuse | MED | sc4's approval field is 'the one field that gives a tool or call its approval class', and the destructive class is new, marked by the family Stories. | types.ts:127-128 already declares `readonly destructive?: boolean` on Tool ('Flags the tool as destructive / irreversible'). 8 builtins set `destructive: true`: az/vm.ts:238, k8s/index.ts:340, aws/s3.ts:210, gcp/compute.ts:247, aws/cloudformation.ts:235, gcp/run.ts:212, gcp/storage.ts:189 and aws/ec2.ts:255. types.ts:83-145 also has ToolApprovalGate / buildApprovalGate. The HLD mentions neither. s3 maps only requiresApproval to 'common', so these 8 tools would be downgraded to 'common', or a second field would be left beside the new one. [files: src/daemon/tools/types.ts, src/daemon/tools/builtins/cloud/aws/s3.ts, src/daemon/tools/builtins/k8s/index.ts] | In s3, map `destructive: true` to the destructive class (or retire the field) and say how buildApprovalGate relates to ApprovalRequest. |
-| change-sites | MED | Hooks receive `caller: 'agent' \| 'daemon' \| 'workflow'` in ToolHookContext, which the executor can supply. | `executeTool(toolId, input, deps)` (executor.ts:23) takes no caller identity, and ToolDeps (types.ts:50-81) has no caller field. The only production caller is read-only-tool-loop.ts:78. Neither sc1 nor sc2 (callTool takes `deps: ToolDeps`) says where the caller value comes from, or which signature or ToolDeps change carries it. [files: src/daemon/tools/executor.ts, src/daemon/tools/types.ts, src/agent/read-only-tool-loop.ts] | State in sc1/sc2 the field that carries the caller (for example `ToolDeps.caller`) and who sets it on each path. |
-| data-compatibility | MED | sc5 failure kinds are 'the same kinds the tracker port already uses'. | port.ts:23 has `PortFailureKind = 'missing-tool' \| 'missing-signin' \| 'unreachable' \| 'rejected'`, and github.ts:76 maps a timeout to 'unreachable'. sc5 adds 'timed-out', 'conversion-failed', 'schema-mismatch' and 'denied'. unit-issue.test.ts:390 iterates exactly the four port kinds. The HLD gives no mapping from the new kinds onto PortFailureKind for the tracker port and its stored or tested results, even though s7 promises 'the same tracker records as before'. [files: src/workflow/tracker/port.ts, src/workflow/tracker/github.ts, src/workflow/tracker/__tests__/unit-issue.test.ts] | State in sc5 or s7 how the new kinds map onto PortFailureKind, or that PortFailureKind is widened and its consumers updated. |
-| error-paths | MED | Every caller's call reaches an approval gate that sends the request 'over the daemon's IPC to the attached client'. | maintenance.ts:81-83 ('Fast-forward sync + conditional install + build against DAEMON_ROOT. Never starts the daemon.') runs in the terminal client process. It runs git checkout -B, merge and remote set-url, often while the daemon is not running. cli/services/workflow.ts calls commitAndPushArtifacts (:139, :174). Both move onto the registry under s7, but the HLD only describes a daemon-side gate. It does not say which process runs the executor for these callers, or what the ApprovalGate does there (with no daemon a destructive call would always be 'no-client'). [files: src/cli/services/maintenance.ts, src/cli/services/workflow.ts] | State in s3/s7 whether CLI-process callers go through daemon IPC or an in-process gate, and how the self-update works when the daemon is down. |
-| tests | MED | Each acceptance criterion maps to a test, including S007:FR001 ('each replaced call site is covered by a test that runs through the registry'). | The HLD names tests for the pipeline order (risk table) and replayed CLI output for conversion. For the cutover it says only 'the existing tests of those stages are the check' (§7 Phase C). DEF S007:FR001 requires a registry-path test per replaced site. Sites such as indexer/index.ts:91, repo-ignore-filter.ts:112 and identity.ts are not covered by any workflow-stage test. [files: docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md] | Add to s7's boundary that each inventoried site gets a test through the registry (or through the typed helper with a recorded executor). |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/daemon/tools/executor.ts`
+- **[[c2]]** `code` `src/daemon/tools/registry.ts`
+- **[[c3]]** `code` `src/daemon/tools/types.ts`
+- **[[c4]]** `code` `src/agent/read-only-tool-loop.ts:78`
+- **[[c5]]** `code` `src/workflow/team/git.ts`
+- **[[c6]]** `code` `src/workflow/tracker/github.ts`
+- **[[c7]]** `code` `src/cli/services/maintenance.ts`
+- **[[c8]]** `code` `src/design/corpus/sources/git-reader.ts`
+- **[[c9]]** `doc` `docs/plans/tool-registry.md`
+- **[[c10]]** `doc` `docs/daemon.md#model-tiering`

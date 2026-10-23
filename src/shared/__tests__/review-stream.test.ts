@@ -161,3 +161,83 @@ test('codeReviewRequestParams forwards fallbackReason exactly and omits the key 
 	assert.deepEqual(codeReviewRequestParams({ epicHash: 'e', storyId: 's', groundingMode: 'degraded', fallbackReason: { kind: 'declined' } })['fallbackReason'], { kind: 'declined' });
 	assert.equal('fallbackReason' in codeReviewRequestParams({ epicHash: 'e', storyId: 's', groundingMode: 'degraded' }), false);
 });
+
+/** A fake clock for several timers: `advance(ms)` fires each timer that is due, in order. */
+function fakeClock() {
+	let now = 0;
+	let seq = 0;
+	const timers = new Map<number, { at: number; fn: () => void }>();
+	return {
+		timers: {
+			setTimer: (fn: () => void, ms: number) => { const id = ++seq; timers.set(id, { at: now + ms, fn }); return id; },
+			clearTimer: (h: unknown) => { timers.delete(h as number); },
+		},
+		armed: () => timers.size,
+		advance(ms: number): void {
+			const until = now + ms;
+			for (;;) {
+				const due = [...timers.entries()].filter(([, t]) => t.at <= until).sort((a, b) => a[1].at - b[1].at)[0];
+				if (due === undefined) break;
+				timers.delete(due[0]);
+				now = due[1].at;
+				due[1].fn();
+			}
+			now = until;
+		},
+	};
+}
+
+test('runReviewStream with idleMs: frames more often than idleMs keep the request alive past idleMs; it resolves on its final frame', async () => {
+	const clock = fakeClock();
+	const f = fakeTransport();
+	const p = runReviewStream<string>('codeReview.run', { timeoutMs: 4 * 3_600_000, idleMs: 20 * 60_000 }, f.transport, clock.timers);
+	// An hour of progress, one frame a minute: three times the idle limit.
+	for (let i = 0; i < 60; i++) {
+		clock.advance(60_000);
+		f.state.sink!.frame({ stream: i % 2 === 0 ? 'progress' : 'delta', data: i });
+	}
+	f.state.sink!.frame({ stream: 'done', data: 'ok' });
+	assert.equal(await p, 'ok');
+	assert.deepEqual([f.state.ended, f.state.cancelled], [1, 0]);
+	assert.equal(clock.armed(), 0, 'both timers released');
+});
+
+test('runReviewStream with idleMs: no frame for idleMs fails \'timeout\' naming the idle limit and cancels the transport', async () => {
+	const clock = fakeClock();
+	const f = fakeTransport();
+	const p = runReviewStream('codeReview.run', { timeoutMs: 4 * 3_600_000, idleMs: 20 * 60_000 }, f.transport, clock.timers);
+	clock.advance(10 * 60_000);
+	f.state.sink!.frame({ stream: 'progress', data: 1 });
+	clock.advance(20 * 60_000 - 1);
+	assert.equal(f.state.cancelled, 0, 'still waiting just under the idle limit after the last frame');
+	clock.advance(1);
+	await assert.rejects(p, isFailure('timeout', /^codeReview\.run: no progress from the daemon for 20 minutes$/));
+	assert.deepEqual([f.state.ended, f.state.cancelled], [0, 1]);
+	assert.equal(clock.armed(), 0, 'the overall timer released too');
+});
+
+test('runReviewStream: frames do not extend timeoutMs; past it the request fails \'timeout\' naming the ceiling', async () => {
+	const clock = fakeClock();
+	const f = fakeTransport();
+	const p = runReviewStream('codeReview.run', { timeoutMs: 60 * 60_000, idleMs: 5 * 60_000 }, f.transport, clock.timers);
+	for (let i = 0; i < 59; i++) { clock.advance(60_000); f.state.sink!.frame({ stream: 'progress', data: i }); }
+	assert.equal(f.state.cancelled, 0);
+	clock.advance(60_000);
+	await assert.rejects(p, isFailure('timeout', /^codeReview\.run: no result from the daemon within 60 minutes$/));
+	assert.deepEqual([f.state.ended, f.state.cancelled], [0, 1]);
+});
+
+test('runReviewStream without idleMs (or with an out-of-range idleMs): today\'s single wait', async () => {
+	for (const idleMs of [undefined, 0, -5, 60 * 60_000, 90 * 60_000]) {
+		const clock = fakeClock();
+		const f = fakeTransport();
+		const opts = idleMs === undefined ? { timeoutMs: 60 * 60_000 } : { timeoutMs: 60 * 60_000, idleMs };
+		const p = runReviewStream('codeReview.run', opts, f.transport, clock.timers);
+		assert.equal(clock.armed(), 1, `idleMs ${idleMs}: one timer, the overall wait`);
+		// Silent for just under the whole wait: no idle limit ends it.
+		clock.advance(60 * 60_000 - 1);
+		assert.equal(f.state.cancelled, 0, `idleMs ${idleMs}: still waiting`);
+		clock.advance(1);
+		await assert.rejects(p, isFailure('timeout', /no result from the daemon within 60 minutes/), `idleMs ${idleMs}`);
+	}
+});

@@ -36,8 +36,11 @@ export class ReviewStreamError extends Error {
 }
 
 export interface ReviewStreamOpts {
-	/** How long to wait for the final frame. */
+	/** How long to wait for the final frame, frames or not. */
 	readonly timeoutMs: number;
+	/** How long to wait without any frame; every progress or delta frame restarts
+	 *  it. Absent, not above 0 or not below timeoutMs: no idle limit. */
+	readonly idleMs?:   number | undefined;
 	readonly onFrame?:  ((stream: 'progress' | 'delta', data: unknown) => void) | undefined;
 	readonly signal?:   AbortSignal | undefined;
 }
@@ -174,7 +177,8 @@ export interface ReviewStreamTimers {
 
 /**
  * Run one review stream request over `transport`, resolved by its 'done'
- * frame's data. The wait limit fails it with 'timeout' and an aborted signal
+ * frame's data. The wait limit, or `idleMs` without a frame, fails it with
+ * 'timeout' (the message says which) and an aborted signal
  * with 'aborted' (both also cancel the transport); an 'error' frame is
  * 'daemon-error' with the frame's reason; 'progress' and 'delta' frames go to
  * `opts.onFrame`; any other frame is ignored.
@@ -190,6 +194,7 @@ export function runReviewStream<T>(
 		const clearTimer = timers.clearTimer ?? ((h: unknown) => clearTimeout(h as NodeJS.Timeout));
 		let settled = false;
 		let timer: unknown;
+		let idleTimer: unknown;
 		let handle: ReviewStreamHandle | undefined;
 		let pending: 'end' | 'cancel' | undefined;   // settled while the transport was still starting
 
@@ -201,6 +206,7 @@ export function runReviewStream<T>(
 			if (settled) return;
 			settled = true;
 			if (timer !== undefined) clearTimer(timer);
+			if (idleTimer !== undefined) clearTimer(idleTimer);
 			opts.signal?.removeEventListener('abort', onAbort);
 			release(how);
 			action();
@@ -215,11 +221,19 @@ export function runReviewStream<T>(
 			() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`),
 			opts.timeoutMs,
 		);
+		const idleMs = opts.idleMs !== undefined && opts.idleMs > 0 && opts.idleMs < opts.timeoutMs ? opts.idleMs : undefined;
+		const armIdle = (): void => {
+			if (idleMs === undefined) return;
+			if (idleTimer !== undefined) clearTimer(idleTimer);
+			idleTimer = setTimer(() => failWith('timeout', `${method}: no progress from the daemon for ${waitText(idleMs)}`), idleMs);
+		};
+		armIdle();
 
 		const sink: ReviewStreamSink = {
 			frame: (f) => {
 				if (settled) return;
 				if (f.stream === 'progress' || f.stream === 'delta') {
+					armIdle();
 					opts.onFrame?.(f.stream, f.data);
 				} else if (f.stream === 'done') {
 					finish('end', () => resolve(f.data as T));

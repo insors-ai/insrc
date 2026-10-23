@@ -94,6 +94,12 @@
         "status": "resolved",
         "choice": "Sequence HLD stories by dependsOn",
         "resolvedAt": "2026-10-23T09:21:27.582Z"
+      },
+      "qd3ec1750": {
+        "question": "Item sb1: the criteria use the terms executor, registry and cheap model, the product's own vocabulary from the approved spec; a reviewer may want them kept as is.",
+        "status": "resolved",
+        "choice": "Keep the terms and add a glossary",
+        "resolvedAt": "2026-10-23T09:21:45.310Z"
       }
     }
   },

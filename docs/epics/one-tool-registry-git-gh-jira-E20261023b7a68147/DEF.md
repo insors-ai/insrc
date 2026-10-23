@@ -237,6 +237,8 @@ The workflow, the daemon and the terminal client's approval service follow the s
   - **resolved**: Deterministic cross-check, then escalate to a higher-tier model _(2026-10-23T09:20:52.280Z)_
 - `qd905ba9f` — Item s1c: the later stories depend on earlier ones, so they are testable only once their dependencies exist; the dependencies are explicit in dependsOn.
   - **resolved**: Sequence HLD stories by dependsOn _(2026-10-23T09:21:27.582Z)_
+- `qd3ec1750` — Item sb1: the criteria use the terms executor, registry and cheap model, the product's own vocabulary from the approved spec; a reviewer may want them kept as is.
+  - **resolved**: Keep the terms and add a glossary _(2026-10-23T09:21:45.310Z)_
 
 ## Citations
 

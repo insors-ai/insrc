@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cdb9a79a-3a39-4ed1-abc0-5ee527062570",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.153Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Port additions and the GitHub adapter: readSignoffRequest and readSignoffState(since)",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f50b4ed5d99dbcc722fb5919da451fb310dbf4dea6c2980d7d1f3f22f83b67c4",
+        "at": "2026-10-23T04:19:19.153Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.154Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Port additions and the GitHub adapter: readSignoffRequest and readSignoffState(since)",
+    "summary": "Add the optional readSignoffRequest(ref) -> { branch, open } and the optional `since` argument on readSignoffState to the tracker port (the sc1 amendment AMD-27), and implement both in the GitHub adapter: readSignoffRequest through gh pr view --json headRefName,state, and readSignoffState with since through gh pr view --json state,mergedAt,reviews using each reviewer's latest decisive review (APPROVED, CHANGES_REQUESTED or DISMISSED; COMMENTED ignored) made after since; a closed unmerged request stays changes-requested; with no since the answer is as in s7.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "The port declares readSignoffRequest as optional and readSignoffState with an optional since, and a tracker without them still type-checks",
+      "readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to { branch, open } and rejects a malformed ref and unreadable output with the port failure kinds",
+      "readSignoffState with since treats a CHANGES_REQUESTED review at or before since as open, one after as changes-requested, a later approval as clearing it, and a COMMENTED review as neither clearing nor creating it",
+      "readSignoffState without since returns exactly what s7 returned"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts: readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to a branch and openness, and rejects a malformed ref and unreadable output"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts: readSignoffState with since uses each reviewer's latest decisive review and answers as in s7 without since"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

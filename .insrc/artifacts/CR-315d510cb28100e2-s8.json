@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "60f9853d0046d69611eb856b4eb0a613cc563bb3ae9de77929ef98e4da29192f",
+        "at": "2026-10-23T06:08:50.952Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1792735630016-myyk15",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T06:07:24.693Z",
+    "model": "claude:opus",
+    "elapsedMs": 86254,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/storage-signoff-history.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts",
+        "src/workflow/artifact-core/lifecycle.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/team/__tests__/author-gate-revise.test.ts",
+        "src/workflow/team/__tests__/signoff-revise-e2e.test.ts",
+        "src/workflow/team/__tests__/signoff-revise.test.ts",
+        "src/workflow/team/author-gate.ts",
+        "src/workflow/team/signoff.ts",
+        "src/workflow/tracker/__tests__/github-signoff-revise.test.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/port.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:231",
+            "message": "In `lifecycleKeepingSignoffs`, when the next head carries a lifecycle with no signoffs, the prior Signoff entries are copied into it before the content is compared. So a content write with unchanged content, a fresh next lifecycle and a prior head that has Signoff entries now stores those entries. That is a change from today's behaviour. The approved design keeps the carry-over to changed content only when the next head brings its own lifecycle. The t3 tests cover unchanged content with a fresh draft lifecycle only over a prior head with no Signoff entries, so this path is never tested.",
+            "expectationRef": "LLD writeArtifact postcondition: 'When the content is unchanged and the next head carries a lifecycle, behaviour is as today and is not changed here'; PLAN t3 acceptance check 'a next head with a fresh draft lifecycle and unchanged content behaves as before'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts:1",
+            "message": "This is the only new test file in the Story without the header doc comment (what the file covers, the Story id and a 'Run: npx tsx --test <path>' line). It also uses describe/it, while the other new test files use a flat test(). The other five new test files in the changed set all have the header. The idiom is drawn only from the files in this Story, so this is an observation, not a rule breach.",
+            "expectationRef": "module-idiom: test-file header comment with Run line",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/team/signoff.ts:648",
+            "message": "The `since` cutoff is the local `at` stamp of the newest Signoff entry, and that stamp is written by recordOpened only after the files have been pushed (resubmit/openRequest come first). Suppose a reviewer requests changes on the new push in the gap between the push and the recording, or the local clock runs ahead of GitHub's. changesRequestedSince then drops that review, because its submittedAt is at or before since. The heads stay in-signoff, and a later merge can record them as signed-off even though the request for changes was never acted on. Two fixes would close this: take the cutoff from the push itself (the commit time or the PR head-commit time), or subtract a margin for clock skew."
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/team/signoff.ts:648",
+            "message": "The latest submission time across the group is found by comparing ISO strings as text (`at > latest`). The same commit fixed this in changesRequestedSince because stamps with and without milliseconds sort wrongly as text. If any Signoff entry's `at` comes from a source with a different precision, this pick of the latest entry is wrong in the same way. Compare with Date.parse here too."
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/team/author-gate.ts:61",
+            "message": "assertHeld builds a second team context and re-reads the holder from the tracker after teamGate has already read it for the same unit. Every 'revise' turn therefore makes extra tracker (gh) calls. The holder can also change between the two reads, so the gate's decision and the holder check can disagree. A cleaner option is to have the gate's outcome report that the unit is unassigned for 'revise', so the holder is read once.",
+            "counterpartRef": "teamGate",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/team/signoff.ts:585",
+            "message": "resubmit checks the branch the files were published to only after publishBranch has committed and pushed them. If the two branches differ, the push has already happened, so the 'switch branch' refusal is returned with the files left on the wrong branch. The earlier currentBranch check makes this unlikely, but the after-publish check cannot undo anything; it should say the commit is already on the wrong branch.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 5
+    }
+  },
+  "citations": []
+}

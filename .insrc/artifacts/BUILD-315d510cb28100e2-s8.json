@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 10,
+        "contentHash": "2b89718a8597e827ceebe9e4609ec64f915faf317b5dcdcdb2e9bd7f6b106226",
+        "at": "2026-10-23T06:17:37.807Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 10,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T06:17:58.005Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-6ce3e96a-a8fa-450e-b61d-c5c0ff542e3d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:21:33.718Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "revision": 10,
+    "updatedAt": "2026-10-23T06:17:21.891Z",
+    "authoredBy": "controller",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S008/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/port.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/storage-signoff-history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/signoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/author-gate-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/author-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-23T06:17:21.891Z"
+      }
+    ],
+    "commit": "fc52f990",
+    "summary": "Nine tasks: the lifecycle step open-signoff from changes-requested, the port reads readSignoffRequest and readSignoffState(since) with the GitHub implementation, the content write keeping the Signoff history, submission prerequisites on the current review, finding and resubmitting to the earlier request, settle passing the last submission time as since, the revise gate on the design.epic and design.story runs, and the end-to-end test with a smoke test on a sandbox repo."
+  },
+  "citations": []
+}

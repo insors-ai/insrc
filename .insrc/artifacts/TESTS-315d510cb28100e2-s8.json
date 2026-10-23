@@ -1,0 +1,496 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "3e6ad6449dacf8294982e4a97f9c9b86a1548b2f8cd4242e140fcf5ad0a52a35",
+        "at": "2026-10-23T05:17:45.221Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "createdAt": "2026-10-23T04:21:33.718Z",
+    "updatedAt": "2026-10-23T05:17:44.571Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "revision": 9
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d0937d23",
+        "ranAt": "2026-10-23T04:21:33.718Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts: open-signoff from changes-requested appends a Signoff entry at the current revision and moves to in-signoff, and every other operation from changes-requested is as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts",
+                "title": "open-signoff from changes-requested appends a Signoff entry at the current revision and moves to in-signoff, and every other operation from changes-requested is as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1500,
+            "titles": [
+              {
+                "title": "open-signoff from changes-requested appends a Signoff entry at the current revision and moves to in-signoff, and every other operation from changes-requested is as before",
+                "result": "pass"
+              },
+              {
+                "title": "open-signoff from changes-requested",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "59bdee33",
+        "ranAt": "2026-10-23T04:24:23.320Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts: readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to a branch and openness, and rejects a malformed ref and unreadable output",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts",
+                "title": "readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to a branch and openness, and rejects a malformed ref and unreadable output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts: readSignoffState with since uses each reviewer's latest decisive review and answers as in s7 without since",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts",
+                "title": "readSignoffState with since uses each reviewer's latest decisive review and answers as in s7 without since",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2771,
+            "titles": [
+              {
+                "title": "readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to a branch and openness, and rejects a malformed ref and unreadable output",
+                "result": "pass"
+              },
+              {
+                "title": "readSignoffState with since uses each reviewer's latest decisive review and answers as in s7 without since",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a23d8104",
+        "ranAt": "2026-10-23T04:56:35.496Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/storage-signoff-history.test.ts: a changed content write keeps the prior Signoff entries and carries neither approval nor review, whether the next head has no lifecycle or a fresh draft one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/storage-signoff-history.test.ts",
+                "title": "a changed content write keeps the prior Signoff entries and carries neither approval nor review, whether the next head has no lifecycle or a fresh draft one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/storage-signoff-history.test.ts: an identical content write of an in-signoff or changes-requested head with no next lifecycle neither throws nor changes its lifecycle, and a prior head with no Signoff entry is written as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/storage-signoff-history.test.ts",
+                "title": "an identical content write of an in-signoff or changes-requested head with no next lifecycle neither throws nor changes its lifecycle, and a prior head with no Signoff entry is written as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/storage-signoff-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1136,
+            "titles": [
+              {
+                "title": "a changed content write keeps the prior Signoff entries and carries neither approval nor review, whether the next head has no lifecycle or a fresh draft one",
+                "result": "pass"
+              },
+              {
+                "title": "an identical content write of an in-signoff or changes-requested head with no next lifecycle neither throws nor changes its lifecycle, and a prior head with no Signoff entry is written as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5faa5f38",
+        "ranAt": "2026-10-23T04:59:28.066Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1419,
+            "titles": [
+              {
+                "title": "prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1ecc34a4",
+        "ranAt": "2026-10-23T05:03:06.703Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: artifacts naming different earlier open requests are refused as a whole",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "artifacts naming different earlier open requests are refused as a whole",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3198,
+            "titles": [
+              {
+                "title": "prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+                "result": "pass"
+              },
+              {
+                "title": "the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one",
+                "result": "pass"
+              },
+              {
+                "title": "artifacts naming different earlier open requests are refused as a whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "e3cdf471",
+        "ranAt": "2026-10-23T05:06:23.097Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2025,
+            "titles": [
+              {
+                "title": "prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+                "result": "pass"
+              },
+              {
+                "title": "the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one",
+                "result": "pass"
+              },
+              {
+                "title": "artifacts naming different earlier open requests are refused as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest",
+                "result": "pass"
+              },
+              {
+                "title": "a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "a64a9155",
+        "ranAt": "2026-10-23T05:08:35.409Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise.test.ts: settleSignoff passes the last entry's at as since and records signoff-changes only for a request made after it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+                "title": "settleSignoff passes the last entry's at as since and records signoff-changes only for a request made after it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1361,
+            "titles": [
+              {
+                "title": "prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind",
+                "result": "pass"
+              },
+              {
+                "title": "the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one",
+                "result": "pass"
+              },
+              {
+                "title": "artifacts naming different earlier open requests are refused as a whole",
+                "result": "pass"
+              },
+              {
+                "title": "a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest",
+                "result": "pass"
+              },
+              {
+                "title": "a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request",
+                "result": "pass"
+              },
+              {
+                "title": "settleSignoff passes the last entry's at as since and records signoff-changes only for a request made after it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ca73b4ef",
+        "ranAt": "2026-10-23T05:11:59.884Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/author-gate-revise.test.ts: assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/author-gate-revise.test.ts",
+                "title": "assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/author-gate-revise.test.ts: a design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/author-gate-revise.test.ts",
+                "title": "a design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/author-gate-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1353,
+            "titles": [
+              {
+                "title": "assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run",
+                "result": "pass"
+              },
+              {
+                "title": "a design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "b898e77a",
+        "ranAt": "2026-10-23T05:17:44.571Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts: changes requested on a two-artifact request, both re-authored through writeArtifact or one left unchanged, approved again and resubmitted to the same request, settled signed-off for the new revisions only, a lingering old decision not cancelling it, a merged request not carried over, and a non-holder and an unassigned user refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts",
+                "title": "changes requested on a two-artifact request, both re-authored through writeArtifact or one left unchanged, approved again and resubmitted to the same request, settled signed-off for the new revisions only, a lingering old decision not cancelling it, a merged request not carried over, and a non-holder and an unassigned user refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Open a signoff pull request on a sandbox repo, push a revision to the same pull request, merge it, then start the next stage",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Run on subhagho/FieldML on 2026-10-23 with the real GitHub adapter: pull request #6 (issue #5) was opened by openSignoff, readSignoffRequest answered its branch and open, changes were recorded, the DEF was re-authored through writeArtifact (Signoff entry kept), a second commit was pushed to the same branch, openSignoff went back to the same request #6 (one pull request on the branch with 2 commits, no second one), the next stage was refused while it was open, the merge was recorded signed-off on DEF and HLD by settleForAttempt, the claim was released and the next stage was allowed. The pull request shows MERGED."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1390,
+            "titles": [
+              {
+                "title": "changes requested on a two-artifact request, both re-authored through writeArtifact or one left unchanged, approved again and resubmitted to the same request, settled signed-off for the new revisions only, a lingering old decision not cancelling it, a merged request not carried over, and a non-holder and an unassigned user refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

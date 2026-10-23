@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9ae3e578-ac22-4f07-8b6f-f7a05c6add7b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.162Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "settleSignoff passes the last submission time as since",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7a281381e862f7ad096987bbb55debd1c40054cf27e26c51a4a3c01718f1ca2d",
+        "at": "2026-10-23T04:19:19.162Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.163Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "settleSignoff passes the last submission time as since",
+    "summary": "Make settleSignoff pass the `at` of the last Signoff entry of the waiting heads as `since` to readSignoffState, so only a request for changes made after the latest submission is recorded; keep recording signed-off and signoff-changes on every waiting head together, and the problems it returns, as in s7.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "readSignoffState is called with the last entry's at as since for each request it reads",
+      "A stale changes-requested decision made before the latest submission leaves the heads in-signoff and a later merge is recorded signed-off",
+      "A request for changes made after the latest submission still moves every waiting head to changes-requested together",
+      "The returned problems and the claim release and completion behaviour are as in s7"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: settleSignoff passes the last entry's at as since and records signoff-changes only for a request made after it"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

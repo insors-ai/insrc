@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8a3daf41-f079-4d54-88e0-3223d8974f1d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.155Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Content write keeps the Signoff history",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fe4269d33f5e8f2da8ea855d83b2af6cdc147dcf83a963e2209bda9ec5743541",
+        "at": "2026-10-23T04:19:19.155Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.155Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Content write keeps the Signoff history",
+    "summary": "Make writeArtifact's content write keep the prior head's meta.lifecycle.signoffs when the prior head has at least one entry and the next head has no lifecycle or one with no signoffs: changed content stores the default draft with the prior entries carried (approval and review not carried), unchanged content with no next lifecycle keeps the whole prior lifecycle and synthesizes no draft (the sc3 amendment AMD-28). Anything else is written as today.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A changed rewrite of an in-signoff head with no next lifecycle stores a draft lifecycle with the prior Signoff entries, no approval and no review, and a minted revision",
+      "A changed rewrite whose next lifecycle is a fresh draft with no signoffs keeps the prior entries and keeps entries the next head carries",
+      "An identical rewrite of an in-signoff or changes-requested head with no next lifecycle does not throw and leaves status, approval, review and Signoff entries untouched",
+      "A prior head with no Signoff entry is written exactly as before, and a next head with a fresh draft lifecycle and unchanged content behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/storage-signoff-history.test.ts: a changed content write keeps the prior Signoff entries and carries neither approval nor review, whether the next head has no lifecycle or a fresh draft one"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/storage-signoff-history.test.ts: an identical content write of an in-signoff or changes-requested head with no next lifecycle neither throws nor changes its lifecycle, and a prior head with no Signoff entry is written as before"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

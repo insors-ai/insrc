@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-63b7d28e-2e89-4a1f-9e06-6f51d298a63b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.160Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Resubmit to the earlier request",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1e1309ca0108874d9d614fce289ff5745a73b74905cbadc19919d57ac0e26db7",
+        "at": "2026-10-23T04:19:19.160Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.161Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resubmit to the earlier request",
+    "summary": "Act on the decision of t5: when the earlier request is still open, publish the artifact files to that request's branch (the current branch must be it), open no second request and record open-signoff on every artifact with the same Reference at its current revision; a current branch that is not the request's branch is refused naming both branches and records nothing; a repeat after a partial recording finds the earlier request again and records the rest. A changes-requested request resubmitted with every artifact approved again, or with an unchanged artifact whose approval and review are current, goes to the same request.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A revision of artifacts whose earlier request is still open pushes to that request's branch, creates no second request and records new Signoff entries with the same Reference at the current revisions",
+      "A current branch that is not the request's branch is refused naming both branches and nothing is recorded",
+      "A repeat after a failed recording of one artifact records the rest against the same request and opens no pull request",
+      "A changes-requested request resubmitted with a revised artifact and an unchanged artifact whose approval and review are current goes to the same request"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: a resubmission pushes to the request's branch, opens no second request and records new Signoff entries with the same Reference, a branch mismatch records nothing, and a repeat finishes the rest"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: a changes-requested request resubmitted with one revised and one unchanged artifact goes to the same request"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -291,3 +291,16 @@ Decisions on the LLD's three open questions:
 1. **Model change, done now, in s8.** The lifecycle table (`src/workflow/artifact-core/lifecycle.ts`) gets a step so `open-signoff` is also allowed from `changes-requested` when the artifact's approval and other-party review are still of its current revision (unchanged content). An artifact the reviewers did not object to then rejoins the request unchanged, and the LLD's revise-together rule no longer applies to it. The s8 plan carries the table change, its tests, and the changes to the tests that assumed an unchanged changes-requested artifact is refused. Reason: leaving it for later would mean reworking the s8 build.
 2. **Deferred: `define` on an existing Epic is not a claim unit.** A DEF in signoff is not gated against changes by non-holders. Options considered: an Epic-level claim, a dedicated DEF claim unit, freezing the DEF while in signoff, detecting a change at approval. Not decided; to be designed as its own follow-up.
 3. **Deferred, as an s8 follow-up: gate the other content writers.** `resolveComment` (`src/workflow/resolve-comment.ts:248-251`, reached from the `workflow.resolveComment` handler at `src/daemon/index.ts:739-745`) and `appendStoryToDefine` (`src/workflow/gates.ts:209-220`) change a DEF, HLD or LLD body with no team gate, and a content change returns the artifact to draft, so a non-holder can move an artifact in signoff to draft through them. s8 gates the authoring runs only. The follow-up should prefer one shared chokepoint at the draft reset over a call at each writer, if every writer goes through one function.
+
+## s8 build complete: follow-ups from the code review (2026-10-23)
+
+BUILD-315d510cb28100e2-s8 approved by the user after two review rounds (round 1 grounded `warn`, round 2 on the diff `warn`, 0 HIGH). Findings accepted as follow-ups, not fixed:
+
+- MED `signoff.ts` settle: the `since` cutoff is the local time recorded after the push, so a request for changes made between the push and the recording, or with a fast local clock, is dropped. Take the cutoff from the push (commit or PR head-commit time) or subtract a skew margin.
+- LOW `signoff.ts` settle: the latest submission time is picked by comparing ISO strings as text; compare with Date.parse.
+- LOW `storage.ts` `lifecycleKeepingSignoffs`: a fresh draft lifecycle over unchanged content now also keeps prior Signoff entries; no test covers it.
+- LOW `author-gate.ts` `assertHeld`: reads the holder a second time per `revise` turn; let the gate report an unassigned unit instead.
+- LOW `signoff.ts` `resubmit`: the after-publish branch check cannot undo the push.
+- LOW `lifecycle-resignoff.test.ts`: add the header comment and use flat `test()`.
+
+Still deferred from the s8 decisions: gating `define` on an existing Epic; gating the other content writers (`resolveComment`, `appendStoryToDefine`) with 'revise'. Open question outside s8: raw design-run writes (`writeArtifact` in synthesize.ts) append no revision-bearing log entry, so review/approve of a redrafted head may hit `head-ahead-of-log` (core-data-model.md item 3).

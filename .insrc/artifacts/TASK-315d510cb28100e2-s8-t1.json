@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-93c77376-94f2-4573-9caa-a9e58298527a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.150Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Let open-signoff run from changes-requested at an unchanged approved revision",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec1d64db07032d3b97f81a421fef736ff6582de8ca3cb2ad10c731d16b403fa6",
+        "at": "2026-10-23T04:19:19.151Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.152Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Let open-signoff run from changes-requested at an unchanged approved revision",
+    "summary": "Add the lifecycle table step so 'open-signoff' is also legal from changes-requested (the user's decision to handle the model change now), keep the reducer stamping the current revision and appending a new Signoff entry, and make sure the status mirrors, decoders and transition checks accept it. A changes-requested head whose approval is of its current revision can then be submitted again without a content change.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "LIFECYCLE_TABLE lists changes-requested as a source status of open-signoff and no other step changes",
+      "open-signoff from changes-requested appends a new Signoff entry at the current revision with the request Reference and moves the status to in-signoff",
+      "assertLegalStatusChange accepts changes-requested to in-signoff only through open-signoff",
+      "every other operation from changes-requested is as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-resignoff.test.ts: open-signoff from changes-requested appends a Signoff entry at the current revision and moves to in-signoff, and every other operation from changes-requested is as before"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

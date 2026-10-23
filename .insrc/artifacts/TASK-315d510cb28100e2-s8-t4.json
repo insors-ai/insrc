@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0b0acb61-287c-49b4-9729-511982313005",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.156Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Submission prerequisites: review of the current revision and a changes-requested head",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "efa583553d1f8fe042e4b7c249d1290b973d68b31cf08a5c63c4b7749916245e",
+        "at": "2026-10-23T04:19:19.156Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.157Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Submission prerequisites: review of the current revision and a changes-requested head",
+    "summary": "Change prerequisiteFailure so a DEF, HLD or LLD needs a review that exists, is by the other party and is of the head's current revision (an override-approved revision with a stale review is refused), and so a head in changes-requested is accepted for submission when its approval and review are of the current revision (the new lifecycle step) and refused, naming its status, when they are not. A BUILD still uses the Story's code-review record.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "A head whose review is of an earlier revision is refused, including one approved with an override reason, and a review of the current revision is accepted",
+      "A changes-requested head whose approval and review are of its current revision is accepted",
+      "A changes-requested head whose approval revision is behind its current revision (built directly in the test fixture, since a content write of a changes-requested head returns it to draft) is refused with its status and a hint to review and approve it again",
+      "The BUILD rule and every s7 refusal text that is not changed here are as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: prerequisiteFailure refuses a stale review including an override-approved one, accepts a changes-requested head whose approval and review are current, and refuses one whose approval is behind"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

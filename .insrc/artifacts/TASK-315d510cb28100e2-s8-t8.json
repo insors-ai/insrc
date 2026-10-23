@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-009f5aa2-4e05-4164-bf76-4e5f96eb55e2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.164Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "The revise gate on the design.epic and design.story runs",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0a1a99b2d3dd1c33623ee7042b2d66a16f810eae4d3eddf81e08952b209aaea",
+        "at": "2026-10-23T04:19:19.164Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.164Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "The revise gate on the design.epic and design.story runs",
+    "summary": "Make assertMayAuthor ask the gate with 'revise' instead of 'author' when the artifact the run writes (the HLD for design.epic, the LLD for design.story) is in-signoff or changes-requested, and, when the gate allows it, read the holder through teamContext and readHolder and refuse an unassigned unit with a claim-first outcome without taking the claim. A define run and a plan run are not covered. The upstream signoff block stays with settleBeforeAuthor.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "A non-holder re-authoring an HLD or LLD in-signoff or changes-requested is refused with held-by-other naming the holder",
+      "An unassigned unit is refused with a claim-first outcome and no claim is taken",
+      "The holder is allowed, and an artifact in any other status is asked with 'author' as before",
+      "A design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before the gate is asked",
+      "A define run and a plan run reach no revise gate, and a repo with no policy makes no tracker call"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/author-gate-revise.test.ts: assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/author-gate-revise.test.ts: a design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

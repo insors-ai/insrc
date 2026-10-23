@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ebb606fc-f73f-4930-94dd-f606e2a7cedc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.165Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "End-to-end revision flow and the sandbox smoke test",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5c239502317c41ba07d88282399b7e264419492a35a384a2992a7cfbf25e97d0",
+        "at": "2026-10-23T04:19:19.165Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.166Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "End-to-end revision flow and the sandbox smoke test",
+    "summary": "Prove the whole flow through the real gate, lifecycle and content write with an in-memory tracker that has readSignoffRequest and timed reviews: changes requested on a two-artifact request, re-author through writeArtifact with a freshly synthesized head, review and approve again, resubmit to the same request, settle records signed-off for the new revisions only, an unchanged artifact rejoining, a merged request not carried over, and a non-holder and an unassigned user refused; and record the sandbox GitHub smoke test as reported by the builder.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Both artifacts of a changes-requested request, one revised and one unchanged, are resubmitted to the same request and settle records them signed-off together for their current revisions only",
+      "A lingering old request for changes does not cancel the resubmission and a later merge is recorded",
+      "A merged request is not carried over to a later revision, which gets its own request",
+      "A non-holder and an unassigned user are refused at the author entry for an artifact in signoff",
+      "The smoke test result is recorded as reported, not run by the gate"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts: changes requested on a two-artifact request, both re-authored through writeArtifact or one left unchanged, approved again and resubmitted to the same request, settled signed-off for the new revisions only, a lingering old decision not cancelling it, a merged request not carried over, and a non-holder and an unassigned user refused"
+      },
+      {
+        "level": "smoke",
+        "name": "Open a signoff pull request on a sandbox repo, push a revision to the same pull request, merge it, then start the next stage"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

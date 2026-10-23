@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-91382e24-393f-4e68-8443-32291b6bb8c1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T04:19:19.158Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Find the earlier request of the chosen artifacts",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s8-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8fd328ed6a9808e55cff2ce6864caee80c81d3be353331d2bd1e2bfd1a52ef68",
+        "at": "2026-10-23T04:19:19.158Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-23T04:19:19.159Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Find the earlier request of the chosen artifacts",
+    "summary": "Make openSignoff decide, before it publishes anything, which earlier request the chosen artifacts belong to: read the LAST entry of signoffsOfMeta of each head whatever its revision; when it is open or changes-requested ask readSignoffRequest whether that request is still open; refuse artifacts that name different earlier requests; never fall back to a new request when the read itself fails; and fall back to opening a new request, as in s7, when the earlier request is merged or closed, the port has no readSignoffRequest, or there is no earlier entry. This task only decides; it does not push or record.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The earlier request is taken from the last Signoff entry of any revision, not from signoffViewOf",
+      "A failed read of the earlier request returns that failure and opens no new request",
+      "A merged or closed earlier request, a port without readSignoffRequest and a head with no earlier entry each lead to a new request as in s7",
+      "Artifacts naming different earlier open requests are refused as a whole, asking for separate submissions"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: the earlier request is read from the last Signoff entry of any revision, a failed read never opens a new request, and a merged or closed request, a port without readSignoffRequest and no earlier entry each open a new one"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/signoff-revise.test.ts: artifacts naming different earlier open requests are refused as a whole"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

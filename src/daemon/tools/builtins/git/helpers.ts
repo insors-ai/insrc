@@ -155,11 +155,31 @@ export async function readBranch(cwd: string): Promise<PreRead<string | undefine
   return { ok: true, value: name ? name : undefined };
 }
 
+/**
+ * The branch to name in a result or preview: a detached HEAD gives the fallback, and a read that cannot run gives it too,
+ * with a warning that names the read (the call itself does not depend on it).
+ */
+export async function branchForReport(cwd: string, warnings: string[], fallback: string): Promise<string> {
+  const r = await readBranch(cwd);
+  if (!r.ok) {
+    warnings.push(`git symbolic-ref --short HEAD ${failureKind(r.failed)}: the branch is shown as ${JSON.stringify(fallback)}`);
+    return fallback;
+  }
+  return r.value ?? fallback;
+}
+
 /** The number of staged files as a precondition: any read that did not give a count is `failed`. */
 export async function readStagedCount(cwd: string): Promise<PreRead<number>> {
   const res = await runShell(['git', 'diff', '--cached', '--name-only'], { cwd, timeoutMs: 5_000 });
   if (!ranToExit(res) || res.code !== 0) { return { ok: false, failed: res }; }
   return { ok: true, value: res.stdout.split('\n').map(s => s.trim()).filter(Boolean).length };
+}
+
+/** The short sha of a ref as a secondary read: its value, or the command that did not give one. */
+export async function readShortSha(cwd: string, ref: string): Promise<PreRead<string>> {
+  const res = await runShell(['git', 'rev-parse', '--short', ref], { cwd, timeoutMs: 5_000 });
+  if (!ranToExit(res) || res.code !== 0) { return { ok: false, failed: res }; }
+  return { ok: true, value: res.stdout.trim() };
 }
 
 /** Short-SHA for HEAD (or any ref). Returns empty string on failure. */

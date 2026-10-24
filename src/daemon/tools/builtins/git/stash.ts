@@ -11,44 +11,34 @@
  *   show   <ref>           -- show contents (no approval)
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail } from './helpers.js';
+import { GitStashDataSchema } from './schemas.js';
+import type { GitStashData, GitStashEntry } from './schemas.js';
 
 export type GitStashOp = 'list' | 'push' | 'pop' | 'apply' | 'drop' | 'clear' | 'show';
 
-export interface GitStashEntry {
-  ref: string;
-  branch: string;
-  message: string;
-}
-
-export interface GitStashData {
-  op: GitStashOp;
-  entries?: GitStashEntry[];
-  affectedRef?: string;
-  output: string;
-}
+export type { GitStashData, GitStashEntry } from './schemas.js';
 
 export const gitStashTool: Tool = {
   id: 'git_stash',
   description: 'Manage the stash stack. list / show are read-only; push / pop / apply / drop / clear gate.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op: { type: 'string', enum: ['list', 'push', 'pop', 'apply', 'drop', 'clear', 'show'] },
-      message: { type: 'string', description: 'For op=push: stash message.' },
-      ref: { type: 'string', description: 'For op=pop/apply/drop/show: stash ref (default stash@{0}).' },
-      includeUntracked: { type: 'boolean', description: 'For op=push: include untracked files (-u).' },
-      keepIndex: { type: 'boolean', description: 'For op=push: preserve staged changes (--keep-index).' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.Optional(Type.String({ enum: ['list', 'push', 'pop', 'apply', 'drop', 'clear', 'show'] })),
+    message: Type.Optional(Type.String({ description: 'For op=push: stash message.' })),
+    ref: Type.Optional(Type.String({ description: 'For op=pop/apply/drop/show: stash ref (default stash@{0}).' })),
+    includeUntracked: Type.Optional(Type.Boolean({ description: 'For op=push: include untracked files (-u).' })),
+    keepIndex: Type.Optional(Type.Boolean({ description: 'For op=push: preserve staged changes (--keep-index).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitStashDataSchema,
 
+  // list and show are reads; drop and clear discard stash entries; push, pop and apply are ordinary mutations.
   approval(input: ToolInput): ApprovalClass {
     const op = input['op'];
-    return op !== 'list' && op !== 'show' ? 'common' : 'none';
+    return op === 'drop' || op === 'clear' ? 'destructive' : op !== 'list' && op !== 'show' ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -100,6 +90,7 @@ export const gitStashTool: Tool = {
 
     if (op === 'show') {
       const ref = str(input, 'ref') ?? 'stash@{0}';
+      assertSafeArg(ref, 'ref');
       const r = await runShell(['git', 'stash', 'show', '-p', '--no-color', ref], { cwd, timeoutMs: 15_000, maxBytes: 512 * 1024 });
       if (r.spawnError) { return spawnFail('git_stash', r.stderr); }
       if (r.code !== 0) { return fail('git_stash', r); }
@@ -115,7 +106,7 @@ export const gitStashTool: Tool = {
       if (message) { argv.push('-m', message); }
     } else if (op === 'pop' || op === 'apply' || op === 'drop') {
       const ref = str(input, 'ref');
-      if (ref) { argv.push(ref); }
+      if (ref) { assertSafeArg(ref, 'ref'); argv.push(ref); }
     }
 
     const r = await runShell(argv, { cwd, timeoutMs: 30_000 });

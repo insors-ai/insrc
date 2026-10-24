@@ -10,39 +10,41 @@
  *     name (main / master / release/*)
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, spawnFail, readBranch, readFailure, revParse, rejectInput } from './helpers.js';
+import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, assertSafeArg, fail, failureKind, spawnFail, readBranch, readFailure, readShortSha, rejectInput } from './helpers.js';
+import { GitPushDataSchema } from './schemas.js';
+import type { GitPushData } from './schemas.js';
 
-export interface GitPushData {
-  remote: string;
-  ref: string;
-  pushed: boolean;
-  shortSha: string;
-  forceMode?: 'none' | 'lease' | 'raw';
-}
+export type { GitPushData } from './schemas.js';
 
 const PROTECTED_REFS = /^(main|master|release\/|trunk)/i;
 
 export const gitPushTool: Tool = {
   id: 'git_push',
   description: 'Push a branch or tag to a remote. Gates with target preview; refuses force-push to protected refs.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      remote: { type: 'string', description: 'Remote name. Default: `origin`.' },
-      ref: { type: 'string', description: 'Ref to push. Default: current branch.' },
-      setUpstream: { type: 'boolean', description: 'Pass -u to set tracking.' },
-      force: { type: 'boolean', description: 'Use --force-with-lease (safer than raw --force).' },
-      forceRaw: { type: 'boolean', description: 'Use raw --force. Refused on protected refs unless forceToMain:true.' },
-      forceToMain: { type: 'boolean', description: 'Allow force push to main / master / release/*. Use with extreme care.' },
-      tags: { type: 'boolean', description: 'Pass --follow-tags to include annotated tags.' },
-      dryRun: { type: 'boolean', description: 'Don\'t actually push; just report what would happen.' },
-    },
-    additionalProperties: false,
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    remote: Type.Optional(Type.String({ description: 'Remote name. Default: `origin`.' })),
+    ref: Type.Optional(Type.String({ description: 'Ref to push. Default: current branch.' })),
+    setUpstream: Type.Optional(Type.Boolean({ description: 'Pass -u to set tracking.' })),
+    force: Type.Optional(Type.Boolean({ description: 'Use --force-with-lease (safer than raw --force).' })),
+    forceRaw: Type.Optional(Type.Boolean({ description: 'Use raw --force. Refused on protected refs unless forceToMain:true.' })),
+    forceToMain: Type.Optional(Type.Boolean({ description: 'Allow force push to main / master / release/*. Use with extreme care.' })),
+    tags: Type.Optional(Type.Boolean({ description: 'Pass --follow-tags to include annotated tags.' })),
+    dryRun: Type.Optional(Type.Boolean({ description: 'Don\'t actually push; just report what would happen.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitPushDataSchema,
+
+  // A forced push (any force flag, a '+' refspec) rewrites the remote's history and an empty-source refspec such as ':dev'
+  // deletes a remote ref: destructive. A push of a branch or tag name, or of 'src:dst', is ordinary.
+  approval(input: ToolInput): ApprovalClass {
+    if (input['force'] === true || input['forceRaw'] === true || input['forceToMain'] === true) { return 'destructive'; }
+    const ref = input['ref'];
+    if (typeof ref === 'string' && (ref.startsWith('+') || ref.startsWith(':'))) { return 'destructive'; }
+    return 'common';
   },
-  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());
@@ -80,7 +82,9 @@ export const gitPushTool: Tool = {
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const remote = str(input, 'remote') ?? 'origin';
+    assertSafeArg(remote, 'ref');
     let ref = str(input, 'ref');
+    if (ref !== undefined) { assertSafeArg(ref, 'ref'); }
     if (!ref) {
       const brRead = await readBranch(cwd);
       if (!brRead.ok) { return readFailure('git_push', brRead.failed); }
@@ -118,13 +122,18 @@ export const gitPushTool: Tool = {
     if (result.spawnError) { return spawnFail('git_push', result.stderr); }
     if (result.code !== 0) { return fail('git_push', result, { network: true, mutating: true }); }
 
-    const shortSha = await revParse(cwd, ref);
+    // The push has happened: the short sha of what was pushed only adds detail, so a read that fails is a warning.
+    // A '+' refspec pushes its source; an empty source (':dev') deletes the remote ref and has no sha.
+    const source = ref.replace(/^\+/, '').split(':')[0] ?? '';
+    const shaRead = source === '' ? undefined : await readShortSha(cwd, source);
+    const shortSha = shaRead?.ok ? shaRead.value : '';
     const data: GitPushData = {
       remote,
       ref,
       pushed: !dryRun,
       shortSha,
       forceMode: forceRaw ? 'raw' : force ? 'lease' : 'none',
+      ...(shaRead !== undefined && !shaRead.ok ? { warnings: [`git rev-parse --short ${source} ${failureKind(shaRead.failed)}: the short sha is empty`] } : {}),
     };
     const body = [
       dryRun ? `Dry-run OK -- would push \`${ref}\` -> \`${remote}\`.` : `Pushed \`${ref}\` -> \`${remote}\` at \`${shortSha}\`.`,

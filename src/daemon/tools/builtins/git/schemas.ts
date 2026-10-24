@@ -140,3 +140,194 @@ export const GitStageDataSchema = Type.Object({
   warnings: warnings(),
 });
 export type GitStageData = Static<typeof GitStageDataSchema>;
+
+// ---- the other tools -------------------------------------------------------
+
+const lits = <T extends string>(...v: T[]) => Type.Union(v.map(x => Type.Literal(x)));
+
+export const GitBranchEntrySchema = Type.Object({
+  name: Type.String(),
+  current: Type.Boolean(),
+  /** Upstream (e.g. `origin/main`) when tracking. */
+  upstream: Type.Optional(Type.String()),
+  /** Last commit on this branch -- short SHA. */
+  shortSha: Type.String(),
+  /** Last commit subject. */
+  subject: Type.String(),
+});
+export type GitBranchEntry = Static<typeof GitBranchEntrySchema>;
+export const GitBranchDataSchema = Type.Object({
+  op: lits('list', 'create', 'switch', 'delete'),
+  branches: Type.Optional(Type.Array(GitBranchEntrySchema)),
+  /** For create / switch / delete: the affected branch name. */
+  target: Type.Optional(Type.String()),
+  /** For switch: the previous branch (for easy revert). */
+  previous: Type.Optional(Type.String()),
+  warnings: warnings(),
+});
+export type GitBranchData = Static<typeof GitBranchDataSchema>;
+
+export const GitTagEntrySchema = Type.Object({
+  name: Type.String(),
+  /** Annotated tag subject if present, or commit subject. */
+  subject: Type.String(),
+  shortSha: Type.String(),
+});
+export type GitTagEntry = Static<typeof GitTagEntrySchema>;
+export const GitTagDataSchema = Type.Object({
+  op: lits('list', 'create', 'delete'),
+  tags: Type.Optional(Type.Array(GitTagEntrySchema)),
+  target: Type.Optional(Type.String()),
+});
+export type GitTagData = Static<typeof GitTagDataSchema>;
+
+export const GitRemoteEntrySchema = Type.Object({ name: Type.String(), fetchUrl: Type.String(), pushUrl: Type.String() });
+export type GitRemoteEntry = Static<typeof GitRemoteEntrySchema>;
+export const GitRemoteDataSchema = Type.Object({
+  op: lits('list', 'add', 'remove', 'set-url', 'rename'),
+  remotes: Type.Optional(Type.Array(GitRemoteEntrySchema)),
+  name: Type.Optional(Type.String()),
+  url: Type.Optional(Type.String()),
+  newName: Type.Optional(Type.String()),
+});
+export type GitRemoteData = Static<typeof GitRemoteDataSchema>;
+
+export const GitStashEntrySchema = Type.Object({ ref: Type.String(), branch: Type.String(), message: Type.String() });
+export type GitStashEntry = Static<typeof GitStashEntrySchema>;
+export const GitStashDataSchema = Type.Object({
+  op: lits('list', 'push', 'pop', 'apply', 'drop', 'clear', 'show'),
+  entries: Type.Optional(Type.Array(GitStashEntrySchema)),
+  affectedRef: Type.Optional(Type.String()),
+  output: Type.String(),
+});
+export type GitStashData = Static<typeof GitStashDataSchema>;
+
+export const GitWorktreeEntrySchema = Type.Object({
+  path: Type.String(),
+  head: Type.String(),
+  branch: Type.Optional(Type.String()),
+  detached: Type.Boolean(),
+  locked: Type.Boolean(),
+  prunable: Type.Boolean(),
+});
+export type GitWorktreeEntry = Static<typeof GitWorktreeEntrySchema>;
+export const GitWorktreeDataSchema = Type.Object({
+  op: lits('list', 'add', 'remove', 'move', 'prune'),
+  worktrees: Type.Optional(Type.Array(GitWorktreeEntrySchema)),
+  path: Type.Optional(Type.String()),
+  branch: Type.Optional(Type.String()),
+  newPath: Type.Optional(Type.String()),
+});
+export type GitWorktreeData = Static<typeof GitWorktreeDataSchema>;
+
+export const GitCheckoutDataSchema = Type.Object({
+  mode: lits('ref', 'path'),
+  ref: Type.Optional(Type.String()),
+  paths: Type.Optional(Type.Array(Type.String())),
+  previous: Type.Optional(Type.String()),
+  warnings: warnings(),
+});
+export type GitCheckoutData = Static<typeof GitCheckoutDataSchema>;
+
+export const GitResetDataSchema = Type.Object({
+  mode: lits('soft', 'mixed', 'hard'),
+  ref: Type.String(),
+  branch: Type.String(),
+  previousShortSha: Type.String(),
+  requiresForcePush: Type.Boolean(),
+  warnings: warnings(),
+});
+export type GitResetData = Static<typeof GitResetDataSchema>;
+
+export const GitPushDataSchema = Type.Object({
+  remote: Type.String(),
+  ref: Type.String(),
+  pushed: Type.Boolean(),
+  shortSha: Type.String(),
+  forceMode: Type.Optional(lits('none', 'lease', 'raw')),
+  warnings: warnings(),
+});
+export type GitPushData = Static<typeof GitPushDataSchema>;
+
+export const GitCommitDataSchema = Type.Object({
+  sha: Type.String(),
+  shortSha: Type.String(),
+  branch: Type.String(),
+  filesChanged: Type.Number(),
+  insertions: Type.Number(),
+  deletions: Type.Number(),
+  message: Type.String(),
+  warnings: warnings(),
+});
+export type GitCommitData = Static<typeof GitCommitDataSchema>;
+
+export const GitAmendDataSchema = Type.Object({
+  sha: Type.String(),
+  shortSha: Type.String(),
+  branch: Type.String(),
+  mode: lits('message', 'staged'),
+  message: Type.String(),
+  /** True when HEAD was already pushed to the tracked upstream before the amend. */
+  requiresForcePush: Type.Boolean(),
+  warnings: warnings(),
+});
+export type GitAmendData = Static<typeof GitAmendDataSchema>;
+
+export const GitPullDataSchema = Type.Object({
+  remote: Type.String(),
+  branch: Type.String(),
+  mode: lits('ff-only', 'merge', 'rebase'),
+  /** Stdout/stderr from git pull -- free-form. */
+  output: Type.String(),
+});
+export type GitPullData = Static<typeof GitPullDataSchema>;
+
+export const GitFetchDataSchema = Type.Object({
+  remote: Type.String(),
+  /** Individual update lines parsed from stderr (e.g. "  abc..def  main -> origin/main"). */
+  updates: Type.Array(Type.String()),
+  /** Raw stderr so the caller can inspect pruned / forced updates if interested. */
+  raw: Type.String(),
+});
+export type GitFetchData = Static<typeof GitFetchDataSchema>;
+
+export const GitMergeDataSchema = Type.Object({
+  ref: Type.String(),
+  branch: Type.String(),
+  strategy: lits('ff-only', 'no-ff', 'default', 'squash'),
+  merged: Type.Boolean(),
+  inConflict: Type.Boolean(),
+  conflicts: Type.Array(Type.String()),
+  warnings: warnings(),
+});
+export type GitMergeData = Static<typeof GitMergeDataSchema>;
+
+export const GitRebaseDataSchema = Type.Object({
+  op: lits('start', 'continue', 'abort', 'skip'),
+  onto: Type.Optional(Type.String()),
+  branch: Type.String(),
+  inConflict: Type.Boolean(),
+  conflicts: Type.Array(Type.String()),
+  /** HEAD short SHA after the rebase (success only). */
+  shortSha: Type.Optional(Type.String()),
+  warnings: warnings(),
+});
+export type GitRebaseData = Static<typeof GitRebaseDataSchema>;
+
+export const GitRevertDataSchema = Type.Object({
+  op: lits('start', 'continue', 'abort', 'skip'),
+  refs: Type.Array(Type.String()),
+  inConflict: Type.Boolean(),
+  conflicts: Type.Array(Type.String()),
+  warnings: warnings(),
+});
+export type GitRevertData = Static<typeof GitRevertDataSchema>;
+
+export const GitCherryPickDataSchema = Type.Object({
+  op: lits('start', 'continue', 'abort', 'skip'),
+  refs: Type.Array(Type.String()),
+  inConflict: Type.Boolean(),
+  conflicts: Type.Array(Type.String()),
+  warnings: warnings(),
+});
+export type GitCherryPickData = Static<typeof GitCherryPickDataSchema>;

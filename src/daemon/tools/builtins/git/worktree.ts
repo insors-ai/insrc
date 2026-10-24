@@ -2,50 +2,36 @@
  * git:worktree -- list / add / remove / move worktrees.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, rejectInput } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
+import { GitWorktreeDataSchema } from './schemas.js';
+import type { GitWorktreeData, GitWorktreeEntry } from './schemas.js';
 
 export type GitWorktreeOp = 'list' | 'add' | 'remove' | 'move' | 'prune';
 
-export interface GitWorktreeEntry {
-  path: string;
-  head: string;
-  branch?: string;
-  detached: boolean;
-  locked: boolean;
-  prunable: boolean;
-}
-
-export interface GitWorktreeData {
-  op: GitWorktreeOp;
-  worktrees?: GitWorktreeEntry[];
-  path?: string;
-  branch?: string;
-  newPath?: string;
-}
+export type { GitWorktreeData, GitWorktreeEntry } from './schemas.js';
 
 export const gitWorktreeTool: Tool = {
   id: 'git_worktree',
   description: 'Manage git worktrees. list is read-only; add / remove / move / prune gate.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op:  { type: 'string', enum: ['list', 'add', 'remove', 'move', 'prune'] },
-      path: { type: 'string', description: 'Worktree path (add / remove / move source).' },
-      branch: { type: 'string', description: 'For add: branch to check out (or create).' },
-      createBranch: { type: 'boolean', description: 'For add: create the branch (-b).' },
-      detach: { type: 'boolean', description: 'For add: detach HEAD instead of checking out a branch.' },
-      force: { type: 'boolean', description: 'For remove / prune: -f.' },
-      newPath: { type: 'string', description: 'For move.' },
-    },
-    required: ['op'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.String({ enum: ['list', 'add', 'remove', 'move', 'prune'] }),
+    path: Type.Optional(Type.String({ description: 'Worktree path (add / remove / move source).' })),
+    branch: Type.Optional(Type.String({ description: 'For add: branch to check out (or create).' })),
+    createBranch: Type.Optional(Type.Boolean({ description: 'For add: create the branch (-b).' })),
+    detach: Type.Optional(Type.Boolean({ description: 'For add: detach HEAD instead of checking out a branch.' })),
+    force: Type.Optional(Type.Boolean({ description: 'For remove / prune: -f.' })),
+    newPath: Type.Optional(Type.String({ description: 'For move.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitWorktreeDataSchema,
 
+  // list is a read; a forced remove discards a worktree with uncommitted work; the other mutations are ordinary.
   approval(input: ToolInput): ApprovalClass {
-    return input['op'] !== 'list' ? 'common' : 'none';
+    if (input['op'] === 'list') { return 'none'; }
+    return input['op'] === 'remove' && input['force'] === true ? 'destructive' : 'common';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -98,10 +84,12 @@ export const gitWorktreeTool: Tool = {
     if (op === 'add') {
       if (!path) { return rejectInput('git_worktree', 'add requires path'); }
       const branch = str(input, 'branch');
+      assertSafeArg(path, 'path');
+      if (branch !== undefined) { assertSafeArg(branch, 'ref'); }
       const argv = ['git', 'worktree', 'add'];
       if (input['detach'] === true) { argv.push('--detach'); }
       else if (input['createBranch'] === true && branch) { argv.push('-b', branch); }
-      argv.push(path);
+      argv.push('--', path);
       if (branch && input['createBranch'] !== true && input['detach'] !== true) {
         argv.push(branch);
       }
@@ -115,7 +103,8 @@ export const gitWorktreeTool: Tool = {
       if (!path) { return rejectInput('git_worktree', 'remove requires path'); }
       const argv = ['git', 'worktree', 'remove'];
       if (input['force'] === true) { argv.push('-f'); }
-      argv.push(path);
+      assertSafeArg(path, 'path');
+      argv.push('--', path);
       const r = await runShell(argv, { cwd, timeoutMs: 30_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
       if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
@@ -125,7 +114,8 @@ export const gitWorktreeTool: Tool = {
     if (op === 'move') {
       const newPath = str(input, 'newPath');
       if (!path || !newPath) { return rejectInput('git_worktree', 'move requires path + newPath'); }
-      const r = await runShell(['git', 'worktree', 'move', path, newPath], { cwd, timeoutMs: 30_000 });
+      assertSafeArg(path, 'path'); assertSafeArg(newPath, 'path');
+      const r = await runShell(['git', 'worktree', 'move', '--', path, newPath], { cwd, timeoutMs: 30_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }
       if (r.code !== 0) { return fail('git_worktree', r, { mutating: true }); }
       return { output: `Moved worktree \`${path}\` -> \`${newPath}\`.`, format: 'markdown', success: true, data: { op, path, newPath } satisfies GitWorktreeData };

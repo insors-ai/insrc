@@ -12,38 +12,29 @@
  * push will be needed.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
+import { str, branchForReport, fail, failureKind, ranToExit, readFailure, readShortSha, spawnFail, rejectInput } from './helpers.js';
+import { GitAmendDataSchema } from './schemas.js';
+import type { GitAmendData } from './schemas.js';
 import type { ShellResult } from '../../shell-helper.js';
 
 export type GitAmendMode = 'message' | 'staged';
 
-export interface GitAmendData {
-  sha: string;
-  shortSha: string;
-  branch: string;
-  mode: GitAmendMode;
-  message: string;
-  /** True when HEAD was already pushed to the tracked upstream before the amend. */
-  requiresForcePush: boolean;
-}
+export type { GitAmendData } from './schemas.js';
 
 export const gitAmendTool: Tool = {
   id: 'git_amend',
   description: 'Amend the most recent commit. mode=message rewrites only the text; mode=staged folds staged changes in.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      mode: { type: 'string', enum: ['message', 'staged'], description: 'message = rewrite message only; staged = fold staged changes in.' },
-      message: { type: 'string', description: 'New message. Optional for mode=staged (keeps existing message if omitted).' },
-      signoff: { type: 'boolean', description: 'Add Signed-off-by trailer.' },
-      verifyHooks: { type: 'boolean', description: 'Run commit hooks (default true).' },
-    },
-    required: ['mode'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    mode: Type.String({ enum: ['message', 'staged'], description: 'message = rewrite message only; staged = fold staged changes in.' }),
+    message: Type.Optional(Type.String({ description: 'New message. Optional for mode=staged (keeps existing message if omitted).' })),
+    signoff: Type.Optional(Type.Boolean({ description: 'Add Signed-off-by trailer.' })),
+    verifyHooks: Type.Optional(Type.Boolean({ description: 'Run commit hooks (default true).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitAmendDataSchema,
   approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
@@ -84,7 +75,9 @@ export const gitAmendTool: Tool = {
 
     if (mode !== 'staged' && !message) { return rejectInput('git_amend', 'mode=message requires a message'); }
 
-    const branch = await currentBranch(cwd) ?? '(detached)';
+    // The branch only labels the answer, so a read that fails is a warning.
+    const warnings: string[] = [];
+    const branch = await branchForReport(cwd, warnings, '(detached)');
     // Amending a pushed commit is the risk this read guards, so a read that did not run is not an answer.
     const pushed = await wasPushed(cwd);
     if (!pushed.ok) { return readFailure('git_amend', pushed.failed); }
@@ -106,15 +99,25 @@ export const gitAmendTool: Tool = {
     if (result.spawnError) { return spawnFail('git_amend', result.stderr); }
     if (result.code !== 0) { return fail('git_amend', result, { mutating: true }); }
 
-    const short = await revParse(cwd, 'HEAD');
+    // The amend has happened: reads that only add detail keep their placeholders and are named in data.warnings.
+    const shortRead = await readShortSha(cwd, 'HEAD');
+    const short = shortRead.ok ? shortRead.value : '';
+    if (!shortRead.ok) { warnings.push(`git rev-parse --short HEAD ${failureKind(shortRead.failed)}: the short sha is empty`); }
     const long = await runShell(['git', 'rev-parse', 'HEAD'], { cwd, timeoutMs: 5_000 });
-    const sha = long.code === 0 ? long.stdout.trim() : '';
+    const longOk = ranToExit(long) && long.code === 0;
+    const sha = longOk ? long.stdout.trim() : '';
+    if (!longOk) { warnings.push(`git rev-parse HEAD ${failureKind(long)}: the sha is empty`); }
 
     // Fetch the actual (possibly rewritten) message to echo back.
     const msgRes = await runShell(['git', 'log', '-1', '--pretty=%B', 'HEAD'], { cwd, timeoutMs: 5_000 });
-    const finalMessage = msgRes.code === 0 ? msgRes.stdout.trimEnd() : message ?? '';
+    const msgOk = ranToExit(msgRes) && msgRes.code === 0;
+    const finalMessage = msgOk ? msgRes.stdout.trimEnd() : message ?? '';
+    if (!msgOk) { warnings.push(`git log -1 HEAD ${failureKind(msgRes)}: the message is the one supplied`); }
 
-    const data: GitAmendData = { sha, shortSha: short, branch, mode, message: finalMessage, requiresForcePush };
+    const data: GitAmendData = {
+      sha, shortSha: short, branch, mode, message: finalMessage, requiresForcePush,
+      ...(warnings.length > 0 ? { warnings } : {}),
+    };
 
     const lines: string[] = [
       `Amended HEAD -> \`${short}\` on **${branch}**.`,

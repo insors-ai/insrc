@@ -33,6 +33,9 @@ interface SnapshotTool {
 }
 const snapshot = (JSON.parse(readFileSync(join(HERE, 'fixtures', 'approval-snapshot.json'), 'utf8')) as { tools: SnapshotTool[] }).tools;
 
+/** Former requiresApproval-true tools that Story s4 turned into per-input classes. */
+const PER_INPUT_SINCE_S4 = new Set(['git_reset', 'git_push', 'git_checkout']);
+
 registerBuiltinTools();
 const live = new Map(listTools().map(t => [t.id, t]));
 
@@ -44,11 +47,20 @@ test('approval-class-mapping.test.ts: every former requiresApproval true builtin
 		assert.ok(tool, `${old.id} is still registered`);
 		if (old.destructive) continue; // covered by the next test
 		if (old.requiresApproval === 'true') {
-			assert.equal(tool.approval, 'common', old.id); counts.common += 1;
+			if (PER_INPUT_SINCE_S4.has(old.id)) {
+				// s4 made these per-input (destructive for hard reset, forced push, checkout of a path): still never none
+				assert.equal(typeof tool.approval, 'function', old.id);
+				assert.ok(['common', 'destructive'].includes(resolveApprovalClass(tool, {})), old.id);
+			} else {
+				assert.equal(tool.approval, 'common', old.id);
+			}
+			counts.common += 1;
 		} else if (old.requiresApproval === 'function') {
 			assert.equal(typeof tool.approval, 'function', old.id);
 			for (const p of old.probes!) {
-				assert.equal(resolveApprovalClass(tool, p.input), p.asks ? 'common' : 'none', `${old.id} ${JSON.stringify(p.input)}`);
+				// a call that asked stays asking (s4 marks some of them destructive); a read stays none
+				const cls = resolveApprovalClass(tool, p.input);
+				assert.ok(p.asks ? cls === 'common' || cls === 'destructive' : cls === 'none', `${old.id} ${JSON.stringify(p.input)} is ${cls}`);
 			}
 			counts.perInput += 1;
 		} else {

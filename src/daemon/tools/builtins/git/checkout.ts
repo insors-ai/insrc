@@ -10,39 +10,33 @@
  *                   paths unconditionally; the gate must be explicit.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, assertSafeArg, fail, failureKind, readBranch, spawnFail, rejectInput } from './helpers.js';
+import { GitCheckoutDataSchema } from './schemas.js';
+import type { GitCheckoutData } from './schemas.js';
 
 export type GitCheckoutMode = 'ref' | 'path';
 
-export interface GitCheckoutData {
-  mode: GitCheckoutMode;
-  ref?: string;
-  paths?: string[];
-  previous?: string;
-}
+export type { GitCheckoutData } from './schemas.js';
 
 export const gitCheckoutTool: Tool = {
   id: 'git_checkout',
   description: 'Switch HEAD to a ref, or restore specific paths to a ref\'s state. Destructive; gates with a warning.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      mode: { type: 'string', enum: ['ref', 'path'], description: 'ref = change HEAD; path = restore file contents.' },
-      ref: { type: 'string', description: 'Target ref. Required for mode=ref; optional for mode=path (default HEAD).' },
-      paths: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Paths to restore. Required for mode=path.',
-      },
-      discard: { type: 'boolean', description: 'mode=ref: allow overwriting uncommitted changes (-f). Use with care.' },
-    },
-    required: ['mode'],
-    additionalProperties: false,
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    mode: Type.String({ enum: ['ref', 'path'], description: 'ref = change HEAD; path = restore file contents.' }),
+    ref: Type.Optional(Type.String({ description: 'Target ref. Required for mode=ref; optional for mode=path (default HEAD).' })),
+    paths: Type.Optional(Type.Array(Type.String(), { description: 'Paths to restore. Required for mode=path.' })),
+    discard: Type.Optional(Type.Boolean({ description: 'mode=ref: allow overwriting uncommitted changes (-f). Use with care.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitCheckoutDataSchema,
+
+  // Restoring paths overwrites uncommitted edits and a forced switch overwrites the worktree: destructive. A plain switch is ordinary.
+  approval(input: ToolInput): ApprovalClass {
+    return input['mode'] === 'path' || input['discard'] === true ? 'destructive' : 'common';
   },
-  approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
     const cwd = String(input['cwd'] ?? process.cwd());
@@ -83,14 +77,20 @@ export const gitCheckoutTool: Tool = {
     if (mode === 'ref') {
       const ref = str(input, 'ref');
       if (!ref) { return rejectInput('git_checkout', 'mode=ref requires ref'); }
-      const previous = await currentBranch(cwd);
+      assertSafeArg(ref, 'ref');
+      // The previous branch only adds detail to the answer: a read that fails is a warning.
+      const prevRead = await readBranch(cwd);
+      const previous = prevRead.ok ? prevRead.value : undefined;
       const argv = ['git', 'switch'];
       if (input['discard'] === true) { argv.push('--force'); }
       argv.push(ref);
       const result = await runShell(argv, { cwd, timeoutMs: 15_000 });
       if (result.spawnError) { return spawnFail('git_checkout', result.stderr); }
       if (result.code !== 0) { return fail('git_checkout', result, { mutating: true }); }
-      const data: GitCheckoutData = { mode, ref, ...(previous ? { previous } : {}) };
+      const data: GitCheckoutData = {
+        mode, ref, ...(previous ? { previous } : {}),
+        ...(prevRead.ok ? {} : { warnings: [`git symbolic-ref --short HEAD ${failureKind(prevRead.failed)}: the previous branch is unknown`] }),
+      };
       return {
         output: previous
           ? `Switched HEAD from **${previous}** to **${ref}**.`
@@ -103,6 +103,8 @@ export const gitCheckoutTool: Tool = {
     const ref = str(input, 'ref') ?? 'HEAD';
     const paths = Array.isArray(input['paths']) ? (input['paths'] as unknown[]).map(String).filter(Boolean) : [];
     if (paths.length === 0) { return rejectInput('git_checkout', 'mode=path requires paths'); }
+    assertSafeArg(ref, 'ref');
+    for (const p of paths) { assertSafeArg(p, 'path'); }
 
     const argv = ['git', 'restore', '--source', ref, '--worktree', '--', ...paths];
     const result = await runShell(argv, { cwd, timeoutMs: 15_000 });

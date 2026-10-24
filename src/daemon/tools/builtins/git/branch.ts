@@ -10,52 +10,34 @@
  * the destruction explicit.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { fail, spawnFail, rejectInput } from './helpers.js';
+import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, rejectInput } from './helpers.js';
+import { GitBranchDataSchema } from './schemas.js';
+import type { GitBranchData, GitBranchEntry } from './schemas.js';
 
 export type GitBranchOp = 'list' | 'create' | 'switch' | 'delete';
 
-export interface GitBranchEntry {
-  name: string;
-  current: boolean;
-  /** Upstream (e.g. `origin/main`) when tracking. */
-  upstream?: string | undefined;
-  /** Last commit on this branch -- short SHA. */
-  shortSha: string;
-  /** Last commit subject. */
-  subject: string;
-}
-
-export interface GitBranchData {
-  op: GitBranchOp;
-  branches?: GitBranchEntry[];
-  /** For create / switch / delete: the affected branch name. */
-  target?: string;
-  /** For switch: the previous branch (for easy revert). */
-  previous?: string;
-}
+export type { GitBranchData, GitBranchEntry } from './schemas.js';
 
 export const gitBranchTool: Tool = {
   id: 'git_branch',
   description: 'List / create / switch / delete branches. op=list is read-only; others gate.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root. Defaults to process cwd.' },
-      op:  { type: 'string', enum: ['list', 'create', 'switch', 'delete'], description: 'Operation to perform.' },
-      name: { type: 'string', description: 'Branch name (required for create / switch / delete).' },
-      startPoint: { type: 'string', description: 'Start point for create (commit / branch / tag). Default HEAD.' },
-      remote: { type: 'boolean', description: 'For list: also list remote branches.' },
-      force: { type: 'boolean', description: 'For delete: use -D to remove unmerged branches. Use with care.' },
-      track: { type: 'boolean', description: 'For create: set upstream to startPoint (implies --track).' },
-    },
-    required: ['op'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
+    op: Type.String({ enum: ['list', 'create', 'switch', 'delete'], description: 'Operation to perform.' }),
+    name: Type.Optional(Type.String({ description: 'Branch name (required for create / switch / delete).' })),
+    startPoint: Type.Optional(Type.String({ description: 'Start point for create (commit / branch / tag). Default HEAD.' })),
+    remote: Type.Optional(Type.Boolean({ description: 'For list: also list remote branches.' })),
+    force: Type.Optional(Type.Boolean({ description: 'For delete: use -D to remove unmerged branches. Use with care.' })),
+    track: Type.Optional(Type.Boolean({ description: 'For create: set upstream to startPoint (implies --track).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitBranchDataSchema,
 
+  // list is a read; delete (forced or not) removes a branch name; create and switch are ordinary mutations.
   approval(input: ToolInput): ApprovalClass {
-    return input['op'] !== 'list' ? 'common' : 'none';
+    return input['op'] === 'delete' ? 'destructive' : input['op'] !== 'list' ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -150,6 +132,8 @@ async function createBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
   const name = str(input, 'name');
   if (!name) { return rejectInput('git_branch', 'missing name for create'); }
   const startPoint = str(input, 'startPoint');
+  assertSafeArg(name, 'ref');
+  if (startPoint !== undefined) { assertSafeArg(startPoint, 'ref'); }
   const track = input['track'] === true;
 
   const argv = ['git', 'branch'];
@@ -177,16 +161,21 @@ async function createBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 async function switchBranch(cwd: string, input: ToolInput): Promise<ToolResult> {
   const name = str(input, 'name');
   if (!name) { return rejectInput('git_branch', 'missing name for switch'); }
+  assertSafeArg(name, 'ref');
 
-  // Capture previous branch for audit trail.
+  // Capture previous branch for audit trail: it only adds detail, so a read that fails is a warning.
   const head = await runShell(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], { cwd, timeoutMs: 5_000 });
-  const previous = head.code === 0 ? head.stdout.trim() : undefined;
+  const headOk = ranToExit(head) && head.code === 0;
+  const previous = headOk ? head.stdout.trim() : undefined;
 
   const result = await runShell(['git', 'switch', name], { cwd, timeoutMs: 10_000 });
   if (result.spawnError) { return spawnFail('git_branch', result.stderr); }
   if (result.code !== 0) { return fail('git_branch', result, { mutating: true }); }
 
-  const data: GitBranchData = { op: 'switch', target: name, ...(previous ? { previous } : {}) };
+  const data: GitBranchData = {
+    op: 'switch', target: name, ...(previous ? { previous } : {}),
+    ...(headOk ? {} : { warnings: [`git rev-parse --abbrev-ref HEAD ${failureKind(head)}: the previous branch is unknown`] }),
+  };
   return {
     output: previous
       ? `Switched from **${previous}** to **${name}**.`
@@ -204,6 +193,7 @@ async function switchBranch(cwd: string, input: ToolInput): Promise<ToolResult> 
 async function deleteBranch(cwd: string, input: ToolInput): Promise<ToolResult> {
   const name = str(input, 'name');
   if (!name) { return rejectInput('git_branch', 'missing name for delete'); }
+  assertSafeArg(name, 'ref');
   const force = input['force'] === true;
 
   const argv = ['git', 'branch', force ? '-D' : '-d', name];

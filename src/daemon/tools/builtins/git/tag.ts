@@ -2,44 +2,33 @@
  * git:tag -- list / create / delete tags.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, rejectInput } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
+import { GitTagDataSchema } from './schemas.js';
+import type { GitTagData, GitTagEntry } from './schemas.js';
 
 export type GitTagOp = 'list' | 'create' | 'delete';
 
-export interface GitTagEntry {
-  name: string;
-  /** Annotated tag subject if present, or commit subject. */
-  subject: string;
-  shortSha: string;
-}
-
-export interface GitTagData {
-  op: GitTagOp;
-  tags?: GitTagEntry[];
-  target?: string;
-}
+export type { GitTagData, GitTagEntry } from './schemas.js';
 
 export const gitTagTool: Tool = {
   id: 'git_tag',
   description: 'List / create / delete tags. list is read-only; create and delete gate.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op:  { type: 'string', enum: ['list', 'create', 'delete'] },
-      name: { type: 'string', description: 'Tag name (create / delete).' },
-      ref:  { type: 'string', description: 'Commit to tag (create). Default HEAD.' },
-      message: { type: 'string', description: 'Annotated-tag message. Omit for a lightweight tag.' },
-      pattern: { type: 'string', description: 'For list: glob pattern (e.g. "v*").' },
-    },
-    required: ['op'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.String({ enum: ['list', 'create', 'delete'] }),
+    name: Type.Optional(Type.String({ description: 'Tag name (create / delete).' })),
+    ref: Type.Optional(Type.String({ description: 'Commit to tag (create). Default HEAD.' })),
+    message: Type.Optional(Type.String({ description: 'Annotated-tag message. Omit for a lightweight tag.' })),
+    pattern: Type.Optional(Type.String({ description: 'For list: glob pattern (e.g. "v*").' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitTagDataSchema,
 
+  // list is a read; delete removes a tag name; create is an ordinary mutation.
   approval(input: ToolInput): ApprovalClass {
-    return input['op'] !== 'list' ? 'common' : 'none';
+    return input['op'] === 'delete' ? 'destructive' : input['op'] !== 'list' ? 'common' : 'none';
   },
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -68,6 +57,7 @@ export const gitTagTool: Tool = {
 
     if (op === 'list') {
       const pattern = str(input, 'pattern');
+      if (pattern !== undefined) { assertSafeArg(pattern, 'ref'); }
       const argv = [
         'git', 'tag', '--list',
         '--format=%(refname:short)%09%(objectname:short)%09%(contents:subject)',
@@ -92,9 +82,11 @@ export const gitTagTool: Tool = {
 
     const name = str(input, 'name');
     if (!name) { return rejectInput('git_tag', `missing name for ${op}`); }
+    assertSafeArg(name, 'ref');
 
     if (op === 'create') {
       const ref = str(input, 'ref') ?? 'HEAD';
+      assertSafeArg(ref, 'ref');
       const msg = str(input, 'message');
       const argv = ['git', 'tag'];
       if (msg) { argv.push('-a', '-m', msg); }

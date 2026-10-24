@@ -2,42 +2,31 @@
  * git:remote -- list / add / remove / set-url / rename remotes.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, rejectInput } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail, rejectInput } from './helpers.js';
+import { GitRemoteDataSchema } from './schemas.js';
+import type { GitRemoteData, GitRemoteEntry } from './schemas.js';
 
 export type GitRemoteOp = 'list' | 'add' | 'remove' | 'set-url' | 'rename';
 
-export interface GitRemoteEntry {
-  name: string;
-  fetchUrl: string;
-  pushUrl: string;
-}
-
-export interface GitRemoteData {
-  op: GitRemoteOp;
-  remotes?: GitRemoteEntry[];
-  name?: string;
-  url?: string;
-  newName?: string;
-}
+export type { GitRemoteData, GitRemoteEntry } from './schemas.js';
 
 export const gitRemoteTool: Tool = {
   id: 'git_remote',
   description: 'Manage remote URLs. list is read-only; add / remove / set-url / rename gate.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op:  { type: 'string', enum: ['list', 'add', 'remove', 'set-url', 'rename'] },
-      name: { type: 'string' },
-      url:  { type: 'string' },
-      newName: { type: 'string', description: 'For op=rename.' },
-      push: { type: 'boolean', description: 'For op=set-url: modify only the push URL (--push).' },
-    },
-    required: ['op'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.String({ enum: ['list', 'add', 'remove', 'set-url', 'rename'] }),
+    name: Type.Optional(Type.String()),
+    url: Type.Optional(Type.String()),
+    newName: Type.Optional(Type.String({ description: 'For op=rename.' })),
+    push: Type.Optional(Type.Boolean({ description: 'For op=set-url: modify only the push URL (--push).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitRemoteDataSchema,
+
+  // list is a read; the mutations are ordinary (remove deletes only remote-tracking refs and config).
 
   approval(input: ToolInput): ApprovalClass {
     return input['op'] !== 'list' ? 'common' : 'none';
@@ -81,6 +70,8 @@ export const gitRemoteTool: Tool = {
 
     const name = str(input, 'name');
     if (!name) { return rejectInput('git_remote', `missing name for ${op}`); }
+    assertSafeArg(name, 'ref');
+    for (const key of ['url', 'newName']) { const v = str(input, key); if (v !== undefined) { assertSafeArg(v, 'ref'); } }
 
     let argv: string[];
     if (op === 'add') {

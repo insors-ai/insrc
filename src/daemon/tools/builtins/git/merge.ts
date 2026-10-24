@@ -8,33 +8,26 @@
  * captures them for programmatic follow-up.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, spawnFail, conflictFailure, currentBranch, rejectInput } from './helpers.js';
+import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, spawnFail, conflictFailure, currentBranch, rejectInput } from './helpers.js';
+import { GitMergeDataSchema } from './schemas.js';
+import type { GitMergeData } from './schemas.js';
 
-export interface GitMergeData {
-  ref: string;
-  branch: string;
-  strategy: 'ff-only' | 'no-ff' | 'default' | 'squash';
-  merged: boolean;
-  inConflict: boolean;
-  conflicts: string[];
-}
+export type { GitMergeData } from './schemas.js';
 
 export const gitMergeTool: Tool = {
   id: 'git_merge',
   description: 'Merge a ref into the current branch. Gates with commit count + strategy.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      ref: { type: 'string', description: 'Ref to merge.' },
-      strategy: { type: 'string', enum: ['ff-only', 'no-ff', 'default', 'squash'], description: 'default: fast-forward when possible, merge commit otherwise.' },
-      message: { type: 'string', description: 'Merge-commit message (ignored for ff-only).' },
-      abort: { type: 'boolean', description: 'Abort an in-progress merge instead of starting one.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    ref: Type.Optional(Type.String({ description: 'Ref to merge.' })),
+    strategy: Type.Optional(Type.String({ enum: ['ff-only', 'no-ff', 'default', 'squash'], description: 'default: fast-forward when possible, merge commit otherwise.' })),
+    message: Type.Optional(Type.String({ description: 'Merge-commit message (ignored for ff-only).' })),
+    abort: Type.Optional(Type.Boolean({ description: 'Abort an in-progress merge instead of starting one.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitMergeDataSchema,
   approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
@@ -53,7 +46,7 @@ export const gitMergeTool: Tool = {
 
     // Count commits about to land.
     const rev = await runShell(['git', 'rev-list', '--count', `${branch}..${ref}`], { cwd, timeoutMs: 10_000 });
-    const incoming = rev.code === 0 ? rev.stdout.trim() : '?';
+    const incoming = ranToExit(rev) && rev.code === 0 ? rev.stdout.trim() : '?';
 
     const lines: string[] = [];
     lines.push(`Repo: \`${cwd}\``);
@@ -75,19 +68,24 @@ export const gitMergeTool: Tool = {
       const r = await runShell(['git', 'merge', '--abort'], { cwd, timeoutMs: 15_000 });
       if (r.spawnError) { return spawnFail('git_merge', r.stderr); }
       if (r.code !== 0) { return fail('git_merge', r, { mutating: true }); }
+      // The abort has happened: the branch only labels the answer, so a read that fails is a warning.
+      const warnings: string[] = [];
+      const abortedBranch = await branchForReport(cwd, warnings, '');
       return {
         output: 'Merge aborted.',
         format: 'markdown',
         success: true,
-        data: { ref: '', branch: (await currentBranch(cwd)) ?? '', strategy: 'default', merged: false, inConflict: false, conflicts: [] } satisfies GitMergeData,
+        data: { ref: '', branch: abortedBranch, strategy: 'default', merged: false, inConflict: false, conflicts: [], ...(warnings.length > 0 ? { warnings } : {}) } satisfies GitMergeData,
       };
     }
 
     const ref = str(input, 'ref');
     if (!ref) { return rejectInput('git_merge', 'missing ref'); }
     const strategy = (str(input, 'strategy') ?? 'default') as GitMergeData['strategy'];
+    assertSafeArg(ref, 'ref');
     const message = str(input, 'message');
-    const branch = (await currentBranch(cwd)) ?? '(detached)';
+    const warnings: string[] = [];
+    const branch = await branchForReport(cwd, warnings, '(detached)');
 
     const argv = ['git', 'merge'];
     if (strategy === 'ff-only') { argv.push('--ff-only'); }
@@ -104,7 +102,7 @@ export const gitMergeTool: Tool = {
     if (result.code !== 0) {
       const { files: conflicts, problem } = await listConflicts(cwd);
       if (conflicts.length > 0) {
-        const data: GitMergeData = { ref, branch, strategy, merged: false, inConflict: true, conflicts };
+        const data: GitMergeData = { ref, branch, strategy, merged: false, inConflict: true, conflicts, ...(warnings.length > 0 ? { warnings } : {}) };
         return conflictFailure({
           output: [
             `**Merge conflict.** \`${ref}\` into **${branch}** paused.`,
@@ -126,7 +124,7 @@ export const gitMergeTool: Tool = {
         : { ...failed, failure: { ...failed.failure, message: `${failed.failure.message} (could not tell whether the merge left conflicts: ${problem})` } };
     }
 
-    const data: GitMergeData = { ref, branch, strategy, merged: true, inConflict: false, conflicts: [] };
+    const data: GitMergeData = { ref, branch, strategy, merged: true, inConflict: false, conflicts: [], ...(warnings.length > 0 ? { warnings } : {}) };
     return {
       output: [
         `Merged \`${ref}\` into **${branch}** (${strategy}).`,

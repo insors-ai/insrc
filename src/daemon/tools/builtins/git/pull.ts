@@ -5,35 +5,29 @@
  * callers that want a merge or rebase pull opt in explicitly.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail, readBranch, readFailure, currentBranch } from './helpers.js';
+import { GitPullDataSchema } from './schemas.js';
+import type { GitPullData } from './schemas.js';
 
 export type GitPullMode = 'ff-only' | 'merge' | 'rebase';
 
-export interface GitPullData {
-  remote: string;
-  branch: string;
-  mode: GitPullMode;
-  /** Stdout/stderr from git pull -- free-form. */
-  output: string;
-}
+export type { GitPullData } from './schemas.js';
 
 export const gitPullTool: Tool = {
   id: 'git_pull',
   description: 'Pull from the current branch\'s upstream. Default --ff-only; merge / rebase modes opt-in.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      remote: { type: 'string', description: 'Remote name. Default: upstream\'s remote (usually `origin`).' },
-      branch: { type: 'string', description: 'Branch on remote to pull. Default: tracked upstream.' },
-      mode: { type: 'string', enum: ['ff-only', 'merge', 'rebase'], description: 'Integration mode. Default: ff-only.' },
-      autostash: { type: 'boolean', description: 'Auto-stash dirty worktree before rebase / merge (git --autostash).' },
-      dryRun: { type: 'boolean', description: 'Only fetch, don\'t integrate.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    remote: Type.Optional(Type.String({ description: 'Remote name. Default: upstream\'s remote (usually `origin`).' })),
+    branch: Type.Optional(Type.String({ description: 'Branch on remote to pull. Default: tracked upstream.' })),
+    mode: Type.Optional(Type.String({ enum: ['ff-only', 'merge', 'rebase'], description: 'Integration mode. Default: ff-only.' })),
+    autostash: Type.Optional(Type.Boolean({ description: 'Auto-stash dirty worktree before rebase / merge (git --autostash).' })),
+    dryRun: Type.Optional(Type.Boolean({ description: 'Only fetch, don\'t integrate.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitPullDataSchema,
   approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
@@ -60,7 +54,15 @@ export const gitPullTool: Tool = {
     const cwd = str(input, 'cwd') ?? process.cwd();
     const mode = (str(input, 'mode') ?? 'ff-only') as GitPullMode;
     const remote = str(input, 'remote');
-    const branch = str(input, 'branch') ?? (await currentBranch(cwd)) ?? '';
+    let branch = str(input, 'branch');
+    if (remote !== undefined) { assertSafeArg(remote, 'ref'); }
+    if (branch !== undefined) { assertSafeArg(branch, 'ref'); }
+    if (branch === undefined) {
+      // The current branch decides what is pulled: a read that cannot run stops the call before anything changes.
+      const brRead = await readBranch(cwd);
+      if (!brRead.ok) { return readFailure('git_pull', brRead.failed); }
+      branch = brRead.value ?? '';
+    }
     const autostash = input['autostash'] === true;
     const dryRun = input['dryRun'] === true;
 

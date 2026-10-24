@@ -7,33 +7,28 @@
  * other git tools.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail } from './helpers.js';
+import { str, assertSafeArg, fail, spawnFail } from './helpers.js';
+import { GitFetchDataSchema } from './schemas.js';
+import type { GitFetchData } from './schemas.js';
 
-export interface GitFetchData {
-  remote: string;
-  /** Individual update lines parsed from stderr (e.g. "  abc..def  main -> origin/main"). */
-  updates: string[];
-  /** Raw stderr so the caller can inspect pruned / forced updates if interested. */
-  raw: string;
-}
+export type { GitFetchData } from './schemas.js';
 
 export const gitFetchTool: Tool = {
   id: 'git_fetch',
   description: 'Fetch refs from a remote. No working-tree changes; no approval required.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      remote: { type: 'string', description: 'Remote name. Default: `origin`.' },
-      all: { type: 'boolean', description: 'Fetch from every configured remote.' },
-      prune: { type: 'boolean', description: 'Remove stale remote-tracking refs (git --prune).' },
-      tags: { type: 'boolean', description: 'Fetch tags. Default behavior is implicit --tags via --follow-tags config, but explicit can help.' },
-      depth: { type: 'number', description: 'Shallow-fetch depth.', minimum: 1 },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    remote: Type.Optional(Type.String({ description: 'Remote name. Default: `origin`.' })),
+    all: Type.Optional(Type.Boolean({ description: 'Fetch from every configured remote.' })),
+    prune: Type.Optional(Type.Boolean({ description: 'Remove stale remote-tracking refs (git --prune).' })),
+    tags: Type.Optional(Type.Boolean({ description: 'Fetch tags. Default behavior is implicit --tags via --follow-tags config, but explicit can help.' })),
+    depth: Type.Optional(Type.Number({ description: 'Shallow-fetch depth.', minimum: 1 })),
+  }, { additionalProperties: false }),
+  outputSchema: GitFetchDataSchema,
+  // approval stays none: a fetch updates remote-tracking refs only.
 
   async execute(input: ToolInput): Promise<ToolResult> {
     const cwd = str(input, 'cwd') ?? process.cwd();
@@ -42,6 +37,7 @@ export const gitFetchTool: Tool = {
     const tags = input['tags'] === true;
     const depth = typeof input['depth'] === 'number' ? Math.floor(input['depth']) : undefined;
     const remote = all ? undefined : (str(input, 'remote') ?? 'origin');
+    if (remote !== undefined) { assertSafeArg(remote, 'ref'); }
 
     const argv = ['git', 'fetch', '--verbose'];
     if (all)    { argv.push('--all'); }

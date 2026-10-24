@@ -11,41 +11,31 @@
  * separate tool (git:amend) so each surface stays focused.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, readBranch, readFailure, readStagedCount, stagedSummary, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, spawnFail, readBranch, readFailure, readStagedCount, stagedSummary, rejectInput } from './helpers.js';
+import { GitCommitDataSchema } from './schemas.js';
+import type { GitCommitData } from './schemas.js';
 
-export interface GitCommitData {
-  sha: string;
-  shortSha: string;
-  branch: string;
-  filesChanged: number;
-  insertions: number;
-  deletions: number;
-  message: string;
-}
+export type { GitCommitData } from './schemas.js';
 
 export const gitCommitTool: Tool = {
   id: 'git_commit',
   description: 'Create a commit from the staged changes. Gates with diff + message preview.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      message: { type: 'string', description: 'Commit message (required). Multi-line supported.' },
-      author: {
-        type: 'string',
-        description: 'Override commit author, e.g. `Name <email>`. Uses git config by default.',
-      },
-      signoff: { type: 'boolean', description: 'Add a Signed-off-by trailer (git -s).' },
-      gpgSign: { type: 'boolean', description: 'Sign the commit (git -S). Disabled by default even when user.signingkey is set.' },
-      allowEmpty: { type: 'boolean', description: 'Allow committing with nothing staged.' },
-      allowDetached: { type: 'boolean', description: 'Allow committing on a detached HEAD.' },
-      verifyHooks: { type: 'boolean', description: 'Run pre-commit / commit-msg hooks. Default true.' },
-    },
-    required: ['message'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    message: Type.String({ description: 'Commit message (required). Multi-line supported.' }),
+    author: Type.Optional(Type.String({
+      description: 'Override commit author, e.g. `Name <email>`. Uses git config by default.',
+    })),
+    signoff: Type.Optional(Type.Boolean({ description: 'Add a Signed-off-by trailer (git -s).' })),
+    gpgSign: Type.Optional(Type.Boolean({ description: 'Sign the commit (git -S). Disabled by default even when user.signingkey is set.' })),
+    allowEmpty: Type.Optional(Type.Boolean({ description: 'Allow committing with nothing staged.' })),
+    allowDetached: Type.Optional(Type.Boolean({ description: 'Allow committing on a detached HEAD.' })),
+    verifyHooks: Type.Optional(Type.Boolean({ description: 'Run pre-commit / commit-msg hooks. Default true.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitCommitDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -138,12 +128,23 @@ export const gitCommitTool: Tool = {
   },
 };
 
+/**
+ * The details of the commit just made. The commit has happened, so a read that fails does not fail the call: it keeps its
+ * placeholder (an empty sha, no files) and is named in data.warnings.
+ */
 async function collectCommitData(cwd: string, branch: string, message: string): Promise<GitCommitData> {
+  const warnings: string[] = [];
   const sha = await runShell(['git', 'rev-parse', 'HEAD'], { cwd, timeoutMs: 5_000 });
   const short = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
   const stat = await runShell(['git', 'show', '--numstat', '--format=', 'HEAD'], { cwd, timeoutMs: 10_000 });
+  const shaOk = ranToExit(sha) && sha.code === 0;
+  const shortOk = ranToExit(short) && short.code === 0;
+  const statOk = ranToExit(stat) && stat.code === 0;
+  if (!shaOk) { warnings.push(`git rev-parse HEAD ${failureKind(sha)}: the sha is empty`); }
+  if (!shortOk) { warnings.push(`git rev-parse --short HEAD ${failureKind(short)}: the short sha is empty`); }
+  if (!statOk) { warnings.push(`git show --numstat HEAD ${failureKind(stat)}: the file counts are empty`); }
   let ins = 0, del = 0, files = 0;
-  for (const line of stat.stdout.split('\n')) {
+  for (const line of statOk ? stat.stdout.split('\n') : []) {
     const parts = line.trim().split('\t');
     if (parts.length < 3) { continue; }
     files += 1;
@@ -152,13 +153,14 @@ async function collectCommitData(cwd: string, branch: string, message: string): 
     if (Number.isFinite(d)) { del += d; }
   }
   return {
-    sha: sha.code === 0 ? sha.stdout.trim() : '',
-    shortSha: short.code === 0 ? short.stdout.trim() : '',
+    sha: shaOk ? sha.stdout.trim() : '',
+    shortSha: shortOk ? short.stdout.trim() : '',
     branch,
     filesChanged: files,
     insertions: ins,
     deletions: del,
     message,
+    ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
 

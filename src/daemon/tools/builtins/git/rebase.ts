@@ -12,38 +12,30 @@
  *   - continue / abort / skip operations are exposed via `op`
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
+import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
+import { GitRebaseDataSchema } from './schemas.js';
+import type { GitRebaseData } from './schemas.js';
 
 export type GitRebaseOp = 'start' | 'continue' | 'abort' | 'skip';
 
-export interface GitRebaseData {
-  op: GitRebaseOp;
-  onto?: string;
-  branch: string;
-  inConflict: boolean;
-  conflicts: string[];
-  /** HEAD short SHA after the rebase (success only). */
-  shortSha?: string;
-}
+export type { GitRebaseData } from './schemas.js';
 
 export const gitRebaseTool: Tool = {
   id: 'git_rebase',
   description: 'Rebase the current branch onto a ref (or continue / abort / skip an in-progress rebase). Interactive mode unsupported.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op: { type: 'string', enum: ['start', 'continue', 'abort', 'skip'], description: 'Default: start.' },
-      onto: { type: 'string', description: 'For op=start: ref to rebase onto.' },
-      upstream: { type: 'string', description: 'For op=start: upstream to detect commits from (git rebase --onto <onto> <upstream>).' },
-      autostash: { type: 'boolean', description: 'Auto-stash dirty worktree.' },
-      rerereAutoupdate: { type: 'boolean', description: 'Pass --rerere-autoupdate.' },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.Optional(Type.String({ enum: ['start', 'continue', 'abort', 'skip'], description: 'Default: start.' })),
+    onto: Type.Optional(Type.String({ description: 'For op=start: ref to rebase onto.' })),
+    upstream: Type.Optional(Type.String({ description: 'For op=start: upstream to detect commits from (git rebase --onto <onto> <upstream>).' })),
+    autostash: Type.Optional(Type.Boolean({ description: 'Auto-stash dirty worktree.' })),
+    rerereAutoupdate: Type.Optional(Type.Boolean({ description: 'Pass --rerere-autoupdate.' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitRebaseDataSchema,
   approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
@@ -61,7 +53,7 @@ export const gitRebaseTool: Tool = {
     const branch = (await currentBranch(cwd)) ?? '(detached)';
     const upstream = str(input, 'upstream') ?? onto;
     const count = await runShell(['git', 'rev-list', '--count', `${upstream}..HEAD`], { cwd, timeoutMs: 5_000 });
-    const commits = count.code === 0 ? count.stdout.trim() : '?';
+    const commits = ranToExit(count) && count.code === 0 ? count.stdout.trim() : '?';
 
     // Already pushed? warn.
     const pushed = await alreadyPushed(cwd);
@@ -100,6 +92,8 @@ export const gitRebaseTool: Tool = {
     const onto = str(input, 'onto');
     if (!onto) { return rejectInput('git_rebase', 'missing onto for op=start'); }
     const upstream = str(input, 'upstream');
+    assertSafeArg(onto, 'ref');
+    if (upstream !== undefined) { assertSafeArg(upstream, 'ref'); }
     const autostash = input['autostash'] === true;
     const rerere = input['rerereAutoupdate'] === true;
 
@@ -123,17 +117,22 @@ export const gitRebaseTool: Tool = {
 };
 
 async function okResult(op: GitRebaseOp, cwd: string, onto?: string): Promise<ToolResult> {
+  // The rebase has happened: reads that only add detail keep their placeholders and are named in data.warnings.
+  const warnings: string[] = [];
   const head = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
-  const shortSha = head.code === 0 ? head.stdout.trim() : '';
-  const branch = (await currentBranch(cwd)) ?? '(detached)';
-  const data: GitRebaseData = { op, ...(onto ? { onto } : {}), branch, inConflict: false, conflicts: [], shortSha };
+  const headOk = ranToExit(head) && head.code === 0;
+  const shortSha = headOk ? head.stdout.trim() : '';
+  if (!headOk) { warnings.push(`git rev-parse --short HEAD ${failureKind(head)}: the short sha is empty`); }
+  const branch = await branchForReport(cwd, warnings, '(detached)');
+  const data: GitRebaseData = { op, ...(onto ? { onto } : {}), branch, inConflict: false, conflicts: [], shortSha, ...(warnings.length > 0 ? { warnings } : {}) };
   const verb = op === 'start' ? `Rebased onto \`${onto}\`` : op === 'continue' ? 'Rebase continued' : op === 'abort' ? 'Rebase aborted' : 'Patch skipped';
   return { output: `${verb}. HEAD -> \`${shortSha}\` on **${branch}**.`, format: 'markdown', success: true, data };
 }
 
 async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[], r: ShellResult, onto?: string): Promise<ToolResult> {
-  const branch = (await currentBranch(cwd)) ?? '(detached)';
-  const data: GitRebaseData = { op, ...(onto ? { onto } : {}), branch, inConflict: true, conflicts };
+  const warnings: string[] = [];
+  const branch = await branchForReport(cwd, warnings, '(detached)');
+  const data: GitRebaseData = { op, ...(onto ? { onto } : {}), branch, inConflict: true, conflicts, ...(warnings.length > 0 ? { warnings } : {}) };
   const body = [
     `**Rebase paused with ${conflicts.length} conflict${conflicts.length === 1 ? '' : 's'}.**`,
     '',
@@ -147,11 +146,11 @@ async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[],
 
 async function listConflicts(cwd: string): Promise<string[]> {
   const r = await runShell(['git', 'diff', '--name-only', '--diff-filter=U'], { cwd, timeoutMs: 10_000 });
-  if (r.code !== 0) { return []; }
+  if (!ranToExit(r) || r.code !== 0) { return []; }
   return r.stdout.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
 async function alreadyPushed(cwd: string): Promise<boolean> {
   const r = await runShell(['git', 'merge-base', '--is-ancestor', 'HEAD', '@{upstream}'], { cwd, timeoutMs: 5_000 });
-  return r.code === 0;
+  return ranToExit(r) && r.code === 0;
 }

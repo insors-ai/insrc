@@ -11,37 +11,32 @@
  * that state so the caller sees it before approving.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
-import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import type { ApprovalClass, Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
+import { str, assertSafeArg, branchForReport, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import { GitResetDataSchema } from './schemas.js';
+import type { GitResetData } from './schemas.js';
 import type { ShellResult } from '../../shell-helper.js';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
 
-export interface GitResetData {
-  mode: GitResetMode;
-  ref: string;
-  branch: string;
-  previousShortSha: string;
-  requiresForcePush: boolean;
-  /** Set when a read that only informs the result could not run. */
-  warnings?: string[];
-}
+export type { GitResetData } from './schemas.js';
 
 export const gitResetTool: Tool = {
   id: 'git_reset',
   description: 'Move HEAD to a ref. mode=hard also discards the worktree.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      mode: { type: 'string', enum: ['soft', 'mixed', 'hard'] },
-      ref: { type: 'string', description: 'Target ref (commit / branch / tag / HEAD~N).' },
-    },
-    required: ['ref'],
-    additionalProperties: false,
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    mode: Type.Optional(Type.String({ enum: ['soft', 'mixed', 'hard'] })),
+    ref: Type.String({ description: 'Target ref (commit / branch / tag / HEAD~N).' }),
+  }, { additionalProperties: false }),
+  outputSchema: GitResetDataSchema,
+
+  // A hard reset discards the worktree and index edits (only the reflog can bring commits back, never edits); soft and mixed are ordinary.
+  approval(input: ToolInput): ApprovalClass {
+    return input['mode'] === 'hard' ? 'destructive' : 'common';
   },
-  approval: 'common',
 
   async buildApprovalGate(input: ToolInput): Promise<ToolApprovalGate> {
     const cwd = String(input['cwd'] ?? process.cwd());
@@ -83,22 +78,30 @@ export const gitResetTool: Tool = {
     const mode = (str(input, 'mode') ?? 'mixed') as GitResetMode;
     const ref = str(input, 'ref');
     if (!ref) { return rejectInput('git_reset', 'missing ref'); }
+    assertSafeArg(ref, 'ref');
 
-    const branch = (await currentBranch(cwd)) ?? '(detached)';
+    // The branch only labels the answer, so a read that fails is a warning.
+    const labelWarnings: string[] = [];
+    const branch = await branchForReport(cwd, labelWarnings, '(detached)');
     const priorShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
-    const previousShortSha = priorShort.code === 0 ? priorShort.stdout.trim() : '';
+    const priorOk = ranToExit(priorShort) && priorShort.code === 0;
+    const previousShortSha = priorOk ? priorShort.stdout.trim() : '';
     // Whether the new HEAD is behind the upstream is a precondition of a hard reset (it discards work); for the
     // other modes an unknown answer is reported as a warning.
     const forceRead = await willNeedForcePush(cwd, ref);
     if (!forceRead.ok && mode === 'hard') { return readFailure('git_reset', forceRead.failed); }
     const requiresForcePush = forceRead.ok && forceRead.value;
-    const warnings = forceRead.ok ? [] : [`force-push check (git merge-base --is-ancestor) ${failureKind(forceRead.failed)}`];
+    const warnings = [...labelWarnings, ...(forceRead.ok ? [] : [`force-push check (git merge-base --is-ancestor) ${failureKind(forceRead.failed)}`])];
+    if (!priorOk) { warnings.push(`git rev-parse --short HEAD ${failureKind(priorShort)}: the previous short sha is empty`); }
 
     const r = await runShell(['git', 'reset', `--${mode}`, ref], { cwd, timeoutMs: 30_000 });
     if (r.spawnError) { return spawnFail('git_reset', r.stderr); }
     if (r.code !== 0) { return fail('git_reset', r, { mutating: true }); }
 
+    // The reset has happened: a read that fails keeps the placeholder and says so.
     const afterShort = await runShell(['git', 'rev-parse', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
+    const afterOk = ranToExit(afterShort) && afterShort.code === 0;
+    if (!afterOk) { warnings.push(`git rev-parse --short HEAD ${failureKind(afterShort)}: the new short sha is empty`); }
     const data: GitResetData = {
       mode, ref, branch,
       previousShortSha,
@@ -106,7 +109,7 @@ export const gitResetTool: Tool = {
       ...(warnings.length > 0 ? { warnings } : {}),
     };
     const body = [
-      `Reset ${mode} on **${branch}**: \`${previousShortSha}\` -> \`${afterShort.stdout.trim()}\`.`,
+      `Reset ${mode} on **${branch}**: \`${previousShortSha}\` -> \`${afterOk ? afterShort.stdout.trim() : ''}\`.`,
       requiresForcePush ? '\n⚠️ `git push --force-with-lease` required to update the remote.' : '',
       r.stdout.trim() ? '\n```\n' + r.stdout.trim() + '\n```' : '',
     ].filter(Boolean).join('\n');

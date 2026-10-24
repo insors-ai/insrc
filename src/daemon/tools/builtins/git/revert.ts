@@ -7,33 +7,28 @@
  */
 
 import { runShell } from '../../shell-helper.js';
+import { Type } from '@sinclair/typebox';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
+import { str, assertSafeArg, branchForReport, fail, ranToExit, spawnFail, rejectInput, conflictFailure } from './helpers.js';
+import { GitRevertDataSchema } from './schemas.js';
+import type { GitRevertData } from './schemas.js';
 
 export type GitRevertOp = 'start' | 'continue' | 'abort' | 'skip';
 
-export interface GitRevertData {
-  op: GitRevertOp;
-  refs: string[];
-  inConflict: boolean;
-  conflicts: string[];
-}
+export type { GitRevertData } from './schemas.js';
 
 export const gitRevertTool: Tool = {
   id: 'git_revert',
   description: 'Create a new commit that undoes the specified commit(s).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string' },
-      op: { type: 'string', enum: ['start', 'continue', 'abort', 'skip'] },
-      refs: { type: 'array', items: { type: 'string' }, description: 'Commits to revert (op=start).', minItems: 1 },
-      noCommit: { type: 'boolean', description: 'Stage the reverts without committing (-n).' },
-      mainline: { type: 'number', description: 'Parent number to revert against for merge commits.', minimum: 1 },
-    },
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String()),
+    op: Type.Optional(Type.String({ enum: ['start', 'continue', 'abort', 'skip'] })),
+    refs: Type.Optional(Type.Array(Type.String(), { description: 'Commits to revert (op=start).', minItems: 1 })),
+    noCommit: Type.Optional(Type.Boolean({ description: 'Stage the reverts without committing (-n).' })),
+    mainline: Type.Optional(Type.Number({ description: 'Parent number to revert against for merge commits.', minimum: 1 })),
+  }, { additionalProperties: false }),
+  outputSchema: GitRevertDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -82,6 +77,7 @@ export const gitRevertTool: Tool = {
     const argv = ['git', 'revert', '--no-edit'];
     if (input['noCommit'] === true) { argv.push('--no-commit'); }
     if (typeof input['mainline'] === 'number') { argv.push('--mainline', String(Math.floor(input['mainline']))); }
+    for (const ref of refs) { assertSafeArg(ref, 'ref'); }
     argv.push(...refs);
 
     const r = await runShell(argv, { cwd, timeoutMs: 120_000 });
@@ -96,9 +92,11 @@ export const gitRevertTool: Tool = {
 };
 
 async function okResult(op: GitRevertOp, refs: string[], cwd: string): Promise<ToolResult> {
-  const branch = (await currentBranch(cwd)) ?? '(detached)';
+  // The operation has happened: the branch only labels the answer, so a read that fails is a warning.
+  const warnings: string[] = [];
+  const branch = await branchForReport(cwd, warnings, '(detached)');
   const verb = op === 'start' ? `Reverted ${refs.length} commit${refs.length === 1 ? '' : 's'}` : op === 'continue' ? 'Revert continued' : op === 'abort' ? 'Revert aborted' : 'Patch skipped';
-  const data: GitRevertData = { op, refs, inConflict: false, conflicts: [] };
+  const data: GitRevertData = { op, refs, inConflict: false, conflicts: [], ...(warnings.length > 0 ? { warnings } : {}) };
   return { output: `${verb} on **${branch}**.`, format: 'markdown', success: true, data };
 }
 
@@ -117,6 +115,6 @@ async function conflictResult(op: GitRevertOp, refs: string[], conflicts: string
 
 async function listConflicts(cwd: string): Promise<string[]> {
   const r = await runShell(['git', 'diff', '--name-only', '--diff-filter=U'], { cwd, timeoutMs: 10_000 });
-  if (r.code !== 0) { return []; }
+  if (!ranToExit(r) || r.code !== 0) { return []; }
   return r.stdout.split('\n').map(s => s.trim()).filter(Boolean);
 }

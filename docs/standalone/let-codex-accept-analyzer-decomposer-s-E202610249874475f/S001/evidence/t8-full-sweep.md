@@ -30,7 +30,7 @@ clean worktrees (no uncommitted work), one after the other:
 
 | Revision | tests | pass | fail | cancelled | Failing tests |
 |---|---|---|---|---|---|
-| 2eed53a1 (before this Story) | 6,264 run | 6,232 | 8 | 6 | the same 12 as above, plus search-filter "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository ..." and threads-boot "daemon.shutdown during maintenance is refused ..." |
+| 2eed53a1 (before this Story) | 6,382 | 6,232 | 8 | 6 | the same 12 as above, plus search-filter "entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository ..." and threads-boot "daemon.shutdown during maintenance is refused ..." |
 | b2744726 (this Story's HEAD) | 6,447 | 6,298 | 6 | 6 | exactly the same 12 as the shared-tree sweep |
 
 So every one of the 12 failures also fails without this Story's commits, and

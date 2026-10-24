@@ -230,3 +230,30 @@ Cycle 4, round 3 and the fixes of the earlier unreviewed rounds were checked one
 | The `git_reset` and `git_push` lookups are in the inventory, and a grep test enforces it | `reset.ts`, `push.ts`; `git-failures.test.ts` (`INVENTORY`, `KNOWN`, `HELPERS`, `scanSources`) | the inventory test, and the audit in "a failing precondition read fails the call before any change ...", whose planted sources show that an unlisted lookup, an unchecked result, a swallowing helper and a typed-helper call each fail the scan |
 
 Gap found and filled: the LLD uses the current-branch read as a precondition of `git_rebase`, `git_checkout` and `git:cherry-pick` as well as of `git_commit` and `git_push`, but only the last two stopped on a failed read. `git_rebase`, `git_checkout` and `git:cherry-pick` now read the branch before changing anything and stop when it cannot be read (their input checks still come first); the branch label of their result stays a warning. Pinned by "git_commit, git_push, git_rebase and git_checkout fail before changing anything ...".
+
+## s4 full sweep (2026-10-25)
+
+Run once after t9, in foreground chunks, `npx tsx --test --test-force-exit` per directory of `src` and `vscode-plugin/src`. Compared with the sweep after s1, by test name.
+
+| Directory | tests | pass | fail | skipped |
+| --- | --- | --- | --- | --- |
+| shared | 67 | 67 | 0 | 0 |
+| db | 575 | 574 | 1 | 0 |
+| mcp | 118 | 118 | 0 | 0 |
+| design | 58 | 58 | 0 | 0 |
+| docgen | 115 | 112 | 0 | 3 |
+| indexer | 301 | 301 | 0 | 0 |
+| understanding | 17 | 17 | 0 | 0 |
+| agent | 110 | 99 | 0 | 11 |
+| config | 151 | 148 | 3 | 0 |
+| analyze | 1167 | 1072 | 0 | 92 |
+| cli | 225 | 225 | 0 | 0 |
+| daemon | 1387 | 1368 | 1 | 18 |
+| workflow | 2293 | 2265 | 22 | 6 |
+| vscode-plugin | 1446 | 1434 | 4 | 8 |
+
+Every failure of the s1 sweep is still there and none of them is in a file this Story touched: the LMDB lock and library reproduction tests (db); the config acceptance-mapping tests (config); `build-start` T33 (daemon); the plugin catalog and ledger tests (vscode-plugin); `convert-repeat`, the T7 and ac1 to ac6 BUILD code-review gate tests and the `t7` hand-filled records (workflow), from the `fix(workflow)` commits before this Story.
+
+One failure is new since the s1 sweep: `src/workflow/__tests__/artifact-write-inventory.test.ts`, "every writer file is inventoried, annotated and classified as the design says". It names `src/bin/insrc-shutdown-watchdog.ts`, `src/daemon/run-file-ownership.ts` and `src/shared/daemon-run-files.ts` (no inventory entry) and `src/daemon/lifecycle.ts` (an entry that no longer matches). Those files come from the daemon-shutdown commits made on this branch while s4 was being built (`e5468d372`, `873e425dd`, `a61dd8d11`, `77595a1ec`), not from this Story, whose commits touch only `src/daemon/tools/**`, one fixture and the docs. It needs entries in `src/workflow/artifact-write-inventory.ts` by whoever owns the shutdown work.
+
+s4 added and changed no failing test: the git, tools, executor and approval suites all pass (git tools `__tests__`: 85 tests, tools `__tests__`: 120).

@@ -1,0 +1,407 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792827584869-aclja2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T07:41:34.529Z",
+    "epicCreatedAt": "2026-10-24T07:31:35.750Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 109634,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e340794b16e4d4b3",
+    "epicSlug": "clarify-design-visual-authoring-independent-reviewer",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792827584869-aclja2",
+    "hldEffectiveHash": "f30e4a293303e207607665241584b5292cf26a1a0e7aab4d44696f5302f0c455",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed prompt changes cover the ISSUE's root cause and fix intent without requiring renderer or schema changes.",
+          "evidence": "The ISSUE identifies missing proposed-design authoring guidance and independent companion assessment, and explicitly requires guidance in the actual review template. The design addresses both locations, author correction requests, rendering limitations, proportional omissions, copy synchronization and the review-round cap. [files: docs/standalone/clarify-design-visual-authoring-independent-reviewer-E20261024e340794b/ISSUE.md, src/prompts/steering-block.md, src/workflow/review/template.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current steering omits proposed-companion selection guidance, and the design-review prompt lacks independent necessity and rendered-artifact checks.",
+          "evidence": "Read the canonical steering and buildTemplateReviewPrompt. Steering routes diagrams to insrc_docgen and describes workflow mechanics without explaining companion definitions. The review prompt contains checklist and evidence instructions but no companion/rendering assessment. Separately, existing content gates already describe optional structured definitions and framework-generated companions, supporting clarification rather than new capability. [files: src/prompts/steering-block.md, src/workflow/review/template.ts, src/workflow/artifacts/companion/er-schema.ts, src/workflow/artifacts/companion/ux-schema.ts, src/workflow/artifacts/companion/sequence-schema.ts, src/workflow/artifacts/companion/component-schema.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Updating the four shared content-gate constants reaches the existing design authoring and synthesis prompts without duplicating policy.",
+          "evidence": "Read framework.write and contract.detail prompt construction and both design synthesizers. Each inserts ER_CONTENT_GATE_RULE, UX_CONTENT_GATE_RULE, SEQUENCE_CONTENT_GATE_RULE and COMPONENT_CONTENT_GATE_RULE. Repository-wide searches found these production consumers in the listed runners and orchestrator, all covered by the inventory. [files: src/workflow/runners/design-epic/index.ts, src/workflow/runners/design-story/index.ts, src/workflow/orchestrator.ts, src/workflow/artifacts/companion/er-schema.ts, src/workflow/artifacts/companion/ux-schema.ts, src/workflow/artifacts/companion/sequence-schema.ts, src/workflow/artifacts/companion/component-schema.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Changing buildTemplateReviewPrompt reaches both design-review routes while retaining shared answer validation.",
+          "evidence": "templateAdapter builds its reviewer-session instructions through buildTemplateReviewPrompt and validates through validateTemplateAnswer. The controller route in review-step/phases/start.ts calls the same prompt builder; findings.ts uses the same validator. No separate companion policy exists in those reviewed route bodies. [files: src/workflow/review/template.ts, src/workflow/review-pipeline/design-review.ts, src/daemon/steps/review-step/phases/start.ts, src/daemon/steps/review-step/phases/findings.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed advisory policy preserves existing outcome normalization, default verdicts, answer schema and premise budget.",
+          "evidence": "Read the schema, complete validator and verdict functions, then executed complete answer fixtures through the real functions. Results: holds/LOW → LOW/pass; does-not-hold/LOW → MED/block; does-not-hold/HIGH → HIGH/block; could-not-verify/HIGH → LOW/warn under DEFAULT_BLOCK_ON. The ISSUE template defaults to eight premises. Narrative advice fits existing evidence/action fields. [files: src/workflow/review/template.ts, src/workflow/review/verdict.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing synchronization mechanisms preserve local instructions, distribute canonical steering correctly and support retaining all three review-round clauses.",
+          "evidence": "Read copy-assets and steering injection/refresh logic: runtime prompts are copied, guide sections are stripped for injection, and marker updates preserve surrounding content. Direct comparisons confirmed plugin steering equals the full canonical source and AGENTS.md/CLAUDE.md marked blocks equal its skeleton. The canonical source contains three round-cap clauses, including the review and code-review guides. [files: copy-assets.mjs, src/daemon/steering-inject.ts, src/prompts/steering-block.md, vscode-plugin/assets/steering-block.md, AGENTS.md, CLAUDE.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The planned ac1/ac2 assertions can detect missing author/build guidance and missing independent reviewer instructions without live model calls.",
+          "evidence": "The existing steering suite reads canonical text and extracts individual guides; template.test.ts directly generates review prompts. The proposed relationship-documentation, relevance, author-regeneration and rendering assertions target clauses absent from today's guidance. Constant-consumer checks also fit the existing source-scan approach in diagram-synth-schema.test.ts. These are planned additions, not assertions already implemented. [files: src/mcp/__tests__/review-rule-text.test.ts, src/workflow/review/__tests__/template.test.ts, src/workflow/__tests__/diagram-synth-schema.test.ts, src/prompts/steering-block.md, src/workflow/review/template.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The planned ac3 tests exercise the actual advisory/verdict contract and synchronization invariants at the stated instruction-delivery scope.",
+          "evidence": "template.test.ts already provides complete valid-answer fixtures suitable for validateTemplateAnswer; the proposed computeVerdict checks match the real runtime results verified above. The steering suite already checks plugin/canonical equality and can retain the three cap clauses. The design correctly limits these checks to instruction delivery and normalization, without claiming they prove model judgment or browser rendering. [files: src/workflow/review/__tests__/template.test.ts, src/workflow/review/template.ts, src/workflow/review/verdict.ts, src/mcp/__tests__/review-rule-text.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 8,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-24T07:53:46.534Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    },
+    "revisionNote": "Revised after first blocking review: narrative-only advisory policy, explicit change inventory and criteria/assertions. Original review retained until independent re-review supersedes it.",
+    "approvedAt": "2026-10-24T07:58:18.742Z",
+    "rangeBase": "dcd6b67450f3c577eb1560d688fec92aecc7c711"
+  },
+  "body": {
+    "summary": {
+      "prose": "Correct design artifact relevance guidance across author, builder and reviewer prompts, with no schema changes. Isolated class implementation changes that do not affect relationships need no ERD. Relationship changes, even simple ones, must document endpoints, direction, cardinality/ownership and compatibility where applicable; use a concise table/text for a clearly understandable change or an ERD when it materially clarifies the model. Sequence/component diagrams explain interaction or boundary changes; UX mocks explain changed layouts, states or flows. Reviewers independently assess necessity even when no definition is supplied, inspect generated links/files/rendered content and consistency, and report unavailable rendering honestly. Advisory means narrative advice, NOT a warn verdict or a does-not-hold/LOW finding. Keep existing verdict semantics unchanged: confirmed material inadequacy is does-not-hold with MED/HIGH and blocks; genuinely unavailable evidence is could-not-verify and warns; an adequate design can hold with optional improvement advice in evidence/action. Never label a confirmed failure unverified or assert a missing artifact exists. An optional visual not required for assessment is not a failed requirement. Missing relationship documentation remains a defect even when no diagram is needed. Builders maintain relevant artifacts when implementation changes the approved relationships/UX, without inventing scope. This prompt-only change itself needs no visual artifact.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone correction under approved ISSUE-e340794b16e4d4b3; no HLD or adjacent boundaries.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone"
+    },
+    "contractDetails": {
+      "summary": {
+        "prose": "Correct design artifact relevance guidance across author, builder and reviewer prompts, with no schema changes. Isolated class implementation changes that do not affect relationships need no ERD. Relationship changes, even simple ones, must document endpoints, direction, cardinality/ownership and compatibility where applicable; use a concise table/text for a clearly understandable change or an ERD when it materially clarifies the model. Sequence/component diagrams explain interaction or boundary changes; UX mocks explain changed layouts, states or flows. Reviewers independently assess necessity even when no definition is supplied, inspect generated links/files/rendered content and consistency, and report unavailable rendering honestly. Advisory means narrative advice, NOT a warn verdict or a does-not-hold/LOW finding. Keep existing verdict semantics unchanged: confirmed material inadequacy is does-not-hold with MED/HIGH and blocks; genuinely unavailable evidence is could-not-verify and warns; an adequate design can hold with optional improvement advice in evidence/action. Never label a confirmed failure unverified or assert a missing artifact exists. An optional visual not required for assessment is not a failed requirement. Missing relationship documentation remains a defect even when no diagram is needed. Builders maintain relevant artifacts when implementation changes the approved relationships/UX, without inventing scope. This prompt-only change itself needs no visual artifact.",
+        "audience": "technical"
+      },
+      "surfaceLevel": "internal",
+      "api": [],
+      "dataModel": [],
+      "interactionWithShared": [],
+      "guidanceInventory": [
+        {
+          "path": "src/prompts/steering-block.md",
+          "change": "Update front-door routing plus design.epic, design.story, build and review/code-review guides: existing-code docgen versus proposed-design structured definitions; proportional relevance and independent reviewer inspection. Preserve three-round limit."
+        },
+        {
+          "path": "src/workflow/review/template.ts",
+          "change": "Extend shared reviewer system prompt and existing checklist wording for independent necessity even without definitions, linked file/content/render checks, missing rendering limits and honest adequacy/advisory outcomes. Preserve item IDs, schemas and premise budget."
+        },
+        {
+          "path": "src/workflow/artifacts/companion/er-schema.ts",
+          "change": "Clarify ER_CONTENT_GATE_RULE relevance examples and documentation obligations; preserve structured definition as source and generated companions as framework-owned."
+        },
+        {
+          "path": "src/workflow/artifacts/companion/ux-schema.ts",
+          "change": "Clarify UX_CONTENT_GATE_RULE relevance examples and documentation obligations; preserve structured definition as source and generated companions as framework-owned."
+        },
+        {
+          "path": "src/workflow/artifacts/companion/sequence-schema.ts",
+          "change": "Clarify SEQUENCE_CONTENT_GATE_RULE relevance examples and documentation obligations; preserve structured definition as source and generated companions as framework-owned."
+        },
+        {
+          "path": "src/workflow/artifacts/companion/component-schema.ts",
+          "change": "Clarify COMPONENT_CONTENT_GATE_RULE relevance examples and documentation obligations; preserve structured definition as source and generated companions as framework-owned."
+        },
+        {
+          "path": "src/workflow/runners/design-epic/index.ts",
+          "change": "Existing consumer of shared content gates; inspect/verify prompt propagation; no duplicated policy."
+        },
+        {
+          "path": "src/workflow/runners/design-story/index.ts",
+          "change": "Existing consumer of shared content gates; inspect/verify prompt propagation; no duplicated policy."
+        },
+        {
+          "path": "src/workflow/orchestrator.ts",
+          "change": "Existing author/synthesis gate consumers and companion renderer; verify shared guidance propagates; no rendering behavior change."
+        },
+        {
+          "path": "src/workflow/review-pipeline/design-review.ts",
+          "change": "Existing consumer of buildTemplateReviewPrompt; verify both reviewer routes consume shared instructions, no separate policy."
+        },
+        {
+          "path": "vscode-plugin/assets/steering-block.md",
+          "change": "Synchronize shipped steering from canonical source."
+        },
+        {
+          "path": "AGENTS.md",
+          "change": "Refresh only generated steering block; retain unrelated local instructions."
+        },
+        {
+          "path": "CLAUDE.md",
+          "change": "Refresh only generated steering block; retain unrelated local instructions."
+        },
+        {
+          "path": "src/workflow/review/verdict.ts",
+          "change": "Unchanged: preserve severityForOutcome and computeVerdict semantics; regression test their actual behavior."
+        },
+        {
+          "path": "src/daemon/steps/review-step/phases/findings.ts",
+          "change": "Unchanged shared answer-validation consumer; verify no divergent policy."
+        }
+      ],
+      "guidancePolicy": "Advisory means narrative advice, NOT a warn verdict or a does-not-hold/LOW finding. Keep existing verdict semantics unchanged: confirmed material inadequacy is does-not-hold with MED/HIGH and blocks; genuinely unavailable evidence is could-not-verify and warns; an adequate design can hold with optional improvement advice in evidence/action. Never label a confirmed failure unverified or assert a missing artifact exists. An optional visual not required for assessment is not a failed requirement. Missing relationship documentation remains a defect even when no diagram is needed."
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Missing necessary companion or broken/generated mismatch",
+          "detection": "Independent review of design semantics and actual linked companion",
+          "response": "Material missing relationship documentation or necessary artifact: does-not-hold MED/HIGH with cited evidence. Adequate design with optional visual improvement: narrative suggestion under the supported adequacy premise, not a failure or warning verdict.",
+          "userImpact": "Proportional judgment without changing outcome/severity contracts or mislabeling evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Rendering tools unavailable",
+          "detection": "Reviewer cannot render linked HTML/diagram",
+          "response": "Read source/definition when possible and report could-not-verify visual rendering rather than claim success",
+          "userImpact": "Evidence limits remain honest",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Class-local method change without external entity/relationship impact",
+          "expected": "No ERD required solely because a class changed"
+        },
+        {
+          "input": "Single new foreign key or relationship cardinality change",
+          "expected": "Document changed relationship; select table/prose or ERD proportionally"
+        },
+        {
+          "input": "No erDefinition or uxDefinition supplied",
+          "expected": "Reviewer still independently assesses relevance"
+        },
+        {
+          "input": "Third review round already completed",
+          "expected": "Stop and request explicit user permission before fourth review"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Canonical steering and guide content remain synchronized with shipped copies",
+          "source": "c1"
+        },
+        {
+          "text": "Review adapter retains existing answer schema and premise budget",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Regression guard on emitted guidance, not model behavior guarantee",
+          "subjects": [
+            "Author/build guides distinguish isolated edits from relationship documentation and select relevant definitions",
+            "Reviewer prompt independently assesses artifact necessity without existing definitions and qualifies rendering",
+            "Steering copies and three-round rule remain synchronized"
+          ],
+          "fixturesNeeded": [
+            "Canonical steering text and generated review prompt with design lacking companion definitions"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Author/build guides distinguish isolated edits from relationship documentation and select relevant definitions"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Reviewer prompt independently assesses artifact necessity without existing definitions and qualifies rendering"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Steering copies and three-round rule remain synchronized"
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test with tsx; extend steering/review prompt suites and run TypeScript build. No live LLM call needed; tests establish instruction delivery rather than judgment quality.",
+      "criteria": [
+        {
+          "id": "ac1",
+          "text": "Authors/builders distinguish isolated class edits from relationship changes; document all relationship changes and use relevant ER/sequence/component/UX definitions without blanket diagram mandates."
+        },
+        {
+          "id": "ac2",
+          "text": "Reviewer prompt independently assesses necessity with no definitions; checks linked files/content/rendered consistency and honestly reports unavailable rendering."
+        },
+        {
+          "id": "ac3",
+          "text": "Advisory improvements do not misuse defect outcomes; unchanged verdict normalization, copy synchronization and three-round cap are preserved."
+        }
+      ],
+      "explicitAssertions": [
+        "src/mcp/__tests__/review-rule-text.test.ts: assert front-door existing-code/proposed-design routing and design/build/review guide relevance examples; relationship documentation versus optional ERD; all three-round clauses retained; plugin steering equals canonical source.",
+        "src/workflow/review/__tests__/template.test.ts: generate prompt for design with no companion definitions; assert unconditional necessity assessment, linked-file existence/content/design consistency checks, visual-render verification and could-not-verify fallback. Assert instructions request author regeneration, not reviewer-authored replacement.",
+        "src/workflow/review/__tests__/template.test.ts: assert shared content gates include isolated-class/no-relationship counterexample, relationship-change documentation, UI/interaction relevance and framework-owned companions; verify design runner/orchestrator consumers use these constants.",
+        "src/workflow/review/__tests__/template.test.ts: pass complete valid answers through validateTemplateAnswer then computeVerdict(DEFAULT_BLOCK_ON). Adequacy holds with optional visual advice remains LOW/pass; does-not-hold severity LOW remains MED/block; HIGH remains HIGH/block; could-not-verify remains LOW/warn. Prove confirmed missing relationship documentation uses failure rather than unverified.",
+        "Instruction assertions fail when added clauses are removed; behavioral fixtures preserve existing schema/verdict contract. These tests establish prompt delivery/normalization, not probabilistic LLM judgment or actual browser rendering."
+      ]
+    },
+    "migration": {
+      "stateBefore": "Steering hides companion selection; review prompt lacks independent relevance/rendered-artifact checks.",
+      "stateAfter": "Existing schemas and rendering unchanged; shipped instructions clarify proportional author/build/reviewer judgment.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Ship updated canonical prompt assets and synchronized steering copies through existing build/refresh mechanisms; preserve unrelated local instructions.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No persisted schema or public API migration; old designs remain readable and reviewer handles missing definitions by assessing relevance.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared relevance guidance through existing prompts",
+        "oneLineSummary": "Preserve companion contracts and teach conditional selection and verification.",
+        "approach": "Update canonical steering, author/build/reviewer guidance and existing review prompt checklist wording; reuse structured definitions and deterministic rendering with unchanged schemas.",
+        "pros": [
+          "Smallest complete behavioral correction",
+          "No renderer or public schema changes"
+        ],
+        "cons": [
+          "Model judgment needs regression fixtures and cannot guarantee every decision"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Mandatory artifact checklist and schema",
+        "oneLineSummary": "Require explicit artifact decisions in every design record.",
+        "approach": "Add structured mandatory artifact-decision fields and review gating even for designs without visual changes, while retaining existing renderers.",
+        "pros": [
+          "Machine-checkable decision presence"
+        ],
+        "cons": [
+          "New artifact schema and migration beyond prompt-only scope",
+          "Encourages ceremony for isolated changes"
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/prompts/steering-block.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/design-review.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/clarify-design-visual-authoring-independent-reviewer-E20261024e340794b/ISSUE.md"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User clarification: isolated class change without entity impact needs no ERD; relationship changes even simple require documentation."
+    }
+  ]
+}

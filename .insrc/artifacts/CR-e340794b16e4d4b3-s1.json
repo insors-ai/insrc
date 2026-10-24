@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792829019033-pm1zi2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T08:03:39.034Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 52613,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e340794b16e4d4b3",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-24T07:31:35.750Z",
+    "epicSlug": "clarify-design-visual-authoring-independent-reviewer",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e340794b16e4d4b3",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "src/prompts/steering-block.md",
+        "src/workflow/artifacts/companion/component-schema.ts",
+        "src/workflow/artifacts/companion/er-schema.ts",
+        "src/workflow/artifacts/companion/sequence-schema.ts",
+        "src/workflow/artifacts/companion/ux-schema.ts",
+        "src/workflow/review/__tests__/visual-guidance.test.ts",
+        "src/workflow/review/template.ts",
+        "vscode-plugin/assets/steering-block.md"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of readDesignReviewSettings. The graph may have missed coverage.",
+            "expectationRef": "readDesignReviewSettings",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620993"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of pick. The graph may have missed coverage.",
+            "expectationRef": "pick",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620994"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of reviewDeadlineMs. The graph may have missed coverage.",
+            "expectationRef": "reviewDeadlineMs",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620995"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of reviewTemplateFor. The graph may have missed coverage.",
+            "expectationRef": "reviewTemplateFor",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620996"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of isDesignStage. The graph may have missed coverage.",
+            "expectationRef": "isDesignStage",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620997"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of resolveDesignReview. The graph may have missed coverage.",
+            "expectationRef": "resolveDesignReview",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "620999"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of has. The graph may have missed coverage.",
+            "expectationRef": "has",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "621000"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of buildTemplateReviewPrompt. The graph may have missed coverage.",
+            "expectationRef": "buildTemplateReviewPrompt",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "621001"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of text. The graph may have missed coverage.",
+            "expectationRef": "text",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "621006"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/review/template.ts:1",
+            "message": "Story tests pass, but no test-reaching edge confirms exercise of validateTemplateAnswer. The graph may have missed coverage.",
+            "expectationRef": "validateTemplateAnswer",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "621007"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 10
+    }
+  }
+}

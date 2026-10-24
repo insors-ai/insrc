@@ -10,6 +10,8 @@ import { serialize as bson, Long } from 'bson';
 import ExcelJS from 'exceljs';
 import { MemoryFileExecution } from '../file-execution.js';
 import { bsonConverter } from '../drivers/converters/bson.js';
+import { deflateRawSync } from 'node:zlib';
+import { avroConverter } from '../drivers/converters/avro.js';
 import { fixedWidthConverter } from '../drivers/converters/fixed-width.js';
 import { xlsxConverter } from '../drivers/converters/xlsx.js';
 import { createTypedRowSource } from '../drivers/converters/typed-row-source.js';
@@ -151,13 +153,36 @@ test('CM-S1-H: typed empty and all-null tables preserve declared types and nulla
 });
 test('CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets', async () => {
 	await fixture(async (dir) => {
-		for (const failure of ['schema', 'budget', 'bson', 'fixed-width'] as const) {
+		for (const failure of ['schema', 'budget', 'bson', 'fixed-width', 'avro'] as const) {
 			const resource = await MemoryFileExecution.open(policy(dir));
 			let sourceClosed = 0;
-			if (failure === 'fixed-width') {
-				const path=join(dir,'giant.txt');await writeFile(path,'x'.repeat(128*1024));
-				await assert.rejects(resource.loadRows((budget,signal)=>fixedWidthConverter.openMemory!(path,{memoryBudgetBytes:budget.limit,budget,signal},{columns:[{name:'value',start:0,length:1,type:'string'}]})),/resource-limit/);
-			} else if (failure === 'bson') {
+			if (failure === 'avro') {
+				const long = (n: number) => {
+					let value = n * 2;
+					const bytes = [];
+					while (value >= 128) {
+						bytes.push((value & 127) | 128);
+						value = Math.floor(value / 128);
+					}
+					bytes.push(value);
+					return Buffer.from(bytes);
+				};
+				const text = (value: string) => {
+					const bytes = Buffer.from(value);
+					return Buffer.concat([long(bytes.length), bytes]);
+				};
+				const sync = Buffer.alloc(16, 7), compressed = deflateRawSync(Buffer.alloc(8 * 1024 * 1024 + 1));
+				const header = Buffer.concat([Buffer.from([79, 98, 106, 1]), long(2), text('avro.schema'), text(JSON.stringify({ type: 'record', name: 'Oversized', fields: [{ name: 'value', type: 'bytes' }] })), text('avro.codec'), text('deflate'), long(0), sync]);
+				const path = join(dir, 'expansion.avro');
+				await writeFile(path, Buffer.concat([header, long(1), long(compressed.length), compressed, sync]));
+				await assert.rejects(resource.loadRows((budget, signal) => avroConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget, signal })), /resource-limit/);
+			}
+			else if (failure === 'fixed-width') {
+				const path = join(dir, 'giant.txt');
+				await writeFile(path, 'x'.repeat(128 * 1024));
+				await assert.rejects(resource.loadRows((budget, signal) => fixedWidthConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget, signal }, { columns: [{ name: 'value', start: 0, length: 1, type: 'string' }] })), /resource-limit/);
+			}
+			else if (failure === 'bson') {
 				const path = join(dir, 'bad.bson'), header = Buffer.alloc(4);
 				header.writeInt32LE(0x7fffffff);
 				await writeFile(path, header);
@@ -245,15 +270,38 @@ test('CM-S1-H: unavailable local readers fail explicitly without INSTALL and clo
 		}
 	});
 });
-
-test('CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once',async()=>{
- await fixture(async dir=>{
-  const resource=await MemoryFileExecution.open(policy(dir));let begin!:()=>void,release!:()=>void;
-  const started=new Promise<void>(r=>begin=r),gate=new Promise<void>(r=>release=r);let calls=0;
-  const loading=resource.loadRows(async budget=>{
-   const free=budget.reserve(1024);
-   return{async targets(){return[];},async describe(){return[];},async *batches(){},async close(){calls++;begin();await gate;free();}};
-  });
-  await started;let closed=false;const closing=resource.close().then(()=>{closed=true;});await delay(5);assert.equal(closed,false);release();await loading;await closing;assert.equal(calls,1);assert.equal(resource.diagnostics.decodedBytes,0);assert.equal(resource.diagnostics.connections,0);
- });
+test('CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once', async () => {
+	await fixture(async (dir) => {
+		const resource = await MemoryFileExecution.open(policy(dir));
+		let begin!: () => void, release!: () => void;
+		const started = new Promise<void>(r => begin = r), gate = new Promise<void>(r => release = r);
+		let calls = 0;
+		const loading = resource.loadRows(async (budget) => {
+			const free = budget.reserve(1024);
+			return { async targets() {
+					return [];
+				}, async describe() {
+					return [];
+				}, async *batches() {
+				}, async close() {
+					calls++;
+					begin();
+					await gate;
+					free();
+				} };
+		});
+		await started;
+		let closed = false;
+		const closing = resource.close().then(() => {
+			closed = true;
+		});
+		await delay(5);
+		assert.equal(closed, false);
+		release();
+		await loading;
+		await closing;
+		assert.equal(calls, 1);
+		assert.equal(resource.diagnostics.decodedBytes, 0);
+		assert.equal(resource.diagnostics.connections, 0);
+	});
 });

@@ -1,3 +1,4 @@
+import { validateAvroSchemaDefinition } from './avro-schema.js';
 /** Explicit container framing + bounded inflater + schema-first Avro rows. */
 import avsc from 'avsc';
 import { inflateRawSync } from 'node:zlib';
@@ -139,7 +140,9 @@ async function header(path: string, stamp: SourceStamp, budget: DecoderBudget): 
 		if (codec !== 'null' && codec !== 'deflate')
 			throw new Error('unsupported-temporary');
 		validateSchemaJson(schema);
-		const type = avsc.Type.forSchema(JSON.parse(schema.toString('utf8')) as avsc.Schema);
+		const definition:unknown=JSON.parse(schema.toString('utf8'));
+		validateAvroSchemaDefinition(definition);
+		const type = avsc.Type.forSchema(definition as avsc.Schema);
 		if (type.typeName !== 'record')
 			throw new Error('unsupported-temporary');
 		validateAvroSchema(type);

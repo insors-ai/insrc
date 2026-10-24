@@ -20,8 +20,9 @@ import type { StructuredSchema } from '../../shared/types.js';
 import { readCommonApprovalMode } from '../../shared/common-approval.js';
 import { getApprovalGate } from '../approval.js';
 import { buildApprovalRequest, resolveApprovalClass, shouldAsk } from './approval-policy.js';
+import { runToolHooks } from './hooks.js';
 import { getTool } from './registry.js';
-import type { ApprovalDenial, ApprovalGate, CommonApprovalMode, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
+import type { ApprovalDenial, ApprovalGate, CommonApprovalMode, Tool, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
 
 const log = getLogger('tools-executor');
 
@@ -56,6 +57,18 @@ export function _setApprovalGateForTests(g: (() => ApprovalGate) | undefined): v
 /** Test seam: the tools.commonApproval setting. Production reads ~/.insrc/config.json on each call. */
 let commonSetting: () => CommonApprovalMode = readCommonApprovalMode;
 export function _setCommonApprovalForTests(f: (() => CommonApprovalMode) | undefined): void { commonSetting = f ?? readCommonApprovalMode; }
+
+/**
+ * The hook stage (sc1): run the rules registered for the tool, after a successful, checked call.
+ * Only a failed rule changes the result: it stays a success and gains hookFailures and one line
+ * per failure in its text. With no rule, or none failing, the very object the tool returned is returned.
+ */
+async function withHooks(tool: Tool, input: ToolInput, deps: ToolDeps, result: ToolResult): Promise<ToolResult> {
+	const failures = await runToolHooks(tool, input, result, deps);
+	if (failures.length === 0) return result;
+	const lines = failures.map(f => `[hook failed] ${f.hookId}: ${f.message}`).join('\n');
+	return { ...result, output: result.output === '' ? lines : `${result.output}\n${lines}`, hookFailures: failures };
+}
 
 /** ajv reports a schema it cannot compile as an error list that starts with this text. */
 const isCompileError = (errors: readonly string[]): boolean => errors[0]?.startsWith('ajv.compile failed') === true;
@@ -129,13 +142,14 @@ export async function executeTool(
 
 	try {
 		const result = await tool.execute(input, deps);
-		if (outputSchema === undefined || !result.success) return result;
+		if (!result.success) return result;
+		if (outputSchema === undefined) return await withHooks(tool, input, deps, result);
 		if (result.data === undefined) {
 			log.warn({ id: tool.id }, 'tool returned no data for its declared output schema');
 			return failed('schema-mismatch', `tool ${tool.id} returned no data for its declared output schema`, result.output);
 		}
 		const dataCheck = validateAgainstSchema(outputSchema as StructuredSchema, result.data);
-		if (dataCheck.ok) return result;
+		if (dataCheck.ok) return await withHooks(tool, input, deps, result);
 		if (isCompileError(dataCheck.errors)) {
 			log.error({ id: tool.id, err: dataCheck.errors[0] }, 'tool declares an invalid output schema');
 			return failed('rejected', `tool ${tool.id} declares an invalid input or output schema`);

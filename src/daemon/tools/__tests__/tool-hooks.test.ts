@@ -25,7 +25,7 @@ test('tool-hooks.test.ts: HookFailure report shape', () => {
 
 import { afterEach, beforeEach } from 'node:test';
 import { HOOK_MESSAGE_MAX, _resetToolHooksForTests, registerToolHook, runToolHooks } from '../hooks.js';
-import { _resetRegistryForTests, registerTool, registerToolAlias } from '../registry.js';
+import { _resetRegistryForTests, getTool as getToolForTest, registerTool, registerToolAlias } from '../registry.js';
 import type { Tool, ToolHook } from '../types.js';
 import { deps, fakeTool } from './_fakes.js';
 
@@ -137,4 +137,118 @@ test('tool-hooks.test.ts: a hook that mutates nested result.data, with and witho
 	const failed = await runToolHooks(tool(), {}, uncloneable, deps());
 	assert.deepEqual(failed.map(f => f.message), ['the result could not be copied for the rule', 'the result could not be copied for the rule']);
 	assert.equal(ran, 0);
+});
+
+// ── the executor's hook stage ─────────────────────────────────────────────
+
+import { _setApprovalGateForTests, executeTool } from '../executor.js';
+import { OutSchema } from './_fakes.js';
+
+const GOOD_IN = { name: 'n', count: 1 };
+const GOOD_DATA = { id: 'x', total: 1 };
+const withCaller = (caller: ToolDeps['caller']): ToolDeps => ({ ...deps(), ...(caller !== undefined ? { caller } : {}) });
+const counter = (id: string, toolId: string, log: string[] = []): ToolHook => hook(id, toolId, async ctx => { log.push(`${id}:${ctx.caller ?? 'unset'}`); });
+
+import type { ToolDeps } from '../types.js';
+afterEach(() => { _setApprovalGateForTests(undefined); });
+
+test('tool-hooks.test.ts: a registered rule runs once after a successful call for each caller (agent, daemon, workflow, unset)', async () => {
+	registerTool(fakeTool('demo', ok(GOOD_DATA)));
+	const log: string[] = [];
+	registerToolHook(counter('h', 'demo', log));
+	for (const caller of ['agent', 'daemon', 'workflow', undefined] as const) {
+		const r = await executeTool('demo', GOOD_IN, withCaller(caller));
+		assert.equal(r.success, true);
+	}
+	assert.deepEqual(log, ['h:agent', 'h:daemon', 'h:workflow', 'h:unset'], 'once per call, with the caller as given');
+});
+
+test('tool-hooks.test.ts: a tool with no outputSchema still runs its rules', async () => {
+	registerTool(fakeTool('plain', ok(), { schemas: false }));
+	const log: string[] = [];
+	registerToolHook(counter('h', 'plain', log));
+	const r = await executeTool('plain', {}, deps());
+	assert.equal(r.success, true);
+	assert.deepEqual(log, ['h:unset']);
+});
+
+test('tool-hooks.test.ts: a tool called through an alias runs the canonical id\'s rule exactly once', async () => {
+	registerTool(fakeTool('file:read', ok(), { schemas: false }));
+	registerToolAlias('file:read', 'Read');
+	const log: string[] = [];
+	registerToolHook(counter('h', 'file:read', log));
+	await executeTool('Read', {}, deps());
+	assert.deepEqual(log, ['h:unset'], 'by alias');
+	await executeTool('file:read', {}, deps());
+	assert.deepEqual(log, ['h:unset', 'h:unset'], 'by canonical id');
+});
+
+test('tool-hooks.test.ts: a failing rule leaves the result a success and reports the failure on hookFailures and in the output text', async () => {
+	const returned: ToolResult = { output: 'did it', format: 'json', success: true, data: GOOD_DATA };
+	registerTool(fakeTool('demo', returned));
+	registerToolHook(hook('first', 'demo', async () => { throw new Error('refresh failed'); }));
+	registerToolHook(hook('second', 'demo', async () => { throw new Error('second failed'); }));
+	const r = await executeTool('demo', GOOD_IN, deps());
+	assert.equal(r.success, true);
+	assert.equal(r.format, 'json');
+	assert.deepEqual(r.data, GOOD_DATA);
+	assert.deepEqual(r.hookFailures, [{ hookId: 'first', message: 'refresh failed' }, { hookId: 'second', message: 'second failed' }]);
+	assert.equal(r.output, 'did it\n[hook failed] first: refresh failed\n[hook failed] second: second failed');
+	assert.equal(returned.output, 'did it', 'the tool\'s own result object is not edited');
+	assert.equal(r.error, undefined);
+	assert.equal(r.failure, undefined);
+});
+
+test('tool-hooks.test.ts: a failed, denied, rejected or schema-mismatch call runs no rule', async () => {
+	const log: string[] = [];
+	registerTool(fakeTool('fails', { output: 'nope', format: 'text', success: false, error: 'nope' }, { schemas: false }));
+	registerTool(fakeTool('bad-data', ok({ id: 1 })));                                // data does not fit OutSchema
+	registerTool(fakeTool('no-data', ok()));                                           // schema declared, no data
+	registerTool(fakeTool('typed', ok(GOOD_DATA)));                                    // input is checked
+	registerTool({ ...fakeTool('destructive', ok(), { schemas: false }), approval: 'destructive' });
+	registerTool(fakeTool('throws', ok(), { schemas: false }));
+	(getToolForTest('throws') as { execute: Tool['execute'] }).execute = async () => { throw new Error('exploded'); };
+	for (const id of ['fails', 'bad-data', 'no-data', 'typed', 'destructive', 'throws']) registerToolHook(counter(`h-${id}`, id, log));
+	_setApprovalGateForTests(() => ({ async ask() { return 'declined'; } }));
+
+	const results = [
+		await executeTool('fails', {}, deps()),
+		await executeTool('bad-data', GOOD_IN, deps()),
+		await executeTool('no-data', GOOD_IN, deps()),
+		await executeTool('typed', { name: 5 }, deps()),                                   // rejected by the input check
+		await executeTool('destructive', {}, deps()),                                      // denied
+		await executeTool('throws', {}, deps()),
+		await executeTool('missing-tool', {}, deps()),
+	];
+	assert.deepEqual(log, [], 'no rule ran');
+	assert.deepEqual(results.map(r => r.success), [false, false, false, false, false, false, false]);
+	assert.deepEqual(results.map(r => r.failure?.kind), [undefined, 'schema-mismatch', 'schema-mismatch', 'rejected', 'denied', 'rejected', 'rejected']);
+	for (const r of results) assert.equal('hookFailures' in r, false);
+	void OutSchema;
+});
+
+test('tool-hooks.test.ts: rules run in registration order and a failing rule does not stop the next', async () => {
+	registerTool(fakeTool('demo', ok(GOOD_DATA)));
+	const order: string[] = [];
+	registerToolHook(hook('a', 'demo', async () => { order.push('a'); throw new Error('a failed'); }));
+	registerToolHook(hook('b', 'demo', async () => { order.push('b'); }));
+	registerToolHook(hook('c', 'demo', async () => { order.push('c'); }));
+	const r = await executeTool('demo', GOOD_IN, deps());
+	assert.deepEqual(order, ['a', 'b', 'c']);
+	assert.deepEqual(r.hookFailures?.map(f => f.hookId), ['a']);
+	assert.equal(r.success, true);
+});
+
+test('tool-hooks.test.ts: a call with no rule returns the object the tool returned', async () => {
+	const returned = ok(GOOD_DATA);
+	registerTool(fakeTool('demo', returned));
+	registerTool(fakeTool('other', ok(GOOD_DATA)));
+	registerToolHook(counter('h', 'other'));                                          // a rule for another tool
+	const r = await executeTool('demo', GOOD_IN, deps());
+	assert.equal(r, returned, 'the same object, nothing added');
+	assert.equal('hookFailures' in r, false);
+	// and when every rule passes
+	registerToolHook(counter('h2', 'demo'));
+	const again = await executeTool('demo', GOOD_IN, deps());
+	assert.equal(again, returned);
 });

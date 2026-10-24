@@ -624,10 +624,11 @@ test('a failing precondition read fails the call before any change, and no runSh
  * through fail, spawnFail, readFailure, conflictFailure or ranToExit); a helper that swallows a failure (currentBranch,
  * stagedCount, revParse) is used only where it is listed, and a listed use is a preview.
  */
-function scanSources(sources: Record<string, string>): { offenders: string[]; lookups: string[]; helperUses: string[] } {
+function scanSources(sources: Record<string, string>): { offenders: string[]; lookups: string[]; helperUses: string[]; readHelpers: string[] } {
 	const offenders: string[] = [];
 	const lookups: string[] = [];
 	const helperUses: string[] = [];
+	const readHelpers: string[] = [];
 	for (const [file, src] of Object.entries(sources)) {
 		for (const m of src.matchAll(/(?:const|let)\s+(\w+)\s*=\s*await\s+runShell(?:Bytes)?\(/g)) {
 			const name = m[1]!;
@@ -637,15 +638,19 @@ function scanSources(sources: Record<string, string>): { offenders: string[]; lo
 			if (!new RegExp(`(?:fail|spawnFail|readFailure|conflictFailure)\\([^)]*\\b${name}\\b`).test(src)) { lookups.push(`${file}: ${name}`); }
 		}
 		for (const m of src.matchAll(/\b(currentBranch|stagedCount|revParse)\(/g)) { helperUses.push(`${file}: ${m[1]}`); }
+		// reads made through the typed helpers: each call is a lookup (secondary) or a precondition and is listed with its count
+		const counts = new Map<string, number>();
+		for (const m of src.matchAll(/\b(readBranch|readStagedCount|readShortSha|branchForReport)\(/g)) { counts.set(m[1]!, (counts.get(m[1]!) ?? 0) + 1); }
+		for (const [h, n] of counts) { readHelpers.push(`${file}: ${h} x${n}`); }
 	}
-	return { offenders, lookups, helperUses };
+	return { offenders, lookups, helperUses, readHelpers };
 }
 
 function audit(): void {
 	const dir = dirname(fileURLToPath(import.meta.url)) + '/..';
 	const skip = new Set(['helpers.ts', 'parsers.ts', 'index.ts', 'schemas.ts', 'coverage.ts']);
 	const sources = Object.fromEntries(readdirSync(dir).filter(n => n.endsWith('.ts') && !skip.has(n)).map(n => [n, readFileSync(join(dir, n), 'utf8')]));
-	const { offenders, lookups, helperUses } = scanSources(sources);
+	const { offenders, lookups, helperUses, readHelpers } = scanSources(sources);
 
 	// the scan itself: it flags a result that is never looked at, a lookup that is not in the list, and a swallowing helper
 	const planted = scanSources({
@@ -655,6 +660,8 @@ function audit(): void {
 	assert.deepEqual(planted.offenders, ['x.ts: r']);
 	assert.deepEqual(planted.lookups, ['x.ts: r', 'x.ts: l']);
 	assert.deepEqual(planted.helperUses, ['x.ts: currentBranch']);
+	const plantedHelpers = scanSources({ 'y.ts': "const ignored = await readShortSha(cwd, 'HEAD');\nawait branchForReport(cwd, w, 'x');\nawait branchForReport(cwd, w, 'x');\n" });
+	assert.deepEqual(plantedHelpers.readHelpers, ['y.ts: readShortSha x1', 'y.ts: branchForReport x2']);
 
 	assert.deepEqual(offenders, [], 'a runShell result whose process flags are never looked at');
 	// A lookup is any other runShell result. Adding one fails here until it is listed with what it is; a secondary one
@@ -670,6 +677,22 @@ function audit(): void {
 	for (const [key, kind] of Object.entries(KNOWN)) {
 		if (kind !== 'secondary') { continue; }
 		assert.ok(INVENTORY.some(l => l.tool.id === TOOL_OF[key.split(':')[0]!]), `${key} is secondary: ${TOOL_OF[key.split(':')[0]!]} needs an INVENTORY entry`);
+	}
+	// Reads through the typed helpers. A precondition read stops the call; a secondary one keeps its placeholder and warns, and
+	// its tool needs an INVENTORY entry. A new call fails here until it is listed.
+	const HELPERS: Record<string, 'secondary' | 'precondition'> = {
+		'amend.ts: branchForReport x1': 'secondary', 'amend.ts: readShortSha x1': 'secondary',
+		'checkout.ts: readBranch x1': 'secondary', 'cherry-pick.ts: branchForReport x1': 'secondary',
+		'commit.ts: readBranch x1': 'precondition', 'commit.ts: readStagedCount x1': 'precondition',
+		'merge.ts: branchForReport x2': 'secondary', 'pull.ts: readBranch x1': 'precondition',
+		'push.ts: readBranch x2': 'precondition', 'push.ts: readShortSha x1': 'secondary',
+		'rebase.ts: branchForReport x2': 'secondary', 'reset.ts: branchForReport x1': 'secondary', 'revert.ts: branchForReport x1': 'secondary',
+	};
+	assert.deepEqual(readHelpers.sort(), Object.keys(HELPERS).sort(), 'a read through a typed helper that is not listed');
+	const HELPER_TOOL: Record<string, string> = { 'amend.ts': 'git_amend', 'checkout.ts': 'git_checkout', 'cherry-pick.ts': 'git:cherry-pick', 'merge.ts': 'git_merge', 'push.ts': 'git_push', 'rebase.ts': 'git_rebase', 'reset.ts': 'git_reset', 'revert.ts': 'git_revert' };
+	for (const [key, kind] of Object.entries(HELPERS)) {
+		if (kind !== 'secondary') { continue; }
+		assert.ok(INVENTORY.some(l => l.tool.id === HELPER_TOOL[key.split(':')[0]!]), `${key} is secondary: ${HELPER_TOOL[key.split(':')[0]!]} needs an INVENTORY entry`);
 	}
 	// the helpers that swallow a failure are used only for the preview of an approval request, where a failure is a placeholder
 	assert.deepEqual(helperUses.sort(), [

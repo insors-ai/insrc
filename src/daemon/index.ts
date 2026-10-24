@@ -123,6 +123,7 @@ import { buildSettingsCatalog } from '../config/settings-catalog.js';
 import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
+import { approvalAnswer, approvalSubscribe } from './approval.js';
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -1748,6 +1749,7 @@ async function main(): Promise<void> {
 		// caller authorization happens inside each handler, stream
 		// events land on the in-process bus and get flushed via
 		// 'todos.subscribe' below.
+		'approval.answer': (params) => approvalAnswer(params),
 		'todos.listForSession': (params) => todosRpc.listForSession(db, params),
 		'todos.create': (params) => todosRpc.create(db, params),
 		'todos.update': (params) => todosRpc.update(db, params),
@@ -1929,6 +1931,8 @@ async function main(): Promise<void> {
 		'handoff.run':                 offlineStream('handoff.run'),
 		'meta-task.run':               offlineStream('meta-task.run'),
 		'gate.request-permission':     offlineStream('gate.request-permission'),
+		// The approval exchange (sc4): clients subscribe here and answer with 'approval.answer'.
+		'approval.subscribe':          approvalSubscribe,
 		'chat.send':                   offlineStream('chat.send'),
 		'chat.resume':                 offlineStream('chat.resume'),
 		'chat.resumeFromCheckpoint':   offlineStream('chat.resumeFromCheckpoint'),

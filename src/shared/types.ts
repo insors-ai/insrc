@@ -899,6 +899,36 @@ export interface IpcResponse {
   error?:  string;
 }
 
+// ---------------------------------------------------------------------------
+// Approval exchange (sc4): the daemon asks, a subscribed client answers.
+// A client opens the `approval.subscribe` stream and receives `gate` frames
+// carrying an ApprovalGateFrame; it answers each request with one
+// `approval.answer` RPC. Clients import these types, not the daemon's.
+// ---------------------------------------------------------------------------
+
+/** What the user is asked to approve: the exact call, not a text summary. */
+export interface ApprovalRequest {
+  requestId:     string;
+  toolId:        string;
+  approvalClass: 'common' | 'destructive';
+  /** The repository the call acts on (input cwd, else the invocation's repoPath). */
+  repoPath:      string;
+  /** The call's arguments, truncated for display when large. */
+  arguments:     Record<string, unknown>;
+  preview?:      { title: string; content: string } | undefined;
+  reason:        string;
+  /** ISO time after which the request is denied as timed-out. */
+  expiresAt:     string;
+}
+
+/** The data of a `gate` frame on the `approval.subscribe` stream. 'cancel' closes a prompt that is no longer open. */
+export type ApprovalGateFrame =
+  | { readonly type: 'request'; readonly request: ApprovalRequest }
+  | { readonly type: 'cancel';  readonly requestId: string; readonly reason: 'answered' | 'timed-out' | 'cancelled' | 'no-client' };
+
+export interface ApprovalAnswerParams { requestId: string; decision: 'approve' | 'decline' }
+export interface ApprovalAnswerResult { accepted: boolean }
+
 export type IpcStreamKind = 'delta' | 'progress' | 'gate' | 'checkpoint' | 'done' | 'error' | 'qna.update' | 'liveStep' | 'todos' | 'handoff' | 'meta-task' | 'assertion-confirm' | 'analyze.result';
 
 export interface IpcStreamMessage {

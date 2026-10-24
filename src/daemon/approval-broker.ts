@@ -20,6 +20,7 @@
  */
 
 import { getLogger } from '../shared/logger.js';
+import type { ApprovalGateFrame } from '../shared/types.js';
 import type { ApprovalAnswer, ApprovalDenial, ApprovalGate, ApprovalRequest } from './tools/types.js';
 
 const log = getLogger('approval-broker');
@@ -28,9 +29,7 @@ const log = getLogger('approval-broker');
 export const APPROVAL_WAIT_MS = 300_000;
 
 /** What a subscribed client is sent. 'cancel' closes a prompt that is no longer open, whatever the reason. */
-export type ApprovalFrame =
-	| { readonly type: 'request'; readonly request: ApprovalRequest }
-	| { readonly type: 'cancel';  readonly requestId: string; readonly reason: 'answered' | 'timed-out' | 'cancelled' | 'no-client' };
+export type ApprovalFrame = ApprovalGateFrame;
 
 interface Pending {
 	readonly request: ApprovalRequest;

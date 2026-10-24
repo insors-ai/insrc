@@ -18,7 +18,7 @@
  */
 
 import type { TSchema } from '@sinclair/typebox';
-import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
+import type { ApprovalRequest, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import type { TodosApi } from '../../shared/todos.js';
 
 
@@ -52,20 +52,7 @@ export type CommonApprovalMode = 'manual' | 'edit-auto' | 'auto';
 /** Why an approval was not given; the same four values as ToolDenialReason. */
 export type ApprovalDenial = ToolDenialReason;
 
-/** What the user is asked to approve: the exact call, not a text summary. */
-export interface ApprovalRequest {
-	requestId: string;
-	toolId: string;
-	approvalClass: 'common' | 'destructive';
-	/** The repository the call acts on (input cwd, else the invocation's repoPath). */
-	repoPath: string;
-	/** The call's arguments, truncated for display when large. */
-	arguments: Record<string, unknown>;
-	preview?: { title: string; content: string } | undefined;
-	reason: string;
-	/** ISO time after which the request is denied as timed-out. */
-	expiresAt: string;
-}
+export type { ApprovalRequest };
 
 export interface ApprovalAnswer {
 	requestId: string;

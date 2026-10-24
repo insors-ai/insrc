@@ -197,6 +197,7 @@ export function parseForEachRef(raw: string, fields: readonly string[]): Record<
     }
     fields.forEach((f, i) => {
       // object names are checked; a peeled name (*objectname) is empty for a ref that is not a tag
+      if (f === 'refname' && values[i] === '') { throw new ParseError('empty ref name'); }
       if (OBJECT_FIELDS.has(f) && !(values[i] === '' && f.startsWith('*')) && !SHA.test(values[i]!)) {
         throw new ParseError(`${f} is not an object name: ${JSON.stringify(values[i])}`);
       }
@@ -211,6 +212,8 @@ const OBJECT_FIELDS = new Set(['objectname', '*objectname', 'tree']);
 // log with a fixed format
 // ---------------------------------------------------------------------------
 
+const ISO_DATE = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:Z|[+-]\d\d:\d\d)$/;
+
 /** The --pretty format git_log runs: seven unit-separated fields; `git log -z` puts a NUL between commits. */
 export const LOG_FORMAT = `%H${FS}%h${FS}%an${FS}%ae${FS}%aI${FS}%s${FS}%b`;
 
@@ -219,7 +222,10 @@ export function parseLogRecords(raw: string): GitLogCommit[] {
   if (raw === '') { return []; }
   return raw.replace(/\0$/, '').split('\0').map(chunk => {
     const f = chunk.split(FS);
-    if (f.length !== 7 || !SHA.test(f[0]!)) { throw new ParseError(`unknown log record: ${JSON.stringify(chunk.slice(0, 120))}`); }
+    const [sha = '', shortSha = '', , , date = ''] = f;
+    if (f.length !== 7 || !SHA.test(sha) || !/^[0-9a-f]{4,}$/.test(shortSha) || !sha.startsWith(shortSha) || !ISO_DATE.test(date)) {
+      throw new ParseError(`unknown log record: ${JSON.stringify(chunk.slice(0, 120))}`);
+    }
     return {
       sha: f[0]!, shortSha: f[1]!, author: f[2]!, authorEmail: f[3]!, date: f[4]!, subject: f[5]!, body: f[6]!.trimEnd(),
     };

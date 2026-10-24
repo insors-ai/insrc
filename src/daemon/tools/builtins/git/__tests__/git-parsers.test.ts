@@ -140,6 +140,9 @@ test('a parser refuses cut output and unknown records', () => {
 		['for-each-ref: wrong field count', () => parseForEachRef('refs/heads/x\0\n', ['refname', 'objectname'])],
 		['for-each-ref: unterminated', () => parseForEachRef('refs/heads/x\x1f' + SHA_A, ['refname', 'objectname'])],
 		['log: unknown record', () => parseLogRecords('abc\x1fdef')],
+		['log: date is not ISO 8601', () => parseLogRecords(`${SHA_A}\x1faaaaaaa\x1fn\x1fe\x1fyesterday\x1fs\x1fb`)],
+		['log: short sha is not a prefix', () => parseLogRecords(`${SHA_A}\x1fbbbbbbb\x1fn\x1fe\x1f2024-01-01T00:00:00Z\x1fs\x1fb`)],
+		['for-each-ref: empty ref name', () => parseForEachRef('\x1f' + SHA_A + '\0\n', ['refname', 'objectname'])],
 		['log: sha is not an object name', () => parseLogRecords('x\x1fx\x1fx\x1fx\x1fx\x1fx\x1fx')],
 	];
 	for (const [name, f] of bad) { assert.throws(f, /./, name); }

@@ -14,6 +14,9 @@
  * layout.
  */
 
+import type { MemoryRowSource } from '../../../../shared/connection-management.js';
+export type { ConvertedColumn, ConvertedTarget, ConvertedBatch, MemoryRowSource } from '../../../../shared/connection-management.js';
+
 export interface ConvertResult {
 	readonly destPath: string;
 	readonly rowCount: number;
@@ -39,6 +42,12 @@ export interface FileConverter {
 	 *  layer in `daemon/db/drivers/duckdb-file.ts` to pick the right
 	 *  converter for a connection's `kind`. */
 	readonly kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx';
+	/** Optional during migration; unsupported formats must fail without a disk fallback. */
+	openMemory?(
+		source: string,
+		controls: MemorySourceOptions,
+		options?: Readonly<Record<string, unknown>> | undefined,
+	): Promise<MemoryRowSource>;
 
 	/**
 	 * Convert one source file. Implementations should be idempotent
@@ -68,4 +77,10 @@ export interface FileConverter {
 		opts: ConvertDirectoryOpts,
 		options?: Readonly<Record<string, unknown>>,
 	): Promise<ConvertDirectoryResult>;
+}
+
+/** Daemon-only decoding controls; never sourced from renderer connection options. */
+export interface MemorySourceOptions {
+ readonly memoryBudgetBytes: number;
+ readonly signal?: AbortSignal | undefined;
 }

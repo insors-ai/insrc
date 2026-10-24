@@ -1,9 +1,9 @@
 /** Daemon-private atomic registry boundary. Never chmod the live inode writable. */
 import { createHash, randomUUID } from 'node:crypto';
-import { open, lstat, readFile, rename, unlink } from 'node:fs/promises';
+import { open, lstat, readFile, rename, unlink, mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { ConnectionsFile } from '../../shared/db-driver.js';
-import type { ManagementEnvelope } from '../../shared/connection-management.js';
+import type { ManagementEnvelope, PreparationRecord } from '../../shared/connection-management.js';
 export class ManagedStoreError extends Error {
 	constructor(readonly code: 'registry-unreadable' | 'recovery-required' | 'reconciliation-required' | 'unsupported-filesystem') {
 		super({ 'registry-unreadable': 'Connection registry cannot be read safely.', 'recovery-required': 'Connection registry requires recovery.', 'reconciliation-required': 'Connection commit requires reconciliation.', 'unsupported-filesystem': 'Connection management requires a verified filesystem fence.' }[code]);
@@ -68,7 +68,7 @@ export async function readRegistrySnapshot(path: string, allowMissing = false): 
 }
 /** Physical proof on the target directory; no production registry is modified. */
 export async function proveWriterFence(directory: string): Promise<void> {
-	if (process.platform === 'win32' || process.getuid?.() === 0)
+	if (process.platform === 'win32' || process.getuid?.() === 0 || process.geteuid?.() === 0)
 		throw new ManagedStoreError('unsupported-filesystem');
 	const original = join(directory, `.connection-fence-${randomUUID()}`);
 	const replacement = `${original}.new`;
@@ -197,7 +197,8 @@ export class ManagedRegistry {
 		let actual: RegistrySnapshot;
 		try {
 			actual = await readRegistrySnapshot(this.path, expected.missing);
-		} catch {
+		}
+		catch {
 			throw new ManagedStoreError('recovery-required');
 		}
 		if (actual.digest !== expected.digest || actual.inode !== expected.inode || actual.device !== expected.device || actual.mode !== expected.mode || actual.missing !== expected.missing)
@@ -224,7 +225,10 @@ export class ManagedRegistry {
 	/** Internal proof consumer; untrusted callers still must pass full current fences. */
 	async #write(expected: RegistrySnapshot, text: string): Promise<void> {
 		await this.#check(expected);
-		const temp = join(dirname(this.path), `.db-connections-${randomUUID()}.tmp`);
+		const next = JSON.parse(text) as ConnectionsFile;
+		const added = Object.keys(next._management!.receipts).filter(id => !Object.hasOwn(expected.file._management?.receipts ?? {}, id));
+		const temporaryId = added.length === 1 && UUID.test(added[0]!) ? added[0]! : randomUUID();
+		const temp = join(dirname(this.path), `.db-connections-${temporaryId}.tmp`);
 		let handle: Awaited<ReturnType<typeof open>> | undefined;
 		let renameAttempted = false;
 		try {
@@ -269,5 +273,111 @@ export class ManagedRegistry {
 			await unlink(temp).catch(() => {
 			});
 		}
+	}
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export type PreparationBoundary = 'before-preparation-sync' | 'after-preparation-sync' | 'after-preparation-directory-sync';
+/** Durable, secret-free recovery records. The service's root lease serializes all calls. */
+export class PreparationJournal {
+	private constructor(readonly directory: string, readonly registryId: string, readonly registryPath: string, private readonly boundary?: ((stage: PreparationBoundary) => Promise<void>) | undefined) {
+	}
+	static async open(registryPath: string, registryId: string, boundary?: ((stage: PreparationBoundary) => Promise<void>) | undefined): Promise<PreparationJournal> {
+		if (!UUID.test(registryId))
+			throw new ManagedStoreError('recovery-required');
+		const directory = join(dirname(registryPath), 'connection-management-recovery');
+		await mkdir(directory, { mode: 0o700 }).catch(err => {
+			if ((err as NodeJS.ErrnoException).code !== 'EEXIST')
+				throw new ManagedStoreError('recovery-required');
+		});
+		const stat = await lstat(directory);
+		if (!stat.isDirectory() || stat.isSymbolicLink() || (stat.mode & 0o777) !== 0o700 || stat.uid !== process.getuid?.())
+			throw new ManagedStoreError('recovery-required');
+		const journal = new PreparationJournal(directory, registryId, registryPath, boundary);
+		await journal.sync();
+		return journal;
+	}
+	private async sync(): Promise<void> {
+		const dir = await open(this.directory, 'r');
+		try {
+			await dir.sync();
+		}
+		finally {
+			await dir.close();
+		}
+	}
+	private check(record: unknown): asserts record is PreparationRecord {
+		if (!record || typeof record !== 'object' || Array.isArray(record))
+			throw new ManagedStoreError('recovery-required');
+		const r = record as PreparationRecord;
+		if (Object.keys(r).sort().join(',') !== 'expectedGeneration,operationId,ownedStagedRefs,phase,registryId' || !UUID.test(r.operationId) || r.registryId !== this.registryId || !UUID.test(r.expectedGeneration) || !['prepared', 'commit-uncertain', 'cleanup-pending'].includes(r.phase) || !Array.isArray(r.ownedStagedRefs) || r.ownedStagedRefs.length > 4096 || r.ownedStagedRefs.some(ref => typeof ref !== 'string' || ref.length > 512) || new Set(r.ownedStagedRefs).size !== r.ownedStagedRefs.length)
+			throw new ManagedStoreError('recovery-required');
+	}
+	async prepare(record: PreparationRecord): Promise<void> {
+		this.check(record);
+		const text = JSON.stringify(record) + '\n';
+		const handle = await open(join(this.directory, `${record.operationId}.json`), 'wx', 0o600);
+		try {
+			await handle.writeFile(text, 'utf8');
+			await this.boundary?.('before-preparation-sync');
+			await handle.sync();
+			await handle.chmod(0o400);
+			await handle.sync();
+			await this.boundary?.('after-preparation-sync');
+		}
+		finally {
+			await handle.close();
+		}
+		await this.sync();
+		await this.boundary?.('after-preparation-directory-sync');
+	}
+	async pending(): Promise<readonly PreparationRecord[]> {
+		try {
+			const records: PreparationRecord[] = [];
+			for (const name of (await readdir(this.directory)).sort()) {
+				if (!name.endsWith('.json') || !UUID.test(name.slice(0, -5)))
+					throw new ManagedStoreError('recovery-required');
+				const path = join(this.directory, name);
+				const st = await lstat(path);
+				if (!st.isFile() || st.isSymbolicLink() || st.uid !== process.getuid?.() || ![0o400, 0o600].includes(st.mode & 0o777) || st.size > 2 * 1024 * 1024)
+					throw new ManagedStoreError('recovery-required');
+				const value: unknown = JSON.parse(await readFile(path, 'utf8'));
+				this.check(value);
+				if (value.operationId !== name.slice(0, -5))
+					throw new ManagedStoreError('recovery-required');
+				records.push(value);
+			}
+			return records;
+		}
+		catch {
+			throw new ManagedStoreError('recovery-required');
+		}
+	}
+	async complete(record: PreparationRecord): Promise<void> {
+		this.check(record);
+		const path = join(this.directory, `${record.operationId}.json`);
+		const existing: unknown = JSON.parse(await readFile(path, 'utf8'));
+		this.check(existing);
+		if (JSON.stringify(existing) !== JSON.stringify(record))
+			throw new ManagedStoreError('recovery-required');
+		const temp = join(dirname(this.registryPath), `.db-connections-${record.operationId}.tmp`);
+		try {
+			const stat = await lstat(temp);
+			if (!stat.isFile() || stat.isSymbolicLink() || stat.uid !== process.getuid?.() || ![0o600, 0o400].includes(stat.mode & 0o777))
+				throw new ManagedStoreError('recovery-required');
+			await unlink(temp);
+			const parent = await open(dirname(temp), 'r');
+			try {
+				await parent.sync();
+			}
+			finally {
+				await parent.close();
+			}
+		}
+		catch (err) {
+			if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
+				throw new ManagedStoreError('recovery-required');
+		}
+		await unlink(path);
+		await this.sync();
 	}
 }

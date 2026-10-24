@@ -2303,7 +2303,7 @@
     "src/daemon/db/drivers/redis.ts": "7c55da6f434833c2eaa6bb14da9f7eb31345cbef664a23b94883fdd66ea98710",
     "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
     "src/daemon/db/pool.ts": "b8405b6e39c7be596519b41ef87f37f3025d57dc5e67d242f23d2cdbcbb8fe84",
-    "src/daemon/db/secrets.ts": "9472b39655cd9a5d8143d61aeae65a3eafd97c78b4ef4d07ef784be95cb060d4",
+    "src/daemon/db/secrets.ts": "65b4e675a37134b304c21cd582b057791333afcb6172b09ae81c7cddba852338",
     "src/daemon/tools/builtins/db/index.ts": "4813c128e56ebcfd5cd44012560a1f503d3b8c7dc3723a066217bce64f88b66a",
     "src/shared/db-driver.ts": "728bcb2d372959b2846a9e1464c6218a11df043f03f956646fbdca8947ae7f38"
   },
@@ -2317,6 +2317,11 @@
       "task": "t5",
       "source": "src/daemon/db/config.ts",
       "reason": "Adds internal managed-commit proof and pre-write unmanaged guard; no ConnectionConfig field classifications or driver reads changed."
+    },
+    {
+      "task": "t6",
+      "source": "src/daemon/db/secrets.ts",
+      "reason": "Adds owned immutable generation staging and encoded userinfo reference resolution using classified credential slots; no driver fields are exposed or reclassified."
     }
   ]
 }

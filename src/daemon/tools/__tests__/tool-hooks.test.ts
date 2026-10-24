@@ -252,3 +252,41 @@ test('tool-hooks.test.ts: a call with no rule returns the object the tool return
 	const again = await executeTool('demo', GOOD_IN, deps());
 	assert.equal(again, returned);
 });
+
+// ── callTool carries the report ───────────────────────────────────────────
+
+import { Type } from '@sinclair/typebox';
+import { callTool } from '../call-tool.js';
+
+function typedTool(id: string) {
+	return {
+		id, description: 'fake',
+		inputSchema: Type.Object({ name: Type.String() }),
+		outputSchema: Type.Object({ count: Type.Number() }),
+		async execute(): Promise<ToolResult> { return { output: 'text', format: 'text', success: true, data: { count: 3 } }; },
+	};
+}
+
+test('tool-hooks.test.ts: callTool carries hookFailures onto the typed success result', async () => {
+	const t = typedTool('ct_hook_fail');
+	registerTool(t);
+	registerToolHook(hook('refresh', 'ct_hook_fail', async () => { throw new Error('status refresh failed'); }));
+	const r = await callTool(t, { name: 'a' }, deps());
+	assert.equal(r.success, true);
+	if (!r.success) return;
+	assert.equal(r.data.count, 3);
+	assert.deepEqual(r.hookFailures, [{ hookId: 'refresh', message: 'status refresh failed' }]);
+	assert.match(r.output, /\[hook failed\] refresh: status refresh failed/);
+});
+
+test('tool-hooks.test.ts: callTool omits hookFailures when nothing failed', async () => {
+	const t = typedTool('ct_hook_ok');
+	registerTool(t);
+	const none = await callTool(t, { name: 'a' }, deps());
+	assert.equal(none.success, true);
+	assert.equal('hookFailures' in none, false, 'no rule registered');
+	registerToolHook(hook('passes', 'ct_hook_ok'));
+	const passing = await callTool(t, { name: 'a' }, deps());
+	assert.equal('hookFailures' in passing, false, 'a rule ran and passed');
+	assert.equal(passing.output, 'text');
+});

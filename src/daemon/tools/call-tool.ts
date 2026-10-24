@@ -30,7 +30,10 @@ export async function callTool<T extends TypedTool>(
 ): Promise<TypedToolResult<Static<T['outputSchema']>>> {
 	const result = await executeTool(tool.id, input as ToolInput, deps);
 	if (result.success && result.data !== undefined) {
-		return { success: true, data: result.data as Static<T['outputSchema']>, output: result.output };
+		return {
+			success: true, data: result.data as Static<T['outputSchema']>, output: result.output,
+			...(result.hookFailures !== undefined ? { hookFailures: result.hookFailures } : {}),
+		};
 	}
 	const error: ToolFailure = result.failure ?? (result.success
 		? { kind: 'schema-mismatch', message: `tool ${tool.id} returned no data for its declared output schema` }

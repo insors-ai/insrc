@@ -27,121 +27,94 @@
       "verdict": "block",
       "findings": [
         {
-          "claimId": "p001",
-          "ref": "1",
+          "claimId": "p01",
+          "ref": "1; s1/ac1",
           "kind": "inventory",
           "severity": "LOW",
-          "premise": "The supported built-in model families are Claude CLI, Codex CLI and local Ollama.",
-          "evidence": "src/agent/providers/cli-provider.ts:68 defines CliKind = 'claude' | 'codex', and :183 declares CliProvider implements LLMProvider. src/agent/providers/ollama.ts:163 declares OllamaProvider implements LLMProvider. docs/daemon.md:69–70 identifies local Ollama and the cli-claude / cli-codex runners, confirming the three named built-in families.",
+          "premise": "The built-in model families in scope are Claude CLI, Codex CLI and local Ollama.",
+          "evidence": "docs/daemon.md:432–433 lists the runners as `ollama | cli-claude | cli-codex`, and docs/daemon.md:488 states that every resolved runner is one of these three, confirming the inventory.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p002",
+          "claimId": "p02",
           "ref": "1",
           "kind": "inventory",
           "severity": "MED",
-          "premise": "Runner identities and family-specific branches are duplicated across the daemon, TUI, VS Code plugin and JetBrains plugin.",
-          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:30 declares 'ollama' | 'cli-claude' | 'cli-codex', and ModelTiersModel.kt:34 repeats those identities in PROVIDERS. model-tier-picker.ts:78 also lists Ollama. These reads confirm duplicated provider identities in the two plugins, but do not establish family-specific branches or duplication in src/daemon and src/cli. The truncated grep results provide no direct source evidence for those remaining claims.",
-          "action": "Narrow the premise to the confirmed plugin identity duplication, or gather targeted source evidence for daemon/TUI identities and family-specific branches across all four surfaces.",
+          "premise": "Runner identities and family-specific branches occur separately in the daemon, TUI, VS Code plugin and JetBrains plugin.",
+          "evidence": "VS Code's model-tier-picker.ts:30 defines ModelProvider as 'ollama' | 'cli-claude' | 'cli-codex', and JetBrains' ModelTiersModel.kt:34 lists the same providers. However, src/cli/panes/model-tiers.ts:63 only calls resolveTier(tiering, t). The truncated grep supplies documentation and historical test output, with no daemon implementation matches or family-specific branches across the four surfaces. The complete inventory is therefore unverifiable from the supplied evidence.",
+          "action": "Gather scoped implementation evidence for runner identities and family-specific branches in each surface, or narrow the premise to the verified plugin provider declarations.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The inventory is only partially verified; the supplied evidence establishes neither a contradiction nor a concrete build failure.",
+            "rationale": "The evidence confirms provider declarations in both plugins but cannot establish the claimed four-surface inventory of identities and branches.",
             "options": [
-              "Narrow the premise to duplicated provider identities in the VS Code and JetBrains plugins.",
-              "Retain the broader premise pending targeted reads showing identities and family-specific branches in each named surface."
+              "Retain the premise and obtain scoped source reads showing identities and family-specific branches in all four surfaces.",
+              "Narrow the premise to the verified VS Code and JetBrains provider declarations, removing the unsupported daemon, TUI and branching claims."
             ]
           }
         },
         {
-          "claimId": "p003",
-          "ref": "1",
-          "kind": "inventory",
-          "severity": "MED",
-          "premise": "Model-ID literals occur in tier defaults, config-catalog defaults, the summariser fallback, the curated catalog asset and installer tier blocks.",
-          "evidence": "Model literals are confirmed at src/config/analyze.ts:135 ('opus'), src/config/config-catalog.ts:116 ('sonnet'), src/analyze/context/shaper-provider.ts:271 ('haiku' and 'gpt-6-luna'), and scripts/insrc-daemon-install.sh:295 ('gpt-6-astra'). However, src/assets/models/cloud-model-catalog.json:1 shows only '{', and vscode-plugin/assets/insrc-daemon-install.sh:1 shows only a shebang. The truncated grep results do not establish model literals in those two files. The full inventory is therefore unverifiable, not contradicted.",
-          "action": "Gather focused model-ID reads from the curated catalog asset and the plugin installer tier blocks, or narrow the premise to the four demonstrated locations.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence supports only part of the inventory; it does not establish that the remaining entries are incorrect.",
-            "options": [
-              "Retain the inventory after gathering model-ID evidence from the curated catalog and plugin installer.",
-              "Narrow the premise to tier defaults, config-catalog defaults, the summariser fallback, and scripts/insrc-daemon-install.sh tier blocks."
-            ]
-          }
-        },
-        {
-          "claimId": "p004",
+          "claimId": "p03",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/config/analyze.ts:135-137 contains hardcoded model IDs for tier defaults.",
-          "evidence": "The supplied reads confirm hardcoded tier model IDs at src/config/analyze.ts:135–137: core uses 'opus', mid uses 'sonnet', and cheap uses 'haiku', each with runner 'cli-claude'.",
+          "premise": "Tier defaults contain literal model IDs at src/config/analyze.ts:135-137.",
+          "evidence": "src/config/analyze.ts:135-137 contains literal model values: core uses 'opus', mid uses 'sonnet', and cheap uses 'haiku', each with runner 'cli-claude'. These reads confirm the cited tier defaults.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p005",
+          "claimId": "p04",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/config/config-catalog.ts:116-118 contains model IDs in config-catalog defaults.",
-          "evidence": "src/config/config-catalog.ts:116 defines models.tiers.mid.model with default 'sonnet'; line 118 defines models.tiers.cheap.model with default 'haiku'. The cited range contains model IDs in config-catalog defaults.",
+          "premise": "Config-catalog tier defaults contain literal model IDs at src/config/config-catalog.ts:116-118.",
+          "evidence": "src/config/config-catalog.ts:116 defines models.tiers.mid.model with literal default 'sonnet'; :118 defines models.tiers.cheap.model with literal default 'haiku'. These confirm literal model IDs within the cited range.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p006",
+          "claimId": "p05",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/analyze/context/shaper-provider.ts:271 contains a hardcoded summariser fallback model.",
-          "evidence": "The supplied read of src/analyze/context/shaper-provider.ts:271 confirms: const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-luna' } as const; These are hardcoded summariser fallback models.",
+          "premise": "The summariser has a literal fallback model at src/analyze/context/shaper-provider.ts:271.",
+          "evidence": "src/analyze/context/shaper-provider.ts:271 defines `const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-luna' } as const;`, confirming literal fallback models at the cited location.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p007",
+          "claimId": "p06",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "The curated model catalog is stored in src/assets/models/cloud-model-catalog.json.",
-          "evidence": "src/daemon/model-catalog.ts:10 identifies src/assets/models/cloud-model-catalog.json as the maintainer-curated JSON asset. The read of src/assets/models/cloud-model-catalog.json:1 succeeds and returns '{', confirming the file exists at the cited path.",
+          "premise": "The curated catalog asset contains model IDs at src/assets/models/cloud-model-catalog.json:5 and :11.",
+          "evidence": "Direct reads confirm model IDs in src/assets/models/cloud-model-catalog.json:5 (\"claude-opus-5-5\") and :11 (\"gpt-6-astra\"), verifying both cited anchors.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p008",
+          "claimId": "p07",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "scripts/insrc-daemon-install.sh:295-297 contains a hardcoded Codex tier block.",
-          "evidence": "scripts/insrc-daemon-install.sh:295-297 hardcodes three cli-codex tiers: core uses gpt-6-astra, mid uses gpt-6.1-sol, and cheap uses gpt-6-luna. The cited lines confirm the premise.",
+          "premise": "The installer's Codex tier defaults at scripts/insrc-daemon-install.sh:295-297 are duplicated in vscode-plugin/assets/insrc-daemon-install.sh:295-297.",
+          "evidence": "scripts/insrc-daemon-install.sh:295-297 and vscode-plugin/assets/insrc-daemon-install.sh:295-297 contain identical cli-codex defaults: core=gpt-6-astra, mid=gpt-6.1-sol, cheap=gpt-6-luna.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p009",
-          "ref": "1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "vscode-plugin/assets/insrc-daemon-install.sh contains a copy of the installer’s Codex tier defaults.",
-          "evidence": "scripts/insrc-daemon-install.sh:295 and vscode-plugin/assets/insrc-daemon-install.sh:295 both contain the identical Codex core default: \"core\": { \"runner\": \"cli-codex\", \"model\": \"gpt-6-astra\" }, confirming the copied default.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p010",
+          "claimId": "p08",
           "ref": "1",
           "kind": "closed-union",
           "severity": "LOW",
-          "premise": "Reasoning-effort choices are defined by one fixed list at src/config/analyze.ts:115 rather than by individual models.",
-          "evidence": "src/config/analyze.ts:115 defines TIER_EFFORTS as ['low', 'medium', 'high', 'xhigh', 'max']; :116 derives TierEffort from that list, and :118 validates membership. src/cli/panes/model-tiers.ts:101 constructs EFFORT_CYCLE directly from TIER_EFFORTS, and :105 cycles it without model-specific selection. These matches confirm the shared fixed list governs effort choices.",
+          "premise": "TIER_EFFORTS at src/config/analyze.ts:115 defines one fixed effort-level list shared across models rather than model-specific lists.",
+          "evidence": "src/config/analyze.ts:115 defines the fixed TIER_EFFORTS list ['low', 'medium', 'high', 'xhigh', 'max']; :116 derives TierEffort from it, and :118 validates membership in that list. src/cli/panes/model-tiers.ts:101 constructs EFFORT_CYCLE directly from TIER_EFFORTS without model-specific selection. This confirms the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p011",
+          "claimId": "p09",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
@@ -151,355 +124,311 @@
           "fixability": "manual"
         },
         {
-          "claimId": "p012",
+          "claimId": "p10",
           "ref": "1",
           "kind": "closed-union",
           "severity": "LOW",
-          "premise": "All Codex models receive the same character input budget because src/agent/providers/cli-provider.ts:204 selects that budget by CLI kind.",
-          "evidence": "src/agent/providers/cli-provider.ts:181 defines CODEX_INPUT_BUDGET_CHARS = 1_048_576. The supplied read at :204 assigns this.inputBudgetChars using only opts.kind === 'codex', confirming the same character input budget for all Codex models.",
+          "premise": "The input-budget selection at src/agent/providers/cli-provider.ts:204 applies the same character budget to every Codex model by selecting on CLI kind.",
+          "evidence": "src/agent/providers/cli-provider.ts:181 defines CODEX_INPUT_BUDGET_CHARS = 1_048_576. The direct read at :204 assigns this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined, selecting solely by CLI kind and applying the same character budget to every Codex model.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p013",
+          "claimId": "p11",
           "ref": "1",
           "kind": "closed-union",
-          "severity": "MED",
-          "premise": "Claude models have no insrc-side input budget and rely on the Claude CLI to refuse oversized input.",
-          "evidence": "src/agent/providers/cli-provider.ts:204 sets inputBudgetChars to CODEX_INPUT_BUDGET_CHARS only for codex and otherwise undefined, confirming Claude has no declared provider input budget. The supplied evidence does not show oversized Claude input handling or establish reliance on CLI refusal.",
-          "action": "Narrow the premise to the verified budget assignment, or provide evidence of Claude oversized-input handling.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The budget assignment is verified; the claimed refusal behavior is not established by the supplied evidence.",
-            "options": [
-              "Reword: CliProvider leaves inputBudgetChars undefined for Claude.",
-              "Supply the Claude invocation and oversized-input handling evidence to verify the full premise."
-            ]
-          }
-        },
-        {
-          "claimId": "p014",
-          "ref": "1",
-          "kind": "citation",
           "severity": "LOW",
-          "premise": "models.shaper.ollamaNumCtx has a default value of 32768 at src/config/analyze.ts:216.",
-          "evidence": "src/config/analyze.ts:216 contains `ollamaNumCtx: 32_768`, confirming the cited default value of 32768 and location.",
+          "premise": "The Claude branch has no locally enforced model input budget and relies on the Claude CLI's size refusal.",
+          "evidence": "src/agent/providers/cli-provider.ts:204 assigns inputBudgetChars only for Codex, leaving it undefined for Claude. Line 743 recognizes /prompt is too long/i as an oversized-input refusal. The supplied shared-file-t12.json:9 record also reports an actual Claude CLI refusal: approximately 1,171,610 tokens against a 1,000,000-token limit. Together these support the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p015",
+          "claimId": "p12",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "src/analyze/context/shaper-provider.ts:267 passes the global Ollama context-window setting.",
-          "evidence": "src/analyze/context/shaper-provider.ts:267 reads `return new OllamaProvider(ollamaModel, local.host, cfg.shaper.ollamaNumCtx);`, confirming that the constructor receives the configured global shaper context-window setting.",
+          "premise": "classifyInputTooLarge recognizes Claude's \"Prompt is too long\" response at src/agent/providers/cli-provider.ts:743.",
+          "evidence": "src/agent/providers/cli-provider.ts:743 contains `if (/prompt is too long/i.test(said)) return {};`, confirming recognition of \"Prompt is too long\" at the cited location.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p016",
+          "claimId": "p13",
           "ref": "1",
-          "kind": "citation",
+          "kind": "external-contract",
           "severity": "LOW",
-          "premise": "src/analyze/context/shaper-provider.ts:303 passes the global Ollama context-window setting.",
-          "evidence": "src/analyze/context/shaper-provider.ts:303 reads `return new OllamaProvider(cfg.summariserModel, local.host, cfg.shaper.ollamaNumCtx);`, confirming that the summariser constructor receives the global shaper context-window setting.",
+          "premise": "The Claude CLI reports an oversized input with a response recognized as \"Prompt is too long\".",
+          "evidence": "src/agent/providers/cli-provider.ts:743 recognizes the message with `/prompt is too long/i.test(said)`. docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/live/repo.run/children/shared-file-t12.json:9 records `claude exited with 1. Prompt is too long` and reports approximately 1,171,610 request tokens against a 1,000,000-token limit, confirming the oversized-input response.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p017",
+          "claimId": "p14",
           "ref": "1",
-          "kind": "citation",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "src/analyze/context/driver.ts:531 passes the global Ollama context-window setting.",
-          "evidence": "src/analyze/context/driver.ts:531 reads `const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);`, confirming that the default provider construction passes the global shaper context-window setting.",
+          "premise": "models.shaper.ollamaNumCtx is a global analysis context-window setting whose default is 32768 at src/config/analyze.ts:216.",
+          "evidence": "The read at src/config/analyze.ts:216 confirms `ollamaNumCtx: 32_768`. The supplied DEF.md:262–265 matches document cfg.shaper.ollamaNumCtx being passed to shaper, summariser, and default analysis providers, supporting its shared analysis context-window role.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p018",
+          "claimId": "p15",
           "ref": "1",
-          "kind": "citation",
+          "kind": "inventory",
           "severity": "LOW",
-          "premise": "src/analyze/context/driver.ts:833 passes the global Ollama context-window setting.",
-          "evidence": "src/analyze/context/driver.ts:833 reads `const provider = args.provider ?? buildProvider(localToolLoopModel(cfg), cfg.shaper.ollamaNumCtx);`, confirming that the fallback provider construction receives the global shaper Ollama context-window setting.",
+          "premise": "The global Ollama context-window setting is forwarded at shaper-provider.ts:267, shaper-provider.ts:303, driver.ts:531 and driver.ts:833.",
+          "evidence": "src/analyze/context/shaper-provider.ts:267 and :303 pass cfg.shaper.ollamaNumCtx to OllamaProvider. src/analyze/context/driver.ts:531 and :833 pass the same setting to buildProvider when args.provider is absent. All four supplied source reads confirm the stated forwarding sites.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p019",
+          "claimId": "p16",
           "ref": "1",
           "kind": "closed-union",
           "severity": "MED",
-          "premise": "Every Ollama model used for analysis receives the global models.shaper.ollamaNumCtx value rather than a per-model context limit.",
-          "evidence": "src/analyze/context/shaper-provider.ts:267 and :303 pass cfg.shaper.ollamaNumCtx to the shaper and summariser OllamaProvider constructors. src/analyze/context/driver.ts:531 and :833 pass the same value to buildProvider, whose constructor at :1091 forwards numCtx. These support the shown default paths, but :531 and :833 also accept args.provider, whose configuration is not supplied. The context-limit search is truncated, so the evidence does not establish the universal claim. No concrete build-breaking failure is demonstrated.",
-          "action": "Narrow the premise to the verified construction paths, or gather evidence covering injected providers and all buildProvider callers before retaining “Every”.",
+          "premise": "Every Ollama model used for analysis receives the global context window rather than a model-specific context window.",
+          "evidence": "src/analyze/context/shaper-provider.ts:267 and :303 pass cfg.shaper.ollamaNumCtx to the shaper and summariser OllamaProvider constructors. src/analyze/context/driver.ts:531 and :833 pass it to buildProvider only when args.provider is absent. These confirm the shown construction paths, but do not establish the context windows of supplied providers. The grep results are truncated, so they cannot establish the universal claim. No concrete build-breaking contradiction is demonstrated.",
+          "action": "Narrow the premise to the verified construction paths, or gather exhaustive source evidence covering analysis providers and overrides.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The supplied evidence supports specific default construction paths but does not establish coverage of every analysis provider.",
+            "rationale": "The evidence supports specific constructor arguments, but not every Ollama model used for analysis.",
             "artifactEdits": [
               {
-                "find": "Every Ollama model used for analysis receives the global models.shaper.ollamaNumCtx value rather than a per-model context limit.",
-                "replace": "The shaper and summariser OllamaProvider constructors in src/analyze/context/shaper-provider.ts receive cfg.shaper.ollamaNumCtx; the default buildProvider calls at src/analyze/context/driver.ts:531 and :833 also receive this value."
+                "find": "Every Ollama model used for analysis receives the global context window rather than a model-specific context window.",
+                "replace": "The shaper and summariser OllamaProvider constructors at src/analyze/context/shaper-provider.ts:267 and :303 receive cfg.shaper.ollamaNumCtx. The default buildProvider calls at src/analyze/context/driver.ts:531 and :833 also receive this value when args.provider is absent."
               }
             ],
             "options": [
-              "Narrow the premise to the verified constructor and default-provider paths using the proposed edit.",
-              "Retain the universal claim only after verifying all buildProvider callers and the configuration of injected analysis providers."
+              "Apply the narrower wording supported by the supplied source reads.",
+              "Retain the universal claim only after gathering complete source evidence for all analysis provider construction paths, including supplied providers."
             ]
           }
         },
         {
-          "claimId": "p020",
+          "claimId": "p17",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
           "premise": "ModelParams declares maxInputTokens at src/shared/types.ts:417.",
-          "evidence": "The supplied grep identifies `export interface ModelParams {` at src/shared/types.ts:415 and `maxInputTokens: number;` at src/shared/types.ts:417. The direct read of line 417 confirms the declaration, verifying the cited field and location.",
+          "evidence": "The grep finds `export interface ModelParams {` at src/shared/types.ts:415 and `maxInputTokens: number;` at src/shared/types.ts:417. The direct read of line 417 confirms the field declaration at the cited location.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p021",
+          "claimId": "p18",
           "ref": "1",
           "kind": "closed-union",
           "severity": "LOW",
-          "premise": "No source code reads ModelParams.maxInputTokens.",
-          "evidence": "The /\\bmaxInputTokens\\b/ probe returned five matches: four in documentation and one in source at src/shared/types.ts:417. The supplied read confirms that source match is the declaration `maxInputTokens: number;`, not a read site. No source read sites were found.",
+          "premise": "ModelParams.maxInputTokens has no runtime read in src/.",
+          "evidence": "The /maxInputTokens/ probe returned five matches: four in documentation and one in src/ at src/shared/types.ts:417. The direct read confirms that source match is the declaration `maxInputTokens: number;`. No runtime read sites were found in src/.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p022",
-          "ref": "1",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The existing daemon model-list surface is providers.listModels, referenced at src/daemon/list-models.ts:127.",
-          "evidence": "src/daemon/list-models.ts:127 maps deps.catalog().modelsFor(provider) through toModelInfo; it does not show registration of providers.listModels. docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t2-suites.md:166 records a passing handler-delegation test, but the truncated matches contain no current handler source. The model-list concept is supported; the exact current IPC surface remains unverified.",
-          "action": "Cite the current providers.listModels handler registration, or narrow the premise to the implementation shown.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The supplied evidence supports a narrower implementation claim but supplies no replacement handler-registration anchor.",
-            "artifactEdits": [
-              {
-                "find": "The existing daemon model-list surface is providers.listModels, referenced at src/daemon/list-models.ts:127.",
-                "replace": "The daemon model-list implementation maps deps.catalog().modelsFor(provider) through toModelInfo at src/daemon/list-models.ts:127."
-              }
-            ],
-            "options": [
-              "Retain the IPC-surface claim after obtaining its current handler-registration source citation.",
-              "Use the proposed narrower statement supported directly by the supplied source line."
-            ]
-          }
-        },
-        {
-          "claimId": "p023",
-          "ref": "1",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "The existing clients obtain their model lists from the daemon through providers.listModels.",
-          "evidence": "Unverifiable: src/daemon/list-models.ts:127 maps deps.catalog().modelsFor(provider), but shows no client call. The reads at vscode-plugin/src/models/model-tier-picker.ts:1 and jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:1 contain only a comment opener and package declaration. The truncated grep supplies historical test logs, including t2-suites.md:166 describing handler delegation, but no source call sites establishing that all existing clients use providers.listModels.",
-          "action": "Gather source call sites for CLI, VSCode, and JetBrains model-list retrieval, plus the daemon handler registration, before asserting a shared route.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The supplied evidence neither establishes complete client coverage nor contradicts the premise; no mechanical correction is supported.",
-            "options": [
-              "Retain the premise after obtaining source evidence for each client's providers.listModels call path.",
-              "Narrow the premise to the daemon catalog mapping shown at src/daemon/list-models.ts:127 and mark client routing as unverified."
-            ]
-          }
-        },
-        {
-          "claimId": "p024",
+          "claimId": "p19",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "The VS Code model-tier picker maintains its own runner list at src/models/model-tier-picker.ts:30 and :78-80.",
-          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:30 defines ModelProvider as 'ollama' | 'cli-claude' | 'cli-codex'; lines 78–80 list matching picker entries for Ollama, Claude CLI, and Codex CLI, confirming the premise.",
+          "premise": "The providers.listModels IPC request is registered at src/daemon/handler-runtime.ts:1430.",
+          "evidence": "The read at src/daemon/handler-runtime.ts:1430 confirms the registration: 'providers.listModels': (params) => listModels(params).",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p025",
+          "claimId": "p20",
+          "ref": "1",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cloud-provider model-list path at src/daemon/list-models.ts:127 obtains its models from the curated catalog.",
+          "evidence": "src/daemon/list-models.ts:127 reads `deps.catalog().modelsFor(provider).map(toModelInfo)`. The gathered t2-suites.md:167 reports a passing integration test that cloud listModels sources from the real getCuratedCatalog after validateModelCatalog; lines 154–155 report curated lists for both CLI cloud providers.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p21",
           "ref": "1",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "The JetBrains plugin maintains its own runner list at ModelTiersModel.kt:34.",
-          "evidence": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:34 defines its own provider/runner list: `val PROVIDERS: List<String> = listOf(\"ollama\", \"cli-claude\", \"cli-codex\")`, confirming the premise.",
+          "premise": "The VS Code extension requests model lists through providers.listModels at vscode-plugin/src/extension.ts:436.",
+          "evidence": "vscode-plugin/src/extension.ts:436 reads `client.rpc<ModelListResult>('providers.listModels', { provider }),`, confirming the extension requests model lists through the cited RPC at the cited location.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p026",
+          "claimId": "p22",
           "ref": "1",
           "kind": "citation",
-          "severity": "MED",
-          "premise": "The VS Code picker imports the daemon effort list at model-tier-picker.ts:25 and uses that compiled list at :199.",
-          "evidence": "model-tier-picker.ts:25 imports CONFIG_CATALOG, not TIER_EFFORTS. At :199 it returns the matching models.tiers.${tier}.effort catalog entry's enumValues, falling back to []. src/config/analyze.ts:115 defines TIER_EFFORTS, but the supplied evidence does not establish that the catalog derives its enumValues from that list. This is an inaccurate description; no concrete build failure is established.",
-          "action": "Correct the premise to describe the verified catalog import and enumValues lookup.",
-          "fixability": "auto",
-          "proposedFix": {
-            "rationale": "The supplied reads directly establish the import and lookup, supporting a mechanical correction.",
-            "artifactEdits": [
-              {
-                "find": "The VS Code picker imports the daemon effort list at model-tier-picker.ts:25 and uses that compiled list at :199.",
-                "replace": "The VS Code picker imports CONFIG_CATALOG at model-tier-picker.ts:25 and reads the matching models.tiers.${tier}.effort entry's enumValues at :199, falling back to an empty array."
-              }
-            ]
-          }
+          "severity": "LOW",
+          "premise": "The JetBrains model-tier section requests daemon model lists at ModelTiersSection.kt:195.",
+          "evidence": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt:195 iterates ModelTiersModel.PROVIDERS and calls gateway.listModels(provider), confirming the cited model-list request.",
+          "action": "none — verified sound",
+          "fixability": "manual"
         },
         {
-          "claimId": "p027",
+          "claimId": "p23",
+          "ref": "1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The VS Code model-tier picker maintains its own runner list at model-tier-picker.ts:30 and :78-80.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:30 defines ModelProvider as 'ollama' | 'cli-claude' | 'cli-codex'; lines 78–80 list those same three provider IDs with picker labels, confirming the cited runner list.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p24",
+          "ref": "1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The JetBrains model-tier model maintains its own runner list at ModelTiersModel.kt:34.",
+          "evidence": "ModelTiersModel.kt:34 declares `val PROVIDERS: List<String> = listOf(\"ollama\", \"cli-claude\", \"cli-codex\")`, confirming the model maintains its own runner/provider list at the cited location.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p25",
+          "ref": "1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The config catalog repeats effort-level values as literal enums in its effort rows at src/config/config-catalog.ts:120.",
+          "evidence": "src/config/analyze.ts:115 defines TIER_EFFORTS as ['low', 'medium', 'high', 'xhigh', 'max']. src/config/config-catalog.ts:120–122 repeat those values as literal enumValues arrays, with an additional empty-string CLI default, for the core, mid, and cheap effort rows. The read at :120 confirms the cited core row.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p26",
+          "ref": "1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The VS Code model-tier picker imports the backend config catalog into its bundle at model-tier-picker.ts:25.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:25 contains `import { CONFIG_CATALOG } from '../../../src/config/config-catalog.js';`, confirming the picker statically imports the backend config catalog as stated.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p27",
+          "ref": "1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The VS Code model-tier picker derives effort choices from config-catalog rows at model-tier-picker.ts:199.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:199 returns the matching `models.tiers.${tier}.effort` CONFIG_CATALOG row's enumValues, falling back to []. src/config/config-catalog.ts:120–122 declares the core, mid, and cheap effort rows with enumValues ['', 'low', 'medium', 'high', 'xhigh', 'max']. This confirms the picker derives effort choices from config-catalog rows.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p28",
           "ref": "1",
           "kind": "ordering",
-          "severity": "MED",
-          "premise": "Making a newly added effort level available in the existing VS Code picker requires rebuilding and releasing the plugin because its effort list is compiled into the plugin.",
-          "evidence": "model-tier-picker.ts:25 imports CONFIG_CATALOG from '../../../src/config/config-catalog.js'; line 199 retrieves effort enumValues from that catalog. These lines establish the list's source, but do not establish how the catalog is packaged or whether adding an effort level requires rebuilding and releasing the plugin.",
-          "action": "Verify the plugin's build and distribution behavior, or narrow the premise to the demonstrated catalog lookup.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The supplied evidence supports catalog-based lookup but leaves the claimed rebuild-and-release requirement unverifiable.",
-            "options": [
-              "Gather build and packaging evidence establishing that catalog changes require a plugin rebuild and release.",
-              "Reword the premise to state only that the existing picker reads effort values from CONFIG_CATALOG."
-            ]
-          }
+          "severity": "LOW",
+          "premise": "Making a newly added config-catalog effort level selectable in VS Code requires rebuilding and releasing the extension that bundles the catalog.",
+          "evidence": "vscode-plugin/src/models/model-tier-picker.ts:25 statically imports CONFIG_CATALOG from '../../../src/config/config-catalog.js'. Line 199 derives selectable effort values directly from that catalog's enumValues. Exposing an added value therefore requires distributing an extension rebuilt with the updated catalog.",
+          "action": "none — verified sound",
+          "fixability": "manual"
         },
         {
-          "claimId": "p028",
+          "claimId": "p29",
           "ref": "1",
           "kind": "closed-union",
           "severity": "MED",
-          "premise": "TierModel stores only a runner, model and optional effort, without a model capability profile.",
-          "evidence": "src/config/analyze.ts:106 declares TierModel; reads at :107, :108 and :111 confirm runner, model and optional effort. The complete interface body is not provided, and the field grep is truncated, so the evidence cannot establish that these are its only fields or exclude a capability profile.",
-          "action": "Provide the complete TierModel declaration to verify the exclusion, or narrow the premise to the three confirmed fields.",
+          "premise": "A tier's stored model selection consists only of runner, model and optional effort.",
+          "evidence": "src/config/analyze.ts:107, :108 and :111 confirm runner, model and optional effort respectively. However, the supplied reads do not show the complete TierModel declaration, and the truncated grep contains no TierModel definition. The claim that these are its only fields is unverifiable.",
+          "action": "Supply the complete TierModel declaration to verify exclusivity, or narrow the premise to the three confirmed fields.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The listed fields are confirmed, but the exclusive inventory remains unverifiable.",
+            "rationale": "The evidence establishes field presence, but not an exhaustive stored shape.",
             "options": [
-              "Gather the complete TierModel declaration, including its closing brace, and reassess.",
-              "Reword the premise to state only that TierModel declares runner, model and optional effort."
+              "Provide the complete TierModel declaration and re-evaluate the exclusivity claim.",
+              "Reword the premise to state that the selection includes runner, model and optional effort, without claiming exclusivity."
             ]
           }
         },
         {
-          "claimId": "p029",
+          "claimId": "p30",
           "ref": "1",
           "kind": "closed-union",
           "severity": "MED",
-          "premise": "A current model-catalog entry stores only id and displayName.",
-          "evidence": "src/daemon/model-catalog.ts:42 identifies CatalogModel; reads at :43 and :44 confirm readonly id: string and readonly displayName?: string. The supplied evidence omits the complete interface body and closing brace, so it cannot establish that these are the only fields.",
-          "action": "Supply the complete CatalogModel declaration to verify exclusivity, or narrow the premise to the two confirmed fields.",
+          "premise": "A curated catalog model entry contains only id and displayName.",
+          "evidence": "src/daemon/model-catalog.ts:43 confirms `readonly id: string;` and :44 confirms `readonly displayName?: string;`. Neither the complete declaration nor its closing brace is supplied, and the grep results are truncated, so the evidence cannot establish that these are the only fields.",
+          "action": "Supply the complete CatalogModel declaration to verify exclusivity, or narrow the premise to the confirmed fields.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "Field presence is verified; field exclusivity remains unverified.",
+            "rationale": "The supplied reads confirm field presence but cannot prove field exclusivity.",
             "options": [
-              "Provide the complete CatalogModel declaration and reassess the word “only”.",
-              "Reword the premise: “CatalogModel declares readonly id: string and optional readonly displayName?: string.”"
+              "Provide the complete CatalogModel declaration and reassess the exclusivity claim.",
+              "Reword the premise to: “A curated catalog model entry declares id and optional displayName.”"
             ]
           }
         },
         {
-          "claimId": "p030",
+          "claimId": "p31",
           "ref": "1",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "Selecting an unknown model currently creates no record of that model’s supported effort levels and input limit.",
-          "evidence": "UNVERIFIABLE: src/config/analyze.ts:107–108 and :111 show runner, model and an optional selected effort, but do not establish whether supported efforts or input limits are recorded elsewhere during selection. src/daemon/model-catalog.ts:43–44 show only id and displayName. The maxInputTokens declaration at src/shared/types.ts:417 has no supplied connection to unknown-model selection. The truncated TierModel search cannot establish absence across that flow.",
-          "action": "Supply complete relevant type definitions and the unknown-model selection and persistence paths to establish whether capability metadata is recorded.",
+          "premise": "The current tier-selection and catalog-entry representations do not persist an unknown model's accepted effort levels or input limit.",
+          "evidence": "UNVERIFIABLE: src/config/analyze.ts:107, :108 and :111 show runner, model and optional selected effort; src/daemon/model-catalog.ts:43–44 show id and optional displayName. The supplied reads omit the complete declarations and persistence logic. The truncated grep cannot establish that accepted effort levels and input limits are absent from these representations.",
+          "action": "Supply complete declarations and relevant persistence logic, or narrow the premise to the fields directly confirmed by the evidence.",
           "fixability": "assisted",
           "proposedFix": {
-            "rationale": "The supplied fields support a narrower observation, but the behavioral absence claim needs selection and persistence evidence.",
+            "rationale": "The evidence confirms individual fields but does not establish the claimed absence of persisted capability metadata.",
             "options": [
-              "Gather the complete types and unknown-model selection/persistence paths, then reassess the premise.",
-              "Narrow the premise to the supplied reads: TierModel exposes runner, model and optional effort; these reads do not demonstrate capability metadata recording."
+              "Provide complete TierModel and CatalogModel declarations plus the serialization or validation paths needed to verify the persistence claim.",
+              "Reword the premise to state only that the cited tier-selection fields are runner, model and selected effort, and the cited catalog-entry fields are id and displayName."
             ]
           }
         },
         {
-          "claimId": "p031",
-          "ref": "1",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "The existing model-selection path does not validate an effort level against the selected model’s own supported levels.",
-          "evidence": "Unverifiable. src/config/analyze.ts:115 defines TIER_EFFORTS, but does not show how validation uses it. Line 242 shows only the resolveTiers signature; src/daemon/model-catalog.ts:43 shows only an id field. No cli-provider.ts implementation was supplied, and the truncated grep provides no relevant validation evidence.",
-          "action": "Obtain focused reads of model selection, effort validation, CLI argument construction, and catalog capability fields before asserting that model-specific validation is absent.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The supplied evidence neither confirms nor contradicts the claimed absence of validation; no mechanical correction is supported.",
-            "options": [
-              "Gather focused implementation evidence and reassess the original premise.",
-              "Qualify the premise: a global effort enum exists, but model-specific effort validation remains unverified."
-            ]
-          }
-        },
-        {
-          "claimId": "p032",
-          "ref": "1",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "Introducing each new model release currently requires editing multiple hardcoded model-definition locations before it can be used.",
-          "evidence": "src/config/analyze.ts:135 hardcodes core model 'opus'; src/config/config-catalog.ts:116 defines a string model setting defaulting to 'sonnet'; src/analyze/context/shaper-provider.ts:271 hardcodes summariser fallbacks; scripts/insrc-daemon-install.sh:295 hardcodes 'gpt-6-astra'. These establish hardcoded identifiers, but do not establish that each new release requires multiple edits before use. The catalog read at src/assets/models/cloud-model-catalog.json:1 contains only '{', and both grep results are truncated and dominated by documentation. The claimed requirement is unverifiable; no concrete build-breaking failure is established.",
-          "action": "Narrow the premise to the verified hardcoded defaults and fallbacks, or gather model-selection and validation evidence demonstrating why each new release requires multiple edits before use.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence supports hardcoded identifiers but does not establish mandatory registration or an exhaustive model set.",
-            "options": [
-              "Reword the premise to describe hardcoded model defaults and summariser fallbacks at the verified locations.",
-              "Retain the release-blocking claim only after gathering evidence of model acceptance constraints and the required edits."
-            ]
-          }
-        },
-        {
-          "claimId": "p033",
+          "claimId": "p32",
           "ref": "4/c5",
           "kind": "citation",
           "severity": "LOW",
           "premise": "validateModelCatalog is the existing curated-catalog loader at src/daemon/model-catalog.ts:162.",
-          "evidence": "src/daemon/model-catalog.ts:162 declares `export async function validateModelCatalog(): Promise<void>`. docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t2-suites.md:181 records a passing test that it loads a valid catalog fixture and caches the frozen parse, corroborating the stated role.",
+          "evidence": "src/daemon/model-catalog.ts:162 declares `export async function validateModelCatalog(): Promise<void>`. The supplied t2-suites.md:181 match reports that it resolves and caches the frozen catalog parse; :167 reports getCuratedCatalog integration after validation. These support the cited symbol, location, and loader role.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p034",
+          "claimId": "p33",
           "ref": "4/c5",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "validateShape is the existing curated-catalog shape validator at src/daemon/model-catalog.ts:107.",
-          "evidence": "src/daemon/model-catalog.ts:107 declares `function validateShape(parsed: unknown, path: string): CloudModelCatalogFile`, confirming the cited symbol and location. The source match at line 181 calls it as `cached = validateShape(parsed, path);`, supporting its role in catalog validation.",
+          "premise": "The daemon invokes validateModelCatalog from its startup hook at src/daemon/index.ts:381.",
+          "evidence": "The read of src/daemon/index.ts:381 confirms the cited invocation: `await validateModelCatalog();`.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p035",
+          "claimId": "p34",
           "ref": "4/c5",
-          "kind": "semantic",
+          "kind": "citation",
           "severity": "LOW",
-          "premise": "validateShape retains only id and displayName when constructing validated catalog entries at src/daemon/model-catalog.ts:141-144.",
-          "evidence": "src/daemon/model-catalog.ts:141–144 constructs a CatalogModel as { id: e['id'], displayName: e['displayName'] } when displayName is a string, otherwise { id: e['id'] }. These object literals retain only id and optional displayName, confirming the premise.",
+          "premise": "validateShape is defined at src/daemon/model-catalog.ts:107.",
+          "evidence": "The read at src/daemon/model-catalog.ts:107 confirms `function validateShape(parsed: unknown, path: string): CloudModelCatalogFile {`, matching the cited symbol and location.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p036",
+          "claimId": "p35",
+          "ref": "4/c5",
+          "kind": "closed-union",
+          "severity": "LOW",
+          "premise": "validateShape retains only id and displayName when constructing a validated model entry at src/daemon/model-catalog.ts:141-144.",
+          "evidence": "src/daemon/model-catalog.ts:141 constructs a CatalogModel; lines 142–144 select either { id: e['id'], displayName: e['displayName'] } when displayName is a string, or { id: e['id'] } otherwise. Both branches retain only the stated fields.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p36",
           "ref": "4/c5",
           "kind": "inventory",
-          "severity": "MED",
-          "premise": "The existing catalog validator accepts only the Claude and Codex CLI families.",
-          "evidence": "src/daemon/model-catalog.ts:124 explicitly loops over ['cli-claude', 'cli-codex'], but the supplied evidence omits surrounding validation and return logic. It establishes those two iteration targets, not whether other families are rejected, ignored, or preserved. Line 48 establishes only the CloudModelCatalogFile declaration.",
-          "action": "Narrow the premise to the verified iteration targets, or obtain the validator body to verify exclusive acceptance.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The two-family loop is verified; exclusive acceptance remains unverifiable.",
-            "options": [
-              "Reword the premise to state that the validator explicitly iterates over cli-claude and cli-codex.",
-              "Inspect the full validator body and returned provider map before retaining the exclusive-acceptance claim."
-            ]
-          }
+          "severity": "LOW",
+          "premise": "The existing catalog validator and its returned map cover only the Claude CLI and Codex CLI families.",
+          "evidence": "src/daemon/model-catalog.ts:124 explicitly iterates only ['cli-claude', 'cli-codex']. Line 120 declares frozenProviders as Record<CloudProvider, readonly CatalogModel[]>, and line 151 returns that frozen map as CloudModelCatalogFile['providers'], confirming the stated two-family scope.",
+          "action": "none — verified sound",
+          "fixability": "manual"
         },
         {
-          "claimId": "p037",
+          "claimId": "p37",
           "ref": "4/c5",
           "kind": "citation",
           "severity": "LOW",
@@ -509,520 +438,739 @@
           "fixability": "manual"
         },
         {
-          "claimId": "p038",
-          "ref": "c5",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "src/daemon/model-catalog.ts:12 documents boot-time catalog validation as a fail-fast refusal for a missing or malformed catalog.",
-          "evidence": "src/daemon/model-catalog.ts:12 confirms only that the catalog is “loaded + validated at boot.” The supplied source evidence does not establish fail-fast refusal for missing or malformed catalogs. DEF.md:211 repeats that claim, but does not independently verify it; the grep results are truncated.",
-          "action": "Read the surrounding source comment and validation/boot error handling to verify startup refusal, or narrow the premise to boot-time loading and validation.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "Boot-time loading and validation are supported; the claimed failure behavior remains unverified.",
-            "options": [
-              "Narrow the premise to: src/daemon/model-catalog.ts:12 documents boot-time catalog loading and validation.",
-              "Gather surrounding source and boot error-handling evidence before retaining the fail-fast refusal claim."
-            ]
-          }
-        },
-        {
-          "claimId": "p039",
-          "ref": "k7",
+          "claimId": "p38",
+          "ref": "4/c5; s1",
           "kind": "ordering",
           "severity": "LOW",
-          "premise": "The daemon awaits validateModelCatalog at src/daemon/index.ts:381 before beginning to listen at :456.",
-          "evidence": "src/daemon/index.ts:381 contains `await validateModelCatalog();`, preceding `await server.listen();` at src/daemon/index.ts:456, confirming the stated ordering.",
+          "premise": "Preserving the existing catalog loader while adding Ollama and per-model capability facts requires extending CloudModelCatalogFile and validateShape.",
+          "evidence": "src/daemon/model-catalog.ts:48 declares CloudModelCatalogFile; :107 declares validateShape returning that type. The loader constructs Record<CloudProvider, readonly CatalogModel[]> at :120, explicitly iterates only cli-claude and cli-codex at :124, constructs CatalogModel entries at :141, and returns frozen providers typed through CloudModelCatalogFile at :151. These support extending the existing catalog shape and validation path for Ollama and model facts.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p040",
+          "claimId": "p39",
+          "ref": "k7; c5",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts:377 describes a missing or malformed curated catalog asset as a fail-fast startup refusal.",
+          "evidence": "The read of src/daemon/index.ts:377 confirms the comment: “missing/malformed catalog asset is a fail-fast startup refusal,” matching the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p40",
           "ref": "k7",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The daemon awaits validateModelCatalog at index.ts:381 before starting its listener at index.ts:456.",
+          "evidence": "src/daemon/index.ts:381 reads `await validateModelCatalog();`, preceding src/daemon/index.ts:456, which reads `await server.listen();`. Both anchors confirm the stated ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p41",
+          "ref": "4/c12; s3/c8",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The config-path tier resolver resolveTiers delegates tier-default resolution to resolveTier.",
+          "evidence": "src/config/analyze.ts:242 declares resolveTiers; lines 244–246 call resolveTier(tiering, 'core'), resolveTier(tiering, 'mid'), and resolveTier(tiering, 'cheap'). Line 271 calls resolveTiers(tiering), confirming the config-path delegation.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p42",
+          "ref": "4/c12; c12",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "The TUI effective-tier view directly calls resolveTier with tiers[t] = resolveTier(tiering, t) at src/cli/panes/model-tiers.ts:63.",
+          "evidence": "The source grep match and direct read at src/cli/panes/model-tiers.ts:63 both confirm `tiers[t] = resolveTier(tiering, t);`, matching the cited expression and location.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p43",
+          "ref": "4/c12; s3",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The default-resolution migration surface includes every resolveTier caller and every direct DEFAULT_TIERS read.",
+          "evidence": "The grep is truncated at 50 matches and its supplied matches are documentation, so it cannot establish exhaustive source coverage. src/cli/panes/model-tiers.ts:63 confirms `tiers[t] = resolveTier(tiering, t);`. src/config/analyze.ts:242 shows only the resolveTiers declaration, and :135 shows the core default value. These reads do not establish every resolveTier caller or direct DEFAULT_TIERS read. No concrete implementation failure is demonstrated.",
+          "action": "Obtain an untruncated source inventory of resolveTier callers and direct DEFAULT_TIERS reads, then reconcile the migration surface; otherwise mark its completeness unverified.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms one caller but cannot support an exhaustive inventory or a mechanical correction.",
+            "options": [
+              "Retain the complete migration requirement and verify its inventory with untruncated source evidence.",
+              "Reword the premise to identify the confirmed TUI caller and explicitly mark remaining consumer coverage unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p44",
+          "ref": "s3/c14; c14",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A missing or malformed curated catalog prevents daemon startup rather than allowing requests to be served.",
-          "evidence": "src/daemon/index.ts:381 awaits validateModelCatalog() before server.listen() at :456. The supplied S001/evidence/t2-suites.md:182–184 records passing tests confirming that missing, non-JSON, and schema-invalid catalogs throw. Together these support validation blocking startup before requests are served.",
+          "premise": "Role routing currently gives a per-repo tier entry precedence over the global tier entry through byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier].",
+          "evidence": "The grep match and direct read at src/analyze/context/role-router.ts:138 show `const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];`, confirming per-repo precedence with the global entry as the nullish fallback.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p041",
-          "ref": "c8",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/config/analyze.ts:242 declares resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel>.",
-          "evidence": "The source grep match and direct read at src/config/analyze.ts:242 both confirm: function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p042",
-          "ref": "4/c12",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The config-path resolveTiers function obtains individual tier defaults through resolveTier.",
-          "evidence": "src/config/analyze.ts:242 declares resolveTiers; lines 244–246 call resolveTier for core, mid, and cheap respectively. Line 271 calls resolveTiers(tiering), confirming the config-path resolution chain.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p043",
-          "ref": "c12",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "The TUI effective-tier view directly calls resolveTier with the expression tiers[t] = resolveTier(tiering, t) at src/cli/panes/model-tiers.ts:63.",
-          "evidence": "The source grep match and direct read at src/cli/panes/model-tiers.ts:63 both confirm `tiers[t] = resolveTier(tiering, t);`, exactly matching the cited expression and location.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p044",
-          "ref": "4/c12",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "Migrating all tier-default consumers requires covering every resolveTier caller and every direct DEFAULT_TIERS read.",
-          "evidence": "src/cli/panes/model-tiers.ts:63 confirms `tiers[t] = resolveTier(tiering, t);`. src/config/analyze.ts:242 confirms the resolveTiers declaration, and :135 shows the core default. However, the grep is truncated at 50 matches and the supplied matches are documentation, so it does not establish exhaustive source coverage of resolveTier callers or direct DEFAULT_TIERS reads. The closed-union claim is unverifiable; no concrete build-breaking contradiction is demonstrated.",
-          "action": "Gather an untruncated source inventory of resolveTier callers and DEFAULT_TIERS reads, then verify each consumer's migration coverage.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence confirms a direct TUI caller but cannot establish the complete consumer set.",
-            "options": [
-              "Retain the exhaustive migration requirement and gather complete source evidence before declaring coverage.",
-              "Narrow the grounded claim to the confirmed TUI resolveTier call and explicitly mark the remaining consumer inventory unverified."
-            ]
-          }
-        },
-        {
-          "claimId": "p045",
-          "ref": "c14",
-          "kind": "citation",
-          "severity": "LOW",
-          "premise": "src/analyze/context/role-router.ts:138 gives a per-repo tier override precedence over the global tier through byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier].",
-          "evidence": "The source grep match and direct read at src/analyze/context/role-router.ts:138 both show `const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];`, confirming that the per-repo tier override takes precedence, with the global tier as the nullish fallback.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p046",
+          "claimId": "p45",
           "ref": "4/c11",
           "kind": "external-contract",
           "severity": "LOW",
           "premise": "The Codex CLI rejects an unknown model with exit status 1.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:11 records `codex exec -m gpt-nonexistent-9 \"Reply with: ok\"` returning exit status 1 with a message that the model is not supported when using Codex with a ChatGPT account.",
+          "evidence": "def-cli-probes.md:11 records `codex exec -m gpt-nonexistent-9 \"Reply with: ok\"` exiting with status 1 and an unsupported-model error. Line 18 explicitly confirms unknown-model rejection with exit 1.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p047",
+          "claimId": "p46",
           "ref": "4/c11",
           "kind": "external-contract",
           "severity": "LOW",
           "premise": "The Claude CLI rejects an unknown model with exit status 1.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:13 records `claude -p --model claude-nonexistent-9 \"Reply with: ok\"` exiting with status 1 and reporting an issue with the selected model. This confirms the premise for the recorded probe.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:13 records `claude -p --model claude-nonexistent-9 \"Reply with: ok\"` exiting with status 1 and a selected-model error. Line 18 confirms unknown-model rejection with exit 1.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p048",
+          "claimId": "p47",
           "ref": "4/c11",
           "kind": "external-contract",
           "severity": "LOW",
-          "premise": "The Codex CLI rejects an unrecognized reasoning-effort name with exit status 1.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:10 records `codex exec -m gpt-6.1-sol -c model_reasoning_effort=bogus \"Reply with: ok\"` exiting with status 1 and reporting `Invalid value: 'bogus'`, confirming the premise.",
+          "premise": "The Codex CLI rejects an unrecognized reasoning-effort value with exit status 1.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:10 records `codex exec -m gpt-6.1-sol -c model_reasoning_effort=bogus \"Reply with: ok\"` exiting with status 1 and reporting `Invalid value: 'bogus'`. Line 19 confirms that Codex rejects unknown effort levels with exit 1.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p049",
+          "claimId": "p48",
           "ref": "4/c11",
           "kind": "external-contract",
           "severity": "LOW",
-          "premise": "The Claude CLI warns about an unrecognized effort name, ignores it and can still exit with status 0.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:14 records `claude -p --model sonnet --effort bogus \"Reply with: ok\"` exiting 0, warning that the unknown effort value is ignored in favor of the default effort, and then answering `ok`. Line 31 records the same behavior for haiku.",
+          "premise": "The Claude CLI warns about an unrecognized effort value, ignores it and exits successfully.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:14 records `claude -p --model sonnet --effort bogus \"Reply with: ok\"` exiting 0, warning that the unknown effort is ignored in favor of the default, and answering `ok`. Line 19 confirms the warning is on stderr and the exit code is 0.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p050",
-          "ref": "s4/lc2",
+          "claimId": "p49",
+          "ref": "4/c11; s4/lc2",
           "kind": "external-contract",
           "severity": "LOW",
-          "premise": "A Codex run can succeed with a recognized effort name that the selected model does not list as supported.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 lists gpt-6-luna's supported reasoning levels without ultra. Line 12 records `codex exec -m gpt-6-luna -c model_reasoning_effort=ultra \"Reply with: ok\"` exiting 0 and answering `ok` with `reasoning effort: ultra`, confirming the premise.",
+          "premise": "A Codex run can succeed with a recognized effort level absent from that model's listed supported levels.",
+          "evidence": "def-cli-probes.md:9 lists gpt-6-luna's supported levels without ultra. At :12, `codex exec -m gpt-6-luna -c model_reasoning_effort=ultra \"Reply with: ok\"` exits 0, answers `ok`, and reports `reasoning effort: ultra`. This confirms the premise; :20 records the same conclusion.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p051",
+          "claimId": "p50",
+          "ref": "4/c11; s4/ac1",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "codex debug models locally returns a model list containing each model's supported reasoning levels.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 records `codex debug models` exiting 0 and returning a JSON list where each model has `slug`, `visibility`, and `supported_reasoning_levels`, confirming the premise for the probed CLI.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p51",
+          "ref": "4/c11; s4/lc2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A successful Codex test run alone is insufficient evidence of model-specific effort support, so the design treats the CLI's model list as authoritative.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:12 records a successful gpt-6-luna run with reasoning effort ultra despite ultra being absent from its listed levels. Line 20 explicitly concludes that accepted levels must come from `codex debug models`, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p52",
           "ref": "4/c11",
           "kind": "external-contract",
-          "severity": "LOW",
-          "premise": "codex debug models locally returns model descriptions containing each model’s supported reasoning levels.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 records `codex debug models` exiting 0 and returning a JSON list in which each model has `supported_reasoning_levels`, confirming the premise for the probed CLI.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p052",
-          "ref": "4/c11",
-          "kind": "external-contract",
-          "severity": "LOW",
+          "severity": "MED",
           "premise": "The Claude CLI has no local model-listing command equivalent to codex debug models.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:21 explicitly states: “claude has no local model-listing command,” confirming the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:21 states that Claude has no local model-listing command, but the supplied evidence contains no CLI help or probe output establishing that absence or the comparison with `codex debug models`. The external contract is unverifiable from this assertion alone.",
+          "action": "Provide CLI command-discovery evidence supporting the premise, or qualify it as a claim reported by the evidence document.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied line repeats the premise without independently demonstrating the external CLI behavior.",
+            "options": [
+              "Add versioned Claude CLI help/probe output and the corresponding Codex command output.",
+              "Qualify the premise to say that the cited evidence document reports no Claude local model-listing command."
+            ]
+          }
         },
         {
-          "claimId": "p053",
-          "ref": "s4/lc3",
+          "claimId": "p53",
+          "ref": "s4/ac1; s4/ac2; c15",
           "kind": "external-contract",
           "severity": "LOW",
-          "premise": "Claude CLI run output cannot establish whether a particular model supports a recognized effort level.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:32–34 records successful runs without warnings for haiku/xhigh, haiku/max, and opus/max. Line 35 records JSON output with no reported effort level. These results support line 40: successful execution does not establish model-specific support for the requested effort.",
+          "premise": "Claude's unknown-effort warning exposes recognized effort names rather than a model-specific support list.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:14 and :31 show identical unknown-effort warnings for sonnet and haiku, listing low, medium, high, xhigh, max. Line 39 explicitly identifies these as CLI effort names rather than per-model support.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p054",
+          "claimId": "p54",
+          "ref": "c15",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "Every recognized effort level exercised by Claude probes 8 through 10 completed without a warning on the model tested.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:32–34 records probes 8–10: haiku/xhigh, haiku/max, and opus/max each exited 0 with `ok` and no warning. This confirms the premise for the combinations exercised.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p55",
+          "ref": "c15",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "The Claude JSON output examined in probe 11 does not report the effort level used.",
+          "evidence": "def-cli-probes.md:35 records probe 11's Claude JSON output and explicitly states, “It reports no effort level.” Line 40 reiterates that probe 11 does not state the effort used, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p56",
+          "ref": "s4/ac1; s4/lc3; c15",
+          "kind": "external-contract",
+          "severity": "LOW",
+          "premise": "No Claude CLI run can establish whether a particular model supports a particular recognized effort level.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:39 states that valid effort names are model-independent. Line 40 reports that every recognized level runs without warnings on every model tried, output never states the effort used, and explicitly concludes that CLI runs do not reveal model-level effort support.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p57",
           "ref": "s4/ac1",
           "kind": "external-contract",
           "severity": "LOW",
-          "premise": "The Claude CLI warning’s Valid values list identifies CLI-recognized effort names rather than model-specific supported levels.",
-          "evidence": "def-cli-probes.md:14 and :31 show sonnet and haiku receiving the identical warning list, `low, medium, high, xhigh, max`, for `--effort bogus`; both fall back to default effort and exit 0. Line 39 explicitly identifies this as the CLI's effort-name list, not a per-model support list, confirming the premise.",
+          "premise": "Claude CLI JSON output exposes a model input limit that can be used when constructing an unknown model's capability profile.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:35 records a successful Claude JSON probe (exit 0) exposing modelUsage[\"claude-haiku-5-5\"].contextWindow = 1000000 and maxOutputTokens = 128000. Line 41 explicitly identifies these fields as the basis for obtaining a Claude model's input limit, supporting the proposed capability-profile construction.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p055",
-          "ref": "s4/ac1",
-          "kind": "external-contract",
+          "claimId": "p58",
+          "ref": "k1; s4/lc1; c4",
+          "kind": "citation",
           "severity": "LOW",
-          "premise": "The Claude CLI’s JSON output exposes per-model context-window and output-limit values from which the artifact expects to obtain the model’s input limit.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:35 records a successful Claude JSON probe exposing modelUsage[\"claude-haiku-5-5\"].contextWindow = 1000000 and maxOutputTokens = 128000. Line 41 explicitly identifies these fields as the basis for obtaining the model's input limit, confirming the premise.",
+          "premise": "CLAUDE.md prohibits direct cloud REST access and delegates cloud LLM access to the installed Claude and Codex CLIs.",
+          "evidence": "CLAUDE.md:12 explicitly prohibits direct cloud REST calls and requires cloud LLM access through locally installed `claude` and `codex` CLI binaries via `CliProvider`. src/agent/providers/cli-provider.ts:183 declares `CliProvider implements LLMProvider`. The evidence confirms the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p056",
-          "ref": "s4/lc2",
-          "kind": "semantic",
+          "claimId": "p59",
+          "ref": "k2; c4",
+          "kind": "citation",
           "severity": "LOW",
-          "premise": "Codex effort-support decisions use membership in the CLI’s model-specific supported-level list rather than successful execution as their evidence.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:9 records gpt-6-luna's supported_reasoning_levels excluding ultra; :12 records an ultra run nevertheless exiting 0. Line 20 explicitly identifies the model list as the authority for supported levels. DEF.md:145 and :154 prescribe that same distinction between supported-level membership and successful execution.",
+          "premise": "CLAUDE.md assigns database ownership to the daemon and requires CLI, MCP and IDE workbench access through IPC.",
+          "evidence": "CLAUDE.md:136 explicitly states: “Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only.” This directly confirms every clause of the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p057",
-          "ref": "s4/ac3",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "For Claude, an effort level passing the check in s4/ac3 means CLI recognition plus user approval, without a claim of verified model support.",
-          "evidence": "DEF.md:145 (s4/ac1) checks Claude effort-name recognition while explicitly stating that CLI output cannot establish model support. DEF.md:146 (s4/ac2) requires that uncertainty to be shown and user approval obtained. DEF.md:147 (s4/ac3) admits only checked, approved levels; DEF.md:155 (s4/lc3) explicitly confirms that user approval admits Claude effort levels without verified model support.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p058",
-          "ref": "Summary/c1",
+          "claimId": "p60",
+          "ref": "k2; c4",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "DEF-ce99b72065d03b1b is seeded from the existing artifact SPEC-1aa3094047d2617b.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:8 explicitly states **Seeded from:** `SPEC-1aa3094047d2617b`. docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md:1 confirms that artifact ID exists.",
+          "premise": "The definition-ownership and IPC-only requirement in k2 is traced to c4's daemon-ownership convention.",
+          "evidence": "DEF.md:79 states that k2 assigns definition ownership to the daemon, requires CLI/MCP/IDE access through daemon IPC, and explicitly references [[c4]]. CLAUDE.md:136 confirms the daemon-ownership convention and IPC-only access for those clients.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p059",
-          "ref": "3/c1",
+          "claimId": "p61",
+          "ref": "k3; s4/ac1; c4",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md requires sequential awaits for all calls reaching an LLM provider, including local Ollama calls.",
+          "evidence": "CLAUDE.md:122 explicitly prohibits Promise.all for anything reaching an LLM provider, including cloud and local Ollama embed/complete calls, and requires serial for...of with sequential awaits.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p62",
+          "ref": "Summary; c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "The seed SPEC restricts extensibility to configurable models while retaining built-in families, transport and structured-output handling in code.",
-          "evidence": "SPEC.md:13 explicitly limits scope to three built-in families, retains transport and structured-output handling in code, and configures models through a repo-shipped data file. SPEC.md:33 confirms “Built-in families, configurable models.” DEF.md:58 and :62 consistently exclude user-defined families/runners and configurable transport or structured-output handling.",
+          "premise": "The DEF's seed reference resolves to SPEC-1aa3094047d2617b.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:8 names `SPEC-1aa3094047d2617b` as its seed. docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md:1 declares that exact artifact ID, confirming the reference resolves.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p060",
-          "ref": "E20261023ce99b720:FR003/c1",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "The seed SPEC requires all-consumer migration in stages with clients obtaining definitions over daemon IPC.",
-          "evidence": "SPEC.md:13 explicitly requires the TUI and both IDE plugins to read definitions over daemon IPC, keep no copy, and migrate every hardcoded runner/model string in stages. SPEC.md:37 confirms all four consumers are in scope. DEF.md:30 (FR003) and :32 (FR005) preserve these requirements.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p061",
+          "claimId": "p63",
           "ref": "E20261023ce99b720:FR001/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "FR001’s authoritative model definitions trace to the seed SPEC’s consolidation of tier defaults, summariser selection, per-model effort levels and input limits.",
-          "evidence": "SPEC.md:9 at docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940 explicitly consolidates tier defaults, summariser selection, per-model effort levels and input limits into a repo-shipped data file. DEF.md:28 at docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720 carries those same facts into FR001’s authoritative family/model descriptions and cites c1. The premise is supported.",
+          "premise": "The seed SPEC requires consolidation of tier defaults, the summariser model, per-model effort levels and input limits into daemon-owned definitions.",
+          "evidence": "SPEC.md:9 explicitly requires daemon-owned definitions and consolidation of tier defaults, the summariser model, per-model effort levels and input limits, with model-level facts stored in a repo-shipped data file. SPEC.md:13 names the daemon as the single authority serving definitions over IPC. DEF.md:28 (FR001) repeats the same required inventory.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p062",
-          "ref": "E20261023ce99b720:FR002/c2",
+          "claimId": "p64",
+          "ref": "E20261023ce99b720:FR003/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "Stakeholder citation c2 requires model structure in a separate repo-shipped data file so model-version updates do not require code changes.",
-          "evidence": "SPEC.md:45 at docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/ and DEF.md:208 at docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/ both record stakeholder citation c2 requesting a separate repo config file storing model structure, explicitly excluding the user's config.json, because frequent model-version updates would make code changes cumbersome. Both confirm the premise.",
+          "premise": "The seed SPEC requires the TUI and both IDE plugins to obtain definitions over daemon IPC without maintaining their own copies.",
+          "evidence": "SPEC.md:13 explicitly states that the daemon is the single authority and that “the TUI and both IDE plugins read definitions over IPC and keep no copy.” SPEC.md:37 confirms daemon-owned definitions exposed through IPC. DEF.md:30, FR003, preserves that requirement for the terminal UI and both IDE plugins.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p063",
-          "ref": "E20261023ce99b720:FR004/c3",
+          "claimId": "p65",
+          "ref": "E20261023ce99b720:FR005/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "Stakeholder citation c3 requires testing an unknown model and letting the user approve or reject it.",
-          "evidence": "Both docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md:46 and docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:209 identify c3 as stakeholder input from user 2026-10-23: \"test and approve or reject the unknown model\". This confirms the premise.",
+          "premise": "The seed SPEC requires migration of every hardcoded runner/model string in stages rather than one coordinated consumer release.",
+          "evidence": "SPEC.md:13 explicitly requires every hardcoded runner/model string to be migrated in stages. SPEC.md:31 names “All consumers, delivered in stages,” and :32 rules out “All consumers in one coordinated release.” DEF.md:32 (FR005) preserves that requirement.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p064",
-          "ref": "k1/c4",
+          "claimId": "p66",
+          "ref": "3/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "CLAUDE.md prohibits direct cloud REST calls and requires cloud model access through the installed Claude and Codex CLIs.",
-          "evidence": "CLAUDE.md:12 explicitly prohibits direct cloud REST calls and requires cloud LLM access through the locally installed claude and codex CLI binaries via CliProvider. CLAUDE.md:137 reiterates this requirement. src/agent/providers/cli-provider.ts:183 declares CliProvider implements LLMProvider.",
+          "premise": "The seed SPEC keeps model families, transports and structured-output handling built into code while allowing model-level data to change.",
+          "evidence": "SPEC.md:13 explicitly states that families, transport and structured-output handling stay in code while models are configured through a repo-shipped data file. SPEC.md:33 reinforces this as “Built-in families, configurable models.”",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p065",
-          "ref": "k2/c4",
+          "claimId": "p67",
+          "ref": "3/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "k2 cites CLAUDE.md’s daemon-ownership and IPC-only architectural rule as the basis for clients accessing definitions through the daemon.",
-          "evidence": "CLAUDE.md:132 requires CLI/MCP/workbench database access through daemon IPC; CLAUDE.md:136 states daemon ownership of all DB access. DEF.md:79 states k2’s daemon ownership and IPC-only access contract and explicitly cites [[c4]], confirming the premise.",
+          "premise": "The seed SPEC limits user configuration to model selection and capability overrides rather than configurable family implementations.",
+          "evidence": "SPEC.md:33 identifies “Built-in families, configurable models.” SPEC.md:35 explicitly names “Model selection and capability overrides” and states that built-in families with configurable models is settled, without reopening family extensibility. These lines confirm the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p066",
-          "ref": "k3/c4",
+          "claimId": "p68",
+          "ref": "3/c1",
           "kind": "cross-artifact",
           "severity": "LOW",
-          "premise": "CLAUDE.md requires serial awaited execution for operations reaching an LLM provider, supporting k3’s prohibition on concurrent probes.",
-          "evidence": "CLAUDE.md:122 explicitly requires serial for...of execution with sequential awaits for anything reaching an LLM provider. DEF.md:80 states k3’s matching prohibition on concurrent provider probes, and DEF.md:145 operationalizes k3 as CLI checks performed “one check at a time.”",
+          "premise": "The seed SPEC rejects shared definition packages and client-side mirrors in favor of daemon-owned definitions exposed through IPC.",
+          "evidence": "docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md:37 selects “Daemon-owned definitions exposed through IPC”; line 38 explicitly rules out “Shared versioned definition package” and “Mirrored definitions in each consumer”. This confirms the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p067",
+          "claimId": "p69",
+          "ref": "3/c3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The seed SPEC requires an explicit capability profile for an unknown model instead of silently inheriting family defaults.",
+          "evidence": "SPEC.md:13 requires an explicit capability profile for any selected model absent from built-in definitions. SPEC.md:39 reiterates this requirement, and SPEC.md:40 explicitly rules out conservative family defaults and inheriting the family's default model profile.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p70",
+          "ref": "E20261023ce99b720:FR002; k4; c2",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Stakeholder citation c2 requests model structure in a separate repo-shipped data file so model-version updates do not require code changes or edits to the user's config.json.",
+          "evidence": "SPEC.md:45 at docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/SPEC.md and DEF.md:208 at docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md both record c2 requesting model structure in a separate repo config file, excluding the user's config.json, because frequent model-version updates would make code changes cumbersome. Both citations confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p71",
+          "ref": "E20261023ce99b720:FR004; k5; c3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Stakeholder citation c3 requests testing an unknown model and letting the user approve or reject it.",
+          "evidence": "SPEC.md:46 at docs/standalone/per-family-model-definitions-served-daemon-E202610231aa30940/ and DEF.md:209 at docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/ both identify c3 as stakeholder input from the user and quote: \"test and approve or reject the unknown model\". This confirms the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p72",
           "ref": "c6",
           "kind": "citation",
           "severity": "LOW",
-          "premise": "Stakeholder citation c6 restricts per-repo overrides to choosing the functions or roles that use each globally configured tier.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:212 identifies c6 as stakeholder input from user 2026-10-23 and states: \"no per-repo override, only the model tiers, per-repo can only override the functions these tiers are used for\". This confirms the stated restriction.",
+          "premise": "Stakeholder citation c6 restricts per-repo model configuration to choosing which functions use the global model tiers.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:212 identifies [[c6]] as the stakeholder statement: \"no per-repo override, only the model tiers, per-repo can only override the functions these tiers are used for\". This confirms the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p068",
-          "ref": "k6/c13",
+          "claimId": "p73",
+          "ref": "k6; c13",
           "kind": "citation",
           "severity": "LOW",
           "premise": "Stakeholder citation c13 explicitly requests removal of per-repo tier overrides.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:219 identifies [[c13]] as stakeholder input from user 2026-10-23 and explicitly states: \"remove the per-repo override for tiers\".",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:219 identifies [[c13]] as a stakeholder citation and explicitly states: \"remove the per-repo override for tiers\". This confirms the premise.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p069",
-          "ref": "c7",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Reference c7 resolves to the prior reasoning-effort story’s t8-live-effort.md evidence artifact.",
-          "evidence": "DEF.md:213 maps [[c7]] to the exact prior-artifact path stated in the premise. That path resolves successfully at line 1 to “# S001/t8 live CLI effort checks”, confirming the referenced evidence artifact exists.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p070",
-          "ref": "c9",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Reference c9 denotes the define workflow’s step output s1.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:215 explicitly declares `- **[[c9]]** `step-output` `s1``, confirming the reference mapping. .insrc/artifacts/DEF-ce99b72065d03b1b.json:1466 also identifies citation `c9`.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p071",
-          "ref": "c10",
-          "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "Reference c10 denotes the first analyze bundle in define step output s1.",
-          "evidence": "DEF.md:216 explicitly maps [[c10]] to `analyze-bundle` `s1.analyzeBundles[0]`; DEF.md:215 maps [[c9]] to step output `s1`. .insrc/artifacts/DEF-ce99b72065d03b1b.json:1473 corroborates the reference `s1.analyzeBundles[0]`.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p072",
-          "ref": "c10",
-          "kind": "closed-union",
-          "severity": "MED",
-          "premise": "The existing code has no complete implementation of the proposed authoritative family-and-model definitions, as reported by analyze bundle c10.",
-          "evidence": "DEF.md:216 confirms c10 reports “No clear match” and partial consumer-side slices. That supports the bundle's reported uncertainty, but does not establish implementation absence. The definitions-name grep finds only DEF.md:292, a prior review entry; the CloudModelCatalogFile/DEFAULT_TIERS search is truncated. src/daemon/model-catalog.ts:43, :48 and src/config/analyze.ts:135 show an id field, an interface declaration and one tier default, insufficient to establish whether a complete authoritative implementation exists.",
-          "action": "Qualify the premise as the bundle's inconclusive finding, or gather source-level evidence establishing the missing authoritative definitions.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence supports an inconclusive analysis report, not the stronger assertion that no complete implementation exists.",
-            "options": [
-              "Reword to: “Analyze bundle c10 reports no clear implementation match and identifies partial consumer-side slices; absence of a complete authoritative implementation remains unverified.”",
-              "Retain the stronger premise only after inspecting the catalog/config implementations and gathering an untruncated, source-scoped search for equivalent definitions."
-            ]
-          }
-        },
-        {
-          "claimId": "p073",
-          "ref": "c10",
-          "kind": "citation",
-          "severity": "MED",
-          "premise": "The consumer-side partial implementations named by c10 exist in vscode-plugin/src/models/model-tier-picker.ts and src/cli/panes/model-tiers.ts.",
-          "evidence": "Reads at vscode-plugin/src/models/model-tier-picker.ts:1 and src/cli/panes/model-tiers.ts:1 confirm both paths exist, but expose only opening comments. DEF.md:216 repeats c10's claim. The truncated grep provides no implementation evidence from either file, so their claimed consumer-side partial implementations remain unverifiable.",
-          "action": "Read the relevant implementation bodies to substantiate c10, or narrow the premise to confirmed file existence.",
-          "fixability": "assisted",
-          "proposedFix": {
-            "rationale": "The evidence establishes file existence but does not establish implementation content; no concrete build failure is demonstrated.",
-            "options": [
-              "Gather implementation-body reads from both files and reassess c10.",
-              "Narrow the premise to file existence, leaving the claimed partial implementations unverified."
-            ]
-          }
-        },
-        {
-          "claimId": "p074",
-          "ref": "s2",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Story s2 depends on story s1 delivering startup-loaded model definitions.",
-          "evidence": "DEF.md:88 identifies S001 as shipping model definitions as data the daemon checks at startup. DEF.md:102 identifies S002 as asking the daemon for family and model definitions, and DEF.md:108 explicitly states **Depends on:** `s1`, confirming the ordering.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p075",
-          "ref": "s3",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Story s3 depends on story s1 delivering the shared definitions that runtime model selection consumes.",
-          "evidence": "DEF.md:88 identifies S001 as shipping model definitions checked by the daemon at startup; DEF.md:117 identifies S003 as running every model by the shared definitions; DEF.md:123 explicitly states S003 depends on `s1`. These confirm the stated ordering.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p076",
-          "ref": "s4",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "Story s4 depends on story s2 providing the definitions interface used to expose approved unknown models.",
-          "evidence": "DEF.md:102 identifies S002 as asking the daemon for family and model definitions. S004 explicitly depends on `s2` at line 141, and its ac5 at line 149 requires approved unknown models to appear in daemon-served definitions under their family with only approved effort levels. This confirms the stated dependency.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p077",
-          "ref": "s5",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The TUI migration in s5 depends on completion of s2, s3 and s4.",
-          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:157 identifies S005 as the TUI task; line 163 explicitly states **Depends on:** `s2`, `s3`, `s4`, confirming the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p078",
-          "ref": "s6",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The VS Code migration in s6 depends on completion of s2, s3 and s4.",
-          "evidence": "DEF.md:173 identifies S006 as the VS Code model-and-effort selection migration; DEF.md:179 explicitly states **Depends on:** `s2`, `s3`, `s4`, confirming the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p079",
-          "ref": "s7",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "The JetBrains migration in s7 depends on completion of s2, s3 and s4.",
-          "evidence": "DEF.md:189 identifies S007 as the JetBrains migration; DEF.md:195 explicitly lists **Depends on:** `s2`, `s3`, `s4`, confirming the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p080",
-          "ref": "s2/ac1",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The definitions response designed in s2 can represent user-approved unknown models, as required by s4/ac5.",
-          "evidence": "DEF.md:114 (s2/ac1) explicitly requires a response shape that can carry models the user approves later. DEF.md:149 (s4/ac5) specifies those unshipped models appear under their family, marked user-approved, with only approved effort levels. These requirements support the premise.",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p081",
-          "ref": "s4/ac2",
-          "kind": "ordering",
-          "severity": "LOW",
-          "premise": "An unknown model’s capability checks and explicit user approval must precede its use.",
-          "evidence": "DEF.md:31 (FR004) requires CLI capability checks, presentation of results, and approval before model use. DEF.md:82 (k5) repeats the approval prerequisite. DEF.md:145–147 establish the sequence: sequential checks (ac1), results and explicit approval of allowed levels before use (ac2), then tier assignment restricted to checked and approved levels (ac3).",
-          "action": "none — verified sound",
-          "fixability": "manual"
-        },
-        {
-          "claimId": "p082",
+          "claimId": "p74",
           "ref": "k6",
           "kind": "semantic",
           "severity": "LOW",
           "premise": "k6 permits per-repo role-to-tier choices and the core floor while restricting tier runner, model and effort settings to global configuration.",
-          "evidence": "DEF.md:83 explicitly states that k6 allows per-repo role-to-tier choices and the core floor, while runner, model and effort are global only. DEF.md:49 (S003:FR004) requires removing per-repo tier overrides; DEF.md:132 (ac4) requires resolving runner, model and effort from global settings and definitions. These directly confirm the premise.",
+          "evidence": "DEF.md:83 explicitly makes runner, model and effort global-only while allowing per-repo role-to-tier choices and the core floor. DEF.md:49 (S003:FR004) requires removing per-repo tier overrides. src/analyze/context/role-router.ts:138 shows the existing override behavior targeted for removal, not a contradiction of the proposed constraint.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p083",
+          "claimId": "p75",
+          "ref": "c7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Reference c7 resolves to the prior reasoning-effort story's t8-live-effort.md evidence artifact.",
+          "evidence": "The read of docs/standalone/add-per-tier-reasoning-effort-setting-E20261023a27df028/S001/evidence/t8-live-effort.md:1 succeeded and returned '# S001/t8 live CLI effort checks', confirming the cited evidence artifact resolves.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p76",
+          "ref": "c9",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Reference c9 identifies the define workflow's step output s1.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:215 explicitly maps reference c9 to `step-output` `s1`: '- **[[c9]]** `step-output` `s1`'.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p77",
+          "ref": "c10",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Reference c10 identifies the first analyze bundle in define step output s1 as s1.analyzeBundles[0].",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:216 explicitly maps [[c10]] to `analyze-bundle` `s1.analyzeBundles[0]`, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p78",
+          "ref": "s1/c10; s2/c10; s3/c10; s5/c10; s6/c10; s7/c10",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The c10 analyze bundle reports no clear existing match for centralized model definitions and identifies only partial consumer-side implementations in the VS Code picker and TUI model-tier pane.",
+          "evidence": "DEF.md:216 explicitly records c10, anchored to s1.analyzeBundles[0], as “No clear match. Partial, consumer-side slices in vscode-plugin/src/models/model-tier-picker.ts and src/cli/panes/model-tiers.ts.” The supplied consumer reads show CONFIG_CATALOG imported at model-tier-picker.ts:25 and resolveTier called at model-tiers.ts:63. This verifies what the bundle reports; it does not establish implementation absence across the repository.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p79",
+          "ref": "s1/c5",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Story s1 extends the existing curated-catalog startup-validation mechanism rather than replacing its file, loader or boot hook.",
+          "evidence": "src/daemon/model-catalog.ts:162 declares validateModelCatalog, and src/daemon/index.ts:381 calls it. DEF.md:94 states “Extends: [[c10]] [[c5]]”. However, the supplied evidence contains neither s1/c5's substantive text nor the catalog loader body, so it cannot verify that s1 preserves the existing file, loader and boot hook. The truncated grep results mainly show historical test logs.",
+          "action": "Supply the s1/c5 definitions and catalog-loading implementation to verify preservation, or narrow the premise to the verified validator declaration and daemon call.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The existing validator and call are supported; the cross-artifact preservation claim needs additional evidence.",
+            "options": [
+              "Retain the premise and provide s1/c5 content plus the catalog loader implementation.",
+              "Narrow the premise to the existing validateModelCatalog declaration and its call at src/daemon/index.ts:381."
+            ]
+          }
+        },
+        {
+          "claimId": "p80",
+          "ref": "s2",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Story s2 depends on story s1 delivering startup-loaded model definitions.",
+          "evidence": "DEF.md:88 identifies S001 as “Ship model definitions as data the daemon checks at startup”; DEF.md:108 explicitly states “**Depends on:** `s1`”, supporting the stated dependency ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p81",
+          "ref": "s3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story s3 depends on story s1 delivering the definitions consumed by runtime model resolution.",
+          "evidence": "DEF.md:88 identifies S001 as shipping model definitions checked by the daemon at startup. DEF.md:123 states “Depends on: `s1`”, but the supplied lines do not identify that declaration as belonging to s3 or establish consumption by runtime model resolution. The full premise is unverifiable.",
+          "action": "Supply s3's heading and description alongside its dependency declaration to verify the ordering and runtime consumption claim.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence partially supports the premise but does not safely establish the complete dependency relationship.",
+            "options": [
+              "Provide s3's section context confirming its dependency on s1 and use of the definitions.",
+              "Narrow the premise to the dependency relationship once the declaration is verified as belonging to s3."
+            ]
+          }
+        },
+        {
+          "claimId": "p82",
+          "ref": "s4",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Story s4 depends on story s2 exposing the daemon's model definitions.",
+          "evidence": "DEF.md:102 identifies S002 as “Ask the daemon for family and model definitions”; DEF.md:141 explicitly records “**Depends on:** `s2`”, confirming the stated ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p83",
+          "ref": "s5",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The TUI migration in story s5 depends on stories s2, s3 and s4.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:163 explicitly states: **Depends on:** `s2`, `s3`, `s4`, confirming the stated dependencies.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p84",
+          "ref": "s6",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The VS Code migration in story s6 depends on stories s2, s3 and s4.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:179 explicitly states: **Depends on:** `s2`, `s3`, `s4`, confirming the stated dependencies for s6.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p85",
+          "ref": "s7",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "The JetBrains migration in story s7 depends on stories s2, s3 and s4.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:195 explicitly states: **Depends on:** `s2`, `s3`, `s4`, confirming the stated dependencies.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p86",
           "ref": "s1/ac3",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A valid tier default must identify a model belonging to the default’s own family.",
-          "evidence": "DEF.md:100 (s1/ac3) explicitly requires startup rejection when a tier default is not one of that family's models, confirming the premise. DEF.md:37 (E20261023ce99b720:S001:FR002) requires invalid definitions to stop startup and identify the faulty entry.",
+          "premise": "A valid tier default must reference a model belonging to that default's own family.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:100 explicitly requires startup rejection when a tier default is not one of that family's models, confirming the stated validity requirement.",
           "action": "none — verified sound",
           "fixability": "manual"
         },
         {
-          "claimId": "p084",
-          "ref": "s3/ac3",
+          "claimId": "p87",
+          "ref": "s1/ac3",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The definitions format admits only the built-in families and must reject an unknown family at startup.",
+          "evidence": "Unverifiable. DEF.md:100 requires startup rejection of unknown families. src/daemon/model-catalog.ts:48 shows only the CloudModelCatalogFile declaration, and :124 shows iteration over ['cli-claude', 'cli-codex']; neither establishes a closed family type or rejection of unknown keys. The truncated grep supplies no validateShape implementation or startup validation path.",
+          "action": "Provide the full family type, validateShape implementation, and startup caller to verify unknown-family rejection.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence establishes the requirement but does not establish or contradict its implementation; no safe artifact correction is supported.",
+            "options": [
+              "Supply complete type, validator, and startup-path evidence to verify the premise.",
+              "Reword the premise as an acceptance requirement whose current implementation remains unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p88",
+          "ref": "s1/ac1; s1/ac2",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "A shipped-definition data change becomes available after rebuilding and restarting the daemon without changing application code.",
+          "evidence": "Unverifiable from the supplied evidence. src/daemon/index.ts:381 calls validateModelCatalog(), and src/daemon/model-catalog.ts:162 declares it. DEF.md:98 specifies loading definitions once at startup. The truncated grep includes historical test results describing catalog caching, but no supplied source shows that rebuilding ships changed definitions or that restarting exposes those changes without application-code edits.",
+          "action": "Provide targeted evidence for asset copying during build, definition loading during startup, and consumption of the changed data after restart.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence partially supports startup ordering but cannot establish the complete rebuild-and-restart claim or justify an exact correction.",
+            "options": [
+              "Retain the premise and supply build-copy, loader, and consumer evidence demonstrating a data-only update after restart.",
+              "Recast the premise as an acceptance requirement and verify it with a data-only change followed by rebuild and daemon restart."
+            ]
+          }
+        },
+        {
+          "claimId": "p89",
+          "ref": "s2/ac2",
           "kind": "cross-artifact",
-          "severity": "LOW",
-          "premise": "s3/ac3 limits the removal of runner and model literals to code outside family implementations, consistent with the seed SPEC retaining family implementations in code.",
-          "evidence": "DEF.md:131 explicitly limits ac3's literal-removal requirement to code “outside the family implementations.” The seed SPEC.md:13 retains families, transport and structured-output handling in code while configuring models through data. DEF.md:32 describes the broader staged consumer migration. These supplied reads support the claimed scope and consistency.",
-          "action": "none — verified sound",
-          "fixability": "manual"
+          "severity": "MED",
+          "premise": "The existing per-family model-list response and the new complete-definitions response must derive from the same definitions.",
+          "evidence": "src/daemon/list-models.ts:127 confirms the existing list derives from deps.catalog().modelsFor(provider).map(toModelInfo). DEF.md:114 specifies the proposed complete-definitions response, but supplies no shared-source linkage. Neither s2/ac2 nor implementation of the new response is shown. The truncated matches do not establish that both responses derive from the same definitions; the premise is unverifiable.",
+          "action": "Provide s2/ac2 and focused evidence establishing the common definitions source for both responses.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The existing catalog source is confirmed, but the proposed response's connection to it is not evidenced.",
+            "options": [
+              "Retain the requirement and supply ac2 plus implementation or design evidence identifying the common definitions source.",
+              "Explicitly distinguish the verified existing catalog source from the proposed shared-source requirement pending verification."
+            ]
+          }
         },
         {
-          "claimId": "p085",
+          "claimId": "p90",
+          "ref": "s2/ac1; s4/ac5",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The complete-definitions response introduced by s2 must support the user-approved unknown models introduced by s4.",
+          "evidence": "DEF.md:149 confirms s4/ac5 requires approved unknown models to appear under their family, marked user-approved, with only approved effort levels. The read at DEF.md:113 is blank and provides no evidence for s2/ac1 or its complete-definitions response. The cross-artifact dependency is therefore unverifiable.",
+          "action": "Obtain the text of s2/ac1 and verify that its complete-definitions response accommodates the models required by s4/ac5.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The s4 requirement is evidenced, but the s2 contract is missing; no safe exact artifact correction is supported.",
+            "options": [
+              "Provide a nonempty read of s2/ac1 to verify the dependency.",
+              "Narrow the premise to the verified s4/ac5 requirement pending evidence for s2/ac1."
+            ]
+          }
+        },
+        {
+          "claimId": "p91",
           "ref": "E20261023ce99b720:S003:FR001",
           "kind": "cross-artifact",
           "severity": "LOW",
           "premise": "S003:FR001 assigns runtime consumption of per-model input limits to story s3.",
-          "evidence": "DEF.md:46 explicitly states E20261023ce99b720:S003:FR001: “Tier defaults, the summariser model and per-model effort and input limits used at run time come from the definitions.” DEF.md:117 identifies S003 as “The daemon runs every model by the shared definitions.” Together these confirm that story s3 owns runtime consumption of per-model input limits.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:46 identifies E20261023ce99b720:S003:FR001 and requires that “per-model effort and input limits used at run time come from the definitions,” confirming assignment to story S003 (s3). src/shared/types.ts:417 confirms the maxInputTokens field declaration.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p92",
+          "ref": "s3/ac3",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The exception to s3's removal of daemon runner and model literals is limited to family implementations.",
+          "evidence": "DEF.md:131 explicitly states that no runner or model literals may remain in the named daemon code outside family implementations. However, the grep is truncated at 50 matches and supplies no source matches from src/agent/providers or the relevant daemon code. Matches such as camon/src/camon/addon_runtime.py:88 and docs/daemon.md:380–382 do not establish the runtime exception boundary. Exclusivity is therefore unverifiable; no concrete build-breaking contradiction is demonstrated.",
+          "action": "Gather scoped, untruncated evidence covering daemon routing, provider construction, attribution and workflow code, and identify which matching files are family implementations.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms the documented requirement but cannot establish its exhaustive implementation boundary; no evidence-derived artifact correction is safe.",
+            "options": [
+              "Retain the premise pending scoped source evidence that verifies the exception boundary.",
+              "Clarify the intended family-implementation boundary in ac3, then verify all relevant literal occurrences against it."
+            ]
+          }
+        },
+        {
+          "claimId": "p93",
+          "ref": "s3/ac5",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Existing per-repo tier overrides must be ignored and removed during startup or settings reconciliation with a warning identifying the repo and tier.",
+          "evidence": "src/analyze/context/role-router.ts:138 reads byRepo?.tiers?.[tier] before global tiers, confirming per-repo overrides are currently consumed. DEF.md:133 states the requested ignore/warn/remove behavior, but repeats the requirement rather than proving its implementation or ordering. The truncated grep supplies no startup or reconciliation code establishing removal and warnings.",
+          "action": "Ground the startup/settings reconciliation integration point and establish that overrides are ignored before routing, removed from persisted settings, and logged with repo and tier.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence establishes the existing override read but cannot establish the lifecycle integration or ordering; no safe artifact correction follows.",
+            "options": [
+              "Retain ac5 and supply targeted startup, reconciliation, persistence, and warning evidence.",
+              "Specify the migration integration and ordering explicitly, then gather evidence for those paths."
+            ]
+          }
+        },
+        {
+          "claimId": "p94",
+          "ref": "s4/ac1; s4/ac2; s4/ac3",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "An unknown model's checks and presentation of their evidence must precede user approval and subsequent model use.",
+          "evidence": "DEF.md:31 (FR004) requires CLI checks, presentation of results, and approval before model use. DEF.md:145–147 (s4/ac1–ac3) confirms the ordering: sequential checks; finished results shown with CLI evidence; user approval of allowed levels; daemon acceptance restricted to checked and approved levels.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p95",
+          "ref": "s4/ac1; s4/lc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A passed Claude effort check establishes CLI recognition of the effort name rather than model-specific support.",
+          "evidence": "def-cli-probes.md:39 states that `Valid values` lists CLI-recognised effort names and is not model-specific. Line 40 reports that every recognised level runs without warning on every model tried, while output never states the effort used. DEF.md:145 explicitly requires confirming CLI recognition because Claude CLI output does not establish per-model effort support. These lines confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p96",
+          "ref": "s4/ac2; s4/ac3; s4/lc3",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "For an unknown Claude model, user approval admits each recognized effort level despite the CLI being unable to confirm model-specific support.",
+          "evidence": "DEF.md:146 explicitly permits user approval of Claude effort levels reported as recognised with model-specific support unconfirmed; DEF.md:147 limits use to checked, approved levels. evidence/def-cli-probes.md:40 confirms recognised levels run without warnings but the CLI cannot establish model-specific effort support.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p97",
+          "ref": "s4/ac3; s4/ac5",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A user-approved unknown-model profile exposes only effort levels that passed the applicable check and were explicitly approved.",
+          "evidence": "DEF.md:147 (s4/ac3) explicitly restricts accepted effort levels to those that passed their check and received user approval. DEF.md:149 (s4/ac5) requires an approved model absent from shipped definitions to appear under its family with only its approved effort levels. Both reads confirm the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p98",
+          "ref": "s4/ac4",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "User rejection or inability to reach the CLI blocks use of the unknown model.",
+          "evidence": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/DEF.md:148 explicitly requires the daemon to refuse the model and explain why when the user rejects the profile or a check cannot reach the CLI, confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p99",
+          "ref": "s4/ac1; s4/lc2",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A Codex unknown-model check requires both model-list evidence for supported efforts and a separate confirmation that the model runs.",
+          "evidence": "DEF.md:145 explicitly requires Codex to obtain supported efforts from its model list and separately confirm the model runs. evidence/def-cli-probes.md:9 records the model list's supported_reasoning_levels; :12 records a successful run with an effort absent from that model's listed levels. Line 20 therefore confirms that run success cannot establish supported efforts.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p100",
+          "ref": "E20261023ce99b720:FR003; s5; s6; s7",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The client migrations required by FR003 are assigned to s5 for the TUI, s6 for VS Code and s7 for JetBrains.",
+          "evidence": "DEF.md:30 defines FR003 as requiring the terminal UI and both IDE plugins to obtain family/model descriptions from the daemon. DEF.md:157 assigns the TUI migration to S005; :173 assigns VS Code to S006; :189 assigns JetBrains to S007, confirming the stated mapping.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p101",
+          "ref": "s5/ac2; s6/ac2; s7/ac2",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Each client migration relies on s4's unknown-model checking and approval flow when a user enters an unlisted model.",
+          "evidence": "DEF.md:170 confirms the TUI starts an unknown-model check and presents results for approval; :186 and :202 confirm the extension and plugin show daemon check results and save only after approval. No evidence for s4 was supplied, so the claimed dependency on s4 is unverifiable.",
+          "action": "Verify s4 defines the shared checking and approval flow, or narrow the premise to the client behaviors confirmed by the supplied acceptance criteria.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The client behaviors are supported, but their attribution to s4 requires additional evidence.",
+            "options": [
+              "Supply s4 evidence establishing the shared checking and approval flow.",
+              "Reword the premise to describe the verified client acceptance criteria without attributing them to s4."
+            ]
+          }
+        },
+        {
+          "claimId": "p102",
+          "ref": "s5/ac3; s6/ac3; s7/ac3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "The TUI, VS Code and JetBrains repo-settings changes must preserve role-to-tier selection while removing per-repo tier runner, model and effort editing under k6.",
+          "evidence": "DEF.md:83 (k6) makes runner, model and effort global-only while retaining per-repo role-to-tier selection and the core floor. DEF.md:171 explicitly preserves role-to-tier editing and excludes repo runner/model/effort editing for the TUI. DEF.md:187 and :203 preserve role-to-tier selection and exclude repo runner/model fields for VS Code and JetBrains; both operationalize k6, which also excludes per-repo effort editing.",
           "action": "none — verified sound",
           "fixability": "manual"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 18,
-        "low": 67
+        "med": 16,
+        "low": 86
       },
-      "reviewedAt": "2026-10-24T18:46:16.414Z",
+      "reviewedAt": "2026-10-24T19:07:50.914Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }

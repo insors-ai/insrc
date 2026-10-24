@@ -134,13 +134,20 @@ test('CM-S1-N: adopted fixture supports create update activation failure and sig
 			throw new Error();
 		assert.equal(created.value.activation, 'failed');
 		assert(!(await readFile(f.path, 'utf8')).includes('new-secret-canary'));
+		const committedBytes = await readFile(f.path, 'utf8');
+		const committedDocument = JSON.parse(committedBytes);
+		const credentialRefs = [...referencedSecrets(committedDocument.connections)];
+		assert.equal(credentialRefs.length, 1);
+		assert.ok(credentialRefs[0]!.startsWith('db:v2:'));
+		assert.equal(f.values.get(credentialRefs[0]!), 'new-secret-canary');
+		const committedKeys = [...f.values];
 		await owner.close();
 		owner = await openManagedRoot(f.root, ports);
 		service = savedManagementFor(f.root)!;
 		assert.equal((await service.status(context, ticket)).status, 'committed');
-		const count = f.values.size;
 		assert.equal((await service.mutate(context, request)).status, 'committed');
-		assert.equal(f.values.size, count);
+		assert.deepEqual([...f.values], committedKeys);
+		assert.equal(await readFile(f.path, 'utf8'), committedBytes);
 		fail = false;
 		const retry = await service.retryActivation(context, { key, committedRevision: created.value.revision });
 		assert.equal(retry.status, 'committed');
@@ -151,6 +158,17 @@ test('CM-S1-N: adopted fixture supports create update activation failure and sig
 		const changed = await service.mutate(context, { ticket: updateTicket, operationId: updateTicket.operationId, key, mode: 'update', expectedRevision: created.value.revision, publicPatch: { label: 'Updated' } });
 		assert.equal(changed.status, 'committed');
 		assert.equal((await service.list(context))[0]?.label, 'Updated');
+		const drifted = JSON.parse(await readFile(f.path, 'utf8'));
+		assert.ok(Object.hasOwn(drifted._management.receipts, ticket.operationId));
+		delete drifted._management.receipts[ticket.operationId];
+		await chmod(f.path, 0o600);
+		await writeFile(f.path, JSON.stringify(drifted));
+		await chmod(f.path, 0o400);
+		const driftedBytes = await readFile(f.path), driftedKeys = [...f.values];
+		const replay = await service.mutate(context, request);
+		assert.notEqual(replay.status, 'committed');
+		assert.deepEqual(await readFile(f.path), driftedBytes, 'missing-receipt drift cannot authorize replay writes');
+		assert.deepEqual([...f.values], driftedKeys, 'missing-receipt drift cannot stage or replace credentials');
 	}
 	finally {
 		await owner.close();

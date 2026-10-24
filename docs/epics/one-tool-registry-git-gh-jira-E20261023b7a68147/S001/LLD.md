@@ -310,22 +310,14 @@ The success variant gains hookFailures?: readonly HookFailure[] | undefined; cal
 - sbdry3 (partial): ToolHookContext.caller allows undefined (ToolDeps.caller is optional since s3) and ToolResultHookReport is merged into ToolResult; both refine the sc1 sketch and may need a sharedContract amendment.
 - Review round 1 (4 HIGH) revised this LLD: hooks keyed by canonical tool.id, a per-hook deep copy instead of a shallow freeze, guarded failure text, and an accurate statement that the hook stage has no cancellation bound.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q2b101b1e` — cd1 (partial): runToolHooks is a new executor-internal helper that sc1 does not name; the contract lists it as new and exported for tests.
+  - **resolved**: Internal helper with test export — sc1 refinement recorded in docs/plans/tool-registry.md _(2026-10-24T14:16:10.663Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-10-24T13:54:11.519Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| boundaries | The proposed shared-contract refinements have been reconciled with the effective upstream contracts. | HLD sc1 sketches a required caller and mutable HookFailure[] report; this LLD explicitly changes caller to allow undefined and uses readonly reports. It also extends s2-owned TypedToolResult. Reviewed amendment records AMD-1 through AMD-7: they address sc2–sc5, with no sc1 amendment or approval resolving the refinements acknowledged in this LLD's open questions. [files: docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/HLD.md, src/daemon/tools/types.ts, src/daemon/tools/call-tool.ts, .insrc/artifacts/AMD-b7a68147dcf72034-6.json] | Record whether these are accepted sketch refinements or require a shared-contract amendment, including the additive sc2 result field. |
+- **[[c1]]** `code` `src/daemon/tools/executor.ts:63-156`
+- **[[c2]]** `code` `src/daemon/tools/types.ts:76-93`
+- **[[c3]]** `code` `src/daemon/tools/call-tool.ts:26-39`
+- **[[c4]]** `doc` `docs/plans/tool-registry.md`

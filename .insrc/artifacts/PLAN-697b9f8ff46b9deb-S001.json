@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1792826130182-adxj6h",
+    "runId": "wf-1792842143818-kto4b1",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-24T07:18:41.530Z",
+    "createdAt": "2026-10-24T11:46:09.721Z",
     "epicCreatedAt": "2026-10-23T14:01:46.590Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 191314,
+    "elapsedMs": 225745,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "697b9f8ff46b9deb",
@@ -25,12 +25,12 @@
     "lldRunId": "wf-1792763798946-g7op3j",
     "lldEffectiveHash": "697b9f8ff46b9deb7c9f49de3715d7269704a2669d032ecdbaf1514d8ab17aff",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-24T07:19:00.809Z",
-    "rangeBase": "3feb24663948cdba5dfda2a58407470905492cd7"
+    "approvedAt": "2026-10-24T11:46:58.044Z",
+    "rangeBase": "b53943496e14ac18ef919298e60308455b4f48ea"
   },
   "body": {
     "summary": {
-      "prose": "Building this fix touches three layers. The CLI provider gets an opt-in silence watchdog for codex structured calls and a typed schema rejection; the review pipeline uses them with a 60 s silence limit, a 600 s cap, three attempts for stalls and accurate attempt counts, plus a bounded verify answer and a prompt that matches codex's grammar; and the daemon and step tool keep long reviews alive with a heartbeat and progress relay. It ends with a live codex check, one full test sweep and a daemon rollout confirmed on a real review.",
+      "prose": "Building this fix touches three layers. The CLI provider gets an opt-in silence watchdog for codex structured calls and reviewer sessions plus a typed schema rejection; the review pipeline takes every call type's silence limit and cap from one table (verify 90 s / 600 s, extract none / 600 s, HLD/LLD sessions and code review 300 s, build validation 90 s), retries a stall up to three times and reports real attempt counts, with a bounded verify answer and a prompt that matches codex's grammar; and the daemon and step tool keep long reviews alive with a heartbeat and progress relay. Tasks t1-t4 are already built; it ends with a live codex check, one full test sweep and a daemon rollout confirmed on a real review.",
       "audience": "technical"
     },
     "tasks": [
@@ -170,38 +170,110 @@
       },
       {
         "id": "t5",
-        "title": "Verify and extract calls use the stall limit and the 600 s cap",
-        "summary": "Set VERIFY_CALL_TIMEOUT_MS to 600_000, add VERIFY_CALL_STALL_MS = 60_000, and pass both from verifyClaim and the design-review verify and extract stages; update the tests that pin the old 180 s value.",
-        "size": "S",
+        "title": "Silence limit for reviewer sessions",
+        "summary": "ReviewSessionOpts (src/shared/types.ts) gains stallMs; CliProvider.runReviewSession's codex run uses the silence watchdog with that limit instead of the first-output watchdog at codexFirstOutputMs when it is set (its deadline, single internal retry and size-refusal handling unchanged); the reviewer-session ExecutionMode gains stallMs and the pipeline driver's send() forwards it to runReviewSession. Ollama's runReviewSession ignores it.",
+        "size": "M",
         "order": 5,
         "dependsOn": [
+          "t1",
           "t4"
         ],
         "acceptanceChecks": [
-          "Every design-review verify and extract call is sent with stallMs 60 s and timeoutMs 600 s",
-          "verifyClaim passes both",
-          "The pinned-limit tests assert the new values"
+          "A codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+          "A reviewer session without stallMs keeps the first-output watchdog exactly as today",
+          "The pipeline driver forwards a reviewer-session call's stallMs to runReviewSession"
         ],
         "derivedFrom": [
-          "c3"
+          "c14",
+          "c4"
         ],
         "tests": [
           {
             "level": "unit",
-            "name": "the design-review verify and extract stages send VERIFY_CALL_STALL_MS (60 s) and VERIFY_CALL_TIMEOUT_MS (600 s) with every call"
+            "name": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError"
           },
           {
             "level": "unit",
-            "name": "verifyClaim passes VERIFY_CALL_STALL_MS and VERIFY_CALL_TIMEOUT_MS"
+            "name": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall"
+          },
+          {
+            "level": "unit",
+            "name": "the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession"
           }
         ]
       },
       {
         "id": "t6",
+        "title": "REVIEW_CALL_LIMITS table and its call sites",
+        "summary": "Add src/workflow/review/call-limits.ts with REVIEW_CALL_LIMITS (design-verify 90 s / 600 s; design-extract no silence / 600 s; design-session 300 s silence beside its deadline; code-review 300 s / 600 s; build-validate 90 s silence inside JUDGE_DEADLINE_MS), with the survey evidence in its comment. Define VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS from the design-verify row; verifyClaim (and so calibration) passes both; the design-review extract, verify and template-session executions, every code-review execution (the shared one and the controller's) and the build-validation runReviewSession read their row. Update the tests that pin the old 180 s value.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "REVIEW_CALL_LIMITS holds the five rows and every silence limit is below its call's total limit",
+          "Every review and build-validation call site sends its row's silence limit and cap; no call site writes its own number",
+          "verifyClaim sends stallMs 90 s and timeoutMs 600 s",
+          "The validate phase's injected provider receives stallMs 90 s with deadlineMs JUDGE_DEADLINE_MS",
+          "The pinned-limit tests assert the new values"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "REVIEW_CALL_LIMITS holds the five call-type rows, every silence limit is below its call's total limit, and VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS come from the design-verify row"
+          },
+          {
+            "level": "unit",
+            "name": "the design-review extract, verify and template-session executions send their REVIEW_CALL_LIMITS row's silence limit and cap"
+          },
+          {
+            "level": "unit",
+            "name": "every code-review execution, the controller's included, sends the code-review row's 300 s silence limit and 600 s cap"
+          },
+          {
+            "level": "unit",
+            "name": "verifyClaim sends stallMs 90 s and timeoutMs 600 s"
+          },
+          {
+            "level": "unit",
+            "name": "the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Real attempt count in the template-review failure message",
+        "summary": "runTemplateReview's message and log for an exhausted invalid answer ('failed checklist … twice') state err.attempts and how many of those attempts were invalid answers, instead of a fixed 'twice'.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Two stalls then an invalid answer fail the template review with a message naming three attempts, not 'twice'",
+          "Two invalid answers still report two attempts"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts"
+          }
+        ]
+      },
+      {
+        "id": "t8",
         "title": "Heartbeat frames from workflow.review",
         "summary": "workflowReviewStart sends a {kind:'heartbeat', operation:'workflow.review', elapsedMs} progress frame every WORKFLOW_REVIEW_HEARTBEAT_MS (60 s) while a review runs and stops before the terminal frame.",
         "size": "S",
-        "order": 6,
+        "order": 8,
         "dependsOn": [],
         "acceptanceChecks": [
           "Heartbeats arrive every 60 s during a review",
@@ -219,13 +291,13 @@
         ]
       },
       {
-        "id": "t7",
+        "id": "t9",
         "title": "insrc_review_step relays progress and waits with an idle limit",
         "summary": "ReviewStepDeps gains progress; the step host wires insrc_review_step with its progress callback; reviewByDaemon passes onFrame (relaying every frame) and idleMs = DESIGN_REVIEW_IDLE_MS (5 min) beside the existing ceilings; an idle timeout names the idle limit.",
         "size": "M",
-        "order": 7,
+        "order": 9,
         "dependsOn": [
-          "t6"
+          "t8"
         ],
         "acceptanceChecks": [
           "Through step.call every daemon progress frame, heartbeats included, arrives as a 'progress' frame before 'done'",
@@ -247,11 +319,11 @@
         ]
       },
       {
-        "id": "t8",
+        "id": "t10",
         "title": "Live check, full sweep and daemon rollout",
-        "summary": "Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that progress reaches the controller and stalls are retried within about a minute.",
+        "summary": "Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that progress reaches the controller and a stall is retried within its call type's silence limit (about 90 s for a verify call).",
         "size": "M",
-        "order": 8,
+        "order": 10,
         "dependsOn": [
           "t1",
           "t2",
@@ -259,12 +331,14 @@
           "t4",
           "t5",
           "t6",
-          "t7"
+          "t7",
+          "t8",
+          "t9"
         ],
         "acceptanceChecks": [
           "Live: codex accepts the bounded VERIFY_SCHEMA strict copy and a verified finding passes the reply check",
           "Full sweep passes (pre-existing failures named)",
-          "A real DEF review relays progress and any stall is retried within about a minute"
+          "A real DEF review relays progress and any stall is retried within its silence limit"
         ],
         "derivedFrom": [
           "c12",
@@ -277,7 +351,7 @@
           },
           {
             "level": "smoke",
-            "name": "a real DEF review on the rebuilt daemon relays progress to the controller and retries any stall within about a minute"
+            "name": "a real DEF review on the rebuilt daemon relays progress to the controller and retries any stall within its call type's silence limit"
           }
         ]
       }
@@ -305,13 +379,13 @@
         "lldStrategyItem": "design-review verify stage execution",
         "coveredByTaskIds": [
           "t4",
-          "t5"
+          "t6"
         ]
       },
       {
         "lldStrategyItem": "verifyClaim",
         "coveredByTaskIds": [
-          "t5"
+          "t6"
         ]
       },
       {
@@ -347,31 +421,31 @@
       {
         "lldStrategyItem": "src/daemon/steps/host.ts insrc_review_step wiring",
         "coveredByTaskIds": [
-          "t7"
+          "t9"
         ]
       },
       {
         "lldStrategyItem": "reviewByDaemon",
         "coveredByTaskIds": [
-          "t7"
+          "t9"
         ]
       },
       {
         "lldStrategyItem": "handleReviewStep",
         "coveredByTaskIds": [
-          "t7"
+          "t9"
         ]
       },
       {
         "lldStrategyItem": "workflowReviewStart heartbeat",
         "coveredByTaskIds": [
-          "t6"
+          "t8"
         ]
       },
       {
         "lldStrategyItem": "CliProvider.completeStructured with VERIFY_SCHEMA on codex",
         "coveredByTaskIds": [
-          "t8"
+          "t10"
         ]
       },
       {
@@ -392,6 +466,36 @@
           "t2",
           "t4"
         ]
+      },
+      {
+        "lldStrategyItem": "REVIEW_CALL_LIMITS",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "CliProvider.runReviewSession",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "design-review executions",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "code-review execution",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "build-validation session",
+        "coveredByTaskIds": [
+          "t6"
+        ]
       }
     ]
   },
@@ -409,7 +513,7 @@
     {
       "id": "c3",
       "kind": "prior-artifact",
-      "ref": "LLD S001 contractDetails.api VERIFY_CALL_TIMEOUT_MS"
+      "ref": "LLD S001 contractDetails.api REVIEW_CALL_LIMITS"
     },
     {
       "id": "c4",
@@ -460,6 +564,16 @@
       "id": "c13",
       "kind": "prior-artifact",
       "ref": "LLD S001 testStrategy live level (CliProvider.completeStructured with VERIFY_SCHEMA on codex)"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api CliProvider.runReviewSession and dataModelChanges ReviewSessionOpts"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges Review call executions"
     }
   ]
 }

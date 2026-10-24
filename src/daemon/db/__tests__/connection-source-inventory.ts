@@ -21,7 +21,7 @@ export function connectionSourceInventory(root: string): InventorySite[] {
 	const program = ts.createProgram(filesUnder(join(root, 'src')), parsed.options);
 	const checker = program.getTypeChecker();
 	const sites: InventorySite[] = [];
-	const roots = new Set(['acquirePool', 'acquireDataPool', 'acquireDriver', 'getFactory', 'DriverPool', 'DriverFactory', 'registerEphemeral', 'ConnectionResolver', 'createConnectionResolver', 'dataConnectionResolver', 'savedConnectionResolver']);
+	const roots = new Set(['acquirePool', 'acquireDataPool', 'acquireDriver', 'withDriver', 'getFactory', 'DriverPool', 'DriverFactory', 'registerEphemeral', 'ConnectionResolver', 'createConnectionResolver', 'dataConnectionResolver', 'savedConnectionResolver']);
 	function canonical(node: ts.Node): ts.Symbol | undefined {
 		let symbol = checker.getSymbolAtLocation(node);
 		if (symbol && (symbol.flags & ts.SymbolFlags.Alias)) symbol = checker.getAliasedSymbol(symbol);

@@ -559,6 +559,11 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
       "expression": "overlay(context)",
       "boundary": "resolver-port-call"
     },
@@ -1054,258 +1059,263 @@
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "acquirePool(repoPath)",
-      "boundary": "pool-port-call"
+      "expression": "savedConnectionResolver.withConnection",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "pool.acquire(connectionId)",
-      "boundary": "driver-port-call"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/data/schema-drift.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
+    },
+    {
+      "file": "src/daemon/tools/builtins/data/schema-drift.ts",
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.lease",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.list",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver.withConnection",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "savedConnectionResolver",
+      "boundary": "symbol:savedConnectionResolver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquireDriver",
-      "boundary": "symbol:acquireDriver"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool",
-      "boundary": "symbol:acquirePool"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool(ctx.repoPath)",
-      "boundary": "pool-port-call"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool(repoPath)",
-      "boundary": "pool-port-call"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool(repoPath)",
-      "boundary": "pool-port-call"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "acquirePool(repoPath)",
-      "boundary": "pool-port-call"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.acquire(connectionId)",
-      "boundary": "driver-port-call"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/daemon/tools/builtins/db/index.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "withDriver",
+      "boundary": "symbol:withDriver"
     },
     {
       "file": "src/db/store-guard.ts",

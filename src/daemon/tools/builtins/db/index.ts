@@ -20,7 +20,9 @@
 import { getLogger } from '../../../../shared/logger.js';
 import { registerTool } from '../../registry.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
-import { acquirePool } from '../../../db/pool-cache.js';
+import { savedConnectionResolver } from '../../../db/pool-cache.js';
+import { resolve } from 'node:path';
+import type { SafeConnection, ConnectionAccessContext } from '../../../../shared/connection-management.js';
 import type {
 	AggregateRequest,
 	AggregateSpec,
@@ -80,7 +82,7 @@ const CONNECTION_ACCESS: AccessPolicy = {
  * Returns undefined when:
  *   - no connectionId in input,
  *   - no repoPath in ctx (test harness),
- *   - the connection isn't registered (acquireDriver will surface
+ *   - the connection isn't registered (the resolver will surface
  *     a clean error inside the tool body),
  *   - the connection's config has no `path` (kv / rdbms families).
  *     Those families shouldn't reach db_file_*; the executor
@@ -94,10 +96,9 @@ async function fileAccessExtract(
 	if (typeof connectionId !== 'string' || connectionId.length === 0) return undefined;
 	if (typeof ctx.repoPath !== 'string' || ctx.repoPath.length === 0) return undefined;
 	try {
-		const pool = await acquirePool(ctx.repoPath);
-		const config = pool.list().find(c => c.id === connectionId);
-		const p = config?.path;
-		return typeof p === 'string' && p.length > 0 ? p : undefined;
+		const config = (await savedConnectionResolver.list(toolAccess(ctx.repoPath))).find(c => c.key.id === connectionId);
+		const p = config?.publicConfig['path'];
+		return typeof p === 'string' && p.length > 0 ? resolve(ctx.repoPath, p) : undefined;
 	} catch {
 		return undefined;
 	}
@@ -137,43 +138,41 @@ async function requireRepoPath(
 	return repoPath;
 }
 
-async function acquireDriver(
-	toolId: string,
-	deps: ToolDeps,
-	connectionId: string,
-	expected: 'rdbms' | 'kv' | 'file',
-): Promise<Driver | ToolResult> {
+function toolAccess(repoPath: string): ConnectionAccessContext {
+	return { lookupRoot: repoPath, daemonEpoch: 'saved-db-tools' };
+}
+async function withDriver(toolId: string, deps: ToolDeps, connectionId: string, expected: 'rdbms' | 'kv' | 'file', use: (driver: Driver) => Promise<ToolResult>): Promise<ToolResult> {
 	const repoPath = await requireRepoPath(toolId, deps);
-	if (typeof repoPath !== 'string') { return repoPath; }
-
-	const pool = await acquirePool(repoPath);
-	const configured = pool.list();
-	if (configured.length === 0) {
-		return fail(
-			toolId,
-			'No data-driver connections configured for this repo. Use the Data Sources pane / insrc.addDbConnection to add one.',
-			'NO_CONNECTIONS_CONFIGURED',
-		);
+	if (typeof repoPath !== 'string')
+		return repoPath;
+	const access = toolAccess(repoPath);
+	const configured = await savedConnectionResolver.list(access);
+	if (configured.length === 0)
+		return fail(toolId, 'No data-driver connections configured for this repo. Use the Data Sources pane / insrc.addDbConnection to add one.', 'NO_CONNECTIONS_CONFIGURED');
+	const match = configured.find(c => c.key.id === connectionId);
+	if (!match)
+		return fail(toolId, `Unknown connection '${connectionId}'. Known: ${configured.map(c => c.key.id).join(', ') || '(none)'}`, 'UNKNOWN_CONNECTION');
+	if (match.family !== expected)
+		return fail(toolId, `Connection '${connectionId}' is ${match.family}; use db:${match.family}:* instead`, 'FAMILY_MISMATCH');
+	if (expected === 'file' && typeof match.publicConfig['path'] !== 'string')
+		return fail(toolId, 'The file connection has no classified source path.', 'UNSUPPORTED');
+	// Pin metadata before any driver construction. A concurrent delete/recreate cannot change the checked resource.
+	const pin = await savedConnectionResolver.lease(access, connectionId);
+	try {
+		if (pin.revision !== match.revision)
+			return fail(toolId, 'The connection changed; retry to check its current resource.', 'CONNECTION_CHANGED');
+		return await savedConnectionResolver.withConnection(access, connectionId, use);
 	}
-	const match = configured.find(c => c.id === connectionId);
-	if (match === undefined) {
-		return fail(
-			toolId,
-			`Unknown connection '${connectionId}'. Known: ${configured.map(c => c.id).join(', ') || '(none)'}`,
-			'UNKNOWN_CONNECTION',
-		);
+	finally {
+		await pin.release();
 	}
-	if (match.family !== expected) {
-		return fail(
-			toolId,
-			`Connection '${connectionId}' is ${match.family}; use db:${match.family}:* instead`,
-			'FAMILY_MISMATCH',
-		);
-	}
-	return await pool.acquire(connectionId);
+}
+type ConnectionSummary = Pick<ConnectionConfig, 'id' | 'kind' | 'family' | 'label' | 'path'>;
+function summaryOf(c: SafeConnection): ConnectionSummary {
+	return { id: c.key.id, kind: c.kind, family: c.family, ...(c.label === undefined ? {} : { label: c.label }), ...(typeof c.publicConfig['path'] === 'string' ? { path: c.publicConfig['path'] } : {}) };
 }
 
-function summariseConnections(conns: readonly ConnectionConfig[]): string {
+function summariseConnections(conns: readonly ConnectionSummary[]): string {
 	if (conns.length === 0) { return '(no connections configured)'; }
 	const rows = ['| id | kind | family | label | path |', '|---|---|---|---|---|'];
 	for (const c of conns) {
@@ -226,8 +225,7 @@ const listConnectionsTool: Tool = {
 		const repoPath = await requireRepoPath(this.id, deps);
 		if (typeof repoPath !== 'string') { return repoPath; }
 		try {
-			const pool = await acquirePool(repoPath);
-			const list = pool.list();
+			const list = (await savedConnectionResolver.list(toolAccess(repoPath))).map(summaryOf);
 			return ok(
 				summariseConnections(list),
 				list.map(c => ({
@@ -274,27 +272,27 @@ const sqlDescribeTool: Tool = {
 		if (connectionId === '' || target === '') {
 			return fail(this.id, 'connectionId and target are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const schema = await (driver as RdbmsDriver).describe(target);
-			const rows = [
-				`**${schema.target}** (${schema.source})`,
-				'',
-				'| column | type | nullable | pk | fk |',
-				'|---|---|---|---|---|',
-			];
-			for (const c of schema.columns) {
-				rows.push(
-					`| ${c.name} | ${c.type} | ${c.nullable === true ? 'yes' : 'no'} ` +
-					`| ${c.primaryKey === true ? 'yes' : ''} ` +
-					`| ${c.foreignKey === undefined ? '' : `${c.foreignKey.table}.${c.foreignKey.column}`} |`,
-				);
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			try {
+				const schema = await (driver as RdbmsDriver).describe(target);
+				const rows = [
+					`**${schema.target}** (${schema.source})`,
+					'',
+					'| column | type | nullable | pk | fk |',
+					'|---|---|---|---|---|',
+				];
+				for (const c of schema.columns) {
+					rows.push(
+						`| ${c.name} | ${c.type} | ${c.nullable === true ? 'yes' : 'no'} ` +
+						`| ${c.primaryKey === true ? 'yes' : ''} ` +
+						`| ${c.foreignKey === undefined ? '' : `${c.foreignKey.table}.${c.foreignKey.column}`} |`,
+					);
+				}
+				return ok(rows.join('\n'), schema);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
 			}
-			return ok(rows.join('\n'), schema);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		});
 	},
 };
 
@@ -335,23 +333,24 @@ const sqlExplainTool: Tool = {
 		if (ast['kind'] !== 'select' || typeof ast['target'] !== 'string' || ast['target'] === '') {
 			return fail(this.id, 'queryAst.kind must be "select" and target must be a non-empty string');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) { return driver; }
-		const rdbms = driver as RdbmsDriver;
-		if (rdbms.explain === undefined) {
-			return fail(this.id, `Connection '${connectionId}' (${rdbms.kind}) does not implement explain`, 'UNSUPPORTED');
-		}
-		try {
-			const opts = buildSampleOpts({ ...input, ...ast });
-			const result = await rdbms.explain({
-				kind: 'select',
-				target: ast['target'],
-				...(opts.where !== undefined ? { where: opts.where } : {}),
-			});
-			return ok('```\n' + result.plan + '\n```', result, 'markdown');
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		const queryTarget = ast['target'];
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rdbms = driver as RdbmsDriver;
+			if (rdbms.explain === undefined) {
+				return fail(this.id, `Connection '${connectionId}' (${rdbms.kind}) does not implement explain`, 'UNSUPPORTED');
+			}
+			try {
+				const opts = buildSampleOpts({ ...input, ...ast });
+				const result = await rdbms.explain({
+					kind: 'select',
+					target: queryTarget,
+					...(opts.where !== undefined ? { where: opts.where } : {}),
+				});
+				return ok('```\n' + result.plan + '\n```', result, 'markdown');
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -379,15 +378,15 @@ const sqlSampleTool: Tool = {
 		if (connectionId === '' || target === '') {
 			return fail(this.id, 'connectionId and target are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const opts = buildSampleOpts(input);
-			const result = await (driver as RdbmsDriver).sample(target, opts);
-			return ok(formatSample(result.target, result), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			try {
+				const opts = buildSampleOpts(input);
+				const result = await (driver as RdbmsDriver).sample(target, opts);
+				return ok(formatSample(result.target, result), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -567,14 +566,14 @@ const sqlAggregateTool: Tool = {
 		}
 		const reqOrErr = buildAggregateRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const result = await (driver as RdbmsDriver).aggregate(target, reqOrErr);
-			return ok(formatAggregateResult(result.target, result.values), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			try {
+				const result = await (driver as RdbmsDriver).aggregate(target, reqOrErr);
+				return ok(formatAggregateResult(result.target, result.values), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -655,14 +654,14 @@ const sqlDistinctTool: Tool = {
 		}
 		const reqOrErr = buildDistinctRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const result = await (driver as RdbmsDriver).distinct(target, reqOrErr);
-			return ok(formatDistinctResult(result.target, result.column, result.distinctCount, result.topValues), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			try {
+				const result = await (driver as RdbmsDriver).distinct(target, reqOrErr);
+				return ok(formatDistinctResult(result.target, result.column, result.distinctCount, result.topValues), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -689,22 +688,22 @@ const fileDistinctTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildDistinctRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) { return driver; }
-		const fd = driver as FileDriver;
-		if (typeof fd.distinct !== 'function') {
-			return fail(
-				this.id,
-				`file driver '${fd.kind}' does not implement distinct(). Every supported file kind routes through the DuckDB-backed driver and exposes distinct; reaching this branch means an out-of-tree driver was registered.`,
-			);
-		}
-		try {
-			const path = typeof input['path'] === 'string' ? input['path'] : undefined;
-			const result = await fd.distinct(path, reqOrErr);
-			return ok(formatDistinctResult(result.target, result.column, result.distinctCount, result.topValues), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.distinct !== 'function') {
+				return fail(
+					this.id,
+					`file driver '${fd.kind}' does not implement distinct(). Every supported file kind routes through the DuckDB-backed driver and exposes distinct; reaching this branch means an out-of-tree driver was registered.`,
+				);
+			}
+			try {
+				const path = typeof input['path'] === 'string' ? input['path'] : undefined;
+				const result = await fd.distinct(path, reqOrErr);
+				return ok(formatDistinctResult(result.target, result.column, result.distinctCount, result.topValues), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -732,21 +731,24 @@ const fileListFilesTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const repoPath = await requireRepoPath(this.id, deps);
 		if (typeof repoPath !== 'string') return repoPath;
-		const pool = await acquirePool(repoPath);
-		const config = pool.list().find(c => c.id === connectionId);
+		const access = toolAccess(repoPath);
+		const config = (await savedConnectionResolver.list(access)).find(c => c.key.id === connectionId);
+		const path = config?.publicConfig['path'];
 		if (config === undefined) {
 			return fail(this.id, `Unknown connection '${connectionId}'`, 'UNKNOWN_CONNECTION');
 		}
-		if (config.family !== 'file' || config.path === undefined) {
+		if (config.family !== 'file' || typeof path !== 'string') {
 			return fail(this.id, `Connection '${connectionId}' is not a file connection`, 'FAMILY_MISMATCH');
 		}
 		const limit = Math.min(Math.max(1, Math.floor(Number(input['limit'] ?? 200))), 1000);
 		const pattern = typeof input['pattern'] === 'string' ? input['pattern'] : undefined;
 
+		const pin = await savedConnectionResolver.lease(access, connectionId);
 		try {
+			if (pin.revision !== config.revision) return fail(this.id, 'The connection changed; retry to check its current resource.', 'CONNECTION_CHANGED');
 			const { listFilesForConnection } = await import('../../../db/list-files.js');
-			const result = await listFilesForConnection(config.path, {
-				recursive: config.recursive === true,
+			const result = await listFilesForConnection(resolve(repoPath, path), {
+				recursive: config.publicConfig['recursive'] === true,
 				...(pattern !== undefined ? { pattern } : {}),
 				limit,
 			});
@@ -763,7 +765,7 @@ const fileListFilesTool: Tool = {
 			return ok(lines.join('\n'), result);
 		} catch (err) {
 			return fail(this.id, (err as Error).message);
-		}
+		} finally { await pin.release(); }
 	},
 };
 
@@ -796,22 +798,22 @@ const fileAggregateTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildAggregateRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) { return driver; }
-		const fd = driver as FileDriver;
-		if (typeof fd.aggregate !== 'function') {
-			return fail(
-				this.id,
-				`file driver '${fd.kind}' does not implement aggregate(). Every supported file kind routes through the DuckDB-backed driver and exposes aggregate; reaching this branch means an out-of-tree driver was registered.`,
-			);
-		}
-		try {
-			const path = typeof input['path'] === 'string' ? input['path'] : undefined;
-			const result = await fd.aggregate(path, reqOrErr);
-			return ok(formatAggregateResult(result.target, result.values), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.aggregate !== 'function') {
+				return fail(
+					this.id,
+					`file driver '${fd.kind}' does not implement aggregate(). Every supported file kind routes through the DuckDB-backed driver and exposes aggregate; reaching this branch means an out-of-tree driver was registered.`,
+				);
+			}
+			try {
+				const path = typeof input['path'] === 'string' ? input['path'] : undefined;
+				const result = await fd.aggregate(path, reqOrErr);
+				return ok(formatAggregateResult(result.target, result.values), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -838,31 +840,31 @@ const sqlListTablesTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.listTables !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement listTables() yet`);
-		}
-		try {
-			const opts: { schema?: string; limit?: number } = {};
-			if (typeof input['schema'] === 'string') opts.schema = input['schema'];
-			if (typeof input['limit'] === 'number')  opts.limit = Math.floor(input['limit']);
-			const result = await rd.listTables(opts);
-			const lines: string[] = [
-				`**${connectionId}** -- ${result.tables.length} table${result.tables.length === 1 ? '' : 's'}` +
-				(result.truncated ? ' (truncated)' : ''),
-			];
-			if (result.tables.length > 0) {
-				lines.push('', '| schema | name | kind |', '|---|---|---|');
-				for (const t of result.tables) {
-					lines.push(`| ${t.schema ?? ''} | ${t.name} | ${t.kind} |`);
-				}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.listTables !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement listTables() yet`);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const opts: { schema?: string; limit?: number } = {};
+				if (typeof input['schema'] === 'string') opts.schema = input['schema'];
+				if (typeof input['limit'] === 'number')  opts.limit = Math.floor(input['limit']);
+				const result = await rd.listTables(opts);
+				const lines: string[] = [
+					`**${connectionId}** -- ${result.tables.length} table${result.tables.length === 1 ? '' : 's'}` +
+					(result.truncated ? ' (truncated)' : ''),
+				];
+				if (result.tables.length > 0) {
+					lines.push('', '| schema | name | kind |', '|---|---|---|');
+					for (const t of result.tables) {
+						lines.push(`| ${t.schema ?? ''} | ${t.name} | ${t.kind} |`);
+					}
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -885,27 +887,27 @@ const sqlListIndexesTool: Tool = {
 		const connectionId = String(input['connectionId'] ?? '');
 		const target = String(input['target'] ?? '');
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.listIndexes !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement listIndexes() yet`);
-		}
-		try {
-			const result = await rd.listIndexes(target);
-			const lines: string[] = [
-				`**${target}** -- ${result.indexes.length} index${result.indexes.length === 1 ? '' : 'es'}`,
-			];
-			if (result.indexes.length > 0) {
-				lines.push('', '| name | columns | unique | pk |', '|---|---|---|---|');
-				for (const idx of result.indexes) {
-					lines.push(`| ${idx.name} | ${idx.columns.join(', ')} | ${idx.unique ? 'yes' : 'no'} | ${idx.primaryKey ? 'yes' : 'no'} |`);
-				}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.listIndexes !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement listIndexes() yet`);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const result = await rd.listIndexes(target);
+				const lines: string[] = [
+					`**${target}** -- ${result.indexes.length} index${result.indexes.length === 1 ? '' : 'es'}`,
+				];
+				if (result.indexes.length > 0) {
+					lines.push('', '| name | columns | unique | pk |', '|---|---|---|---|');
+					for (const idx of result.indexes) {
+						lines.push(`| ${idx.name} | ${idx.columns.join(', ')} | ${idx.unique ? 'yes' : 'no'} | ${idx.primaryKey ? 'yes' : 'no'} |`);
+					}
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -942,29 +944,29 @@ const sqlAntiJoinTool: Tool = {
 		if (connectionId === '' || leftTarget === '' || leftColumn === '' || rightTarget === '' || rightColumn === '') {
 			return fail(this.id, 'connectionId, leftTarget, leftColumn, rightTarget, rightColumn are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.antiJoin !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement antiJoin() yet`);
-		}
-		try {
-			const req: AntiJoinRequest = typeof input['exampleLimit'] === 'number'
-				? { leftTarget, leftColumn, rightTarget, rightColumn, exampleLimit: Math.floor(input['exampleLimit']) }
-				: { leftTarget, leftColumn, rightTarget, rightColumn };
-			const result = await rd.antiJoin(req);
-			const lines: string[] = [
-				`**${leftTarget}.${leftColumn}** -> **${rightTarget}.${rightColumn}**`,
-				'',
-				`orphan count: **${result.orphanCount}**`,
-			];
-			if (result.examples.length > 0) {
-				lines.push('', '_orphan examples:_', ...result.examples.map(e => `- \`${String(e)}\``));
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.antiJoin !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement antiJoin() yet`);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const req: AntiJoinRequest = typeof input['exampleLimit'] === 'number'
+					? { leftTarget, leftColumn, rightTarget, rightColumn, exampleLimit: Math.floor(input['exampleLimit']) }
+					: { leftTarget, leftColumn, rightTarget, rightColumn };
+				const result = await rd.antiJoin(req);
+				const lines: string[] = [
+					`**${leftTarget}.${leftColumn}** -> **${rightTarget}.${rightColumn}**`,
+					'',
+					`orphan count: **${result.orphanCount}**`,
+				];
+				if (result.examples.length > 0) {
+					lines.push('', '_orphan examples:_', ...result.examples.map(e => `- \`${String(e)}\``));
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1000,38 +1002,38 @@ const sqlFunctionalDependencyTool: Tool = {
 		if (connectionId === '' || target === '' || fromColumn === '' || toColumn === '') {
 			return fail(this.id, 'connectionId, target, fromColumn and toColumn are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.functionalDependency !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement functionalDependency() yet`);
-		}
-		try {
-			const where = parseWhereInput(input['where']);
-			const req: FunctionalDependencyRequest = where.length === 0
-				? (typeof input['topViolations'] === 'number'
-					? { fromColumn, toColumn, topViolations: Math.floor(input['topViolations']) }
-					: { fromColumn, toColumn })
-				: (typeof input['topViolations'] === 'number'
-					? { fromColumn, toColumn, topViolations: Math.floor(input['topViolations']), where }
-					: { fromColumn, toColumn, where });
-			const result = await rd.functionalDependency(target, req);
-			const lines: string[] = [
-				`**${target}** -- \`${fromColumn}\` -> \`${toColumn}\``,
-				'',
-				`totalGroups: ${result.totalGroups} | consistent: ${result.consistentGroups} | informative: ${result.informativeGroups}`,
-				`maxDistinctTo: ${result.maxDistinctTo} | avgDistinctTo: ${result.avgDistinctTo.toFixed(2)} | determinationScore: ${result.determinationScore.toFixed(3)}`,
-			];
-			if (result.topViolations.length > 0) {
-				lines.push('', '_top violations:_', '| from | distinct to | sample to-values |', '|---|---|---|');
-				for (const v of result.topViolations) {
-					lines.push(`| ${String(v.fromValue)} | ${v.distinctToCount} | ${v.toSample.map(s => String(s)).join(', ')} |`);
-				}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.functionalDependency !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement functionalDependency() yet`);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const where = parseWhereInput(input['where']);
+				const req: FunctionalDependencyRequest = where.length === 0
+					? (typeof input['topViolations'] === 'number'
+						? { fromColumn, toColumn, topViolations: Math.floor(input['topViolations']) }
+						: { fromColumn, toColumn })
+					: (typeof input['topViolations'] === 'number'
+						? { fromColumn, toColumn, topViolations: Math.floor(input['topViolations']), where }
+						: { fromColumn, toColumn, where });
+				const result = await rd.functionalDependency(target, req);
+				const lines: string[] = [
+					`**${target}** -- \`${fromColumn}\` -> \`${toColumn}\``,
+					'',
+					`totalGroups: ${result.totalGroups} | consistent: ${result.consistentGroups} | informative: ${result.informativeGroups}`,
+					`maxDistinctTo: ${result.maxDistinctTo} | avgDistinctTo: ${result.avgDistinctTo.toFixed(2)} | determinationScore: ${result.determinationScore.toFixed(3)}`,
+				];
+				if (result.topViolations.length > 0) {
+					lines.push('', '_top violations:_', '| from | distinct to | sample to-values |', '|---|---|---|');
+					for (const v of result.topViolations) {
+						lines.push(`| ${String(v.fromValue)} | ${v.distinctToCount} | ${v.toSample.map(s => String(s)).join(', ')} |`);
+					}
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1115,18 +1117,18 @@ const sqlHistogramTool: Tool = {
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
 		const reqOrErr = buildHistogramRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.histogram !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement histogram() yet`);
-		}
-		try {
-			const result = await rd.histogram(target, reqOrErr);
-			return ok(formatHistogramResult(result.target, result.column, result.mode, result.buckets, result.nonNullCount, result.nullCount), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.histogram !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement histogram() yet`);
+			}
+			try {
+				const result = await rd.histogram(target, reqOrErr);
+				return ok(formatHistogramResult(result.target, result.column, result.mode, result.buckets, result.nonNullCount, result.nullCount), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1152,19 +1154,19 @@ const fileHistogramTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildHistogramRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) return driver;
-		const fd = driver as FileDriver;
-		if (typeof fd.histogram !== 'function') {
-			return fail(this.id, `file driver '${fd.kind}' does not implement histogram(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const result = await fd.histogram(target, reqOrErr);
-			return ok(formatHistogramResult(result.target, result.column, result.mode, result.buckets, result.nonNullCount, result.nullCount), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.histogram !== 'function') {
+				return fail(this.id, `file driver '${fd.kind}' does not implement histogram(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
+			}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const result = await fd.histogram(target, reqOrErr);
+				return ok(formatHistogramResult(result.target, result.column, result.mode, result.buckets, result.nonNullCount, result.nullCount), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1244,18 +1246,18 @@ const sqlCorrelationMatrixTool: Tool = {
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
 		const reqOrErr = buildCorrelationRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.correlationMatrix !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement correlationMatrix() yet`);
-		}
-		try {
-			const result = await rd.correlationMatrix(target, reqOrErr);
-			return ok(formatCorrelationResult(result.target, result.columns, result.method, result.nonNullCount, result.matrix), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.correlationMatrix !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement correlationMatrix() yet`);
+			}
+			try {
+				const result = await rd.correlationMatrix(target, reqOrErr);
+				return ok(formatCorrelationResult(result.target, result.columns, result.method, result.nonNullCount, result.matrix), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1280,19 +1282,19 @@ const fileCorrelationMatrixTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildCorrelationRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) return driver;
-		const fd = driver as FileDriver;
-		if (typeof fd.correlationMatrix !== 'function') {
-			return fail(this.id, `file driver '${fd.kind}' does not implement correlationMatrix(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const result = await fd.correlationMatrix(target, reqOrErr);
-			return ok(formatCorrelationResult(result.target, result.columns, result.method, result.nonNullCount, result.matrix), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.correlationMatrix !== 'function') {
+				return fail(this.id, `file driver '${fd.kind}' does not implement correlationMatrix(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
+			}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const result = await fd.correlationMatrix(target, reqOrErr);
+				return ok(formatCorrelationResult(result.target, result.columns, result.method, result.nonNullCount, result.matrix), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1387,18 +1389,18 @@ const sqlOutliersTool: Tool = {
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
 		const reqOrErr = buildOutlierRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.outliers !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement outliers() yet`);
-		}
-		try {
-			const r = await rd.outliers(target, reqOrErr);
-			return ok(formatOutlierResult(r.target, r.column, r.method, r.threshold, r.nonNullCount, r.belowCount, r.aboveCount, r.outlierCount, r.lowerBound, r.upperBound, r.center, r.spread, r.examples), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.outliers !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement outliers() yet`);
+			}
+			try {
+				const r = await rd.outliers(target, reqOrErr);
+				return ok(formatOutlierResult(r.target, r.column, r.method, r.threshold, r.nonNullCount, r.belowCount, r.aboveCount, r.outlierCount, r.lowerBound, r.upperBound, r.center, r.spread, r.examples), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1422,19 +1424,19 @@ const fileOutliersTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildOutlierRequest(input);
 		if (typeof reqOrErr === 'string') return fail(this.id, reqOrErr);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) return driver;
-		const fd = driver as FileDriver;
-		if (typeof fd.outliers !== 'function') {
-			return fail(this.id, `file driver '${fd.kind}' does not implement outliers(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const r = await fd.outliers(target, reqOrErr);
-			return ok(formatOutlierResult(r.target, r.column, r.method, r.threshold, r.nonNullCount, r.belowCount, r.aboveCount, r.outlierCount, r.lowerBound, r.upperBound, r.center, r.spread, r.examples), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.outliers !== 'function') {
+				return fail(this.id, `file driver '${fd.kind}' does not implement outliers(). All DuckDB-backed file kinds support it; reaching this branch means an out-of-tree driver was registered.`);
+			}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const r = await fd.outliers(target, reqOrErr);
+				return ok(formatOutlierResult(r.target, r.column, r.method, r.threshold, r.nonNullCount, r.belowCount, r.aboveCount, r.outlierCount, r.lowerBound, r.upperBound, r.center, r.spread, r.examples), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1501,18 +1503,18 @@ const sqlTemporalTrendTool: Tool = {
 		if (connectionId === '' || target === '') return fail(this.id, 'connectionId and target are required');
 		const reqOrErr = buildTemporalTrendRequest(input);
 		if (reqOrErr.error !== undefined) return fail(this.id, reqOrErr.error);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.temporalTrend !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement temporalTrend() yet`);
-		}
-		try {
-			const r = await rd.temporalTrend(target, reqOrErr.request);
-			return ok(formatTemporalTrendResult(r), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.temporalTrend !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement temporalTrend() yet`);
+			}
+			try {
+				const r = await rd.temporalTrend(target, reqOrErr.request);
+				return ok(formatTemporalTrendResult(r), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1538,19 +1540,19 @@ const fileTemporalTrendTool: Tool = {
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
 		const reqOrErr = buildTemporalTrendRequest(input);
 		if (reqOrErr.error !== undefined) return fail(this.id, reqOrErr.error);
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) return driver;
-		const fd = driver as FileDriver;
-		if (typeof fd.temporalTrend !== 'function') {
-			return fail(this.id, `file driver '${fd.kind}' does not implement temporalTrend(). All DuckDB-backed file kinds support it.`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const r = await fd.temporalTrend(target, reqOrErr.request);
-			return ok(formatTemporalTrendResult(r), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (typeof fd.temporalTrend !== 'function') {
+				return fail(this.id, `file driver '${fd.kind}' does not implement temporalTrend(). All DuckDB-backed file kinds support it.`);
+			}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const r = await fd.temporalTrend(target, reqOrErr.request);
+				return ok(formatTemporalTrendResult(r), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1588,29 +1590,29 @@ const sqlDickeyFullerTool: Tool = {
 		if (connectionId === '' || target === '' || valueColumn === '' || timestampColumn === '') {
 			return fail(this.id, 'connectionId, target, valueColumn, timestampColumn are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.dickeyFuller !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement dickeyFuller() yet`);
-		}
-		const where = parseWhereInput(input['where']);
-		const req: DickeyFullerRequest = where.length > 0
-			? { valueColumn, timestampColumn, where }
-			: { valueColumn, timestampColumn };
-		try {
-			const r = await rd.dickeyFuller(target, req);
-			const lines: string[] = [
-				`**${r.target}** -- Dickey-Fuller on \`${r.valueColumn}\` (sorted by \`${r.timestampColumn}\`, n=${r.n})`,
-				'',
-				`β = ${fmtNullable(r.beta)}`,
-				`SE(β) = ${fmtNullable(r.seBeta)}`,
-				`t-stat = ${fmtNullable(r.tStat)}`,
-			];
-			return ok(lines.join('\n'), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.dickeyFuller !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement dickeyFuller() yet`);
+			}
+			const where = parseWhereInput(input['where']);
+			const req: DickeyFullerRequest = where.length > 0
+				? { valueColumn, timestampColumn, where }
+				: { valueColumn, timestampColumn };
+			try {
+				const r = await rd.dickeyFuller(target, req);
+				const lines: string[] = [
+					`**${r.target}** -- Dickey-Fuller on \`${r.valueColumn}\` (sorted by \`${r.timestampColumn}\`, n=${r.n})`,
+					'',
+					`β = ${fmtNullable(r.beta)}`,
+					`SE(β) = ${fmtNullable(r.seBeta)}`,
+					`t-stat = ${fmtNullable(r.tStat)}`,
+				];
+				return ok(lines.join('\n'), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1647,38 +1649,38 @@ const sqlTemporalGapStatsTool: Tool = {
 		if (connectionId === '' || target === '' || timestampColumn === '') {
 			return fail(this.id, 'connectionId, target, timestampColumn are required');
 		}
-		const driver = await acquireDriver(this.id, deps, connectionId, 'rdbms');
-		if (!isDriver(driver)) return driver;
-		const rd = driver as RdbmsDriver;
-		if (typeof rd.temporalGapStats !== 'function') {
-			return fail(this.id, `RDBMS driver '${rd.kind}' does not implement temporalGapStats() yet`);
-		}
-		const where = parseWhereInput(input['where']);
-		const req: TemporalGapStatsRequest = {
-			timestampColumn,
-			...(where.length > 0 ? { where } : {}),
-			...(typeof input['gapRatio'] === 'number' ? { gapRatio: input['gapRatio'] } : {}),
-			...(typeof input['topGaps']  === 'number' ? { topGaps:  Math.floor(input['topGaps']) } : {}),
-		};
-		try {
-			const r = await rd.temporalGapStats(target, req);
-			const lines: string[] = [
-				`**${r.target}** -- gap stats on \`${r.timestampColumn}\` (n=${r.n})`,
-				'',
-				`median Δ: ${r.medianDeltaSeconds === null ? '_(null)_' : `${r.medianDeltaSeconds.toPrecision(6)}s`}`,
-				`regularity: ${r.regularityScore === null ? '_(null)_' : (r.regularityScore * 100).toFixed(1) + '%'}`,
-				`gap count: ${r.gapCount}`,
-			];
-			if (r.topGaps.length > 0) {
-				lines.push('', '| from epoch | to epoch | Δs | ratio |', '|---|---|---|---|');
-				for (const g of r.topGaps) {
-					lines.push(`| ${g.fromEpoch} | ${g.toEpoch} | ${g.deltaSeconds.toPrecision(4)} | ${g.ratio.toPrecision(4)} |`);
-				}
+		return withDriver(this.id, deps, connectionId, 'rdbms', async driver => {
+			const rd = driver as RdbmsDriver;
+			if (typeof rd.temporalGapStats !== 'function') {
+				return fail(this.id, `RDBMS driver '${rd.kind}' does not implement temporalGapStats() yet`);
 			}
-			return ok(lines.join('\n'), r);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			const where = parseWhereInput(input['where']);
+			const req: TemporalGapStatsRequest = {
+				timestampColumn,
+				...(where.length > 0 ? { where } : {}),
+				...(typeof input['gapRatio'] === 'number' ? { gapRatio: input['gapRatio'] } : {}),
+				...(typeof input['topGaps']  === 'number' ? { topGaps:  Math.floor(input['topGaps']) } : {}),
+			};
+			try {
+				const r = await rd.temporalGapStats(target, req);
+				const lines: string[] = [
+					`**${r.target}** -- gap stats on \`${r.timestampColumn}\` (n=${r.n})`,
+					'',
+					`median Δ: ${r.medianDeltaSeconds === null ? '_(null)_' : `${r.medianDeltaSeconds.toPrecision(6)}s`}`,
+					`regularity: ${r.regularityScore === null ? '_(null)_' : (r.regularityScore * 100).toFixed(1) + '%'}`,
+					`gap count: ${r.gapCount}`,
+				];
+				if (r.topGaps.length > 0) {
+					lines.push('', '| from epoch | to epoch | Δs | ratio |', '|---|---|---|---|');
+					for (const g of r.topGaps) {
+						lines.push(`| ${g.fromEpoch} | ${g.toEpoch} | ${g.deltaSeconds.toPrecision(4)} | ${g.ratio.toPrecision(4)} |`);
+					}
+				}
+				return ok(lines.join('\n'), r);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1711,30 +1713,30 @@ const kvListNamespacesTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') return fail(this.id, 'connectionId is required');
-		const driver = await acquireDriver(this.id, deps, connectionId, 'kv');
-		if (!isDriver(driver)) return driver;
-		const kd = driver as KvDriver;
-		if (typeof kd.listNamespaces !== 'function') {
-			return fail(this.id, `KV driver '${kd.kind}' does not implement listNamespaces() yet`);
-		}
-		try {
-			const limit = typeof input['limit'] === 'number' ? Math.floor(input['limit']) : undefined;
-			const result = await kd.listNamespaces(limit !== undefined ? { limit } : undefined);
-			const lines: string[] = [
-				`**${connectionId}** -- ${result.namespaces.length} namespace${result.namespaces.length === 1 ? '' : 's'}` +
-					(result.truncated ? ' (truncated)' : '') +
-					(result.supported ? '' : ' (driver does not expose namespaces)'),
-			];
-			if (result.namespaces.length > 0) {
-				lines.push('', '| name | kind | approx count |', '|---|---|---|');
-				for (const ns of result.namespaces) {
-					lines.push(`| ${ns.name} | ${ns.kind ?? ''} | ${ns.approxCount ?? ''} |`);
-				}
+		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
+			const kd = driver as KvDriver;
+			if (typeof kd.listNamespaces !== 'function') {
+				return fail(this.id, `KV driver '${kd.kind}' does not implement listNamespaces() yet`);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const limit = typeof input['limit'] === 'number' ? Math.floor(input['limit']) : undefined;
+				const result = await kd.listNamespaces(limit !== undefined ? { limit } : undefined);
+				const lines: string[] = [
+					`**${connectionId}** -- ${result.namespaces.length} namespace${result.namespaces.length === 1 ? '' : 's'}` +
+						(result.truncated ? ' (truncated)' : '') +
+						(result.supported ? '' : ' (driver does not expose namespaces)'),
+				];
+				if (result.namespaces.length > 0) {
+					lines.push('', '| name | kind | approx count |', '|---|---|---|');
+					for (const ns of result.namespaces) {
+						lines.push(`| ${ns.name} | ${ns.kind ?? ''} | ${ns.approxCount ?? ''} |`);
+					}
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1759,32 +1761,32 @@ const kvDescribeNamespaceTool: Tool = {
 		const connectionId = String(input['connectionId'] ?? '');
 		const namespace = String(input['namespace'] ?? '');
 		if (connectionId === '' || namespace === '') return fail(this.id, 'connectionId and namespace are required');
-		const driver = await acquireDriver(this.id, deps, connectionId, 'kv');
-		if (!isDriver(driver)) return driver;
-		const kd = driver as KvDriver;
-		if (typeof kd.describeNamespace !== 'function') {
-			return fail(this.id, `KV driver '${kd.kind}' does not implement describeNamespace() yet`);
-		}
-		try {
-			const sampleSize = typeof input['sampleSize'] === 'number' ? Math.floor(input['sampleSize']) : undefined;
-			const result = await kd.describeNamespace(namespace, sampleSize !== undefined ? { sampleSize } : undefined);
-			const lines: string[] = [
-				`**${namespace}** (${result.kind ?? 'namespace'})` + (result.supported ? '' : ' -- driver does not expose namespace shape'),
-				`approxCount: ${result.approxCount ?? '_(unknown)_'}`,
-			];
-			if (result.sampleKeys.length > 0) {
-				lines.push('', '_sample keys_:', ...result.sampleKeys.map(k => `- \`${k}\``));
+		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
+			const kd = driver as KvDriver;
+			if (typeof kd.describeNamespace !== 'function') {
+				return fail(this.id, `KV driver '${kd.kind}' does not implement describeNamespace() yet`);
 			}
-			if (result.fields.length > 0) {
-				lines.push('', '| path | types | nullable | freq |', '|---|---|---|---|');
-				for (const f of result.fields) {
-					lines.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+			try {
+				const sampleSize = typeof input['sampleSize'] === 'number' ? Math.floor(input['sampleSize']) : undefined;
+				const result = await kd.describeNamespace(namespace, sampleSize !== undefined ? { sampleSize } : undefined);
+				const lines: string[] = [
+					`**${namespace}** (${result.kind ?? 'namespace'})` + (result.supported ? '' : ' -- driver does not expose namespace shape'),
+					`approxCount: ${result.approxCount ?? '_(unknown)_'}`,
+				];
+				if (result.sampleKeys.length > 0) {
+					lines.push('', '_sample keys_:', ...result.sampleKeys.map(k => `- \`${k}\``));
 				}
+				if (result.fields.length > 0) {
+					lines.push('', '| path | types | nullable | freq |', '|---|---|---|---|');
+					for (const f of result.fields) {
+						lines.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+					}
+				}
+				return ok(lines.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
 			}
-			return ok(lines.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		});
 	},
 };
 
@@ -1813,19 +1815,19 @@ const kvScanTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'kv');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const result = await (driver as KvDriver).scan(buildScanOpts(input));
-			const summary =
-				`${result.keys.length} keys${result.truncated ? ' (truncated)' : ''}` +
-				(result.keys.length === 0
-					? ''
-					: '\n\n' + result.keys.slice(0, 50).map(k => `- ${keyToString(k)}`).join('\n'));
-			return ok(summary, result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
+			try {
+				const result = await (driver as KvDriver).scan(buildScanOpts(input));
+				const summary =
+					`${result.keys.length} keys${result.truncated ? ' (truncated)' : ''}` +
+					(result.keys.length === 0
+						? ''
+						: '\n\n' + result.keys.slice(0, 50).map(k => `- ${keyToString(k)}`).join('\n'));
+				return ok(summary, result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1855,18 +1857,18 @@ const kvGetTool: Tool = {
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
 		const rawKey = input['key'];
 		if (rawKey === undefined || rawKey === null) { return fail(this.id, 'key is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'kv');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const result = await (driver as KvDriver).get(
-				rawKey as string | Readonly<Record<string, unknown>>,
-			);
-			const preview = JSON.stringify(result.value, null, 2) ?? 'null';
-			const summary = `**${keyToString(result.key)}** (${result.type})\n\n\`\`\`json\n${preview.slice(0, 2_000)}\n\`\`\``;
-			return ok(summary, result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
+			try {
+				const result = await (driver as KvDriver).get(
+					rawKey as string | Readonly<Record<string, unknown>>,
+				);
+				const preview = JSON.stringify(result.value, null, 2) ?? 'null';
+				const summary = `**${keyToString(result.key)}** (${result.type})\n\n\`\`\`json\n${preview.slice(0, 2_000)}\n\`\`\``;
+				return ok(summary, result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1890,23 +1892,23 @@ const kvSampleShapeTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'kv');
-		if (!isDriver(driver)) { return driver; }
-		try {
-			const result = await (driver as KvDriver).sampleShape(buildScanOpts(input));
-			const rows = [
-				`sampled ${result.sampleSize} values`,
-				'',
-				'| path | types | nullable | frequency |',
-				'|---|---|---|---|',
-			];
-			for (const f of result.fields) {
-				rows.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+		return withDriver(this.id, deps, connectionId, 'kv', async driver => {
+			try {
+				const result = await (driver as KvDriver).sampleShape(buildScanOpts(input));
+				const rows = [
+					`sampled ${result.sampleSize} values`,
+					'',
+					'| path | types | nullable | frequency |',
+					'|---|---|---|---|',
+				];
+				for (const f of result.fields) {
+					rows.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+				}
+				return ok(rows.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
 			}
-			return ok(rows.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		});
 	},
 };
 
@@ -1933,30 +1935,30 @@ const fileDescribeTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) { return driver; }
-		const fd = driver as FileDriver;
-		if (fd.describe === undefined) {
-			return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support describe; try db:file:sample_shape`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const schema = target === undefined
-				? await fd.describe()
-				: await fd.describe(target);
-			const rows = [
-				`**${schema.target}** (${schema.source})`,
-				'',
-				'| column | type | nullable |',
-				'|---|---|---|',
-			];
-			for (const c of schema.columns) {
-				rows.push(`| ${c.name} | ${c.type} | ${c.nullable === true ? 'yes' : 'no'} |`);
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (fd.describe === undefined) {
+				return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support describe; try db:file:sample_shape`);
 			}
-			return ok(rows.join('\n'), schema);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const schema = target === undefined
+					? await fd.describe()
+					: await fd.describe(target);
+				const rows = [
+					`**${schema.target}** (${schema.source})`,
+					'',
+					'| column | type | nullable |',
+					'|---|---|---|',
+				];
+				for (const c of schema.columns) {
+					rows.push(`| ${c.name} | ${c.type} | ${c.nullable === true ? 'yes' : 'no'} |`);
+				}
+				return ok(rows.join('\n'), schema);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -1980,20 +1982,20 @@ const fileSampleTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) { return driver; }
-		const fd = driver as FileDriver;
-		if (fd.sample === undefined) {
-			return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support row-sample; try db:file:sample_shape`);
-		}
-		try {
-			const target = typeof input['target'] === 'string' ? input['target'] : undefined;
-			const opts = buildSampleOpts(input);
-			const result = await fd.sample(target, opts);
-			return ok(formatSample(result.target, result), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (fd.sample === undefined) {
+				return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support row-sample; try db:file:sample_shape`);
+			}
+			try {
+				const target = typeof input['target'] === 'string' ? input['target'] : undefined;
+				const opts = buildSampleOpts(input);
+				const result = await fd.sample(target, opts);
+				return ok(formatSample(result.target, result), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -2017,27 +2019,27 @@ const fileSampleShapeTool: Tool = {
 	async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
 		const connectionId = String(input['connectionId'] ?? '');
 		if (connectionId === '') { return fail(this.id, 'connectionId is required'); }
-		const driver = await acquireDriver(this.id, deps, connectionId, 'file');
-		if (!isDriver(driver)) { return driver; }
-		const fd = driver as FileDriver;
-		if (fd.sampleShape === undefined) {
-			return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support sample_shape; try db:file:describe`);
-		}
-		try {
-			const result = await fd.sampleShape(buildScanOpts(input));
-			const rows = [
-				`sampled ${result.sampleSize} records`,
-				'',
-				'| path | types | nullable | frequency |',
-				'|---|---|---|---|',
-			];
-			for (const f of result.fields) {
-				rows.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+		return withDriver(this.id, deps, connectionId, 'file', async driver => {
+			const fd = driver as FileDriver;
+			if (fd.sampleShape === undefined) {
+				return fail(this.id, `Connection '${connectionId}' (${fd.kind}) does not support sample_shape; try db:file:describe`);
 			}
-			return ok(rows.join('\n'), result);
-		} catch (err) {
-			return fail(this.id, (err as Error).message);
-		}
+			try {
+				const result = await fd.sampleShape(buildScanOpts(input));
+				const rows = [
+					`sampled ${result.sampleSize} records`,
+					'',
+					'| path | types | nullable | frequency |',
+					'|---|---|---|---|',
+				];
+				for (const f of result.fields) {
+					rows.push(`| ${f.path} | ${f.types.join(', ')} | ${f.nullable ? 'yes' : 'no'} | ${(f.frequency * 100).toFixed(0)}% |`);
+				}
+				return ok(rows.join('\n'), result);
+			} catch (err) {
+				return fail(this.id, (err as Error).message);
+			}
+		});
 	},
 };
 
@@ -2062,9 +2064,6 @@ function buildScanOpts(input: ToolInput): ScanOpts {
 			: { limit };
 }
 
-function isDriver(v: Driver | ToolResult): v is Driver {
-	return (v as Driver).family !== undefined;
-}
 
 function keyToString(key: string | Readonly<Record<string, unknown>>): string {
 	return typeof key === 'string' ? key : JSON.stringify(key);

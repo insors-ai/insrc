@@ -101,3 +101,8 @@ export async function closeAll(): Promise<void> {
 export function _resetCacheForTests(): void {
 	CACHE.clear();
 }
+
+/** Test-only owner injection; consumers still exercise the real resolver and lease gates. */
+export function _setPoolForTests(root: string, pool: DriverPool): void {
+	CACHE.set(root, pool);
+}

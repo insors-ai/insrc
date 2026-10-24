@@ -2304,7 +2304,7 @@
     "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
     "src/daemon/db/pool.ts": "a5b9dfa09738dc0b75c0ab2be3019b5bb0fe90ca6b2e8bc2266fb90f25702f90",
     "src/daemon/db/secrets.ts": "65b4e675a37134b304c21cd582b057791333afcb6172b09ae81c7cddba852338",
-    "src/daemon/tools/builtins/db/index.ts": "4813c128e56ebcfd5cd44012560a1f503d3b8c7dc3723a066217bce64f88b66a",
+    "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
     "src/shared/db-driver.ts": "728bcb2d372959b2846a9e1464c6218a11df043f03f956646fbdca8947ae7f38"
   },
   "classificationUpdates": [
@@ -2337,6 +2337,11 @@
       "task": "t10",
       "source": "src/daemon/db/pool.ts",
       "reason": "Safe metadata now carries the existing read-only URL/path presence and ephemeral booleans needed to preserve runtime summaries. No new editable fields or raw values are exposed."
+    },
+    {
+      "task": "t12",
+      "source": "src/daemon/tools/builtins/db/index.ts",
+      "reason": "Ordinary tools now use safe metadata and revision-pinned full-use callbacks. Path/recursive/id/kind/family/label reads remain classified; no raw URL, options or stored credentials are projected."
     }
   ]
 }

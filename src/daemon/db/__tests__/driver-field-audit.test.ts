@@ -116,7 +116,11 @@ test('CM-S1-L: typed production acquisition aliases and factory sites have expli
 	assert.ok(actual.some(s=>s.file==='src/analyze/measure.ts' && s.expression==='resolver.withConnection' && s.boundary==='resolver-member'));
 	assert.ok(!actual.some(s=>s.file==='src/analyze/measure.ts' && s.boundary==='driver-port-call'), 'Measurement must not acquire a raw driver outside its shared work lease');
 	assert.ok(actual.some(s=>s.file==='src/daemon/db-rpc.ts' && s.boundary==='driver-port-call'));
-	assert.ok(actual.some(s=>s.file==='src/daemon/tools/builtins/db/index.ts' && s.boundary==='symbol:acquireDriver'));
+	assert.ok(actual.some(s=>s.file==='src/daemon/tools/builtins/db/index.ts' && s.boundary==='symbol:withDriver'));
+	for (const file of ['src/daemon/tools/builtins/db/index.ts', 'src/daemon/tools/builtins/data/schema-drift.ts']) {
+		assert.ok(actual.some(s=>s.file===file && s.expression==='savedConnectionResolver.withConnection' && s.boundary==='resolver-member'));
+		assert.ok(!actual.some(s=>s.file===file && (s.boundary==='driver-port-call' || s.boundary==='symbol:acquireDriver')), 'Ordinary tools must not return raw drivers from an acquisition alias');
+	}
 });
 
 

@@ -7,6 +7,7 @@ import { parseProbeWorkerStart, parseProbeWorkerCancel, parseProbeWorkerResult }
 test('CM-S2-A1: strict public test requests reject malformed oversized and forged fields', () => {
 	const request={requestId:randomUUID(),draftRevision:0,key:{repoRoot:'/repo',scope:'saved',id:'source'},publicPatch:{kind:'postgres',endpoint:'postgres://host/db'},credentials:{password:{action:'replace',value:'private-canary'}}};
 	assert.deepEqual(parseDraftTestRequest(request),request);
+	assert.throws(()=>parseDraftTestRequest({...request,credentials:{runtimeAuth:{action:'keep'}}}),ManagementInputError);
 	for (const publicPatch of [{runtimeAuth:{}},{options:{runtimeAuth:{accessKeyId:'canary'}}},{options:{nested:[{runtimeAuth:{}}]}}]) assert.throws(()=>parseDraftTestRequest({...request,publicPatch}),ManagementInputError);
 	for(const bad of [{...request,owner:'spoof'},{...request,runtimeAuth:{}},{...request,key:{...request.key,daemonEpoch:'spoof'}},{...request,requestId:'invalid'},{...request,draftRevision:-1},{...request,draftRevision:1.5},{...request,draftRevision:Number.MAX_SAFE_INTEGER+1},{...request,expectedRevision:''},{...request,credentials:{password:{action:'keep',value:'secret'}}},{...request,publicPatch:{value:'x'.repeat(DRAFT_TEST_MAX_BYTES)}}]) assert.throws(()=>parseDraftTestRequest(bad),ManagementInputError);
 	assert.deepEqual(parseTestCancellation({requestId:request.requestId}),{requestId:request.requestId});

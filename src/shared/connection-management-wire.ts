@@ -60,7 +60,7 @@ export function assertDraftTestJson(value: unknown): void {
  walk(value,0);
 }
 export function parseDraftTestRequest(value: unknown): DraftTestRequest {
- assertDraftTestJson(value);
+ assertDraftTestJson(value); assertNoRuntimeAuth(value);
  const o = object(value); keys(o,['requestId','draftRevision','key','publicPatch','credentials'],['expectedRevision']);
  assertDraftTestUuid(o['requestId']); parseConnectionKey(o['key']);
  if (!Number.isSafeInteger(o['draftRevision']) || (o['draftRevision'] as number) < 0) throw new ManagementInputError();

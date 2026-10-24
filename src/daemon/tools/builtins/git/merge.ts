@@ -10,7 +10,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, spawnFail, withFailure, currentBranch, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, spawnFail, conflictFailure, currentBranch, rejectInput } from './helpers.js';
 
 export interface GitMergeData {
   ref: string;
@@ -105,7 +105,7 @@ export const gitMergeTool: Tool = {
       const { files: conflicts, problem } = await listConflicts(cwd);
       if (conflicts.length > 0) {
         const data: GitMergeData = { ref, branch, strategy, merged: false, inConflict: true, conflicts };
-        return withFailure({
+        return conflictFailure({
           output: [
             `**Merge conflict.** \`${ref}\` into **${branch}** paused.`,
             '',
@@ -119,7 +119,7 @@ export const gitMergeTool: Tool = {
           success: false,
           error: 'merge conflict',
           data,
-        }, failureKind(result), result.stderr.trim() || result.stdout.trim());
+        }, result);
       }
       const failed = fail('git_merge', result, { mutating: true });
       return problem === undefined || failed.failure === undefined ? failed

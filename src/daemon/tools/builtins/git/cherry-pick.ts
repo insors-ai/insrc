@@ -5,7 +5,7 @@
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput, failureKind, withFailure } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
 
 export type GitCherryPickOp = 'start' | 'continue' | 'abort' | 'skip';
 
@@ -108,7 +108,7 @@ async function conflictResult(op: GitCherryPickOp, refs: string[], conflicts: st
     '',
     'Resolve, `git add`, then `git:cherry-pick` with `op: continue`.',
   ].join('\n');
-  return withFailure({ output: body, format: 'markdown', success: false, error: 'cherry-pick conflict', data }, failureKind(r), r.stderr.trim() || r.stdout.trim());
+  return conflictFailure({ output: body, format: 'markdown', success: false, error: 'cherry-pick conflict', data }, r);
 }
 
 async function listConflicts(cwd: string): Promise<string[]> {

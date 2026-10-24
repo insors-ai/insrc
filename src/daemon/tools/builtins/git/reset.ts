@@ -13,7 +13,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, spawnFail, currentBranch, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, rejectInput } from './helpers.js';
 import type { ShellResult } from '../../shell-helper.js';
 
 export type GitResetMode = 'soft' | 'mixed' | 'hard';
@@ -90,7 +90,7 @@ export const gitResetTool: Tool = {
     // Whether the new HEAD is behind the upstream is a precondition of a hard reset (it discards work); for the
     // other modes an unknown answer is reported as a warning.
     const forceRead = await willNeedForcePush(cwd, ref);
-    if (!forceRead.ok && mode === 'hard') { return fail('git_reset', forceRead.failed); }
+    if (!forceRead.ok && mode === 'hard') { return readFailure('git_reset', forceRead.failed); }
     const requiresForcePush = forceRead.ok && forceRead.value;
     const warnings = forceRead.ok ? [] : [`force-push check (git merge-base --is-ancestor) ${failureKind(forceRead.failed)}`];
 

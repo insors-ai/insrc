@@ -9,7 +9,7 @@
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput, failureKind, withFailure } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
 
 export type GitRevertOp = 'start' | 'continue' | 'abort' | 'skip';
 
@@ -112,7 +112,7 @@ async function conflictResult(op: GitRevertOp, refs: string[], conflicts: string
     '',
     'Resolve, `git add`, then `git_revert` with `op: continue`.',
   ].filter(Boolean).join('\n');
-  return withFailure({ output: body, format: 'markdown', success: false, error: 'revert conflict', data }, failureKind(r), r.stderr.trim() || r.stdout.trim());
+  return conflictFailure({ output: body, format: 'markdown', success: false, error: 'revert conflict', data }, r);
 }
 
 async function listConflicts(cwd: string): Promise<string[]> {

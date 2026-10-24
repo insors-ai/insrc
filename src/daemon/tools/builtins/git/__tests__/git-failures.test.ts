@@ -11,14 +11,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { runShell } from '../../../shell-helper.js';
+import { runShell, setShellTimeoutScaleForTests } from '../../../shell-helper.js';
 import type { ShellResult } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolResult } from '../../../types.js';
-import { fail, failureKind, rejectInput, spawnFail, UNKNOWN_OUTCOME, withFailure, withFailureNet } from '../helpers.js';
+import { conflictFailure, fail, failureKind, rejectInput, spawnFail, UNKNOWN_OUTCOME, withFailure, withFailureNet } from '../helpers.js';
 import { gitAmendTool } from '../amend.js';
 import { gitBlameTool } from '../blame.js';
 import { gitBranchTool } from '../branch.js';
@@ -216,17 +216,39 @@ test('git_merge with a conflict keeps its data and its merge conflict error and 
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a timed-out mutating call carries kind timed-out and the unknown-outcome sentence in failure.message', () => {
-	const t: ShellResult = { ...shell({ code: null }), timedOut: true, stderr: 'partial' };
-	const mutating = fail('git_push', t, { network: true, mutating: true });
-	assert.equal(mutating.failure?.kind, 'timed-out');
-	assert.ok(mutating.failure?.message.includes(UNKNOWN_OUTCOME));
-	assert.equal(mutating.output, '[git_push] failed: partial');
-	assert.equal(mutating.error, 'partial');
+test('a timed-out mutating call carries kind timed-out and the unknown-outcome sentence in failure.message', async () => {
+	// A real mutating tool whose git command never finishes: a fake git on PATH that sleeps, with the time limits scaled down.
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-gitfail-slow-'));
+	const savedPath = process.env['PATH'];
+	try {
+		const bin = join(dir, 'bin');
+		mkdirSync(bin);
+		writeFileSync(join(bin, 'git'), '#!/bin/sh\nsleep 5\n', { mode: 0o755 });
+		process.env['PATH'] = `${bin}:${savedPath ?? ''}`;
+		setShellTimeoutScaleForTests(0.002);
+		const res = await gitStageTool.execute({ cwd: dir, op: 'stage', paths: ['x'] }, deps(dir));
+		assert.equal(res.success, false);
+		assert.equal(res.failure?.kind, 'timed-out');
+		assert.ok(res.failure?.message.includes(UNKNOWN_OUTCOME), res.failure?.message);
+		assert.ok(!res.output.includes(UNKNOWN_OUTCOME), 'output keeps today\'s text');
+		assert.ok(!(res.error ?? '').includes(UNKNOWN_OUTCOME), 'error keeps today\'s text');
 
-	const read = fail('git_log', t);
-	assert.equal(read.failure?.kind, 'timed-out');
-	assert.ok(!read.failure?.message.includes(UNKNOWN_OUTCOME));
+		// the same through a read: no unknown-outcome sentence
+		const read = await gitStatusTool.execute({ cwd: dir }, deps(dir));
+		assert.equal(read.failure?.kind, 'timed-out');
+		assert.ok(!read.failure?.message.includes(UNKNOWN_OUTCOME));
+	} finally {
+		setShellTimeoutScaleForTests(undefined);
+		process.env['PATH'] = savedPath;
+		rmSync(dir, { recursive: true, force: true });
+	}
+
+	// a conflicted merge, rebase, revert or cherry-pick that timed out says so too
+	const t: ShellResult = { ...shell({ code: null }), timedOut: true };
+	const conflict = conflictFailure({ output: 'o', format: 'markdown', success: false, error: 'merge conflict', data: {} }, t);
+	assert.equal(conflict.failure?.kind, 'timed-out');
+	assert.ok(conflict.failure?.message.includes(UNKNOWN_OUTCOME));
+	assert.equal(conflict.error, 'merge conflict');
 });
 
 test('the helper reads of amend and reset keep git\'s documented answers apart from process failures', async () => {
@@ -251,6 +273,8 @@ test('the helper reads of amend and reset keep git\'s documented answers apart f
 		const blocked = await gitAmendTool.execute({ cwd: repo, mode: 'message', message: 'x' }, deps(repo));
 		assert.equal(blocked.success, false);
 		assert.equal(blocked.failure?.kind, 'missing-tool');
+		assert.equal(blocked.output.startsWith('[git_amend] cannot spawn git -- '), true, blocked.output);
+		assert.equal(blocked.error, 'git not found');
 	} finally {
 		process.env['PATH'] = savedPath;
 		rmSync(repo, { recursive: true, force: true });

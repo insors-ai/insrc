@@ -14,7 +14,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, failureKind, ranToExit, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
+import { str, fail, failureKind, ranToExit, readFailure, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
 import type { ShellResult } from '../../shell-helper.js';
 
 export type GitAmendMode = 'message' | 'staged';
@@ -85,7 +85,7 @@ export const gitAmendTool: Tool = {
     const branch = await currentBranch(cwd) ?? '(detached)';
     // Amending a pushed commit is the risk this read guards, so a read that did not run is not an answer.
     const pushed = await wasPushed(cwd);
-    if (!pushed.ok) { return fail('git_amend', pushed.failed); }
+    if (!pushed.ok) { return readFailure('git_amend', pushed.failed); }
     const requiresForcePush = pushed.value;
 
     const argv = ['git', 'commit', '--amend'];

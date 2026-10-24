@@ -72,6 +72,17 @@ export function fail(label: string, r: ShellResult, opts: { network?: boolean; m
   );
 }
 
+/** A failed read that must stop the call: the legacy spawn text when git could not be spawned, else the default failure. */
+export function readFailure(label: string, r: ShellResult, opts: { network?: boolean; mutating?: boolean } = {}): ToolResult {
+  return r.spawnError ? spawnFail(label, r.stderr) : fail(label, r, opts);
+}
+
+/** The failure of a conflicted merge, rebase, revert or cherry-pick: the kind comes from the command's outcome, and a timed-out one says its outcome is unknown. */
+export function conflictFailure(result: ToolResult, r: ShellResult): ToolResult {
+  const kind = failureKind(r);
+  return withFailure(result, kind, r.stderr.trim() || r.stdout.trim(), kind === 'timed-out' ? `${result.error ?? ''} (${UNKNOWN_OUTCOME})` : undefined);
+}
+
 /** A call refused before any command ran (missing or malformed input): the default shape with kind 'rejected'. */
 export function rejectInput(label: string, msg: string): ToolResult {
   return withFailure({ output: `[${label}] failed: ${msg}`, format: 'text', success: false, error: msg }, 'rejected');

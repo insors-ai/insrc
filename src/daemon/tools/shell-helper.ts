@@ -39,6 +39,10 @@ export interface ShellOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
+
+/** Test seam: multiplies every time limit so a test can time out a real command in milliseconds. */
+let timeoutScale = 1;
+export function setShellTimeoutScaleForTests(scale?: number): void { timeoutScale = scale ?? 1; }
 const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 
 /**
@@ -61,7 +65,7 @@ export function runShell(
   }
 
   const [command, ...args] = argv;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const timeoutMs = (options.timeoutMs ?? DEFAULT_TIMEOUT_MS) * timeoutScale;
   const maxBytes = options.maxBytes ?? DEFAULT_MAX_BYTES;
 
   return new Promise<ShellResult>(resolve => {

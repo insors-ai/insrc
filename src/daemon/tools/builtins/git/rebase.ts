@@ -15,7 +15,7 @@
 import { runShell } from '../../shell-helper.js';
 import type { ShellResult } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, rejectInput, failureKind, withFailure } from './helpers.js';
+import { str, fail, spawnFail, currentBranch, rejectInput, conflictFailure } from './helpers.js';
 
 export type GitRebaseOp = 'start' | 'continue' | 'abort' | 'skip';
 
@@ -142,7 +142,7 @@ async function conflictResult(op: GitRebaseOp, cwd: string, conflicts: string[],
     '',
     'Resolve, `git add`, then re-run `git_rebase` with `op: continue`. Or `op: abort`.',
   ].filter(Boolean).join('\n');
-  return withFailure({ output: body, format: 'markdown', success: false, error: 'rebase conflict', data }, failureKind(r), r.stderr.trim() || r.stdout.trim());
+  return conflictFailure({ output: body, format: 'markdown', success: false, error: 'rebase conflict', data }, r);
 }
 
 async function listConflicts(cwd: string): Promise<string[]> {

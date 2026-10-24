@@ -89,6 +89,7 @@ async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal
 		internalRetry: false,
 		...(exec.cwd !== undefined ? { cwd: exec.cwd } : {}),
 		...(exec.timeoutMs !== undefined ? { timeoutMs: exec.timeoutMs } : {}),
+		...(exec.stallMs !== undefined ? { stallMs: exec.stallMs } : {}),
 		...(signal !== undefined ? { signal } : {}),
 	});
 }

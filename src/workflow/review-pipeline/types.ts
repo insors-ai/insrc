@@ -54,7 +54,7 @@ export interface ReviewMaterial {
 
 /** How a call is run. */
 export type ExecutionMode =
-	| { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined }
+	| { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined }
 	/** `deadlineMs` is the per-session limit; the job hands each session only what remains of its deadline. */
 	| { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };
 
@@ -257,6 +257,8 @@ export interface NotJudged {
 	/** The last error's message, when there was one. */
 	readonly detail?: string | undefined;
 	readonly policy: 'record-not-judged' | 'record-observation';
+	/** How many times the call was issued. Absent on a stage error, and on a job recorded before it was kept. */
+	readonly attempts?: number | undefined;
 }
 
 /** Calls made per role, when the review was divided. */

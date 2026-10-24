@@ -30,6 +30,7 @@ import {
 import type { Claim, Evidence, Finding } from '../review/types.js';
 import { buildBatchedVerifyPrompt, buildVerifyPrompt, normalizeFinding, VERDICTS_SCHEMA, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA, type RawFinding } from '../review/verify.js';
 import type { StructuredSchema } from '../../shared/types.js';
+import { attemptsText } from './job.js';
 import type { AdapterStage, NotJudged, ReviewAdapter, ReviewMaterialSnapshot, StageAnswer, StageOutputs } from './types.js';
 
 /** A design review's snapshot: the document, taken once. */
@@ -37,15 +38,16 @@ export function designReviewSnapshot(documentText: string): ReviewMaterialSnapsh
 	return { kind: 'design-review', documentText };
 }
 
-/** Today's record of a premise whose judgement failed twice: MED, never a pass (ISSUE-d4b2cd1c). */
-export function notJudgedFinding(claim: Claim, cause: string): Finding {
+/** The record of a premise whose judgement failed every attempt: MED, never a pass (ISSUE-d4b2cd1c).
+ *  `attempts` is how often the call was issued; without it the count is not stated. */
+export function notJudgedFinding(claim: Claim, cause: string, attempts?: number | undefined): Finding {
 	return {
 		claimId: claim.id,
 		...(claim.ref !== undefined ? { ref: claim.ref } : {}),
 		kind: claim.kind,
 		severity: 'MED',
 		premise: claim.text,
-		evidence: `Not judged: the reviewing model call failed twice. Last error: ${cause}`,
+		evidence: `Not judged: the reviewing model call failed${attempts !== undefined ? ` ${attemptsText(attempts)}` : ''}. Last error: ${cause}`,
 		action: 'Re-run the review, or judge this premise by hand.',
 		fixability: 'manual',
 	};
@@ -135,7 +137,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 				const raw = batched !== undefined ? batched.get(claim.id) : answers.find(a => a.key === claim.id)?.answer as RawFinding | undefined;
 				if (raw !== undefined) return normalizeFinding(claim, raw);
 				const failed = notJudged.get(claim.id);
-				return notJudgedFinding(claim, failed?.detail ?? failed?.cause ?? 'no verdict was returned for this premise');
+				return notJudgedFinding(claim, failed?.detail ?? failed?.cause ?? 'no verdict was returned for this premise', failed?.attempts);
 			});
 		},
 	};

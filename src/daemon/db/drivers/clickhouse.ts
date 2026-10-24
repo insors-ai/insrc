@@ -66,6 +66,10 @@ export class ClickHouseDriver implements RdbmsDriver {
 		this.prismaPath = prismaPath;
 	}
 
+	async probeReachability(): Promise<void> {
+		await this.runRows('SELECT 1', []);
+	}
+
 	async describe(target: string): Promise<SchemaDescription> {
 		const cached = this.schemaCache.get(target);
 		if (cached !== undefined) { return cached; }

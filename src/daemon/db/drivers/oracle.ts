@@ -107,6 +107,12 @@ export class OracleDriver implements RdbmsDriver {
 		this.prismaPath = prismaPath;
 	}
 
+	async probeReachability(): Promise<void> {
+		const pool = await this.poolPromise, connection = await pool.getConnection();
+		try { await connection.execute('SELECT 1 FROM DUAL'); }
+		finally { await connection.close(); }
+	}
+
 	async describe(target: string): Promise<SchemaDescription> {
 		const cached = this.schemaCache.get(target);
 		if (cached !== undefined) { return cached; }

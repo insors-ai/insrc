@@ -103,6 +103,10 @@ export class SqliteDriver implements RdbmsDriver {
 		});
 	}
 
+	async probeReachability(): Promise<void> {
+		this.db.prepare('SELECT 1').get();
+	}
+
 	async describe(target: string): Promise<SchemaDescription> {
 		const cached = this.schemaCache.get(target);
 		if (cached !== undefined) { return cached; }

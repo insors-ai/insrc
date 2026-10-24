@@ -1,4 +1,7 @@
 import test from 'node:test';
+import { mock } from 'node:test';
+import fsPromises from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, open, stat, readdir, rm, chmod, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -159,5 +162,27 @@ test('CM-S1-O: inode mode envelope and generation drift block writes instead of 
 			await store?.close();
 			await f.cleanup();
 		}
+	}
+});
+test('CM-S1-F: an ineffective physical overwrite fence refuses adoption with exact registry bytes unchanged', async () => {
+	const f = await fixture();
+	const originalOpen = fsPromises.open;
+	const before = await readFile(f.path, 'utf8');
+	const mocked = mock.method(fsPromises, 'open', async (...args: Parameters<typeof originalOpen>) => {
+		const [path, flags] = args;
+		if (typeof path === 'string' && path.includes('.connection-fence-') && flags === 'w')
+			await chmod(path, 0o600);
+		return originalOpen(...args);
+	});
+	syncBuiltinESMExports();
+	try {
+		await assert.rejects(ManagedRegistry.open(f.path, { ownsRoot: async () => true }), { code: 'unsupported-filesystem' });
+		assert.equal(await readFile(f.path, 'utf8'), before);
+		assert.deepEqual(await readdir(f.root), ['db-connections.json']);
+	}
+	finally {
+		mocked.mock.restore();
+		syncBuiltinESMExports();
+		await f.cleanup();
 	}
 });

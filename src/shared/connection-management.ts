@@ -8,7 +8,7 @@ export interface SafeConnection {
  readonly key: ConnectionKey; readonly revision: string; readonly kind: string; readonly family: DriverFamily;
  readonly label?: string | undefined; readonly publicConfig: Readonly<Record<string, unknown>>;
  readonly declaredFamily?: DriverFamily | undefined; readonly registeredFamily?: DriverFamily | undefined;
- readonly effectiveFamily: DriverFamily; readonly compatibilityWarning?: string | undefined;
+ readonly effectiveFamily: DriverFamily; readonly compatibilityWarning?: string | undefined; readonly readOnly?: boolean | undefined;
  readonly credentialPresence: Readonly<Record<string, boolean>>;
 }
 export interface DriverDescriptor {

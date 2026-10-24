@@ -136,6 +136,25 @@ test('null params including nested ones are removed before INV-5, and the adhere
 	const uu = firstAttempt(u);
 	assert.deepEqual(uu.params, { maybe: null }, 'the admitted null is kept, the refused one removed');
 	assert.notEqual(uu.invariant, 'INV-5');
+	// A nested object inside a union: its refused null is removed without choosing a branch.
+	const nestedUnion = supplied('custom.nested-union', { type: 'object', additionalProperties: false, properties: {
+		value: { anyOf: [{ type: 'object', additionalProperties: false, properties: { x: { type: 'string' }, y: { type: 'string' } } }, { type: 'string' }] },
+	} });
+	const { outcome: nu } = await plan([nestedUnion], wirePlan('custom.nested-union', JSON.stringify({ value: { x: null, y: 'kept' } })));
+	const nn = firstAttempt(nu);
+	assert.deepEqual(nn.params, { value: { y: 'kept' } }, 'the refused null inside the union branch is removed');
+	assert.notEqual(nn.invariant, 'INV-5');
+	// Two branches that disagree about the same key: one admits null there, so the null is kept.
+	const disagree = supplied('custom.disagree', { type: 'object', additionalProperties: false, properties: {
+		value: { anyOf: [
+			{ type: 'object', additionalProperties: false, properties: { x: { type: 'string' } } },
+			{ type: 'object', additionalProperties: false, properties: { x: { enum: ['z', null] } } },
+		] },
+	} });
+	const { outcome: dg } = await plan([disagree], wirePlan('custom.disagree', JSON.stringify({ value: { x: null } })));
+	const d = firstAttempt(dg);
+	assert.deepEqual(d.params, { value: { x: null } }, 'a null some declaring branch admits is kept');
+	assert.notEqual(d.invariant, 'INV-5');
 });
 
 test('invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5', async () => {

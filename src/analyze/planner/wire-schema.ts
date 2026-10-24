@@ -253,20 +253,42 @@ function excludesNull(schema: Schema | undefined, root: Schema): boolean {
 	return false;
 }
 
-/** Remove nulls the template's schema certainly refuses: a null there means the property is absent. */
+/** The schemas a value at this node may be read against: the node itself (its own properties or items) and, resolved, each union branch. */
+function branchesOf(node: Schema, root: Schema): Schema[] {
+	const out: Schema[] = [node];
+	for (const k of ['anyOf', 'oneOf']) {
+		if (!Array.isArray(node[k])) continue;
+		for (const b of node[k] as Schema[]) { const r = resolveLocal(b, root); if (r !== undefined) out.push(...branchesOf(r, root)); }
+	}
+	return out;
+}
+
+/**
+ * Remove nulls the template's schema certainly refuses: a null there means the
+ * property is absent. Through a union no branch is chosen: a null key is removed
+ * only when some branch declares it and every branch declaring it refuses null,
+ * and a value is walked against the union of the declaring branches' schemas.
+ */
 function dropWireNulls(value: unknown, schema: Schema | undefined, root: Schema): unknown {
 	const node = resolveLocal(schema, root);
 	if (node === undefined || value === null || typeof value !== 'object') return value;
+	const branches = branchesOf(node, root);
 	if (Array.isArray(value)) {
-		const items = node['items'];
-		return items !== null && typeof items === 'object' && !Array.isArray(items) ? value.map(v => dropWireNulls(v, items as Schema, root)) : value;
+		const items = branches.map(b => b['items']).filter((i): i is Schema => i !== null && typeof i === 'object' && !Array.isArray(i));
+		if (items.length === 0) return value;
+		const itemSchema: Schema = items.length === 1 ? items[0]! : { anyOf: items };
+		return value.map(v => dropWireNulls(v, itemSchema, root));
 	}
-	const props = node['properties'] as Record<string, Schema> | undefined;
-	if (props === undefined) return value;
+	const declaring = (key: string): Schema[] => branches.flatMap(b => {
+		const props = b['properties'] as Record<string, Schema> | undefined;
+		return props !== undefined && key in props ? [props[key]!] : [];
+	});
 	const out: Schema = {};
 	for (const [k, v] of Object.entries(value as Schema)) {
-		if (v === null && k in props && excludesNull(props[k], root)) continue;
-		out[k] = dropWireNulls(v, props[k], root);
+		const subs = declaring(k);
+		if (subs.length === 0) { out[k] = v; continue; }
+		if (v === null && subs.every(sub => excludesNull(sub, root))) continue;
+		out[k] = dropWireNulls(v, subs.length === 1 ? subs[0] : { anyOf: subs }, root);
 	}
 	return out;
 }

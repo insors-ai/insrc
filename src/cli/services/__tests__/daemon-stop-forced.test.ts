@@ -24,21 +24,25 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { join } from 'node:path';
 
 // A short root: a Unix socket path is limited to ~104 bytes on macOS.
-const HOME = mkdtempSync('/tmp/insrc-stop-');
-process.env['HOME'] = HOME;
-mkdirSync(join(HOME, '.insrc'), { recursive: true });
+const testHome = mkdtempSync('/tmp/insrc-stop-');
+process.env['HOME'] = testHome;
+mkdirSync(join(testHome, '.insrc'), { recursive: true });
 
 const { stopDaemon } = await import('../daemon.js');
 const { PATHS } = await import('../../../shared/paths.js');
+assert.equal(PATHS.pidFile, join(testHome, '.insrc/daemon.pid'));
+assert.equal(PATHS.sockFile, join(testHome, '.insrc/daemon.sock'));
+assert.equal(PATHS.daemonRunGuard, join(testHome, '.insrc/daemon.run-files.guard'));
+assert.ok(testHome.startsWith('/tmp/insrc-stop-'));
 
 const children: ChildProcess[] = [];
 after(() => {
 	for (const c of children) { try { c.kill('SIGKILL'); } catch { /* gone */ } }
-	rmSync(HOME, { recursive: true, force: true });
+	rmSync(testHome, { recursive: true, force: true });
 });
 
 /** A stand-in daemon. `reply` — whether it answers the shutdown request. */
-function stubbornDaemonSource(reply: boolean): string {
+function stubbornDaemonSource(reply: boolean, removeFiles = false): string {
 	return `
 const net = require('node:net');
 const fs = require('node:fs');
@@ -47,6 +51,7 @@ process.on('SIGINT', () => {});
 const server = net.createServer(sock => {
 	sock.on('error', () => {});
 	sock.on('data', chunk => {
+		if (${String(removeFiles)}) { fs.rmSync(${JSON.stringify(PATHS.pidFile)}, { force: true }); fs.rmSync(${JSON.stringify(PATHS.sockFile)}, { force: true }); sock.destroy(); return; }
 		if (!${String(reply)}) return;              // accepts, never replies
 		const req = JSON.parse(String(chunk).split('\\n')[0]);
 		sock.write(JSON.stringify({ id: req.id, result: { ok: true } }) + '\\n');   // replies, never stops
@@ -62,11 +67,11 @@ setInterval(() => { if (process.ppid !== parent) process.exit(0); }, 250);
 `;
 }
 
-async function startStubborn(reply: boolean): Promise<ChildProcess> {
-	const dir = join(mkdtempSync(join(HOME, 'stub-')), 'daemon');
+async function startStubborn(reply: boolean, removeFiles = false): Promise<ChildProcess> {
+	const dir = join(mkdtempSync(join(testHome, 'stub-')), 'daemon');
 	mkdirSync(dir, { recursive: true });
 	const entry = join(dir, 'index.js');
-	writeFileSync(entry, stubbornDaemonSource(reply));
+	writeFileSync(entry, stubbornDaemonSource(reply, removeFiles));
 	const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] });
 	children.push(child);
 	await new Promise<void>((resolve, reject) => {
@@ -111,4 +116,42 @@ test('forced stop, silent daemon: a child that accepts the connection and never 
 	assert.equal(await exited(child), 'SIGKILL');
 	assert.equal(existsSync(PATHS.pidFile), false);
 	assert.equal(existsSync(PATHS.sockFile), false);
+});
+
+
+test('Retained stop target survives run-file removal and RPC failure', async () => {
+ const child = await startStubborn(true, true);
+ const outcome = await stopDaemon({ stopWaitMs: 100, replyBoundMs: 200 });
+ assert.deepEqual(outcome, { stopped: true, forced: true, pid: child.pid });
+ assert.equal(await exited(child), 'SIGKILL');
+});
+
+test('Verified forced termination preserves StopOutcome and never targets reused PIDs', async () => {
+ const child = await startStubborn(true);
+ const bystander = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' }); children.push(bystander);
+ const { captureDaemon } = await import('../lifecycle.js');
+ const original = await captureDaemon();
+ writeFileSync(PATHS.pidFile, String(bystander.pid));
+ try {
+  await assert.rejects(stopDaemon({ capture: async () => original, requestShutdown: async () => { throw new Error('gone socket'); }, stopWaitMs: 0 }), /ownership conflict/);
+  assert.equal(await exited(child), 'SIGKILL');
+  assert.equal(bystander.exitCode, null); assert.equal(bystander.signalCode, null);
+  assert.equal(existsSync(PATHS.pidFile), true);
+ } finally { bystander.kill('SIGKILL'); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
+});
+
+test('Real ownership and guard conflicts prevent maintenance restart', async () => {
+ const { restart } = await import('../maintenance.js');
+ const { acquireRunFileGuard } = await import('../../../shared/daemon-run-files.js');
+ let starts = 0;
+ const child = await startStubborn(true);
+ let guard: ReturnType<typeof acquireRunFileGuard> | undefined;
+ try {
+  const result = await restart(() => {}, {
+   stopDaemon: () => stopDaemon({ requestShutdown: async () => { guard = acquireRunFileGuard(PATHS.daemonRunGuard); return 'no-reply'; }, stopWaitMs: 0 }),
+   startDaemon: async () => { starts++; return { started: true, alreadyRunning: false, logPath: '' }; },
+  });
+  assert.equal(result.ok, false); assert.match(result.error!, /ownership conflict/); assert.equal(starts, 0);
+  assert.equal(await exited(child), 'SIGKILL'); assert.equal(existsSync(PATHS.pidFile), true);
+ } finally { guard?.release(); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
 });

@@ -8,14 +8,18 @@
  * pid+socket polling. Kept dependency-free so both the daemon service
  * and the maintenance service can share them without an import cycle.
  *
- * "Stopped" = both the pid file AND the socket are gone (the socket
- * lingers briefly after exit). "Ready" = pid file + socket present and
+ * "Stopped" requires the retained original process to have exited. "Ready" = pid file + socket present and
  * the pid is alive (covers ONNX cold-boot, which can take ~30 s+).
  */
 
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { PATHS } from '../../shared/paths.js';
+import { captureStopTarget } from '../../shared/daemon-process-client.js';
+import type { StopTarget } from '../../shared/daemon-process-client.js';
+import { acquireRunFileGuard, removeOwnedRunFile, runFileIdentity, sameRunFile } from '../../shared/daemon-run-files.js';
+import type { RunFileIdentity } from '../../shared/daemon-run-files.js';
+import { readProcessIdentity } from '../../shared/daemon-process.js';
 
 /** The managed daemon's pid from PATHS.pidFile — undefined if absent/non-numeric.
  *  Exported so the debug service (Story s3) excludes the managed daemon from the
@@ -29,7 +33,7 @@ export function pidFromFile(): number | undefined {
 }
 
 function pidAlive(pid: number): boolean {
-	try { process.kill(pid, 0); return true; } catch { return false; }
+	return readProcessIdentity(pid) !== undefined;
 }
 
 /** True when the daemon pid file references a live process. */
@@ -38,20 +42,52 @@ export function isRunning(): boolean {
 	return pid !== undefined && pidAlive(pid);
 }
 
-/** Wait until the daemon is fully drained (pid file + socket gone).
- *  Removes a stale pid file so a subsequent start doesn't refuse.
- *  Returns true if it stopped within `timeoutMs`. */
-export async function waitForStop(timeoutMs = 30_000): Promise<boolean> {
-	const deadline = Date.now() + timeoutMs;
-	while (Date.now() < deadline) {
-		const pid = pidFromFile();
-		if (pid !== undefined && !pidAlive(pid)) {
-			try { rmSync(PATHS.pidFile); } catch { /* best effort */ }
-		}
-		if (!existsSync(PATHS.pidFile) && !existsSync(PATHS.sockFile)) return true;
-		await sleep(500);
-	}
-	return false;
+export interface CapturedDaemon {
+ readonly target: StopTarget | undefined;
+ readonly pidFile: RunFileIdentity | undefined;
+ readonly socketFile: RunFileIdentity | undefined;
+}
+function matches(path: string, expected: RunFileIdentity | undefined): void {
+ const current = runFileIdentity(path);
+ if (current && (!expected || !sameRunFile(current, expected))) throw new Error(`run-file ownership conflict: replacement at ${path}; restart withheld`);
+}
+/** Capture before RPC under the same guard used by publishers; never reacquire a PID later. */
+export async function captureDaemon(): Promise<CapturedDaemon> {
+ const guard = acquireRunFileGuard(PATHS.daemonRunGuard);
+ let target: StopTarget | undefined;
+ try {
+  const pidFile = runFileIdentity(PATHS.pidFile), socketFile = runFileIdentity(PATHS.sockFile);
+  const pid = pidFromFile();
+  if (pidFile && pid === undefined) throw new Error('run-file ownership conflict: invalid PID file; restart withheld');
+  if (!pidFile && socketFile) throw new Error('run-file ownership conflict: socket has no PID owner; restart withheld');
+  if (pid !== undefined) target = await captureStopTarget(pid);
+  matches(PATHS.pidFile, pidFile); matches(PATHS.sockFile, socketFile);
+  return { target, pidFile, socketFile };
+ } catch (error) { await target?.handle.close(); throw error; }
+ finally { guard.release(); }
+}
+/** Only after positive kernel-handle exit; no orphan guard is reclaimed. */
+export function cleanupStoppedDaemon(captured: CapturedDaemon): void {
+ const guard = acquireRunFileGuard(PATHS.daemonRunGuard);
+ try {
+  matches(PATHS.pidFile, captured.pidFile); matches(PATHS.sockFile, captured.socketFile);
+  removeOwnedRunFile(PATHS.pidFile, captured.pidFile, guard);
+  removeOwnedRunFile(PATHS.sockFile, captured.socketFile, guard);
+ } finally { guard.release(); }
+}
+/** Poll the retained capability. Missing paths never stand in for process exit. */
+export async function waitForStop(timeoutMs = 30_000, target?: StopTarget): Promise<boolean> {
+ const captured = target ? undefined : await captureDaemon();
+ const observed = target ?? captured?.target;
+ try {
+  if (!observed) { if (captured) cleanupStoppedDaemon(captured); return true; }
+  const deadline = Date.now() + timeoutMs;
+  do {
+   if (await observed.handle.hasExited()) { if (captured) cleanupStoppedDaemon(captured); return true; }
+   if (Date.now() >= deadline) return false;
+   await sleep(Math.min(100, Math.max(0, deadline - Date.now())));
+  } while (true);
+ } finally { if (captured) await captured.target?.handle.close(); }
 }
 
 /** Wait until the daemon accepted startup (pid file + socket present

@@ -9,8 +9,8 @@
  * Extracted from the former `cli/commands/daemon.ts` commander actions.
  */
 
-import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, openSync, mkdirSync, rmSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, openSync, mkdirSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import type { Socket } from 'node:net';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,11 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { rpc } from '../client.js';
 import { PATHS } from '../../shared/paths.js';
 import type { DaemonStatus } from '../../shared/types.js';
-import { pidFromFile, waitForReady, waitForStop } from './lifecycle.js';
+import { captureDaemon, cleanupStoppedDaemon, waitForReady, waitForStop } from './lifecycle.js';
+
+import type { CapturedDaemon } from './lifecycle.js';
+import type { StopTarget } from '../../shared/daemon-process-client.js';
+import { runFileGuardConflict } from '../../shared/daemon-run-files.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 /** Daemon entry point relative to this compiled file (out/cli/services).
@@ -58,6 +62,8 @@ export function getStatus(): Promise<DaemonStatus> {
  *  ready — pid file + socket present and the pid alive. The long
  *  window covers ONNX cold-boot on a fresh install. */
 export async function startDaemon(): Promise<StartResult> {
+	const conflict = runFileGuardConflict(PATHS.daemonRunGuard);
+	if (conflict) throw new Error(conflict);
 	const alreadyRunning = existsSync(PATHS.pidFile);
 	mkdirSync(PATHS.logDir, { recursive: true });
 	const logFd = openSync(PATHS.daemonLog, 'a');
@@ -83,12 +89,6 @@ export interface StopOutcome {
 	readonly pid?:    number;
 }
 
-/** A daemon process is recognised by the tail of its command line, not by
- *  DAEMON_ENTRY: that is the entry of the CLI's OWN checkout, while the control
- *  script starts the daemon from the installed one, so a CLI run from a
- *  development checkout would not match a live installed daemon. */
-const DAEMON_ENTRY_SUFFIX = 'daemon/index.js';
-
 /** Bound on the reply to `daemon.shutdown`. A daemon whose main thread is
  *  blocked while its socket still listens accepts the connection and never
  *  answers, so an unbounded await would never reach the wait or the kill. */
@@ -98,21 +98,16 @@ const KILL_WAIT_MS            = 5_000;
 
 /**
  * Injectable dependencies for the stop. Split out so unit tests drive every
- * outcome against a fake process table (alive / command line / kill) with no
+ * outcome against an injected retained process capability with no
  * real daemon, and so the integration tests can shorten the waits.
  */
 export interface StopDeps {
 	/** Send `daemon.shutdown`; settles on the reply, rejects on a connection
 	 *  error, and resolves `'no-reply'` when `boundMs` passes first. */
 	readonly requestShutdown: (boundMs: number) => Promise<'replied' | 'no-reply'>;
-	readonly waitForStop:     (timeoutMs: number) => Promise<boolean>;
-	readonly pidFromFile:     () => number | undefined;
-	readonly pidAlive:        (pid: number) => boolean;
-	/** The pid's command line, or undefined when it cannot be read. */
-	readonly commandLine:     (pid: number) => string | undefined;
-	readonly kill:            (pid: number, signal: NodeJS.Signals) => void;
-	/** Remove the pid file and the socket file (after a forced kill only). */
-	readonly removeRunFiles:  () => void;
+ readonly capture: () => Promise<CapturedDaemon>;
+ readonly waitForStop: (timeoutMs: number, target: StopTarget) => Promise<boolean>;
+ readonly cleanup: (captured: CapturedDaemon) => void;
 	readonly sleep:           (ms: number) => Promise<void>;
 	readonly replyBoundMs:    number;
 	readonly stopWaitMs:      number;
@@ -134,32 +129,19 @@ function requestShutdownBounded(boundMs: number): Promise<'replied' | 'no-reply'
 	});
 }
 
-function readCommandLine(pid: number): string | undefined {
-	try {
-		const out = execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-		return out.length > 0 ? out : undefined;
-	} catch { return undefined; }
-}
-
 const realStopDeps: StopDeps = {
-	requestShutdown: requestShutdownBounded,
-	waitForStop,
-	pidFromFile,
-	pidAlive: pid => { try { process.kill(pid, 0); return true; } catch { return false; } },
-	commandLine: readCommandLine,
-	kill: (pid, signal) => { process.kill(pid, signal); },
-	removeRunFiles: () => {
-		rmSync(PATHS.pidFile,  { force: true });
-		rmSync(PATHS.sockFile, { force: true });
-	},
+ requestShutdown: requestShutdownBounded,
+ capture: captureDaemon,
+ waitForStop,
+ cleanup: cleanupStoppedDaemon,
 	sleep: ms => new Promise(r => setTimeout(r, ms)),
 	replyBoundMs: SHUTDOWN_REPLY_BOUND_MS,
 	stopWaitMs:   STOP_WAIT_MS,
 	killWaitMs:   KILL_WAIT_MS,
 };
 
-/** Ask the daemon to shut down, wait (up to 30 s) for it to fully drain
- *  (pid file + socket gone), and END IT when it does not: a daemon that
+/** Ask the daemon to shut down, wait (up to 30 s) for the original
+ *  process to exit, and END IT when it does not: a daemon that
  *  overruns the wait is killed, its pid file and socket are removed, and the
  *  outcome says so. Rejects with "daemon is not running" when there is no
  *  daemon to stop, and when the stop cannot be completed safely (the pid is
@@ -170,53 +152,25 @@ export function stopDaemon(over: Partial<StopDeps> = {}): Promise<StopOutcome> {
 }
 
 export async function stopDaemonWith(deps: StopDeps): Promise<StopOutcome> {
-	const livePid = (): number | undefined => {
-		const pid = deps.pidFromFile();
-		return pid !== undefined && deps.pidAlive(pid) ? pid : undefined;
-	};
-
-	try {
-		await deps.requestShutdown(deps.replyBoundMs);
-	} catch (err) {
-		// A request that failed is "already stopped" only when no daemon process
-		// is alive. With a live pid (socket gone, or the daemon answered with an
-		// error) go on to the wait and the forced kill.
-		if (livePid() === undefined) throw err;
-	}
-
-	if (await deps.waitForStop(deps.stopWaitMs)) return { stopped: true, forced: false };
-
-	const waited = `${Math.round(deps.stopWaitMs / 1000)} s`;
-	const pid = livePid();
-	if (pid === undefined) {
-		// No process to end, yet the socket file remains: we cannot tell whose it is.
-		throw new Error(`daemon did not stop within ${waited}: its socket file is still present and the pid file names no live process`);
-	}
-
-	const command = deps.commandLine(pid);
-	if (command === undefined || !command.trimEnd().endsWith(DAEMON_ENTRY_SUFFIX)) {
-		throw new Error(
-			`daemon did not stop within ${waited}, and pid ${pid} from the pid file is not a daemon process ` +
-			`(command line: ${command ?? 'unreadable'}); it was not killed and its pid file was left in place`,
-		);
-	}
-
-	try {
-		deps.kill(pid, 'SIGKILL');
-	} catch (err) {
-		if (deps.pidAlive(pid)) {
-			const why = err instanceof Error ? err.message : String(err);
-			throw new Error(`daemon (pid ${pid}) did not stop within ${waited} and SIGKILL failed: ${why}; its pid file was left in place`);
-		}
-	}
-	const deadline = Date.now() + deps.killWaitMs;
-	while (deps.pidAlive(pid) && Date.now() < deadline) await deps.sleep(100);
-	if (deps.pidAlive(pid)) {
-		throw new Error(`daemon (pid ${pid}) did not stop within ${waited} and is still alive after SIGKILL; its pid file was left in place`);
-	}
-
-	deps.removeRunFiles();
-	return { stopped: true, forced: true, pid };
+ const captured = await deps.capture();
+ const target = captured.target;
+ if (!target) throw new Error('daemon is not running — no live original process was captured');
+ try {
+  // An RPC error cannot discard a target captured before the request.
+  try { await deps.requestShutdown(deps.replyBoundMs); } catch { /* retain and observe original */ }
+  if (await deps.waitForStop(deps.stopWaitMs, target)) {
+   deps.cleanup(captured); return { stopped: true, forced: false };
+  }
+  try { await target.handle.terminate(); }
+  catch (error) { throw new Error(`daemon (pid ${target.pid}) SIGKILL failed: ${error instanceof Error ? error.message : String(error)}; restart withheld`); }
+  const deadline = Date.now() + deps.killWaitMs;
+  while (!(await target.handle.hasExited())) {
+   if (Date.now() >= deadline) throw new Error(`daemon (pid ${target.pid}) is still alive after SIGKILL; restart withheld`);
+   await deps.sleep(100);
+  }
+  deps.cleanup(captured);
+  return { stopped: true, forced: true, pid: target.pid };
+ } finally { await target.handle.close(); }
 }
 
 /** One line for the user about how a stop ended. */

@@ -1,0 +1,2310 @@
+{
+  "version": 1,
+  "purpose": "S001 t1 reviewed source classification input; not an enabled runtime profile or proof of safe materialization.",
+  "common": {
+    "identity": [
+      "id",
+      "kind"
+    ],
+    "public": [
+      "label"
+    ],
+    "retained": [
+      "family",
+      "secretRef",
+      "ephemeral"
+    ],
+    "unsupported": "Any unclassified existing field is preserved server-side, never projected, and blocks adoption/edit until classified. New unclassified fields and nested keys are rejected. No field is made public by name heuristics."
+  },
+  "rows": [
+    {
+      "kind": "postgres",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/pg.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-postgres",
+        "kind": "postgres",
+        "url": "postgresql://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "cockroachdb",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/pg.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-cockroachdb",
+        "kind": "cockroachdb",
+        "url": "postgresql://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "mysql",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/mysql.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-mysql",
+        "kind": "mysql",
+        "url": "mysql://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "mariadb",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/mysql.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-mariadb",
+        "kind": "mariadb",
+        "url": "mysql://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "mssql",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/mssql.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-mssql",
+        "kind": "mssql",
+        "url": "mssql://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "oracle",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/oracle.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-oracle",
+        "kind": "oracle",
+        "url": "oracle://fixture:synthetic@localhost/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "clickhouse",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/clickhouse.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hierarchical URL with userinfo; entire raw URL private; unknown/query dialect retained read-only until explicitly parsed",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-clickhouse",
+        "kind": "clickhouse",
+        "url": "http://fixture:synthetic@localhost:8123/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "sqlite",
+      "family": "rdbms",
+      "sources": [
+        "src/daemon/db/drivers/sqlite.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "namespace.allow",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "path wins verbatim; file: URL uses URL.pathname without percent-decoding; otherwise raw url is the path",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-sqlite",
+        "kind": "sqlite",
+        "url": "file:///tmp/fixture.sqlite",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "path": "fixtures/data",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/schema.prisma"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "redis",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/redis.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "Redis SDK URL; full URL private including username/password/query",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-redis",
+        "kind": "redis",
+        "url": "redis://fixture:synthetic@localhost:6379/0",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "valkey",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/redis.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "Redis SDK URL; full URL private including username/password/query",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-valkey",
+        "kind": "valkey",
+        "url": "redis://fixture:synthetic@localhost:6379/0",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "keydb",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/redis.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "Redis SDK URL; full URL private including username/password/query",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-keydb",
+        "kind": "keydb",
+        "url": "redis://fixture:synthetic@localhost:6379/0",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "mongodb",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/mongodb.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "pii"
+      ],
+      "credentialFields": [
+        "url"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "MongoClient URI including mongodb+srv, multi-host and query credentials; do not normalize with generic URL parser",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-mongodb",
+        "kind": "mongodb",
+        "url": "mongodb+srv://fixture:synthetic@cluster.invalid/fixture",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none",
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "cassandra",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/cassandra.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "options.contactPoints",
+        "options.localDataCenter",
+        "options.keyspace",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "contactPoints array; URL unused legacy placeholder",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-cassandra",
+        "kind": "cassandra",
+        "url": "fixture-required-by-legacy-loader",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "options": {
+          "contactPoints": [
+            "localhost"
+          ],
+          "localDataCenter": "datacenter1",
+          "keyspace": "fixture"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none"
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "nats",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/nats.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "options.bucket",
+        "pii"
+      ],
+      "credentialFields": [
+        "options.servers"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "server URLs may carry userinfo/token; auth is not a separate supported option",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-nats",
+        "kind": "nats",
+        "url": "fixture-required-by-legacy-loader",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "options": {
+          "bucket": "fixture",
+          "servers": [
+            "nats://fixture:synthetic@localhost:4222"
+          ]
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none"
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "dynamodb",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/dynamodb.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "options.region",
+        "options.profile",
+        "pii"
+      ],
+      "credentialFields": [
+        "options.endpoint"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "AWS default/profile chain; endpoint URL kept private; accessKeyId/secretAccessKey/sessionToken are not config inputs",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-dynamodb",
+        "kind": "dynamodb",
+        "url": "fixture-required-by-legacy-loader",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "options": {
+          "region": "us-east-1",
+          "profile": "fixture-profile",
+          "endpoint": "http://localhost:8000"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none"
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "etcd",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/etcd.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "namespace.allow",
+        "options.user",
+        "pii"
+      ],
+      "credentialFields": [
+        "options.hosts",
+        "options.password"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "recursive",
+        "partitioning"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "hosts URLs may carry credentials; separate user/password supported",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-etcd",
+        "kind": "etcd",
+        "url": "fixture-required-by-legacy-loader",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "namespace": {
+          "allow": [
+            "allowed:*"
+          ]
+        },
+        "options": {
+          "user": "fixture-user",
+          "hosts": [
+            "http://localhost:2379"
+          ],
+          "password": "synthetic-only"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "recursive": false,
+        "partitioning": "none"
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "memcached",
+      "family": "kv",
+      "sources": [
+        "src/daemon/db/drivers/memcached.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/drivers/kv-common.ts"
+      ],
+      "publicFields": [
+        "label",
+        "options.user",
+        "pii"
+      ],
+      "credentialFields": [
+        "options.servers",
+        "options.password"
+      ],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "path",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "recursive",
+        "partitioning"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "server list passed verbatim to memjs; separate SASL user/password supported",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-memcached",
+        "kind": "memcached",
+        "url": "fixture-required-by-legacy-loader",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "file",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "options": {
+          "user": "fixture-user",
+          "servers": [
+            "localhost:11211"
+          ],
+          "password": "synthetic-only"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "path": "fixtures/retained-path",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "recursive": false,
+        "partitioning": "none"
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "csv",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.delimiter",
+        "options.header",
+        "options.quote",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-csv",
+        "kind": "csv",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "delimiter": ",",
+          "header": true,
+          "quote": false
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "tsv",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.delimiter",
+        "options.header",
+        "options.quote",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-tsv",
+        "kind": "tsv",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "delimiter": ",",
+          "header": true,
+          "quote": false
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "jsonl",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-jsonl",
+        "kind": "jsonl",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "ndjson",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-ndjson",
+        "kind": "ndjson",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "json",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-json",
+        "kind": "json",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "parquet",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-parquet",
+        "kind": "parquet",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "arrow",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-arrow",
+        "kind": "arrow",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "feather",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow",
+        "options"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-feather",
+        "kind": "feather",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        },
+        "options": {
+          "legacySupportedOption": "retained privately"
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "avro",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/db/drivers/converters/avro.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.glob",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-avro",
+        "kind": "avro",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "glob": "*.fixture"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "bson",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/db/drivers/converters/bson.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.glob",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-bson",
+        "kind": "bson",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "glob": "*.fixture"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "fixed-width",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/db/drivers/converters/fixed-width.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.glob",
+        "options.columns[].name",
+        "options.columns[].start",
+        "options.columns[].length",
+        "options.columns[].type",
+        "options.encoding",
+        "options.trim",
+        "options.skipFirstLine",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-fixed-width",
+        "kind": "fixed-width",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "glob": "*.fixture",
+          "columns": [
+            {
+              "name": "value",
+              "start": 0,
+              "length": 12,
+              "type": "string"
+            }
+          ],
+          "encoding": "utf8",
+          "trim": true,
+          "skipFirstLine": false
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    },
+    {
+      "kind": "xlsx",
+      "family": "file",
+      "sources": [
+        "src/daemon/db/drivers/duckdb-file.ts",
+        "src/shared/db-driver.ts",
+        "src/daemon/db/config.ts",
+        "src/daemon/db/pool.ts",
+        "src/daemon/db/drivers/converters/xlsx.ts",
+        "src/daemon/tools/builtins/db/index.ts",
+        "src/daemon/db/secrets.ts"
+      ],
+      "publicFields": [
+        "label",
+        "path",
+        "recursive",
+        "partitioning",
+        "options.glob",
+        "pii"
+      ],
+      "credentialFields": [],
+      "retainedOnlyFields": [
+        "family",
+        "secretRef",
+        "ephemeral",
+        "url",
+        "schemaSource.type",
+        "schemaSource.path",
+        "namespace.allow"
+      ],
+      "identityFields": [
+        "id",
+        "kind"
+      ],
+      "dialect": "local path; native/converted directory supports recursive and hive/none; options.glob only converted walk",
+      "unknownFieldPolicy": "preserve-private-block-edit",
+      "unknownDraftPolicy": "reject",
+      "familyPolicy": "preserve-explicit-legacy-pin; derive-on-create; never-normalize",
+      "fixture": {
+        "id": "fixture-xlsx",
+        "kind": "xlsx",
+        "path": "fixtures/data",
+        "label": "Synthetic fixture",
+        "pii": [
+          "email"
+        ],
+        "family": "rdbms",
+        "legacyOpaque": {
+          "mustSurvive": "retained privately; blocks edit until classified"
+        },
+        "recursive": true,
+        "partitioning": "hive",
+        "options": {
+          "glob": "*.fixture"
+        },
+        "secretRef": "synthetic-retained-ref",
+        "ephemeral": true,
+        "url": "retained-placeholder",
+        "schemaSource": {
+          "type": "prisma",
+          "path": "fixtures/retained-schema.prisma"
+        },
+        "namespace": {
+          "allow": [
+            "retained:*"
+          ]
+        }
+      },
+      "rejectedShapes": [
+        "unclassified option/nested keys in a draft",
+        "non-object options",
+        "malformed field types",
+        "client-supplied secretRef or ephemeral",
+        "kind/id/family replacement on edit"
+      ]
+    }
+  ],
+  "constraints": [
+    "Never project credentialFields, raw URL, secretRef or unknown values.",
+    "Keep/Replace/Clear credentials are implemented in t3; this audit changes no registry/keychain.",
+    "Container public fields are exact leaf schemas; never allow arbitrary nested objects.",
+    "Preserve pinned family and raw dialect verbatim. Unrepresentable dialects remain read-only.",
+    "Etcd/memcached option passwords currently are not resolved by URL-only pool secret resolution; t3/t6 must add typed secret materialization without persisting plaintext.",
+    "Actual registered kinds, rather than the stale index.ts count comment, are authoritative."
+  ],
+  "sourceDigests": {
+    "src/daemon/db/config.ts": "60f60abcf252e1c7afeb8540a95c12f60891e8b4d28ddeefd5dc1272435cc5e3",
+    "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
+    "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
+    "src/daemon/db/drivers/converters/avro.ts": "e2a8dd50f1da32b3c65752350b922f7a03cd7bc7d42972c57f9ee52d8262adea",
+    "src/daemon/db/drivers/converters/bson.ts": "80b819aa9bda0c5105546c818fcc72f3347471d29c1a349a266d36c5dc5fcf27",
+    "src/daemon/db/drivers/converters/fixed-width.ts": "ceec9d24b4d2127470c58023dc370be24dfedd91db90d862d2a607939b7e52d4",
+    "src/daemon/db/drivers/converters/xlsx.ts": "4f3149cf9c08bfccadbeab044a3bd9e93fd2270f1341bb025873bb69a9c1d8c9",
+    "src/daemon/db/drivers/duckdb-file.ts": "556a9cf771cb089664c33b63544f9bc232014ca77e4781a3570c166745d7b050",
+    "src/daemon/db/drivers/dynamodb.ts": "a377a571eb482d672ed16857618c0483a9ef0d08b049bba04cdddb2ecb69aade",
+    "src/daemon/db/drivers/etcd.ts": "5ecfe742cda8c82b945c3c9701548ca5ac709e48c3fa6bd433e63e45bc261772",
+    "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
+    "src/daemon/db/drivers/memcached.ts": "92fde20fcb82d921162f493026fe96ff191f7baa1b6aa55625aa121cf1956861",
+    "src/daemon/db/drivers/mongodb.ts": "d6c13219d2a17ccedd049d2427442751e2527c0b70c6a4588bd1a7b371201659",
+    "src/daemon/db/drivers/mssql.ts": "2d5d91382700974b47127ca024fa6f7002b89e21a54c0708eacf4a84f49e058c",
+    "src/daemon/db/drivers/mysql.ts": "95896778d630a317b2ffdeaeec03428719ff74b9da1ec70efb324437940af370",
+    "src/daemon/db/drivers/nats.ts": "da7b4956ab0ebaad0868355b70d25901e00ab29c9d6d5b4667b97b944866ffef",
+    "src/daemon/db/drivers/oracle.ts": "2da13b9fbd3ef8864f6253d526d19c75e8b1ec13ecf873d6147a6c99f1009cc3",
+    "src/daemon/db/drivers/pg.ts": "116c829478efc3aeb985b8e38e6846006fb6fdcbb41a13861b94fa389273e6ba",
+    "src/daemon/db/drivers/redis.ts": "7c55da6f434833c2eaa6bb14da9f7eb31345cbef664a23b94883fdd66ea98710",
+    "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
+    "src/daemon/db/pool.ts": "b8405b6e39c7be596519b41ef87f37f3025d57dc5e67d242f23d2cdbcbb8fe84",
+    "src/daemon/db/secrets.ts": "9472b39655cd9a5d8143d61aeae65a3eafd97c78b4ef4d07ef784be95cb060d4",
+    "src/daemon/tools/builtins/db/index.ts": "4813c128e56ebcfd5cd44012560a1f503d3b8c7dc3723a066217bce64f88b66a",
+    "src/shared/db-driver.ts": "f944de0ff8d9708ca0ef10a927a44537291990a79ac552b86f189fb024984660"
+  }
+}

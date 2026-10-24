@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T08:23:58.478Z",
+    "updatedAt": "2026-10-24T08:30:48.653Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Corrected t1 validation findings: SQLite URL.pathname preserves percent escapes; a real two-file SQLite test proves the behavior and explicit-path precedence. CM-S1-A now uses isolated existing save/load ports to edit labels and verify every retained supported field, unknown field and top-level metadata survives for all 29 kinds. Three focused tests pass; production behavior unchanged. Full sweep remains blocked by two reproduced pre-existing-test shutdown assertion failures; no green sweep or Story completion claimed.",
+    "testRecord": {
+      "md": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S001/TESTS.md"
+    },
+    "changeLog": [],
+    "commit": "119d66734"
+  }
+}

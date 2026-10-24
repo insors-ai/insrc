@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s1",
+    "createdAt": "2026-10-24T08:23:58.478Z",
+    "updatedAt": "2026-10-24T08:30:48.653Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "119d66734",
+        "ranAt": "2026-10-24T08:30:48.653Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-A: per-driver profile matrix covers every listRegisteredKinds entry and preserves unexposed supported config.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-L: static TypeScript import/alias/factory/acquire inventory with zero unclassified production sites; each classified use has metadata-only, full-use lease or bounded-private-probe rationale.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6196,
+            "titles": [
+              {
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

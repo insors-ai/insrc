@@ -1,0 +1,51 @@
+{
+  "task": "484fcef7efaf229e/s1/t1",
+  "status": "t1 task validation passed; full suite deferred by explicit user instruction",
+  "productionBehaviorChanged": false,
+  "checks": [
+    {
+      "name": "typecheck",
+      "result": "pass"
+    },
+    {
+      "name": "focused audit tests",
+      "result": "3 pass on Node 26 and Node 22.23.2"
+    },
+    {
+      "name": "full sweep",
+      "result": "failures observed; stopped test process tree after reproduction; no complete green sweep claimed"
+    },
+    {
+      "name": "isolated search.query recheck",
+      "result": "pass in 44 seconds"
+    },
+    {
+      "name": "isolated threads-boot shutdown checks",
+      "result": "2 fail on Node 26 and Node 22.23.2; missing shutdown/draining log assertion at lines 110 and 149"
+    }
+  ],
+  "validationCorrections": [
+    "SQLite URL.pathname retains percent-encoded path text; real files prove behavior and path precedence.",
+    "All 29 fixtures round-trip through existing config persistence and a label edit, checking every retained-only field and unknown metadata."
+  ],
+  "failureTests": [
+    "src/daemon/threads/__tests__/threads-boot.test.ts:110",
+    "src/daemon/threads/__tests__/threads-boot.test.ts:149"
+  ],
+  "taskTests": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+  "logs": [
+    "/tmp/cm-t1-typecheck.log",
+    "/tmp/cm-t1-audit-node22.log",
+    "/tmp/cm-t1-full-tests.log",
+    "/tmp/cm-t1-search-recheck.log",
+    "/tmp/cm-t1-shutdown-node22.log"
+  ],
+  "next": "Build remaining 22 tasks using relevant tests per task, then run the full sweep. Previously observed shutdown failures remain recorded and must be assessed at the final sweep.",
+  "taskValidation": {
+    "passed": true,
+    "scopeRespected": true,
+    "testsPassed": true,
+    "typecheckClean": true,
+    "tests": 3
+  }
+}

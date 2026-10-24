@@ -1,0 +1,26 @@
+<!-- insrc:artifact ISSUE-8d39ef09031e75d3 -->
+
+# Let codex accept the analyzer decomposer's output schema
+
+## Reproduction
+
+Route the analyze.decompose role to codex: its default mid tier is cli-codex. Then run any one-shot analysis (insrc_analyze, or a daemon run that calls decompose). The decomposer's single structured call fails before the model answers. Reproduced on 2026-10-24 by calling CliProvider.completeStructured (codex, gpt-6.1-sol) with DECOMPOSE_SCHEMA: codex refused it after 3.4 s with invalid_json_schema: "Invalid schema for response_format 'codex_output_schema': 'schema.properties.explorations.items.properties.params.properties' is required for object schemas." In the survey of daemon codex calls from 2026-10-16 to 2026-10-24, every one of the 113 decomposer calls failed with this error. Expected: codex accepts the schema and returns an exploration plan, as Ollama and claude do. The multi-turn insrc_analyze_step is not affected, because there the controller emits the plan itself.
+
+## Root cause
+
+DECOMPOSE_SCHEMA (src/analyze/context/decomposer.ts:125) declares each exploration's params as an open object (src/analyze/context/decomposer.ts:142): {type:'object', additionalProperties:true}, with no properties. Each exploration type takes its own params, and the executor reads them as an untyped record (src/analyze/explore/types.ts:97, src/analyze/explore/executor.ts). Every codex structured call sends the strict copy built by codexStrictSchema (src/agent/providers/structured-output.ts:381, through processSchemaForOpenAIStrict). That copy passes this node through unchanged; the printed strict node is {"type":"object","additionalProperties":true}. Codex's strict grammar requires every object to declare its properties (and to be closed), so it refuses the whole schema. The decomposer has no fallback: its catch (src/analyze/context/decomposer.ts:195) rethrows the classified error, so the analysis fails. The same open-object pattern exists in other analyzer schemas routed to the mid tier, e.g. AGGREGATOR_INPUT_SCHEMA with properties:{} (src/analyze/planner/templates/shared-schemas.ts:112), used by the planner (src/analyze/planner/driver.ts, role analyze.plan, src/config/role-taxonomy.ts:88). Whether they reach codex the same way is not yet established.
+
+## Fix intent
+
+Make the decomposer's output schema one codex accepts, so a one-shot analysis on the codex tier gets an exploration plan, while every other provider keeps getting and validating the same plan as today. The params each exploration type accepts must stay expressible and validated, so the fix must not weaken what a plan may carry or how it is checked. As part of the fix, establish whether the other analyzer schemas routed to codex fail the same way, and either fix them or record them. Coordinate with ISSUE-7d346e0dcbafc70e (optional fields under the codex strict copy), which concerns the same strict-copy boundary. A regression test must prove that codex's strict form of the decomposer schema is accepted.
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/context/decomposer.ts:142` — "params:  { type: 'object', additionalProperties: true },"
+- **[[c2]]** `code` `src/agent/providers/structured-output.ts:381` — "const copy = processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);"
+- **[[c3]]** `code` `src/analyze/context/decomposer.ts:195` — "if (errClass instanceof DecomposerLlmUnavailableError) throw errClass;"
+- **[[c4]]** `code` `src/config/role-taxonomy.ts:86` — "{ id: 'analyze.decompose',             criticality: 'peripheral', defaultTier: 'mid'  },"
+- **[[c5]]** `code` `src/analyze/explore/types.ts:97` — "readonly params:   Readonly<Record<string, unknown>>;"
+- **[[c6]]** `code` `src/analyze/planner/templates/shared-schemas.ts:112` — "export const AGGREGATOR_INPUT_SCHEMA = {"
+- **[[c7]]** `prior-artifact` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md:18` — "ERROR analyze: exploration decomposer: 113x"
+- **[[c8]]** `prior-artifact` `ISSUE-7d346e0dcbafc70e`

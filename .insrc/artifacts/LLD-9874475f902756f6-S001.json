@@ -1,0 +1,705 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792845934467-09830t",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T12:57:08.198Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 693721,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9874475f902756f6",
+    "epicSlug": "let-codex-accept-analyzer-decomposer-s",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792845934467-09830t",
+    "hldEffectiveHash": "9874475f902756f6166c87e9588873ada1117077375ef62d2ea71c7ea5cb108d",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-24T14:09:31.405Z",
+    "rangeBase": "58fb32e36f74892338995fe514446685c2d241b6",
+    "reviewOverride": {
+      "reason": "User-approved override (2026-10-24, option 1): review cycle 2 converged from 3 to 2 to 1 HIGH finding, all on caller-supplied planner catalogs, which no production path uses. The last one (draft-07 tuple items failing the Ajv 2020 wire compile) is fixed in the LLD by a general trial-compile fallback to a whole-params slot, with a regression test. Codex acceptance of the complete schemas is proven by the planned live test at build.",
+      "at": "2026-10-24T14:09:31.405Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This fix lets the two analyzer calls that ask a model for a plan (the exploration decomposer and the task planner) run on codex, which today refuses both of their schemas. The decomposer's schema now lists each exploration type's params, and the planner sends, per call, a schema listing the params of each template in the catalog it is using. Codex's strict grammar can express both. Optional params may be null, and both decomposer entry points and the planner remove those nulls before the plan is used. Every provider gets the same schemas, runners and plan validation see exactly today's params, and nothing changes for callers. Acceptance criteria (from the ISSUE's fix intent): ac1, codex accepts both schemas (strict-form regression plus a live test); ac2, every provider gets the same plans and validation as today (documented and empty params, placeholders, supplied catalogs incl. open objects, INV-5 unchanged); ac3, a mismatched type/params pair cannot reach execution, and every exploration type and catalog template has its params branch.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Let codex accept the analyzer decomposer's output schema"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "DECOMPOSE_SCHEMA",
+          "signature": "export const DECOMPOSE_SCHEMA: StructuredSchema  // explorations[].params: { anyOf: ExplorationParamsSchema[] } (one closed object per exploration type) instead of { type:'object', additionalProperties:true }",
+          "parameters": [],
+          "returns": {
+            "type": "StructuredSchema",
+            "meaning": "The decomposer's output schema. Each exploration's params is an anyOf with one branch per exploration type (one per EXPLORATION_TYPES entry, 20 today). Each branch is a closed object listing that type's params, none of them required and each typed T | null, so the documented empty-params case (the prompt: 'leave the exploration's params empty and add a note in purpose') stays valid. Every param also accepts a `$eN.<accessor>` placeholder string, since the executor resolves placeholders before dispatch. Codex accepted a two-type prototype of this shape (probed live 2026-10-24; evidence nullable-anyof-proto.md); acceptance of the complete schema is established by the planned live test."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "codexStrictSchema(DECOMPOSE_SCHEMA) contains no object node without properties and no object whose additionalProperties is not false",
+            "Every exploration type in EXPLORATION_TYPES has exactly one params branch",
+            "A plan that was valid before (a known type with its documented params, or empty params) is still valid"
+          ]
+        },
+        {
+          "name": "decompose",
+          "signature": "decompose(args: DecomposeArgs): Promise<ExplorationPlan>  // signature unchanged",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "DecomposeArgs",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ExplorationPlan>",
+            "meaning": "Unchanged shape. decompose and finalizeDecompose (the plan phase of the multi-turn insrc_analyze_step, src/analyze/context/decomposer.ts:266) share one params step, run before topology validation: each exploration's null-valued params are removed, and its remaining keys are checked against its own type's declared params, so neither entry point accepts another type's keys. Requiredness is not checked here: a missing required param still fails only that exploration at its runner, recorded by the executor as today."
+          },
+          "errors": [
+            {
+              "type": "DecomposerSchemaUnrecoverable (existing classified error path)",
+              "condition": "an exploration's params, after nulls are removed, carry a key its own type does not declare (wrong-type pairing), at either entry point"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The plan handed to the executor carries no null param values, from decompose and from finalizeDecompose alike",
+            "On codex, a decompose call no longer fails with invalid_json_schema",
+            "For Ollama and claude, a plan that omits optional params is unchanged"
+          ]
+        },
+        {
+          "name": "PLANNED_TASK_SCHEMA",
+          "signature": "export const PLANNED_TASK_SCHEMA  // unchanged: params stays { type:'object' } for validation; the schema SENT to the provider is derived per call (see runPlanner)",
+          "parameters": [],
+          "returns": {
+            "type": "JSON Schema",
+            "meaning": "Unchanged. It stays the planner's validation schema (with INV-5 checking each task's params against its template's full inputSchema). It is no longer what runPlanner sends to the provider: that wire schema is derived per call from the effective catalog (see runPlanner)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Validation of a returned plan is unchanged"
+          ]
+        },
+        {
+          "name": "PLAN_TASK_SCHEMA",
+          "signature": "export const PLAN_TASK_SCHEMA  // unchanged; remains the planner's validation schema",
+          "parameters": [],
+          "returns": {
+            "type": "JSON Schema",
+            "meaning": "Unchanged: the planner's validation schema. runPlanner sends a wire schema derived from it per call, in which tasks[].params is an anyOf over the call's effective catalog."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Byte-identical; the codex-facing change is in the per-call wire schema"
+          ]
+        },
+        {
+          "name": "runPlanner",
+          "signature": "runPlanner(args: RunPlannerArgs): Promise<PlanTask>  // signature unchanged",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "RunPlannerArgs",
+              "purpose": "Unchanged: the planner input (intent, context bundle, parent task path, catalog) and options.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<PlanTask>",
+            "meaning": "Unchanged. runPlanner sends a WIRE schema derived from PLAN_TASK_SCHEMA for its EFFECTIVE catalog (the catalog the caller supplied, PlanBuilderInput.catalog, when non-empty, otherwise getTemplatesForTarget(intent.target), as selected today at src/analyze/planner/driver.ts:161). In it, tasks[].params is an anyOf with one branch per effective template. (a) A template WITH an inputSchema gets its wire form: every object the inputSchema closes (additionalProperties:false) keeps its structure, with optional properties nullable and not required; every object it leaves open (no declared properties, or additionalProperties not false) becomes a string slot holding that object's JSON. A slot is used only where the original schema admits nothing but an object at that position, so a string there can only mean encoded JSON and decoding is unambiguous; and a root anyOf-of-required (the adherence one-of-three) is left out of the branch. (b) A template WITHOUT an inputSchema (allowed by AnalyzeTaskTemplate, src/shared/analyze-types.ts:119, and skipped by INV-5), and a template whose inputSchema anywhere uses a reference or identity keyword ($ref, $defs, definitions, $id, $anchor), whose pointers would resolve against the plan root once embedded, or a union or conditional keyword or multi-type value (anyOf, oneOf, allOf, not, if/then/else, type: [..]) anywhere other than the root anyOf-of-required (where a string might be a legitimate value or an encoded object), or whose derived branch fails a trial compile in the wire validators' own dialects (the codex reply check's Ajv 2020 on the codexStrictSchema copy, and validateAgainstSchema's Ajv) — this catches draft-specific forms such as tuple items: [..] that INV-5's draft-07 Ajv accepts, without enumerating them, gets a branch in which the whole params is one JSON-string slot: round-tripped losslessly, with INV-5 still validating it against the template's original root inputSchema. No built-in template uses these keywords. Identity: the wire schema carries no $id (PLAN_TASK_SCHEMA's fixed $id would collide in the singleton Ajv registries of validateAgainstSchema and validateCodexReply on the second compile), and it is built once per distinct effective catalog and reused, keyed by a fingerprint (SHA-256 of the canonical JSON) of the catalog's templates' ids, revisions and inputSchemas, so two catalogs that share template ids but differ in any schema get different wire schemas and slot paths, so each catalog's validator compiles once per process, as the compile cache expects (src/agent/providers/structured-output.ts:79). Messages: the initial output-shape block prints this call's wire schema instead of PLAN_TASK_SCHEMA; the catalog keeps rendering each template's original inputSchema and adds, per template, the list of paths sent as JSON strings; and the system prompt states the encoding explicitly, distinguishing the emitted wire value from the decoded object: in a slot, the emitted value is the JSON text of the object (e.g. an aggregator task, whose whole params is a slot, emits \"params\": \"{}\"); everywhere else params is an object; an optional value may be null, meaning absent. The prompt's HARD 'params is an object literal' rule is amended to name the slot exception. On a correction retry, the rejected plan echoed as the assistant turn and the offending-task snippet are re-encoded to the wire form, so the retry example matches what the model must emit. After the reply, for each task (its template field names the branch), the JSON strings at the recorded slot paths are parsed back into objects and null values on non-nullable keys are removed; then the existing validation (INV-5, against the same effective catalog's full inputSchemas, still skipping templates without one) runs as today."
+          },
+          "errors": [
+            {
+              "type": "existing plan-builder-schema-unrecoverable / invariant errors",
+              "condition": "a task's params, after decoding and null removal, fail its template's inputSchema (unchanged behaviour), or a JSON-encoded open object is not valid JSON"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The planner no longer fails on codex with invalid_json_schema",
+            "A caller-supplied template, including one without an inputSchema or with open/dictionary-like objects (e.g. scopeRef {kind, value}), is expressible in the wire schema, round-trips losslessly, and is validated by INV-5 exactly as today",
+            "A supplied template whose inputSchema uses local references round-trips as a whole-params slot and is validated by INV-5 against its original root schema",
+            "A native string at a union position (e.g. value: anyOf[open object, string] given 'hello' or '{\"x\":1}') is never decoded: such a template is a whole-params slot, so the value round-trips exactly",
+            "A supplied template whose branch would not compile in the wire validators' dialects (e.g. tuple items: [{type:'string'},{type:'integer'}]) falls back to a whole-params slot, and {pair:['x',7]} round-trips and is validated by INV-5 against the original schema as today",
+            "A cached wire schema is reused only for a catalog with the same ids, revisions and inputSchemas",
+            "Repeated and recursive runPlanner calls, with the same or different catalogs, compile their wire schemas without an id collision",
+            "The prompt, the output-shape block and every correction retry describe and show the wire form the model must emit",
+            "Every template rule (including the adherence one-of-three) is still enforced by INV-5"
+          ]
+        },
+        {
+          "name": "codexStrictSchema",
+          "signature": "codexStrictSchema(schema: StructuredSchema): StructuredSchema  // unchanged; consumed",
+          "parameters": [
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StructuredSchema",
+            "meaning": "Unchanged: the strict copy codex is given. This Story does not change it; the general open-object and optional-field handling stays with ISSUE-7d346e0dcbafc70e."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Byte-identical output for every schema other than the two reshaped here"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Exploration params table",
+        "change": "new",
+        "details": "One params schema per exploration type (20 entries keyed by EXPLORATION_TYPES), holding each type's param names, value types and which are required, as documented in src/prompts/analyze/decompose.system.md and read by the runners (about 35 keys in total; class.hierarchy and usage.example take symbolName or entityId; db.connections.list takes none). Each value schema also admits a `$eN...` placeholder string, and each optional param admits null. DECOMPOSE_SCHEMA's params anyOf is built from it, and decompose's post-reply pairing check reads it. It lives beside the explorations it describes (src/analyze/explore/).",
+        "schemaDiff": "explorations[].params: {type:'object', additionalProperties:true} -> {anyOf:[{type:'object', additionalProperties:false, required:[<required keys>], properties:{<key>: <type|placeholder|null>}} x 20]}",
+        "callSites": [
+          "src/analyze/context/decomposer.ts:125",
+          "src/analyze/context/decomposer.ts:142",
+          "src/analyze/explore/executor.ts",
+          "src/analyze/explore/types.ts:97"
+        ]
+      },
+      {
+        "entity": "Planner wire schema (per call)",
+        "change": "new",
+        "details": "Derived from PLAN_TASK_SCHEMA and an effective catalog (the supplied catalog, else the target's registered templates), without $id, built once per distinct catalog and reused, keyed by a SHA-256 fingerprint of the canonical JSON of the templates' ids, revisions and inputSchemas. tasks[].params becomes an anyOf with one branch per template: closed objects stay structural (optional properties nullable), open objects become JSON-string slots at recorded paths, and the root anyOf-of-required is dropped from the branch. Slots are used only at positions the original schema restricts to an object. A template with no inputSchema, or whose inputSchema uses $ref/$defs/definitions/$id/$anchor or any union/conditional/multi-type keyword other than the root anyOf-of-required, or whose derived branch fails a trial compile under the wire validators' dialects (Ajv 2020 on the codex strict copy, and validateAgainstSchema's Ajv), is a single whole-params JSON-string slot. The trial compile is the general guard; the keyword rules make the common cases explicit. Of the 27 built-in templates none falls back to whole-params; 9 have slots (the 5 aggregators' empty root input, the 3 adherence constraints[] items, docs.subrun.deep-dive upstreamContext). PLAN_TASK_SCHEMA, PLANNED_TASK_SCHEMA and each template's full inputSchema are unchanged and remain the validation source (INV-5).",
+        "schemaDiff": "sent schema: tasks[].params {type:'object'} -> {anyOf:[<wire form of template.inputSchema: closed objects structural, open objects as JSON strings> for each template in the effective catalog]}",
+        "callSites": [
+          "src/analyze/planner/driver.ts:161",
+          "src/analyze/planner/driver.ts:352",
+          "src/analyze/planner/schema.ts",
+          "src/analyze/planner/validate.ts:257",
+          "src/agent/providers/structured-output.ts:79",
+          "src/shared/analyze-types.ts:119"
+        ]
+      },
+      {
+        "entity": "Plan params after the reply",
+        "change": "invariant-change",
+        "details": "Decomposer (decompose and finalizeDecompose, one shared step): a null param value is removed; nothing else is rewritten. Planner (runPlanner, per task): JSON strings at the recorded open-object paths of the task's template are parsed back into objects, then null values on keys whose own schema does not permit null are removed, including inside nested declared objects.",
+        "callSites": [
+          "src/analyze/context/decomposer.ts:195",
+          "src/analyze/context/decomposer.ts:266",
+          "src/analyze/planner/driver.ts"
+        ]
+      },
+      {
+        "entity": "Planner messages",
+        "change": "field-modify",
+        "details": "The planner system prompt's HARD params rule (src/prompts/analyze/planner.system.md:45, 'params is an object literal ... never null') is amended to distinguish wire values from decoded objects: params is an object except where it, or a value inside it, is a JSON-string slot, whose emitted value is the JSON text of the object (example: an aggregator task emits \"params\": \"{}\"); an optional value may be null, meaning absent. buildInitialMessages prints the call's wire schema as the OUTPUT SHAPE (src/analyze/planner/driver.ts:352). renderCatalog keeps each template's original inputSchema and lists its slot paths, noting a whole-params slot. appendCorrectionTurn and the offending-task snippet echo the rejected plan in wire form.",
+        "callSites": [
+          "src/prompts/analyze/planner.system.md:45",
+          "src/analyze/planner/driver.ts:322",
+          "src/analyze/planner/driver.ts:364",
+          "src/analyze/planner/render-catalog.ts:30"
+        ]
+      },
+      {
+        "entity": "Decomposer prompt",
+        "change": "field-modify",
+        "details": "src/prompts/analyze/decompose.system.md gains one line: an optional param may be given as null, meaning absent (the codex strict copy requires every listed key). The output shape the decomposer is held to is DECOMPOSE_SCHEMA itself, which has no $id.",
+        "callSites": [
+          "src/prompts/analyze/decompose.system.md"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A model gives an exploration keys that its type does not declare (e.g. another type's params; the anyOf is not bound to the sibling type field)",
+          "detection": "After the reply and the null removal, the shared params step (in decompose and finalizeDecompose) compares each exploration's remaining keys with its own type's declared params and finds an undeclared key.",
+          "response": "decompose throws DecomposerSchemaUnrecoverable naming the exploration id, its type and the failing params (classifyError, src/analyze/context/decomposer.ts:390). In the one-shot analysis, the driver keeps today's behaviour for that error: it logs 'decomposer failed; using freeform.probe fallback' and runs the fallback plan instead (src/analyze/context/driver.ts:1460). The mismatched plan itself is never executed. In the multi-turn plan phase, finalizeDecompose throws the same error back to the controller, as it does today for a schema failure.",
+          "userImpact": "Nothing from the invalid plan runs. A one-shot analysis degrades to the freeform.probe fallback, as for any decomposer schema failure today, and the controller path reports the precise error.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An exploration arrives with a required param missing, including the documented empty-params case",
+          "detection": "Not detected before execution: the schema requires no param. The runner throws its missing-param error, and the executor records a failed output for that exploration (src/analyze/explore/executor.ts) and continues with the others.",
+          "response": "Unchanged: per-exploration failure.",
+          "userImpact": "None new: identical to today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A planner task's JSON-encoded open object is not valid JSON",
+          "detection": "runPlanner's decode step fails to parse the string at a recorded open-object path of the task's template.",
+          "response": "Reported through the existing plan-builder schema/invariant failure for that task, with the path and the parse error.",
+          "userImpact": "The planner's existing failure handling applies; no partial object reaches INV-5.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A planner task's params, after nulls are removed, break its template's full inputSchema (e.g. an adherence check with none of constraintTopic, constraints or constraintIds)",
+          "detection": "The existing invariant validation INV-5 (src/analyze/planner/validate.ts:247) validates params against the template's own inputSchema, which still holds the one-of-three rule the closed branch leaves out.",
+          "response": "Unchanged: the planner's existing invariant failure and retry handling.",
+          "userImpact": "None new: the same rule is enforced at the same place as today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A new exploration type or planner template is added without a params entry",
+          "detection": "A unit test asserts that every EXPLORATION_TYPES entry has exactly one params branch, and that the planner branch set matches the registered template catalog; the strict-copy scan test asserts that no open object remains.",
+          "response": "The build fails at test time, before a codex call can be refused.",
+          "userImpact": "None at runtime.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Codex still refuses a reshaped schema (an unprobed keyword combination)",
+          "detection": "The live test (INSRC_LIVE_TESTS=1) sends both reshaped schemas to codex and fails on invalid_json_schema; in production the decomposer's existing error path reports the refusal.",
+          "response": "The analysis fails as it does today; the test pins the regression.",
+          "userImpact": "Same as today's failure, but caught before release.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two wire schemas for different catalogs, or the same one built twice, are compiled in one process",
+          "detection": "Prevented by construction: a wire schema has no $id, and a catalog's schema object is reused, so neither singleton Ajv sees a duplicate id; a test compiles several, through validateAgainstSchema and validateCodexReply.",
+          "response": "None needed at runtime.",
+          "userImpact": "Repeated and recursive planner calls do not fail local reply validation.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An exploration whose param is a `$eN.<accessor>` placeholder string where the type expects an array (e.g. names: \"$e2.profile.exports[0..2]\")",
+          "expected": "Valid: every param's value schema admits a placeholder string, and the executor resolves it before dispatch as today."
+        },
+        {
+          "input": "db.connections.list with params {}",
+          "expected": "Valid: its branch is a closed object with no properties, which codex accepts as an object with an empty properties map."
+        },
+        {
+          "input": "class.hierarchy or usage.example given entityId instead of symbolName",
+          "expected": "Valid: both keys are optional in the branch (each nullable), and the runner keeps its own either-or check."
+        },
+        {
+          "input": "A codex reply with every optional param null",
+          "expected": "After null removal the params hold only the required keys, which is identical to a claude or Ollama plan that omitted them."
+        },
+        {
+          "input": "An optional param whose own schema permits null",
+          "expected": "None exist today; the removal only drops nulls on keys whose own schema does not permit null, so such a null would be kept."
+        },
+        {
+          "input": "The multi-turn insrc_analyze_step plan phase, where the controller emits the plan",
+          "expected": "Validated against the same DECOMPOSE_SCHEMA (src/daemon/steps/analyze-step/phases/plan.ts). A controller plan that omits optional params is valid, as before."
+        },
+        {
+          "input": "A planner template whose inputSchema has additionalProperties:true objects (aggregators, adherence constraints items, docs.subrun.deep-dive upstreamContext)",
+          "expected": "Each open object is sent as a JSON-string slot and parsed back after the reply, so every key it carries reaches INV-5 and the runtime, as today. Closed objects keep their structure."
+        },
+        {
+          "input": "runPlanner given a non-empty supplied catalog containing a template that is not registered (e.g. one whose input requires customValue)",
+          "expected": "Its branch is in the wire schema, so codex can express {customValue: ...}; INV-5 validates it against that template's full inputSchema, as today."
+        },
+        {
+          "input": "A supplied template whose inputSchema has scopeRef: {type:'object'} (a dictionary read as kind/value by readScopeRef)",
+          "expected": "scopeRef is sent as a JSON string, codex emits '{\"kind\":\"repo\",\"value\":\"/r\"}', and runPlanner decodes it back to {kind:'repo', value:'/r'} before INV-5; an empty-object collapse cannot happen."
+        },
+        {
+          "input": "An exploration with empty params, as the decomposer prompt documents when a param cannot be expressed",
+          "expected": "Valid against DECOMPOSE_SCHEMA (no param is required). The runner fails that exploration as today; the other explorations run."
+        },
+        {
+          "input": "A supplied template with no inputSchema",
+          "expected": "Its branch is one whole-params JSON-string slot; codex emits the params as JSON text, runPlanner parses it back to the object, and INV-5 skips the template as today."
+        },
+        {
+          "input": "A correction retry after INV-5 rejects a task whose template has JSON-string slots",
+          "expected": "The echoed assistant plan and the offending-task snippet show those values re-encoded as JSON strings, matching the wire schema the retry is held to."
+        },
+        {
+          "input": "A supplied template whose inputSchema uses customValue: {$ref:'#/definitions/Value'} with definitions.Value {type:'string'}",
+          "expected": "Its branch is a whole-params JSON-string slot (no reference is embedded, so codexStrictSchema finds no dangling ref); the params is decoded and INV-5 validates it against the template's own root schema, where the reference resolves as today."
+        },
+        {
+          "input": "Two supplied catalogs that both contain custom.template, one with customValue: string and the other with customValue: integer",
+          "expected": "Their fingerprints differ, so each call gets its own wire schema and slot paths; {customValue: 7} is valid only in the second, matching INV-5 for each."
+        },
+        {
+          "input": "A supplied template whose value property is anyOf [{type:'object', additionalProperties:true}, {type:'string'}], given value 'hello' or '{\"x\":1}' (a native string)",
+          "expected": "The union makes the template a whole-params slot, so the model emits the whole params as JSON text and the native string comes back exactly as given; nothing is parsed at the union position."
+        },
+        {
+          "input": "A built-in aggregator task (inputSchema properties:{} with additionalProperties:true)",
+          "expected": "Its whole params is a slot: the model emits \"params\": \"{}\" (or the JSON of any keys it sets), which decodes to the object INV-5 and the runtime see today; the prompt and catalog say so."
+        },
+        {
+          "input": "A supplied closed template with pair: {type:'array', items:[{type:'string'},{type:'integer'}]} (a draft-07 tuple)",
+          "expected": "Its branch fails the Ajv 2020 trial compile, so the template becomes a whole-params slot; {pair:['x',7]} round-trips as JSON text and INV-5 accepts it against the original draft-07 schema, as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Runners keep receiving params as an untyped record with today's keys and values; placeholder substitution in the executor is unchanged.",
+          "source": "c5"
+        },
+        {
+          "text": "codexStrictSchema and its output for every other schema are unchanged; the general strict-copy normalisation stays with ISSUE-7d346e0dcbafc70e.",
+          "source": "c2"
+        },
+        {
+          "text": "decompose keeps its single structured call and its classified error path; the one-shot driver's freeform.probe fallback on DecomposerSchemaUnrecoverable is unchanged.",
+          "source": "c3"
+        },
+        {
+          "text": "Planner tasks are still validated against each template's full inputSchema (INV-5), including the adherence one-of-three rule.",
+          "source": "c10"
+        },
+        {
+          "text": "Every provider receives the same schema; a plan valid under today's documented params stays valid.",
+          "source": "c1"
+        },
+        {
+          "text": "runPlanner's catalog selection (supplied catalog, else the target's registered templates) is unchanged, and both the wire schema and INV-5 use that same effective catalog.",
+          "source": "c15"
+        },
+        {
+          "text": "INV-5 keeps skipping templates without an inputSchema, and each compiled schema object is reused (the compile cache is keyed by object).",
+          "source": "c21"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via tsx (npx tsx --test), assert/strict; fake codex binaries as in src/agent/providers/__tests__/cli-codex-strict-schema.test.ts; live codex suites gated on INSRC_LIVE_TESTS=1",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Strict-form regression: the codex strict copy of DECOMPOSE_SCHEMA, and of the planner wire schema for each built-in target's catalog, contains no object without properties and no object whose additionalProperties is not false (the two rules codex enforces).",
+          "subjects": [
+            "DECOMPOSE_SCHEMA",
+            "Planner wire schema (per call)",
+            "codexStrictSchema"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Coverage: every EXPLORATION_TYPES entry (derived, not a hard-coded count) has exactly one params branch, and the planner wire schema has exactly one branch per template of its effective catalog.",
+          "subjects": [
+            "Exploration params table",
+            "Planner wire schema (per call)"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Same plan as today: each documented params example in src/prompts/analyze/decompose.system.md, a params value that is a `$eN` placeholder string where an array is expected, and empty params for any type validate against DECOMPOSE_SCHEMA; a plan omitting optional params validates for non-codex providers.",
+          "subjects": [
+            "DECOMPOSE_SCHEMA"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Null removal and pairing at both entry points: decompose and finalizeDecompose drop null params, so the executor sees today's params; a plan whose exploration carries a key its type does not declare fails with DecomposerSchemaUnrecoverable at both, and in the one-shot driver that failure takes the freeform.probe fallback without executing the plan; a plan with empty params for a type stays valid and fails only that exploration at its runner.",
+          "subjects": [
+            "decompose",
+            "finalizeDecompose",
+            "one-shot analysis driver fallback"
+          ],
+          "fixturesNeeded": [
+            "fake provider returning a plan with null optionals",
+            "fake provider returning a mismatched type/params pair",
+            "a controller plan with a mismatched pair for finalizeDecompose"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Planner wire schema and decoding: runPlanner sends a schema whose params anyOf covers exactly its effective catalog (incl. a supplied unregistered template); open objects (e.g. a supplied scopeRef {type:'object'}) go out as JSON strings and come back as the same objects, so {scopeRef:{kind:'repo',value:'/r'}} reaches INV-5 intact; null params (incl. nested) are dropped before INV-5; the adherence one-of-three rule still fails a task with none of the three.",
+          "subjects": [
+            "runPlanner",
+            "PLANNED_TASK_SCHEMA.params"
+          ],
+          "fixturesNeeded": [
+            "fake provider capturing the sent schema",
+            "a supplied catalog with an unregistered template using scopeRef {type:'object'}",
+            "fake provider returning an adherence task with all three constraint sources null"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Live codex accepts the strict copy of the complete DECOMPOSE_SCHEMA (all 20 types) and of the complete planner wire schema for each built-in target's catalog, and returns a plan that passes the reply check. This is what establishes complete-schema acceptance; the committed two-type prototype probe is supporting evidence only.",
+          "subjects": [
+            "DECOMPOSE_SCHEMA",
+            "Planner wire schema (per call)"
+          ],
+          "fixturesNeeded": [
+            "INSRC_LIVE_TESTS=1",
+            "installed codex CLI"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Planner identity, prompt and retry: repeated and recursive runPlanner calls with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision; the output-shape block is the call's wire schema; the catalog lists each template's JSON-string slot paths; a correction retry echoes the rejected plan in wire form; a supplied template without an inputSchema round-trips its params. A supplied template with local $ref/definitions round-trips as a whole-params slot and is validated by INV-5 against its root schema; two supplied catalogs with the same template id but different inputSchemas get different wire schemas (no stale reuse). A supplied template with a union of open object and string round-trips native strings ('hello', '{\"x\":1}') unchanged via the whole-params fallback; the 27 built-in templates produce no whole-params fallback and exactly their 9 slot sets; the prompt names the slot exception with the aggregator example. A supplied template with a draft-07 tuple falls back to a whole-params slot via the trial compile; both the wire reply check and INV-5 accept {pair:['x',7]}.",
+          "subjects": [
+            "runPlanner",
+            "Planner wire schema (per call)",
+            "Planner messages"
+          ],
+          "fixturesNeeded": [
+            "two catalogs (built-in and supplied) for repeated calls",
+            "a supplied template without an inputSchema",
+            "a fake provider that fails INV-5 once, to drive a correction retry",
+            "a supplied template whose inputSchema uses #/definitions references",
+            "two supplied catalogs sharing a template id with different inputSchemas",
+            "a supplied template with value anyOf [open object, string]",
+            "a supplied template with tuple items"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "the codex strict copy of DECOMPOSE_SCHEMA and of the planner wire schema contains no object without properties and no object whose additionalProperties is not false",
+            "live: codex accepts the strict copy of DECOMPOSE_SCHEMA and of the planner wire schema and returns a plan that passes the reply check"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "every documented decomposer params example, a placeholder string where an array is expected, and empty params validate against DECOMPOSE_SCHEMA",
+            "decompose and finalizeDecompose remove null params, so the executor receives today's params, and empty params still fail only that exploration at its runner",
+            "runPlanner's wire schema covers its effective catalog, incl. a supplied template with an open scopeRef, which round-trips intact; null params are removed before INV-5; the adherence one-of-three rule still fails a task with none of the three",
+            "repeated and recursive planner calls with the same and different catalogs compile without an id collision; a supplied template without an inputSchema round-trips; the output shape and correction retries show the wire form",
+            "a supplied template with local references round-trips and is validated by INV-5 against its root schema; catalogs sharing a template id but differing in schema get different wire schemas",
+            "a native string at a union position round-trips unchanged; built-in templates keep their 9 slot sets with no whole-params fallback",
+            "a supplied template with a draft-07 tuple falls back to a whole-params slot and passes both the wire reply check and INV-5"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "a plan whose exploration carries a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose, and the one-shot driver then runs the freeform.probe fallback instead of the plan",
+            "every exploration type has exactly one params branch, and the planner wire schema has one branch per template of its effective catalog"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "DECOMPOSE_SCHEMA declares explorations[].params as an open object (src/analyze/context/decomposer.ts:142), and PLANNED_TASK_SCHEMA declares params as {type:'object'} (src/analyze/planner/schema.ts). The codex strict copy passes both through (src/agent/providers/structured-output.ts:381), and live codex refuses both with invalid_json_schema. 113 of 113 decomposer calls failed in the 2026-10-16..24 survey. Runners read params untyped (src/analyze/explore/types.ts:97); the planner checks params against each template's inputSchema afterwards (INV-5).",
+      "stateAfter": "DECOMPOSE_SCHEMA declares params per exploration type as closed objects with nullable optionals, and runPlanner sends a per-call schema whose params cover its effective catalog the same way; live codex accepts both. Both plan entry points of the decomposer, and runPlanner, remove nulls on non-nullable keys before validation, so runners, INV-5 and the exploration cache see today's params. Other providers get the same schemas, and their plans are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the exploration params table (one entry per EXPLORATION_TYPES type, 20 today) beside the explorations, from the documented params and the runners' reads; no param is marked required in the schema.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reshape DECOMPOSE_SCHEMA's params into the per-type anyOf; give decompose and finalizeDecompose one shared params step (remove null params, reject keys the exploration's type does not declare) before topology validation.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In runPlanner, build the wire schema once per effective catalog (no $id): tasks[].params as an anyOf over the catalog's templates in wire form (closed objects structural with nullable optionals; open objects, and the whole params of a template without inputSchema, as JSON-string slots at recorded paths). Print it as the output shape, list slot paths in the catalog, amend the system prompt's params rule, and re-encode the echoed plan on correction retries. After the reply, decode the slots and remove nulls before INV-5. PLAN_TASK_SCHEMA and PLANNED_TASK_SCHEMA stay unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the strict-form regression tests and the live codex test; record the remaining refused schemas (workflow step and tracker schemas, reachable only through workflow.run) in the evidence and on ISSUE-7d346e0dcbafc70e.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Rebuild and restart the installed daemon, then confirm a one-shot insrc_analyze on the codex tier returns a plan.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API change: decompose, finalizeDecompose and runPlanner keep their signatures and outputs; PLAN_TASK_SCHEMA and PLANNED_TASK_SCHEMA are unchanged. Plans valid under today's documented params stay valid, and the multi-turn insrc_analyze_step controller plans still validate (they now also get the pairing check). A supplied planner catalog keeps working, including unregistered templates. Exploration cache keys are unchanged, because cached plans carry today's params, without nulls. Plans may no longer carry undeclared extra param keys, which no runtime reads.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Per-type params schemas, nullable optionals, nulls dropped by the owner",
+        "oneLineSummary": "Declare each exploration type's (and each planner template's) params as a closed object with its real keys, optional keys nullable, under an anyOf keyed by type; the decomposer/planner drop null params after the reply."
+      },
+      {
+        "id": "a2",
+        "name": "One flat closed params object (union of all keys, all nullable)",
+        "oneLineSummary": "Replace the open params object with one closed object listing every param key any exploration type uses, each nullable; drop nulls after the reply.",
+        "reasonRejected": "Accepted by codex but weaker validation (partial on fi3: per-type requiredness is not in the schema, and cross-type key meanings are flattened) and a large mostly-null output per exploration."
+      },
+      {
+        "id": "a3",
+        "name": "Params as a JSON-encoded string",
+        "oneLineSummary": "Declare params as a string holding JSON; parse it and validate it per type after the reply.",
+        "reasonRejected": "Violates fi2 (changes the plan's wire shape for every provider and for the insrc_analyze_step controller path) and fi3 (the schema checks nothing inside params)."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Scope (user decision 2026-10-24, option 2): this Story fixes the analyzer schemas only. The other refused schemas are recorded, not fixed: frameworkWriteSchema, contractDetailSchema, the ER/UX definition schemas, trackerPushExecuteSchema, trackerSyncExecuteSchema and STUB_ARTIFACT_JSON_SCHEMA, which reach codex only through the daemon-driven workflow.run (src/daemon/workflow-rpc.ts:211), plus AGGREGATOR_OUTPUT_SCHEMA, a template runtime schema that is never sent to a model. They belong with ISSUE-7d346e0dcbafc70e's strict-copy work."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/context/decomposer.ts:142",
+      "quotedText": "params:  { type: 'object', additionalProperties: true },"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:381",
+      "quotedText": "const copy = processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/analyze/context/decomposer.ts:195",
+      "quotedText": "if (errClass instanceof DecomposerLlmUnavailableError) throw errClass;"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts:86",
+      "quotedText": "{ id: 'analyze.decompose',             criticality: 'peripheral', defaultTier: 'mid'  },"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/analyze/explore/types.ts:97",
+      "quotedText": "readonly params:   Readonly<Record<string, unknown>>;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts:158"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md:18",
+      "quotedText": "ERROR analyze: exploration decomposer: 113x"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-7d346e0dcbafc70e"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610248d39ef09/evidence/open-object-probe.md"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts:247",
+      "quotedText": "// INV-5: params validate against template inputSchema"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/analyze/planner/schema.ts:55",
+      "quotedText": "params:   { type: 'object' },"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "src/prompts/analyze/decompose.system.md:50"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/analyze/planner/driver.ts:144",
+      "quotedText": "export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-8d39ef09031e75d3"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/analyze/planner/driver.ts:161",
+      "quotedText": "const catalog = catalogArg.length > 0"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/analyze/context/decomposer.ts:266",
+      "quotedText": "export function finalizeDecompose(raw: unknown): ExplorationPlan {"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/analyze/context/driver.ts:1460",
+      "quotedText": "plan = steps.fallbackFreeformPlan(intent, args.shaperId);"
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610248d39ef09/evidence/nullable-anyof-proto.md",
+      "quotedText": "prototype support only (two types); complete-schema acceptance is established by the live test"
+    },
+    {
+      "id": "c19",
+      "kind": "doc",
+      "ref": "src/prompts/analyze/decompose.system.md:166",
+      "quotedText": "leave the exploration's `params` empty and add a note in `purpose`"
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/daemon/analyze-rpc.ts:503",
+      "quotedText": "const catalog = getTemplatesForTarget(intent.target);"
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/analyze/planner/validate.ts:257",
+      "quotedText": "if (tmpl.inputSchema === undefined) continue; // no schema declared -> nothing to validate"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/prompts/analyze/planner.system.md:45",
+      "quotedText": "`params` is an object literal."
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:79",
+      "quotedText": "ajv-compiled validators are cached on the singleton; the same schema"
+    }
+  ]
+}

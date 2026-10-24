@@ -36,6 +36,12 @@ import { gitLsTreeTool } from './ls-tree.js';
 import { gitLsFilesTool } from './ls-files.js';
 import { gitRevListTool } from './rev-list.js';
 import { gitRevParseTool } from './rev-parse.js';
+import { gitFetchRefsTool } from './fetch-refs.js';
+import { gitPathHistoryTool } from './path-history.js';
+import { gitHashObjectTool } from './hash-object.js';
+import { gitMergeBaseTool } from './merge-base.js';
+import { gitShowRefTool } from './show-ref.js';
+import { gitSymbolicRefTool } from './symbolic-ref.js';
 
 export function registerGitTools(): void {
   register(withFailureNet(gitStatusTool));
@@ -66,4 +72,10 @@ export function registerGitTools(): void {
   register(withFailureNet(gitLsFilesTool));
   register(withFailureNet(gitRevListTool));
   register(withFailureNet(gitRevParseTool));
+  register(withFailureNet(gitFetchRefsTool));
+  register(withFailureNet(gitPathHistoryTool));
+  register(withFailureNet(gitHashObjectTool));
+  register(withFailureNet(gitMergeBaseTool));
+  register(withFailureNet(gitShowRefTool));
+  register(withFailureNet(gitSymbolicRefTool));
 }

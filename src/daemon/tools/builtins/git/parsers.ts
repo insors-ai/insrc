@@ -230,3 +230,37 @@ export function parseLogRecords(raw: string): GitLogCommit[] {
     };
   });
 }
+
+// ---------------------------------------------------------------------------
+// path history, merge-base --all, fetch --porcelain
+// ---------------------------------------------------------------------------
+
+export interface PathHistoryCommit { sha: string; committerTime: string; subject?: string }
+
+/** The --pretty format git_path_history runs: sha, committer time (ISO 8601) and subject, unit-separated; `git log -z` ends each commit with a NUL. */
+export const PATH_HISTORY_FORMAT = `%H${FS}%cI${FS}%s`;
+
+export function parsePathHistory(raw: string): PathHistoryCommit[] {
+  if (raw === '') { return []; }
+  return raw.replace(/\0$/, '').split('\0').map(rec => {
+    const [sha = '', committerTime = '', ...subject] = rec.replace(/^\n/, '').split(FS);
+    if (!SHA.test(sha) || !ISO_DATE.test(committerTime)) { throw new ParseError(`unknown history record: ${JSON.stringify(rec.slice(0, 120))}`); }
+    const text = subject.join(FS);
+    return text === '' ? { sha, committerTime } : { sha, committerTime, subject: text };
+  });
+}
+
+export interface FetchedRef { ref: string; old: string; new: string }
+
+/** `git fetch --porcelain`: "<flag> <old> <new> <ref>" per updated ref; flag '!' is a rejected update. */
+export function parseFetchPorcelain(raw: string): { updated: FetchedRef[]; rejected: string[] } {
+  const updated: FetchedRef[] = [];
+  const rejected: string[] = [];
+  if (raw === '') { return { updated, rejected }; }
+  for (const line of raw.replace(/\n$/, '').split('\n')) {
+    const m = /^(.) ([0-9a-f]{40}(?:[0-9a-f]{24})?) ([0-9a-f]{40}(?:[0-9a-f]{24})?) (\S.*)$/.exec(line);
+    if (!m) { throw new ParseError(`unknown fetch record: ${JSON.stringify(line.slice(0, 120))}`); }
+    if (m[1] === '!') { rejected.push(m[4]!); } else { updated.push({ ref: m[4]!, old: m[2]!, new: m[3]! }); }
+  }
+  return { updated, rejected };
+}

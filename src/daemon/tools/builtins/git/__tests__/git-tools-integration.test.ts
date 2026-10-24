@@ -15,7 +15,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { resolveApprovalClass } from '../../../approval-policy.js';
+import { listTools } from '../../../registry.js';
 import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
 import { gitCatFileTool } from '../cat-file.js';
 import type { ApprovalGate, ApprovalRequest } from '../../../types.js';
@@ -289,6 +291,17 @@ test('every new read tool returns data that fits its outputSchema', async () => 
 			['git_cat_file', { rev: 'HEAD:t.txt' }, data => assert.equal(data.objects[0].content, 'h\u00e9llo\n')],
 			['git_cat_file', { rev: 'HEAD:t.txt', exists: true }, data => assert.deepEqual(data, { exists: true })],
 			['git_cat_file', { rev: 'HEAD:t.txt', type: true }, data => assert.deepEqual(data, { type: 'blob', size: 7 })],
+			['git_show_ref', {}, data => assert.deepEqual(data.refs.map((r: { name: string }) => r.name).sort(), ['refs/heads/main', 'refs/heads/side', 'refs/tags/v1'])],
+			['git_show_ref', { ref: 'refs/heads/main', verify: true }, data => assert.equal(data.refs.length, 1)],
+			['git_show_ref', { ref: 'refs/heads/main', exists: true }, data => assert.equal(data.refs[0].name, 'refs/heads/main')],
+			['git_show_ref', { ref: 'refs/heads/gone', exists: true }, data => assert.deepEqual(data.refs, [])],
+			['git_show_ref', { ref: 'nomatch' }, data => assert.deepEqual(data.refs, [])],
+			['git_merge_base', { a: 'HEAD', b: 'side' }, data => assert.equal(data.bases.length, 1)],
+			['git_merge_base', { a: 'side', b: 'HEAD', isAncestor: true }, data => assert.deepEqual(data, { isAncestor: true })],
+			['git_hash_object', { path: 'bin.bin' }, data => assert.match(data.sha, /^[0-9a-f]{40}$/)],
+			['git_symbolic_ref', { ref: 'HEAD', op: 'get' }, data => assert.deepEqual(data, { target: 'refs/heads/main' })],
+			['git_path_history', { path: 't.txt' }, data => assert.equal(data.commits.length, 1)],
+			['git_path_history', {}, data => assert.match(data.commits[0].committerTime, /^\d{4}-\d\d-\d\dT/)],
 			['git_for_each_ref', {}, data => assert.deepEqual(data.refs.map((r: Record<string, string>) => r['refname']).sort(), ['refs/heads/main', 'refs/heads/side', 'refs/tags/v1'])],
 			['git_for_each_ref', { pattern: ['refs/tags'], fields: ['refname:short', 'objecttype'] }, data => assert.deepEqual(data.refs, [{ 'refname:short': 'v1', objecttype: 'commit' }])],
 		];
@@ -454,5 +467,176 @@ test('git_cat_file reports git diagnostics exceed byte limit when stderr passes 
 	} finally {
 		process.env['PATH'] = savedPath;
 		rmSync(repo, { recursive: true, force: true }); rmSync(repo + '-fake', { recursive: true, force: true });
+	}
+});
+
+
+test('git_merge_base answers all, unrelated and isAncestor cases with data that fits its schema', async () => {
+	registerForTests();
+	const repo = newRepo();
+	try {
+		const commit = (name: string): string => { writeFileSync(join(repo, name), name); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', name); return git(repo, 'rev-parse', 'HEAD').trim(); };
+		const x = commit('x');
+		git(repo, 'branch', 'A'); git(repo, 'branch', 'B');
+		git(repo, 'checkout', '-q', 'A'); const a1 = commit('a1');
+		git(repo, 'checkout', '-q', 'B'); const b1 = commit('b1');
+		// a criss-cross: A merges B's tip and B merges A's tip, so A2 and B2 have two best common ancestors
+		git(repo, 'checkout', '-q', 'A'); git(repo, 'merge', '-q', '--no-ff', '-m', 'A2', b1);
+		git(repo, 'checkout', '-q', 'B'); git(repo, 'merge', '-q', '--no-ff', '-m', 'B2', a1);
+		const d = toolDeps(repo);
+		const run = async (input: Record<string, unknown>) => executeTool('git_merge_base', { cwd: repo, ...input }, d);
+
+		const one = await run({ a: 'main', b: 'A' });
+		assert.deepEqual((one.data as { bases: string[] }).bases, [x]);
+		const all = await run({ a: 'A', b: 'B', all: true });
+		assert.deepEqual([...(all.data as { bases: string[] }).bases].sort(), [a1, b1].sort(), 'every best common ancestor');
+		assert.equal(((await run({ a: 'A', b: 'B' })).data as { bases: string[] }).bases.length, 1, 'without all, one');
+
+		// unrelated histories: no bases, and the call succeeds
+		git(repo, 'checkout', '-q', '--orphan', 'orphan'); git(repo, 'rm', '-rfq', '.');
+		writeFileSync(join(repo, 'o'), 'o'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'orphan');
+		const none = await run({ a: 'main', b: 'orphan' });
+		assert.equal(none.success, true, none.output);
+		assert.deepEqual(none.data, { bases: [] });
+		assert.deepEqual((await run({ a: 'main', b: 'orphan', all: true })).data, { bases: [] });
+
+		// isAncestor: exit 0 is true, exit 1 is false, anything else is a failure
+		assert.deepEqual((await run({ a: x, b: 'A', isAncestor: true })).data, { isAncestor: true });
+		assert.deepEqual((await run({ a: 'A', b: x, isAncestor: true })).data, { isAncestor: false });
+		assert.deepEqual((await run({ a: 'main', b: 'orphan', isAncestor: true })).data, { isAncestor: false });
+		const bad = await run({ a: 'nosuchrev', b: 'A', isAncestor: true });
+		assert.equal(bad.success, false);
+		assert.equal(bad.failure?.kind, 'rejected');
+		const badBase = await run({ a: 'nosuchrev', b: 'A' });
+		assert.equal(badBase.success, false);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('git_symbolic_ref sets, reads and deletes refs/remotes/origin/HEAD with the classes none, common and destructive', async () => {
+	registerForTests();
+	const repo = newRepo();
+	try {
+		writeFileSync(join(repo, 'a'), '1'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'c1');
+		git(repo, 'update-ref', 'refs/remotes/origin/main', 'HEAD');
+		git(repo, 'branch', 'other');
+		const d = toolDeps(repo);
+		const requests: string[] = [];
+		_setApprovalGateForTests(() => ({ async ask(r) { requests.push(`${r.toolId}:${r.approvalClass}`); return { requestId: r.requestId, decision: 'approve' as const }; } }));
+		const auto = { ...d, approvalMode: 'auto' as const };
+		const symref = 'refs/remotes/origin/HEAD';
+		const run = (input: Record<string, unknown>) => executeTool('git_symbolic_ref', { cwd: repo, ...input }, auto);
+
+		// get is a read: no question; set is common: none in auto mode; delete is destructive: asks in every mode
+		assert.deepEqual((await run({ ref: 'HEAD', op: 'get' })).data, { target: 'refs/heads/main' });
+		assert.deepEqual(requests, []);
+		const set = await run({ ref: symref, op: 'set', target: 'refs/remotes/origin/main' });
+		assert.equal(set.success, true, set.output);
+		assert.deepEqual(set.data, { target: 'refs/remotes/origin/main' });
+		assert.deepEqual(requests, [], 'a set asks only under the common setting');
+		assert.equal(git(repo, 'symbolic-ref', symref).trim(), 'refs/remotes/origin/main');
+		assert.deepEqual((await run({ ref: symref, op: 'get' })).data, { target: 'refs/remotes/origin/main' });
+
+		// a ref that is not symbolic: a failure, or null with quiet
+		const plain = await run({ ref: 'refs/heads/main', op: 'get' });
+		assert.equal(plain.success, false);
+		assert.deepEqual((await run({ ref: 'refs/heads/main', op: 'get', quiet: true })).data, { target: null });
+
+		// set moves HEAD itself
+		assert.equal((await run({ ref: 'HEAD', op: 'set', target: 'refs/heads/other' })).success, true);
+		assert.equal(git(repo, 'symbolic-ref', '--short', 'HEAD').trim(), 'other');
+		assert.equal((await executeTool('git_symbolic_ref', { cwd: repo, ref: 'HEAD', op: 'set', target: 'refs/heads/main' }, { ...d, approvalMode: 'manual' as const })).success, true);
+		assert.deepEqual(requests, ['git_symbolic_ref:common']);
+
+		// delete asks, and is not run when declined
+		_setApprovalGateForTests(() => ({ async ask(r) { requests.push(`${r.toolId}:${r.approvalClass}`); return 'declined' as const; } }));
+		const declined = await run({ ref: symref, op: 'delete' });
+		assert.equal(declined.failure?.kind, 'denied');
+		assert.equal(git(repo, 'symbolic-ref', symref).trim(), 'refs/remotes/origin/main', 'still there');
+		assert.equal(requests.at(-1), 'git_symbolic_ref:destructive');
+		_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' as const }; } }));
+		const deleted = await run({ ref: symref, op: 'delete' });
+		assert.equal(deleted.success, true, deleted.output);
+		assert.deepEqual(deleted.data, { target: null });
+		assert.deepEqual((await run({ ref: symref, op: 'get', quiet: true })).data, { target: null });
+
+		// bad input
+		assert.equal((await run({ ref: 'HEAD', op: 'set' })).success, false);
+		assert.equal((await run({ ref: '-d', op: 'get' })).success, false);
+		assert.equal((await run({ ref: 'HEAD', op: 'set', target: '--x' })).success, false);
+	} finally { _setApprovalGateForTests(undefined); rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('git_fetch_refs applies the policy-refresh and maintenance fetches and is destructive for a forced refspec that targets a local branch', async () => {
+	registerForTests();
+	const remote = mkdtempSync(join(tmpdir(), 'insrc-fr-remote-'));
+	const repo = newRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		git(remote, 'init', '-q', '--bare', '-b', 'main');
+		writeFileSync(join(repo, 'a'), '1'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'c1');
+		git(repo, 'tag', 'v1');
+		git(repo, 'remote', 'add', 'origin', remote);
+		git(repo, 'push', '-q', 'origin', 'main', 'v1');
+		git(repo, 'checkout', '-q', '-b', 'other'); writeFileSync(join(repo, 'b'), '2'); git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'c2');
+		git(repo, 'push', '-q', 'origin', 'other');
+		git(repo, 'checkout', '-q', 'main');
+		const mainSha = git(repo, 'rev-parse', 'main').trim();
+		const clone = mkdtempSync(join(tmpdir(), 'insrc-fr-clone-'));
+		git(clone, 'init', '-q', '-b', 'main'); git(clone, 'remote', 'add', 'origin', remote);
+		const d = toolDeps(clone);
+
+		// the classes: remote-tracking destinations are none even when forced; another ref is common, destructive when forced
+		const classOf = (refspecs: string[]): string => resolveApprovalClass(listTools().find(t => t.id === 'git_fetch_refs')!, { remote: 'origin', refspecs });
+		assert.equal(classOf(['+refs/heads/main:refs/remotes/origin/main']), 'none');
+		assert.equal(classOf(['refs/heads/main:refs/remotes/origin/main', '+refs/heads/o:refs/remotes/origin/o']), 'none');
+		assert.equal(classOf(['refs/heads/a:refs/heads/b']), 'common');
+		assert.equal(classOf(['+refs/heads/a:refs/heads/b']), 'destructive');
+		assert.equal(classOf(['+refs/heads/a:refs/tags/t']), 'destructive');
+		assert.equal(classOf(['+refs/heads/main:refs/remotes/origin/main', '+refs/heads/a:refs/heads/b']), 'destructive');
+		assert.equal(classOf(['refs/heads/main']), 'destructive', 'not an explicit pair: unknown destination');
+
+		// the policy-refresh fetch: only the named ref, no tags, no FETCH_HEAD, an empty refmap
+		const refresh = await executeTool('git_fetch_refs', {
+			cwd: clone, remote: 'origin', refspecs: ['+refs/heads/main:refs/remotes/origin/main'],
+			noTags: true, noWriteFetchHead: true, noRecurseSubmodules: true, noPrune: true, refmap: '',
+		}, { ...d, approvalMode: 'auto' as const });
+		assert.equal(refresh.success, true, refresh.output);
+		assert.deepEqual(refresh.data, { updated: [{ ref: 'refs/remotes/origin/main', old: '0'.repeat(40), new: mainSha }] });
+		assert.equal(git(clone, 'for-each-ref', '--format=%(refname)', 'refs/remotes').trim(), 'refs/remotes/origin/main', 'only the named ref was fetched');
+		assert.equal(git(clone, 'tag', '--list').trim(), '', 'no tags');
+		assert.equal(existsSync(join(clone, '.git', 'FETCH_HEAD')), false, 'no FETCH_HEAD');
+
+		// the maintenance fetch of another branch; fetching it again updates nothing
+		const maintenance = await executeTool('git_fetch_refs', { cwd: clone, remote: 'origin', refspecs: ['+refs/heads/other:refs/remotes/origin/other'] }, d);
+		assert.equal(maintenance.success, true, maintenance.output);
+		assert.equal((maintenance.data as { updated: { ref: string }[] }).updated[0]?.ref, 'refs/remotes/origin/other');
+		const again = await executeTool('git_fetch_refs', { cwd: clone, remote: 'origin', refspecs: ['+refs/heads/other:refs/remotes/origin/other'] }, d);
+		assert.deepEqual(again.data, { updated: [] });
+
+		// a forced refspec into a local branch asks in every mode and is not run when declined
+		const requests: string[] = [];
+		_setApprovalGateForTests(() => ({ async ask(r) { requests.push(r.approvalClass); return 'declined' as const; } }));
+		const auto = { ...d, approvalMode: 'auto' as const };
+		const forced = await executeTool('git_fetch_refs', { cwd: clone, remote: 'origin', refspecs: ['+refs/heads/main:refs/heads/main'] }, auto);
+		assert.equal(forced.failure?.kind, 'denied');
+		assert.deepEqual(requests, ['destructive']);
+		assert.equal(git(clone, 'branch', '--list', 'main').trim(), '', 'no local branch was written');
+		_setApprovalGateForTests(undefined);
+
+		// failures keep their kind: an unreachable remote, a refused sign-in, input that is not an explicit pair
+		const unreachable = await executeTool('git_fetch_refs', { cwd: clone, remote: '/nonexistent/remote', refspecs: ['+a:refs/remotes/x/a'] }, d);
+		assert.equal(unreachable.success, false);
+		assert.equal(unreachable.failure?.kind, 'unreachable');
+		const bin = join(clone + '-fake', 'bin'); mkdirSync(bin, { recursive: true });
+		writeFileSync(join(bin, 'git'), '#!/bin/sh\necho "fatal: Authentication failed for https://example.invalid/x.git/" >&2\nexit 128\n', { mode: 0o755 });
+		process.env['PATH'] = `${bin}:${savedPath ?? ''}`;
+		const signin = await executeTool('git_fetch_refs', { cwd: clone, remote: 'origin', refspecs: ['+a:refs/remotes/x/a'] }, d);
+		assert.equal(signin.failure?.kind, 'missing-signin');
+		process.env['PATH'] = savedPath;
+		assert.equal((await executeTool('git_fetch_refs', { cwd: clone, remote: 'origin', refspecs: ['refs/heads/main'] }, auto)).success, false);
+		rmSync(clone, { recursive: true, force: true }); rmSync(clone + '-fake', { recursive: true, force: true });
+	} finally {
+		process.env['PATH'] = savedPath; _setApprovalGateForTests(undefined);
+		rmSync(remote, { recursive: true, force: true }); rmSync(repo, { recursive: true, force: true });
 	}
 });

@@ -373,3 +373,28 @@ export type GitCatFileData = Static<typeof GitCatFileDataSchema>;
 
 export const GitForEachRefDataSchema = Type.Object({ refs: Type.Array(Type.Record(Type.String(), Type.String())) });
 export type GitForEachRefData = Static<typeof GitForEachRefDataSchema>;
+
+export const GitSymbolicRefDataSchema = Type.Object({ target: Type.Union([Type.String(), Type.Null()]) });
+export type GitSymbolicRefData = Static<typeof GitSymbolicRefDataSchema>;
+
+export const GitShowRefDataSchema = Type.Object({ refs: Type.Array(Type.Object({ sha: Type.String(), name: Type.String() })) });
+export type GitShowRefData = Static<typeof GitShowRefDataSchema>;
+
+export const GitMergeBaseDataSchema = Type.Union([
+  Type.Object({ bases: Type.Array(Type.String()) }),
+  Type.Object({ isAncestor: Type.Boolean() }),
+]);
+export type GitMergeBaseData = Static<typeof GitMergeBaseDataSchema>;
+
+export const GitHashObjectDataSchema = Type.Object({ sha: Type.String() });
+export type GitHashObjectData = Static<typeof GitHashObjectDataSchema>;
+
+export const GitPathHistoryDataSchema = Type.Object({
+  commits: Type.Array(Type.Object({ sha: Type.String(), committerTime: Type.String(), subject: Type.Optional(Type.String()) })),
+});
+export type GitPathHistoryData = Static<typeof GitPathHistoryDataSchema>;
+
+export const GitFetchRefsDataSchema = Type.Object({
+  updated: Type.Array(Type.Object({ ref: Type.String(), old: Type.String(), new: Type.String() })),
+});
+export type GitFetchRefsData = Static<typeof GitFetchRefsDataSchema>;

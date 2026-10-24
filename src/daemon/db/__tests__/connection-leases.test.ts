@@ -374,3 +374,28 @@ test('CM-S1-M: early iterator return and abort while a read is pending release o
 		await f.cleanup();
 	}
 });
+test('CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics', async () => {
+	const f = await fixture();
+	try {
+		for (const result of [Object.assign(() => {
+			}, { driver: f.raw }), { rows: [{ value: Object.assign(() => {
+						}, { driver: f.raw }) }] }, { rows: [{ value: () => f.raw }] }]) {
+			(f.raw as unknown as Record<string, unknown>)['sample'] = async () => result;
+			await assert.rejects(f.pool.withConnection('fixture', async (driver) => driver.sample!('x', { limit: 1 })), { code: 'conflict' });
+		}
+		const { ObjectId } = await import('bson');
+		const id = new ObjectId('000000000000000000000001');
+		const date = new Date('2020-01-02T00:00:00.000Z');
+		const bytes = Buffer.from([1, 2, 3]);
+		(f.raw as unknown as Record<string, unknown>)['sample'] = async () => ({ rows: [{ id, date, bytes }] });
+		const result = await f.pool.withConnection('fixture', async (driver) => driver.sample!('x', { limit: 1 }));
+		assert.equal(JSON.stringify(result), JSON.stringify({ rows: [{ id, date, bytes }] }));
+		const row = result.rows[0] as Record<string, unknown>;
+		assert.ok(row['date'] instanceof Date);
+		assert.ok(Buffer.isBuffer(row['bytes']));
+		assert.equal(row['id'], id.toHexString());
+	}
+	finally {
+		await f.cleanup();
+	}
+});

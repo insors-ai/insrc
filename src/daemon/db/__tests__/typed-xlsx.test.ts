@@ -100,6 +100,7 @@ test('CM-S1-W: XLSX empty and all-null worksheets keep declared stub/header sche
 			assert.deepEqual(await rows(source, 'Empty'), []);
 			assert.deepEqual(await rows(source, 'All_Null'), []);
 			assert.equal((await xlsxConverter.convertFile(path, dest)).rowCount, 0);
+			for (const target of await source.targets()) await assertParquetSchema(join(dest,target.worksheetSlug!+'.parquet'),target.columns);
 			assert.deepEqual(await saved(join(dest, 'Empty.parquet')), []);
 			assert.deepEqual(await saved(join(dest, 'All_Null.parquet')), []);
 		}

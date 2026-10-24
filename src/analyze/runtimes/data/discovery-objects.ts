@@ -29,6 +29,8 @@
  */
 
 import { getLogger } from '../../../shared/logger.js';
+import { analysisConnectionContext } from '../../connection-access.js';
+import { resolve } from 'node:path';
 import { listFilesForConnection } from '../../../daemon/db/list-files.js';
 
 import type {
@@ -42,7 +44,7 @@ import type {
 	TemplateRuntime,
 } from '../../executor/types.js';
 import {
-	acquireDataPool,
+	dataConnectionResolver,
 	optionalStringParam,
 	requireStringParam,
 	connectionWithinScope,
@@ -84,113 +86,115 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 		const connectionId = connectionWithinScope(scope, requireStringParam(args, 'connectionId', TEMPLATE_ID), TEMPLATE_ID);
 		const kindFilter   = optionalStringParam(args, 'kind', TEMPLATE_ID);
 
-		const pool = await acquireDataPool(repoPath);
-		await pool.reload();
-		const driver = await pool.acquire(connectionId);
+		const access = analysisConnectionContext(repoPath);
+		return dataConnectionResolver.withConnection(access, connectionId, async driver => {
 
-		const objects: ObjectRecord[] = [];
-		// A listing the driver or the file walk cut short, for the completeness record.
-		const limited: ReachedLimit[] = [];
-		switch (driver.family) {
-			case 'rdbms': {
-				const r = driver as RdbmsDriver;
-				if (typeof r.listTables !== 'function') {
-					throw new Error(
-						`${TEMPLATE_ID}: driver '${driver.kind}' does not support listTables`,
-					);
-				}
-				const listing = await r.listTables();
-				for (const t of listing.tables) {
-					objects.push({
-						kind:   'table',
-						name:   t.name,
-						...(t.schema !== undefined ? { schema: t.schema } : {}),
-					});
-				}
-				// The driver's own cut flag: it stopped at its default limit.
-				if (listing.truncated) limited.push(driverCut('tables', listing.tables.length));
-				break;
-			}
-			case 'kv': {
-				const k = driver as KvDriver;
-				if (typeof k.listNamespaces !== 'function') {
-					throw new Error(
-						`${TEMPLATE_ID}: driver '${driver.kind}' does not support listNamespaces`,
-					);
-				}
-				const listing = await k.listNamespaces();
-				for (const ns of listing.namespaces) {
-					objects.push({ kind: 'namespace', name: ns.name });
-				}
-				if (listing.truncated) limited.push(driverCut('namespaces', listing.namespaces.length));
-				break;
-			}
-			case 'file': {
-				// File drivers store the filesystem root on the
-				// ConnectionConfig (config.path). Pull it via pool.list().
-				const config = pool.list().find(c => c.id === connectionId);
-				if (config === undefined || typeof config.path !== 'string') {
-					throw new Error(
-						`${TEMPLATE_ID}: file connection '${connectionId}' missing config.path`,
-					);
-				}
-				const result = await listFilesForConnection(config.path, {
-					recursive: config.recursive === true,
-					limit:     FILE_LIST_LIMIT,
-				});
-				for (const f of result.files) {
-					objects.push({
-						kind:  'file',
-						path:  f.path,
-						size:  f.size,
-						mtime: f.mtime,
-					});
-				}
-				if (result.truncated) {
-					limited.push({
-						what: 'files', limit: FILE_LIST_LIMIT, scope: 'source',
-						reason: `the file listing stops at ${FILE_LIST_LIMIT} files; how many more the connection holds is not known`,
-					});
-					log.warn(
-						{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT },
-						'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set',
-					);
-				}
-				void (driver as FileDriver);
-				break;
-			}
-			default:
-				throw new Error(
-					`${TEMPLATE_ID}: driver family '${(driver as { family: string }).family}' not supported`,
-				);
-		}
 
-		const filtered = kindFilter !== undefined
-			? objects.filter(o => o.kind === kindFilter)
-			: objects;
+			const objects: ObjectRecord[] = [];
+			// A listing the driver or the file walk cut short, for the completeness record.
+			const limited: ReachedLimit[] = [];
+			switch (driver.family) {
+				case 'rdbms': {
+					const r = driver as RdbmsDriver;
+					if (typeof r.listTables !== 'function') {
+						throw new Error(
+							`${TEMPLATE_ID}: driver '${driver.kind}' does not support listTables`,
+						);
+					}
+					const listing = await r.listTables();
+					for (const t of listing.tables) {
+						objects.push({
+							kind:   'table',
+							name:   t.name,
+							...(t.schema !== undefined ? { schema: t.schema } : {}),
+						});
+					}
+					// The driver's own cut flag: it stopped at its default limit.
+					if (listing.truncated) limited.push(driverCut('tables', listing.tables.length));
+					break;
+				}
+				case 'kv': {
+					const k = driver as KvDriver;
+					if (typeof k.listNamespaces !== 'function') {
+						throw new Error(
+							`${TEMPLATE_ID}: driver '${driver.kind}' does not support listNamespaces`,
+						);
+					}
+					const listing = await k.listNamespaces();
+					for (const ns of listing.namespaces) {
+						objects.push({ kind: 'namespace', name: ns.name });
+					}
+					if (listing.truncated) limited.push(driverCut('namespaces', listing.namespaces.length));
+					break;
+				}
+				case 'file': {
+					// File drivers store the filesystem root on the
+					// Safe metadata supplies its path; the lease also covers the filesystem walk.
+					const config = (await dataConnectionResolver.list(access)).find(c => c.key.id === connectionId);
+	 const path = config?.publicConfig['path'];
+					if (config === undefined || typeof path !== 'string') {
+						throw new Error(
+							`${TEMPLATE_ID}: file connection '${connectionId}' missing config.path`,
+						);
+					}
+					const result = await listFilesForConnection(resolve(repoPath, path), {
+						recursive: config.publicConfig['recursive'] === true,
+						limit:     FILE_LIST_LIMIT,
+					});
+					for (const f of result.files) {
+						objects.push({
+							kind:  'file',
+							path:  f.path,
+							size:  f.size,
+							mtime: f.mtime,
+						});
+					}
+					if (result.truncated) {
+						limited.push({
+							what: 'files', limit: FILE_LIST_LIMIT, scope: 'source',
+							reason: `the file listing stops at ${FILE_LIST_LIMIT} files; how many more the connection holds is not known`,
+						});
+						log.warn(
+							{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT },
+							'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set',
+						);
+					}
+					void (driver as FileDriver);
+					break;
+				}
+				default:
+					throw new Error(
+						`${TEMPLATE_ID}: driver family '${(driver as { family: string }).family}' not supported`,
+					);
+			}
 
-		// Stable order: by name|path ascending.
-		filtered.sort((a, b) => {
-			const ka = a.name ?? a.path ?? '';
-			const kb = b.name ?? b.path ?? '';
-			return ka < kb ? -1 : ka > kb ? 1 : 0;
+			const filtered = kindFilter !== undefined
+				? objects.filter(o => o.kind === kindFilter)
+				: objects;
+
+			// Stable order: by name|path ascending.
+			filtered.sort((a, b) => {
+				const ka = a.name ?? a.path ?? '';
+				const kb = b.name ?? b.path ?? '';
+				return ka < kb ? -1 : ka > kb ? 1 : 0;
+			});
+
+			log.info(
+				{
+					runId:        args.runId,
+					taskId:       args.task.taskId,
+					connectionId,
+					driverFamily: driver.family,
+					kindFilter:   kindFilter ?? '(none)',
+					objectCount:  filtered.length,
+				},
+				'data.discovery.objects: enumerated',
+			);
+
+			return {
+				outputs: new Map<string, unknown>([['objects', filtered]]),
+				completeness: buildCompleteness({ returned: filtered.length, limited, basis: 'data-source' }),
+			};
 		});
-
-		log.info(
-			{
-				runId:        args.runId,
-				taskId:       args.task.taskId,
-				connectionId,
-				driverFamily: driver.family,
-				kindFilter:   kindFilter ?? '(none)',
-				objectCount:  filtered.length,
-			},
-			'data.discovery.objects: enumerated',
-		);
-
-		return {
-			outputs: new Map<string, unknown>([['objects', filtered]]),
-			completeness: buildCompleteness({ returned: filtered.length, limited, basis: 'data-source' }),
-		};
 	},
 };

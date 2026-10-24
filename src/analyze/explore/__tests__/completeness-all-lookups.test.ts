@@ -11,6 +11,8 @@
  * stand-in tool loop.
  */
 
+import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -227,14 +229,8 @@ function standInPool(listing: { tables: { name: string; kind: string }[]; trunca
 		listTables: async () => listing,
 		describe: async () => ({ columns: [{ name: 'id', type: 'INTEGER' }, { name: 'amount', type: 'REAL' }] }),
 	};
-	const pool = {
-		list: () => [{ id: 'app', kind: 'sqlite', family: 'rdbms', label: 'app' }],
-		acquire: async (connectionId: string) => {
-			if (connectionId !== 'app') throw new Error(`unknown connection '${connectionId}'`);
-			return driver;
-		},
-	};
-	return (async () => pool) as unknown as Parameters<typeof runDbTablesList>[2];
+ return async root=>leasedDataPool(root,[{id:'app',kind:'sqlite',family:'rdbms',label:'app'}],connectionId=>{if(connectionId!=='app')throw new Error(`unknown connection '${connectionId}'`);return driver;});
+
 }
 
 const loopStandIn = (async () => ({
@@ -490,14 +486,14 @@ test("the table-listing lookup reads the data driver's cut flag into a limit", a
 	);
 
 	// A driver that cannot list: named as skipped in the record, and the note is left empty.
-	const noList = (async () => ({ acquire: async () => ({ family: 'rdbms', kind: 'odd' }) })) as unknown as Parameters<typeof runDbTablesList>[2];
+	const noList = (async root => leasedDataPool(root, [], async () => ({ family: 'rdbms', kind: 'odd' }))) as unknown as Parameters<typeof runDbTablesList>[2];
 	const unsupported = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, noList);
 	assert.deepEqual(unsupported.completeness.skipped, [{ what: 'the listing', reason: "Driver kind 'odd' does not implement listTables." }]);
 	assert.equal(unsupported.notFoundNote, '');
 	assert.equal(unsupported.completeness.complete, false);
 
 	// A file connection has one target and no listing: that is an empty result that IS complete, and the note stays.
-	const fileConn = (async () => ({ acquire: async () => ({ family: 'file', kind: 'csv' }) })) as unknown as Parameters<typeof runDbTablesList>[2];
+	const fileConn = (async root => leasedDataPool(root, [], async () => ({ family: 'file', kind: 'csv' }))) as unknown as Parameters<typeof runDbTablesList>[2];
 	const single = await runDbTablesList(exp('db.tables.list', { connectionId: 'app' }), ctx, fileConn);
 	assert.equal(single.completeness.complete, true);
 	assert.match(single.notFoundNote, /single target/);

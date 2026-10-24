@@ -15,6 +15,7 @@
 
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { acquirePool } from '../../../daemon/db/index.js';
+import { createConnectionResolver } from '../../../daemon/db/pool-cache.js';
 import { ConnectionOutsideScopeError } from '../../context/invariants.js';
 import type { ResolvedScope } from '../../context/scope.js';
 import { resolveTaskScope } from '../shared/task-scope.js';
@@ -127,3 +128,6 @@ export function acquireDataPool(repoPath: string): ReturnType<PoolSource> {
 export function _setDataPoolSourceForTest(source: PoolSource | undefined): void {
 	poolSource = source ?? acquirePool;
 }
+
+/** Every runtime consumer uses safe metadata or callback leases; injected pool sources obey the same port. */
+export const dataConnectionResolver = createConnectionResolver({poolSource: path => poolSource(path)});

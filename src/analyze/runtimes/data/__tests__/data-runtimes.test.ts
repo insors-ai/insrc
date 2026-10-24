@@ -3,6 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { leasedDataPool } from '../../../__tests__/fixtures/leased-data-pool.js';
+
 /**
  * Data-target runtime tests (3 deterministic + bootstrap + prompt
  * file existence).
@@ -123,12 +125,8 @@ function recordingPool(): { opened: string[]; acquired: string[]; source: Parame
 		listTables: async () => ({ tables: [{ name: 'payments', kind: 'table' }], truncated: false }),
 		describe:   async () => ({ columns: [{ name: 'id', type: 'INTEGER' }], source: 'catalog' }),
 	};
-	const pool = {
-		reload:  async () => undefined,
-		list:    () => [{ id: 'ledger-db', kind: 'sqlite', family: 'rdbms', label: 'ledger' }, { id: 'audit-db', kind: 'sqlite', family: 'rdbms', label: 'audit' }],
-		acquire: async (id: string) => { acquired.push(id); return driver; },
-	};
-	return { opened, acquired, source: (async (path: string) => { opened.push(path); return pool; }) as never };
+ return {opened,acquired,source:async(path:string)=>{opened.push(path);return leasedDataPool(path,[{id:'ledger-db',kind:'sqlite',family:'rdbms',label:'ledger'},{id:'audit-db',kind:'sqlite',family:'rdbms',label:'audit'}],id=>{acquired.push(id);return driver;});}};
+
 }
 async function withStandIns<T>(body: (p: ReturnType<typeof recordingPool>) => Promise<T>): Promise<T> {
 	const p = recordingPool();

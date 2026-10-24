@@ -17,8 +17,9 @@
  * honest "0 sources" bundle.
  */
 
-import { familyOf } from '../../daemon/db/index.js';
 import { acquirePool } from '../../daemon/db/index.js';
+import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
+import { analysisConnectionContext } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 
 import type {
@@ -44,17 +45,16 @@ export async function runDbConnectionsList(
 	// A registry that cannot be read is a lookup that could not run: it throws,
 	// and the executor reports it as failed. "No connections" is said only when
 	// the registry was read and holds none.
-	const pool = await acquire(ctx.repoPath);
-
-	const list = pool.list();
+	const resolver = createConnectionResolver({ poolSource: acquire });
+	const list = await resolver.list(analysisConnectionContext(ctx.repoPath));
 	const connections: DbConnectionSummary[] = list.map(c => {
-		const fam = c.family ?? familyOf(c.kind);
+		const fam = c.family;
 		return {
-			id:     c.id,
+			id:     c.key.id,
 			kind:   c.kind,
 			family: (fam ?? 'file') as DbConnectionSummary['family'],
-			label:  c.label ?? c.id,
-			...(c.path !== undefined ? { path: c.path } : {}),
+			label:  c.label ?? c.key.id,
+			...(typeof c.publicConfig['path'] === 'string' ? { path: c.publicConfig['path'] } : {}),
 		};
 	});
 

@@ -357,7 +357,7 @@ export function safeConnection(config: ConnectionConfig, key: ConnectionKey, rev
 		warnings.push('This saved shape is read-only until its private fields are classified or migrated.');
 	return { key: { ...key, id: config.id }, revision, kind: p.kind, family: effective, effectiveFamily: effective, registeredFamily: p.family,
 		...(declared !== undefined ? { declaredFamily: declared } : {}), ...(typeof result.fields['label'] === 'string' ? { label: result.fields['label'] } : {}),
-		publicConfig: result.fields, credentialPresence: result.presence, ...(result.readonly ? { readOnly: true } : {}), ...(warnings.length ? { compatibilityWarning: warnings.join(' ') } : {}) };
+		publicConfig: result.fields, credentialPresence: result.presence, hasUrl: config.url !== undefined, hasPath: config.path !== undefined, ...(config.ephemeral === true ? { ephemeral: true as const } : {}), ...(result.readonly ? { readOnly: true } : {}), ...(warnings.length ? { compatibilityWarning: warnings.join(' ') } : {}) };
 }
 export interface DraftMaterialization {
 	readonly key: ConnectionKey;

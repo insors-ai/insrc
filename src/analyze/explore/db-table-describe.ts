@@ -13,6 +13,8 @@
  */
 
 import { acquirePool } from '../../daemon/db/index.js';
+import { createConnectionResolver } from '../../daemon/db/pool-cache.js';
+import { analysisConnectionContext } from '../connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import type { KvDriver, RdbmsDriver, FileDriver } from '../../daemon/db/index.js';
 
@@ -62,94 +64,95 @@ export async function runDbTableDescribe(
 	// The registry cannot be read, the connection cannot be opened, or the
 	// describe call fails: the lookup could not run. Each throws, and the
 	// executor reports the lookup as failed.
-	const pool = await acquire(ctx.repoPath);
-	const driver = await pool.acquire(params.connectionId);
+	const resolver = createConnectionResolver({ poolSource: acquire });
+	return resolver.withConnection(analysisConnectionContext(ctx.repoPath), params.connectionId, async driver => {
 
-	const family = driver.family;
-	let columns: DbColumnSummary[] = [];
-	let shapeSummary = '';
-	let notFoundNote = '';
-	// For the completeness record: this driver cannot describe (an expected
-	// condition, named as skipped), or the key-value summary kept fewer
-	// fields or keys than exist.
-	let unsupported: string | undefined;
-	let returned = 0;
-	const limited: ReachedLimit[] = [];
+		const family = driver.family;
+		let columns: DbColumnSummary[] = [];
+		let shapeSummary = '';
+		let notFoundNote = '';
+		// For the completeness record: this driver cannot describe (an expected
+		// condition, named as skipped), or the key-value summary kept fewer
+		// fields or keys than exist.
+		let unsupported: string | undefined;
+		let returned = 0;
+		const limited: ReachedLimit[] = [];
 
-	if (family === 'rdbms') {
-		const schema = await (driver as RdbmsDriver).describe(params.target);
-		columns = schema.columns.map(c => ({
-			name:      c.name,
-			type:      c.type,
-			...(c.nullable   !== undefined ? { nullable:   c.nullable   } : {}),
-			...(c.primaryKey !== undefined ? { primaryKey: c.primaryKey } : {}),
-			...(c.foreignKey !== undefined ? { foreignKey: {
-				table:  c.foreignKey.table,
-				column: c.foreignKey.column,
-			} } : {}),
-		}));
-	} else if (family === 'kv') {
-		const kv = driver as KvDriver;
-		if (kv.describeNamespace === undefined) {
-			notFoundNote = `Driver kind '${driver.kind}' does not implement describeNamespace.`;
-			unsupported = notFoundNote;
-		} else {
-			const desc = await kv.describeNamespace(params.target);
-			shapeSummary = summariseKvDescription(desc);
-			returned = Math.min(desc.fields.length, KV_SUMMARY_FIELDS);
-			if (desc.fields.length > KV_SUMMARY_FIELDS) {
-				limited.push(reachedLimit('fields', KV_SUMMARY_FIELDS, 'overall', desc.fields.length));
-			}
-			if (desc.sampleKeys.length > KV_SUMMARY_KEYS) {
-				limited.push(reachedLimit('sample keys', KV_SUMMARY_KEYS, 'source', desc.sampleKeys.length));
-			}
-		}
-	} else if (family === 'file') {
-		const fd = driver as FileDriver;
-		if (fd.describe === undefined) {
-			notFoundNote = `Driver kind '${driver.kind}' does not implement describe.`;
-			unsupported = notFoundNote;
-		} else {
-			const schema = await fd.describe(params.target);
+		if (family === 'rdbms') {
+			const schema = await (driver as RdbmsDriver).describe(params.target);
 			columns = schema.columns.map(c => ({
-				name: c.name,
-				type: c.type,
-				...(c.nullable !== undefined ? { nullable: c.nullable } : {}),
+				name:      c.name,
+				type:      c.type,
+				...(c.nullable   !== undefined ? { nullable:   c.nullable   } : {}),
+				...(c.primaryKey !== undefined ? { primaryKey: c.primaryKey } : {}),
+				...(c.foreignKey !== undefined ? { foreignKey: {
+					table:  c.foreignKey.table,
+					column: c.foreignKey.column,
+				} } : {}),
 			}));
+		} else if (family === 'kv') {
+			const kv = driver as KvDriver;
+			if (kv.describeNamespace === undefined) {
+				notFoundNote = `Driver kind '${driver.kind}' does not implement describeNamespace.`;
+				unsupported = notFoundNote;
+			} else {
+				const desc = await kv.describeNamespace(params.target);
+				shapeSummary = summariseKvDescription(desc);
+				returned = Math.min(desc.fields.length, KV_SUMMARY_FIELDS);
+				if (desc.fields.length > KV_SUMMARY_FIELDS) {
+					limited.push(reachedLimit('fields', KV_SUMMARY_FIELDS, 'overall', desc.fields.length));
+				}
+				if (desc.sampleKeys.length > KV_SUMMARY_KEYS) {
+					limited.push(reachedLimit('sample keys', KV_SUMMARY_KEYS, 'source', desc.sampleKeys.length));
+				}
+			}
+		} else if (family === 'file') {
+			const fd = driver as FileDriver;
+			if (fd.describe === undefined) {
+				notFoundNote = `Driver kind '${driver.kind}' does not implement describe.`;
+				unsupported = notFoundNote;
+			} else {
+				const schema = await fd.describe(params.target);
+				columns = schema.columns.map(c => ({
+					name: c.name,
+					type: c.type,
+					...(c.nullable !== undefined ? { nullable: c.nullable } : {}),
+				}));
+			}
 		}
-	}
 
-	log.info(
-		{
-			runId:        ctx.runId,
+		log.info(
+			{
+				runId:        ctx.runId,
+				connectionId: params.connectionId,
+				target:       params.target,
+				family,
+				columns:      columns.length,
+			},
+			'db.table.describe: complete',
+		);
+
+		if (family !== 'kv') returned = columns.length;
+		const completeness = buildCompleteness({
+			returned,
+			limited,
+			skipped: unsupported !== undefined ? [{ what: 'the description', reason: unsupported }] : [],
+			basis:   'data-source',
+			...(family === 'kv' ? { basisNote: 'a key-value namespace is described from a sample of its keys, not from every key' } : {}),
+		});
+
+		return {
+			type:         'db.table.describe',
+			completeness,
 			connectionId: params.connectionId,
 			target:       params.target,
 			family,
-			columns:      columns.length,
-		},
-		'db.table.describe: complete',
-	);
-
-	if (family !== 'kv') returned = columns.length;
-	const completeness = buildCompleteness({
-		returned,
-		limited,
-		skipped: unsupported !== undefined ? [{ what: 'the description', reason: unsupported }] : [],
-		basis:   'data-source',
-		...(family === 'kv' ? { basisNote: 'a key-value namespace is described from a sample of its keys, not from every key' } : {}),
+			columns,
+			shapeSummary,
+			// A note that reports an unsupported description is in the record.
+			notFoundNote: unsupported !== undefined ? '' : notFoundNote,
+		};
 	});
-
-	return {
-		type:         'db.table.describe',
-		completeness,
-		connectionId: params.connectionId,
-		target:       params.target,
-		family,
-		columns,
-		shapeSummary,
-		// A note that reports an unsupported description is in the record.
-		notFoundNote: unsupported !== undefined ? '' : notFoundNote,
-	};
 }
 
 /** How many fields and sample keys a key-value namespace's summary names. */

@@ -10,6 +10,7 @@ export interface SafeConnection {
  readonly declaredFamily?: DriverFamily | undefined; readonly registeredFamily?: DriverFamily | undefined;
  readonly effectiveFamily: DriverFamily; readonly compatibilityWarning?: string | undefined; readonly readOnly?: boolean | undefined;
  readonly credentialPresence: Readonly<Record<string, boolean>>;
+ readonly hasUrl?: boolean | undefined; readonly hasPath?: boolean | undefined; readonly ephemeral?: true | undefined;
 }
 export interface DriverDescriptor {
  readonly kind: string; readonly family: DriverFamily;

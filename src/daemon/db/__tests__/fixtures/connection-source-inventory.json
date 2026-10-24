@@ -85,11 +85,6 @@
   "sites": [
     {
       "file": "src/analyze/explore/db-connections-list.ts",
-      "expression": "acquire(ctx.repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/analyze/explore/db-connections-list.ts",
       "expression": "acquirePool",
       "boundary": "symbol:acquirePool"
     },
@@ -104,16 +99,6 @@
       "boundary": "symbol:acquirePool"
     },
     {
-      "file": "src/analyze/explore/db-connections-list.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/explore/db-table-describe.ts",
-      "expression": "acquire(ctx.repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
       "file": "src/analyze/explore/db-table-describe.ts",
       "expression": "acquirePool",
       "boundary": "symbol:acquirePool"
@@ -129,21 +114,6 @@
       "boundary": "symbol:acquirePool"
     },
     {
-      "file": "src/analyze/explore/db-table-describe.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/explore/db-table-describe.ts",
-      "expression": "pool.acquire(params.connectionId)",
-      "boundary": "driver-port-call"
-    },
-    {
-      "file": "src/analyze/explore/db-tables-list.ts",
-      "expression": "acquire(ctx.repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
       "file": "src/analyze/explore/db-tables-list.ts",
       "expression": "acquirePool",
       "boundary": "symbol:acquirePool"
@@ -157,16 +127,6 @@
       "file": "src/analyze/explore/db-tables-list.ts",
       "expression": "acquirePool",
       "boundary": "symbol:acquirePool"
-    },
-    {
-      "file": "src/analyze/explore/db-tables-list.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/explore/db-tables-list.ts",
-      "expression": "pool.acquire(params.connectionId)",
-      "boundary": "driver-port-call"
     },
     {
       "file": "src/analyze/measure.ts",
@@ -260,98 +220,13 @@
     },
     {
       "file": "src/analyze/runtimes/data/_shared.ts",
+      "expression": "poolSource(path)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/analyze/runtimes/data/_shared.ts",
       "expression": "poolSource(repoPath)",
       "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-connections.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-connections.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-connections.ts",
-      "expression": "acquireDataPool(repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-connections.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-connections.ts",
-      "expression": "pool.reload",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "acquireDataPool(repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "pool.acquire(connectionId)",
-      "boundary": "driver-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/discovery-objects.ts",
-      "expression": "pool.reload",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "acquireDataPool",
-      "boundary": "symbol:acquireDataPool"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "acquireDataPool(repoPath)",
-      "boundary": "pool-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "pool.acquire(connectionId)",
-      "boundary": "driver-port-call"
-    },
-    {
-      "file": "src/analyze/runtimes/data/schema-table.ts",
-      "expression": "pool.reload",
-      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db-rpc.ts",

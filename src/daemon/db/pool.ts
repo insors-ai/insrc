@@ -106,7 +106,7 @@ export class DriverPool {
 			}
 			catch {
 				const family = e.config.family ?? familyOf(e.config.kind) ?? 'rdbms';
-				return { key, revision: e.revision, kind: e.config.kind, family, effectiveFamily: family, publicConfig: {}, credentialPresence: {}, readOnly: true, compatibilityWarning: 'This connection requires a supported driver profile.' };
+				return { key, revision: e.revision, kind: e.config.kind, family, effectiveFamily: family, publicConfig: {}, credentialPresence: {}, hasUrl: e.config.url !== undefined, hasPath: e.config.path !== undefined, ...(e.config.ephemeral === true ? { ephemeral: true as const } : {}), readOnly: true, compatibilityWarning: 'This connection requires a supported driver profile.' };
 			}
 		});
 	}

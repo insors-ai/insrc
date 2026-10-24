@@ -10,6 +10,8 @@
  * unclassified.
  */
 
+import { leasedDataPool } from '../../__tests__/fixtures/leased-data-pool.js';
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -253,10 +255,7 @@ test('each class of lookup catch clause has a test: an expected condition says s
 
 	// The data lookups: the registry cannot be read, the connection cannot be opened, the call fails.
 	const poolFails = (async () => { throw new Error('registry unreadable'); }) as unknown as Parameters<typeof runDbTablesList>[2];
-	const pool = (driver: unknown): Parameters<typeof runDbTablesList>[2] => (async () => ({
-		list: () => [],
-		acquire: async (id: string) => { if (id !== 'app') throw new Error(`unknown connection '${id}'`); return driver; },
-	})) as unknown as Parameters<typeof runDbTablesList>[2];
+	const pool = (driver: unknown): Parameters<typeof runDbTablesList>[2] => async root => leasedDataPool(root,[{id:'app',kind:'sqlite',family:'rdbms'}],id=>{if(id!=='app')throw new Error(`unknown connection '${id}'`);return driver;});
 	const boom = async (): Promise<never> => { throw new Error('connection reset'); };
 
 	await assert.rejects(runDbConnectionsList(exp('db.connections.list', {}), ctx, poolFails), /registry unreadable/);

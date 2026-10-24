@@ -93,7 +93,7 @@ export function createTypedRowSource(input: readonly TypedTargetReader[], option
 		},
 		async *batches(target, signal): AsyncIterable<ConvertedBatch> {
 			signal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
-			live(signal);
+			try { live(signal); } catch(error) { closed=true;controller.abort();await cleanup();throw error; }
 			for (const reader of selectTargets(readers, target)) {
 				const version = schemaVersion(reader.target);
 				let rows: Readonly<Record<string, unknown>>[] = [], bytes = 0;

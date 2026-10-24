@@ -214,10 +214,22 @@ test('CM-S1-S: rejected and cancelled bounded decoding closes every actual sourc
    try { await assert.rejects(rows(source), /resource-limit/); } finally { await source.close(); }
    assert.equal(closed, opened);
    await writeFile(path, Buffer.concat([serialize({v:1}),serialize({v:2})]));
-   const live = await bsonConverter.openMemory!(path,{memoryBudgetBytes:1024*1024});
+   const earlyBudget=new DecoderBudget(1024*1024);
+   const live = await bsonConverter.openMemory!(path,{memoryBudgetBytes:earlyBudget.limit,budget:earlyBudget});
    const controller = new AbortController(); controller.abort();
-   try { await assert.rejects(Array.fromAsync(live.batches(undefined,controller.signal)),{name:'AbortError'}); } finally {await live.close();}
-   assert.equal(closed,opened);
+   await assert.rejects(Array.fromAsync(live.batches(undefined,controller.signal)),{name:'AbortError'});
+   assert.equal(earlyBudget.snapshot().retained,0,'pre-aborted rejection releases schema without caller close');
+   assert.equal(closed,opened);await live.close();
+   for(const kind of ['bson','fixed-width']){
+    const budget=new DecoderBudget(8*1024*1024),abort=new AbortController();
+    const data=kind==='bson'?path:fixed;
+    await writeFile(data,kind==='bson'?Buffer.concat(Array.from({length:3000},()=>serialize({v:1}))):'x\n'.repeat(3000));
+    const decoder=kind==='bson'?await bsonConverter.openMemory!(data,{memoryBudgetBytes:budget.limit,budget}):await fixedWidthConverter.openMemory!(data,{memoryBudgetBytes:budget.limit,budget},{columns:[{name:'v',start:0,length:1,type:'string'}]});
+    const iterator=decoder.batches(undefined,abort.signal)[Symbol.asyncIterator]();assert.equal((await iterator.next()).done,false);
+    assert(opened>closed,'decoder handle remains open while batch is suspended');abort.abort();
+    await assert.rejects(iterator.next(),{name:'AbortError'});assert.equal(closed,opened,'active abort closes the actual decoder handle');
+    assert.equal(budget.snapshot().retained,0,'active abort releases rows, schema and parser buffers before caller close');await decoder.close();
+   }
   });
  } finally {spy.mock.restore();syncBuiltinESMExports();}
 });

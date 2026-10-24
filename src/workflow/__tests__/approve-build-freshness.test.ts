@@ -96,3 +96,18 @@ test('a legacy review cannot establish freshness for an undated BUILD', () => {
  const bound = { ...review(), body: { ...review().body, subject: { changedFiles: ['src/a.ts'], buildFingerprint: reviewedBuildFingerprint(b) } } };
  assert.equal(reviewBuildGap(b, bound, '/repo'), undefined);
 });
+
+
+test('completion refuses a malformed review even when an empty BUILD has no file coverage to check', async () => {
+ const repo = mkdtempSync(join(tmpdir(), 'insrc-invalid-review-'));
+ try {
+  const dir = join(repo, '.insrc/artifacts'); mkdirSync(dir, { recursive: true });
+  const b = build(); b.body.changeLog = [];
+  const path = join(dir, `BUILD-${H}-s1.json`);
+  writeFileSync(path, JSON.stringify(b));
+  for (const malformed of [{ meta: { createdAt: AFTER } }, { ...review(AFTER), body: { verdict: 'unknown', subject: { changedFiles: [] } } }, { ...review(AFTER), body: { verdict: 'pass' } }]) {
+   writeFileSync(join(dir, `CR-${H}-s1.json`), JSON.stringify(malformed));
+   await assert.rejects(approveJson(path), /code review structure cannot be verified/);
+  }
+ } finally { rmSync(repo, { recursive: true, force: true }); }
+});

@@ -24,7 +24,10 @@ export function reviewBuildGap(build: unknown, review: unknown, repoPath: string
 	const b = record(build), r = record(review);
 	const meta = record(b['meta']), body = record(b['body']);
 	if (b['meta'] !== meta || b['body'] !== body) return 'the current BUILD structure cannot be verified';
-	const subject = record(record(r['body'])['subject']);
+	const reviewBody = record(r['body']);
+	const subject = record(reviewBody['subject']);
+	if (!['pass', 'warn', 'block'].includes(String(reviewBody['verdict'])) || !Array.isArray(subject['changedFiles'])
+		|| !subject['changedFiles'].every(f => typeof f === 'string')) return 'the code review structure cannot be verified';
 	const fingerprint = subject['buildFingerprint'];
 	if (fingerprint !== undefined) {
 		if (fingerprint !== reviewedBuildFingerprint(build)) return 'the BUILD content has changed since this code review';

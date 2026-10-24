@@ -31,6 +31,15 @@
     "reviewOverride": {
       "reason": "User-approved override (2026-10-24, option 1): review cycle 2 converged from 3 to 2 to 1 HIGH finding, all on caller-supplied planner catalogs, which no production path uses. The last one (draft-07 tuple items failing the Ajv 2020 wire compile) is fixed in the LLD by a general trial-compile fallback to a whole-params slot, with a regression test. Codex acceptance of the complete schemas is proven by the planned live test at build.",
       "at": "2026-10-24T14:09:31.405Z"
+    },
+    "questionResolutions": {
+      "qf9789f0e": {
+        "question": "Scope (user decision 2026-10-24, option 2): this Story fixes the analyzer schemas only. The other refused schemas are recorded, not fixed: frameworkWriteSchema, contractDetailSchema, the ER/UX definition schemas, trackerPushExecuteSchema, trackerSyncExecuteSchema and STUB_ARTIFACT_JSON_SCHEMA, which reach codex only through the daemon-driven workflow.run (src/daemon/workflow-rpc.ts:211), plus AGGREGATOR_OUTPUT_SCHEMA, a template runtime schema that is never sent to a model. They belong with ISSUE-7d346e0dcbafc70e's strict-copy work.",
+        "status": "resolved",
+        "choice": "Analyzer schemas only",
+        "rationale": "User decision 2026-10-24 (option 2): the other refused schemas are recorded for ISSUE-7d346e0dcbafc70e.",
+        "resolvedAt": "2026-10-24T14:11:14.770Z"
+      }
     }
   },
   "body": {

@@ -351,3 +351,34 @@ Declare params as a string holding JSON; parse it and validate it per type after
 ## 9. Open questions
 
 - Scope (user decision 2026-10-24, option 2): this Story fixes the analyzer schemas only. The other refused schemas are recorded, not fixed: frameworkWriteSchema, contractDetailSchema, the ER/UX definition schemas, trackerPushExecuteSchema, trackerSyncExecuteSchema and STUB_ARTIFACT_JSON_SCHEMA, which reach codex only through the daemon-driven workflow.run (src/daemon/workflow-rpc.ts:211), plus AGGREGATOR_OUTPUT_SCHEMA, a template runtime schema that is never sent to a model. They belong with ISSUE-7d346e0dcbafc70e's strict-copy work.
+
+## Resolved questions
+
+- `qf9789f0e` — Scope (user decision 2026-10-24, option 2): this Story fixes the analyzer schemas only. The other refused schemas are recorded, not fixed: frameworkWriteSchema, contractDetailSchema, the ER/UX definition schemas, trackerPushExecuteSchema, trackerSyncExecuteSchema and STUB_ARTIFACT_JSON_SCHEMA, which reach codex only through the daemon-driven workflow.run (src/daemon/workflow-rpc.ts:211), plus AGGREGATOR_OUTPUT_SCHEMA, a template runtime schema that is never sent to a model. They belong with ISSUE-7d346e0dcbafc70e's strict-copy work.
+  - **resolved**: Analyzer schemas only — User decision 2026-10-24 (option 2): the other refused schemas are recorded for ISSUE-7d346e0dcbafc70e. _(2026-10-24T14:11:14.770Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/analyze/context/decomposer.ts:142` — "params:  { type: 'object', additionalProperties: true },"
+- **[[c2]]** `code` `src/agent/providers/structured-output.ts:381` — "const copy = processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);"
+- **[[c3]]** `code` `src/analyze/context/decomposer.ts:195` — "if (errClass instanceof DecomposerLlmUnavailableError) throw errClass;"
+- **[[c4]]** `code` `src/config/role-taxonomy.ts:86` — "{ id: 'analyze.decompose',             criticality: 'peripheral', defaultTier: 'mid'  },"
+- **[[c5]]** `code` `src/analyze/explore/types.ts:97` — "readonly params:   Readonly<Record<string, unknown>>;"
+- **[[c6]]** `code` `src/analyze/explore/executor.ts:158`
+- **[[c7]]** `prior-artifact` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md:18` — "ERROR analyze: exploration decomposer: 113x"
+- **[[c8]]** `prior-artifact` `ISSUE-7d346e0dcbafc70e`
+- **[[c9]]** `prior-artifact` `docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610248d39ef09/evidence/open-object-probe.md`
+- **[[c10]]** `code` `src/analyze/planner/validate.ts:247` — "// INV-5: params validate against template inputSchema"
+- **[[c11]]** `code` `src/analyze/planner/schema.ts:55` — "params:   { type: 'object' },"
+- **[[c12]]** `doc` `src/prompts/analyze/decompose.system.md:50`
+- **[[c13]]** `code` `src/analyze/planner/driver.ts:144` — "export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {"
+- **[[c14]]** `prior-artifact` `ISSUE-8d39ef09031e75d3`
+- **[[c15]]** `code` `src/analyze/planner/driver.ts:161` — "const catalog = catalogArg.length > 0"
+- **[[c16]]** `code` `src/analyze/context/decomposer.ts:266` — "export function finalizeDecompose(raw: unknown): ExplorationPlan {"
+- **[[c17]]** `code` `src/analyze/context/driver.ts:1460` — "plan = steps.fallbackFreeformPlan(intent, args.shaperId);"
+- **[[c18]]** `prior-artifact` `docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610248d39ef09/evidence/nullable-anyof-proto.md` — "prototype support only (two types); complete-schema acceptance is established by the live test"
+- **[[c19]]** `doc` `src/prompts/analyze/decompose.system.md:166` — "leave the exploration's `params` empty and add a note in `purpose`"
+- **[[c20]]** `code` `src/daemon/analyze-rpc.ts:503` — "const catalog = getTemplatesForTarget(intent.target);"
+- **[[c21]]** `code` `src/analyze/planner/validate.ts:257` — "if (tmpl.inputSchema === undefined) continue; // no schema declared -> nothing to validate"
+- **[[c22]]** `code` `src/prompts/analyze/planner.system.md:45` — "`params` is an object literal."
+- **[[c23]]** `code` `src/agent/providers/structured-output.ts:79` — "ajv-compiled validators are cached on the singleton; the same schema"

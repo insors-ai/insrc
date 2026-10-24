@@ -70,7 +70,7 @@ test('a bound review detects changed commits and tasks even at the same timestam
 	assert.match(reviewBuildGap(tasksChanged, r, '/repo')!, /BUILD content has changed/);
 });
 
-test('a dated BUILD rejects missing or invalid review timestamps instead of assuming freshness', () => {
+test('legacy reviews without a BUILD binding are rejected regardless of their review timestamps', () => {
 	assert.match(reviewBuildGap(build(), { meta: {}, body: review().body }, '/repo')!, /freshness cannot be verified/);
 	assert.match(reviewBuildGap(build(), review('not-a-date'), '/repo')!, /freshness cannot be verified/);
 });

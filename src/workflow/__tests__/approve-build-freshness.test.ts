@@ -88,3 +88,11 @@ test('an existing structurally invalid BUILD cannot satisfy completion with a pa
   }
  } finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+
+test('a legacy review cannot establish freshness for an undated BUILD', () => {
+ const b = { meta: {}, body: build().body };
+ assert.match(reviewBuildGap(b, review(), '/repo')!, /BUILD has no timestamp/);
+ const bound = { ...review(), body: { ...review().body, subject: { changedFiles: ['src/a.ts'], buildFingerprint: reviewedBuildFingerprint(b) } } };
+ assert.equal(reviewBuildGap(b, bound, '/repo'), undefined);
+});

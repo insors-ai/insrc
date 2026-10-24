@@ -31,6 +31,7 @@ export function reviewBuildGap(build: unknown, review: unknown, repoPath: string
 	} else {
 		// Older records lack a binding. Their review must at least postdate the build.
 		const times = [meta['createdAt'], meta['updatedAt']].filter(t => t !== undefined);
+		if (times.length === 0) return 'the BUILD has no timestamp, so review freshness cannot be verified';
 		if (times.length > 0) {
 			const stamps = times.map(t => typeof t === 'string' ? Date.parse(t) : Number.NaN);
 			const at = record(r['meta'])['createdAt'];

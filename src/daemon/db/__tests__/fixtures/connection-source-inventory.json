@@ -425,6 +425,11 @@
     },
     {
       "file": "src/daemon/db/management.ts",
+      "expression": "this.ports.pool.reload",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/management.ts",
       "expression": "this.ports.pool.safeList",
       "boundary": "pool-member"
     },

@@ -158,6 +158,7 @@ export class ManagedRegistry {
 	#tail: Promise<void> = Promise.resolve();
 	#snapshot: RegistrySnapshot;
 	#uncertain = false;
+	#uncertainCandidate: RegistrySnapshot | undefined;
 	private constructor(readonly path: string, snapshot: RegistrySnapshot, ports: ManagedStorePorts) {
 		this.#snapshot = snapshot;
 		this.#ports = ports;
@@ -190,6 +191,38 @@ export class ManagedRegistry {
 	async inspect(): Promise<RegistrySnapshot> {
 		await this.#check(this.#snapshot);
 		return this.snapshot;
+	}
+	/** Reconcile only the exact precommit inode or the exact replacement inode built by this owner. */
+	async reconcile(): Promise<RegistrySnapshot> {
+		await this.#tail;
+		if (!this.#uncertain)
+			return this.inspect();
+		if (stores.get(this.path) !== this || !await this.#ports.ownsRoot())
+			throw new ManagedStoreError('recovery-required');
+		const actual = await readRegistrySnapshot(this.path);
+		const matches = (known: RegistrySnapshot | undefined) => known && actual.digest === known.digest && actual.inode === known.inode && actual.device === known.device && actual.mode === known.mode && actual.missing === known.missing;
+		if (!matches(this.#snapshot) && !matches(this.#uncertainCandidate))
+			throw new ManagedStoreError('recovery-required');
+		const parent = await open(dirname(this.path), 'r');
+		try {
+			await parent.sync();
+		}
+		catch {
+			throw new ManagedStoreError('reconciliation-required');
+		}
+		finally {
+			await parent.close();
+		}
+		this.#snapshot = actual;
+		this.#uncertain = false;
+		this.#uncertainCandidate = undefined;
+		return this.snapshot;
+	}
+	async cleanupCommittedTemp(operationId: string): Promise<void> {
+		const current = await this.inspect();
+		if (!UUID.test(operationId) || !Object.hasOwn(current.file._management?.receipts ?? {}, operationId))
+			throw new ManagedStoreError('recovery-required');
+		await discardOperationTemp(this.path, operationId);
 	}
 	async close(): Promise<void> {
 		await this.#tail;
@@ -232,7 +265,9 @@ export class ManagedRegistry {
 		await this.#check(expected);
 		const next = JSON.parse(text) as ConnectionsFile;
 		const added = Object.keys(next._management!.receipts).filter(id => !Object.hasOwn(expected.file._management?.receipts ?? {}, id));
-		const temporaryId = added.length === 1 && UUID.test(added[0]!) ? added[0]! : randomUUID();
+		const changed = Object.keys(next._management!.receipts).filter(id => JSON.stringify(next._management!.receipts[id]) !== JSON.stringify(expected.file._management?.receipts[id]));
+		const candidate = added.length === 1 ? added[0] : changed.length === 1 ? changed[0] : undefined;
+		const temporaryId = candidate && UUID.test(candidate) ? candidate : randomUUID();
 		const temp = join(dirname(this.path), `.db-connections-${temporaryId}.tmp`);
 		let handle: Awaited<ReturnType<typeof open>> | undefined;
 		let renameAttempted = false;
@@ -246,6 +281,8 @@ export class ManagedRegistry {
 			await handle.chmod(0o400);
 			await handle.sync();
 			await this.#ports.boundary?.('temp-chmod');
+			const replacement = await handle.stat();
+			this.#uncertainCandidate = { file: next, digest: hash(text), inode: replacement.ino, device: replacement.dev, mode: replacement.mode & 0o777, missing: false };
 			await handle.close();
 			handle = undefined;
 			await this.#check(expected);
@@ -261,9 +298,11 @@ export class ManagedRegistry {
 			finally {
 				await parent.close();
 			}
-			this.#snapshot = await readRegistrySnapshot(this.path);
-			if (this.#snapshot.digest !== hash(text) || this.#snapshot.mode !== 0o400)
+			const observed = await readRegistrySnapshot(this.path);
+			if (observed.digest !== hash(text) || observed.mode !== 0o400 || observed.inode !== this.#uncertainCandidate?.inode || observed.device !== this.#uncertainCandidate.device)
 				throw new ManagedStoreError('reconciliation-required');
+			this.#snapshot = observed;
+			this.#uncertainCandidate = undefined;
 		}
 		catch {
 			if (renameAttempted) {
@@ -394,24 +433,7 @@ export class PreparationJournal {
 		this.check(existing);
 		if (JSON.stringify(existing) !== JSON.stringify(record))
 			throw new ManagedStoreError('recovery-required');
-		const temp = join(dirname(this.registryPath), `.db-connections-${record.operationId}.tmp`);
-		try {
-			const stat = await lstat(temp);
-			if (!stat.isFile() || stat.isSymbolicLink() || stat.uid !== process.getuid?.() || ![0o600, 0o400].includes(stat.mode & 0o777))
-				throw new ManagedStoreError('recovery-required');
-			await unlink(temp);
-			const parent = await open(dirname(temp), 'r');
-			try {
-				await parent.sync();
-			}
-			finally {
-				await parent.close();
-			}
-		}
-		catch (err) {
-			if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
-				throw new ManagedStoreError('recovery-required');
-		}
+		await discardOperationTemp(this.registryPath, record.operationId);
 		this.#completionPending.set(record.operationId, structuredClone(record));
 		await unlink(path).catch(err => {
 			if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
@@ -421,5 +443,25 @@ export class PreparationJournal {
 		await this.sync();
 		await this.boundary?.('after-completion-sync');
 		this.#completionPending.delete(record.operationId);
+	}
+}
+async function discardOperationTemp(registryPath: string, operationId: string): Promise<void> {
+	const temp = join(dirname(registryPath), `.db-connections-${operationId}.tmp`);
+	try {
+		const stat = await lstat(temp);
+		if (!stat.isFile() || stat.isSymbolicLink() || stat.uid !== process.getuid?.() || ![0o600, 0o400].includes(stat.mode & 0o777))
+			throw new ManagedStoreError('recovery-required');
+		await unlink(temp);
+		const parent = await open(dirname(temp), 'r');
+		try {
+			await parent.sync();
+		}
+		finally {
+			await parent.close();
+		}
+	}
+	catch (err) {
+		if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
+			throw new ManagedStoreError('recovery-required');
 	}
 }

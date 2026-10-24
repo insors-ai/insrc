@@ -18,91 +18,7 @@ import type { Driver, ConnectionConfig } from '../../../shared/db-driver.js';
 import { setTimeout as delay } from 'node:timers/promises';
 import type { MutationRequest, MutationOutcome } from '../../../shared/connection-management.js';
 import '../drivers/index.js';
-function deferred() {
-	let resolve!: () => void;
-	const promise = new Promise<void>(r => {
-		resolve = r;
-	});
-	return { promise, resolve };
-}
-async function environment() {
-	const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-service-')));
-	const original = PATHS.insrc;
-	Object.defineProperty(PATHS, 'insrc', { value: join(directory, 'insrc'), configurable: true });
-	const fixtures: Awaited<ReturnType<typeof rootFixture>>[] = [];
-	async function rootFixture(name: string, seed?: ConnectionConfig) {
-		const root = join(directory, name);
-		await mkdir(root);
-		const path = connectionsPath(root);
-		await mkdir(dirname(path), { recursive: true });
-		const registryId = randomUUID();
-		await writeFile(path, JSON.stringify({ connections: seed ? [seed] : [], retainedDocument: { exact: true }, _management: { version: 2, registryId, generation: randomUUID(), revisions: seed ? { [seed.id]: randomUUID() } : {}, receipts: {} } }, null, 2) + '\n', { mode: 0o400 });
-		const counts = { gets: 0, credentialGets: 0, sets: 0, deletes: 0, stages: 0, writes: 0 };
-		const hooks: {
-			stage?: (() => Promise<void>) | undefined;
-		} = {};
-		const values = new Map<string, string>();
-		const keystore = { getKey: async (ref: string) => {
-				counts.gets++;
-				if (!ref.startsWith('db-management:'))
-					counts.credentialGets++;
-				return values.get(ref) ?? null;
-			}, setKey: async (ref: string, value: string) => {
-				counts.sets++;
-				values.set(ref, value);
-			}, deleteKey: async (ref: string) => {
-				counts.deletes++;
-				values.delete(ref);
-			} };
-		const tickets = await SavedTicketAuthority.open({ root, registryId, adopted: false, keystore, isRegistered: async (candidate) => candidate === root });
-		const store = await ManagedRegistry.open(path, { ownsRoot: async () => true, boundary: async (stage) => {
-				if (stage === 'temp-open')
-					counts.writes++;
-			} });
-		const journal = await PreparationJournal.open(path, registryId);
-		const generations = new CredentialGenerations(journal, 'a'.repeat(32), { keystore, current: () => store.inspect(), boundary: async (stage) => {
-				if (stage === 'before-keychain-stage') {
-					counts.stages++;
-					await hooks.stage?.();
-				}
-			} });
-		const pool = new DriverPool(root, { factory: () => async (config) => ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
-				}, describe: async () => ({ columns: [] }) } as unknown as Driver) });
-		await pool.reload();
-		const context = { connectionIdentity: 'fixture-client', access: { lookupRoot: root, managementRepoRoot: root, daemonEpoch: 'fixture' } };
-		const service = await SavedConnectionManagement.create({ root, store, tickets, generations, pool, enabled: async () => true, isRegistered: async (candidate) => candidate === root, activate: async () => {
-			}, readSecret: keystore.getKey });
-		const uninstall = installSavedManagement(root, service);
-		const reset = () => {
-			for (const key of Object.keys(counts) as (keyof typeof counts)[])
-				counts[key] = 0;
-		};
-		const request = async (id: string, mode: 'create' | 'update' = 'create', revision?: string): Promise<MutationRequest> => {
-			const key = { repoRoot: root, scope: 'saved' as const, id };
-			const ticket = await service.ticket(context, key, mode);
-			return { ticket, operationId: ticket.operationId, key, mode, ...(revision ? { expectedRevision: revision } : {}), publicPatch: mode === 'create' ? { kind: 'postgres', endpoint: 'postgres://host/db' } : { label: 'Changed' }, credentials: { 'url.username': { action: 'replace', value: 'fixture-user' }, 'url.password': { action: 'replace', value: 'replacement-secret-canary' } } };
-		};
-		const f = { root, path, store, journal, generations, pool, tickets, service, context, values, keystore, counts, hooks, reset, request, close: async () => {
-				uninstall();
-				await pool.closeAll();
-				await store.close();
-			} };
-		fixtures.push(f);
-		return f;
-	}
-	return { directory, rootFixture, cleanup: async () => {
-			for (const f of fixtures)
-				await f.close();
-			Object.defineProperty(PATHS, 'insrc', { value: original, configurable: true });
-			await rm(directory, { recursive: true, force: true });
-		} };
-}
-function committed(outcome: MutationOutcome) {
-	assert.equal(outcome.status, 'committed', JSON.stringify(outcome));
-	if (outcome.status !== 'committed')
-		throw Error('expected commit');
-	return outcome.value;
-}
+import { environment, committed, deferred } from './fixtures/saved-management-fixture.js';
 test('CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports', async () => {
 	const env = await environment();
 	const f = await env.rootFixture('root');
@@ -143,7 +59,7 @@ test('CM-S1-D: same-root concurrent creates commit once and independent roots do
 		const results = await Promise.all(requests.map(r => a.service.mutate(a.context, r)));
 		assert.equal(results.filter(r => r.status === 'committed').length, 1);
 		assert.equal(results.filter(r => r.status === 'rejected' && r.code === 'duplicate-id').length, 1);
-		assert.equal(a.counts.writes, 1);
+		assert.equal(Object.keys(JSON.parse(await readFile(a.path, 'utf8'))._management.receipts).length, 1);
 		assert.equal(a.counts.stages, 2);
 		assert.equal((await a.service.list(a.context)).length, 1);
 		const barrier = a.pool.beginMutation('blocked', 'create');

@@ -141,6 +141,9 @@ export class SavedTicketAuthority {
   const { signature: _, ...unsigned } = ticket;
   return Object.freeze({...unsigned, signature:this.mac('ticket', unsigned).toString('base64url')});
  }
+ /** Conservative admission hint only; never authorizes an effect without inspect/requestMac. */
+ expired(ticket: OperationTicket): boolean { return Date.parse(ticket.expiresAt) <= this.now(); }
+
  /** Expired authenticated tickets remain inspectable for status/recovery, never silently not-seen. */
  async inspect(value: unknown): Promise<{ ticket: OperationTicket; expired: boolean }> {
   await this.eligible();

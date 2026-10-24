@@ -1,9 +1,9 @@
 /** Serialized saved-connection application service. Routes remain disabled until maintenance gates install it. */
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
 import type { ConnectionConfig } from '../../shared/db-driver.js';
-import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection } from '../../shared/connection-management.js';
-import { parseMutationRequest, ManagementInputError } from '../../shared/connection-management-wire.js';
+import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt } from '../../shared/connection-management.js';
+import { parseMutationRequest, parseOperationTicket, parseConnectionKey, ManagementInputError } from '../../shared/connection-management-wire.js';
 import { canonicalRequestJson, SavedTicketAuthority, TicketError } from './management-tickets.js';
 import { connectionsPath, loadConnections } from './config.js';
 import { credentialValues, materializeDraft, ProfileError, safeConnection } from './driver-profiles.js';
@@ -76,6 +76,12 @@ export interface SavedManagementPorts {
 export class SavedConnectionManagement {
 	readonly root: string;
 	readonly #lastCommitted = new Map<string, SafeConnection>();
+	readonly #inflight = new Map<string, {
+		canonical: string;
+		ticket: OperationTicket;
+		promise: Promise<MutationOutcome>;
+	}>();
+	readonly #phase = new Map<string, CommittedOutcome>();
 	private constructor(private readonly ports: SavedManagementPorts) {
 		this.root = ports.root;
 	}
@@ -86,7 +92,7 @@ export class SavedConnectionManagement {
 		await service.current();
 		return service;
 	}
-	private async current(): Promise<RegistrySnapshot> {
+	private async current(reconcile = false): Promise<RegistrySnapshot> {
 		if (!await this.ports.enabled())
 			throw new ManagementServiceError('upgrade-required');
 		if (!await this.ports.isRegistered(this.root))
@@ -98,13 +104,26 @@ export class SavedConnectionManagement {
 		catch {
 			throw new ManagementServiceError('registry-unreadable');
 		}
-		const current = await this.ports.store.inspect();
+		const current = await (reconcile ? this.ports.store.reconcile() : this.ports.store.inspect());
 		if (!current.file._management || JSON.stringify(loaded.file) !== JSON.stringify(current.file))
 			throw new ManagementServiceError('recovery-required');
 		const envelope = current.file._management;
 		const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 		if (!uuid.test(envelope.registryId) || !uuid.test(envelope.generation) || envelope.registryId !== this.ports.generations.journal.registryId || Object.values(envelope.revisions).some(revision => typeof revision !== 'string' || !uuid.test(revision)) || current.file.connections.some(c => !Object.hasOwn(envelope.revisions, c.id)))
 			throw new ManagementServiceError('registry-unreadable');
+		for (const [id, receipt] of Object.entries(envelope.receipts)) {
+			try {
+				if (!uuid.test(id) || !receipt || typeof receipt !== 'object' || Object.keys(receipt).sort().join(',') !== 'cleanupRefs,outcome,requestMac,ticket' || !/^[A-Za-z0-9_-]{43}$/.test(receipt.requestMac))
+					throw new Error();
+				const ticket = parseOperationTicket(receipt.ticket);
+				const outcome = receipt.outcome;
+				if (ticket.operationId !== id || ticket.lookupRoot !== this.root || ticket.scope !== 'saved' || !/^[A-Za-z0-9_-]{43}$/.test(ticket.signature) || !outcome || Object.keys(outcome).sort().join(',') !== 'activation,credentialCleanup,operationId,registration,revision' || outcome.operationId !== id || !uuid.test(outcome.revision) || !['persisted', 'removed'].includes(outcome.registration) || !['active', 'pending', 'failed', 'not-applicable'].includes(outcome.activation) || !['complete', 'pending'].includes(outcome.credentialCleanup) || !Array.isArray(receipt.cleanupRefs) || receipt.cleanupRefs.some(ref => typeof ref !== 'string' || !this.ports.generations.owns(ref)))
+					throw new Error();
+			}
+			catch {
+				throw new ManagementServiceError('registry-unreadable');
+			}
+		}
 		return current;
 	}
 	private context(context: ManagementRequestContext): void {
@@ -114,6 +133,18 @@ export class SavedConnectionManagement {
 	legacyProjection(id: string): SafeConnection | undefined {
 		const value = this.#lastCommitted.get(id) ?? this.ports.pool.safeList().find(c => c.key.id === id);
 		return value ? structuredClone(value) : undefined;
+	}
+	private async cleanupState(receipt: CommittedReceipt, current: RegistrySnapshot): Promise<'complete' | 'pending'> {
+		if ((await this.ports.generations.journal.pending()).some(r => r.operationId === receipt.ticket.operationId))
+			return 'pending';
+		if (receipt.outcome.credentialCleanup === 'complete')
+			return 'complete';
+		const live = referencedSecrets(current.file.connections);
+		for (const ref of receipt.cleanupRefs) {
+			if (!live.has(ref) && await this.ports.readSecret(ref) !== null)
+				return 'pending';
+		}
+		return 'complete';
 	}
 	async list(context: ManagementRequestContext): Promise<readonly SafeConnection[]> {
 		this.context(context);
@@ -137,7 +168,19 @@ export class SavedConnectionManagement {
 		catch (error) {
 			return managementRejection(error);
 		}
-		return withSavedRootGate(this.root, () => this.apply(request));
+		const canonical = canonicalRequestJson(request);
+		const prior = this.#inflight.get(request.operationId);
+		if (prior)
+			return prior.canonical === canonical ? prior.promise.then(value => structuredClone(value)) : managementRejection(new ManagementServiceError('operation-mismatch'));
+		const promise = withSavedRootGate(this.root, () => this.apply(request));
+		this.#inflight.set(request.operationId, { canonical, ticket: request.ticket, promise });
+		try {
+			return structuredClone(await promise);
+		}
+		finally {
+			if (this.#inflight.get(request.operationId)?.promise === promise)
+				this.#inflight.delete(request.operationId);
+		}
 	}
 	private async apply(request: MutationRequest): Promise<MutationOutcome> {
 		let barrier: (() => void) | undefined;
@@ -147,6 +190,15 @@ export class SavedConnectionManagement {
 		try {
 			const current = await this.current();
 			const envelope = current.file._management!;
+			const recorded = envelope.receipts[request.operationId];
+			if (recorded) {
+				const mac = await this.ports.tickets.requestMac(request, { reconciliationOnly: true });
+				if (!timingSafeEqual(Buffer.from(mac, 'base64url'), Buffer.from(recorded.requestMac, 'base64url')))
+					throw new ManagementServiceError('operation-mismatch');
+				return { status: 'committed', value: { ...structuredClone(this.#phase.get(request.operationId) ?? recorded.outcome), credentialCleanup: await this.cleanupState(recorded, current) } };
+			}
+			if (this.ports.tickets.expired(request.ticket))
+				throw new ManagementServiceError('reconciliation-required');
 			const existing = current.file.connections.find(c => c.id === request.key.id);
 			if (request.mode === 'create' && existing)
 				throw new ManagementServiceError('duplicate-id');
@@ -154,8 +206,6 @@ export class SavedConnectionManagement {
 				throw new ManagementServiceError('not-found');
 			if (request.mode === 'update' && envelope.revisions[request.key.id] !== request.expectedRevision)
 				throw new ManagementServiceError('conflict');
-			if (envelope.receipts[request.operationId])
-				throw new ManagementServiceError('reconciliation-required');
 			await this.ports.pool.reload();
 			barrier = this.ports.pool.beginMutation(request.key.id, request.mode, request.expectedRevision);
 			const requestMac = await this.ports.tickets.requestMac(request);
@@ -176,24 +226,37 @@ export class SavedConnectionManagement {
 			catch {
 				cleanup = 'pending';
 			}
+			let activation: 'active' | 'failed' = 'active';
+			let poolReady = true;
 			try {
 				await this.ports.pool.reload();
 			}
 			catch {
-				barrier();
-				barrier = undefined;
-				return { status: 'committed', value: { ...outcome, activation: 'failed', credentialCleanup: cleanup } };
+				poolReady = false;
+				activation = 'failed';
 			}
 			barrier();
 			barrier = undefined;
-			let activation: 'active' | 'failed' = 'active';
+			if (poolReady) {
+				try {
+					await this.ports.activate(request.key.id, revision);
+				}
+				catch {
+					activation = 'failed';
+				}
+			}
+			const final: CommittedOutcome = { ...outcome, activation, credentialCleanup: cleanup };
+			const latest = this.ports.store.snapshot;
+			const metadata = latest.file._management!;
 			try {
-				await this.ports.activate(request.key.id, revision);
+				await this.ports.store.commit(latest, { ...latest.file, _management: { ...metadata, generation: randomUUID(), receipts: { ...metadata.receipts, [request.operationId]: { ...metadata.receipts[request.operationId]!, outcome: final } } } });
+				this.#phase.set(request.operationId, structuredClone(final));
+				return { status: 'committed', value: final };
 			}
 			catch {
-				activation = 'failed';
+				// Commitment is already durable. Until finalization can be reconciled, report the persisted pending phase.
+				return committed;
 			}
-			return { status: 'committed', value: { ...outcome, activation, credentialCleanup: cleanup } };
 		}
 		catch (error) {
 			return committed ?? managementRejection(error);
@@ -201,6 +264,103 @@ export class SavedConnectionManagement {
 		finally {
 			barrier?.();
 		}
+	}
+	async status(context: ManagementRequestContext, value: unknown): Promise<OperationStatus> {
+		try {
+			this.context(context);
+			const { ticket, expired } = await this.ports.tickets.inspect(value);
+			const inFlight = this.#inflight.get(ticket.operationId);
+			if (inFlight) {
+				if (canonicalRequestJson(inFlight.ticket) !== canonicalRequestJson(ticket))
+					throw new ManagementServiceError('operation-mismatch');
+				return { status: 'pending' };
+			}
+			return await withSavedRootGate(this.root, async () => {
+				let current = await this.current(true);
+				const receipt = current.file._management!.receipts[ticket.operationId];
+				if (receipt && canonicalRequestJson(receipt.ticket) !== canonicalRequestJson(ticket))
+					throw new ManagementServiceError('operation-mismatch');
+				const recovered = await this.ports.generations.recover();
+				current = await this.current();
+				const canonical = current.file._management!.receipts[ticket.operationId];
+				if (canonical) {
+					await this.ports.store.cleanupCommittedTemp(ticket.operationId);
+					const cleanup = recovered.find(r => r.operationId === ticket.operationId)?.cleanup ?? await this.cleanupState(canonical, current);
+					const outcome = { ...structuredClone(this.#phase.get(ticket.operationId) ?? canonical.outcome), credentialCleanup: cleanup };
+					this.#phase.set(ticket.operationId, structuredClone(outcome));
+					return { status: 'committed', value: outcome };
+				}
+				if (expired)
+					return { status: 'reconciliation-required' };
+				if ((await this.ports.generations.journal.pending()).some(record => record.operationId === ticket.operationId))
+					return { status: 'pending' };
+				return { status: 'not-seen' };
+			});
+		}
+		catch {
+			return { status: 'reconciliation-required' };
+		}
+	}
+	async retryActivation(context: ManagementRequestContext, value: ActivationRetry): Promise<MutationOutcome> {
+		try {
+			this.context(context);
+			value = JSON.parse(canonicalRequestJson(value)) as ActivationRetry;
+			parseConnectionKey(value.key);
+			if (Object.keys(value).sort().join(',') !== 'committedRevision,key' || value.key.repoRoot !== this.root || value.key.scope !== 'saved')
+				throw new ManagementServiceError('invalid-input');
+		}
+		catch (error) {
+			return managementRejection(error);
+		}
+		return withSavedRootGate(this.root, async () => {
+			try {
+				const current = await this.current();
+				const envelope = current.file._management!;
+				if (envelope.revisions[value.key.id] !== value.committedRevision || !current.file.connections.some(c => c.id === value.key.id))
+					throw new ManagementServiceError('conflict');
+				const receipt = Object.values(envelope.receipts).find(r => r.ticket.connectionId === value.key.id && r.outcome.revision === value.committedRevision);
+				if (!receipt)
+					throw new ManagementServiceError('not-found');
+				await this.ports.tickets.inspect(receipt.ticket);
+				await this.ports.pool.reload();
+				let activation: 'active' | 'failed' = 'active';
+				try {
+					await this.ports.activate(value.key.id, value.committedRevision);
+				}
+				catch {
+					activation = 'failed';
+				}
+				const outcome = { ...(this.#phase.get(receipt.ticket.operationId) ?? receipt.outcome), activation, credentialCleanup: await this.cleanupState(receipt, current) };
+				this.#phase.set(outcome.operationId, structuredClone(outcome));
+				return { status: 'committed', value: outcome };
+			}
+			catch (error) {
+				return managementRejection(error);
+			}
+		});
+	}
+	/** Maintenance only. Expired tickets without receipts are never made executable again. */
+	async pruneReceipts(context: ManagementRequestContext): Promise<void> {
+		this.context(context);
+		await withSavedRootGate(this.root, async () => {
+			const current = await this.current();
+			const envelope = current.file._management!;
+			const pending = new Set((await this.ports.generations.journal.pending()).map(r => r.operationId));
+			const receipts = { ...envelope.receipts };
+			const removed: string[] = [];
+			for (const [id, receipt] of Object.entries(receipts)) {
+				const inspected = await this.ports.tickets.inspect(receipt.ticket);
+				if (inspected.expired && !pending.has(id) && await this.cleanupState(receipt, current) === 'complete') {
+					delete receipts[id];
+					removed.push(id);
+				}
+			}
+			if (removed.length) {
+				await this.ports.store.commit(current, { ...current.file, _management: { ...envelope, generation: randomUUID(), receipts } });
+				for (const id of removed)
+					this.#phase.delete(id);
+			}
+		});
 	}
 	async legacyUpsert(context: ManagementRequestContext, config: ConnectionConfig): Promise<MutationOutcome> {
 		try {

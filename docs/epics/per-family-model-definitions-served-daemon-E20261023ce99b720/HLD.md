@@ -4,7 +4,7 @@
 
 ## Summary
 
-Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) moves into one definitions file shipped with insrc, which the daemon loads and checks at startup and holds as a single registry. The daemon resolves tiers, the summariser model, effort levels and input limits only through that registry, serves the same view to every client over one IPC request, and adds models a user has checked and approved from a separate per-user store. The terminal UI and both IDE plugins stop keeping their own lists and render what the daemon returns.
+Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) moves into one definitions file shipped with insrc: each family's models with their aliases, effort levels and input limits, and the family's own tier defaults and summariser model. The daemon checks the file at startup and every thread that runs models builds the same registry from it; a model the user has checked and approved is added from a separate per-user store, and a model that is neither shipped nor approved is never run, its tier falling back to the family default until the user approves it. Clients get the whole picture from one daemon request and keep no lists of their own.
 
 ## Contents
 
@@ -25,11 +25,11 @@ Every fact about the model families insrc runs (Claude CLI, Codex CLI, Ollama) m
 
 ## 2. Framework summary
 
-A daemon-held model-definitions registry, grown from the existing curated cloud catalog. One shipped JSON file (replacing src/assets/models/cloud-model-catalog.json) describes each family's runner identity and CLI kind, its known models with per-model accepted effort levels and input limit, the tier defaults and the summariser model; Ollama is described at family level because its installed models are discovered live. The daemon validates the file at boot before it listens (as validateModelCatalog does today at src/daemon/index.ts:381), refuses to start on a bad file, and keeps a frozen registry. User-approved unknown models live in a separate daemon-owned store under the insrc home and are overlaid on the registry as user-approved entries. One read-only IPC request serves the merged view; providers.listModels is derived from it. Tier settings become global-only.
+A model-definitions registry, grown from the curated cloud catalog and built in every daemon thread that runs models. One shipped JSON file (replacing src/assets/models/cloud-model-catalog.json) describes, per family, its runner identity and CLI kind, its known models with aliases (e.g. the Claude CLI's opus/sonnet/haiku), accepted effort levels and input limit, its own core/mid/cheap tier defaults and its summariser model, plus which family a fresh install defaults to; Ollama is described at family level because its installed models are listed live. The main thread validates the file before it starts the worker threads (today created at src/daemon/index.ts:205) and before it listens; the file is then loaded by each model-running thread at its start. User-approved unknown models live in a per-user store owned by the main thread and are pushed to the workers over the existing hub channel. A tier set to a model that is neither shipped nor approved runs its family's tier default with a warning until approved (user decision A). One read-only IPC request serves the merged view; providers.listModels is drawn from it. Tier settings become global-only, with coreFloor kept as a tier name.
 
 ## 3. Architecture shape
 
-Daemon side: (1) the definitions file and its loader/validator replace the curated catalog in the same boot slot; (2) a ModelRegistry module is the only place that answers model questions (families, models of a family, tier default, summariser model, whether a model accepts an effort, a model's input limit, runner and CLI kind of a family), reading the frozen shipped definitions plus an approved-model overlay; (3) tier resolution (resolveTier, the role router, the shaper and summariser provider selection, CliProvider's input budget) asks the registry instead of DEFAULT_TIERS, TIER_EFFORTS, SUMMARISER_CLI_FALLBACK and CODEX_INPUT_BUDGET_CHARS; (4) an unknown-model check service probes through the installed CLIs one call at a time and writes approved profiles to the approved-model store; (5) the existing config reconcile step removes per-repo tier overrides. IPC side: models.definitions returns the merged view; providers.listModels keeps its shape but is drawn from the registry (Ollama still listed live); models.check / models.approve / models.reject drive the unknown-model flow. Client side: the TUI model-tiers pane, the VS Code model-tier picker and repo panel, and the JetBrains model-tiers and per-repo sections render models.definitions and call the check/approve requests; none keeps a runner, model or effort list.
+Daemon, every model-running thread: (1) a ModelRegistry built at thread start from the validated definitions file plus the current approved-model set; it is the only answer to model questions: families, models and their aliases, whether a model accepts an effort, a model's input limit, a family's tier default and summariser model, the runner and CLI kind of a family, and the model a tier setting resolves to (with the fallback of decision A). (2) Tier resolution (resolveTier and the role router's default fallback), shaper and summariser provider selection (including the summary worker's summariseDoc path, src/analyze/summariser/driver.ts:195 and :211), CliProvider's input budget and effort forwarding all ask the registry instead of DEFAULT_TIERS, TIER_EFFORTS, SUMMARISER_CLI_FALLBACK and CODEX_INPUT_BUDGET_CHARS. Main thread only: (3) validation of the definitions file before the thread services start and before the socket listens; (4) the approved-model store and the unknown-model check service, which probes through the installed CLIs one call at a time and, after an approval or rejection, sends the new approved set to every worker over the hub channel (src/daemon/threads/main-services.ts:154, src/daemon/threads/channel.ts:124); (5) the config reconcile rule that removes per-repo tier overrides. IPC: models.definitions returns the merged view; providers.listModels keeps its shape but is drawn from the registry (Ollama still listed live); models.check / models.approve / models.reject drive the unknown-model flow; each new method is classified in src/daemon/threads/method-class.ts. Clients: the TUI model-tiers pane, the VS Code model-tier picker and repo panel, and the JetBrains model-tiers and per-repo sections render models.definitions and call the check/approve requests; none keeps a runner, model or effort list. Installer: both copies of the install script take the chosen family's tier defaults from the definitions file instead of their own blocks.
 
 ## 4. Diagrams
 
@@ -42,43 +42,47 @@ Daemon side: (1) the definitions file and its loader/validator replace the curat
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`, `s4`
 
-**Purpose:** The shipped, versioned data format for all model facts: the single place a maintainer edits to add a model, version or effort level (k4). Validated at daemon start (k7).
+**Purpose:** The shipped, versioned data format for all model facts, edited to add a model, alias, version or effort level (k4); validated before the daemon starts its workers or listens (k7). Tier defaults and the summariser model are per family, so the installer's Claude and Codex mappings and the Codex summariser come from it.
 
 **Interface sketch (type-level):**
 
 ```
 type FamilyId = 'cli-claude' | 'cli-codex' | 'ollama';
-type EffortLevel = string; // e.g. 'low' | 'medium' | 'high' | 'xhigh' | 'max'; the file is the authority
+type TierName = 'core' | 'mid' | 'cheap';
+type EffortLevel = string; // the file is the authority for the level names
 interface InputLimit { readonly unit: 'chars' | 'tokens'; readonly max: number; }
 interface ModelDefinition {
-  readonly id: string;                       // exact id passed to the CLI
+  readonly id: string;                         // canonical id, unique within its family
+  readonly aliases?: readonly string[] | undefined; // names the CLI also accepts (e.g. 'haiku'); unique within the family
   readonly displayName?: string | undefined;
-  readonly efforts: readonly EffortLevel[];   // accepted effort levels for THIS model ([] = effort not passed)
-  readonly inputLimit?: InputLimit | undefined; // absent = the CLI's own size refusal decides
+  readonly efforts: readonly EffortLevel[];     // accepted effort levels ([] = no effort passed)
+  readonly inputLimit?: InputLimit | undefined; // absent = the family default, else the CLI's own refusal decides
 }
+interface TierDefault { readonly model: string; readonly effort?: EffortLevel | undefined; } // model: an id or alias of THIS family
 interface FamilyDefinition {
   readonly id: FamilyId;
-  readonly cliKind?: 'claude' | 'codex' | undefined; // absent for ollama
+  readonly cliKind?: 'claude' | 'codex' | undefined;  // absent for ollama
   readonly displayName: string;
-  readonly models: readonly ModelDefinition[];   // ollama: optional known models; installed ones are listed live
-  readonly defaultInputLimit?: InputLimit | undefined; // family fallback, e.g. ollama context window
+  readonly models: readonly ModelDefinition[];        // ollama: optional known models; installed ones are listed live
+  readonly defaultInputLimit?: InputLimit | undefined;
+  readonly tierDefaults?: Readonly<Record<TierName, TierDefault>> | undefined; // required for the CLI families
+  readonly summariserModel?: string | undefined;      // id or alias of this family; required for the CLI families
 }
 interface ModelDefinitionsFile {
   readonly version: number;
+  readonly defaultFamily: 'cli-claude' | 'cli-codex'; // the family a fresh install and an unset tier use
   readonly families: readonly FamilyDefinition[];
-  readonly tierDefaults: Readonly<Record<'core' | 'mid' | 'cheap', { readonly family: FamilyId; readonly model: string; readonly effort?: EffortLevel | undefined }>>;
-  readonly summariser: Readonly<Record<'cli-claude' | 'cli-codex', string>>; // cheap model per CLI family
 }
 ```
 
 **Assumptions cited:** [[c5]]
 
-### 5.2 sc2: ModelRegistry
+### 5.2 sc2: ModelRegistry (one per model-running thread)
 
 **Owner Story:** `s1`
 **Consumed by:** `s2`, `s3`, `s4`
 
-**Purpose:** The daemon's only in-process source of model facts, built once at boot from sc1 plus an approved-model overlay. Every daemon consumer asks it instead of keeping literals (s3/ac3); s4 plugs its approved models in through ApprovedModelSource.
+**Purpose:** The only in-process source of model facts, built at the start of every thread that runs models from the validated sc1 file plus the current approved-model set, so the main thread and the workers answer identically. It resolves aliases, and applies user decision A: a tier set to a model that is neither shipped nor approved resolves to the family's tier default, flagged as a fallback.
 
 **Interface sketch (type-level):**
 
@@ -87,20 +91,27 @@ interface ResolvedModel extends ModelDefinition {
   readonly family: FamilyId;
   readonly source: 'shipped' | 'user-approved';
 }
-interface ApprovedModelSource {
-  approvedModels(family: FamilyId): readonly ResolvedModel[]; // source === 'user-approved'
+interface ApprovedModelSet { readonly profiles: readonly ApprovedProfile[]; readonly revision: number; }
+interface TierResolution {
+  readonly family: FamilyId;
+  readonly model: ResolvedModel;               // canonical model actually run
+  readonly effort?: EffortLevel | undefined;   // dropped when the model does not accept it (s3/ac2)
+  readonly fallback?: { readonly reason: 'unknown-model' | 'rejected-model'; readonly requested: string } | undefined; // decision A
+  readonly droppedEffort?: EffortLevel | undefined;
 }
 interface ModelRegistry {
   families(): readonly FamilyDefinition[];
-  models(family: FamilyId): readonly ResolvedModel[];          // shipped + approved overlay
-  find(family: FamilyId, modelId: string): ResolvedModel | undefined;
-  acceptsEffort(family: FamilyId, modelId: string, effort: EffortLevel): boolean;
-  inputLimit(family: FamilyId, modelId: string): InputLimit | undefined;
-  tierDefault(tier: 'core' | 'mid' | 'cheap'): { family: FamilyId; model: string; effort?: EffortLevel | undefined };
-  summariserModel(family: 'cli-claude' | 'cli-codex'): string;
+  defaultFamily(): 'cli-claude' | 'cli-codex';
+  models(family: FamilyId): readonly ResolvedModel[];             // shipped + approved overlay
+  find(family: FamilyId, idOrAlias: string): ResolvedModel | undefined;
+  acceptsEffort(family: FamilyId, idOrAlias: string, effort: EffortLevel): boolean;
+  inputLimit(family: FamilyId, idOrAlias: string): InputLimit | undefined;
+  tierDefault(family: FamilyId, tier: TierName): TierDefault;
+  summariserModel(family: 'cli-claude' | 'cli-codex'): ResolvedModel;
   cliKind(family: FamilyId): 'claude' | 'codex' | undefined;
+  resolveTier(setting: { family: FamilyId; model?: string | undefined; effort?: EffortLevel | undefined } | undefined, tier: TierName): TierResolution;
+  applyApproved(set: ApprovedModelSet): void;  // replaces the overlay; later revisions win
 }
-type RegistryOverlayRegistration = (source: ApprovedModelSource) => void; // s4 registers its store
 ```
 
 **Assumptions cited:** [[c5]] [[c12]]
@@ -110,7 +121,7 @@ type RegistryOverlayRegistration = (source: ApprovedModelSource) => void; // s4 
 **Owner Story:** `s2`
 **Consumed by:** `s4`, `s5`, `s6`, `s7`
 
-**Purpose:** The one read-only daemon request every client uses to learn families, models, per-model efforts and limits, tier defaults and the summariser model (k2). Carries user-approved models marked as such (s4/ac5). providers.listModels is drawn from the same registry and agrees with it (s2/ac2).
+**Purpose:** The one read-only daemon request every client uses to learn families, models with aliases, per-model efforts and limits, each family's tier defaults and summariser model, and the default family (k2). Carries user-approved models marked as such (s4/ac5). providers.listModels is drawn from the same registry and agrees with it (s2/ac2).
 
 **Interface sketch (type-level):**
 
@@ -118,20 +129,22 @@ type RegistryOverlayRegistration = (source: ApprovedModelSource) => void; // s4 
 // request: 'models.definitions'  params: {}
 interface ModelDefinitionsResult {
   readonly version: number;
+  readonly defaultFamily: 'cli-claude' | 'cli-codex';
   readonly families: readonly {
     readonly id: FamilyId;
     readonly displayName: string;
+    readonly liveListed: boolean;   // true for ollama: installed models come from providers.listModels
+    readonly tierDefaults?: Readonly<Record<TierName, TierDefault>> | undefined;
+    readonly summariserModel?: string | undefined;
     readonly models: readonly {
       readonly id: string;
+      readonly aliases: readonly string[];
       readonly displayName?: string | undefined;
       readonly efforts: readonly EffortLevel[];
       readonly inputLimit?: InputLimit | undefined;
       readonly source: 'shipped' | 'user-approved';
     }[];
-    readonly liveListed: boolean; // true for ollama: installed models come from providers.listModels
   }[];
-  readonly tierDefaults: ModelDefinitionsFile['tierDefaults'];
-  readonly summariser: ModelDefinitionsFile['summariser'];
 }
 ```
 
@@ -142,32 +155,34 @@ interface ModelDefinitionsResult {
 **Owner Story:** `s4`
 **Consumed by:** `s5`, `s6`, `s7`
 
-**Purpose:** The daemon flow that checks a model not in the definitions through its CLI, one call at a time (k1, k3), returns per-effort evidence, and stores the user's approved profile in a per-user store (k5), never the shipped file or config.json (k4).
+**Purpose:** The daemon flow that checks a model not in the definitions through its CLI, one call at a time (k1, k3), returns per-effort evidence, and stores the user's approved profile in a per-user store (k5) outside the shipped file and config.json (k4). After every approval or rejection the main thread pushes the new approved set to each worker's registry.
 
 **Interface sketch (type-level):**
 
 ```
 // request: 'models.check'   params: { family: 'cli-claude' | 'cli-codex'; modelId: string; claimedEfforts: EffortLevel[] }
-type EffortVerdict = 'accepted' | 'rejected' | 'recognised-unconfirmed'; // the last: Claude, the CLI cannot confirm support
+type EffortVerdict = 'accepted' | 'rejected' | 'recognised-unconfirmed'; // last: Claude, support not confirmable by the CLI
 interface ModelCheckResult {
   readonly family: FamilyId;
   readonly modelId: string;
-  readonly runs: boolean;                 // the model answered through its CLI
-  readonly inputLimit?: InputLimit | undefined; // from the CLI's own output where it states one
+  readonly runs: boolean;
+  readonly inputLimit?: InputLimit | undefined;
   readonly efforts: readonly { readonly effort: EffortLevel; readonly verdict: EffortVerdict; readonly evidence: string }[];
-  readonly checkId: string;               // ties an approval to this check
-  readonly error?: string | undefined;    // the CLI could not be reached (s4/ac4)
+  readonly checkId: string;
+  readonly error?: string | undefined;     // the CLI could not be reached (s4/ac4)
 }
 // request: 'models.approve' params: { checkId: string; efforts: EffortLevel[] }  -> { ok: true } | { ok: false; reason: string }
 // request: 'models.reject'  params: { checkId: string }                          -> { ok: true }
 interface ApprovedProfile {
   readonly family: FamilyId;
   readonly modelId: string;
-  readonly efforts: readonly EffortLevel[];   // only checked AND approved levels (s4/ac3)
+  readonly status: 'approved' | 'rejected';
+  readonly efforts: readonly EffortLevel[];  // approved: only checked AND approved levels (s4/ac3)
   readonly inputLimit?: InputLimit | undefined;
-  readonly approvedAt: string;               // ISO time
-  readonly cliVersion: string;               // the CLI version the check ran against
+  readonly decidedAt: string;               // ISO time
+  readonly cliVersion: string;
 }
+// hub message main -> worker: { kind: 'approved-models'; set: ApprovedModelSet }
 ```
 
 **Assumptions cited:** [[c11]]
@@ -177,20 +192,20 @@ interface ApprovedProfile {
 **Owner Story:** `s3`
 **Consumed by:** `s5`, `s6`, `s7`
 
-**Purpose:** The settings shape after k6: tier runner, model and effort exist only globally; a repo may only assign roles to tiers and set the core floor. Clients edit settings to this shape; the daemon ignores and removes per-repo tier overrides (s3/ac5).
+**Purpose:** The settings shape after k6: tier runner, model and effort exist only globally; a repo may only assign roles to tiers and set the core floor, which stays a tier name as today (src/config/analyze.ts:144). Clients edit settings to this shape; the daemon ignores and removes per-repo tier overrides (s3/ac5) and keeps every existing coreFloor and roleTiers value.
 
 **Interface sketch (type-level):**
 
 ```
-interface GlobalTierSetting { readonly runner: FamilyId; readonly model: string; readonly effort?: EffortLevel | undefined; }
+interface GlobalTierSetting { readonly runner: FamilyId; readonly model: string; readonly effort?: EffortLevel | undefined; } // model: id or alias
 interface GlobalTiering {
-  readonly tiers?: Partial<Record<'core' | 'mid' | 'cheap', GlobalTierSetting>> | undefined;
-  readonly roleTiers?: Readonly<Record<string, 'core' | 'mid' | 'cheap'>> | undefined;
-  readonly coreFloor?: boolean | undefined;
+  readonly tiers?: Partial<Record<TierName, GlobalTierSetting>> | undefined;
+  readonly roleTiers?: Readonly<Record<string, TierName>> | undefined;
+  readonly coreFloor?: TierName | undefined;
 }
 interface RepoTiering { // models.byRepo[repo]
-  readonly roleTiers?: Readonly<Record<string, 'core' | 'mid' | 'cheap'>> | undefined;
-  readonly coreFloor?: boolean | undefined;
+  readonly roleTiers?: Readonly<Record<string, TierName>> | undefined;
+  readonly coreFloor?: TierName | undefined;
   // no `tiers`: a stale models.byRepo[repo].tiers entry is removed by config reconcile
 }
 ```
@@ -203,79 +218,79 @@ interface RepoTiering { // models.byRepo[repo]
 
 **Owns:** `sc1`, `sc2`
 
-The definitions file contents, the loader and validator (missing file, malformed JSON, unknown family, tier default or summariser model not among that family's models, all naming the faulty entry), the frozen registry construction and its boot slot (the slot validateModelCatalog holds today, before the socket listens), and the retirement of the curated catalog asset and its loader. The installer's Codex tier block is rewritten to take its defaults from the same file.
+The definitions file contents (seeded from the curated catalog, with current model ids such as the Claude haiku the CLI resolves today, and with the CLI aliases the tier defaults use), the validator (missing file, malformed JSON, unknown family, duplicate id or alias in a family, a tier default or summariser model that is not an id or alias of its family, a defaultFamily without tier defaults; each failure names the entry), its run in the main thread before the thread services start and before the socket listens, and building the registry at the start of the main thread and of each worker that runs models. Both installer copies take the chosen family's tier defaults from the file. Retires the curated catalog asset and its loader. Tests: a validator suite with one fixture per refusal reason (ac3); a data-only addition test that adds a model and alias to a fixture file and reads it back through the registry with no code change (ac2); a boot-order test that the file is validated before thread services start and before listen (ac1, k7); a test that the main thread and a worker build equal registries; the existing model-catalog and model-catalog-asset suites are adapted to the new file.
 
 ### 6.2 Story E20261024ce99b720:S002
 
 **Owns:** `sc3`
 **Depends on:** `sc1`, `sc2`
 
-The handler for models.definitions, the projection of the registry into the result, and re-sourcing providers.listModels for the CLI families from the registry so the two answers agree; the live Ollama listing stays as it is.
+The handler for models.definitions, the projection of the registry into the result, its entry in src/daemon/threads/method-class.ts, and re-sourcing providers.listModels for the CLI families from the registry so the two answers agree; the live Ollama listing stays as it is. Tests: models.definitions returns every family, model, alias, effort list, limit, tier default and summariser model of a fixture file (ac1); providers.listModels and models.definitions agree for each CLI family (ac2); the method-class coverage test passes with the new entry; the existing list-models suite is adapted.
 
 ### 6.3 Story E20261024ce99b720:S003
 
 **Owns:** `sc5`
 **Depends on:** `sc1`, `sc2`
 
-Moving every daemon consumer onto the registry: resolveTier and the role router's default fallback (DEFAULT_TIERS), the summariser fallback (SUMMARISER_CLI_FALLBACK), the effort list (TIER_EFFORTS and the config catalog's effort rows), CliProvider's input budget and effort forwarding (dropping an effort the model does not accept, with a warning naming model and effort), and the runner/CLI-kind literals in routing, provider construction, attribution and workflow code. Also the settings parse and config reconcile rule that stop reading and then remove per-repo tier overrides with a warning naming repo and tier.
+Moving every daemon consumer, in the main thread and the workers, onto the registry: resolveTier and the role router's default fallback (DEFAULT_TIERS), the summariser selection (SUMMARISER_CLI_FALLBACK) including the summary worker's path, the effort list (TIER_EFFORTS and the config catalog's effort rows), CliProvider's input budget and effort forwarding, and the runner/CLI-kind literals in routing, provider construction, attribution and workflow code. Applies decision A at resolution: a tier set to a model that is neither shipped nor approved runs its family's tier default and logs a warning naming the tier, the requested model and the default used. Also the settings parse and config reconcile rule that stop reading, then remove, per-repo tier overrides with a warning naming repo and tier, keeping coreFloor and roleTiers. Tests: an unset tier resolves to the family's tier default from a fixture file (ac1); an unsupported effort is not passed and a warning names model and effort (ac2); a source scan fails on runner or model literals outside the family implementations (ac3); a repo's role-to-tier choice applies while the tier's model comes from global settings (ac4); reconcile removes per-repo tier overrides, warns with repo and tier and keeps coreFloor/roleTiers (ac5); an unlisted model falls back to the tier default with the warning (decision A); the summariser in a worker resolves the same model as in the main thread; the existing analyze-tiering, tier-defaults and core-floor suites are adapted.
 
 ### 6.4 Story E20261024ce99b720:S004
 
 **Owns:** `sc4`
 **Depends on:** `sc1`, `sc2`, `sc3`
 
-The per-family check procedures (Codex: model list from the CLI plus a run; Claude: a run, input limit from the JSON output, recognised effort names), their serial execution, the approved-model store file under the insrc home and its validation, registering the store with the registry as its approved-model overlay, and the daemon refusing a tier set to an unknown model that has no approved profile.
+The per-family check procedures (Codex: model list from the CLI plus a run; Claude: a run, input limit from the JSON output, recognised effort names), their serial execution, the approved-model store under the insrc home (approved and rejected profiles) and its validation, loading it into the main thread's registry, pushing every change to the workers over the hub channel and having a later-started worker read the store at its start, the method-class entries for models.check, models.approve and models.reject, and refusing to set a tier to a model whose profile is rejected or whose check could not reach the CLI. Tests: per-family checks against fake CLIs record each verdict and run one call at a time (ac1); results list each claimed level with evidence and nothing is usable before approval (ac2); an approved profile admits only the passed and approved levels (ac3); a rejected profile or an unreachable CLI refuses the model with a reason (ac4); an approved model appears in models.definitions marked user-approved (ac5); a worker's registry reflects an approval and a rejection; a malformed store is reported and ignored without stopping the daemon; the method-class coverage test passes.
 
 ### 6.5 Story E20261024ce99b720:S005
 
 **Depends on:** `sc3`, `sc4`, `sc5`
 
-The TUI model-tiers pane and its effort cycle driven by models.definitions, the unknown-model check and approval screen, and the repo settings view limited to role-to-tier and the core floor.
+The TUI model-tiers pane and its effort cycle driven by models.definitions, the unknown-model check and approval screen, and the repo settings view limited to role-to-tier and the core floor. Tests: the pane offers exactly the families, models and effort levels of a fake models.definitions answer and holds no list of its own (ac1); saving an unknown model starts the check and shows its results for approval (ac2); the repo view edits only role-to-tier and coreFloor (ac3); the existing model-tiers pane suites are adapted.
 
 ### 6.6 Story E20261024ce99b720:S006
 
 **Depends on:** `sc3`, `sc4`, `sc5`
 
-The VS Code model-tier picker driven by models.definitions instead of its runner union and compiled config-catalog effort rows, the unknown-model check and approval prompt, and the Repo Configuration panel without per-tier runner or model fields.
+The VS Code model-tier picker driven by models.definitions instead of its runner union and compiled config-catalog effort rows, the unknown-model check and approval prompt, and the Repo Configuration panel without per-tier runner or model fields. Tests: the picker offers exactly the options of a fake models.definitions answer and the extension bundle keeps no runner or model list (ac1); confirming an unknown model shows the check results and saves only after approval (ac2); the repo panel shows only role-to-tier and coreFloor (ac3); the existing model-tier-picker suite is adapted.
 
 ### 6.7 Story E20261024ce99b720:S007
 
 **Depends on:** `sc3`, `sc4`, `sc5`
 
-The JetBrains model-tiers settings section driven by models.definitions instead of ModelTiersModel.PROVIDERS, the unknown-model check and approval dialog, and the per-repo settings without per-tier runner or model fields.
+The JetBrains model-tiers settings section driven by models.definitions instead of ModelTiersModel.PROVIDERS, the unknown-model check and approval dialog, and the per-repo settings without per-tier runner or model fields. Tests: the section offers exactly the options of a fake models.definitions answer and the plugin keeps no runner or model list (ac1); applying an unknown model shows the check results and saves only after approval (ac2); the per-repo settings show only role-to-tier and coreFloor (ac3); the existing ModelTiersModel and settings tests are adapted.
 
 ## 7. Non-functional targets
 
-- **Performance:** The definitions file is read and validated once at boot; every later model question is an in-memory lookup on the frozen registry. models.definitions answers without touching a CLI or Ollama.
-- **Security:** No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home, written only by the daemon; clients reach it only through models.approve and models.reject (k2).
-- **Observability:** A bad definitions file stops the daemon with a log naming the faulty entry (s1/ac3). Dropping an unsupported effort logs a warning naming the model and effort (s3/ac2). Removing a per-repo tier override logs the repo and tier (s3/ac5). Each unknown-model check logs every CLI call and its verdict.
-- **Durability:** Approved profiles survive daemon restarts and insrc updates because they live outside the shipped file and outside config.json; an insrc update that ships a model a user had approved prefers the shipped definition. A malformed approved-model store is reported and ignored rather than stopping the daemon, so a user file can never block startup.
+- **Performance:** The definitions file is parsed and validated once in the main thread at boot and read once more by each worker at its start; every later model question is an in-memory lookup. models.definitions answers without touching a CLI or Ollama. An approval reaches every worker in one hub message.
+- **Security:** No cloud REST call is added (k1): checks run only through the installed claude and codex CLIs. The approved-model store is a per-user file under the insrc home, written only by the daemon's main thread; clients reach it only through models.approve and models.reject (k2).
+- **Observability:** A bad definitions file stops the daemon with a log naming the faulty entry (s1/ac3). Dropping an unsupported effort logs the model and effort (s3/ac2). Falling back from an unlisted model logs the tier, the requested model and the default used (decision A). Removing a per-repo tier override logs the repo and tier (s3/ac5). Each unknown-model check logs every CLI call and its verdict.
+- **Durability:** Approved and rejected profiles survive daemon restarts and insrc updates because they live outside the shipped file and outside config.json; when an update ships a model a user had approved, the shipped definition wins. A malformed approved-model store is reported and ignored rather than stopping the daemon. Existing coreFloor and roleTiers values are kept unchanged when per-repo tier overrides are removed.
 
 ## 8. Rollout
 
-**Phase A — definitions file and registry**
+**Phase A — definitions file and per-thread registry**
 
 **Stories:** `s1`
 
 s1 owns sc1 and sc2, which every other Story consumes; it has no dependencies.
 
-**Backward compat:** providers.listModels keeps answering the same models for cli-claude and cli-codex: the definitions file starts with exactly the curated catalog's entries, and the catalog's boot slot and fail-fast behaviour are kept.
+**Backward compat:** providers.listModels keeps answering the same Claude and Codex models: the definitions file is seeded from the curated catalog (with stale ids refreshed) and adds the aliases today's tier defaults use, so every tier already configured with opus, sonnet, haiku or a catalogued Codex id still resolves. The catalog's fail-fast startup behaviour is kept and now runs before the worker threads start.
 
 **Phase B — daemon serves and runs by the definitions**
 
 **Stories:** `s2`, `s3`
 
-Both depend only on s1. s2 adds the models.definitions request and re-sources providers.listModels; s3 moves the daemon's tier resolution, effort forwarding, input limits and runner literals onto the registry and makes tiers global-only.
+Both depend only on s1. s2 adds models.definitions and re-sources providers.listModels; s3 moves every daemon consumer, in every thread, onto the registry, applies the fallback for unlisted models and makes tiers global-only.
 
-**Backward compat:** providers.listModels keeps its request and result shape for existing clients. A tier already set in config.json keeps running the same model; only an effort its model does not accept is dropped, with a warning. Per-repo tier overrides are ignored and removed with a logged warning naming repo and tier, never silently.
+**Backward compat:** providers.listModels keeps its request and result shape. A tier set to a shipped model or alias keeps running it; only an effort its model does not accept is dropped, with a warning. A tier set to a model that is neither shipped nor approved runs its family's tier default with a warning naming the tier, the requested model and the default, until the user checks and approves it (decision A). Per-repo tier overrides are removed with a warning naming repo and tier; coreFloor and roleTiers values are kept.
 
 **Phase C — unknown-model check and approval**
 
 **Stories:** `s4`
 
-s4 depends on s2 (its approved models appear in models.definitions) and must land before the client Stories that drive its check and approval requests.
+s4 depends on s2 (approved models appear in models.definitions) and must land before the client Stories that drive its check and approval requests.
 
-**Backward compat:** A tier already set to a model outside the definitions keeps running until the user reviews it: the daemon logs that the model has no approved profile rather than stopping existing work at upgrade.
+**Backward compat:** Until a user approves a fallen-back model, its tier keeps running the family default; approving it makes the tier run the requested model in every thread without a restart.
 
 **Phase D — clients render the daemon's definitions**
 
@@ -291,30 +306,30 @@ Each client Story depends on s2, s3 and s4 and on nothing else from the others, 
 
 | Area | Why | Mitigation |
 | :--- | :--- | :--- |
+| Registries out of step across threads (s1, s4) | The indexing and summary workers start before the catalog is validated today (src/daemon/index.ts:205 vs :381) and keep their own module state, so a worker could run with no registry or with a stale approved set. | s1 moves validation ahead of the thread services and builds the registry at every model-running thread's start; s4 pushes each approval change over the hub channel with a revision number and a later-started worker reads the store at its start; tests compare a worker's resolution with the main thread's. |
 | Daemon-wide literal removal (s3) | 30 non-test files import src/config/analyze.ts and 14 carry runner literals; a missed site keeps a stale default or effort and silently disagrees with the definitions. | s3 adds a source scan test that fails on runner or model literals outside the family implementations, and keeps resolveTier's signature so callers change only where they read literals. |
-| Upgrade of existing user settings (s3, s4) | Users have per-repo tier overrides and tiers set to models outside the shipped list; removing or refusing them at upgrade could change what runs without notice. | Reconcile removes per-repo overrides only with a logged warning naming repo and tier; a tier on an unlisted model keeps running and is flagged for review rather than refused at upgrade. |
-| Claude effort support cannot be confirmed (s4) | No Claude CLI output shows whether a model supports an effort level (evidence def-cli-probes.md probes 7-11), so an approved Claude level may be silently ignored by the model. | Claude levels are shown as recognised with support unconfirmed, and only the user's explicit approval admits them; the approved profile records the CLI version so a re-check can be offered after a CLI update. |
+| Upgrade of existing settings (s1, s3) | Users have tiers set to aliases, to catalogued ids and to models outside any list; removing support for any of them, or running an unapproved model, would change what runs without notice or break k5. | The definitions keep today's aliases and catalogued ids; an unlisted model falls back to the family's tier default with a warning naming tier, requested model and default (decision A); per-repo overrides are removed only with a logged warning, keeping coreFloor and roleTiers. |
 
 ## 9. Alternatives considered
 
-### 9.1 a1: One daemon-held definitions registry grown from the curated catalog — **CHOSEN**
+### 9.1 a1: One definitions registry per daemon thread, grown from the curated catalog — **CHOSEN**
 
-Replace the curated cloud catalog with one shipped definitions file covering all three families, loaded and validated at boot into a daemon registry that every daemon consumer and a new IPC request read, with user-approved profiles held in a separate daemon-owned store merged into the same view.
+Replace the curated cloud catalog with one shipped definitions file covering all three families, validated once at boot and loaded into a registry in every daemon thread that does model work, with user-approved profiles in a separate daemon-owned store pushed to every thread.
 
-The existing curated catalog (one JSON asset, a boot-time loader and validator, a frozen cached parse) becomes the single model-definitions file: per family its runner identity and CLI kind, its known models with each model's accepted effort levels and input limit, the tier defaults and the summariser model; Ollama carries family-level facts (runner, default context window) because its installed models are discovered live. The daemon loads it once at boot, before it listens, and refuses to start on a bad file, exactly as the catalog does today. A registry module answers every question the daemon now answers from literals: tier defaults, the summariser model, whether a model accepts an effort, a model's input limit, the runner and CLI kind for a family.
+The curated catalog (one JSON asset, a boot-time loader and validator, a frozen cached parse) becomes the single model-definitions file: per family its runner identity and CLI kind, its known models with each model's aliases, accepted effort levels and input limit, the family's own tier defaults and summariser model, and which family a fresh install defaults to; Ollama carries family-level facts because its installed models are listed live. The main thread validates the file before it starts the worker threads and before it listens, and refuses to start on a bad file. Each thread that resolves models (the main thread and the indexing and document-summary workers) builds the same frozen registry from the validated file at its start, so no thread reads a literal and none waits on another.
 
-User-approved unknown models are per-user facts, so they live in their own daemon-owned store under the insrc home, never in the shipped file or the user's config.json; the registry presents shipped and approved models as one view, marking approved ones. A new read-only IPC request returns that view, and the existing per-family model-list request is derived from it so the two always agree. The unknown-model check is a daemon IPC flow that probes through the installed CLIs one call at a time and records the user's approval. The TUI and both IDE plugins drop their own runner, model and effort lists and render the IPC answer; tier settings become global-only and stale per-repo tier overrides are removed by the existing config reconcile step.
+User-approved unknown models are per-user facts, kept in their own daemon-owned store under the insrc home, never in the shipped file or config.json. The main thread owns that store and, after any approval or rejection, sends the new set to every worker over the existing hub channel; a worker started later reads the store at its start. A tier set to a model that is neither shipped nor approved runs the family's tier default from the definitions, with a warning, until the user approves it. One read-only IPC request returns the merged view, providers.listModels is derived from it, and the unknown-model check is a daemon IPC flow that probes through the installed CLIs one call at a time. Clients render the IPC answer; tiers become global-only and stale per-repo tier overrides are removed by config reconcile.
 
 **Pros:**
-- One source for every model fact: a release adds or changes a model by editing one data file and restarting the daemon, with no code change in the daemon or any client.
-- Reuses the shipped catalog's file, boot hook, fail-fast validation and frozen cache, so k7's startup behaviour is kept rather than rebuilt.
-- Clients reach facts only over IPC (k2), so a new effort level or model no longer needs a VS Code or JetBrains release.
-- Shipped facts (k4) and per-user approvals (k5) are kept apart, so updating insrc never overwrites a user's approvals and approvals never leak into the shipped file.
+- One source for every model fact: adding or renaming a model, alias or effort level is a data-file edit and a daemon restart, with no code change in the daemon or any client.
+- Every thread that runs a model reads the same validated registry, so the summary worker and the main thread cannot disagree on a tier default or an effort level.
+- Clients reach facts only over IPC (k2), so a new effort level or model needs no VS Code or JetBrains release.
+- Shipped facts (k4) and per-user approvals (k5) stay apart, so an insrc update never overwrites a user's approvals.
 
 **Cons:**
-- Widest migration: 30 non-test files import src/config/analyze.ts and 14 carry runner literals, so the daemon-side cut-over spans several stories.
-- Clients that render the IPC answer cannot show model choices while the daemon is down; today the VS Code effort list works offline because it is compiled in.
-- Introduces a second persistent store (approved profiles) with its own format, migration and validation.
+- Widest migration: 30 non-test files import src/config/analyze.ts and 14 carry runner literals, spanning several stories.
+- Approval changes must reach worker threads through the hub channel, adding a message type and a restart path that tests must cover.
+- Clients cannot show model choices while the daemon is down; today the VS Code effort list works offline because it is compiled in.
 
 **Cost estimate:** L
 
@@ -322,75 +337,80 @@ User-approved unknown models are per-user facts, so they live in their own daemo
 
 Keep one shipped data file but compile it into generated TypeScript constants that the daemon and the VS Code extension import at build time, with JetBrains reading the same facts over IPC.
 
-A build step turns the shipped definitions file into a generated module of typed constants (families, models, effort levels, limits, tier defaults). The daemon and the VS Code extension import the generated module, so every literal in code is replaced by a typed reference and the compiler catches a removed model. JetBrains, which cannot import TypeScript, receives the same facts over a daemon IPC request.
+A build step turns the shipped definitions file into a generated module of typed constants (families, models, aliases, effort levels, limits, tier defaults). The daemon, in every thread, and the VS Code extension import the generated module, so every literal in code is replaced by a typed reference and the compiler catches a removed model. JetBrains receives the same facts over a daemon IPC request.
 
-Unknown-model approvals are handled at runtime by the daemon in a separate store, and the generated constants are merged with them where the daemon resolves a tier. Clients other than VS Code render IPC answers; VS Code uses the generated constants for its lists and asks the daemon only for approved models.
+Unknown-model approvals are handled at runtime by the daemon in a separate store and merged where the daemon resolves a tier. VS Code uses the generated constants for its lists and asks the daemon only for approved models.
 
 **Pros:**
-- Typed references: a model removed from the data file breaks the build where it was used, instead of failing at runtime.
-- No startup parse cost and no new boot-time validation path in the daemon.
+- Typed references: a model removed from the data file breaks the build where it was used.
+- No boot-time parse, so threads need no registry initialisation step.
 
 **Cons:**
-- Breaks k2 for VS Code: the extension keeps its own compiled copy, so a model or effort change still needs a VS Code release, the exact drift the Epic removes.
+- Breaks k2 for VS Code: the extension keeps its own compiled copy, so a model or effort change still needs a VS Code release.
 - Two delivery paths for the same facts (generated constants for TypeScript, IPC for JetBrains), so clients can disagree between releases.
-- A data-file edit is no longer a data-only change: it needs a regenerated module and a rebuild of every TypeScript consumer, weakening s1/ac2.
+- A data-file edit needs a regenerated module and a rebuild of every TypeScript consumer, weakening s1/ac2.
 
 **Cost estimate:** M
 
-**Rejected because:** Violates k2 (the VS Code extension keeps a compiled copy of the facts) and only partially meets k4 and k7. Strong typing, but VS Code keeps a compiled copy of the facts, which violates k2 and makes a data edit need a rebuild, partially breaking k4's no-code-change intent.
+**Rejected because:** Typed constants, but VS Code keeps a compiled copy (violates k2) and a data edit needs a rebuild (partial k4), and a hand-edited installed file is not checked at start (partial k7).
 
 ### 9.3 a3: Definitions seeded into the user's settings
 
 Ship a defaults file whose contents the config reconcile step copies into each user's config.json, then let every consumer read model facts from the settings it already loads.
 
-The shipped defaults describe families, models, effort levels and limits; on daemon boot and update the existing config reconcile step fills those values into the user's config.json, and every consumer reads them through the settings path it already uses. Clients read them through the existing config catalog and config read requests.
+The shipped defaults describe families, models, effort levels and limits; on daemon boot and update the existing config reconcile step fills them into the user's config.json, and every consumer, in any thread, reads them through the settings path it already uses.
 
-User-approved models are added to the same settings section, so shipped and approved models sit side by side, and the per-repo tier override removal is another reconcile rule.
+User-approved models are added to the same settings section, and the per-repo tier override removal is another reconcile rule.
 
 **Pros:**
-- Reuses the existing settings load and reconcile path end to end, so few new modules.
-- Users can see and edit every model fact in one place.
+- Reuses the existing settings load and reconcile path, which every thread already reads.
+- Users can see every model fact in one place.
 
 **Cons:**
-- Violates k4: model-level facts would live in the user's config.json, the place the stakeholder ruled out.
-- A shipped model update must be merged into every user's edited copy, so the drift the Epic removes moves into each user's settings.
+- Violates k4: model-level facts would live in the user's config.json.
+- A shipped model update must be merged into every user's edited copy, so drift moves into each user's settings.
 - Users can hand-edit a model's effort levels, so the daemon could again run a model with a capability it lacks.
 
 **Cost estimate:** M
 
-**Rejected because:** Violates k4 (model facts would live in the user's config.json) and only partially meets k5 and k7. Puts model facts in the user's config.json, which k4 rules out, and lets users edit capabilities the daemon then trusts, weakening k5.
+**Rejected because:** Model facts in the user's config.json violate k4, and editable capabilities weaken k5.
 
 ### 9.4 a4: Keep facts in place and add a consistency check
 
 Leave the literals where they are and add a test that fails when the daemon, the config catalog, the installer and the clients disagree.
 
-No new source of truth: the existing literals stay in the daemon, the config catalog, the installer and both plugins, and a cross-file test compares them and fails the build when they drift. Per-model effort levels and input limits are added as further literals next to the existing ones.
+No new source of truth: the existing literals stay in the daemon, the config catalog, the installer and both plugins, and a cross-file test compares them and fails the build when they drift. Per-model effort levels and input limits are added as further literals.
 
 Unknown models are handled by letting the user pick any effort the CLI recognises, with no stored profile.
 
 **Pros:**
 - Smallest change; nothing moves and no client behaviour changes.
-- Drift between the existing copies is caught in CI rather than by users.
+- Drift between existing copies is caught in CI.
 
 **Cons:**
-- Does not meet k4 or k2: facts stay in code and clients keep their own lists, so every model release still needs code edits in several places and client releases.
-- Cannot satisfy s4 or k5: there is nowhere to store a user's approved profile.
-- The check only compares copies it knows about, so a new copy added later is not covered.
+- Does not meet k4 or k2: facts stay in code and clients keep their own lists.
+- Cannot satisfy s4 or k5: there is nowhere to store an approved profile.
+- The check only compares copies it knows about.
 
 **Cost estimate:** S
 
-**Rejected because:** Violates k2, k4 and k5: facts stay in code and in each client, and there is nowhere to store an approval. Leaves facts in code and in each client and has nowhere to keep an approval, so it fails k2, k4 and k5.
+**Rejected because:** Facts stay in code and in each client, with nowhere to keep an approval: fails k2, k4 and k5.
 
 ## 10. References
 
 - **[[c1]]** `prior-artifact` `DEF-ce99b72065d03b1b` — "Approved Define for this Epic (approved with review override 2026-10-25)."
-- **[[c2]]** `step-output` `s1` — "HldContext analyze bundles (capability discovery, import graph, structural map, conventions)."
+- **[[c2]]** `step-output` `s1` — "HldContext analyze bundles (capability discovery, import graph, structural map, manifests, conventions)."
 - **[[c3]]** `code` `src/daemon/model-catalog.ts:162` — "export async function validateModelCatalog(): Promise<void> {"
 - **[[c4]]** `code` `src/daemon/index.ts:381` — "await validateModelCatalog();"
 - **[[c5]]** `code` `src/daemon/index.ts:377` — "missing/malformed catalog asset is a fail-fast startup refusal"
-- **[[c6]]** `code` `src/config/analyze.ts:252` — "resolveTier(tiering: TieringOverride, tier: TierName): TierModel"
+- **[[c6]]** `code` `src/daemon/index.ts:205` — "const threadServices = threadsEnabled()"
 - **[[c7]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:40` — "So no Claude CLI run shows whether a given model supports a given level."
-- **[[c8]]** `step-output` `s3` — "a1 is the only alternative that satisfies all seven constraints. a2 violates k2 (VS Code keeps a compiled copy) and only partially meets k4 and k7; a3 violates k4 (facts in config.json) and only parti"
-- **[[c9]]** `code` `src/daemon/list-models.ts:127` — "const models = deps.catalog().modelsFor(provider).map(toModelInfo);"
+- **[[c8]]** `step-output` `s3` — "a1 is the only alternative that satisfies all seven constraints. a2 violates k2 and only partially meets k4 and k7; a3 violates k4 and only partially meets k5 and k7; a4 violates k2, k4 and k5. Buildi"
+- **[[c9]]** `code` `src/daemon/threads/main-services.ts:154` — "hubPort: port2"
+- **[[c10]]** `stakeholder` `user 2026-10-25` — "go with A: a tier set to an unlisted, unapproved model falls back to the tier default from the definitions with a warning until the user approves it"
 - **[[c11]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:20` — "For codex, a model's accepted levels must therefore come from `codex debug models`"
 - **[[c12]]** `code` `src/cli/panes/model-tiers.ts:63` — "tiers[t] = resolveTier(tiering, t);"
+- **[[c13]]** `code` `src/config/analyze.ts:144` — "readonly coreFloor?: TierName | undefined;"
+- **[[c14]]** `code` `src/daemon/threads/method-class.ts:148` — "['providers.listModels', 'session', false],"
+- **[[c15]]** `code` `scripts/insrc-daemon-install.sh:303` — ""core":  { "runner": "cli-claude", "model": "opus" },"
+- **[[c16]]** `doc` `docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/evidence/def-cli-probes.md:35` — "claude -p --model haiku --effort xhigh --output-format json"

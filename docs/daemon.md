@@ -1386,19 +1386,19 @@ A tool's class is the `approval` field on its definition: a class, or a function
 
 ### When a common call asks
 
-The effective mode decides: it is the chat session's **edits mode** when the call came from a chat (`Manual`, `Edit Automatically`, `Auto`), and otherwise the global setting `tools.commonApproval` in \`~/.insrc/config.json\` (\`manual\`, \`edit-auto\` or \`auto\`; default **\`auto\`**). \`manual\` and \`edit-auto\` ask; \`auto\` does not. The setting is read on each call, so a change applies without a restart; an unknown value reads as \`auto\` and is logged.
+The effective mode decides: it is the chat session's **edits mode** when the call came from a chat (`Manual`, `Edit Automatically`, `Auto`), and otherwise the global setting `tools.commonApproval` in `~/.insrc/config.json` (`manual`, `edit-auto` or `auto`; default **`auto`**). `manual` and `edit-auto` ask; `auto` does not. The setting is read on each call, so a change applies without a restart; an unknown value reads as `auto` and is logged.
 
 A destructive call ignores all of this: no setting, chat mode, argument or caller identity skips the question, and the daemon is the only place the question is held, so no caller can supply or replace it.
 
-\`permissions.mode\` (\`validate\` or \`auto-accept\`) is retired. Nothing read it; \`tools.commonApproval\` is the one tool-approval setting, and a daemon boot strips the old key from an existing config.
+`permissions.mode` (`validate` or `auto-accept`) is retired. Nothing read it; `tools.commonApproval` is the one tool-approval setting, and a daemon boot strips the old key from an existing config.
 
 ### How the question reaches you
 
-The daemon holds each pending request, with a 300 second wait. A client (the terminal client, the editor) opens the \`approval.subscribe\` stream when it attaches and receives each request as a \`gate\` frame: the tool, the repository, the exact arguments (long values truncated for display), a preview and the time left. It answers with one \`approval.answer\` call (\`{ requestId, decision: "approve" | "decline" }\`, reply \`{ accepted }\`). The first answer wins; the others see their prompt close.
+The daemon holds each pending request, with a 300 second wait. A client (the terminal client, the editor) opens the `approval.subscribe` stream when it attaches and receives each request as a `gate` frame: the tool, the repository, the exact arguments (long values truncated for display), a preview and the time left. It answers with one `approval.answer` call (`{ requestId, decision: "approve" | "decline" }`, reply `{ accepted }`). The first answer wins; the others see their prompt close.
 
-The call is **denied, and the tool does not run**, when you decline, when nobody answers in time, when no client has the stream open, or when the caller cancels. The caller gets a failed result with kind \`denied\` and a reason (\`declined\`, \`timed-out\`, \`no-client\`, \`cancelled\`). Closing the last client resolves every pending request as \`no-client\`; pending requests are not kept across a daemon restart, and the clients reopen the stream by themselves.
+The call is **denied, and the tool does not run**, when you decline, when nobody answers in time, when no client has the stream open, or when the caller cancels. The caller gets a failed result with kind `denied` and a reason (`declined`, `timed-out`, `no-client`, `cancelled`). Closing the last client resolves every pending request as `no-client`; pending requests are not kept across a daemon restart, and the clients reopen the stream by themselves.
 
-In the terminal client the question appears above the panes and takes the keys until answered (\`y\` approve, \`n\` decline). In the editor it is a warning toast with Approve and Decline; VS Code cannot dismiss a toast programmatically, so after a cancel the old toast stays on screen but a click on it sends nothing.
+In the terminal client the question appears above the panes and takes the keys until answered (`y` approve, `n` decline). In the editor it is a warning toast with Approve and Decline; VS Code cannot dismiss a toast programmatically, so after a cancel the old toast stays on screen but a click on it sends nothing.
 
 ## CLI reference
 

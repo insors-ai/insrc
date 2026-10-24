@@ -255,7 +255,12 @@ test('CM-S1-M: a lease arriving during idle close waits for close and rebuild be
 		} });
 	try {
 		await f.pool.withConnection('fixture', async (driver) => driver.describe!('x'));
-		await started.promise;
+		// The production idle timer is intentionally unref'ed. This isolated
+		// fixture owns a referenced deadline while waiting for that timer.
+		await new Promise<void>((resolve,reject)=>{
+			const deadline=setTimeout(()=>reject(new Error('idle close did not start')),5000);
+			void started.promise.then(()=>{clearTimeout(deadline);resolve();});
+		});
 		let finished = false;
 		const work = f.pool.withConnection('fixture', async (driver) => {
 			await driver.describe!('x');

@@ -99,8 +99,8 @@ function standInPool(opts: { truncated?: boolean } = {}): Parameters<typeof _set
 	};
 	const pool = {
 		reload: async () => undefined,
-		list: () => [{ id: 'app', kind: 'sqlite', family: 'rdbms', label: 'app' }],
-		acquire: async () => driver,
+		safeList: () => [{ key: { repoRoot: REPO, scope: 'saved', id: 'app' }, revision: 'fixture', kind: 'sqlite', family: 'rdbms', effectiveFamily: 'rdbms', label: 'app', publicConfig: {}, credentialPresence: {} }],
+		withConnection: async (_id: string, use: (value: typeof driver) => Promise<unknown>) => use(driver),
 	};
 	return (async () => pool) as unknown as Parameters<typeof _setDataPoolSourceForTest>[0];
 }

@@ -427,3 +427,32 @@ Lower VERIFY_CALL_TIMEOUT_MS to ~60 s and raise the pipeline's attempts, plus th
 
 - Follow-up (out of scope by decision, 2026-10-24): codexStrictSchema forces every optional property of every codex schema to be present and non-null. Making that null-tolerant needs a correct reply-normalisation design across unions, $ref and patternProperties; to be filed as its own issue.
 - Separate defect found by the survey: the analyzer's exploration decomposer fails on every codex run because its params object schema has no properties (codex strict mode refuses it); to be filed as its own bugfix.
+
+## Resolved questions
+
+- `qfbddcfb9` — Follow-up (out of scope by decision, 2026-10-24): codexStrictSchema forces every optional property of every codex schema to be present and non-null. Making that null-tolerant needs a correct reply-normalisation design across unions, $ref and patternProperties; to be filed as its own issue.
+  - **resolved**: Retain the strict contract — User decision 2026-10-24 (option A): S001 leaves codexStrictSchema unchanged; the normalisation design is filed as ISSUE-7d346e0dcbafc70e. _(2026-10-24T07:15:20.200Z)_
+- `q1be9eefa` — Separate defect found by the survey: the analyzer's exploration decomposer fails on every codex run because its params object schema has no properties (codex strict mode refuses it); to be filed as its own bugfix.
+  - **deferred**: deferred for review — Out of this Story's scope; to be filed as its own bugfix through triage, where its fix shape is decided. _(2026-10-24T11:42:15.391Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1 how-does-it-work (insrc_analyze_step): Callers of codexStrictSchema / processSchemaForOpenAIStrict, uses of VERIFY_CALL_TIMEOUT_MS, progress relay in review-step vs code-review-step`
+- **[[c2]]** `analyze-bundle` `s1 code-read: existing codex stall watchdog: How the CLI provider detects a silent codex run`
+- **[[c3]]** `analyze-bundle` `s1 code-read: review pipeline retry and failure classes: How a failed review call is re-issued and recorded`
+- **[[c4]]** `analyze-bundle` `s1 code-read: design-review progress path: Where design-review progress is produced and where it is lost`
+- **[[c5]]** `analyze-bundle` `s1 code-read: verify schema, strict copy and reply check: What the review expects, what codex receives, and how the reply is checked`
+- **[[c6]]** `prior-artifact` `ISSUE-562b1bb52f476d81`
+- **[[c7]]** `doc` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023562b1bb5/evidence/stall-replays.md`
+- **[[c8]]** `code` `src/workflow/review/review.ts:104` — "onCall: c => emit(c.stage === 'extract' ? 'extract' : `verify:${c.carries.key ?? ''}`),"
+- **[[c9]]** `code` `src/shared/types.ts:287` — "export interface StructuredCompletionOpts {"
+- **[[c10]]** `code` `src/workflow/review/template.ts:62` — "export const HARD_REVIEW_DEADLINE_MS = 30 * 60_000;"
+- **[[c11]]** `code` `src/agent/providers/model-call-error.ts:30` — "export class ModelResponseShapeError extends Error {"
+- **[[c12]]** `code` `src/workflow/review-pipeline/job.ts:291` — "if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {"
+- **[[c13]]** `code` `src/shared/process-group.ts:108` — "? setTimeout(() => { if (!stall.started(stdout)) { stalled = true; kill(); } }, stall.ms)"
+- **[[c14]]** `code` `src/mcp/progress-forward.ts:51` — "const message = ev.kind === 'stage'"
+- **[[c15]]** `code` `src/workflow/review-pipeline/job.ts:51` — "super(`review stage ${stage}: the call failed twice (${cause})"
+- **[[c16]]** `code` `src/workflow/review/verify.ts:100` — "const SYSTEM = ["
+- **[[c17]]** `stakeholder` `user 2026-10-24` — "go with option A"
+- **[[c18]]** `doc` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md` — "Stalls (no-finish) concentrate in DEF verify calls: 38 of 792 (4.8%). Code-review gather 2 of 701, build validation 1 of 176, and none in 129 HLD/LLD sessions, 101 code-review judges, 19 extract calls"
+- **[[c19]]** `stakeholder` `user 2026-10-24` — "we need to take a more holistic view on the review timeouts, just because we noticed it in the DEF review doesn't mean the same pattern doesn't exist elsewhere"

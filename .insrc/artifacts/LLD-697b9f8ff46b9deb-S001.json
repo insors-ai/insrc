@@ -38,6 +38,12 @@
         "choice": "Retain the strict contract",
         "rationale": "User decision 2026-10-24 (option A): S001 leaves codexStrictSchema unchanged; the normalisation design is filed as ISSUE-7d346e0dcbafc70e.",
         "resolvedAt": "2026-10-24T07:15:20.200Z"
+      },
+      "q1be9eefa": {
+        "question": "Separate defect found by the survey: the analyzer's exploration decomposer fails on every codex run because its params object schema has no properties (codex strict mode refuses it); to be filed as its own bugfix.",
+        "status": "deferred",
+        "rationale": "Out of this Story's scope; to be filed as its own bugfix through triage, where its fix shape is decided.",
+        "resolvedAt": "2026-10-24T11:42:15.391Z"
       }
     },
     "review": {

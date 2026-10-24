@@ -25,7 +25,6 @@
     "lldRunId": "wf-1792845934467-09830t",
     "lldEffectiveHash": "9874475f902756f6166c87e9588873ada1117077375ef62d2ea71c7ea5cb108d",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-24T14:16:17.830Z",
     "rangeBase": "2eed53a1f4d248e7d3d57f5533914948a9d532f5"
   },
   "body": {
@@ -171,7 +170,7 @@
       {
         "id": "t5",
         "title": "runPlanner sends the wire schema and decodes the reply",
-        "summary": "runPlanner sends the t4 wire schema for its effective catalog. After the reply, for each task, it parses the JSON strings at its template's recorded slot paths back into objects (a parse failure is reported through the existing planner failure path) and removes nulls on non-nullable keys, then runs INV-5 as today.",
+        "summary": "runPlanner sends the t4 wire schema for its effective catalog. After the reply, for each task, it parses the JSON strings at its template's recorded slot paths back into objects (a parse failure is reported through the existing planner failure path) and, before decoding, removes the nulls the wire form forced at structural positions (user decision A, 2026-10-24: slot JSON contents and whole-params slots reach INV-5 as the model wrote them), then runs INV-5 as today.",
         "size": "M",
         "order": 5,
         "dependsOn": [
@@ -180,7 +179,7 @@
         "acceptanceChecks": [
           "A supplied template's scopeRef {kind:'repo', value:'/r'} round-trips through a slot into INV-5 unchanged",
           "Supplied templates with no inputSchema, with local $ref/definitions, with a union of open object and string (native 'hello' and '{\"x\":1}'), and with a draft-07 tuple ({pair:['x',7]}) each round-trip as a whole-params slot and pass INV-5 as today",
-          "Null params, including nested ones, are removed before INV-5",
+          "Nulls the wire form forced, including in nested objects and array items, are removed before INV-5; slot JSON contents and whole-params slots reach INV-5 as written",
           "The adherence one-of-three rule still fails a task with none of the three",
           "Invalid JSON in a slot is reported, and nothing partial reaches INV-5"
         ],
@@ -199,7 +198,7 @@
           },
           {
             "level": "unit",
-            "name": "null params including nested ones are removed before INV-5, and the adherence one-of-three rule still fails a task with none of the three"
+            "name": "nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds"
           },
           {
             "level": "unit",

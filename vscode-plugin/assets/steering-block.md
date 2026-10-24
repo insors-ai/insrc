@@ -36,7 +36,8 @@ a call from memory when the contract is one lookup away.
   - For "where is X used", also grep for the name and report any call site the
     analyzer missed — its call graph can be incomplete.
 - **Draw / diagram / document / map the code** (a self-contained HTML doc from
-  the graph) → `insrc_docgen`.
+  the graph) → `insrc_docgen`. For PROPOSED designs, use the workflow
+  artifact definitions below; docgen describes existing code, not a future model.
 - **Build / add / implement a feature** → do NOT hand-pick a stage and do NOT
   just start editing. Route it: `brainstorm` (if the idea is rough) →
   `insrc_triage` (sizes + routes) → the routed workflow → review → approve →
@@ -90,6 +91,35 @@ scope, `path?`), `component-dependency` (module dependency topology, `path?`),
 `call-sequence` (call flow from an entry point — needs `symbol`, `maxDepth?`),
 `narrative` (a base diagram + a graph-grounded walkthrough — needs `base` +
 `question`).
+
+### Relevant design artifacts
+
+Authors, builders and reviewers must judge relevance from the change, not its
+size or whether a definition already exists. An isolated class implementation
+change with no entity/relationship impact needs no ERD. Relationship changes,
+even simple ones, MUST document endpoints, direction, cardinality/ownership and
+compatibility where applicable. Clear prose or a small table may suffice; add
+an ERD when it materially clarifies the model. Use sequence/component diagrams
+for interaction/dependency boundaries and UX mocks for changed layout, states
+or flows when those visuals materially aid assessment. No blanket diagram rule.
+
+For proposed designs author `erDefinition` (LinkML), `sequenceDefinition`,
+`componentDependencyDefinition`, or `uxDefinition` (Adaptive Cards subset).
+These structured definitions are the source of truth; the framework generates
+and attaches `companions`. Do not hand-author companion references. Describe
+what each relevant visual explains and retain source/element descriptions.
+
+Reviewers independently assess necessary artifacts even when no definitions
+are supplied. Inspect linked files, generated content and rendering against
+the design; a definition alone is not proof of a working visual. Request author
+correction/regeneration for missing, broken or inconsistent artifacts. If
+rendering is unavailable, inspect source where possible and report the limit;
+never claim a visual was verified. Material inadequacy is `does-not-hold` with
+MED/HIGH and blocks; genuinely unavailable evidence is `could-not-verify`.
+Optional improvements to an otherwise adequate design are narrative advice,
+not a `warn` verdict or a false failure/unverified finding. Builders maintain
+relevant artifacts when implementation changes documented relationships or UX.
+These checks stay within the existing three-round review limit.
 
 ### Approval discipline (applies to every workflow artifact)
 
@@ -210,6 +240,9 @@ Loop: `phase:'start'` with `{ workflow:'design.epic', focus, params }` →
 `phase:'synthesize'` → `done`. Review the HLD with `insrc_review_step` before
 approving (a `block` verdict from unresolved HIGH/MED findings gates approval);
 resolve, then present-ask-approve. Next stage: `design.story` per Story.
+Apply the front-door **Relevant design artifacts** rule: assess relevance
+independently, document relationship changes even when simple, and do not
+require an ERD for isolated class edits. Use structured companion definitions only when the visual materially helps.
 <!-- insrc:guide:design.epic:end -->
 
 <!-- insrc:guide:design.story:start -->
@@ -226,6 +259,9 @@ anti-overreach rule so authoring does not spill onto sibling Stories. Loop:
 `phase:'start'` → `emit_plan` → `phase:'plan'` → `emit_step` (loop) →
 `emit_synthesize` → `phase:'synthesize'` → `done`. Review (`insrc_review_step`),
 present-ask-approve, then run `plan`.
+Apply the front-door **Relevant design artifacts** rule: assess relevance
+independently, document relationship changes even when simple, and do not
+require an ERD for isolated class edits. Use structured companion definitions only when the visual materially helps.
 <!-- insrc:guide:design.story:end -->
 
 <!-- insrc:guide:plan:start -->
@@ -271,6 +307,9 @@ reviewed by the party that wrote the code, is always withheld into `skipped[]`.
 A code review whose verdict is `block` withholds completion under
 `codeReview.enforce` (config, off / advisory by default). Either is passed only
 with an explicit `overrideReview`.
+Apply the front-door **Relevant design artifacts** rule: assess relevance
+independently, document relationship changes even when simple, and do not
+require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
@@ -326,6 +365,9 @@ the third round on the same artifact or code, STOP: show the user the latest
 review's findings and what the earlier rounds changed, and ASK whether to run
 another cycle of up to three rounds, approve with an override reason, or change
 course. Do not start a fourth review until the user says so.
+Apply the front-door **Relevant design artifacts** rule: assess relevance
+independently, document relationship changes even when simple, and do not
+require an ERD for isolated class edits. Reviewers inspect actual generated files/links/rendering and qualify unavailable evidence.
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->
@@ -363,6 +405,9 @@ the third round on the same artifact or code, STOP: show the user the latest
 review's findings and what the earlier rounds changed, and ASK whether to run
 another cycle of up to three rounds, approve with an override reason, or change
 course. Do not start a fourth review until the user says so.
+Apply the front-door **Relevant design artifacts** rule: assess relevance
+independently, document relationship changes even when simple, and do not
+require an ERD for isolated class edits. Reviewers inspect actual generated files/links/rendering and qualify unavailable evidence.
 <!-- insrc:guide:code-review:end -->
 
 <!-- insrc:guide:tracker:start -->

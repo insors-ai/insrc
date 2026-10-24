@@ -89,6 +89,13 @@
         "choice": "Internal helper with test export",
         "rationale": "sc1 refinement recorded in docs/plans/tool-registry.md",
         "resolvedAt": "2026-10-24T14:16:10.663Z"
+      },
+      "q8e8b12c1": {
+        "question": "ep2 (partial): a rule that never settles is not detected by the hook stage; the LLD records it as a known limit and adds no timeout.",
+        "status": "resolved",
+        "choice": "Accept the known limit",
+        "rationale": "No timeout; the LLD states the hook stage has no cancellation bound",
+        "resolvedAt": "2026-10-24T14:17:10.924Z"
       }
     }
   },

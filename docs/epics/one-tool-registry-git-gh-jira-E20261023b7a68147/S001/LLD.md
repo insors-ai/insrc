@@ -314,6 +314,8 @@ The success variant gains hookFailures?: readonly HookFailure[] | undefined; cal
 
 - `q2b101b1e` — cd1 (partial): runToolHooks is a new executor-internal helper that sc1 does not name; the contract lists it as new and exported for tests.
   - **resolved**: Internal helper with test export — sc1 refinement recorded in docs/plans/tool-registry.md _(2026-10-24T14:16:10.663Z)_
+- `q8e8b12c1` — ep2 (partial): a rule that never settles is not detected by the hook stage; the LLD records it as a known limit and adds no timeout.
+  - **resolved**: Accept the known limit — No timeout; the LLD states the hook stage has no cancellation bound _(2026-10-24T14:17:10.924Z)_
 
 ## Citations
 

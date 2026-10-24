@@ -49,6 +49,7 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
+import { createApprovalPrompter } from './chat/approval-subscribe.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
@@ -101,6 +102,23 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusItem);
 
   const client = createIpcClient();
+
+  // A tool call that needs the user's yes (sc4): the daemon pushes it over approval.subscribe and
+  // it is shown as a warning toast with Approve and Decline. Opened at attach, reopened after a restart.
+  const approvals = createApprovalPrompter({
+    client,
+    notifier: {
+      show: (text) => {
+        let closed = false;
+        const choice = Promise.resolve(vscode.window.showWarningMessage(text, 'Approve', 'Decline')).then(
+          (c) => (closed || c === undefined ? undefined : c === 'Approve' ? 'approve' as const : 'decline' as const),
+        );
+        return { choice, close: () => { closed = true; } };
+      },
+    },
+  });
+  approvals.start();
+  context.subscriptions.push({ dispose: () => approvals.stop() });
 
   const commands = createCommandRegistry(
     (command, callback) => vscode.commands.registerCommand(command, callback),

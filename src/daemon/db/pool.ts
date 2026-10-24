@@ -12,6 +12,7 @@ import { loadConnections } from './config.js';
 import { safeConnection } from './driver-profiles.js';
 import { RevisionLeaseGate, ConnectionUseError } from './lease-gate.js';
 import { guardedDriver, driverFailure } from './driver-guard.js';
+import { fileExecutionPolicy } from './file-policy.js';
 const log = getLogger('db-pool');
 const IDLE_CLOSE_MS = 10 * 60 * 1000;
 interface PoolEntry {
@@ -31,6 +32,7 @@ export interface DriverPoolOptions {
 	readonly gate?: RevisionLeaseGate | undefined;
 }
 export class DriverPool {
+	readonly #ownerId = randomUUID();
 	private readonly entries = new Map<string, PoolEntry>();
 	readonly #gate: RevisionLeaseGate;
 	readonly #replacing = new Set<string>();
@@ -216,7 +218,10 @@ export class DriverPool {
 		const withSecrets = await resolveConfigSecrets(entry.config);
 		const config = await resolveConfigPath(withSecrets, this.repoPath);
 		log.debug({ id: entry.config.id, kind: entry.config.kind }, 'building driver');
-		return factory(config);
+		return factory(config, familyOf(config.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(config, {
+			lookupRoot: this.repoPath, ownerId: this.#ownerId, revision: entry.revision,
+			persistence: config.ephemeral === true ? 'memory-only' : 'saved-cache',
+		}) } : undefined);
 	}
 	private touch(entry: PoolEntry): void {
 		entry.lastUsedAt = Date.now();

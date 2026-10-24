@@ -21,6 +21,7 @@
 import { isAbsolute, relative, resolve } from 'node:path';
 import { access } from 'node:fs/promises';
 import { constants as fsConst } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 
 import { getLogger } from '../shared/logger.js';
 import {
@@ -39,11 +40,14 @@ import {
 	deleteSecret,
 	extractUrlPassword,
 	makeSecretRef,
-	resolveSecrets,
+	referencedSecrets,
+	credentialKeystore,
 } from './db/secrets.js';
 import { reloadAll } from './db/pool-cache.js';
 import { assertUnmanagedWrite } from './db/managed-store.js';
 import { savedManagementFor, withSavedRootGate } from './db/management.js';
+import { materializeDraft } from './db/driver-profiles.js';
+import { fileExecutionPolicy } from './db/file-policy.js';
 import type {
 	ConnectionConfig,
 	Driver,
@@ -295,7 +299,9 @@ export async function testConnectionRpc(params: {
 	let driver: Driver | null = null;
 	try {
 		const transient = await materializeTransientConfig(cfg, family, repoRoot);
-		driver = await factory(transient);
+		driver = await factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {
+			lookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',
+		}) } : undefined);
 		return { ok: true, kind: cfg.kind, family, tookMs: Date.now() - start };
 	} catch (err) {
 		return {
@@ -307,7 +313,7 @@ export async function testConnectionRpc(params: {
 		};
 	} finally {
 		if (driver !== null) {
-			driver.close().catch(() => { /* best-effort */ });
+			await driver.close().catch(() => { /* best-effort */ });
 		}
 	}
 }
@@ -453,9 +459,19 @@ async function materializeTransientConfig(
 		base.path = abs;
 	} else {
 		if (input.url === undefined) { throw new Error(`${family} connection missing url`); }
-		base.url = input.url.includes('${secret:')
-			? await resolveSecrets(input.url)
-			: input.url;
+		base.url = input.url;
 	}
-	return base;
+	const suppliedRefs = referencedSecrets(base);
+	let allowedRefs: ReadonlySet<string> = new Set();
+	if (suppliedRefs.size > 0) {
+		const snapshot = await loadConnections(repoRoot);
+		const stored = snapshot.file.connections.find(config => config.id === input.id && config.kind === input.kind);
+		allowedRefs = referencedSecrets(stored);
+		if ([...suppliedRefs].some(ref => !allowedRefs.has(ref))) throw new Error('Invalid credential reference');
+	}
+	const effective = await materializeDraft({ key: { scope: 'saved', repoRoot: resolve(repoRoot), id: input.id },
+		mode: 'update', current: { config: base, revision: 'private-probe' }, expectedRevision: 'private-probe', publicPatch: {},
+		readSecret: async ref => allowedRefs.has(ref) ? credentialKeystore.getKey(ref) : null,
+	});
+	return effective.config;
 }

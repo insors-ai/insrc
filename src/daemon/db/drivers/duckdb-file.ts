@@ -31,49 +31,18 @@
  *     AggregateRequest objects compile to SQL via the existing
  *     rdbms-common helpers.
  */
-
+import { createHash } from 'node:crypto';
 import { existsSync, statSync } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
-
+import { dirname, join, sep, resolve } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
-import type {
-	AggregateRequest,
-	AggregateResult,
-	ColumnDescription,
-	ConnectionConfig,
-	CorrelationMatrixRequest,
-	CorrelationMatrixResult,
-	DistinctRequest,
-	DistinctResult,
-	FileDriver,
-	HistogramRequest,
-	HistogramResult,
-	OutlierRequest,
-	OutlierResult,
-	SampleOpts,
-	SampleResult,
-	ScanOpts,
-	SchemaDescription,
-	ShapeReport,
-	TemporalTrendRequest,
-	TemporalTrendResult,
-} from '../../../shared/db-driver.js';
+import type { AggregateRequest, AggregateResult, ColumnDescription, ConnectionConfig, DriverFactoryContext, CorrelationMatrixRequest, CorrelationMatrixResult, DistinctRequest, DistinctResult, FileDriver, HistogramRequest, HistogramResult, OutlierRequest, OutlierResult, SampleOpts, SampleResult, ScanOpts, SchemaDescription, ShapeReport, TemporalTrendRequest, TemporalTrendResult, } from '../../../shared/db-driver.js';
 import { registerDriver } from '../registry.js';
-import { withConnection } from '../duckdb-pool.js';
+import { MemoryFileExecution, savedFileExecution } from '../file-execution.js';
+import type { OwnedFileExecutionResource } from '../file-execution.js';
+import { fileExecutionPolicy } from '../file-policy.js';
+import { memoryFileSources } from '../memory-file-sources.js';
 import { clampFileLimit } from './file-common.js';
-import {
-	POSTGRES_DIALECT,
-	compileAggregateExprs,
-	compileDistinct,
-	compileWhere,
-	executeCorrelationMatrix,
-	executeHistogram,
-	executeOutliers,
-	executeTemporalTrend,
-	readAggregateRow,
-	readDistinctCount,
-	readDistinctRows,
-} from './rdbms-common.js';
+import { POSTGRES_DIALECT, compileAggregateExprs, compileDistinct, compileWhere, executeCorrelationMatrix, executeHistogram, executeOutliers, executeTemporalTrend, readAggregateRow, readDistinctCount, readDistinctRows, } from './rdbms-common.js';
 import type { OrchestratorDeps } from './rdbms-common.js';
 import { inferShape } from './shape-common.js';
 import { cacheDirFor, destForSource, ensureCached } from '../converter-cache.js';
@@ -83,9 +52,7 @@ import { fixedWidthConverter } from './converters/fixed-width.js';
 import { xlsxConverter } from './converters/xlsx.js';
 import { parquetGlobFor, walkSourceTree } from './converters/shared.js';
 import type { FileConverter } from './converters/types.js';
-
 const log = getLogger('db-duckdb-file');
-
 /**
  * DuckDB's Node binding returns BIGINT / HUGEINT columns as JS `bigint`.
  * BigInt is opaque to `JSON.stringify` (which throws) and not safely
@@ -101,7 +68,8 @@ function normalizeBigInts<T>(value: T): T {
 			? Number(b)
 			: b.toString()) as unknown as T;
 	}
-	if (value === null || typeof value !== 'object') return value;
+	if (value === null || typeof value !== 'object')
+		return value;
 	if (Array.isArray(value)) {
 		return value.map(v => normalizeBigInts(v)) as unknown as T;
 	}
@@ -111,39 +79,26 @@ function normalizeBigInts<T>(value: T): T {
 	}
 	return out as T;
 }
-
 // ---------------------------------------------------------------------------
 // File kinds + reader-expression mapping
 // ---------------------------------------------------------------------------
-
 /** Kinds the DuckDB driver handles natively. avro / bson / fixed-width
  *  / xlsx are converted to Parquet via Phase 2 converters and then
  *  routed through the same DuckDB query path as native parquet. */
-export type DuckDBFileKind =
-	| 'csv' | 'tsv'
-	| 'jsonl' | 'ndjson'
-	| 'json'
-	| 'parquet'
-	| 'arrow' | 'feather'
-	| 'avro' | 'bson' | 'fixed-width' | 'xlsx';
-
+export type DuckDBFileKind = 'csv' | 'tsv' | 'jsonl' | 'ndjson' | 'json' | 'parquet' | 'arrow' | 'feather' | 'avro' | 'bson' | 'fixed-width' | 'xlsx';
 const NATIVE_KINDS: readonly DuckDBFileKind[] = [
 	'csv', 'tsv', 'jsonl', 'ndjson', 'json', 'parquet', 'arrow', 'feather',
 ];
-
 const CONVERTED_KINDS: readonly DuckDBFileKind[] = ['avro', 'bson', 'fixed-width', 'xlsx'];
-
 const CONVERTERS: Record<'avro' | 'bson' | 'fixed-width' | 'xlsx', FileConverter> = {
-	'avro':        avroConverter,
-	'bson':        bsonConverter,
+	'avro': avroConverter,
+	'bson': bsonConverter,
 	'fixed-width': fixedWidthConverter,
-	'xlsx':        xlsxConverter,
+	'xlsx': xlsxConverter,
 };
-
 function isConvertedKind(kind: DuckDBFileKind): kind is 'avro' | 'bson' | 'fixed-width' | 'xlsx' {
 	return CONVERTED_KINDS.includes(kind);
 }
-
 /**
  * Per-kind reader-function syntax. The `?` is a literal placeholder
  * for the path parameter; the rest is dialect-fixed. Caller is
@@ -159,7 +114,8 @@ function isConvertedKind(kind: DuckDBFileKind): kind is 'avro' | 'bson' | 'fixed
  * before the SQL runs, so DuckDB only sees Parquet at query time.
  */
 function readerExpression(kind: DuckDBFileKind, optionsSql: string, extraSql = ''): string {
-	if (isConvertedKind(kind)) return `read_parquet(?${extraSql})`;
+	if (isConvertedKind(kind))
+		return `read_parquet(?${extraSql})`;
 	switch (kind) {
 		case 'csv':
 			// `read_csv_auto` auto-detects types from a row sample, then
@@ -194,29 +150,26 @@ function readerExpression(kind: DuckDBFileKind, optionsSql: string, extraSql = '
 		}
 	}
 }
-
 // ---------------------------------------------------------------------------
 // Directory glob assembly (Phase 4.4 of plans/data-driver-duckdb-files.md)
 // ---------------------------------------------------------------------------
-
 /** File-extension glob pattern per kind, used when path is a directory. */
 function globExtensionFor(kind: DuckDBFileKind): string {
 	switch (kind) {
-		case 'csv':         return '*.csv';
-		case 'tsv':         return '*.tsv';
-		case 'jsonl':       return '*.jsonl';
-		case 'ndjson':      return '*.ndjson';
-		case 'json':        return '*.json';
-		case 'parquet':     return '*.parquet';
-		case 'arrow':       return '*.arrow';
-		case 'feather':     return '*.feather';
-		case 'avro':        return '*.avro';
-		case 'bson':        return '*.bson';
-		case 'xlsx':        return '*.xlsx';
+		case 'csv': return '*.csv';
+		case 'tsv': return '*.tsv';
+		case 'jsonl': return '*.jsonl';
+		case 'ndjson': return '*.ndjson';
+		case 'json': return '*.json';
+		case 'parquet': return '*.parquet';
+		case 'arrow': return '*.arrow';
+		case 'feather': return '*.feather';
+		case 'avro': return '*.avro';
+		case 'bson': return '*.bson';
+		case 'xlsx': return '*.xlsx';
 		case 'fixed-width': return '*';
 	}
 }
-
 /**
  * Source-tree walk pattern for directory connections of converted
  * kinds (Phase 4.5 of plans/data-driver-duckdb-files.md). Defaults to
@@ -224,12 +177,10 @@ function globExtensionFor(kind: DuckDBFileKind): string {
  * (string basename glob) overrides it. Fixed-width sources have no
  * canonical extension, so the default is "all files".
  */
-function sourceWalkPattern(
-	kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx',
-	options: Readonly<Record<string, unknown>> | undefined,
-): string | undefined {
+function sourceWalkPattern(kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx', options: Readonly<Record<string, unknown>> | undefined): string | undefined {
 	const userGlob = options?.['glob'];
-	if (typeof userGlob === 'string' && userGlob.length > 0) return userGlob;
+	if (typeof userGlob === 'string' && userGlob.length > 0)
+		return userGlob;
 	switch (kind) {
 		case 'avro': return '*.avro';
 		case 'bson': return '*.bson';
@@ -237,7 +188,6 @@ function sourceWalkPattern(
 		case 'fixed-width': return undefined;
 	}
 }
-
 /**
  * Resolve the path argument to feed into `read_xxx(?)`. For a
  * single-file connection: just the absolute path. For a directory
@@ -245,28 +195,21 @@ function sourceWalkPattern(
  * (`/path/*.csv` or `/path/**\/*.csv` when recursive). DuckDB walks
  * the tree itself; the driver doesn't pre-enumerate files.
  */
-function resolveReaderPath(
-	kind: DuckDBFileKind,
-	rootPath: string,
-	isDirectory: boolean,
-	recursive: boolean,
-): string {
-	if (!isDirectory) return rootPath;
+function resolveReaderPath(kind: DuckDBFileKind, rootPath: string, isDirectory: boolean, recursive: boolean): string {
+	if (!isDirectory)
+		return rootPath;
 	const ext = globExtensionFor(kind);
 	const middle = recursive ? `**${sep}${ext}` : ext;
 	return join(rootPath, middle);
 }
-
 // ---------------------------------------------------------------------------
 // Reader-option assembly (CSV / TSV)
 // ---------------------------------------------------------------------------
-
 interface ResolvedCsvOptions {
 	readonly delimiter: string | undefined;
 	readonly header: boolean | undefined;
 	readonly quote: string | undefined | false;
 }
-
 /**
  * Pull CSV/TSV options off the connection config + validate. Anything
  * outside the allowed shape is rejected here so the SQL we splice
@@ -290,7 +233,8 @@ function resolveCsvOptions(config: ConnectionConfig): ResolvedCsvOptions {
 		delimiter = d;
 	}
 	let header: boolean | undefined;
-	if (typeof o['header'] === 'boolean') header = o['header'];
+	if (typeof o['header'] === 'boolean')
+		header = o['header'];
 	let quote: string | undefined | false;
 	if (typeof o['quote'] === 'string') {
 		const q = o['quote'];
@@ -298,73 +242,61 @@ function resolveCsvOptions(config: ConnectionConfig): ResolvedCsvOptions {
 			throw new Error(`data-driver: csv quote must be a single non-backslash char`);
 		}
 		quote = q;
-	} else if (o['quote'] === false) {
+	}
+	else if (o['quote'] === false) {
 		quote = false;
 	}
 	return { delimiter, header, quote };
 }
-
 /** Build the comma-prefixed `, opt=val` suffix to splice after the
  *  path parameter in `read_csv_auto(?, ...)`. Only emits options the
  *  user explicitly set; DuckDB's defaults handle the rest. */
 function csvOptionsSql(opts: ResolvedCsvOptions): string {
 	const parts: string[] = [];
-	if (opts.delimiter !== undefined) parts.push(`delim='${opts.delimiter}'`);
-	if (opts.header !== undefined) parts.push(`header=${opts.header}`);
+	if (opts.delimiter !== undefined)
+		parts.push(`delim='${opts.delimiter}'`);
+	if (opts.header !== undefined)
+		parts.push(`header=${opts.header}`);
 	if (opts.quote === false) {
 		parts.push(`quote=''`);
-	} else if (opts.quote !== undefined) {
-		parts.push(`quote='${opts.quote}'`);
+	}
+	else if (opts.quote !== undefined) {
+		parts.push(`quote='${opts.quote.replaceAll("'", "''")}'`);
 	}
 	return parts.length === 0 ? '' : `, ${parts.join(', ')}`;
 }
-
 // ---------------------------------------------------------------------------
 // Driver class
 // ---------------------------------------------------------------------------
-
 class DuckDBFileDriver implements FileDriver {
 	readonly family = 'file' as const;
 	readonly kind: DuckDBFileKind;
-
-	private schemaCache: SchemaDescription | null = null;
-
-	constructor(
-		readonly id: string,
-		kind: DuckDBFileKind,
-		private readonly path: string,
-		private readonly csvOpts: ResolvedCsvOptions,
-		private readonly isDirectory: boolean,
-		private readonly recursive: boolean,
-		private readonly hivePartitioning: boolean,
-		private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined,
-	) {
+	private readonly schemaCache = new Map<string, SchemaDescription>();
+	private memoryReady: Promise<void> | undefined;
+	constructor(readonly id: string, kind: DuckDBFileKind, private readonly path: string, private readonly csvOpts: ResolvedCsvOptions, private readonly isDirectory: boolean, private readonly recursive: boolean, private readonly hivePartitioning: boolean, private readonly execution: OwnedFileExecutionResource, private readonly sourcePaths: readonly string[], private readonly connectionOptions: Readonly<Record<string, unknown>> | undefined) {
 		this.kind = kind;
 	}
-
 	// ---------------------------------------------------------------------------
 	// FileDriver methods
 	// ---------------------------------------------------------------------------
-
 	async describe(target?: string): Promise<SchemaDescription> {
 		// Per-target schema cache only valid when no target is passed --
 		// xlsx-with-sheet target uses a distinct underlying parquet so
 		// its describe cannot reuse the unioned-glob cache.
-		if (target === undefined && this.schemaCache !== null) return this.schemaCache;
-
+		const cacheKey = this.kind === 'xlsx' && !this.isDirectory ? target ?? '' : '';
+		if (this.execution.policy.persistence === 'memory-only' && this.schemaCache.has(cacheKey))
+			return this.schemaCache.get(cacheKey)!;
 		const readPath = await this.readerPath(target);
 		const expr = this.readerExpr();
 		const sql = `DESCRIBE SELECT * FROM ${expr}`;
 		log.debug({ id: this.id, sql }, 'describe');
-
-		const rows = await withConnection(async (conn) => {
+		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, [readPath]);
 			return reader.getRowObjects();
 		});
 		if (rows.length === 0) {
 			throw new Error(`data-driver: ${this.kind} '${readPath}' has no columns`);
 		}
-
 		const columns: ColumnDescription[] = rows.map(r => ({
 			name: String(r['column_name']),
 			type: String(r['column_type']),
@@ -373,23 +305,22 @@ class DuckDBFileDriver implements FileDriver {
 			nullable: r['null'] === 'YES' || r['null'] === true,
 		}));
 		const schema: SchemaDescription = {
-			target: target ?? this.path,
+			target: target ?? this.displayTarget(),
 			columns,
 			source: this.kind === 'parquet' || this.kind === 'arrow' || this.kind === 'feather'
 				? 'header'
 				: 'inferred',
 		};
-		if (target === undefined) this.schemaCache = schema;
+		if (this.execution.policy.persistence === 'memory-only')
+			this.schemaCache.set(cacheKey, schema);
 		return schema;
 	}
-
 	async sample(target: string | undefined, opts: SampleOpts): Promise<SampleResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		const limit = clampFileLimit(opts.limit);
 		const readPath = await this.readerPath(target);
 		const expr = this.readerExpr();
-
 		// WHERE compiled via the same compileWhere helper RDBMS drivers
 		// use -- structured clauses, parametrised values, column names
 		// validated against the schema. The path parameter is bound at
@@ -398,22 +329,19 @@ class DuckDBFileDriver implements FileDriver {
 		const whereText = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT * FROM ${expr}${whereText} LIMIT ${limit}`;
 		log.debug({ id: this.id, sql }, 'sample');
-
 		const params = [readPath, ...where.values];
-		const rows = await withConnection(async (conn) => {
+		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
 			return normalizeBigInts(reader.getRowObjects());
 		});
-
 		return {
-			target: target ?? this.path,
+			target: target ?? this.displayTarget(),
 			columns: cols,
 			rows,
 			truncated: rows.length >= limit,
 			metadata: { samplingMethod: 'first' },
 		};
 	}
-
 	async sampleShape(opts: ScanOpts): Promise<ShapeReport> {
 		// Nested-shape inference doesn't have a clean DuckDB native --
 		// `JSON_STRUCTURE` aggregates can describe one row's shape but
@@ -424,13 +352,12 @@ class DuckDBFileDriver implements FileDriver {
 		const readPath = await this.readerPath();
 		const expr = this.readerExpr();
 		const sql = `SELECT * FROM ${expr} LIMIT ${limit}`;
-		const rows = await withConnection(async (conn) => {
+		const rows = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, [readPath]);
 			return normalizeBigInts(reader.getRowObjects()) as readonly unknown[];
 		});
 		return inferShape(rows);
 	}
-
 	async aggregate(target: string | undefined, request: AggregateRequest): Promise<AggregateResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
@@ -447,16 +374,14 @@ class DuckDBFileDriver implements FileDriver {
 		const whereClause = where.text === '' ? '' : ` ${where.text}`;
 		const sql = `SELECT ${aggExprs.exprs.join(', ')} FROM ${expr}${whereClause}`;
 		log.debug({ id: this.id, sql }, 'aggregate');
-
 		const params = [readPath, ...aggExprs.values, ...where.values];
-		const row = await withConnection(async (conn) => {
+		const row = await this.execution.withConnection(async (conn) => {
 			const reader = await conn.runAndReadAll(sql, params as never[]);
 			const first = reader.getRowObjects()[0] as Readonly<Record<string, unknown>> | undefined;
 			return first === undefined ? undefined : normalizeBigInts(first);
 		});
-		return { target: target ?? this.path, values: readAggregateRow(row, aggExprs.keys) };
+		return { target: target ?? this.displayTarget(), values: readAggregateRow(row, aggExprs.keys) };
 	}
-
 	async distinct(target: string | undefined, request: DistinctRequest): Promise<DistinctResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
@@ -464,18 +389,11 @@ class DuckDBFileDriver implements FileDriver {
 		// FROM clause is the reader-function expression; pass it as
 		// `asTableExpr` so compileDistinct doesn't quote-target the
 		// connection path (which isn't a SQL identifier).
-		const compiled = compileDistinct(
-			target ?? this.path,
-			request,
-			cols,
-			POSTGRES_DIALECT,
-			{ asTableExpr: this.readerExpr() },
-		);
+		const compiled = compileDistinct(target ?? this.displayTarget(), request, cols, POSTGRES_DIALECT, { asTableExpr: this.readerExpr() });
 		log.debug({ id: this.id }, 'distinct');
-
-		const [countRow, valueRows] = await withConnection(async (conn) => {
+		const [countRow, valueRows] = await this.execution.withConnection(async (conn) => {
 			const cReader = await conn.runAndReadAll(compiled.distinctCountSql, [readPath]);
-			const vReader = await conn.runAndReadAll(compiled.topValuesSql,    [readPath]);
+			const vReader = await conn.runAndReadAll(compiled.topValuesSql, [readPath]);
 			const cRaw = cReader.getRowObjects()[0] as Readonly<Record<string, unknown>> | undefined;
 			const vRaw = vReader.getRowObjects() as readonly Readonly<Record<string, unknown>>[];
 			return [
@@ -484,42 +402,37 @@ class DuckDBFileDriver implements FileDriver {
 			] as const;
 		});
 		return {
-			target: target ?? this.path,
+			target: target ?? this.displayTarget(),
 			column: request.column,
 			distinctCount: readDistinctCount(countRow),
 			topValues: readDistinctRows(valueRows),
 		};
 	}
-
 	async histogram(target: string | undefined, request: HistogramRequest): Promise<HistogramResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		return executeHistogram(request, await this.orchestratorDeps(target, cols));
 	}
-
 	async correlationMatrix(target: string | undefined, request: CorrelationMatrixRequest): Promise<CorrelationMatrixResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		return executeCorrelationMatrix(request, await this.orchestratorDeps(target, cols));
 	}
-
 	async outliers(target: string | undefined, request: OutlierRequest): Promise<OutlierResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		return executeOutliers(request, await this.orchestratorDeps(target, cols));
 	}
-
 	async temporalTrend(target: string | undefined, request: TemporalTrendRequest): Promise<TemporalTrendResult> {
 		const schema = await this.describe(target);
 		const cols = schema.columns.map(c => c.name);
 		return executeTemporalTrend({ ...await this.orchestratorDeps(target, cols), request });
 	}
-
 	private async orchestratorDeps(target: string | undefined, cols: readonly string[]): Promise<OrchestratorDeps> {
 		const readPath = await this.readerPath(target);
 		const fromExpr = this.readerExprWithPathParam('$1');
 		return {
-			target: target ?? this.path,
+			target: target ?? this.displayTarget(),
 			knownColumns: cols,
 			dialect: POSTGRES_DIALECT,
 			asTableExpr: fromExpr,
@@ -527,35 +440,34 @@ class DuckDBFileDriver implements FileDriver {
 			aggregate: (req) => this.aggregate(target, req),
 			runRows: async (sql, values) => {
 				const params = [readPath, ...values];
-				return await withConnection(async (conn) => {
+				return await this.execution.withConnection(async (conn) => {
 					const reader = await conn.runAndReadAll(sql, params as never[]);
-					return normalizeBigInts(
-						reader.getRowObjects() as readonly Readonly<Record<string, unknown>>[],
-					);
+					return normalizeBigInts(reader.getRowObjects() as readonly Readonly<Record<string, unknown>>[]);
 				});
 			},
 		};
 	}
-
 	async close(): Promise<void> {
-		// The DuckDB instance is daemon-wide and outlives every driver;
-		// per-driver close is a no-op.
+		this.schemaCache.clear();
+		await this.execution.close();
 	}
-
 	// ---------------------------------------------------------------------------
 	// Helpers
 	// ---------------------------------------------------------------------------
-
 	/** SQL `read_xxx(?, ...)` expression. The `?` binds to the
 	 *  caller-provided path / glob from `readerPath()`. */
+	private displayTarget(): string {
+		return this.execution.policy.persistence === 'memory-only' ? this.id : this.path;
+	}
 	private readerExpr(): string {
+		if (this.execution.policy.persistence === 'memory-only')
+			return 'query_table(?)';
 		const optsSql = (this.kind === 'csv' || this.kind === 'tsv')
 			? csvOptionsSql(this.csvOpts)
 			: '';
 		const extra = this.hivePartitioning ? `, hive_partitioning=true` : '';
 		return readerExpression(this.kind, optsSql, extra);
 	}
-
 	/** Same as readerExpr but with the path placeholder substituted in
 	 *  place of the implicit `?` -- used when the SQL also references
 	 *  explicit `$N` placeholders so DuckDB's parameter numbering stays
@@ -563,7 +475,6 @@ class DuckDBFileDriver implements FileDriver {
 	private readerExprWithPathParam(placeholder: string): string {
 		return this.readerExpr().replace('?', placeholder);
 	}
-
 	/**
 	 * Resolve the path / glob bound to the reader function's first
 	 * parameter. For native kinds this is sync and trivial. For
@@ -577,12 +488,22 @@ class DuckDBFileDriver implements FileDriver {
 	 * single logical table).
 	 */
 	private async readerPath(target?: string): Promise<string> {
+		if (this.execution instanceof MemoryFileExecution) {
+			const execution = this.execution;
+			if (!this.memoryReady) {
+				this.memoryReady = isConvertedKind(this.kind)
+					? execution.loadRows((budget, signal) => memoryFileSources(CONVERTERS[this.kind as keyof typeof CONVERTERS], this.sourcePaths, budget, signal, this.connectionOptions))
+					: execution.loadNative({ kind: this.kind as Exclude<DuckDBFileKind, 'avro' | 'bson' | 'fixed-width' | 'xlsx'>, paths: this.sourcePaths,
+						...this.csvOpts, hivePartitioning: this.hivePartitioning });
+			}
+			await this.memoryReady;
+			return execution.table(this.kind === 'xlsx' && !this.isDirectory ? target : undefined);
+		}
 		if (!isConvertedKind(this.kind)) {
 			return resolveReaderPath(this.kind, this.path, this.isDirectory, this.recursive);
 		}
 		return this.ensureConvertedAndGlob(this.kind, target);
 	}
-
 	/**
 	 * Stage a converted-kind connection's source(s) into the cache,
 	 * return the DuckDB-readable Parquet path / glob.
@@ -598,13 +519,9 @@ class DuckDBFileDriver implements FileDriver {
 	 * tree. `target` is not yet plumbed for directory-of-xlsx --
 	 * uncommon enough to defer.
 	 */
-	private async ensureConvertedAndGlob(
-		kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx',
-		target?: string,
-	): Promise<string> {
+	private async ensureConvertedAndGlob(kind: 'avro' | 'bson' | 'fixed-width' | 'xlsx', target?: string): Promise<string> {
 		const converter = CONVERTERS[kind];
 		const opts = this.connectionOptions;
-
 		if (!this.isDirectory) {
 			const sourceRoot = dirname(this.path);
 			const dest = destForSource(this.id, sourceRoot, this.path);
@@ -623,7 +540,6 @@ class DuckDBFileDriver implements FileDriver {
 			}
 			return dest;
 		}
-
 		const pattern = sourceWalkPattern(kind, opts);
 		const sources = await walkSourceTree(this.path, {
 			recursive: this.recursive,
@@ -640,49 +556,62 @@ class DuckDBFileDriver implements FileDriver {
 		// xlsx mirrors source tree but each `.xlsx` becomes a directory
 		// of per-sheet `.parquet`s -- always one extra depth than the
 		// source layout, so always use `**`.
-		if (kind === 'xlsx') return join(cacheDir, '**', '*.parquet');
+		if (kind === 'xlsx')
+			return join(cacheDir, '**', '*.parquet');
 		return parquetGlobFor(cacheDir, this.recursive);
 	}
 }
-
 /** Mirror the xlsx converter's sheet-name slug rule so callers can
  *  resolve a target back to its on-disk Parquet. Kept in lock-step
  *  with `converters/xlsx.ts`'s `slugify`. */
 function slugifySheetName(name: string): string {
 	return name.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'sheet';
 }
-
 // ---------------------------------------------------------------------------
 // Factory + registration
 // ---------------------------------------------------------------------------
-
 function makeFactory(kind: DuckDBFileKind) {
-	return async (config: ConnectionConfig) => {
-		if (config.path === undefined) {
-			throw new Error(`data-driver: ${kind} connection '${config.id}' missing path`);
+	return async (config: ConnectionConfig, context?: DriverFactoryContext) => {
+		try {
+			if (config.path === undefined) {
+				throw new Error(`data-driver: ${kind} connection '${config.id}' missing path`);
+			}
+			if (!existsSync(config.path)) {
+				throw new Error(`data-driver: ${kind} '${config.path}' does not exist`);
+			}
+			// Phase 4.1 -- a connection's path may be a single file or a
+			// directory. Stat tells us which; downstream logic switches
+			// between absolute path and DuckDB-glob accordingly.
+			const stat = statSync(config.path);
+			const isDirectory = stat.isDirectory();
+			const recursive = config.recursive === true && isDirectory;
+			const hivePartitioning = config.partitioning === 'hive' && isDirectory;
+			const csvOpts = (kind === 'csv' || kind === 'tsv')
+				? resolveCsvOptions(config)
+				: { delimiter: undefined, header: undefined, quote: undefined };
+			const policy = context?.fileExecutionPolicy ?? fileExecutionPolicy(config, {
+				lookupRoot: dirname(resolve(config.path)), ownerId: 'private-factory',
+				revision: createHash('sha256').update(JSON.stringify(config)).digest('hex'), persistence: 'saved-cache',
+			});
+			const memory = policy.persistence === 'memory-only';
+			const pattern = isConvertedKind(kind) ? sourceWalkPattern(kind, config.options) : globExtensionFor(kind);
+			const sourcePaths = memory && isDirectory
+				? await walkSourceTree(config.path, { recursive, ...(pattern === undefined ? {} : { pattern }) })
+				: [config.path];
+			const execution = memory
+				? await MemoryFileExecution.open(policy, { nativePaths: isConvertedKind(kind) ? [] : sourcePaths,
+					...((kind === 'arrow' || kind === 'feather') ? { localReaders: ['arrow'] as const } : {}) })
+				: savedFileExecution(policy);
+			return new DuckDBFileDriver(config.id, kind, config.path, csvOpts, isDirectory, recursive, hivePartitioning, execution, sourcePaths, config.options);
 		}
-		if (!existsSync(config.path)) {
-			throw new Error(`data-driver: ${kind} '${config.path}' does not exist`);
+		catch (error) {
+			if (context?.fileExecutionPolicy?.persistence !== 'memory-only')
+				throw error;
+			const message = error instanceof Error ? error.message : '';
+			throw new Error(['resource-limit', 'unsupported-temporary'].includes(message) ? message : 'Temporary file initialization failed');
 		}
-		// Phase 4.1 -- a connection's path may be a single file or a
-		// directory. Stat tells us which; downstream logic switches
-		// between absolute path and DuckDB-glob accordingly.
-		const stat = statSync(config.path);
-		const isDirectory = stat.isDirectory();
-		const recursive = config.recursive === true && isDirectory;
-		const hivePartitioning = config.partitioning === 'hive' && isDirectory;
-
-		const csvOpts = (kind === 'csv' || kind === 'tsv')
-			? resolveCsvOptions(config)
-			: { delimiter: undefined, header: undefined, quote: undefined };
-		return new DuckDBFileDriver(
-			config.id, kind, config.path, csvOpts,
-			isDirectory, recursive, hivePartitioning,
-			config.options,
-		);
 	};
 }
-
 /** Register the DuckDB-backed driver for every file kind it handles
  *  -- native (csv / tsv / jsonl / ndjson / json / parquet / arrow /
  *  feather) plus converted (avro / bson / fixed-width / xlsx via the
@@ -699,7 +628,6 @@ export function registerDuckDBFileDriver(): void {
 		registerDriver({ kind, family: 'file', factory: makeFactory(kind) });
 	}
 }
-
 // Self-register on import (matches the convention every other driver
 // module follows). The driver pool's lazy DuckDB init means no DuckDB
 // work happens until the first describe / sample / etc. call -- the

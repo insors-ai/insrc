@@ -240,3 +240,15 @@ test('CM-S1-H: unavailable local readers fail explicitly without INSTALL and clo
 		}
 	});
 });
+
+test('CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once',async()=>{
+ await fixture(async dir=>{
+  const resource=await MemoryFileExecution.open(policy(dir));let begin!:()=>void,release!:()=>void;
+  const started=new Promise<void>(r=>begin=r),gate=new Promise<void>(r=>release=r);let calls=0;
+  const loading=resource.loadRows(async budget=>{
+   const free=budget.reserve(1024);
+   return{async targets(){return[];},async describe(){return[];},async *batches(){},async close(){calls++;begin();await gate;free();}};
+  });
+  await started;let closed=false;const closing=resource.close().then(()=>{closed=true;});await delay(5);assert.equal(closed,false);release();await loading;await closing;assert.equal(calls,1);assert.equal(resource.diagnostics.decodedBytes,0);assert.equal(resource.diagnostics.connections,0);
+ });
+});

@@ -26,7 +26,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -102,7 +103,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -178,7 +180,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -254,7 +257,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -330,7 +334,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -406,7 +411,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -482,7 +488,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -558,7 +565,8 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -634,7 +642,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -711,7 +720,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -788,7 +798,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -865,7 +876,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -942,7 +954,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1024,7 +1037,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1105,7 +1119,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1186,7 +1201,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1269,7 +1285,8 @@
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
         "src/daemon/db/secrets.ts",
-        "src/daemon/db/drivers/kv-common.ts"
+        "src/daemon/db/drivers/kv-common.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1351,7 +1368,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1430,7 +1449,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1509,7 +1530,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1584,7 +1607,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1659,7 +1684,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1734,7 +1761,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1809,7 +1838,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1884,7 +1915,9 @@
         "src/daemon/db/config.ts",
         "src/daemon/db/pool.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -1960,7 +1993,9 @@
         "src/daemon/db/pool.ts",
         "src/daemon/db/drivers/converters/avro.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -2036,7 +2071,9 @@
         "src/daemon/db/pool.ts",
         "src/daemon/db/drivers/converters/bson.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -2112,7 +2149,9 @@
         "src/daemon/db/pool.ts",
         "src/daemon/db/drivers/converters/fixed-width.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -2206,7 +2245,9 @@
         "src/daemon/db/pool.ts",
         "src/daemon/db/drivers/converters/xlsx.ts",
         "src/daemon/tools/builtins/db/index.ts",
-        "src/daemon/db/secrets.ts"
+        "src/daemon/db/secrets.ts",
+        "src/daemon/db/file-policy.ts",
+        "src/daemon/db-rpc.ts"
       ],
       "publicFields": [
         "label",
@@ -2289,7 +2330,7 @@
     "src/daemon/db/drivers/converters/bson.ts": "1b827625a6e453f2b0bf6994f5077ee564ec6fb52cf1e336da04229a16c8a0da",
     "src/daemon/db/drivers/converters/fixed-width.ts": "e1e8d06eadd7a03fdec3dcf8958063f36c9d5725230d37814d1306531cfdd364",
     "src/daemon/db/drivers/converters/xlsx.ts": "d7edeb3262a53e60ac6c9f457d70c789a79748f7126922da202c8a93a8fddee1",
-    "src/daemon/db/drivers/duckdb-file.ts": "556a9cf771cb089664c33b63544f9bc232014ca77e4781a3570c166745d7b050",
+    "src/daemon/db/drivers/duckdb-file.ts": "24fce16f07d5f95c15520a167fd2f356561ab033d415a42e9e6ee1e9241c4f51",
     "src/daemon/db/drivers/dynamodb.ts": "a377a571eb482d672ed16857618c0483a9ef0d08b049bba04cdddb2ecb69aade",
     "src/daemon/db/drivers/etcd.ts": "5ecfe742cda8c82b945c3c9701548ca5ac709e48c3fa6bd433e63e45bc261772",
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
@@ -2302,10 +2343,12 @@
     "src/daemon/db/drivers/pg.ts": "f25e92672220bfee6335f3dc6376ec309c7e324b605f3c1020eb631ecfc429bf",
     "src/daemon/db/drivers/redis.ts": "7c55da6f434833c2eaa6bb14da9f7eb31345cbef664a23b94883fdd66ea98710",
     "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
-    "src/daemon/db/pool.ts": "a5b9dfa09738dc0b75c0ab2be3019b5bb0fe90ca6b2e8bc2266fb90f25702f90",
+    "src/daemon/db/pool.ts": "7dcc2412a974f28c1ba9b88b5dc05bdf0947f3505fb04b3ca42581473e438346",
     "src/daemon/db/secrets.ts": "65b4e675a37134b304c21cd582b057791333afcb6172b09ae81c7cddba852338",
     "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
-    "src/shared/db-driver.ts": "728bcb2d372959b2846a9e1464c6218a11df043f03f956646fbdca8947ae7f38"
+    "src/shared/db-driver.ts": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
+    "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
+    "src/daemon/db-rpc.ts": "e7e16db9ddbd4282e9855f2fa7447a8f027895103d421d829cba7c087aa005d5"
   },
   "classificationUpdates": [
     {
@@ -2382,6 +2425,31 @@
       "task": "t17",
       "source": "src/daemon/db/drivers/converters/xlsx.ts",
       "reason": "Replaces complete Workbook allocation with bounded archive/XML worksheet passes and shared saved/memory inference/coercion. Retains source-only converter configuration; no new ConnectionConfig field reads."
+    },
+    {
+      "task": "t19",
+      "source": "src/shared/db-driver.ts",
+      "reason": "Threads daemon-only FileExecutionPolicy through factory context and owned file-driver query resources. Existing classified config fields remain unchanged; renderer options cannot supply execution authority, and ephemeral/private-probe file sources use memory-only resources."
+    },
+    {
+      "task": "t19",
+      "source": "src/daemon/db/pool.ts",
+      "reason": "Threads daemon-only FileExecutionPolicy through factory context and owned file-driver query resources. Existing classified config fields remain unchanged; renderer options cannot supply execution authority, and ephemeral/private-probe file sources use memory-only resources."
+    },
+    {
+      "task": "t19",
+      "source": "src/daemon/db/drivers/duckdb-file.ts",
+      "reason": "Threads daemon-only FileExecutionPolicy through factory context and owned file-driver query resources. Existing classified config fields remain unchanged; renderer options cannot supply execution authority, and ephemeral/private-probe file sources use memory-only resources."
+    },
+    {
+      "task": "t19",
+      "source": "src/daemon/db/file-policy.ts",
+      "reason": "Daemon-only policy hashes already-classified id/kind/path/options and owner-supplied root/revision; no option grants execution authority."
+    },
+    {
+      "task": "t19",
+      "source": "src/daemon/db-rpc.ts",
+      "reason": "Legacy private probes build profile-validated snapshots using classified existing config fields and same-record server-owned secret references; file probes receive memory-only authority and awaited disposal."
     }
   ]
 }

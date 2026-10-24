@@ -35,7 +35,7 @@
     },
     "src/daemon/db-rpc.ts": {
       "classification": "bounded-private-probe",
-      "rationale": "t19/t21: transient factory needs memory-only ownership; S002 later owns worker orchestration"
+      "rationale": "t19: bounded private factory probe uses S001 read-only profile materialization, only same-record server-owned credential refs, memory-only file authority, and awaited cleanup; S002 retains worker orchestration."
     },
     "src/daemon/db/drivers/mssql.ts": {
       "classification": "driver-internal-library-pool",
@@ -51,7 +51,7 @@
     },
     "src/daemon/db/pool.ts": {
       "classification": "pool-owner",
-      "rationale": "t9/t19: factory/resource lifetime and ephemeral seam; no user session state added in S001"
+      "rationale": "t19: canonical lookup owner supplies revision-scoped saved execution or memory-only ephemeral execution authority through daemon factory context; own ownerId/repoPath reads are construction metadata, never raw-driver escape."
     },
     "src/daemon/db/registry.ts": {
       "classification": "factory-metadata",
@@ -379,7 +379,7 @@
     },
     {
       "file": "src/daemon/db-rpc.ts",
-      "expression": "factory(transient)",
+      "expression": "factory(transient, familyOf(cfg.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(transient, {\n\t\t\tlookupRoot: repoRoot, ownerId: 'probe:' + randomUUID(), revision: randomUUID(), persistence: 'memory-only',\n\t\t}) } : undefined)",
       "boundary": "driver-port-call"
     },
     {
@@ -659,7 +659,7 @@
     },
     {
       "file": "src/daemon/db/pool.ts",
-      "expression": "factory(config)",
+      "expression": "factory(config, familyOf(config.kind) === 'file' ? { fileExecutionPolicy: fileExecutionPolicy(config, {\n\t\t\tlookupRoot: this.repoPath, ownerId: this.#ownerId, revision: entry.revision,\n\t\t\tpersistence: config.ephemeral === true ? 'memory-only' : 'saved-cache',\n\t\t}) } : undefined)",
       "boundary": "driver-port-call"
     },
     {
@@ -780,6 +780,11 @@
     {
       "file": "src/daemon/db/pool.ts",
       "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#ownerId",
       "boundary": "pool-member"
     },
     {
@@ -1000,6 +1005,11 @@
     {
       "file": "src/daemon/db/pool.ts",
       "expression": "this.reloadNow",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.repoPath",
       "boundary": "pool-member"
     },
     {

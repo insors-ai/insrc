@@ -104,6 +104,8 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 	#controller = new AbortController();
 	#connections = new Set<DuckDBConnection>();
 	#pending = new Set<Promise<unknown>>();
+	#sources = new Set<MemoryRowSource>();
+	#sourceClosures = new WeakMap<MemoryRowSource, Promise<void>>();
 	#retained: (() => void)[] = [];
 	#closed = false;
 	#closing: Promise<void> | undefined;
@@ -148,6 +150,14 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 	#name(): string {
 		return 'cm_' + randomUUID().replaceAll('-', '');
 	}
+	#closeSource(source: MemoryRowSource): Promise<void> {
+		let closing = this.#sourceClosures.get(source);
+		if (!closing) {
+			closing = Promise.resolve().then(() => source.close()).finally(() => this.#sources.delete(source));
+			this.#sourceClosures.set(source, closing);
+		}
+		return closing;
+	}
 	#live(): void {
 		if (this.#closed || this.#controller.signal.aborted)
 			throw new Error('File execution closed');
@@ -179,6 +189,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 		try {
 			await this.#operation(async (connection) => {
 				source = await factory(this.decoderBudget, this.#controller.signal);
+				this.#sources.add(source);
 				this.#live();
 				const targets = Object.freeze((await source.targets()).map(target => Object.freeze({ ...target, columns: Object.freeze(target.columns.map(column => Object.freeze({ ...column }))) })));
 				if (new Set(targets.map(t => t.targetId)).size !== targets.length)
@@ -226,7 +237,7 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 		}
 		finally {
 			try {
-				await source?.close();
+				if (source) await this.#closeSource(source);
 			}
 			catch (error) {
 				await this.close();
@@ -344,14 +355,14 @@ export class MemoryFileExecution implements OwnedFileExecutionResource {
 			while (this.#pending.size)
 				await Promise.allSettled([...this.#pending]);
 			try {
-				this.engine.close();
+				for (const source of this.#sources) await this.#closeSource(source);
 			}
 			finally {
-				this.#tables.clear();
-				this.#targets = [];
-				this.#union = undefined;
-				for (const release of this.#retained.splice(0))
-					release();
+				try { this.engine.close(); }
+				finally {
+					this.#tables.clear(); this.#targets = []; this.#union = undefined;
+					for (const release of this.#retained.splice(0)) release();
+				}
 			}
 		})();
 		return this.#closing;

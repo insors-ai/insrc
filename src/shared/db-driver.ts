@@ -1,4 +1,4 @@
-import type { ManagementEnvelope } from './connection-management.js';
+import type { ManagementEnvelope, FileExecutionPolicy } from './connection-management.js';
 
 /**
  * Data-driver family interfaces -- shared between daemon + browser.
@@ -765,7 +765,11 @@ export type Driver = RdbmsDriver | KvDriver | FileDriver;
  * layer before the factory is called, so drivers see the raw
  * connection string.
  */
-export type DriverFactory = (config: ConnectionConfig) => Promise<Driver>;
+/** Daemon construction authority. Never accepted as a renderer connection option. */
+export interface DriverFactoryContext {
+	readonly fileExecutionPolicy?: FileExecutionPolicy | undefined;
+}
+export type DriverFactory = (config: ConnectionConfig, context?: DriverFactoryContext | undefined) => Promise<Driver>;
 
 export interface DriverRegistration {
 	readonly kind: string;

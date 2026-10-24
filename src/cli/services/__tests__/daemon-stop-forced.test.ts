@@ -194,3 +194,30 @@ test('Real orphaned guard owner death prevents maintenance restart', async () =>
   assert.equal(await exited(child), 'SIGKILL'); assert.equal(existsSync(PATHS.daemonRunGuard), true);
  } finally { guardOwner?.kill('SIGKILL'); rmSync(PATHS.daemonRunGuard, { recursive: true, force: true }); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
 });
+
+test('Retained waitForStop verifies run-file ownership and guards before reporting success', async () => {
+ const { captureDaemon, waitForStop } = await import('../lifecycle.js');
+ const { acquireRunFileGuard } = await import('../../../shared/daemon-run-files.js');
+ const child = await startStubborn(true), captured = await captureDaemon(); assert.ok(captured.target);
+ try {
+  await captured.target.handle.terminate(); await exited(child);
+  const guard = acquireRunFileGuard(PATHS.daemonRunGuard);
+  try { await assert.rejects(waitForStop(0, captured.target), /ownership conflict/); }
+  finally { guard.release(); }
+  writeFileSync(PATHS.pidFile, 'replacement');
+  await assert.rejects(waitForStop(0, captured.target), /ownership conflict/);
+  assert.equal(readFileSync(PATHS.pidFile, 'utf8'), 'replacement'); assert.equal(existsSync(PATHS.sockFile), true);
+ } finally { await captured.target.handle.close(); rmSync(PATHS.pidFile, { force: true }); rmSync(PATHS.sockFile, { force: true }); }
+});
+
+test('Retained waitForStop ignores path disappearance until original exit and preserves handle ownership', async () => {
+ const { captureDaemon, waitForStop } = await import('../lifecycle.js');
+ const child = await startStubborn(true), captured = await captureDaemon(); assert.ok(captured.target);
+ try {
+  rmSync(PATHS.pidFile); rmSync(PATHS.sockFile);
+  assert.equal(await waitForStop(0, captured.target), false);
+  await captured.target.handle.terminate(); await exited(child);
+  assert.equal(await waitForStop(1000, captured.target), true);
+  assert.equal(await captured.target.handle.hasExited(), true, 'caller still owns its usable handle');
+ } finally { await captured.target.handle.close(); }
+});

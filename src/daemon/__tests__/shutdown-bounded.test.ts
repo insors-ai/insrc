@@ -38,7 +38,7 @@ async function scenario(mode: string) {
 }
 test('Watchdog arm failure self-kills before blocked native cleanup', { timeout: 5000 }, async () => {
  const out = await scenario('arm-fail'); assert.equal(out.signal, 'SIGKILL');
- assert.deepEqual(out.events, ['arm', 'clear']); assert.match(out.log, /shutdown failed.*broker spawn failed/);
+ assert.deepEqual(out.events, ['arm', 'clear']); assert.match(out.log, /shutdown failed.*broker capture failed/);
 });
 test('Bounded shutdown preserves lock-loss, fatal and normal cleanup behavior', { timeout: 10000 }, async () => {
  for (const mode of ['blocked', 'exit-hook', 'healthy', 'locks-lost']) {

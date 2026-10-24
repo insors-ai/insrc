@@ -5,7 +5,7 @@ import { describeStop, stopDaemonWith } from '../daemon.js';
 import type { StopDeps } from '../daemon.js';
 import { restart } from '../maintenance.js';
 
-function fixture(options: { clean?: boolean; rpcError?: boolean; survives?: boolean; conflict?: string; capabilityError?: boolean } = {}) {
+function fixture(options: { clean?: boolean | undefined; rpcError?: boolean | undefined; survives?: boolean | undefined; conflict?: string | undefined; capabilityError?: boolean | undefined } = {}) {
  let alive = true, closed = 0, killed = 0, cleaned = 0;
  const order: string[] = [];
  const target = { pid: 71, startedAt: 'kernel-incarnation', commandLine: 'node /installed/daemon/index.js', handle: {

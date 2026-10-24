@@ -47,6 +47,7 @@ export interface CapturedDaemon {
  readonly pidFile: RunFileIdentity | undefined;
  readonly socketFile: RunFileIdentity | undefined;
 }
+const capturedTargets = new WeakMap<StopTarget, CapturedDaemon>();
 function matches(path: string, expected: RunFileIdentity | undefined): void {
  const current = runFileIdentity(path);
  if (current && (!expected || !sameRunFile(current, expected))) throw new Error(`run-file ownership conflict: replacement at ${path}; restart withheld`);
@@ -62,7 +63,9 @@ export async function captureDaemon(): Promise<CapturedDaemon> {
   if (!pidFile && socketFile) throw new Error('run-file ownership conflict: socket has no PID owner; restart withheld');
   if (pid !== undefined) target = await captureStopTarget(pid);
   matches(PATHS.pidFile, pidFile); matches(PATHS.sockFile, socketFile);
-  return { target, pidFile, socketFile };
+  const captured = { target, pidFile, socketFile };
+  if (target) capturedTargets.set(target, captured);
+  return captured;
  } catch (error) { await target?.handle.close(); throw error; }
  finally {
   try { guard.release(); } catch (error) { await target?.handle.close(); throw error; }
@@ -79,17 +82,23 @@ export function cleanupStoppedDaemon(captured: CapturedDaemon): void {
 }
 /** Poll the retained capability. Missing paths never stand in for process exit. */
 export async function waitForStop(timeoutMs = 30_000, target?: StopTarget): Promise<boolean> {
- const captured = target ? undefined : await captureDaemon();
+ const captured = target ? capturedTargets.get(target) : await captureDaemon();
+ const ownsHandle = target === undefined;
  const observed = target ?? captured?.target;
  try {
   if (!observed) { if (captured) cleanupStoppedDaemon(captured); return true; }
   const deadline = Date.now() + timeoutMs;
   do {
-   if (await observed.handle.hasExited()) { if (captured) cleanupStoppedDaemon(captured); return true; }
+   if (await observed.handle.hasExited()) {
+    // A foreign target carries no authority over current paths. Only absence
+    // is safe without the original publication evidence.
+    cleanupStoppedDaemon(captured ?? { target: observed, pidFile: undefined, socketFile: undefined });
+    return true;
+   }
    if (Date.now() >= deadline) return false;
    await sleep(Math.min(100, Math.max(0, deadline - Date.now())));
   } while (true);
- } finally { if (captured) await captured.target?.handle.close(); }
+ } finally { if (ownsHandle) await captured?.target?.handle.close(); }
 }
 
 /** Wait until the daemon accepted startup (pid file + socket present

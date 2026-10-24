@@ -37,7 +37,7 @@ export function armShutdownWatchdog(options: WatchdogOptions): Promise<ShutdownW
   child.once('exit', (code, signal) => fail(`shutdown watchdog exited ${settled ? 'after' : 'before'} readiness (${code ?? signal})`));
   child.on('message', (message: unknown) => {
    if (typeof message !== 'object' || message === null) { fail('invalid shutdown watchdog readiness'); return; }
-   const value = message as { type?: string; reason?: string; pid?: number };
+   const value = message as { type?: string | undefined; reason?: string | undefined; pid?: number | undefined };
    if (value.type === 'failed') { fail(value.reason ?? 'shutdown watchdog failed'); return; }
    if (settled || value.type !== 'ready' || value.pid !== child.pid) { fail('invalid shutdown watchdog readiness'); return; }
    settled = true; clearTimeout(timer); child.unref(); child.channel?.unref();

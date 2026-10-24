@@ -28,6 +28,12 @@ async function run(mode: string) {
  if (mode === 'timeout') options.helperPath = ${JSON.stringify(silent)};
  if (mode === 'broker') options.brokerPath = '/missing-broker';
  try {
+ if (mode === 'ipc-disconnect') {
+  const { fork } = require('node:child_process');
+  const child = fork(${JSON.stringify(new URL('../../../out/bin/insrc-shutdown-watchdog.js', import.meta.url).pathname)}, [String(process.pid), String(Date.now() + 500), ${JSON.stringify(log)}, ${JSON.stringify(join(root, 'out/bin/insrc-process-broker'))}], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  child.on('message', () => { child.disconnect(); process.stdout.write(JSON.stringify({ ready: true, watchdog: child.pid }) + '\\n'); setTimeout(() => process.exit(0), 100); });
+  return;
+ }
  const watchdog = await armShutdownWatchdog(options);
  watchdog.stage('close native store');
  process.stdout.write(JSON.stringify({ ready: true, watchdog: watchdog.pid }) + '\\n');
@@ -59,16 +65,25 @@ test('Independent watchdog bounds a disposable blocked parent and disarms after 
  }
 });
 test('Ready handshake reports spawn failure, early exit and timeout', { timeout: 10000 }, async () => {
- for (const [mode, expected] of [['spawn', /spawn failed/], ['early', /before readiness/], ['timeout', /timed out/], ['broker', /broker spawn failed/]] as const) {
+ for (const [mode, expected] of [['spawn', /spawn failed/], ['early', /before readiness/], ['timeout', /timed out/], ['broker', /broker capture failed/]] as const) {
   const p = await run(mode); assert.match(p.value.error, expected); assert.equal((await p.ended)[0], 0);
  }
 });
 test('Watchdog never signals after reparenting and imports only Node built-ins', { timeout: 5000 }, async () => {
  const p = await run('healthy'); assert.equal((await p.ended)[0], 0); await gone(p.value.watchdog);
  await new Promise(r => setTimeout(r, 850)); assert.equal(existsSync(p.log), false);
- const source = readFileSync(join(root, 'src/bin/insrc-shutdown-watchdog.ts'), 'utf8');
+ const source = readFileSync(join(root, 'out/bin/insrc-shutdown-watchdog.js'), 'utf8');
  const imports = [...source.matchAll(/from ['"]([^'"]+)['"]/g)].map(m => m[1]!);
  assert.ok(imports.length >= 4); assert.ok(imports.every(name => name.startsWith('node:')));
  assert.doesNotMatch(source, /process\.kill\(/);
+ assert.doesNotMatch(source, /from ['"](?:lmdb|@lancedb|\.\.)/);
  for (const path of ['out/bin/insrc-shutdown-watchdog.js', 'out/daemon/shutdown-watchdog.js', 'out/bin/insrc-process-broker']) assert.equal(existsSync(join(root, path)), true);
+});
+
+
+test('Watchdog IPC disconnect during readiness releases its shared broker session without signalling the parent', { timeout: 10000 }, async () => {
+ for (let i = 0; i < 5; i++) {
+  const p = await run('ipc-disconnect'); assert.equal(p.value.ready, true);
+  assert.equal((await p.ended)[0], 0); await gone(p.value.watchdog); assert.equal(existsSync(p.log), false);
+ }
 });

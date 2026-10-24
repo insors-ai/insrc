@@ -54,3 +54,5 @@ deadlines and is responsible for helper cleanup.
 
 The broker opens no store, socket, or network connection. Its stdio channel is
 internal to the daemon/CLI and is not registered as a user-facing tool.
+
+The CLI and shutdown watchdog share `src/shared/daemon-process-client.ts`; there is one broker framing, identity-validation and request implementation. The normal build uses esbuild already supplied by tsx to bundle that Node-only client into `out/bin/insrc-shutdown-watchdog.js`, and verifies that every remaining runtime import is a Node built-in. The watchdog source can share modules without introducing a storage dependency into the packaged executable.

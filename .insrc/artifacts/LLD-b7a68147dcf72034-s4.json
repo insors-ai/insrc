@@ -145,6 +145,13 @@
         "choice": "Proceed with revised LLD",
         "rationale": "Superseded by the approved revision 12",
         "resolvedAt": "2026-10-24T18:21:27.644Z"
+      },
+      "q1e05bf47": {
+        "question": "Review cycle 4, round 2 (1 HIGH, 1 MED) revised this LLD: coverage is tracked per operation for multi-operation commands, with the operations the existing tools lack assigned to s8 by name, and the secondary-lookup list gained git_stage, git_revert, git_checkout and git_cherry-pick, with the audit test as the authority for completeness.",
+        "status": "resolved",
+        "choice": "Proceed with explicit s8 deferrals",
+        "rationale": "Coverage is per operation; the audit test is the authority for completeness",
+        "resolvedAt": "2026-10-24T18:21:54.077Z"
       }
     }
   },

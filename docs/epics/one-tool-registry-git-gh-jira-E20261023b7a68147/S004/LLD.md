@@ -488,6 +488,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Use approved artifact records — AMD-b7a68147dcf72034-8 and DEF revision 2 were approved on 2026-10-24; EXT.md and the rendered HLD.md are stale _(2026-10-24T18:20:52.700Z)_
 - `q6bdcab8e` — Review cycle 4, round 1 (1 HIGH, 2 MED, 1 unverified) revised this LLD: the isolated environment is the corpus reader's own, fail takes the ShellResult, precondition reads fail the call before any change, and the authority for s8 is cited.
   - **resolved**: Proceed with revised LLD — Superseded by the approved revision 12 _(2026-10-24T18:21:27.644Z)_
+- `q1e05bf47` — Review cycle 4, round 2 (1 HIGH, 1 MED) revised this LLD: coverage is tracked per operation for multi-operation commands, with the operations the existing tools lack assigned to s8 by name, and the secondary-lookup list gained git_stage, git_revert, git_checkout and git_cherry-pick, with the audit test as the authority for completeness.
+  - **resolved**: Proceed with explicit s8 deferrals — Coverage is per operation; the audit test is the authority for completeness _(2026-10-24T18:21:54.077Z)_
 
 ## Citations
 

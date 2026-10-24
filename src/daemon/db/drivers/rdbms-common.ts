@@ -11,6 +11,7 @@
  * statement text.
  */
 
+import { allDriverWork, retainDriverWork } from '../driver-work.js';
 import type {
 	AggregateFunction,
 	AggregateRequest,
@@ -1543,7 +1544,7 @@ export async function executeAntiJoin(
 	deps: AntiJoinOrchestratorDeps,
 ): Promise<AntiJoinResult> {
 	const examplesLimit = clampAntiJoinExamples(request.exampleLimit);
-	const [leftSchema, rightSchema] = await Promise.all([
+	const [leftSchema, rightSchema] = await allDriverWork([
 		deps.describe(request.leftTarget),
 		deps.describe(request.rightTarget),
 	]);
@@ -1724,7 +1725,7 @@ export async function executeOutliers(
 		buildOrchestratorOptions(deps),
 	);
 
-	const [countRows, exRows] = await Promise.all([
+	const [countRows, exRows] = await allDriverWork([
 		deps.runRows(countsCompiled.text, countsCompiled.values),
 		deps.runRows(exCompiled.text, exCompiled.values),
 	]);
@@ -2236,7 +2237,7 @@ export async function executeTemporalGapStats(
 		deps.target, request, deps.knownColumns, deps.dialect,
 		median, gapRatio, topN, buildOrchestratorOptions(deps),
 	);
-	const [countsRows, topRows] = await Promise.all([
+	const [countsRows, topRows] = await allDriverWork([
 		deps.runRows(buckets.countsSql,  buckets.countsValues),
 		deps.runRows(buckets.topGapsSql, buckets.topGapsValues),
 	]);
@@ -2279,6 +2280,9 @@ export async function withTimeout<T>(
 	timeoutMs: number,
 	onTimeout?: () => void,
 ): Promise<T> {
+	// Retain the actual client promise, including library-pool cleanup, in the
+	// outer management lease even when this bounded waiter returns first.
+	retainDriverWork(op);
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<never>((_, reject) => {
 		timer = setTimeout(() => {

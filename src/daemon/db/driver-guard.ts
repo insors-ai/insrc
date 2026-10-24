@@ -1,5 +1,6 @@
 import type { Driver } from '../../shared/db-driver.js';
 import { ConnectionUseError } from './lease-gate.js';
+import { withDriverWork } from './driver-work.js';
 const METHODS = new Set(['describe', 'sample', 'explain', 'aggregate', 'distinct', 'listTables', 'listIndexes', 'functionalDependency', 'antiJoin', 'histogram', 'correlationMatrix', 'outliers', 'temporalTrend', 'dickeyFuller', 'temporalGapStats', 'scan', 'get', 'sampleShape', 'listNamespaces', 'describeNamespace']);
 const RESULT_PROTOTYPES = new Set<object>([Object.prototype, Array.prototype, Date.prototype, Buffer.prototype, Uint8Array.prototype, ArrayBuffer.prototype, DataView.prototype, RegExp.prototype, Map.prototype, Set.prototype]);
 /** A callback sees only interface members; retained views cannot start work after callback exit. */
@@ -119,7 +120,7 @@ export function guardedDriver(driver: Driver): {
 						iterators.delete(iterator);
 						return Promise.resolve({ done: true, value: undefined });
 					}
-					return track(Promise.resolve(method.call(iterator, arg)).then(result => {
+					return track(Promise.resolve(withDriverWork(track, () => method.call(iterator, arg))).then(result => {
 						if (result.done)
 							iterators.delete(iterator);
 						return { done: result.done, value: wrap(result.value) };
@@ -164,7 +165,7 @@ export function guardedDriver(driver: Driver): {
 		Object.defineProperty(target, key, { enumerable: true, configurable: true, value: (...args: unknown[]) => {
 				try {
 					check();
-					const result = Reflect.apply(method, driver, args);
+					const result = withDriverWork(track, () => Reflect.apply(method, driver, args));
 					if (result && (typeof result === 'object' || typeof result === 'function') && typeof Reflect.get(result, 'then') === 'function')
 						return track(Promise.resolve(result).then(wrap).catch(error => {
 							throw driverFailure(error);
@@ -188,7 +189,7 @@ export function guardedDriver(driver: Driver): {
 					iterators.delete(iterator);
 					closing.push(Promise.resolve().then(() => {
 						const finish = iterator.return;
-						return finish ? Reflect.apply(finish, iterator, []) : undefined;
+						return finish ? withDriverWork(track, () => Reflect.apply(finish, iterator, [])) : undefined;
 					}));
 				}
 				await Promise.allSettled(closing);

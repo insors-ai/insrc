@@ -261,3 +261,54 @@ test('CM-S1-M: metadata-only file listing keeps its pin until the filesystem res
 		await env.cleanup();
 	}
 });
+
+test('CM-S1-V: actual MSSQL sample timeout retains underlying library work through late success or failure', async () => {
+ await import('../../../../db/drivers/mssql.js');
+ const { getFactory } = await import('../../../../db/registry.js');
+ const factory = getFactory('mssql')!;
+ const originalTimer = globalThis.setTimeout;
+ for (const ending of ['success', 'failure'] as const) {
+  const env = await environment();
+  const f = await env.rootFixture('root', { id: 'fixture', kind: 'mssql', url: 'mssql://user:password@localhost/db' });
+  _setPoolForTests(f.root, f.pool);
+  const started = deferred(), proceed = deferred(), timedOut = deferred();
+  let libraryReleased = 0;
+  const actual = await factory({ id: 'fixture', kind: 'mssql', url: 'mssql://user:password@localhost/db' });
+  Object.assign(actual, {
+   describe: async () => ({ target: 'table', columns: [{ name: 'n', type: 'integer', nullable: false }], source: 'introspect' }),
+   run: async () => { started.resolve(); try { await proceed.promise; if (ending === 'failure') throw new Error('late library failure'); return [{ n: 1 }]; } finally { libraryReleased++; } },
+  });
+  f.hooks.factory = async () => actual;
+  const timer = mock.method(globalThis, 'setTimeout', ((fn: (...args: unknown[]) => void, ms?: number, ...args: unknown[]) => {
+   if (ms === 5000) return originalTimer(() => { fn(...args); timedOut.resolve(); }, 1);
+   return originalTimer(fn, ms, ...args);
+  }) as typeof setTimeout);
+  let work: Promise<unknown> | undefined;
+  try {
+   const revision = f.pool.leaseState('fixture').revision;
+   work = getTool('db_sql_sample')!.execute({ connectionId: 'fixture', target: 'table', limit: 10 }, deps(f.root));
+   await started.promise; await timedOut.promise;
+   await delay(5);
+   assert.ok(f.pool.leaseState('fixture').active > 0);
+   assert.equal(libraryReleased, 0);
+   assert.throws(() => f.pool.beginMutation('fixture', 'remove', revision), { code: 'busy' });
+   assert.throws(() => f.pool.beginMutation('fixture', 'update', revision), { code: 'busy' });
+   assert.equal(await Promise.race([work.then(() => false), delay(5, true)]), true);
+   proceed.resolve();
+   const result = await work as { success: boolean; error?: string };
+   assert.equal(result.success, false); assert.match(result.error!, /timed out/);
+   assert.equal(libraryReleased, 1); assert.equal(f.pool.leaseState('fixture').active, 0);
+  } finally {
+   proceed.resolve(); if (work) await work;
+   timer.mock.restore(); _resetCacheForTests(); await env.cleanup();
+  }
+ }
+});
+
+test('CM-S1-V: parallel driver calls settle every library request before propagating a sibling failure', async () => {
+ const { allDriverWork } = await import('../../../../db/driver-work.js');
+ const pending = deferred(); let settled = false;
+ const work = allDriverWork([Promise.reject(new Error('first failed')), pending.promise.then(() => 'second')]).finally(() => { settled = true; });
+ await delay(5); assert.equal(settled, false);
+ pending.resolve(); await assert.rejects(work, /first failed/); assert.equal(settled, true);
+});

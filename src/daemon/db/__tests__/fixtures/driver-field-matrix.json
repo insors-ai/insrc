@@ -2295,11 +2295,11 @@
     "src/daemon/db/drivers/kv-common.ts": "eaaa5f6bacfa1893334da220d2be2c0ea7a28875fd16f55af963cc7c25d7b622",
     "src/daemon/db/drivers/memcached.ts": "92fde20fcb82d921162f493026fe96ff191f7baa1b6aa55625aa121cf1956861",
     "src/daemon/db/drivers/mongodb.ts": "d6c13219d2a17ccedd049d2427442751e2527c0b70c6a4588bd1a7b371201659",
-    "src/daemon/db/drivers/mssql.ts": "2d5d91382700974b47127ca024fa6f7002b89e21a54c0708eacf4a84f49e058c",
-    "src/daemon/db/drivers/mysql.ts": "95896778d630a317b2ffdeaeec03428719ff74b9da1ec70efb324437940af370",
+    "src/daemon/db/drivers/mssql.ts": "479eb8e3566cf6350235291691e9960013d41f2cb20b6e377f13577e20cbe32b",
+    "src/daemon/db/drivers/mysql.ts": "7c8fa80ee6d9d485a71d70597b4d0f29dee530f5ed658475bbb3b2bf7ccb8582",
     "src/daemon/db/drivers/nats.ts": "da7b4956ab0ebaad0868355b70d25901e00ab29c9d6d5b4667b97b944866ffef",
-    "src/daemon/db/drivers/oracle.ts": "2da13b9fbd3ef8864f6253d526d19c75e8b1ec13ecf873d6147a6c99f1009cc3",
-    "src/daemon/db/drivers/pg.ts": "116c829478efc3aeb985b8e38e6846006fb6fdcbb41a13861b94fa389273e6ba",
+    "src/daemon/db/drivers/oracle.ts": "1d9ed4082094eec408e04dec8eb5a949b382b04200dc01a5a388fbede5a64dc7",
+    "src/daemon/db/drivers/pg.ts": "f25e92672220bfee6335f3dc6376ec309c7e324b605f3c1020eb631ecfc429bf",
     "src/daemon/db/drivers/redis.ts": "7c55da6f434833c2eaa6bb14da9f7eb31345cbef664a23b94883fdd66ea98710",
     "src/daemon/db/drivers/sqlite.ts": "40a042348a2626d9136cd6846c700b50d1b81839db42d1c754e1c936190de4c9",
     "src/daemon/db/pool.ts": "a5b9dfa09738dc0b75c0ab2be3019b5bb0fe90ca6b2e8bc2266fb90f25702f90",
@@ -2342,6 +2342,26 @@
       "task": "t12",
       "source": "src/daemon/tools/builtins/db/index.ts",
       "reason": "Ordinary tools now use safe metadata and revision-pinned full-use callbacks. Path/recursive/id/kind/family/label reads remain classified; no raw URL, options or stored credentials are projected."
+    },
+    {
+      "task": "t12",
+      "source": "src/daemon/db/drivers/pg.ts",
+      "reason": "Wait for parallel library client requests to settle before enclosing connection cleanup; no configuration field reads or classifications changed."
+    },
+    {
+      "task": "t12",
+      "source": "src/daemon/db/drivers/mysql.ts",
+      "reason": "Wait for parallel library client requests to settle before enclosing connection cleanup; no configuration field reads or classifications changed."
+    },
+    {
+      "task": "t12",
+      "source": "src/daemon/db/drivers/mssql.ts",
+      "reason": "Wait for parallel library client requests to settle before enclosing connection cleanup; no configuration field reads or classifications changed."
+    },
+    {
+      "task": "t12",
+      "source": "src/daemon/db/drivers/oracle.ts",
+      "reason": "Wait for parallel library client requests to settle before enclosing connection cleanup; no configuration field reads or classifications changed."
     }
   ]
 }

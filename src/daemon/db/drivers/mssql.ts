@@ -1,3 +1,4 @@
+import { allDriverWork } from '../driver-work.js';
 /**
  * MSSQL driver (kind: `mssql`).
  *
@@ -231,7 +232,7 @@ export class MssqlDriver implements RdbmsDriver {
 		const cols = schema.columns.map(c => c.name);
 		const compiled = compileDistinct(target, request, cols, MSSQL_DIALECT);
 		log.debug({ id: this.id }, 'distinct query');
-		const [countRows, valueRows] = await Promise.all([
+		const [countRows, valueRows] = await allDriverWork([
 			withTimeout(this.run(compiled.distinctCountSql, []), SAMPLE_TIMEOUT_MS),
 			withTimeout(this.run(compiled.topValuesSql,    []), SAMPLE_TIMEOUT_MS),
 		]);

@@ -42,9 +42,10 @@ The daemon does **not**:
 11. [How a request's size is measured](#how-a-requests-size-is-measured)
 12. [What a plan-tree run does about scope, failed tasks and runs that died](#what-a-plan-tree-run-does-about-scope-failed-tasks-and-runs-that-died)
 13. [What a build records about its tests](#what-a-build-records-about-its-tests)
-14. [CLI reference](#cli-reference)
-15. [Troubleshooting](#troubleshooting)
-16. [Uninstall](#uninstall)
+14. [The git tools](#the-git-tools)
+15. [CLI reference](#cli-reference)
+16. [Troubleshooting](#troubleshooting)
+17. [Uninstall](#uninstall)
 
 ---
 
@@ -1411,6 +1412,270 @@ A rule that must follow an operation, such as refreshing tracker status after a 
 - **Canonical ids.** A rule is registered under the tool's canonical id. A call through an alias runs the same rules, once. `registerToolHook` throws at start-up on a duplicate `toolId` and rule id, an empty id, or an alias of an already registered tool.
 - **A copy per rule.** Each rule is given its own `structuredClone` of the input and the result, so nothing it does to them, nested data included, reaches the caller or the next rule. A result that cannot be copied is reported as that rule's failure, and the rest still run. The rule's context is `{ toolId, input, result, caller }`; `caller` is the call's `deps.caller` and can be unset.
 - **No cancellation bound.** The stage awaits each rule. A rule that never settles holds the call until it does; neither `executeTool` nor `callTool` races the call against cancellation. Rules are repository code, so a hanging rule is a defect in that rule.
+
+## The git tools
+
+The daemon has 34 git tools. The 22 that existed keep their ids and inputs; each now declares a typed result that the
+executor checks, returns a failure kind on every failed result, and decides its approval class from the call.
+
+- **Twelve tools are new** and let code stop running git itself: `git_rev_parse`, `git_rev_list`, `git_ls_files`,
+  `git_ls_tree`, `git_cat_file` (one rev or many through `cat-file --batch`, bytes as utf8 or lossless base64,
+  isolated from the environment by default), `git_for_each_ref` (`contains`, `merged`, `noMerged`, `pointsAt`),
+  `git_symbolic_ref` (get, set, delete), `git_show_ref` (with `exists`), `git_merge_base`, `git_hash_object`,
+  `git_path_history` and `git_fetch_refs`.
+- **Destructive calls ask in every mode**, including auto: a hard reset, a forced push (any force flag, a `+` refspec) and
+  a push that deletes a remote ref (`:dev`), branch and tag delete, stash drop and clear, a forced worktree remove, a
+  checkout of a path or with discard, `git_symbolic_ref` delete, and `git_fetch_refs` with a forced refspec into a ref that
+  is not under `refs/remotes/`. Reads are none.
+- **A lookup made after a change keeps its placeholder and says so**: the result stays a success and `data.warnings` names
+  the read that could not run. A read that decides the call (the current branch, the staged count, whether a reset needs a
+  force push, whether a commit was already pushed) stops the call before anything is changed.
+- **A ref goes before the option terminator and a path after `--`**; a ref that starts with `-` or any argument with a NUL
+  is refused.
+- **Failure text is not a compatibility surface**; the tool ids, the input schemas and the `success` and `error` fields are.
+
+### What of git each tool covers
+
+Story s4 covers the rows marked `covered`; the rows marked `assigned` belong to Story s8, which adds the tools for them;
+`excluded` ones are not offered, with the reason. The table is rendered from `src/daemon/tools/builtins/git/coverage.ts`
+and a test keeps this copy equal to it.
+
+<!-- git-coverage:start -->
+| Command | Operation | Owner | Tools or reason |
+| --- | --- | --- | --- |
+| add |  | covered | git_stage |
+| annotate |  | covered | git_blame |
+| blame |  | covered | git_blame |
+| branch |  | covered | git_branch |
+| cat-file |  | covered | git_cat_file |
+| checkout |  | covered | git_checkout |
+| cherry-pick |  | covered | git:cherry-pick |
+| commit |  | covered | git_commit, git_amend |
+| diff |  | covered | git_diff |
+| fetch |  | covered | git_fetch, git_fetch_refs |
+| for-each-ref |  | covered | git_for_each_ref |
+| hash-object |  | covered | git_hash_object |
+| log |  | covered | git_log |
+| ls-files |  | covered | git_ls_files |
+| ls-tree |  | covered | git_ls_tree |
+| merge |  | covered | git_merge |
+| merge-base |  | covered | git_merge_base |
+| pickaxe |  | covered | git_path_history |
+| pull |  | covered | git_pull |
+| push |  | covered | git_push |
+| rebase |  | covered | git_rebase |
+| refs |  | covered | git_for_each_ref, git_show_ref |
+| remote |  | covered | git_remote |
+| reset |  | covered | git_reset |
+| rev-list |  | covered | git_rev_list |
+| rev-parse |  | covered | git_rev_parse |
+| revert |  | covered | git_revert |
+| show |  | covered | git_show |
+| show-ref |  | covered | git_show_ref |
+| stage |  | covered | git_stage |
+| stash |  | covered | git_stash |
+| status |  | covered | git_status |
+| switch |  | covered | git_branch |
+| symbolic-ref |  | covered | git_symbolic_ref |
+| tag |  | covered | git_tag |
+| unpack-file |  | covered | git_cat_file |
+| whatchanged |  | covered | git_path_history |
+| worktree |  | covered | git_worktree |
+| stash | list | covered | git_stash |
+| stash | show | covered | git_stash |
+| stash | push | covered | git_stash |
+| stash | pop | covered | git_stash |
+| stash | apply | covered | git_stash |
+| stash | drop | covered | git_stash |
+| stash | clear | covered | git_stash |
+| stash | branch | assigned | s8 |
+| stash | create | assigned | s8 |
+| stash | store | assigned | s8 |
+| stash | export | assigned | s8 |
+| stash | import | assigned | s8 |
+| stash | save | excluded | deprecated spelling of stash push |
+| worktree | list | covered | git_worktree |
+| worktree | add | covered | git_worktree |
+| worktree | move | covered | git_worktree |
+| worktree | remove | covered | git_worktree |
+| worktree | prune | covered | git_worktree |
+| worktree | lock | assigned | s8 |
+| worktree | unlock | assigned | s8 |
+| worktree | repair | assigned | s8 |
+| remote | list | covered | git_remote |
+| remote | get-url | covered | git_remote |
+| remote | add | covered | git_remote |
+| remote | rename | covered | git_remote |
+| remote | remove | covered | git_remote |
+| remote | set-url | covered | git_remote |
+| remote | show | assigned | s8 |
+| remote | prune | assigned | s8 |
+| remote | update | assigned | s8 |
+| remote | set-head | assigned | s8 |
+| remote | set-branches | assigned | s8 |
+| remote | set-url --add | assigned | s8 |
+| remote | set-url --delete | assigned | s8 |
+| branch | list | covered | git_branch |
+| branch | create | covered | git_branch |
+| branch | delete | covered | git_branch |
+| branch | merged | covered | git_for_each_ref |
+| branch | no-merged | covered | git_for_each_ref |
+| branch | points-at | covered | git_for_each_ref |
+| branch | contains | covered | git_for_each_ref |
+| branch | show-current | covered | git_rev_parse |
+| branch | rename | assigned | s8 |
+| branch | copy | assigned | s8 |
+| branch | set-upstream-to | assigned | s8 |
+| branch | unset-upstream | assigned | s8 |
+| branch | edit-description | assigned | s8 |
+| tag | list | covered | git_tag |
+| tag | create | covered | git_tag |
+| tag | delete | covered | git_tag |
+| tag | verify | assigned | s8 |
+| tag | sign | assigned | s8 |
+| refs | list | covered | git_for_each_ref |
+| refs | exists | covered | git_show_ref |
+| refs | verify | assigned | s8 |
+| refs | migrate | assigned | s8 |
+| refs | optimize | assigned | s8 |
+| reflog | show | assigned | s8 |
+| reflog | list | assigned | s8 |
+| reflog | exists | assigned | s8 |
+| reflog | expire | assigned | s8 |
+| reflog | delete | assigned | s8 |
+| reflog | write | assigned | s8 |
+| reflog |  | assigned | s8 |
+| am |  | assigned | s8 |
+| apply |  | assigned | s8 |
+| archive |  | assigned | s8 |
+| backfill |  | assigned | s8 |
+| bisect |  | assigned | s8 |
+| bugreport |  | assigned | s8 |
+| bundle |  | assigned | s8 |
+| check-attr |  | assigned | s8 |
+| check-ignore |  | assigned | s8 |
+| check-mailmap |  | assigned | s8 |
+| check-ref-format |  | assigned | s8 |
+| checkout-index |  | assigned | s8 |
+| cherry |  | assigned | s8 |
+| clean |  | assigned | s8 |
+| clone |  | assigned | s8 |
+| column |  | assigned | s8 |
+| commit-graph |  | assigned | s8 |
+| commit-tree |  | assigned | s8 |
+| config |  | assigned | s8 |
+| count-objects |  | assigned | s8 |
+| describe |  | assigned | s8 |
+| diagnose |  | assigned | s8 |
+| diff-files |  | assigned | s8 |
+| diff-index |  | assigned | s8 |
+| diff-pairs |  | assigned | s8 |
+| diff-tree |  | assigned | s8 |
+| fast-export |  | assigned | s8 |
+| fast-import |  | assigned | s8 |
+| fmt-merge-msg |  | assigned | s8 |
+| format-patch |  | assigned | s8 |
+| fsck |  | assigned | s8 |
+| fsck-objects |  | assigned | s8 |
+| gc |  | assigned | s8 |
+| get-tar-commit-id |  | assigned | s8 |
+| grep |  | assigned | s8 |
+| index-pack |  | assigned | s8 |
+| init |  | assigned | s8 |
+| init-db |  | assigned | s8 |
+| interpret-trailers |  | assigned | s8 |
+| last-modified |  | assigned | s8 |
+| ls-remote |  | assigned | s8 |
+| mailinfo |  | assigned | s8 |
+| mailsplit |  | assigned | s8 |
+| maintenance |  | assigned | s8 |
+| merge-file |  | assigned | s8 |
+| merge-octopus |  | assigned | s8 |
+| merge-ours |  | assigned | s8 |
+| merge-recursive |  | assigned | s8 |
+| merge-recursive-ours |  | assigned | s8 |
+| merge-recursive-theirs |  | assigned | s8 |
+| merge-resolve |  | assigned | s8 |
+| merge-subtree |  | assigned | s8 |
+| merge-tree |  | assigned | s8 |
+| mktag |  | assigned | s8 |
+| mktree |  | assigned | s8 |
+| multi-pack-index |  | assigned | s8 |
+| mv |  | assigned | s8 |
+| name-rev |  | assigned | s8 |
+| notes |  | assigned | s8 |
+| pack-objects |  | assigned | s8 |
+| pack-redundant |  | assigned | s8 |
+| pack-refs |  | assigned | s8 |
+| patch-id |  | assigned | s8 |
+| prune |  | assigned | s8 |
+| prune-packed |  | assigned | s8 |
+| quiltimport |  | assigned | s8 |
+| range-diff |  | assigned | s8 |
+| read-tree |  | assigned | s8 |
+| repack |  | assigned | s8 |
+| replace |  | assigned | s8 |
+| replay |  | assigned | s8 |
+| repo |  | assigned | s8 |
+| request-pull |  | assigned | s8 |
+| rerere |  | assigned | s8 |
+| restore |  | assigned | s8 |
+| rm |  | assigned | s8 |
+| shortlog |  | assigned | s8 |
+| show-branch |  | assigned | s8 |
+| show-index |  | assigned | s8 |
+| sparse-checkout |  | assigned | s8 |
+| stripspace |  | assigned | s8 |
+| submodule |  | assigned | s8 |
+| subtree |  | assigned | s8 |
+| unpack-objects |  | assigned | s8 |
+| update-index |  | assigned | s8 |
+| update-ref |  | assigned | s8 |
+| var |  | assigned | s8 |
+| verify-commit |  | assigned | s8 |
+| verify-pack |  | assigned | s8 |
+| verify-tag |  | assigned | s8 |
+| version |  | assigned | s8 |
+| write-tree |  | assigned | s8 |
+| checkout--worker |  | excluded | internal helper, not an operation |
+| credential |  | excluded | credential helper |
+| credential-cache |  | excluded | credential helper |
+| credential-cache--daemon |  | excluded | internal helper, not an operation |
+| credential-store |  | excluded | credential helper |
+| daemon |  | excluded | server or transport role |
+| difftool |  | excluded | needs a person at a terminal or a GUI |
+| difftool--helper |  | excluded | internal helper, not an operation |
+| fetch-pack |  | excluded | server or transport role |
+| filter-branch |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
+| for-each-repo |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
+| fsmonitor--daemon |  | excluded | internal helper, not an operation |
+| help |  | excluded | needs a person at a terminal or a GUI |
+| hook |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
+| http-backend |  | excluded | server or transport role |
+| http-fetch |  | excluded | server or transport role |
+| http-push |  | excluded | server or transport role |
+| imap-send |  | excluded | mail |
+| instaweb |  | excluded | needs a person at a terminal or a GUI |
+| merge-index |  | excluded | internal helper, not an operation |
+| merge-one-file |  | excluded | internal helper, not an operation |
+| mergetool |  | excluded | needs a person at a terminal or a GUI |
+| receive-pack |  | excluded | server or transport role |
+| remote-ext |  | excluded | server or transport role |
+| remote-fd |  | excluded | server or transport role |
+| remote-ftp |  | excluded | server or transport role |
+| remote-ftps |  | excluded | server or transport role |
+| remote-http |  | excluded | server or transport role |
+| remote-https |  | excluded | server or transport role |
+| send-pack |  | excluded | server or transport role |
+| sh-i18n--envsubst |  | excluded | internal helper, not an operation |
+| shell |  | excluded | server or transport role |
+| submodule--helper |  | excluded | internal helper, not an operation |
+| update-server-info |  | excluded | server or transport role |
+| upload-archive |  | excluded | server or transport role |
+| upload-archive--writer |  | excluded | internal helper, not an operation |
+| upload-pack |  | excluded | server or transport role |
+| web--browse |  | excluded | needs a person at a terminal or a GUI |
+<!-- git-coverage:end -->
 
 ## CLI reference
 

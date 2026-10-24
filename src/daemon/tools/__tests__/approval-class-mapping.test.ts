@@ -115,3 +115,20 @@ test('approval-class-mapping.test.ts: the tool ids and input schemas match the s
 		assert.deepEqual(JSON.parse(JSON.stringify(live.get(old.id)!.inputSchema)), old.inputSchema, `${old.id} input schema`);
 	}
 });
+
+test('approval-class-mapping.test.ts: the twelve git tools of Story s4 are registered, ten of them reads and two per-input', () => {
+	const reads = ['git_rev_parse', 'git_rev_list', 'git_ls_files', 'git_ls_tree', 'git_cat_file', 'git_for_each_ref', 'git_show_ref', 'git_merge_base', 'git_hash_object', 'git_path_history'];
+	for (const id of reads) {
+		const tool = live.get(id);
+		assert.ok(tool, `${id} is registered`);
+		assert.equal(tool.approval, undefined, `${id} declares no approval`);
+		assert.equal(resolveApprovalClass(tool, {}), 'none', id);
+		assert.ok(tool.outputSchema !== undefined, `${id} declares a typed result`);
+		assert.equal(snapshot.some(s => s.id === id), false, `${id} is new: it is not in the snapshot of the 228`);
+	}
+	const symbolic = live.get('git_symbolic_ref')!;
+	assert.deepEqual(['get', 'set', 'delete'].map(op => resolveApprovalClass(symbolic, { op })), ['none', 'common', 'destructive']);
+	const fetchRefs = live.get('git_fetch_refs')!;
+	assert.equal(resolveApprovalClass(fetchRefs, { refspecs: ['+refs/heads/a:refs/remotes/o/a'] }), 'none');
+	assert.equal(resolveApprovalClass(fetchRefs, { refspecs: ['+refs/heads/a:refs/heads/a'] }), 'destructive');
+});

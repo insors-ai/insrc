@@ -21,7 +21,7 @@ import { listTools } from '../../../registry.js';
 import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
 import { gitCatFileTool } from '../cat-file.js';
 import type { ApprovalGate, ApprovalRequest } from '../../../types.js';
-import { git, newRepo, registerForTests, toolDeps } from './_repo.js';
+import { git, newRepo, registerForTests, richRepo, toolDeps } from './_repo.js';
 
 test('every git read tool\'s result fits its declared outputSchema', async () => {
 	registerForTests();
@@ -68,26 +68,6 @@ function gate(answer: 'declined' | 'approve'): ApprovalRequest[] {
 	const g: ApprovalGate = { async ask(r) { requests.push(r); return answer === 'approve' ? { requestId: r.requestId, decision: 'approve' } : 'declined'; } };
 	_setApprovalGateForTests(() => g);
 	return requests;
-}
-
-/** A repository with two commits, a branch b, a tag t, one stash entry, a linked worktree and a dirty a.txt. */
-function richRepo(): { repo: string; wt: string; remote: string } {
-	const repo = newRepo();
-	writeFileSync(join(repo, 'a.txt'), 'one\n');
-	git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'first');
-	writeFileSync(join(repo, 'a.txt'), 'two\n');
-	git(repo, 'commit', '-q', '-am', 'second');
-	git(repo, 'branch', 'b'); git(repo, 'tag', 't');
-	writeFileSync(join(repo, 'a.txt'), 'stashed\n');
-	git(repo, 'stash', 'push', '-q');
-	const wt = mkdtempSync(join(tmpdir(), 'insrc-wt-')) + '/linked';
-	git(repo, 'worktree', 'add', '-q', '-b', 'wtb', wt);
-	writeFileSync(join(repo, 'a.txt'), 'dirty\n');
-	const remote = mkdtempSync(join(tmpdir(), 'insrc-remote-'));
-	git(remote, 'init', '-q', '--bare', '-b', 'main');
-	git(repo, 'remote', 'add', 'origin', remote);
-	git(repo, 'push', '-q', 'origin', 'main', 'b');
-	return { repo, wt, remote };
 }
 
 test('destructive git calls ask through the executor and are not run when declined', async () => {

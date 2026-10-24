@@ -1,7 +1,7 @@
 /** Shared helpers of the git tool tests: a real temporary repository and a registry holding the git tools. */
 
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -27,5 +27,26 @@ export const toolDeps = (repo: string): ToolDeps => ({ sessionId: 'test', repoPa
 export function registerForTests(): void {
 	_resetRegistryForTests();
 	registerGitTools();
+}
+
+
+/** A repository with two commits, a branch b, a tag t, one stash entry, a linked worktree and a dirty a.txt. */
+export function richRepo(): { repo: string; wt: string; remote: string } {
+	const repo = newRepo();
+	writeFileSync(join(repo, 'a.txt'), 'one\n');
+	git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'first');
+	writeFileSync(join(repo, 'a.txt'), 'two\n');
+	git(repo, 'commit', '-q', '-am', 'second');
+	git(repo, 'branch', 'b'); git(repo, 'tag', 't');
+	writeFileSync(join(repo, 'a.txt'), 'stashed\n');
+	git(repo, 'stash', 'push', '-q');
+	const wt = mkdtempSync(join(tmpdir(), 'insrc-wt-')) + '/linked';
+	git(repo, 'worktree', 'add', '-q', '-b', 'wtb', wt);
+	writeFileSync(join(repo, 'a.txt'), 'dirty\n');
+	const remote = mkdtempSync(join(tmpdir(), 'insrc-remote-'));
+	git(remote, 'init', '-q', '--bare', '-b', 'main');
+	git(repo, 'remote', 'add', 'origin', remote);
+	git(repo, 'push', '-q', 'origin', 'main', 'b');
+	return { repo, wt, remote };
 }
 

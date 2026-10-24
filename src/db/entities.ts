@@ -414,16 +414,9 @@ export async function reindexFile(
 			throw new UnregisteredRepoError(repoPath);
 		}
 
-		// 1. Snapshot existing entities for this (repoId, filePath).
-		//    Scan the entity sub-DB; cheap at typical scale (a few
-		//    dozen entities per file).
-		const existing: bigint[] = [];
-		for (const { key, value } of s.entity.getRange()) {
-			const row = decodeEntityRow(value as Buffer);
-			if (row.repoId !== repoId) continue;
-			if (toAbsolutePath(row.filePath, repoPath) !== filePath) continue;
-			existing.push(decodeKeyU64(key as Buffer));
-		}
+		// Snapshot only this file's indexed candidates inside the write transaction.
+		const existing = collectEntityU64sByFileInTxn(s, filePath)
+			.filter(u64 => readEntityRowSync(s, u64)?.repoId === repoId);
 
 		// 2. Upsert each parsed entity, tracking which u64s we touched.
 		const seen = new Set<bigint>();
@@ -819,65 +812,46 @@ export async function listEntitiesByKinds(
 
 export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]> {
 	const store = await getGraphStore();
-	const repoId = lookupRepoIdInTxn(store, repo);
-	if (repoId === undefined) return [];
-	const out: Entity[] = [];
-	const repoCache = new Map<number, string>([[repoId, repo]]);
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
-		if (stringId === undefined) continue;
-		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
-	}
-	return out;
+	return readEntityScope(store, transaction => {
+		const repoId = scopedRepoId(store, repo, transaction);
+		if (repoId === undefined) return [];
+		const out: Entity[] = [];
+		for (const candidate of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
+			if (candidate.row.repoId !== repoId) continue;
+			out.push(rowToDomainEntity(candidate.stringId, candidate.row, candidate.repoPath));
+		}
+		return out;
+	});
 }
 
-/**
- * The files the store holds for one repo: each non-empty absolute file
- * path mapped to the string ids of THIS repo's entities in it. One pass
- * over the entity table, no entity construction. Entities with an empty
- * file path (external endpoints) belong to no file and are left out.
- * An unregistered repo yields an empty map.
- */
-export async function listEntityFilesForRepo(
-	_db: DbClient,
-	repo: string,
-): Promise<Map<string, string[]>> {
+/** Group this repository's indexed entities by exact absolute file, preserving u64 order. */
+export async function listEntityFilesForRepo(_db: DbClient, repo: string): Promise<Map<string, string[]>> {
 	const store = await getGraphStore();
-	const out = new Map<string, string[]>();
-	const repoId = lookupRepoIdInTxn(store, repo);
-	if (repoId === undefined) return out;
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		if (row.filePath === '') continue;
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
-		if (stringId === undefined) continue;
-		const file = toAbsolutePath(row.filePath, repo);
-		const ids = out.get(file);
-		if (ids === undefined) out.set(file, [stringId]);
-		else ids.push(stringId);
-	}
-	return out;
+	return readEntityScope(store, transaction => {
+		const out = new Map<string, string[]>();
+		const repoId = scopedRepoId(store, repo, transaction);
+		if (repoId === undefined) return out;
+		for (const { row, stringId, repoPath } of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
+			if (row.repoId !== repoId || row.filePath === '') continue;
+			const file = toAbsolutePath(row.filePath, repoPath);
+			const ids = out.get(file);
+			if (ids === undefined) out.set(file, [stringId]); else ids.push(stringId);
+		}
+		return out;
+	});
 }
 
 export async function findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]> {
 	const store = await getGraphStore();
-	// `file` from callers is an absolute path; rows store the
-	// repo-relative `filePath`. We resolve the row's repo root via its
-	// repoId, recompute the absolute, and compare.
-	const out: Entity[] = [];
-	const repoCache = new Map<number, string>();
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		const repoPath = lookupRepoPath(store, row.repoId, repoCache);
-		if (toAbsolutePath(row.filePath, repoPath) !== file) continue;
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
-		if (stringId === undefined) continue;
-		out.push(rowToDomainEntity(stringId, row, repoPath));
-	}
-	return out;
+	return readEntityScope(store, transaction => {
+		const out: Entity[] = [];
+		for (const { row, stringId, repoPath } of indexedEntityRows(store, store.entityByFile, encodeEntityFileKey(file), transaction)) {
+			// Digest collisions must never broaden exact-file equality.
+			if (toAbsolutePath(row.filePath, repoPath) !== file) continue;
+			out.push(rowToDomainEntity(stringId, row, repoPath));
+		}
+		return out;
+	});
 }
 
 export async function listUnembeddedEntities(_db: DbClient, repo: string): Promise<Entity[]> {
@@ -1100,31 +1074,57 @@ const encodeRepoKey = (id: number): Buffer => {
 	return b;
 };
 
-async function collectEntityU64sByFile(store: GraphStore, file: string): Promise<bigint[]> {
-	return collectEntityU64sByFileInTxn(store, file);
+type EntityReadTransaction = ReturnType<GraphStore['root']['useReadTransaction']>;
+
+/** Keep index enumeration and every authoritative lookup on the same LMDB snapshot. */
+function readEntityScope<T>(store: GraphStore, read: (transaction: EntityReadTransaction) => T): T {
+	const transaction = store.root.useReadTransaction();
+	try { return read(transaction); } finally { transaction.done(); }
 }
 
-function collectEntityU64sByFileInTxn(store: GraphStore, file: string): bigint[] {
-	const out: bigint[] = [];
-	const repoCache = new Map<number, string>();
-	for (const { key, value } of store.entity.getRange()) {
+function scopedRepoId(store: GraphStore, path: string, transaction: EntityReadTransaction): number | undefined {
+	for (const { value } of store.repo.getRange({ transaction })) {
+		const repo = decodeRepoRow(value as Buffer);
+		if (repo.path === path) return repo.id;
+	}
+	return undefined;
+}
+
+function* indexedEntityRows(store: GraphStore, index: GraphStore['entityByFile'], key: Buffer, transaction?: EntityReadTransaction | undefined): Generator<{ u64: bigint; row: EntityRow; stringId: string; repoPath: string }> {
+	const options = transaction === undefined ? undefined : { transaction };
+	for (const id of index.getValues(key, options)) {
+		const u64Key = id as Buffer;
+		const value = store.entity.get(u64Key, options);
+		if (value === undefined) throw new Error('Entity membership index refers to a missing authoritative row');
 		const row = decodeEntityRow(value as Buffer);
-		const repoPath = lookupRepoPath(store, row.repoId, repoCache);
-		if (toAbsolutePath(row.filePath, repoPath) === file) {
-			out.push(decodeKeyU64(key as Buffer));
-		}
+		const repo = store.repo.get(encodeRepoKey(row.repoId), options);
+		if (repo === undefined) throw new Error('Entity membership index refers to an unregistered repository');
+		const stringId = store.entityStringByU64.get(u64Key, options);
+		if (typeof stringId !== 'string') throw new Error('Entity membership index refers to an entity without its string ID');
+		yield { u64: decodeKeyU64(u64Key), row, stringId, repoPath: decodeRepoRow(repo as Buffer).path };
+	}
+}
+
+async function collectEntityU64sByFile(store: GraphStore, file: string): Promise<bigint[]> {
+	return readEntityScope(store, transaction => collectEntityU64sByFileInTxn(store, file, transaction));
+}
+
+function collectEntityU64sByFileInTxn(store: GraphStore, file: string, transaction?: EntityReadTransaction | undefined): bigint[] {
+	const out: bigint[] = [];
+	for (const { u64, row, repoPath } of indexedEntityRows(store, store.entityByFile, encodeEntityFileKey(file), transaction)) {
+		if (toAbsolutePath(row.filePath, repoPath) === file) out.push(u64);
 	}
 	return out;
 }
 
 async function collectEntityU64sByRepo(store: GraphStore, repoId: number): Promise<bigint[]> {
-	const out: bigint[] = [];
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		out.push(decodeKeyU64(key as Buffer));
-	}
-	return out;
+	return readEntityScope(store, transaction => {
+		const out: bigint[] = [];
+		for (const { u64, row } of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
+			if (row.repoId === repoId) out.push(u64);
+		}
+		return out;
+	});
 }
 
 /**

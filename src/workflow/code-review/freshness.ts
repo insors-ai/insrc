@@ -97,21 +97,19 @@ export async function computeCodeReviewFreshness(
  * graph layer so the pure compute + its unit tests never open the env. Read-only.
  */
 export async function realFreshnessGraphDeps(): Promise<Pick<FreshnessDeps, 'entityWatermark' | 'fileMtime'>> {
-	const { getGraphStore }    = await import('../../db/graph/store.js');
-	const { decodeEntityRow }  = await import('../../db/graph/codec.js');
+	const { findEntitiesByFile } = await import('../../db/entities.js');
 	const { statSync }         = await import('node:fs');
 	const { join, isAbsolute } = await import('node:path');
 
 	return {
-		async entityWatermark(_repoPath, file) {
-			const store = await getGraphStore();
+		async entityWatermark(repoPath, file) {
+			const absolute = isAbsolute(file) ? file : join(repoPath, file);
 			let max: number | null = null;
-			for (const { value } of store.entity.getRange()) {
-				const row = decodeEntityRow(value as Buffer);
-				if (row.filePath === file) {
-					const at = typeof row.indexedAt === 'number' ? row.indexedAt : 0;
-					max = max === null ? at : Math.max(max, at);
-				}
+			for (const entity of await findEntitiesByFile(null, absolute)) {
+				if (entity.repo !== repoPath) continue;
+				const parsed = Date.parse(entity.indexedAt);
+				const at = Number.isFinite(parsed) ? parsed : 0;
+				max = max === null ? at : Math.max(max, at);
 			}
 			return max;
 		},

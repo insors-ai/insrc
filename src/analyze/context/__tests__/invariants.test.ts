@@ -229,7 +229,7 @@ test('ensureNonEmptyClosure: given readers it reads the registry and the entitie
 	const calls: string[] = [];
 	const readers = (entities: number) => ({
 		listRepos:           async () => { calls.push('listRepos'); return [{ path: '/standin/app', status: 'ready' } as unknown as RegisteredRepo]; },
-		listEntitiesForRepo: async (repoPath: string) => { calls.push(`listEntitiesForRepo:${repoPath}`); return Array.from({ length: entities }, () => makeEntity(repoPath, `${repoPath}/a.ts`)); },
+		listEntitiesForRepo: async (repoPath: string, opts?: { readonly limit: 1 } | undefined) => { assert.deepEqual(opts, { limit: 1 }); calls.push(`listEntitiesForRepo:${repoPath}`); return Array.from({ length: entities }, () => makeEntity(repoPath, `${repoPath}/a.ts`)); },
 	});
 
 	// Real store: nothing registered. Stand-ins: registered, with entities.

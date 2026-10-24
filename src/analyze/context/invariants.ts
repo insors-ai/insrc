@@ -289,11 +289,11 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	// Count entities indexed for this repo. Stops at the first hit;
+	// Check for an indexed entity in this repo. Stops at the first hit;
 	// no need to materialise the full list.
 	const entities = deps !== undefined
-		? await deps.listEntitiesForRepo(best.path)
-		: await listEntitiesForRepo(null, best.path);
+		? await deps.listEntitiesForRepo(best.path, { limit: 1 })
+		: await listEntitiesForRepo(null, best.path, { limit: 1 });
 	if (entities.length === 0) {
 		throw new ScopeNotIndexedError(
 			scopePath,
@@ -303,7 +303,7 @@ export async function ensureNonEmptyClosure(
 	}
 
 	log.debug(
-		{ scope: scopePath, repo: best.path, entityCount: entities.length },
+		{ scope: scopePath, repo: best.path, indexedEntityFound: entities.length > 0 },
 		'ensureNonEmptyClosure: closure non-empty',
 	);
 	return best.path;

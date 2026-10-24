@@ -10,6 +10,7 @@ import { addRepo, lookupRepoId } from '../repos.js';
 import { deleteEntitiesForFile, deleteEntitiesForRepo, getEntity, findEntitiesByFile, listEntitiesForRepo, listEntityFilesForRepo, reindexFile, upsertEntities } from '../entities.js';
 import type { Entity } from '../../shared/types.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
+import { realFreshnessGraphDeps } from '../../workflow/code-review/freshness.js';
 
 useTemporaryLance();
 const A = '/repo/scoped-a', B = '/repo/scoped-b';
@@ -120,4 +121,31 @@ test('indexed entity contents and ordering match an authoritative row-scan oracl
  assert.deepEqual(await listEntitiesForRepo(null, A), expected);
  assert.deepEqual(await findEntitiesByFile(null, `${A}/a.ts`), expected.filter(e => e.file === `${A}/a.ts`));
  assert.deepEqual(await listEntityFilesForRepo(null, A), expectedFiles);
+});
+
+test('first-match repository readiness reads only one authoritative entity and preserves default results', async () => {
+	const s = await getGraphStore(), get = s.entity.get.bind(s.entity);
+	mock.method(s.entity, 'getRange', () => { throw new Error('whole-table scan'); });
+	const reads = mock.method(s.entity, 'get', (...args: Parameters<typeof get>) => get(...args));
+	assert.deepEqual((await listEntitiesForRepo(null, A, { limit: 1 })).map(e => e.id), ['a1']);
+	assert.equal(reads.mock.callCount(), 1);
+	reads.mock.restore();
+	assert.deepEqual((await listEntitiesForRepo(null, A)).map(e => e.id), ['a1', 'a2', 'other-a']);
+	assert.deepEqual(await listEntitiesForRepo(null, '/unknown', { limit: 1 }), []);
+});
+
+test('real review watermarks use indexed file entities and isolate repository timestamps', async () => {
+	await upsertEntities(null, [
+		{ ...entity('a1'), indexedAt: new Date(100).toISOString() },
+		{ ...entity('a2'), indexedAt: new Date(200).toISOString() },
+		{ ...entity('b1', B), indexedAt: new Date(999).toISOString() },
+	]);
+	const s = await getGraphStore();
+	mock.method(s.entity, 'getRange', () => { throw new Error('whole-table watermark scan'); });
+	const deps = await realFreshnessGraphDeps();
+	assert.equal(await deps.entityWatermark(A, 'a.ts'), 200);
+	assert.equal(await deps.entityWatermark(A, `${A}/a.ts`), 200);
+	assert.equal(await deps.entityWatermark(B, 'a.ts'), 999);
+	assert.equal(await deps.entityWatermark(A, 'missing.ts'), null);
+	assert.equal(await deps.entityWatermark(A, `${B}/a.ts`), null);
 });

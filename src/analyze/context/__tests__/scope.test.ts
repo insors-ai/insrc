@@ -19,6 +19,15 @@ const OUTER = '/work/mono';
 const INNER = '/work/mono/packages/app';
 const OTHER = '/work/other';
 
+test('symbol readiness fallback requests only the first repository entity', async () => {
+	const d = deps({ entities: [entity(`${INNER}/other.ts`, 'other')] });
+	const read = d.listEntitiesForRepo;
+	let requested: unknown;
+	d.listEntitiesForRepo = async (path, opts) => { requested = opts; return read(path, opts); };
+	await assert.rejects(resolveScope({ kind: 'symbol', value: `${INNER}/missing.ts#missing` }, d), ScopeRefUnresolvedError);
+	assert.deepEqual(requested, { limit: 1 });
+});
+
 function repo(path: string, status = 'ready'): RegisteredRepo {
 	return { path, status } as unknown as RegisteredRepo;
 }

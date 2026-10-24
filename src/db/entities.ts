@@ -810,7 +810,7 @@ export async function listEntitiesByKinds(
 	return out;
 }
 
-export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]> {
+export async function listEntitiesForRepo(_db: DbClient, repo: string, opts?: { readonly limit: 1 } | undefined): Promise<Entity[]> {
 	const store = await getGraphStore();
 	return readEntityScope(store, transaction => {
 		const repoId = scopedRepoId(store, repo, transaction);
@@ -819,6 +819,7 @@ export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<
 		for (const candidate of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
 			if (candidate.row.repoId !== repoId) continue;
 			out.push(rowToDomainEntity(candidate.stringId, candidate.row, candidate.repoPath));
+			if (opts?.limit === 1) break;
 		}
 		return out;
 	});

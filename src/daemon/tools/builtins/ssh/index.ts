@@ -38,7 +38,7 @@ function fail(id: string, msg: string): ToolResult {
  * "my-dev" passes straight through (ssh resolves it against
  * ~/.ssh/config). `user@host` and `user@host:port` get `-p` split out.
  */
-function parseHost(host: string): { target: string; port?: number } {
+function parseHost(host: string): { target: string; port?: number | undefined } {
   // If there's no `:` it's either an alias or user@host.
   const colon = host.lastIndexOf(':');
   if (colon < 0 || host.includes('/')) { return { target: host }; }

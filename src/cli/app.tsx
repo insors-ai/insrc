@@ -40,7 +40,7 @@ const TOAST_MS = 4000;
 
 /** Outer shell: provides the services context so everything below
  *  (including the body's own daemon-status hook) can read it. */
-export function App(props: { services: Services; pollMs?: number; initialPane?: number }): ReactElement {
+export function App(props: { services: Services; pollMs?: number | undefined; initialPane?: number | undefined }): ReactElement {
 	return (
 		<ServicesContext.Provider value={props.services}>
 			<AppBody {...(props.pollMs !== undefined ? { pollMs: props.pollMs } : {})} {...(props.initialPane !== undefined ? { initialPane: props.initialPane } : {})} />
@@ -48,7 +48,7 @@ export function App(props: { services: Services; pollMs?: number; initialPane?: 
 	);
 }
 
-function AppBody(props: { pollMs?: number; initialPane?: number }): ReactElement {
+function AppBody(props: { pollMs?: number | undefined; initialPane?: number | undefined }): ReactElement {
 	const services = useServices();
 	const { exit } = useApp();
 	const [pane, setPane] = useState(props.initialPane ?? 0);

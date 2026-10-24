@@ -263,7 +263,7 @@ export class OllamaProvider implements LLMProvider {
    * timeout without a live ollama. Read-only: no model pull/mutation.
    */
   async listLocalModels(
-    opts: { timeoutMs?: number; listFn?: () => Promise<{ models?: unknown }> } = {},
+    opts: { timeoutMs?: number | undefined; listFn?: (() => Promise<{ models?: unknown }>) | undefined } = {},
   ): Promise<readonly LocalModelInfo[]> {
     const timeoutMs = opts.timeoutMs ?? OLLAMA_LIST_TIMEOUT_MS;
     const listFn    = opts.listFn ?? (() => this.client.list());

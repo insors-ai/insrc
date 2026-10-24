@@ -24,7 +24,7 @@ function admitXmlUnits(bytes: Buffer): void {
 			else {
 				if (bytes[offset + 1] === 33)
 					throw new Error('unsupported-temporary');
-				let quote = 0;
+				let quote = 0, attributes = 0;
 				offset++;
 				while (offset < bytes.length) {
 					const ch = bytes[offset++]!;
@@ -34,6 +34,8 @@ function admitXmlUnits(bytes: Buffer): void {
 					}
 					else if (ch === 34 || ch === 39)
 						quote = ch;
+					else if (ch === 61 && ++attributes > 128)
+						throw new Error('resource-limit');
 					else if (ch === 62)
 						break;
 					if (offset - start > 64 * 1024)

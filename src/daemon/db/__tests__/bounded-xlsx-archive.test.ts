@@ -164,3 +164,8 @@ test('CM-S1-S: malformed nested shared strings and text outside string items can
 		}
 	});
 });
+
+test('CM-S1-S: XML attribute count is rejected before any parser reservation or materialization',()=>{
+ const xml='<root '+Array.from({length:129},(_,i)=>'a'+i+'="value"').join(' ')+'/>';
+ const budget=new DecoderBudget(16*1024*1024);assert.throws(()=>parseBoundedXml(Buffer.from(xml),budget,{}),/resource-limit/);assert.equal(budget.snapshot().peak,0);assert.equal(budget.snapshot().retained,0);
+});

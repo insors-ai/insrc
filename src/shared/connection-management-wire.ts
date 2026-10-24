@@ -1,5 +1,5 @@
 /** Structural wire validation only. Signature, registry rights and driver fields are daemon gates. */
-import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket } from './connection-management.js';
+import type { ConnectionKey, CredentialPatch, MutationRequest, OperationTicket, DraftTestRequest, DraftTestResult, TestCancellation } from './connection-management.js';
 
 export class ManagementInputError extends Error {
  readonly code: 'invalid-input' | 'operation-mismatch';
@@ -20,6 +20,71 @@ function text(value: unknown): asserts value is string {
 }
 function scope(value: unknown): void { if (value !== 'saved' && value !== 'temporary') throw new ManagementInputError(); }
 function mode(value: unknown): void { if (typeof value !== 'string' || !['create','update','remove'].includes(value)) throw new ManagementInputError(); }
+export const DRAFT_TEST_MAX_BYTES = 256 * 1024;
+export function assertDraftTestUuid(value: unknown): asserts value is string {
+ if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) throw new ManagementInputError();
+}
+/** Only JSON values cross either test boundary. Reject lossy coercion and excessive nesting. */
+export function assertDraftTestJson(value: unknown): void {
+ let bytes = 0;
+ const add = (n: number) => { bytes += n; if (bytes > DRAFT_TEST_MAX_BYTES) throw new ManagementInputError(); };
+ const string = (s: string) => {
+  add(2);
+  for (let i = 0; i < s.length; i++) {
+   const c = s.charCodeAt(i);
+   if (c === 34 || c === 92) add(2);
+   else if (c < 32) add([8,9,10,12,13].includes(c) ? 2 : 6);
+   else if (c < 128) add(1);
+   else if (c < 2048) add(2);
+   else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length && s.charCodeAt(i+1) >= 0xdc00 && s.charCodeAt(i+1) <= 0xdfff) { add(4); i++; }
+   else add(c >= 0xd800 && c <= 0xdfff ? 6 : 3);
+  }
+ };
+ const active = new Set<object>();
+ const walk = (v: unknown, depth: number): void => {
+  if (depth > 64) throw new ManagementInputError();
+  if (v === null) { add(4); return; }
+  if (typeof v === 'string') { string(v); return; }
+  if (typeof v === 'boolean') { add(v ? 4 : 5); return; }
+  if (typeof v === 'number' && Number.isFinite(v)) { add(String(v).length); return; }
+  if (typeof v !== 'object' || active.has(v)) throw new ManagementInputError();
+  active.add(v); add(2);
+  if (Array.isArray(v)) {
+   for (let i=0; i<v.length; i++) { if (i) add(1); if (!Object.hasOwn(v,i)) throw new ManagementInputError(); walk(v[i],depth+1); }
+  } else {
+   const o = object(v); let first = true;
+   for (const k of Object.keys(o)) { if (!first) add(1); first=false; string(k); add(1); walk(o[k],depth+1); }
+  }
+  active.delete(v);
+ };
+ walk(value,0);
+}
+export function parseDraftTestRequest(value: unknown): DraftTestRequest {
+ assertDraftTestJson(value);
+ const o = object(value); keys(o,['requestId','draftRevision','key','publicPatch','credentials'],['expectedRevision']);
+ assertDraftTestUuid(o['requestId']); parseConnectionKey(o['key']);
+ if (!Number.isSafeInteger(o['draftRevision']) || (o['draftRevision'] as number) < 0) throw new ManagementInputError();
+ if (Object.hasOwn(o,'expectedRevision')) assertDraftTestUuid(o['expectedRevision']);
+ object(o['publicPatch']);
+ for (const patch of Object.values(object(o['credentials']))) parseCredentialPatch(patch);
+ return value as DraftTestRequest;
+}
+export function parseTestCancellation(value: unknown): TestCancellation {
+ assertDraftTestJson(value); const o=object(value); keys(o,['requestId']); assertDraftTestUuid(o['requestId']); return value as TestCancellation;
+}
+export const DRAFT_TEST_MESSAGES = {
+ failed: 'Connection test failed.', timeout: 'Connection test timed out. Retry when cleanup completes.',
+ canceled: 'Connection test canceled.', 'resource-limit': 'Connection test exceeded the memory limit. Use a smaller input or a saved connection.',
+ 'unsupported-temporary': 'This input cannot be tested without persistent storage. Use a saved connection.'
+} as const;
+export function parseDraftTestResult(value: unknown): DraftTestResult {
+ assertDraftTestJson(value); const o=object(value); keys(o,['requestId','draftRevision','repoRoot','daemonEpoch','status','tookMs'],['safeMessage']);
+ assertDraftTestUuid(o['requestId']); text(o['repoRoot']); text(o['daemonEpoch']);
+ if (!Number.isSafeInteger(o['draftRevision']) || (o['draftRevision'] as number)<0 || typeof o['tookMs'] !== 'number' || !Number.isFinite(o['tookMs']) || o['tookMs']<0 || !['reachable','failed','timeout','canceled'].includes(o['status'] as string)) throw new ManagementInputError();
+ const messages: readonly string[] = Object.values(DRAFT_TEST_MESSAGES);
+ if (Object.hasOwn(o,'safeMessage') && (typeof o['safeMessage'] !== 'string' || !messages.includes(o['safeMessage']) || o['status']==='reachable')) throw new ManagementInputError();
+ return value as DraftTestResult;
+}
 export function parseConnectionKey(value: unknown): ConnectionKey {
  const o = object(value); keys(o, ['repoRoot','scope','id']); text(o['repoRoot']); text(o['id']); scope(o['scope']);
  return value as ConnectionKey;

@@ -4,6 +4,17 @@ import type { ConnectionConfig, Driver, DriverFamily } from './db-driver.js';
 export type ConnectionScope = 'saved' | 'temporary';
 export interface ConnectionKey { readonly repoRoot: string; readonly scope: ConnectionScope; readonly id: string }
 export type CredentialPatch = { readonly action: 'keep' } | { readonly action: 'replace'; readonly value: string } | { readonly action: 'clear' };
+export interface DraftTestRequest {
+ readonly requestId: string; readonly draftRevision: number; readonly key: ConnectionKey;
+ readonly expectedRevision?: string | undefined; readonly publicPatch: Readonly<Record<string, unknown>>;
+ readonly credentials: Readonly<Record<string, CredentialPatch>>;
+}
+export interface DraftTestResult {
+ readonly requestId: string; readonly draftRevision: number; readonly repoRoot: string; readonly daemonEpoch: string;
+ readonly status: 'reachable' | 'failed' | 'timeout' | 'canceled'; readonly tookMs: number;
+ readonly safeMessage?: string | undefined;
+}
+export interface TestCancellation { readonly requestId: string }
 export interface SafeConnection {
  readonly key: ConnectionKey; readonly revision: string; readonly kind: string; readonly family: DriverFamily;
  readonly label?: string | undefined; readonly publicConfig: Readonly<Record<string, unknown>>;

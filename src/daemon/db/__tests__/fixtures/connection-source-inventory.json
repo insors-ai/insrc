@@ -88,6 +88,14 @@
     "src/daemon/connection-management-rpc.ts": {
       "classification": "metadata-only",
       "rationale": "t21: the only resolver acquisition is safe metadata list scoped to the exact canonical lookup directory; adopted roots use the installed authoritative service. No raw driver method, option or stored credential crosses v2 routes."
+    },
+    "src/daemon/db/management-adoption.ts": {
+      "classification": "non-driver-lock",
+      "rationale": "t22: O_EXCL maintenance owner lease acquire; no driver or library connection acquisition."
+    },
+    "src/daemon/db/management-startup.ts": {
+      "classification": "full-use-lease",
+      "rationale": "t22: authoritative shared acquirePool (or fixture port) retained by installed root service; activation probes use full withConnection callback. ManagementOwnerLease.acquire is an O_EXCL file ownership lock, not a driver."
     }
   },
   "sites": [
@@ -435,6 +443,46 @@
       "file": "src/daemon/db/index.ts",
       "expression": "getFactory",
       "boundary": "symbol:getFactory"
+    },
+    {
+      "file": "src/daemon/db/management-adoption.ts",
+      "expression": "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "(ports.pool ?? acquirePool)(root)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "ManagementOwnerLease.acquire(join(directory, 'owner.json'), root)",
+      "boundary": "acquire-call"
+    },
+    {
+      "file": "src/daemon/db/management-startup.ts",
+      "expression": "pool.withConnection",
+      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/management.ts",

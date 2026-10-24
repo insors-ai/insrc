@@ -1,5 +1,7 @@
 /** Daemon-private atomic registry boundary. Never chmod the live inode writable. */
 import { createHash, randomUUID } from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { open, lstat, readFile, rename, unlink, mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { ConnectionsFile } from '../../shared/db-driver.js';
@@ -18,12 +20,23 @@ export interface RegistrySnapshot {
 	readonly mode: number;
 	readonly missing: boolean;
 }
+/** Secret-free restart fence, persisted by the maintenance owner. */
+export interface RegistryAnchor {
+	readonly digest: string; readonly inode: number; readonly device: number; readonly mode: number; readonly missing: boolean;
+	readonly registryId?: string | undefined; readonly generation?: string | undefined;
+}
+export function registryAnchor(snapshot: RegistrySnapshot): RegistryAnchor {
+	return { digest: snapshot.digest, inode: snapshot.inode, device: snapshot.device, mode: snapshot.mode, missing: snapshot.missing,
+		...(snapshot.file._management ? { registryId: snapshot.file._management.registryId, generation: snapshot.file._management.generation } : {}) };
+}
 export type CommitBoundary = 'temp-open' | 'temp-write' | 'temp-sync' | 'temp-chmod' | 'before-rename' | 'after-rename' | 'parent-sync';
 export interface ManagedStorePorts {
 	/** Trusted owner-lease check, supplied only by the serialized daemon service. */
 	readonly ownsRoot: () => Promise<boolean>;
 	/** Failure injection/observability; never receives document values. */
 	readonly boundary?: ((stage: CommitBoundary) => Promise<void>) | undefined;
+	readonly prepared?: ((before: RegistryAnchor, candidate: RegistryAnchor, temporaryBasename: string) => Promise<void>) | undefined;
+	readonly committed?: ((anchor: RegistryAnchor) => Promise<void>) | undefined;
 }
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 function envelope(value: unknown): value is ManagementEnvelope {
@@ -66,9 +79,31 @@ export async function readRegistrySnapshot(path: string, allowMissing = false): 
 		throw new ManagedStoreError('registry-unreadable');
 	}
 }
+/** Exercise the legacy writeFile recipe in an independent same-UID process.
+ * The writable control proves permission denial is real rather than a broken child.
+ */
+export async function proveProtectedRegistry(path: string): Promise<void> {
+ if (process.getuid?.() === undefined || process.geteuid?.() === undefined || process.getuid() === 0 || process.getuid() !== process.geteuid()) throw new ManagedStoreError('unsupported-filesystem');
+ const control = join(dirname(path), `.connection-control-${randomUUID()}`);
+ const before = await readRegistrySnapshot(path);
+ try {
+  const handle = await open(control, 'wx', 0o600);
+  await handle.close();
+  const program = `const fs=require('node:fs/promises');(async()=>{
+   if(process.getuid()!==Number(process.argv[3])||process.geteuid()!==Number(process.argv[3]))process.exit(2);
+   await fs.writeFile(process.argv[2],'control');
+   try{await fs.writeFile(process.argv[1],'legacy-write');process.exit(3);}
+   catch(e){if(e.code!=='EACCES')process.exit(4);}
+  })().catch(()=>process.exit(5));`;
+  await promisify(execFile)(process.execPath, ['-e', program, path, control, String(process.getuid?.())], { timeout: 10000 });
+  const after = await readRegistrySnapshot(path);
+  if (JSON.stringify(registryAnchor(before)) !== JSON.stringify(registryAnchor(after))) throw new Error();
+ } catch { throw new ManagedStoreError('unsupported-filesystem'); }
+ finally { await unlink(control).catch(()=>{}); }
+}
 /** Physical proof on the target directory; no production registry is modified. */
 export async function proveWriterFence(directory: string): Promise<void> {
-	if (process.platform === 'win32' || process.getuid?.() === 0)
+	if (process.platform === 'win32' || process.getuid?.() === undefined || process.geteuid?.() === undefined || process.getuid() === 0 || process.geteuid() === 0 || process.getuid() !== process.geteuid())
 		throw new ManagedStoreError('unsupported-filesystem');
 	const original = join(directory, `.connection-fence-${randomUUID()}`);
 	const replacement = `${original}.new`;
@@ -79,7 +114,7 @@ export async function proveWriterFence(directory: string): Promise<void> {
 		await old.writeFile('old');
 		await old.sync();
 		next = await open(replacement, 'wx', 0o600);
-		await next.writeFile('protected');
+		await next.writeFile('{"connections":[]}');
 		await next.sync();
 		await next.chmod(0o400);
 		await next.sync();
@@ -98,7 +133,8 @@ export async function proveWriterFence(directory: string): Promise<void> {
 			throw new ManagedStoreError('unsupported-filesystem');
 		await old.write(Buffer.from('detached'), 0, 8, 0);
 		await old.sync();
-		if (await readFile(original, 'utf8') !== 'protected')
+		await proveProtectedRegistry(original);
+		if (await readFile(original, 'utf8') !== '{"connections":[]}')
 			throw new ManagedStoreError('unsupported-filesystem');
 		const parent = await open(directory, 'r');
 		try {
@@ -146,8 +182,13 @@ export async function writeWithManagedProof(path: string, text: string, proof: M
 	await write(claim.expected, text);
 }
 /** Reject even a caller trying to drop the envelope; read existing truth first. */
+export function managementStateDirectory(path: string): string { return join(dirname(path), 'connection-management'); }
+export async function managementMarkerExists(path: string): Promise<boolean> {
+	try { await lstat(managementStateDirectory(path)); return true; }
+	catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw new ManagedStoreError('registry-unreadable'); }
+}
 export async function assertUnmanagedWrite(path: string, file: ConnectionsFile): Promise<void> {
-	if (stores.has(path) || Object.hasOwn(file, '_management'))
+	if (stores.has(path) || Object.hasOwn(file, '_management') || await managementMarkerExists(path))
 		throw new ManagedStoreError('recovery-required');
 	const current = await readRegistrySnapshot(path, true);
 	if (Object.hasOwn(current.file, '_management'))
@@ -214,6 +255,7 @@ export class ManagedRegistry {
 			await parent.close();
 		}
 		this.#snapshot = actual;
+		await this.#ports.committed?.(registryAnchor(actual));
 		this.#uncertain = false;
 		this.#uncertainCandidate = undefined;
 		return this.snapshot;
@@ -271,6 +313,7 @@ export class ManagedRegistry {
 		const temp = join(dirname(this.path), `.db-connections-${temporaryId}.tmp`);
 		let handle: Awaited<ReturnType<typeof open>> | undefined;
 		let renameAttempted = false;
+		let anchorAttempted = false;
 		try {
 			handle = await open(temp, 'wx', 0o600);
 			await this.#ports.boundary?.('temp-open');
@@ -286,6 +329,8 @@ export class ManagedRegistry {
 			await handle.close();
 			handle = undefined;
 			await this.#check(expected);
+			anchorAttempted = this.#ports.prepared !== undefined;
+			await this.#ports.prepared?.(registryAnchor(expected), registryAnchor(this.#uncertainCandidate), `.db-connections-${temporaryId}.tmp`);
 			await this.#ports.boundary?.('before-rename');
 			renameAttempted = true;
 			await rename(temp, this.path);
@@ -301,6 +346,7 @@ export class ManagedRegistry {
 			const observed = await readRegistrySnapshot(this.path);
 			if (observed.digest !== hash(text) || observed.mode !== 0o400 || observed.inode !== this.#uncertainCandidate?.inode || observed.device !== this.#uncertainCandidate.device)
 				throw new ManagedStoreError('reconciliation-required');
+			await this.#ports.committed?.(registryAnchor(observed));
 			this.#snapshot = observed;
 			this.#uncertainCandidate = undefined;
 		}
@@ -308,6 +354,10 @@ export class ManagedRegistry {
 			if (renameAttempted) {
 				this.#uncertain = true;
 				throw new ManagedStoreError('reconciliation-required');
+			}
+			if (anchorAttempted) {
+				try { await this.#check(expected); await this.#ports.committed?.(registryAnchor(expected)); }
+				catch { this.#uncertain = true; throw new ManagedStoreError('reconciliation-required'); }
 			}
 			throw new ManagedStoreError('recovery-required');
 		}

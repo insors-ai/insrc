@@ -9,7 +9,8 @@ import { canonicalRequestJson } from './db/management-tickets.js';
 import { ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
 import { driverDescriptors } from './db/driver-profiles.js';
 import { savedConnectionResolver } from './db/pool-cache.js';
-import { loadConnections } from './db/config.js';
+import { loadConnections, connectionsPath } from './db/config.js';
+import { managementMarkerExists } from './db/managed-store.js';
 export const CONNECTION_V2_METHODS = [
 	'db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.connections.v2.list', 'db.connections.v2.read',
 	'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate',
@@ -46,10 +47,10 @@ async function root(value: unknown, canonical = false): Promise<string> {
 export function managementContext(repoRoot: string, context: TrustedRpcContext): ManagementRequestContext {
 	return { connectionIdentity: context.connectionIdentity, access: { lookupRoot: repoRoot, managementRepoRoot: repoRoot, daemonEpoch: context.daemonEpoch } };
 }
-function owner(repoRoot: string) {
+async function owner(repoRoot: string) {
 	const service = savedManagementFor(repoRoot);
 	if (!service)
-		throw new ManagementServiceError('upgrade-required');
+		throw new ManagementServiceError(await managementMarkerExists(connectionsPath(repoRoot)) ? 'recovery-required' : 'upgrade-required');
 	return service;
 }
 async function safeList(repoRoot: string, context: TrustedRpcContext) {
@@ -63,7 +64,7 @@ async function safeList(repoRoot: string, context: TrustedRpcContext) {
 	catch {
 		throw new ManagementServiceError('registry-unreadable');
 	}
-	if (registry.file._management)
+	if (registry.file._management || await managementMarkerExists(connectionsPath(repoRoot)))
 		throw new ManagementServiceError('recovery-required');
 	return savedConnectionResolver.list({ lookupRoot: repoRoot, daemonEpoch: context.daemonEpoch });
 }
@@ -109,27 +110,27 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 			if (key.scope !== 'saved' || (typeof params.mode !== 'string' || !['create', 'update'].includes(params.mode)))
 				throw new ManagementInputError();
 			const repoRoot = await root(key.repoRoot, true);
-			return await owner(repoRoot).ticket(managementContext(repoRoot, context), key, params.mode as 'create' | 'update');
+			return await (await owner(repoRoot)).ticket(managementContext(repoRoot, context), key, params.mode as 'create' | 'update');
 		}
 		if (method === 'db.connections.v2.mutate') {
 			const request = parseMutationRequest(JSON.parse(canonicalRequestJson(value))) as MutationRequest;
 			if (request.key.scope !== 'saved' || request.mode === 'remove')
 				throw new ManagementInputError();
 			const repoRoot = await root(request.key.repoRoot, true);
-			return await owner(repoRoot).mutate(managementContext(repoRoot, context), request);
+			return await (await owner(repoRoot)).mutate(managementContext(repoRoot, context), request);
 		}
 		if (method === 'db.connections.v2.status') {
 			const params = object(value, ['ticket']), ticket = parseOperationTicket(params.ticket);
 			if (ticket.scope !== 'saved')
 				throw new ManagementServiceError('upgrade-required');
 			const repoRoot = await root(ticket.lookupRoot, true);
-			return await owner(repoRoot).status(managementContext(repoRoot, context), ticket);
+			return await (await owner(repoRoot)).status(managementContext(repoRoot, context), ticket);
 		}
 		const params = object(value, ['key', 'committedRevision']), key = parseConnectionKey(params.key);
 		if (key.scope !== 'saved' || typeof params.committedRevision !== 'string' || !params.committedRevision || params.committedRevision.length > 16384)
 			throw new ManagementInputError();
 		const repoRoot = await root(key.repoRoot, true);
-		return await owner(repoRoot).retryActivation(managementContext(repoRoot, context), { key, committedRevision: params.committedRevision });
+		return await (await owner(repoRoot)).retryActivation(managementContext(repoRoot, context), { key, committedRevision: params.committedRevision });
 	}
 	catch (error) {
 		return managementRejection(error instanceof SyntaxError ? new ManagementInputError() : error);

@@ -119,9 +119,20 @@ export class SavedTicketAuthority {
   });
   return new SavedTicketAuthority(root, key, options.isRegistered, options.now ?? Date.now, options.keystore, ref);
  }
- private mac(domain: 'ticket' | 'request', value: unknown): Buffer {
+ private mac(domain: 'ticket' | 'request' | 'owner-state' | 'rollback-value', value: unknown): Buffer {
   return createHmac('sha256', this.#key).update(`connection-management-v2:${domain}\0`).update(canonicalRequestJson(value)).digest();
  }
+ /** Daemon maintenance metadata has separate MAC domains from tickets and user requests. */
+ async maintenanceMac(domain: 'owner-state' | 'rollback-value', value: unknown): Promise<string> {
+  await this.eligible(); return this.mac(domain, value).toString('base64url');
+ }
+ async verifyMaintenance(domain: 'owner-state' | 'rollback-value', value: unknown, signature: string): Promise<void> {
+  await this.eligible();
+  if (!/^[A-Za-z0-9_-]{43}$/.test(signature)) throw new TicketError('recovery-required');
+  const expected = this.mac(domain, value), actual = Buffer.from(signature, 'base64url');
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new TicketError('recovery-required');
+ }
+ async assertAvailable(): Promise<void> { await this.eligible(); }
  private async eligible(): Promise<void> {
   try { if (!await this.registered(this.root)) throw new Error(); } catch { throw new TicketError('invalid-input'); }
   let stored: string | null;

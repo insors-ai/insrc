@@ -43,6 +43,9 @@ import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js'
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
 import { buildHandlerRuntime } from './handler-runtime.js';
+import { openManagedRoot } from './db/management-startup.js';
+import { managementMarkerExists } from './db/managed-store.js';
+import { connectionsPath } from './db/config.js';
 import { initChatHandlers, disposeChatHandlers } from './chat-handler.js';
 // Phase 1 cleanup: handoff-stream, meta-task-stream, gate-handlers, orphan-handlers,
 // the chat agent-flow exports (chatReply, chatRedirect, brainstormAddIdea, chatSend,
@@ -404,6 +407,15 @@ async function main(): Promise<void> {
 	// them over the socket, and the step handlers call the same functions
 	// in-process through the in-daemon client (Epic c2ba6fa6, Story s11).
 	let understandingService: UnderstandingService | undefined;
+	const connectionOwners: { close: () => Promise<void> }[] = [];
+	for (const registered of await listRepos(db)) {
+		if (!await managementMarkerExists(connectionsPath(registered.path))) continue;
+		try {
+			connectionOwners.push(await openManagedRoot(registered.path, {
+				isRegistered: async root => (await listRepos(db)).some(repo => repo.path === root),
+			}));
+		} catch { log.warn({ repo: registered.path }, 'connection management disabled: maintenance or recovery required'); }
+	}
 	const { rpcHandlers, streamHandlers, understandingRoutes } = buildHandlerRuntime({
 		db, configStore, queue, indexer, startedAt,
 		shutdown: reason => shutdown(reason),
@@ -521,6 +533,7 @@ async function main(): Promise<void> {
 				await supervisor.terminateAll();
 				log.info('shutdown: the daemon\'s workers exited');
 			}
+			for (const owner of connectionOwners) await owner.close();
 			await closeDb();
 			await closeDuckDB();
 			await closeGraphStore();

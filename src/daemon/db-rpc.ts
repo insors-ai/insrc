@@ -28,7 +28,7 @@ import { familyOf, getFactory, kindExists, listRegisteredKinds, } from './db/reg
 import { connectionsPath, loadConnections, repoIdOf, saveConnections, } from './db/config.js';
 import { deleteSecret, extractUrlPassword, makeSecretRef, referencedSecrets, credentialKeystore, } from './db/secrets.js';
 import { reloadAll } from './db/pool-cache.js';
-import { assertUnmanagedWrite } from './db/managed-store.js';
+import { assertUnmanagedWrite, managementMarkerExists } from './db/managed-store.js';
 import { savedManagementFor, withSavedRootGate } from './db/management.js';
 import { materializeDraft, safeConnection } from './db/driver-profiles.js';
 import { fileExecutionPolicy } from './db/file-policy.js';
@@ -77,7 +77,7 @@ export async function listConnectionsRpc(params: {
 	try {
 		const managed = savedManagementFor(repoRoot);
 		const loaded = managed ? undefined : await loadConnections(repoRoot);
-		if ((!transport && managed) || loaded?.file._management)
+		if ((!transport && managed) || loaded?.file._management || (!managed && await managementMarkerExists(connectionsPath(repoRoot))))
 			return [];
 		const connections = managed ? await managed.list(managementContext(repoRoot, transport!))
 			: loaded!.resolved.map(config => safeConnection(config, { repoRoot, scope: 'saved', id: config.id }, 'legacy:' + createHash('sha256').update(JSON.stringify(config)).digest('hex')));

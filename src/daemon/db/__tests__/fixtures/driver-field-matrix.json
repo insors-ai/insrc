@@ -2377,7 +2377,7 @@
     "src/daemon/tools/builtins/db/index.ts": "040c4d419c4322956f4b8d1b8887ba6baf96d052facdc22329e0fb1d224d9d4c",
     "src/shared/db-driver.ts": "1870db8e35911cddbd2e086b942b5fe7d1e95c17a35b495bd29b92d70077d708",
     "src/daemon/db/file-policy.ts": "06c559235bf80e7265f81d87439b0c951c831b17fee45cac463e8005bbea2538",
-    "src/daemon/db-rpc.ts": "dd4bbcf4400385c537d206055c394bef80ba340b3bcdc8f8c35f7f84eb28a00f",
+    "src/daemon/db-rpc.ts": "80d9603e8e85c4b91e811066a4da96a2b6362e487cbd18549c16a975339fc233",
     "src/daemon/db/management.ts": "264e31035388ee47971948f9a528bebf3947713e737b9b4116b7c3b3abb6aa8f"
   },
   "classificationUpdates": [
@@ -2495,6 +2495,11 @@
       "task": "t21",
       "source": "src/daemon/db/management.ts",
       "reason": "Shared saved service merges a complete server-side projection for legacy partial edits while deriving credential intent only from explicitly supplied fields; all prior config fields remain private/retained under the existing profiles."
+    },
+    {
+      "task": "t22",
+      "source": "src/daemon/db-rpc.ts",
+      "reason": "Partial-adoption marker blocks unmanaged fallback reads; adopted service still supplies safe projections. No driver configuration fields or credential slots changed."
     }
   ]
 }

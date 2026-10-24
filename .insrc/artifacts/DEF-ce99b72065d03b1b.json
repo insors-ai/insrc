@@ -920,7 +920,7 @@
       "prose": "insrc will hold one authoritative description of each model family it supports and of the models in it, kept by the background service and shared with every screen that shows or changes model settings. Updating to a new model or version becomes a data change rather than a code change, every client shows exactly what the service will run, and a model insrc does not yet know is checked and approved by the user before it is used.",
       "audience": "product"
     },
-    "problem": "The facts that describe each model family insrc can run on (the Claude CLI, the Codex CLI and local Ollama) are scattered rather than held in one place. Which runner a family is, which model each capability tier defaults to, which model summarises, which reasoning-effort levels a given model accepts and how large an input it takes are written as repeated literal strings and per-family branches across the daemon, the terminal UI and both IDE plugins. The same fact is therefore stated many times and can drift: a client can offer an effort level or a model the daemon will not honour, or the daemon can run a model with a capability it lacks, and nothing notices. Model releases arrive often (new versions, new effort levels that only some models support), and today each one needs code edits in several places, and a release of each client that keeps its own list, before anyone can use it. When a user picks a model that insrc does not know, there is no record of what that model can actually do, so its effort levels and limits are guessed rather than known. The cost falls on every model update and on every user who switches models: slow, error-prone changes, and settings screens that may not match what actually runs.",
+    "problem": "The facts that describe each model family insrc can run on (the Claude CLI, the Codex CLI and local Ollama) are scattered rather than held in one place. Runner identity and family-specific behaviour are repeated as literal strings and per-family branches across the daemon, the terminal UI and both IDE plugins. Model ids are written in several places: the tier defaults (src/config/analyze.ts:135-137), the config-catalog defaults (src/config/config-catalog.ts:116-118), the summariser fallback (src/analyze/context/shaper-provider.ts:271), the curated catalog asset (src/assets/models/cloud-model-catalog.json) and the installer's Codex tier block (scripts/insrc-daemon-install.sh:295-297, copied in vscode-plugin/assets/insrc-daemon-install.sh). Reasoning-effort levels are one fixed list shared by every model (src/config/analyze.ts:115), not a per-model fact. Input size is not described per model at all: every Ollama model gets one global context window (models.shaper.ollamaNumCtx, default 32768, src/config/analyze.ts:216), the CLI families declare none, and ModelParams.maxInputTokens (src/shared/types.ts:417) is declared but read nowhere. The same fact is therefore stated many times and can drift: a client can offer an effort level or a model the daemon will not honour, or the daemon can run a model with a capability it lacks, and nothing notices. Model releases arrive often (new versions, new effort levels that only some models support), and today each one needs edits in several of the places above, and a release of each client that keeps its own list, before anyone can use it. When a user picks a model that insrc does not know, there is no record of what that model can actually do: a tier stores only a runner, a model and an optional effort (src/config/analyze.ts:106-111) and a catalog entry only an id and a display name (src/daemon/model-catalog.ts:42-45), so its effort levels and limits are guessed rather than known. The cost falls on every model update and on every user who switches models: slow, error-prone changes, and settings screens that may not match what actually runs.",
     "nonGoals": [
       {
         "text": "User-defined model families or runner implementations.",
@@ -957,8 +957,8 @@
     ],
     "assumptions": [
       {
-        "text": "The existing curated model catalog asset and its boot-time validation can be extended to carry the per-model facts rather than replaced.",
-        "confidence": "med",
+        "text": "The existing curated model catalog (src/assets/models/cloud-model-catalog.json, loaded by validateModelCatalog at src/daemon/model-catalog.ts:162) can be extended rather than replaced: it already carries a version field and a boot-time validator, and validateShape (src/daemon/model-catalog.ts:107) reads only id and displayName per entry and covers only the two CLI families, so carrying the per-model facts means adding fields and an Ollama family to that file and a stricter validator, under the same loader and boot hook.",
+        "confidence": "high",
         "source": "c5"
       },
       {
@@ -1016,7 +1016,7 @@
       },
       {
         "id": "k7",
-        "text": "A missing or malformed definitions file is a fail-fast startup refusal, as the curated catalog is today.",
+        "text": "A missing or malformed definitions file is a fail-fast startup refusal, as the curated catalog is today. The daemon awaits validateModelCatalog (src/daemon/index.ts:381) before it starts listening (src/daemon/index.ts:456), so no request is served before the file is validated.",
         "type": "convention",
         "source": "c5"
       }

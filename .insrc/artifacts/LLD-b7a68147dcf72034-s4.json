@@ -105,6 +105,13 @@
         "choice": "Keep IDs; filter by operation",
         "rationale": "Confirmed by the user on 2026-10-24: a rule for one operation filters on input.op; ac4 keeps the seven multi-operation ids",
         "resolvedAt": "2026-10-24T18:15:15.741Z"
+      },
+      "q931a951f": {
+        "question": "This LLD was narrowed on the user's decision on 2026-10-24 after six review rounds in two cycles: the long tail of git (about 55 commands, their family tools, stdin delivery and the destructive classes of their modes) moved to the new Story s8, appended to the Epic with HLD amendment AMD-b7a68147dcf72034-8. DEF s4 ac1 is met by s4 and s8 together. The user accepted the ac1 exclusions (a person or GUI, mail, server or transport role, credential helpers); out-of-range legacy inputs are rejected; a failed git_show diff is a real failure.",
+        "status": "resolved",
+        "choice": "Proceed with narrowed s4",
+        "rationale": "The split was the user's decision; s4 and s8 together meet DEF s4 ac1",
+        "resolvedAt": "2026-10-24T18:16:58.416Z"
       }
     }
   },

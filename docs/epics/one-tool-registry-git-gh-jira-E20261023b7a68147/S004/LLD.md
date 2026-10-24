@@ -476,6 +476,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Record as non-discriminating — k1, k3, k4, k6 are not touched by the choice between the three shapes _(2026-10-24T18:13:40.476Z)_
 - `q893aa254` — sbdry3 (partial): the Story says 'each mutating operation is a distinct tool the rules can see' while ac4 keeps the seven multi-operation ids; the LLD keeps the ids and lets a rule filter on input.op. Confirm this reading at approval.
   - **resolved**: Keep IDs; filter by operation — Confirmed by the user on 2026-10-24: a rule for one operation filters on input.op; ac4 keeps the seven multi-operation ids _(2026-10-24T18:15:15.741Z)_
+- `q931a951f` — This LLD was narrowed on the user's decision on 2026-10-24 after six review rounds in two cycles: the long tail of git (about 55 commands, their family tools, stdin delivery and the destructive classes of their modes) moved to the new Story s8, appended to the Epic with HLD amendment AMD-b7a68147dcf72034-8. DEF s4 ac1 is met by s4 and s8 together. The user accepted the ac1 exclusions (a person or GUI, mail, server or transport role, credential helpers); out-of-range legacy inputs are rejected; a failed git_show diff is a real failure.
+  - **resolved**: Proceed with narrowed s4 — The split was the user's decision; s4 and s8 together meet DEF s4 ac1 _(2026-10-24T18:16:58.416Z)_
 
 ## Citations
 

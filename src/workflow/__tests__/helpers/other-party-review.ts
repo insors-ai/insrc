@@ -25,6 +25,7 @@ import { authorPartyOf, otherParty } from '../../review/party.js';
 import type { Party } from '../../review/party.js';
 import type { ReviewReport } from '../../review/types.js';
 import { codeReviewArtifactId } from '../../storage.js';
+import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
 import { lifecycleMeta, recordReviewSync } from '../lifecycle-fixtures.js';
 
 /** The model label each party's reviews carry: `client` has always meant the controller. */
@@ -46,7 +47,7 @@ export interface StampedReview {
  * review was written.
  */
 export function stampOtherPartyReview(jsonPath: string): StampedReview {
-	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+	const artifact = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown>; body?: { changeLog?: { target: { file: string } }[] } };
 	const author = authorPartyOf(artifact.meta);
 	const reviewedBy: Party = author === 'unknown' ? 'daemon' : otherParty(author);
 	const at = '2026-10-05T00:00:00.000Z';
@@ -62,7 +63,10 @@ export function stampOtherPartyReview(jsonPath: string): StampedReview {
 				epicHash, storyId, reviewedBy,
 			},
 			body: {
-				kind: 'code-review', epicHash, storyId, groundingMode: 'full', subject: { changedFiles: [] },
+				kind: 'code-review', epicHash, storyId, groundingMode: 'full', subject: {
+					changedFiles: artifact.body?.changeLog?.map(e => e.target.file) ?? [],
+					buildFingerprint: reviewedBuildFingerprint(artifact),
+				},
 				dimensions: [], verdict: 'pass', counts: { high: 0, med: 0, low: 0 },
 			},
 		};

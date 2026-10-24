@@ -234,6 +234,8 @@ export interface CodeReviewBody {
 	/** The exact review subject: the Story's changed files (git-derived). */
 	readonly subject:    {
 		readonly changedFiles: readonly string[];
+		/** Build content reviewed; absent on older records, which use timestamp checks. */
+		readonly buildFingerprint?: string | undefined;
 		/** Optional on read: records written before ISSUE-b47dadc7 lack both. */
 		readonly changeSetAttribution?: ChangeSetAttribution | undefined;
 		readonly sharedWithExcluded?: readonly string[] | undefined;

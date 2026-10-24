@@ -28,7 +28,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { PATHS } from '../../shared/paths.js';
-import { artifactJsonPath, codeReviewArtifactId } from '../storage.js';
+import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
+import { reviewBuildGap } from './build-freshness.js';
 import type { ReviewVerdict } from '../review/types.js';
 
 const log = getLogger('code-review:gate');
@@ -78,8 +79,10 @@ export function enforceCodeReviewGate(
 	// the gate never manufactures a block from a record it cannot read.
 	let verdict: ReviewVerdict | string;
 	let counts: GateCounts;
+	let review: unknown;
 	try {
 		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { body?: { verdict?: unknown; counts?: unknown } };
+		review = parsed;
 		const body = parsed.body;
 		if (body === undefined || body === null) throw new Error('record has no body');
 		verdict = typeof body.verdict === 'string' ? body.verdict : '<missing>';
@@ -93,6 +96,18 @@ export function enforceCodeReviewGate(
 	if (verdict !== 'pass' && verdict !== 'warn' && verdict !== 'block') {
 		log.warn({ jsonPath, verdict }, 'code-review gate: verdict outside the ReviewVerdict union; treating as no-review (fail-open)');
 		return { status: 'no-review' };
+	}
+
+	const buildPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId));
+	if (existsSync(buildPath)) {
+		let gap: string | undefined;
+		try { gap = reviewBuildGap(JSON.parse(readFileSync(buildPath, 'utf8')), review, repoPath); }
+		catch { gap = 'the current BUILD cannot be read'; }
+		if (gap !== undefined) {
+			const reason = opts?.overrideReview;
+			if (reason !== undefined && reason.trim().length > 0) return { status: 'overridden', verdict: 'block', counts, overrideReason: reason, at: new Date().toISOString() };
+			return { status: 'blocked', verdict: 'block', counts, message: `Code review is out of date or incomplete: ${gap}. Run insrc_code_review_step again or approve with an override reason.` };
+		}
 	}
 
 	if (verdict === 'pass') return { status: 'pass', counts };

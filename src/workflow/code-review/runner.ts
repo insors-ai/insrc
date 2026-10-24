@@ -25,6 +25,7 @@
 
 import type { LLMProvider } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
+import { reviewedBuildFingerprint } from './build-freshness.js';
 import type { ReviewVerdict } from '../review/types.js';
 import {
 	artifactIdMarker,
@@ -327,6 +328,7 @@ function buildArtifact(
 		...(opts.fallbackReason !== undefined ? { fallbackReason: opts.fallbackReason } : {}),
 		subject:       {
 			changedFiles: subject.changedFiles,
+			...(subject.buildRecord !== null ? { buildFingerprint: reviewedBuildFingerprint(subject.buildRecord) } : {}),
 			...(subject.changeSetAttribution !== undefined ? { changeSetAttribution: subject.changeSetAttribution } : {}),
 			...(subject.sharedWithExcluded !== undefined ? { sharedWithExcluded: subject.sharedWithExcluded } : {}),
 			...(subject.excludedFromScope !== undefined && subject.excludedFromScope.length > 0 ? { excludedFromScope: subject.excludedFromScope } : {}),

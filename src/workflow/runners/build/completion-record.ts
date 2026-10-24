@@ -19,9 +19,10 @@
  */
 
 import { storyWorkflowFiles } from './own-files.js';
+import { existsSync, readFileSync } from 'node:fs';
 import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
-import { buildArtifactId, inheritedStoryStandalone } from '../../storage.js';
+import { artifactJsonPath, buildArtifactId, inheritedStoryStandalone } from '../../storage.js';
 import type { RoundWriter } from './round-writer.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
@@ -43,6 +44,11 @@ export async function ensureBuildRecordOnCompletion(
 	if (ref.epicHash.length === 0 || ref.storyId.length === 0) return undefined;
 	try {
 		const now = new Date().toISOString();
+		// Completion refreshes ledger placement/provenance; it is not another build.
+		// Keep the last build's clock so approval does not invalidate its own review.
+		const priorPath = artifactJsonPath(repoPath, buildArtifactId(ref.epicHash, ref.storyId));
+		const prior = existsSync(priorPath) ? JSON.parse(readFileSync(priorPath, 'utf8')) as { meta?: { updatedAt?: string; createdAt?: string } } : undefined;
+		const builtAt = prior?.meta?.updatedAt ?? prior?.meta?.createdAt ?? now;
 		// S001/t4 — the placement, INHERITED from the work item's definition artifact.
 		//
 		// Previously this wrote no `standalone` key at all, for a reason that was
@@ -62,7 +68,7 @@ export async function ensureBuildRecordOnCompletion(
 		const standaloneFlag = inheritedStoryStandalone(repoPath, ref.epicHash, ref.storyId);
 		const base: BuildRecord = {
 			meta: {
-				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: now,
+				workflow: 'build', epicHash: ref.epicHash, storyId: ref.storyId, createdAt: now, updatedAt: builtAt,
 				...(standaloneFlag === true ? { standalone: true } : {}),
 			},
 			body: { tasks: [] },

@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { runCodeReview, DEFAULT_DEPS, type CodeReviewRunnerDeps, type JudgeSlot, type CodeReviewProgress } from '../runner.js';
+import { reviewedBuildFingerprint } from '../build-freshness.js';
 import type {
 	CodeReviewGrounding,
 	CodeReviewSubject,
@@ -36,6 +37,19 @@ const subject = (
 });
 
 const grounding: CodeReviewGrounding = { symbols: [] };
+
+test('the persisted review binds the BUILD snapshot that was reviewed', async () => {
+	const { deps, provider } = makeDeps();
+	const s = subject();
+	const buildRecord = {
+		meta: { workflow: 'build' as const, epicHash: s.epicHash, storyId: s.storyId, createdAt: CREATED },
+		body: { commit: 'reviewed-commit', tasks: [{ id: 't1', passed: true }] },
+	};
+	const out = await runCodeReview({ ...s, buildRecord }, provider, runOpts().opts, deps);
+	assert.equal(out.ok, true);
+	if (!out.ok) return;
+	assert.equal(out.artifact.body.subject.buildFingerprint, reviewedBuildFingerprint(buildRecord));
+});
 
 /** A finding at a fixed in-scope location for a given severity. */
 const finding = (severity: DimensionFinding['severity'], dimension: ReviewDimension): DimensionFinding => ({

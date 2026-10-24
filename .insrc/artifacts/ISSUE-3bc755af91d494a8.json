@@ -24,12 +24,12 @@
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-06T06:28:55.595Z",
     "envelope": {
+      "description": "",
       "references": [],
-      "attachments": [],
-      "description": ""
+      "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 0,
         "contentHash": "13b14c523607b34e96bd601fbcc0112965559ef15144e13889b4b9e4576f6c10",
@@ -40,7 +40,20 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T13:16:03.838Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "3bc755af91d494a8",
+      "slug": "EPIC-3bc755af91d494a8"
     }
   },
   "body": {

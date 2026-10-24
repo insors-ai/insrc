@@ -45,7 +45,7 @@ const isApproved = (p: string): boolean =>
 // a BUILD target whose json does NOT exist yet is created, then approved
 // ---------------------------------------------------------------------------
 
-test('single BUILD target with no prior json => the hook CREATES the record, then it completes (no ArtifactMissingError)', async () => {
+test('single BUILD target with no prior json creates the record, but completes only after its code review', async () => {
 	await withRepo(async (repo) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's7'));
 		assert.ok(!existsSync(json), 'precondition: the BUILD json does not exist yet');
@@ -55,8 +55,14 @@ test('single BUILD target with no prior json => the hook CREATES the record, the
 		writeFileSync(artifactJsonPath(repo, codeReviewArtifactId(HASH, 's7')), JSON.stringify({ meta: { reviewedBy: 'daemon' }, body: { verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } }));
 		const out = await approveTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
 		assert.ok(existsSync(json), 'the completion hook created the BUILD json');
-		assert.equal(out.approved.length, 1, 'the created BUILD is approved (not skipped)');
-		assert.equal(out.skipped.length, 0);
+		assert.equal(out.approved.length, 0, 'a review with no evidence of the newly created build cannot approve it');
+		assert.equal(out.skipped.length, 1);
+		assert.match(out.skipped[0]!.reason, /out of date|freshness/);
+		assert.equal(isApproved(json), false);
+		stampOtherPartyReview(json);
+		const fresh = await approveTarget({ repoPath: repo, artifactPath: json }, { enforce: false });
+		assert.equal(fresh.approved.length, 1, 'a review bound to the created BUILD completes it');
+		assert.equal(fresh.skipped.length, 0);
 		assert.ok(isApproved(jsonPathForMd(json)), 'approved in the lifecycle on the created record');
 	});
 });

@@ -29,6 +29,7 @@ import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
 import { enforceCodeReviewGate } from './code-review/gate.js';
+import { reviewBuildGap } from './code-review/build-freshness.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
@@ -772,6 +773,11 @@ function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta, lif
 			};
 		}
 		// the party of a code review is its lifecycle review's, when it has one, else its own label
+		const gap = reviewBuildGap(readJsonOrUndefined(jsonPath), cr, dirname(dirname(dirname(jsonPath))));
+		if (gap !== undefined) return {
+			message: `Completion requires a current code review: ${gap}. Run insrc_code_review_step again.`,
+			summary: 'code review is out of date or does not cover the BUILD',
+		};
 		reviewer = reviewerPartyOf(lifecycleReviewOf(cr.meta) ?? cr.meta);
 	} else if (lifecycleReview !== undefined) {
 		reviewer = reviewerPartyOf(lifecycleReview);

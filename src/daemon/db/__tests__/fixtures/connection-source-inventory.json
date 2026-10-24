@@ -391,6 +391,31 @@
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(await pool(context)).withConnection",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "(ports.poolSource ?? acquirePool)(context.lookupRoot)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "acquirePool",
+      "boundary": "symbol:acquirePool"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
       "expression": "acquirePool",
       "boundary": "symbol:acquirePool"
     },
@@ -398,6 +423,11 @@
       "file": "src/daemon/db/pool-cache.ts",
       "expression": "CACHE.get(repoPath)",
       "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "DriverPool",
+      "boundary": "symbol:DriverPool"
     },
     {
       "file": "src/daemon/db/pool-cache.ts",
@@ -435,13 +465,38 @@
       "boundary": "pool-member"
     },
     {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool-cache.ts",
+      "expression": "pool(context)",
+      "boundary": "pool-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "DriverFactory",
+      "boundary": "symbol:DriverFactory"
+    },
+    {
       "file": "src/daemon/db/pool.ts",
       "expression": "DriverPool",
       "boundary": "symbol:DriverPool"
     },
     {
       "file": "src/daemon/db/pool.ts",
-      "expression": "factory(resolvedConfig)",
+      "expression": "factory(config)",
       "boundary": "driver-port-call"
     },
     {
@@ -461,13 +516,178 @@
     },
     {
       "file": "src/daemon/db/pool.ts",
-      "expression": "this.build",
+      "expression": "this.#closing",
       "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/pool.ts",
-      "expression": "this.build(entry).finally(() => {\n\t\t\tentry.building = null;\n\t\t})",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#closing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#gate",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#reloadTail",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.#replacing",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.acquire",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.acquire(id)",
       "boundary": "driver-port-call"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.build",
+      "boundary": "pool-member"
     },
     {
       "file": "src/daemon/db/pool.ts",
@@ -496,11 +716,6 @@
     },
     {
       "file": "src/daemon/db/pool.ts",
-      "expression": "this.closeEntry",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/daemon/db/pool.ts",
       "expression": "this.entries",
       "boundary": "pool-member"
     },
@@ -562,6 +777,66 @@
     {
       "file": "src/daemon/db/pool.ts",
       "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entries",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.entry",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.lease",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.options",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.options",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.reloadNow",
       "boundary": "pool-member"
     },
     {
@@ -582,6 +857,16 @@
     {
       "file": "src/daemon/db/pool.ts",
       "expression": "this.repoPath",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/daemon/db/pool.ts",
+      "expression": "this.touch",
       "boundary": "pool-member"
     },
     {

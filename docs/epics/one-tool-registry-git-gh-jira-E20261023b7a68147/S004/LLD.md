@@ -484,6 +484,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **resolved**: Proceed with revised LLD — The rejection of schema-forbidden git_diff and git_stage inputs is a documented, accepted compatibility change _(2026-10-24T18:19:15.253Z)_
 - `q5e34a22d` — Review cycle 3, round 2 (3 HIGH, 1 MED) was addressed without a further review; the user then chose one more cycle of up to three rounds. Added: runShellBytes with stdin and isolation, a batch binary-safe git_cat_file, git_fetch_refs, git_symbolic_ref set and delete, coverage rows with several tool ids, and the git_diff path-plus-paths exception.
   - **ignored**: left to implementer judgment — Review-history note, superseded: the cycle ran and the LLD was approved with an override _(2026-10-24T18:20:09.525Z)_
+- `qb493db12` — Authority for the split: Story s8 and HLD amendment AMD-b7a68147dcf72034-8 (storyBoundary.addStory) were approved by the user on 2026-10-24 (16:02:39 UTC) together with DEF revision 2; the s8 extension record S008/EXT.md still reads 'pending approval' and the rendered HLD.md has not been regenerated, but the effective HLD is the base HLD plus amendments AMD-3 to AMD-8, all approved, as the artifact records show. The record is in docs/plans/tool-registry.md.
+  - **resolved**: Use approved artifact records — AMD-b7a68147dcf72034-8 and DEF revision 2 were approved on 2026-10-24; EXT.md and the rendered HLD.md are stale _(2026-10-24T18:20:52.700Z)_
 
 ## Citations
 

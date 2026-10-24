@@ -131,6 +131,13 @@
         "status": "ignored",
         "rationale": "Review-history note, superseded: the cycle ran and the LLD was approved with an override",
         "resolvedAt": "2026-10-24T18:20:09.525Z"
+      },
+      "qb493db12": {
+        "question": "Authority for the split: Story s8 and HLD amendment AMD-b7a68147dcf72034-8 (storyBoundary.addStory) were approved by the user on 2026-10-24 (16:02:39 UTC) together with DEF revision 2; the s8 extension record S008/EXT.md still reads 'pending approval' and the rendered HLD.md has not been regenerated, but the effective HLD is the base HLD plus amendments AMD-3 to AMD-8, all approved, as the artifact records show. The record is in docs/plans/tool-registry.md.",
+        "status": "resolved",
+        "choice": "Use approved artifact records",
+        "rationale": "AMD-b7a68147dcf72034-8 and DEF revision 2 were approved on 2026-10-24; EXT.md and the rendered HLD.md are stale",
+        "resolvedAt": "2026-10-24T18:20:52.700Z"
       }
     }
   },

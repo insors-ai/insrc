@@ -256,4 +256,9 @@ test('CM-S1-A: private endpoint lists reject unrepresented DSN text and credenti
 	const valid: ConnectionConfig = { ...current, options: { servers: ['nats://u:canary@localhost:4222'], bucket: 'fixture' } };
 	const cleared = await materializeDraft({ key: key(), mode: 'update', current: { config: valid, revision: 'r1' }, expectedRevision: 'r1', publicPatch: {}, credentials: { 'options.servers': { action: 'clear' } }, readSecret });
 	assert.equal(safeConnection(cleared.config, key(), 'r2').credentialPresence['options.servers'], false);
+	const moved = await materializeDraft({ key: key(), mode: 'update', current: { config: valid, revision: 'r1' }, expectedRevision: 'r1', publicPatch: { options: { servers: ['nats://new:4222'] } }, credentials: { 'options.servers': { action: 'clear' } }, readSecret });
+	assert.deepEqual(moved.config.options?.['servers'], ['nats://new:4222']);
+	const dynamo: ConnectionConfig = { id: 'fixture', kind: 'dynamodb', url: 'dynamodb:options', options: { endpoint: 'https://u:canary@old:443', region: 'us-east-1' } };
+	const movedEndpoint = await materializeDraft({ key: key(), mode: 'update', current: { config: dynamo, revision: 'r1' }, expectedRevision: 'r1', publicPatch: { options: { endpoint: 'https://new:443' } }, credentials: { 'options.endpoint': { action: 'clear' } }, readSecret });
+	assert.equal(movedEndpoint.config.options?.['endpoint'], 'https://new:443');
 });

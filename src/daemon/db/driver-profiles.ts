@@ -523,16 +523,17 @@ export async function materializeDraft(input: DraftMaterialization): Promise<Eff
 			const existing = current?.options?.[name];
 			let value: unknown;
 			if (action.action === 'clear') {
-				if (Array.isArray(existing)) {
+				const mergedValue = (config['options'] as Record<string, unknown> | undefined)?.[name];
+				if (Array.isArray(mergedValue)) {
 					value = [];
-					for (const v of existing) {
+					for (const v of mergedValue) {
 						if (typeof v !== 'string')
 							throw new ProfileError();
 						(value as string[]).push(address(await resolveTokens(v, input.readSecret), p.kind).publicValue);
 					}
 				}
 				else
-					value = name === 'endpoint' && typeof existing === 'string' ? address(await resolveTokens(existing, input.readSecret), p.kind).publicValue : undefined;
+					value = name === 'endpoint' && typeof mergedValue === 'string' ? address(await resolveTokens(mergedValue, input.readSecret), p.kind).publicValue : undefined;
 			}
 			else if (action.action === 'replace') {
 				if (action.value.includes('${secret:'))

@@ -1,6 +1,9 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readdir, readFile, stat, rm } from 'node:fs/promises';
+import { mkdtemp, writeFile, readdir, readFile, stat, rm, mkdir, chmod, realpath } from 'node:fs/promises';
 import { watch } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -138,18 +141,20 @@ test('CM-S1-H: BSON and XLSX rows use private typed tables with precise values t
 });
 test('CM-S1-H: typed empty and all-null tables preserve declared types and nullability before the first batch', async () => {
 	await fixture(async (dir) => {
-		const resource = await MemoryFileExecution.open(policy(dir));
-		const columns = [convertedColumn('required', 'INT32', false), convertedColumn('nullable', 'DOUBLE', true)];
-		try {
-			await resource.loadRows(async () => createTypedRowSource([{ target: { targetId: 'empty', sourceIdentity: 'source', columns }, async *rows() {
-					}, normalize: r => r }], { memoryBudgetBytes: policy(dir).memoryBudgetBytes }));
-			assert.deepEqual(await query(resource), []);
-			const table = await resource.table();
-			const schema = await resource.withConnection(async (c) => (await c.runAndReadAll('DESCRIBE SELECT * FROM query_table(?)', [table])).getRowObjectsJS());
-			assert.deepEqual(schema.map(r => [r.column_name, r.column_type, r.null]), [['required', 'INTEGER', 'NO'], ['nullable', 'DOUBLE', 'YES']]);
-		}
-		finally {
-			await resource.close();
+		for (const allNull of [false, true]) {
+			const resource = await MemoryFileExecution.open(policy(dir)), columns = [convertedColumn('integer', 'INT32', allNull), convertedColumn('nullable', 'DOUBLE', true)];
+			try {
+				await resource.loadRows(async (budget) => createTypedRowSource([{ target: { targetId: 'typed', sourceIdentity: 'source', columns }, async *rows() {
+							if (allNull)
+								yield { integer: null, nullable: null };
+						}, normalize: r => r }], { memoryBudgetBytes: budget.limit, budget }));
+				assert.deepEqual(await query(resource), allNull ? [{ integer: null, nullable: null }] : []);
+				const table = await resource.table(), schema = await resource.withConnection(async (c) => (await c.runAndReadAll('DESCRIBE SELECT * FROM query_table(?)', [table])).getRowObjectsJS());
+				assert.deepEqual(schema.map(r => [r.column_name, r.column_type, r.null]), [['integer', 'INTEGER', allNull ? 'YES' : 'NO'], ['nullable', 'DOUBLE', 'YES']]);
+			}
+			finally {
+				await resource.close();
+			}
 		}
 	});
 });
@@ -321,5 +326,48 @@ test('CM-S1-H: resource close waits for decoder source cleanup after native work
 		assert.equal(calls, 1);
 		assert.equal(resource.diagnostics.decodedBytes, 0);
 		assert.equal(resource.diagnostics.connections, 0);
+	});
+});
+test('CM-S1-H: isolated native and converted execution leaves home cache temp config working roots and captured logs free of file or path leakage', async () => {
+	await fixture(async (dir) => {
+		const root = await realpath(dir), sources = join(root, 'sources');
+		for (const name of ['sources', 'home', 'temp', 'cache', 'config', 'data', 'working', 'logs'])
+			await mkdir(join(root, name));
+		await writeFile(join(sources, 'PRIVATE_PATH_CANARY.csv'), 'id,label\n1,first\n2,second\n');
+		await writeFile(join(sources, 'PRIVATE_PATH_CANARY.json'), JSON.stringify([{ id: 1, label: 'first' }, { id: 2, label: 'second' }]));
+		await writeFile(join(sources, 'PRIVATE_PATH_CANARY.jsonl'), '{"id":1,"label":"first"}\n{"id":2,"label":"second"}\n');
+		await writeFile(join(sources, 'PRIVATE_PATH_CANARY.bson'), Buffer.concat([bson({ id: 1, label: 'first' }), bson({ id: 2, label: 'second' })]));
+		const bad = Buffer.alloc(4);
+		bad.writeInt32LE(0x7fffffff);
+		await writeFile(join(sources, 'bad.bson'), bad);
+		const workbook = new ExcelJS.Workbook(), sheet = workbook.addWorksheet('Data');
+		sheet.addRow(['id', 'label']);
+		sheet.addRow([1, 'first']);
+		sheet.addRow([2, 'second']);
+		await workbook.xlsx.writeFile(join(sources, 'PRIVATE_PATH_CANARY.xlsx'));
+		const setup = await DuckDBInstance.create(':memory:'), connection = await setup.connect();
+		try {
+			await connection.run("COPY (SELECT 1 AS id, 'first' AS label UNION ALL SELECT 2,'second') TO ? (FORMAT PARQUET)", [join(sources, 'PRIVATE_PATH_CANARY.parquet')]);
+		}
+		finally {
+			connection.closeSync();
+			setup.closeSync();
+		}
+		for (const name of await readdir(sources))
+			await chmod(join(sources, name), 0o400);
+		await chmod(sources, 0o500);
+		try {
+			const { stdout, stderr } = await promisify(execFile)(process.execPath, ['--import', import.meta.resolve('tsx'), fileURLToPath(new URL('./fixtures/private-execution-fs-probe.ts', import.meta.url)), root], { cwd: join(root, 'working'), env: { ...process.env, HOME: join(root, 'home'), TMPDIR: join(root, 'temp'), TMP: join(root, 'temp'), TEMP: join(root, 'temp'), XDG_CACHE_HOME: join(root, 'cache'), XDG_CONFIG_HOME: join(root, 'config'), XDG_DATA_HOME: join(root, 'data'), INSRC_MODE: 'daemon', INSRC_LOG_LEVEL: 'trace', INSRC_LIVE_TESTS: '0', TSX_DISABLE_CACHE: '1', NODE_DISABLE_COMPILE_CACHE: '1' }, timeout: 45000, maxBuffer: 1024 * 1024 });
+			const result = JSON.parse(stdout);
+			assert.equal(result.native, 4);
+			assert.equal(result.converted, 2);
+			assert.equal(result.filesystemUnchanged, true);
+			assert.equal(result.logsClean, true);
+			for (const marker of [root, 'PRIVATE_PATH_CANARY', 'PRIVATE_CONFIG_CANARY'])
+				assert(!(stdout + stderr).includes(marker), 'no source/configuration path leakage through native stdout or stderr');
+		}
+		finally {
+			await chmod(sources, 0o700);
+		}
 	});
 });

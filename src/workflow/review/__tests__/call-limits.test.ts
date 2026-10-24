@@ -57,6 +57,8 @@ test('the design-review extract, verify and template-session executions send the
 	const verify = callsOf(stages, 'verify', snap);
 	assert.equal(verify.length, 1);
 	assert.deepEqual(verify[0]!.execution, { mode: 'structured', cwd: '/repo', timeoutMs: 600_000, stallMs: 90_000 });
+	const batched = callsOf(premise.stagesFor('controller') as never, 'verify', snap);
+	assert.deepEqual(batched[0]!.execution, { mode: 'structured', cwd: '/repo', timeoutMs: 600_000, stallMs: 90_000 }, "the controller path's batched verify call");
 	const template = templateAdapter(designReviewSnapshot('# LLD'), {
 		template: reviewTemplateFor('spec'), stage: 'design.story', repo: '/repo', limitMs: 900_000, timedOut: () => new Error('t'),
 	});

@@ -113,12 +113,12 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 	};
 	const verifyController: AdapterStage = {
 		id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'fail-review',
-		// Today's one batched verify call holding every premise.
+		// Today's one batched verify call holding every premise, with the design-verify limits.
 		singleCalls: (_prior, snap) => {
 			const claims = (snap.claims ?? []) as Claim[];
 			if (claims.length === 0) return [];
 			const { system, user } = buildBatchedVerifyPrompt(claims, (snap.evidence ?? []) as Evidence[]);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: VERDICTS_SCHEMA as unknown as StructuredSchema, execution: { mode: 'structured', cwd: opts.repo } }];
+			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: VERDICTS_SCHEMA as unknown as StructuredSchema, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-verify') } }];
 		},
 		chunkCalls: () => [],
 	};

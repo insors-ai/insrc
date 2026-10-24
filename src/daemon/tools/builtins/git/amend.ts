@@ -82,6 +82,8 @@ export const gitAmendTool: Tool = {
     const signoff = input['signoff'] === true;
     const verifyHooks = input['verifyHooks'] !== false;
 
+    if (mode !== 'staged' && !message) { return rejectInput('git_amend', 'mode=message requires a message'); }
+
     const branch = await currentBranch(cwd) ?? '(detached)';
     // Amending a pushed commit is the risk this read guards, so a read that did not run is not an answer.
     const pushed = await wasPushed(cwd);
@@ -95,8 +97,7 @@ export const gitAmendTool: Tool = {
       else { argv.push('--no-edit'); }
     } else {
       // message-only: --only --no-edit tree-wise, but rewrite message.
-      if (!message) { return rejectInput('git_amend', 'mode=message requires a message'); }
-      argv.push('-m', message, '--only');
+      argv.push('-m', message ?? '', '--only');
     }
     if (signoff) { argv.push('-s'); }
     if (!verifyHooks) { argv.push('--no-verify'); }

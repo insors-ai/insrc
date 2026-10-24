@@ -118,6 +118,31 @@ export async function currentBranch(cwd: string): Promise<string | undefined> {
   return name ? name : undefined;
 }
 
+/** A precondition read: its value, or the command that did not give one. */
+export type PreRead<T> = { ok: true; value: T } | { ok: false; failed: ShellResult };
+
+/**
+ * The current branch as a precondition: `value` is undefined only for a detached HEAD (git's 'not a symbolic ref').
+ * A read that was not spawned, timed out, was cut, or failed for any other reason (not a repository) is `failed`,
+ * so the caller stops before changing anything.
+ */
+export async function readBranch(cwd: string): Promise<PreRead<string | undefined>> {
+  const res = await runShell(['git', 'symbolic-ref', '--short', 'HEAD'], { cwd, timeoutMs: 5_000 });
+  if (!ranToExit(res)) { return { ok: false, failed: res }; }
+  if (res.code !== 0) {
+    return /not a symbolic ref/i.test(res.stderr) ? { ok: true, value: undefined } : { ok: false, failed: res };
+  }
+  const name = res.stdout.trim();
+  return { ok: true, value: name ? name : undefined };
+}
+
+/** The number of staged files as a precondition: any read that did not give a count is `failed`. */
+export async function readStagedCount(cwd: string): Promise<PreRead<number>> {
+  const res = await runShell(['git', 'diff', '--cached', '--name-only'], { cwd, timeoutMs: 5_000 });
+  if (!ranToExit(res) || res.code !== 0) { return { ok: false, failed: res }; }
+  return { ok: true, value: res.stdout.split('\n').map(s => s.trim()).filter(Boolean).length };
+}
+
 /** Short-SHA for HEAD (or any ref). Returns empty string on failure. */
 export async function revParse(cwd: string, ref: string): Promise<string> {
   const res = await runShell(['git', 'rev-parse', '--short', ref], { cwd, timeoutMs: 5_000 });

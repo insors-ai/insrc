@@ -12,7 +12,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, revParse, rejectInput } from './helpers.js';
+import { str, fail, failureKind, spawnFail, readBranch, readFailure, revParse, rejectInput } from './helpers.js';
 
 export interface GitPushData {
   remote: string;
@@ -49,8 +49,8 @@ export const gitPushTool: Tool = {
     const remote = String(input['remote'] ?? 'origin');
     let ref = str(input, 'ref');
     if (!ref) {
-      const br = await currentBranch(cwd);
-      ref = br ?? '(detached HEAD)';
+      const brRead = await readBranch(cwd);
+      ref = !brRead.ok ? `(unknown: ${failureKind(brRead.failed)})` : brRead.value ?? '(detached HEAD)';
     }
     const force = input['force'] === true;
     const forceRaw = input['forceRaw'] === true;
@@ -82,7 +82,9 @@ export const gitPushTool: Tool = {
     const remote = str(input, 'remote') ?? 'origin';
     let ref = str(input, 'ref');
     if (!ref) {
-      const br = await currentBranch(cwd);
+      const brRead = await readBranch(cwd);
+      if (!brRead.ok) { return readFailure('git_push', brRead.failed); }
+      const br = brRead.value;
       if (!br) {
         return rejectInput('git_push', 'detached HEAD -- supply an explicit ref');
       }

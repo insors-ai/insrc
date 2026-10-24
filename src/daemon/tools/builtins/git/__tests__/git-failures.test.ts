@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -19,6 +19,7 @@ import { runShell, setShellTimeoutScaleForTests } from '../../../shell-helper.js
 import type { ShellResult } from '../../../shell-helper.js';
 import type { Tool, ToolDeps, ToolResult } from '../../../types.js';
 import { conflictFailure, fail, failureKind, rejectInput, spawnFail, UNKNOWN_OUTCOME, withFailure, withFailureNet } from '../helpers.js';
+import { FAILURE_CALLS } from './fixtures/failure-calls.js';
 import { gitAmendTool } from '../amend.js';
 import { gitBlameTool } from '../blame.js';
 import { gitBranchTool } from '../branch.js';
@@ -116,79 +117,67 @@ test('the registration wrapper adds kind rejected to an unsuccessful result with
 	assert.equal(await withFailureNet(make(ok)).execute({}, deps('/tmp')), ok);
 });
 
-/** One call of each of the 22 existing tools that reaches git (or its own input check) outside a repository. */
-const EVERY_TOOL: readonly (readonly [Tool, Record<string, unknown>])[] = [
-	[gitStatusTool, {}], [gitLogTool, {}], [gitDiffTool, {}], [gitShowTool, { ref: 'HEAD' }],
-	[gitBlameTool, { path: 'x' }], [gitBranchTool, { op: 'list' }], [gitStageTool, { op: 'stage', paths: ['x'] }],
-	[gitCommitTool, { message: 'm', allowDetached: true }], [gitAmendTool, { mode: 'message', message: 'm' }],
-	[gitPushTool, { remote: 'origin', ref: 'main' }], [gitPullTool, { remote: 'origin', ref: 'main' }],
-	[gitFetchTool, {}], [gitCheckoutTool, { mode: 'ref', ref: 'main' }], [gitMergeTool, { ref: 'main' }],
-	[gitRebaseTool, { onto: 'main' }], [gitStashTool, { op: 'list' }], [gitResetTool, { ref: 'HEAD', mode: 'mixed' }],
-	[gitRevertTool, { refs: ['HEAD'] }], [gitCherryPickTool, { refs: ['HEAD'] }], [gitTagTool, { op: 'list' }],
-	[gitRemoteTool, { op: 'list' }], [gitWorktreeTool, { op: 'list' }],
-];
+const TOOLS = new Map<string, Tool>([
+	gitStatusTool, gitLogTool, gitDiffTool, gitShowTool, gitBlameTool, gitBranchTool, gitStageTool, gitCommitTool, gitAmendTool,
+	gitPushTool, gitPullTool, gitFetchTool, gitCheckoutTool, gitMergeTool, gitRebaseTool, gitStashTool, gitResetTool, gitRevertTool,
+	gitCherryPickTool, gitTagTool, gitRemoteTool, gitWorktreeTool,
+].map(t => [t.id, t] as const));
 
 /**
- * What each of the 22 tools returned before this Story, recorded from the commit before it for the call in EVERY_TOOL:
- * outside a repository ('failed' is the exact text before git's own message, which is the error; `fixedError` is set where
- * the message is the tool's own) and with git missing from PATH (the exact output and error).
+ * What each call of FAILURE_CALLS returned before this Story, recorded from the commit before it: `<phase>|<tool>|<input>`
+ * to [output, error], where phase is 'repoless' (outside a repository) or 'nogit' (git missing from PATH).
  */
-const BASELINE: Readonly<Record<string, { failed: string; fixedError: string | null; noGit: readonly [string, string] }>> = {
-	"git_status": { failed: "[git:status] failed: ", fixedError: null, noGit: ["[git:status] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_log": { failed: "[git:log] failed: ", fixedError: null, noGit: ["[git:log] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_diff": { failed: "[git:diff] failed: ", fixedError: null, noGit: ["[git:diff] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_show": { failed: "[git:show] failed: ", fixedError: null, noGit: ["[git:show] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_blame": { failed: "[git:blame] failed: ", fixedError: null, noGit: ["[git:blame] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_branch": { failed: "[git_branch] failed: ", fixedError: null, noGit: ["[git_branch] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_stage": { failed: "[git:stage] failed: ", fixedError: null, noGit: ["[git:stage] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_commit": { failed: "[git_commit] failed: ", fixedError: "nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit", noGit: ["[git_commit] failed: nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit", "nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit"] },
-	"git_amend": { failed: "[git_amend] failed: ", fixedError: null, noGit: ["[git_amend] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_push": { failed: "[git_push] failed: ", fixedError: null, noGit: ["[git_push] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_pull": { failed: "[git_pull] failed: ", fixedError: null, noGit: ["[git_pull] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_fetch": { failed: "[git_fetch] failed: ", fixedError: null, noGit: ["[git_fetch] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_checkout": { failed: "[git_checkout] failed: ", fixedError: null, noGit: ["[git_checkout] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_merge": { failed: "[git_merge] failed: ", fixedError: null, noGit: ["[git_merge] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_rebase": { failed: "[git_rebase] failed: ", fixedError: null, noGit: ["[git_rebase] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_stash": { failed: "[git_stash] failed: ", fixedError: null, noGit: ["[git_stash] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_reset": { failed: "[git_reset] failed: ", fixedError: null, noGit: ["[git_reset] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_revert": { failed: "[git_revert] failed: ", fixedError: null, noGit: ["[git_revert] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git:cherry-pick": { failed: "[git:cherry-pick] failed: ", fixedError: null, noGit: ["[git:cherry-pick] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_tag": { failed: "[git_tag] failed: ", fixedError: null, noGit: ["[git_tag] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_remote": { failed: "[git_remote] failed: ", fixedError: null, noGit: ["[git_remote] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-	"git_worktree": { failed: "[git_worktree] failed: ", fixedError: null, noGit: ["[git_worktree] cannot spawn git -- [spawn] spawn git ENOENT", "git not found"] },
-};
+const BASELINE = JSON.parse(readFileSync(new URL('./fixtures/failure-baseline.json', import.meta.url), 'utf8')) as Record<string, [string, string | null]>;
+
+/**
+ * The calls whose failure the Story changes on purpose (LLD 3.5): a precondition read that cannot run now fails the call
+ * before anything is changed, with the kind of the failed read, instead of being read as an answer ('detached HEAD',
+ * 'nothing staged'). Their text is pinned to the new behaviour instead.
+ */
+const CHANGED = new Set<string>([
+	...['repoless', 'nogit'].flatMap(ph => [
+		`${ph}|git_commit|${JSON.stringify({ message: 'm', allowDetached: true })}`,
+		`${ph}|git_commit|${JSON.stringify({ message: 'm', allowEmpty: true, allowDetached: true })}`,
+		`${ph}|git_push|${JSON.stringify({ remote: 'origin' })}`,
+	]),
+]);
+const GIT_MESSAGE = /^(fatal|warning|error|usage): /i;
 
 test('the legacy output and error text of every existing failure path is unchanged', async () => {
 	assert.equal(rejectInput('git_branch', 'missing name for create').output, '[git_branch] failed: missing name for create');
 	assert.equal(rejectInput('git_branch', 'missing name for create').error, 'missing name for create');
 	assert.equal(rejectInput('git_branch', 'x').failure?.kind, 'rejected');
-	assert.equal(EVERY_TOOL.length, 22);
-	assert.deepEqual(EVERY_TOOL.map(([t]) => t.id).sort(), Object.keys(BASELINE).sort());
+	assert.equal(FAILURE_CALLS.length * 2, Object.keys(BASELINE).length);
+	assert.equal(new Set(FAILURE_CALLS.map(([id]) => id)).size, 22, 'every one of the 22 tools is called');
 
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-gitfail-nogit-'));
 	const savedPath = process.env['PATH'];
 	try {
-		// Outside a repository: the recorded prefix, then the message, which is also the error.
-		for (const [tool, input] of EVERY_TOOL) {
-			const want = BASELINE[tool.id]!;
-			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
-			assert.equal(res.success, false, tool.id);
-			assert.equal(res.format, 'text', tool.id);
-			assert.ok(res.error !== undefined && res.error.length > 0, tool.id);
-			assert.equal(res.output, want.failed + res.error, `${tool.id}: ${res.output}`);
-			if (want.fixedError !== null) { assert.equal(res.error, want.fixedError, tool.id); }
-			assert.equal(res.failure?.kind, 'rejected', tool.id);
-		}
-
-		// With git missing: the recorded output and error, exactly.
-		process.env['PATH'] = join(dir, 'nowhere');
-		for (const [tool, input] of EVERY_TOOL) {
-			const want = BASELINE[tool.id]!;
-			const res = await tool.execute({ ...input, cwd: dir }, deps(dir));
-			assert.equal(res.success, false, tool.id);
-			assert.equal(res.output, want.noGit[0], tool.id);
-			assert.equal(res.error, want.noGit[1], tool.id);
-			assert.equal(res.failure?.kind, res.error === 'git not found' ? 'missing-tool' : 'rejected', tool.id);
+		for (const phase of ['repoless', 'nogit'] as const) {
+			if (phase === 'nogit') { process.env['PATH'] = join(dir, 'nowhere'); }
+			for (const [id, input] of FAILURE_CALLS) {
+				const key = `${phase}|${id}|${JSON.stringify(input)}`;
+				const [wantOut, wantErr] = BASELINE[key]!;
+				const res = await TOOLS.get(id)!.execute({ ...input, cwd: dir }, deps(dir));
+				const out = res.output.split(dir).join('<DIR>');
+				const err = res.error?.split(dir).join('<DIR>') ?? null;
+				assert.equal(res.success, false, key);
+				assert.ok(res.failure !== undefined, `${key}: has a failure`);
+				if (CHANGED.has(key)) {
+					assert.equal(res.failure.kind, phase === 'nogit' ? 'missing-tool' : 'rejected', key);
+					assert.match(out, phase === 'nogit' ? /^\[git_[a-z]+\] cannot spawn git -- / : /^\[git_[a-z]+\] failed: fatal: /, key);
+					continue;
+				}
+				if (phase === 'repoless' && wantErr !== null && GIT_MESSAGE.test(wantErr) && wantOut.endsWith(wantErr)) {
+					// git's own message: the text before it is the tool's, and it is also the error
+					assert.ok(err !== null && GIT_MESSAGE.test(err), `${key}: ${err}`);
+					assert.equal(out, wantOut.slice(0, wantOut.length - wantErr.length) + err, key);
+				} else {
+					assert.equal(out, wantOut, key);
+					assert.equal(err, wantErr, key);
+				}
+				assert.equal(res.failure.kind, err === 'git not found' ? 'missing-tool' : 'rejected', key);
+			}
 		}
 	} finally {
 		process.env['PATH'] = savedPath;
@@ -302,6 +291,39 @@ test('the helper reads of amend and reset keep git\'s documented answers apart f
 		assert.equal(blocked.failure?.kind, 'missing-tool');
 		assert.equal(blocked.output.startsWith('[git_amend] cannot spawn git -- '), true, blocked.output);
 		assert.equal(blocked.error, 'git not found');
+	} finally {
+		process.env['PATH'] = savedPath;
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('git_commit and git_push keep their legacy refusals in a repository and fail before any change when a precondition read cannot run', async () => {
+	const repo = newRepo();
+	const savedPath = process.env['PATH'];
+	try {
+		writeFileSync(join(repo, 'f.txt'), 'a\n');
+		git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', 'one');
+
+		// nothing staged: the legacy refusal
+		const empty = await gitCommitTool.execute({ cwd: repo, message: 'm' }, deps(repo));
+		assert.equal(empty.output, '[git_commit] failed: nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit');
+		assert.equal(empty.failure?.kind, 'rejected');
+
+		// detached HEAD: the legacy refusals, not a read failure
+		git(repo, 'checkout', '-q', '--detach');
+		const detached = await gitCommitTool.execute({ cwd: repo, message: 'm' }, deps(repo));
+		assert.equal(detached.output, '[git_commit] failed: refusing to commit on detached HEAD -- rerun with allowDetached:true to override');
+		const push = await gitPushTool.execute({ cwd: repo }, deps(repo));
+		assert.equal(push.output, '[git_push] failed: detached HEAD -- supply an explicit ref');
+
+		// a read that cannot run: the call fails before anything changes
+		writeFileSync(join(repo, 'g.txt'), 'b\n');
+		const head = git(repo, 'rev-parse', 'HEAD');
+		process.env['PATH'] = join(repo, 'nowhere');
+		const blocked = await gitCommitTool.execute({ cwd: repo, message: 'm', allowDetached: true, allowEmpty: true }, deps(repo));
+		assert.equal(blocked.failure?.kind, 'missing-tool');
+		process.env['PATH'] = savedPath;
+		assert.equal(git(repo, 'rev-parse', 'HEAD'), head);
 	} finally {
 		process.env['PATH'] = savedPath;
 		rmSync(repo, { recursive: true, force: true });

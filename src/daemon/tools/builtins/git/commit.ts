@@ -13,7 +13,7 @@
 
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { str, fail, spawnFail, currentBranch, stagedCount, stagedSummary, rejectInput } from './helpers.js';
+import { str, fail, spawnFail, readBranch, readFailure, readStagedCount, stagedSummary, rejectInput } from './helpers.js';
 
 export interface GitCommitData {
   sha: string;
@@ -96,15 +96,18 @@ export const gitCommitTool: Tool = {
     const verifyHooks = input['verifyHooks'] !== false;  // default true
 
     // Detached HEAD guard.
-    const branch = await currentBranch(cwd);
+    const branchRead = await readBranch(cwd);
+    if (!branchRead.ok) { return readFailure('git_commit', branchRead.failed); }
+    const branch = branchRead.value;
     if (!branch && !allowDetached) {
       return rejectInput('git_commit', 'refusing to commit on detached HEAD -- rerun with allowDetached:true to override');
     }
 
     // Empty-index guard.
     if (!allowEmpty) {
-      const count = await stagedCount(cwd);
-      if (count === 0) {
+      const countRead = await readStagedCount(cwd);
+      if (!countRead.ok) { return readFailure('git_commit', countRead.failed); }
+      if (countRead.value === 0) {
         return rejectInput('git_commit', 'nothing staged -- run git:stage first, or pass allowEmpty:true for an empty commit');
       }
     }

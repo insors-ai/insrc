@@ -1,0 +1,725 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792870426982-1mrfrd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T19:36:01.643Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 134651,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "484fcef7efaf229e",
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "storyId": "s2",
+    "lldRunId": "wf-1792867668065-n4o9m7",
+    "lldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build isolated connection testing on the approved S001 foundation, with actual reachability checks and a bounded disposable worker. Share draft, path and authentication preparation with activation, and retain maintenance ownership until background work drains. Run relevant tests for each task, followed by the final build and full sweep after implementation is complete; release remains gated while S001 review is deferred.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define strict draft-test and worker IPC contracts",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "summary": "Add sc4 types/validators in src/shared/connection-management.ts and src/shared/connection-management-wire.ts; proposed src/daemon/db/draft-probe.ts defines internal DraftProbe and private worker message shapes.",
+        "acceptanceChecks": [
+          "Reject unknown/client owner/runtimeAuth fields, malformed UUID/revision, oversized256KiB input; fixed result codes and exact nonce correlation. No public BaseDriver redesign."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S2-A1: strict public and private test payloads reject malformed unknown oversized and spoofed identity or runtimeAuth fields; exact sanitized correlation shape."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add zero-write probe-worker logging bootstrap",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "summary": "Update src/shared/logger.ts so worker mode avoids top-level directory creation, config reads and file/stdout transports; preserve normal modes. Bootstrap before dynamic driver imports.",
+        "acceptanceChecks": [
+          "Fresh compiled/development process produces no config/cache/log files or canary output on import/success/failure/close; normal daemon/cli/mcp behavior preserved."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A2: fresh compiled and tsx worker logging bootstrap performs zero directory config log or output writes with canaries, preserving standard logger modes."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Share runtime path preparation with activation",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "summary": "Extract src/daemon/db/pool.ts path handling into proposed src/daemon/db/runtime-config.ts; use registered-kind rules and normalize SQLite path/url and schemaSource.path.",
+        "acceptanceChecks": [
+          "Different cwd/decoy source never changes target; root containment/readability/missing-file/pinned-family and file URL tests match activation. No source or registry writes."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-E1: activation and probes resolve relative file SQLite URL and schema paths from another cwd identically; reject outside-root or missing paths without writes."
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add metadata-first read-only saved draft preparation",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "summary": "Update src/daemon/db/management.ts and src/daemon/db/management-startup.ts with probeMetadataReady callback and prepareDraft under root gate; share materializeDraft without pool-backed list/mutation.",
+        "acceptanceChecks": [
+          "Production startup callback yields zero keychain reads for stale/missing/duplicate drafts; valid target reads only own credentials and signing key after admission. Abort/drift/recovery refused, no pool reload/stage/write/activation."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-F1: production metadata admission rejects missing stale duplicate and drifted drafts before any keychain call; valid Keep Replace Clear only reads owned target with zero pool reload or persistence."
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Prepare DynamoDB identity for private IPC",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "summary": "Proposed src/daemon/db/dynamo-identity.ts and src/daemon/db/drivers/dynamodb.ts share activation provider selection, parent-readonly auth snapshot and worker explicit credential injection.",
+        "acceptanceChecks": [
+          "Environment/session token and explicit/default profiles match activation principal; no worker fallback, config/env/argv/log persistence or client runtimeAuth. Late/expired/failed provider cannot spawn."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-E2: Dynamo test and activation use same environment session-token and profile identity through private auth IPC; late expired rejected or malformed auth cannot fall back or leak."
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add explicit Postgres and MySQL probes",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "summary": "Implement awaited probeReachability concrete methods in src/daemon/db/drivers/pg.ts and src/daemon/db/drivers/mysql.ts, covering postgres/cockroachdb/mysql/mariadb.",
+        "acceptanceChecks": [
+          "SELECT1 must actually reach/authenticate; successful lazy constructor with failing probe never returns reachable; close disposes resources and no schema enumeration."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A3: postgres cockroachdb mysql mariadb await SELECT1 and fail unreachable or bad-auth after successful lazy construction; close completes without schema discovery."
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add remaining SQL probes",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "summary": "Implement readonly awaited probes in src/daemon/db/drivers/sqlite.ts, mssql.ts, oracle.ts and clickhouse.ts (all under src/daemon/db/drivers/).",
+        "acceptanceChecks": [
+          "SQLite readonly SELECT1 never creates missing DB; MSSQL/ClickHouse SELECT1 and Oracle SELECT1 FROM DUAL await success and close; unavailable services fail and no schema discovery."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A4: sqlite mssql oracle clickhouse perform actual read-only probes, refuse unavailable sources, and dispose; SQLite never creates a missing database."
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add Redis and MongoDB probes",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1"
+        ],
+        "summary": "Implement explicit lazy connect/PING in src/daemon/db/drivers/redis.ts for redis/valkey/keydb and MongoDB admin ping in src/daemon/db/drivers/mongodb.ts.",
+        "acceptanceChecks": [
+          "Unreachable/bad-auth negatives fail after successful construction; bounded read-only calls, no namespace scan or writes; close completes."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A5: redis valkey keydb explicitly connect and ping and MongoDB pings; construction alone cannot succeed unreachable or bad credentials."
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Add remaining KV probes",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t1",
+          "t5"
+        ],
+        "summary": "Implement awaited minimal probes in src/daemon/db/drivers/cassandra.ts, nats.ts, dynamodb.ts, etcd.ts and memcached.ts: connect/system-local query, flush, ListTables Limit1, range limit1, version.",
+        "acceptanceChecks": [
+          "All five kinds require actual server operation; no writes or exposed table/key data. Dynamo uses parent identity; missing/failed credentials and protocol failures sanitize."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A6: cassandra nats dynamodb etcd memcached await minimal actual operations with failure sanitization, no writes or exposed data, and deterministic close."
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Add real memory-only file reachability probes",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "summary": "Update src/daemon/db/drivers/duckdb-file.ts to load actual owned private readers and bounded selected-target query for all native/converted registered file aliases.",
+        "acceptanceChecks": [
+          "Malformed/unreadable files fail; empty valid data succeeds; XLSX actual sheet selection; saved and private sources unchanged, no INSTALL/cache/spill/path logs or schema-completeness claim."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A7: all native and converted file kinds load actual private readers before reachable; malformed sources fail and empty valid sheets succeed without cache spill INSTALL logs or source writes."
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Implement response and drain lifetime primitives",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [],
+        "summary": "Add RequestLifetime in src/daemon/request-context.ts and server-created local unary lifecycle in src/daemon/server.ts: registerDrain, complete, seal, completed/drained promises and signal.",
+        "acceptanceChecks": [
+          "Register before first await; reply/complete/abort races idempotent; complete seals, drain awaits all work; invalid late registration explicit. Internal completion survives closed socket without external reply."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "CM-S2-F2: unary complete seal and drain are once-only; registered pending work survives timeout reply and signal abort until cleanup, with internal-only completion."
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Separate local and cloneable thread envelopes",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "summary": "Update src/daemon/threads/channel.ts, src/daemon/threads/router.ts and src/daemon/threads/worker-requests.ts with local envelope and explicit wire projection.",
+        "acceptanceChecks": [
+          "No function/promise/signal reaches MessagePort; trusted identity/epoch preserved, unknown local fields omitted. Remote unary reply/error/crash/queue paths complete original lifetime; streams unchanged."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-G1: local lifecycle projects to cloneable channel identity without promises signals callbacks; remote completion and stream behavior remain compatible."
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Retain maintenance and activity ownership through drain",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t11",
+          "t12"
+        ],
+        "summary": "Update src/daemon/threads/maintenance-entry.ts and src/daemon/threads/router.ts to await completed AND drained with explicit non-admitted completion.",
+        "acceptanceChecks": [
+          "Real-lock timeout/deferred work denies exclusive maintenance until drain. Refusal/pre-admission cancel/acquisition failure/unknown handler/queued cancel complete once with zero stray activity/holds or socket replies."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-G2: production maintenance holds and router activity span completed plus drained; timeout disconnect refusal queued cancel acquisition failure and unknown handler release exactly once."
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Build isolated one-shot probe worker entry",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "summary": "Proposed src/bin/insrc-connection-test.ts with quiet bootstrap, allowlisted private IPC validation, minimal environment, explicit29-kind probe coverage and owned driver/resource disposal.",
+        "acceptanceChecks": [
+          "Only IPC carries effective config/auth; no registry/keychain/graph/daemon IPC access. Reachable only after actual probe and disposal; initialization/error/malformed-message paths fixed safe output; compiled/tsx startup covered."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A8: fresh compiled and development one-shot workers admit exactly29 probe kinds through private IPC, await actual probe and cleanup, and reject malformed startup without logging credentials."
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Implement bounded parent test supervisor",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t1",
+          "t4",
+          "t5",
+          "t11",
+          "t14"
+        ],
+        "summary": "Proposed src/daemon/db/draft-test.ts starts10s deadline before prep, validates owned snapshots, forks private worker and correlates outputs; cancellation250ms grace then owned-child SIGKILL/reap.",
+        "acceptanceChecks": [
+          "One active per transport, global4 including pending prep/reap; first terminal outcome wins; no late spawn; normal success waits exit; synchronously registers complete operation drain; timeout result distinct from capacity/maintenance lifetime."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-B1: parent10s deadline spans preparation spawn init and close; cancel250ms grace forcibly reaps owned child, rejects repeats or over4 capacity and suppresses late spawn/replies while registered drain retains ownership."
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Wire v2 and legacy test/cancel routes",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t13",
+          "t15"
+        ],
+        "summary": "Update src/daemon/connection-management-rpc.ts, src/daemon/handler-runtime.ts, src/daemon/threads/method-class.ts and src/daemon/db-rpc.ts for trusted-context main-daemon routing and existing legacy projection.",
+        "acceptanceChecks": [
+          "Exact v2 result and owner cancellation; legacy successful fields/saved-local lookup retained and errors sanitized; standalone temporary draft only, injected future edit resolver fail-closed; no S003 store/UI/removal."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-C1: actual v2 and legacy IPC routes share trusted supervisor context and exact safe projections; owner cancellation isolated, main-daemon classification and saved-local compatibility preserved."
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Integrate supervisor lifecycle and release capability gates",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t16"
+        ],
+        "summary": "Update src/daemon/index.ts and connection capability projection to install/drain test supervisor, stop admission during shutdown and advertise only verified foundation+S002 evidence. This task implements gate reader and disabled defaults; later t19 supplies evidence, never implicitly enabling the feature.",
+        "acceptanceChecks": [
+          "Disconnect/shutdown cancels owned work, no unrelated process signals; pending noncancelable preparation truthfully retains drain. S001 approval untouched and production feature remains disabled without verified prerequisites."
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-C2: supervisor startup shutdown and disconnect stop admission cancel and drain owned work; capability remains disabled for absent S001 or S002 evidence and no live daemon operations run."
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Verify complete actual-process acceptance and compatibility",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t17"
+        ],
+        "summary": "Add focused end-to-end real IPC/child/SQL-KV-loopback/file fixtures and deterministic race suites covering CM-S2-A through CM-S2-G and all29 kind registrations. Earlier tasks own and run their focused tests; this task composes cross-boundary actual-process acceptance only, not a per-task full sweep.",
+        "acceptanceChecks": [
+          "Compare Save/Test effective draft, production metadata readiness, exact fake keys/registry, filesystem/log canaries, paths/auth identity, real maintenance locking and reap/zero residual counters. Live unavailable evidence explicitly labeled, not green skips."
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "CM-S2-A9: composed actual-process SQL KV and native/converted fixtures prove Save/Test parity, zero persistent drafts, sanitized canaries, bounded cancellation and zero residual resources under real IPC and maintenance locks."
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Run final build and full sweep with release evidence",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t18"
+        ],
+        "summary": "After every implementation task built, run final build and full regression sweep once, preserving separate focused task evidence. Record failures/baseline distinctions and fail-closed capability evidence; request independent code review afterward.",
+        "acceptanceChecks": [
+          "Never claim failed/skipped/timed-out coverage green; no live adoption/keychain migration/daemon restart. Release stays disabled while S001 review or broader gates unresolved; BUILD approval remains user-controlled."
+        ],
+        "derivedFrom": [
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "CM-S2-SWEEP: after all S002 tasks are built run final build and full test sweep; record actual failures skips and timeouts and keep release disabled for unmet prerequisites."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Unknown-field/type/size rejection; request/result owner identities; pinned family; missing/foreign secret refusal; parent fixed messages for SQL/KV/file errors",
+        "coveredByTaskIds": [
+          "t1",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "SQL/KV loopback fixtures; native CSV/JSON/JSONL/Parquet and BSON/Avro/fixed-width/XLSX; optional Arrow explicitly reports unsupported if absent",
+        "coveredByTaskIds": [
+          "t2",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t14",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Snapshot registry bytes/keychain values and watch isolated HOME/TMP/cache/log directories before/after all success/error paths",
+        "coveredByTaskIds": [
+          "t2",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t14",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Capture stdout/stderr/daemon logs with credential/path canaries; worker receives config solely by IPC; no INSTALL or persistent files",
+        "coveredByTaskIds": [
+          "t2",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t14",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "10-second production deadline including hanging prepare/spawn/init/close; cancellation250ms grace then owned PID absent; retries capacity bounded",
+        "coveredByTaskIds": [
+          "t11",
+          "t13",
+          "t15",
+          "t17",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Duplicate clicks busy, per-owner isolation, global cap4 including reaping, reconnect epoch, root switch/form close simulation via cancel and late result identity; UI presentation remains S005",
+        "coveredByTaskIds": [
+          "t11",
+          "t13",
+          "t15",
+          "t17",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Child never replies, ignores cancel, sends malformed/duplicate/wrong nonce messages, exits early; same-time success/cancel deadline; transport disconnect/shutdown drain; zero child/resource/timer/listener residuals",
+        "coveredByTaskIds": [
+          "t11",
+          "t13",
+          "t15",
+          "t17",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "handler-runtime test dispatch and cancel main-daemon classification; trusted socket context; feature disabled until prerequisites verified; missing old-daemon method handshake",
+        "coveredByTaskIds": [
+          "t12",
+          "t16",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy saved-only test returns existing successful fields and bounded sanitized failure; no regression to memory-only file behavior",
+        "coveredByTaskIds": [
+          "t12",
+          "t16",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "Factory construction NEVER implies reachable. Add S002-only DraftProbe interface { probeReachability(): Promise<void>; close(): Promise<void> } in proposed src/daemon/db/draft-probe.ts. Concrete driver classes implement this extra internal method without changing shared BaseDriver, registry factory signatures or sc1/sc8. Worker uses exact registered-kind allowlist and checks method presence; absence fails unsupported, never reachable. Driver probes: postgres/cockroachdb SELECT 1 through pg; mysql/mariadb pooled SELECT 1; sqlite read-only open then SELECT 1 (missing file must not be created); mssql SELECT 1; oracle SELECT 1 FROM DUAL; clickhouse SELECT 1; redis/valkey/keydb explicitly connect lazy client then PING; mongodb admin ping; cassandra client connect then SELECT release_version FROM system.local; nats connected flush; dynamodb authenticated ListTables Limit1 without exposing names; etcd authenticated bounded range limit1; memcached version. No writes or schema enumeration. File kinds csv/tsv/json/jsonl/ndjson/parquet/arrow/feather/avro/bson/fixed-width/xlsx explicitly call private readerPath under memory-only policy and issue a bounded SELECT on the selected local target; parse/load errors fail; empty valid input can succeed; xlsx must select real sheet, not fake fallback. No completeness claim. Add methods at src/daemon/db/drivers/pg.ts, mysql.ts, sqlite.ts, mssql.ts, oracle.ts, clickhouse.ts, redis.ts, mongodb.ts, cassandra.ts, nats.ts, dynamodb.ts, etcd.ts, memcached.ts, duckdb-file.ts (each name resolved under src/daemon/db/drivers/). Add exact29-kind coverage assertion, actual unreachable/bad-auth/malformed-file negatives and lazy factory success/probe failure tests. S002 owns these test-specific operations; no sc8 converter redesign.",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/shared/logger.ts must remove top-level mkdirSync and defer mkdir/config reads/transports to non-worker logger creation. Add explicit internal probe-worker mode selected via fixed nonsecret bootstrap environment before first module import; worker fork overwrites INSRC_MODE to probe-worker, filters all inherited logger/Node injection variables, and uses dynamic driver imports only after selecting mode. In probe-worker getRoot returns disabled pino with in-memory no-op destination; it must never call resolveLevel/read config, mkdir, pino transport, pino-roll or stdout/stderr sink. Guard top-level path imports for side effects. Existing daemon/cli/mcp modes preserve current lazy creation and transport behavior. Verify fresh compiled and tsx processes, isolated HOME/TMP and actual PATHS.logDir, spies on fs mkdir/read config and recursive filesystem watches plus path/password canaries on startup/init/error/close; ignoring stdio alone is not evidence.",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates a per-unary-request AbortController, merges signal with existing trusted identity/epoch, returns abort callback and suppresses response delivery after abort. Socket close calls registered cancel as today. Other unary handlers may ignore optional signal unchanged. src/daemon/handler-runtime.ts must pass trusted context to legacy testConnectionRpc via additive optional second parameter; v2 adapter forwards signal to supervisor. src/daemon/threads/method-class.ts classifies test/cancel/legacy db.testConnection in main daemon, never serializes signal into worker threads. Supervisor shutdown hook in src/daemon/index.ts stops admission, aborts all owned operations, sends child cancel and escalates after250ms, awaiting owned close before daemon teardown; no unrelated PIDs signaled. Real IPC disconnect tests prove child exits and no late reply; legacy and v2 share owner/capacity.",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Add SavedConnectionManagement.prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest, 'key' | 'expectedRevision' | 'publicPatch' | 'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> in src/daemon/db/management.ts. Under existing per-root serialized gate validate context/root, enabled/registration/recovery state through current(), snapshot config and revision, infer create/update, enforce existence/expectedRevision, then call shared materializeDraft with readonly owned reference reader. Never list(), apply(), pool.reload(), mutate(), stage/activate, tickets or receipts. Owner-aware reader only accepts refs enumerated from selected snapshot after revision checks; create cannot resolve arbitrary supplied refs. Hold gate through readonly credential materialization so concurrent mutation/cleanup cannot delete Keep generation while it is read; release immediately after immutable plaintext snapshot built, not for network test. Check signal after every await and before returns; hanging preparation retains bounded supervisor slot and queued aborted gate callback must not read secrets/spawn when eventually admitted. No late spawn after deadline. No raw snapshot returned to client or child beyond effective config. Tests snapshot exact registry/keychain and spy zero pool reload/staging/writers; concurrent saved update/delete cannot race Keep acquisition. Future temporary resolver uses equivalent readonly owner contract, no S003 store implementation.",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Extract resolveConfigPath and resolveAndCheckRepoPath from src/daemon/db/pool.ts into proposed src/daemon/db/runtime-config.ts as side-effect-free exported prepareRuntimeConfig(config: ConnectionConfig, canonicalRoot: string, signal?: AbortSignal): Promise<ConnectionConfig>. Both pool activation and S002 prepareDraft/legacy preparation call it after materializeDraft and before factory/IPC. Select path policy by registered kind/familyOf(kind), never pinned family. Preserve existing lexical repo-root containment and readable-path checks and schemaSource.path resolution; never cwd-relative resolution. File paths become absolute. Normalize SQLite effective path using existing path-over-url precedence from sqlite.ts: accept path, plain URL path or decoded local file URL, reject remote file URL authorities and non-file schemes; resolve relative path against canonical root, check containment/readability, put result in config.path so factory opens that exact readonly path. Never create a missing SQLite file or write normalized runtime paths back to saved JSON. Existing file/schemaSource paths follow same shared helper for activation, legacy and v2; source URI and pinned-family regression fixtures prevent divergence. Before any filesystem await validate signal; after await check again and no late IPC on timeout. Shared helper extracts existing behavior, with explicit SQLite URL normalization correction applied equally to activation and tests rather than a probe-only interpretation. No cache/converter redesign. Test daemon cwd different from repository with a decoy same-name file, relative/absolute in-root file and SQLite paths and file URLs, outside-root ../ and absolute inputs, schemaSource.path, missing/unreadable files, percent encoding and pinned family conflicts. Assert selected absolute file and contents match actual activation, and saved bytes unchanged. No implicit permission widening or acceptance of out-of-root paths.",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Activation and probes share a readonly resolveDynamoIdentity(config, signal) helper in proposed src/daemon/db/dynamo-identity.ts; src/daemon/db/drivers/dynamodb.ts uses the same provider selection. Explicit options.profile uses fromIni({profile}) exactly as activation today; otherwise use installed fromNodeProviderChain() with daemon process credential environment/default-chain context. Resolve once in parent during bounded preparation, preserving accessKeyId, secretAccessKey, optional sessionToken and expiration; never fall back to another identity after a selected provider fails, and never ask stripped worker environment/profile files to resolve credentials again. The same helper builds activation credentials provider so provider selection is single-sourced without storing credentials in ConnectionConfig or changing profile slots. Private WorkerStart carries optional runtimeAuth:{type:'aws-v1',accessKeyId:string,secretAccessKey:string,sessionToken?:string,expiration?:string} only for dynamodb; validate exact fields, nonempty strings/size/ISO expiration at both ends. Do not place this field on public DraftTestRequest, config/options, artifact, log, environment or command line; reject any client runtimeAuth field. In child construct DynamoDriver through explicit internal factory overload/options carrying supplied static credential identity to DynamoDBClient({credentials:...}); never registry mutation or global credentials override, no fromIni/default chain in worker. Clear parent snapshot refs after send/cancel and child refs on close. Bound provider waiting by same10s parent deadline; a late provider resolution is dropped and cannot fork/send; keep preparation slots bounded until provider drains. Existing provider process/file reads belong to parent identity resolution, not worker; no draft/config/keychain writes, SDK caches must not be introduced. Avoid new arbitrary subprocess invocation, selection exactly matches existing activated provider. Readonly current AWS profile/SSO chain resolution may fail safely (expired/interactive auth required) but never silently substitute another principal. Test environment-only keys plus session token, explicitly selected profile despite env credentials, default chain selected profile, absent/expired credentials, assumed-role/session expiration, provider rejection/deadline and malformed worker auth. Compare identity at fake signed request boundary with activation under same resolver; actual local DynamoDB HTTP fixture checks signing access key and session token without sending credentials externally. Snapshot worker environment/argv/log/files for canaries; explicit runtimeAuth missing in Dynamo worker fails rather than invoking a credential fallback.",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates per-unary-request AbortController and passes the signal with trusted identity/epoch; returns abort callback. IMPORTANT: cancellation MUST NOT suppress internal completion delivery. After unary handler settles directDispatch emits exactly one internal reply (fixed failure projection when needed), even if signal aborted; IpcServer alone discards socket delivery on closed/canceled request using its existing settled/socket guard. This supersedes the earlier instruction to suppress directDispatch delivery. Thus wrappers can observe handler completion after disconnect. src/daemon/threads/maintenance-entry.ts holdingForward keeps the unary maintenance hold until internal reply (not cancel), uses idempotent release, drops only external delivery after cancellation, and handles cancel-before-admission without starting handler. src/daemon/threads/router.ts uses once-only ended callback for unary reply/error, not unary cancel; preserves internal completion delivery to maintenance wrapper while suppressing client writes at outer server. Keep existing stream cancellation behavior unchanged and once-only. Pending routed unary handlers not owned by this story retain current completion semantics; test/cancel/legacy methods are classified main-daemon in src/daemon/threads/method-class.ts. src/daemon/handler-runtime.ts forwards trusted context to optional second testConnectionRpc parameter and v2 supervisor, never serializes AbortSignal into worker threads. A handler ignoring optional signal still emits completion and cannot strand holds/activity. src/daemon/index.ts stops supervisor admission and drains owned child/preparation work during shutdown; child grace250ms then SIGKILL only owned PIDs. Tests use real IPC disconnect with maintenance locking and router onRequest activity enabled: cancel during preparation/init/close, completion after disconnect, error, unknown method, and pre-admission cancel must return counters/holds exactly once to baseline; no socket late reply and no early maintenance admission while actual handler work is running. Supervisor response terminal state and reaper capacity remain distinct; parent-owned cleanup continues tracked after timeout, without suppressing internal reply or leaking request bookkeeping.",
+        "coveredByTaskIds": [
+          "t3",
+          "t5",
+          "t13",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "This supersedes prepareDraft's earlier instruction to call current() first. Do NOT call current(), enabled(), service.list(), pool reload, tickets.assertAvailable or generations.assertReady before selected existence/revision admission: production enabled reads every connection credential. Refactor src/daemon/db/management-startup.ts to expose a NEW internal probeMetadataReady():Promise<RegistrySnapshot> callback in SavedManagementPorts, alongside unchanged enabled() for existing mutation/list behavior. probeMetadataReady checks owner lease, protected currentStore.inspect(), already-authenticated state's current() inode/digest, parent mode/inode, signed checkpoint committed anchor, running release fingerprint and canonical registration only; all are metadata reads and cached authenticated state, no signing-key or credential getKey, no recover/reconcile. At startup full enabled validation remains unchanged before service installation. prepareDraft under per-root gate validates trusted context, obtains probeMetadataReady snapshot, parses/enforces registry envelope metadata with the shared metadata validator extracted from current() without calling enabled, and selects requested ID/revision. If missing/stale/duplicate return existing sanitized code before ANY keychain call. After admission, recheck abort, validate signing authority availability if required, selected profile and generation ownership, then materialize only selected config with owned-reference reader. Never scan unrelated connection credentials in this probe-only path. Failure in metadata fence returns recovery-required/upgrade-required before secrets; missing signing key after valid admission still fails. Immutable selected snapshot held under same root gate through readonly selected credential read, runtime paths and completion; no mutation, no generation cleanup. This is an internal adapter implementing consumed sc1/sc2/sc3, not a change to public wire or weakened mutation readiness. Test through openManagedRoot's actual production callback with injected fake keystore, not always-true service fixture: reset keychain counters AFTER startup, then missing/stale/duplicate draft must issue zero getKey calls (including signing keys), zero stages/writes/spawn, while valid target reads only signing key plus selected owned credentials, never unrelated credential canary; missing key and registry/owner drift remain refused. Name management-startup.ts and management.ts explicitly as change sites.",
+        "coveredByTaskIds": [
+          "t4",
+          "t11",
+          "t13",
+          "t15",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Introduce internal RequestLifetime in src/daemon/request-context.ts, created server-side in src/daemon/server.ts BEFORE forwarding unary request. API registerDrain(work:Promise<void>):void, seal():void, drained:Promise<void>; registerDrain accepts only before seal, uses all-settled work completion, never settles drained until sealed AND every registered work item settled. Expose only registerDrain on TrustedRpcContext, lifetime owned by internal RequestEnvelope; none is deserialized from client params or serialized to worker-thread wire. draft-test supervisor synchronously registers its whole operation-drain promise before first await; drain encompasses root-gate queue, pending root/keychain/AWS preparation, asynchronous spawn, child close/reap, and all cleanup/listener/timer releases, including work continuing after timeout result. Terminal response promise settles at deadline independently. directDispatch seals request lifetime in its unary handler finally and still delivers exactly one INTERNAL reply after result settles; IpcServer drops only external canceled socket delivery. holdingForward in src/daemon/threads/maintenance-entry.ts resolves its held callback only when (reply delivered internally OR pre-admission canceled) AND request.lifetime.drained settles; keep hold through timed-out hanging preparation and through reaping. No early release on cancel or reply for work registered in lifetime. Router in src/daemon/threads/router.ts similarly calls once-only ended() after internal unary reply AND drained; no late socket write. For unrelated unary handlers with zero registered work drained resolves immediately at seal, preserving previous behavior. All relevant test methods remain main-daemon classified; on remote unary routes lacking a local lifetime use existing reply completion, do not serialize promises/functions. Ensure wrappers propagate the SAME lifetime object, including holdingForward's queued entry; if cancellation before forward admission, seal empty lifetime and release once. If synchronous handler throws, seal and internal reply; if supervisor preparation never settles, terminal client timeout still returned but slot/maintenance hold/activity remain truthfully held until drain; never fabricate cleanup. This intentionally prevents compaction/restart from racing unresolved store access and caps leaks to four admitted operations. Shutdown cancels operations, reaps children and waits registered drains; a still-unresolved noncancelable preparation is reported pending rather than releasing live resource ownership. Real-lock integration test: install production server/router/holdingForward with maintenance lock enabled, hold fake credential preparation deferred, reach real or injected deadline and receive timeout, attempt exclusive maintenance and assert denied while pending; repeat after socket disconnect and while child ignores cancel; settle preparation/reap then assert exclusive maintenance admitted and activity/holds/listeners zero exactly once. Register-before-await, rejection, queued-cancel, reply/cancel race and ignored AbortSignal coverage mandatory.",
+        "coveredByTaskIds": [
+          "t4",
+          "t11",
+          "t13",
+          "t15",
+          "t18"
+        ]
+      },
+      {
+        "lldStrategyItem": "Explicit defining change site src/daemon/threads/channel.ts: retain RequestEnvelope as the cloneable WIRE interface. Its trustedContext must be narrowed to a wire-only {connectionIdentity:string;daemonEpoch:string} type, not full TrustedRpcContext after optional signal/registerDrain are added. Add separate main-thread LocalRequestEnvelope type with same request data and trusted local context plus RequestLifetime; ForwardRequest/server/router/maintenance wrappers use this local type. Router.send creates an explicit field-by-field WireRequestEnvelope projection containing kind/requestId/method/params/stream/session/underHold and identity/epoch ONLY; never spreads local request or posts lifetime/AbortSignal/functions/promises. src/daemon/threads/worker-requests.ts receives and validates wire projection and uses existing worker-side request completion. No S002 test runs on worker thread; no test deadline/cancel callbacks cross channel. Remote unary requests retain existing semantics: socket cancel does not abort worker execution, reply/error/worker-unavailable remains completion trigger, with parent local lifetime completed/sealed at that terminal trigger. Include structuredClone/postMessage regression test with local lifetime present and ignored optional local context fields; verify no DataCloneError and no identity loss. This supersedes earlier use of RequestEnvelope as both local and wire container.\nExtend RequestLifetime with once-only complete():void and completed:Promise<void> in addition to registerDrain/seal/drained. complete() seals registration and resolves completed exactly once; drained still awaits every registered promise. WRAPPER BOOKKEEPING waits completed AND drained, NOT internal reply AND drained. directDispatch invokes complete() in unary handler finally (also unknown method and synchronous throw), delivers internal reply once, and external socket filtering remains IpcServer. holdingForward calls complete() for every path that NEVER invokes forward: maintenance refusal, lock acquisition failure, cancellation while waiting for admission and cancel before admission; these paths have no registered work, so drained resolves. Maintenance refusal may deliver sanitized busy reply only if socket still open; pre-admission cancellation MUST NOT fabricate a socket reply or invoke handler. Router registers one completion observer before dispatch; onRequest ended runs once after completed AND drained even when no internal reply exists. For non-admitted paths complete and seal the shared SAME local lifetime before release; no callback references stranded. Error delivery and complete must execute even if external deliver throws; use once-only finally semantics, no duplicate handler execution. holdingForward's hold promise releases only after completed AND drained when admitted; if not admitted there is no acquired work hold to retain. RequestLifetime creation occurs before Router onRequest, so observers never miss synchronous refusal/cancel. Remote replies/errors and queued-local reroutes set complete once on original local lifetime; worker crash/unavailable/predispatch queue rejection also complete/seal empty lifetime; streams retain existing cancellation/hold semantics unchanged. Add production real-lock tests with onRequest enabled for (1) maintenance already exclusive -> busy refusal, (2) cancellation before admission, (3) lock acquisition rejects/throws, (4) synchronous unknown handler, (5) worker unavailable/queued cancellation. Each must prove handler/spawn/secret calls zero, no reply to closed socket, local completed/drained settle, activity and hold counts return to baseline once, and next request/maintenance succeeds. Preserve earlier timeout test where admitted deferred preparation DOES retain hold until drain. These rules replace all earlier reply-only completion statements for local lifetimes.",
+        "coveredByTaskIds": [
+          "t11",
+          "t12",
+          "t13",
+          "t18"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails sc4 public/private request, result and cancellation validation"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges worker-safe shared logger bootstrap"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges runtime path preparation shared with activation"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges saved owner readonly prepareDraft and metadata-only admission"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges DynamoDB authentication snapshot for private worker IPC"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges explicit awaited reachability probes for all29 registered kinds"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges unary transport, RequestLifetime, cloneable channel projection and non-admitted completion"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails one-shot worker, parent deadline, capacity, correlation, cancellation and drain"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration legacy/v2 routing, compatibility, supervisor lifecycle and release evidence gates"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy CM-S2-A through CM-S2-G and migration final build/sweep with truthful evidence"
+    }
+  ]
+}

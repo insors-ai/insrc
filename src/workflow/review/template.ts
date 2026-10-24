@@ -205,7 +205,7 @@ export function buildTemplateReviewPrompt(
 		'  A structured definition alone does not prove the generated artifact exists or renders correctly.',
 		'  Request author correction/regeneration; do not silently substitute a reviewer-authored design.',
 		'- If rendering is unavailable, inspect source where possible and report exactly what could not be',
-		'  verified. Never claim visual verification without it. Use the existing relevant checklist items',
+		'  verified. Report unavailable rendering as could-not-verify. Never claim visual verification without it. Use the existing relevant checklist items',
 		'  and premise budget; an absent definition does not make relevance automatically notApplicable.',
 		'- A materially inadequate design (including missing necessary relationship documentation) is a',
 		'  confirmed does-not-hold MED/HIGH. Optional visual improvements to an otherwise adequate design',

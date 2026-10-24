@@ -35,6 +35,7 @@ export async function environment() {
 		const counts = { gets: 0, credentialGets: 0, sets: 0, deletes: 0, stages: 0, writes: 0 };
 		const hooks: {
 			stage?: (() => Promise<void>) | undefined;
+			factory?: ((config: ConnectionConfig) => Promise<Driver>) | undefined;
 			writer?: ((stage: string) => Promise<void>) | undefined;
 			activate?: ((id: string, revision: string) => Promise<void>) | undefined;
 		} = {};
@@ -65,7 +66,7 @@ export async function environment() {
 					await hooks.stage?.();
 				}
 			} });
-		let pool = new DriverPool(root, { factory: () => async (config) => ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
+		let pool = new DriverPool(root, { factory: () => async (config) => hooks.factory ? hooks.factory(config) : ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
 				}, describe: async () => ({ columns: [] }) } as unknown as Driver) });
 		await pool.reload();
 		const context = { connectionIdentity: 'fixture-client', access: { lookupRoot: root, managementRepoRoot: root, daemonEpoch: 'fixture' } };
@@ -99,7 +100,7 @@ export async function environment() {
 						await hooks.stage?.();
 					}
 				} });
-			pool = new DriverPool(root, { factory: () => async (config) => ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
+			pool = new DriverPool(root, { factory: () => async (config) => hooks.factory ? hooks.factory(config) : ({ id: config.id, kind: config.kind, family: 'rdbms', close: async () => {
 					}, describe: async () => ({ columns: [] }) } as unknown as Driver) });
 			await pool.reload();
 			service = await SavedConnectionManagement.create({ root, store, tickets, generations, pool, enabled: async () => true, isRegistered: async (candidate) => candidate === root, activate: async (id, revision) => {

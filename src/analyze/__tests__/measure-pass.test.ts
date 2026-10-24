@@ -16,6 +16,7 @@ import { tmpdir, userInfo } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { leasedDataPool } from './fixtures/leased-data-pool.js';
 import { loadConnections } from '../../daemon/db/config.js';
 import { getDb } from '../../db/client.js';
 import { findEntitiesByFile, getEntity, listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
@@ -254,10 +255,8 @@ function standInPool(connections: readonly StandInConnection[]): { opened: strin
 	const acquired: string[] = [];
 	const asked: Array<Record<string, unknown> | undefined> = [];
 	let reloaded = 0;
-	const pool = {
-		reload:  async () => { reloaded += 1; },
-		list:    () => connections.map(c => ({ id: c.id, kind: c.kind, family: c.family, label: c.id, ...(c.path !== undefined ? { path: c.path } : {}), ...(c.recursive !== undefined ? { recursive: c.recursive } : {}) })),
-		acquire: async (id: string) => {
+ const configs = connections.map(c => ({ id: c.id, kind: c.kind, family: c.family, label: c.id, ...(c.path !== undefined ? { path: c.path } : {}), ...(c.recursive !== undefined ? { recursive: c.recursive } : {}) }));
+ const leased = leasedDataPool('', configs, async (id: string) => {
 			acquired.push(id);
 			const c = connections.find(x => x.id === id);
 			if (c === undefined) throw new Error(`no connection '${id}'`);
@@ -265,8 +264,9 @@ function standInPool(connections: readonly StandInConnection[]): { opened: strin
 			if (c.stalled === true) return new Promise<never>(() => undefined);
 			if (c.refusesAfterMs !== undefined) return new Promise<never>((_, reject) => setTimeout(() => reject(new Error('connect ETIMEDOUT')), c.refusesAfterMs));
 			return { family: c.family, kind: c.kind, ...(c.driver ?? {}) };
-		},
-	};
+ });
+ const pool = { ...leased, reload: async () => { reloaded += 1; } };
+
 	_setDataPoolSourceForTest((async (path: string) => { opened.push(path); return pool; }) as never);
 	return { opened, acquired, asked, reloads: () => reloaded };
 }

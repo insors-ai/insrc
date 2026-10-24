@@ -224,28 +224,18 @@
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.acquire",
-      "boundary": "pool-member"
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.acquire(id)",
-      "boundary": "driver-port-call"
+      "expression": "createConnectionResolver",
+      "boundary": "symbol:createConnectionResolver"
     },
     {
       "file": "src/analyze/measure.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/measure.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
-    },
-    {
-      "file": "src/analyze/measure.ts",
-      "expression": "pool.list",
-      "boundary": "pool-member"
+      "expression": "createConnectionResolver({ poolSource: async () => pool })",
+      "boundary": "resolver-port-call"
     },
     {
       "file": "src/analyze/measure.ts",
@@ -256,6 +246,26 @@
       "file": "src/analyze/measure.ts",
       "expression": "pool.reload",
       "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "pool.safeList",
+      "boundary": "pool-member"
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "expression": "resolver.withConnection",
+      "boundary": "resolver-member"
     },
     {
       "file": "src/analyze/runtimes/data/_shared.ts",

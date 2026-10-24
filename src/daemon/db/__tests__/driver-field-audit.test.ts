@@ -113,7 +113,8 @@ test('CM-S1-L: typed production acquisition aliases and factory sites have expli
 		assert.ok(actual.some(s=>s.file===path && s.expression===`resolver.${file==='db-connections-list'?'list':'withConnection'}` && s.boundary==='resolver-member'));
 		assert.ok(!actual.some(s=>s.file===path && (s.expression==='acquire(ctx.repoPath)' || s.boundary==='driver-port-call')), 'Injected aliases must not acquire a raw driver');
 	}
-	assert.ok(actual.some(s=>s.file==='src/analyze/measure.ts' && s.expression==='pool.acquire(id)'));
+	assert.ok(actual.some(s=>s.file==='src/analyze/measure.ts' && s.expression==='resolver.withConnection' && s.boundary==='resolver-member'));
+	assert.ok(!actual.some(s=>s.file==='src/analyze/measure.ts' && s.boundary==='driver-port-call'), 'Measurement must not acquire a raw driver outside its shared work lease');
 	assert.ok(actual.some(s=>s.file==='src/daemon/db-rpc.ts' && s.boundary==='driver-port-call'));
 	assert.ok(actual.some(s=>s.file==='src/daemon/tools/builtins/db/index.ts' && s.boundary==='symbol:acquireDriver'));
 });

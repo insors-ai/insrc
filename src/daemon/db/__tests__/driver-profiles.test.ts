@@ -230,6 +230,15 @@ test('CM-S1-A: credential-bearing URI text is refused in public fields even when
 	}
 });
 test('CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints', () => {
+	for (const prefix of ['%ZZ', '%', '%FF', '%E0%A4', '']) {
+		const token = '%24%7Bsecret%3Aowned-reference-canary%7D';
+		for (const encoded of [token, encodeURIComponent(token), encodeURIComponent(encodeURIComponent(token))]) {
+			const dto = safeConnection({ id: 'fixture', kind: 'mssql', url: `mssql://host/${prefix}${encoded}` }, key(), 'r1');
+			assert.equal(dto.readOnly, true);
+			assert.ok(!Object.hasOwn(dto.publicConfig, 'endpoint'));
+			assert.ok(!JSON.stringify(dto).includes('canary'));
+		}
+	}
 	for (const url of ['mssql://host;database=fixture;password=credential-canary', 'mssql://host/db;password=credential-canary', 'mssql://host=%24%7Bsecret%3Aowned-reference-canary%7D/db', 'mssql://host/%24%7Bsecret%3Aowned-reference-canary%7D']) {
 		const dto = safeConnection({ id: 'fixture', kind: 'mssql', url }, key(), 'r1');
 		assert.ok(dto.compatibilityWarning?.includes('read-only'));

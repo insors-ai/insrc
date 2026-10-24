@@ -64,20 +64,22 @@ function clean(value: unknown, depth = 0): boolean {
 		return false;
 	if (typeof value === 'string') {
 		let decoded = value;
-		for (let i = 0; i < 3; i++) {
+		for (let i = 0; i < 8; i++) {
 			if (decoded.includes('${secret:'))
 				return false;
 			try {
-				const next = decodeURIComponent(decoded);
+				// Decode valid escapes even alongside literal or malformed percent text.
+				// Otherwise an unrelated %ZZ can conceal an encoded secret token.
+				const next = decodeURIComponent(decoded.replace(/%(?![0-9a-f]{2})/gi, '%25'));
 				if (next === decoded)
-					break;
+					return true;
 				decoded = next;
 			}
 			catch {
-				break;
+				return false;
 			}
 		}
-		return true;
+		return false;
 	}
 	if (Array.isArray(value))
 		return value.every(v => clean(v, depth + 1));

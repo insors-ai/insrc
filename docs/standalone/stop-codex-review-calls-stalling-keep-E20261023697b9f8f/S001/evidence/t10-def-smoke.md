@@ -21,3 +21,20 @@ DEF-ce99b72065d03b1b was authored by the controller, so the daemon reviewed it
 - The progress notifications the MCP server forwards to the client are not visible in a tool result, so their arrival at the client UI was not observed directly; what is shown is that the controller-side step received frames often enough never to hit its 5-minute idle limit.
 
 Result: pass.
+
+## Progress at the controller, captured live (2026-10-24, second run)
+
+To close the limit above, `t10-progress-capture.mjs` (beside this file) started
+the INSTALLED MCP server (`~/.insrc/daemon/out/bin/insrc-mcp.js`, fe21858a) as a
+client does, and called `insrc_review_step` on DEF-ce99b720 with a progress
+token, recording every `notifications/progress` the client received.
+Raw record: `t10-progress-capture.json`.
+
+- The review ran 19 min 53 s (1,193,318 ms) and returned `next: done`, verdict `block` (0 HIGH, 18 MED, 57 LOW), `reviewedBy: daemon`. No stall, no error.
+- The client received **97 progress notifications**, the first 0.2 s after the call:
+  - 19 heartbeats (`{"kind":"heartbeat","operation":"workflow.review",...}`), one every 60 s from 60 s to 1,140 s;
+  - 78 phase frames: `▸ extract`, `▸ probe`, 75 x `▸ verify:pNN`, `▸ done`.
+- The longest gap between two notifications was 60,001 ms; the progress values only increase.
+
+So progress reaches the controller throughout a real DEF review, and the
+heartbeat keeps the client's idle limit from ever being reached.

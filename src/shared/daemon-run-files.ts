@@ -91,7 +91,11 @@ export function acquireRunFileGuard(path: string, owner: ProcessIdentity = requi
 	};
 }
 
-/** Caller holds the shared guard throughout verification and unlink. Missing owned files are harmless. */
+/**
+ * Caller must hold the SAME guard used by every cooperating managed publisher
+ * of this path through verification and unlink. Observed mismatches fail closed.
+ * This is not atomic conditional unlink against writers outside that protocol.
+ */
 export function removeOwnedRunFile(path: string, expected: RunFileIdentity | undefined, guard: RunFileGuard): void {
 	guard.assertOwned();
 	const current = runFileIdentity(path);

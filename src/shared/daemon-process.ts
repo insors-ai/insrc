@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
+/** Diagnostic observation only: never a capability authorizing process termination. */
 export interface ProcessIdentity {
 	readonly pid: number;
 	readonly startedAt: string;
@@ -78,17 +79,3 @@ export function processIdentityState(target: ProcessIdentity, read: ProcessIdent
 	return current === undefined ? 'gone' : sameProcess(target, current) ? 'same' : 'replaced';
 }
 
-/** Verify the retained identity immediately before signalling; never substitute a PID-file reread. */
-export function signalVerifiedProcess(
-	target: ProcessIdentity,
-	signal: NodeJS.Signals,
-	read: ProcessIdentityReader = readProcessIdentity,
-	kill: (pid: number, signal: NodeJS.Signals) => void = process.kill,
-): boolean {
-	if (processIdentityState(target, read) !== 'same') return false;
-	try { kill(target.pid, signal); return true; }
-	catch (error) {
-		if ((error as NodeJS.ErrnoException).code === 'ESRCH') return false;
-		throw error;
-	}
-}

@@ -13,7 +13,7 @@ const children: ChildProcess[] = [];
 beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'insrc-run-files-')); });
 afterEach(() => { for (const child of children.splice(0)) child.kill('SIGKILL'); rmSync(dir, { recursive: true, force: true }); });
 
-test('guard ownership serializes acquisition and removes only captured unchanged run files', () => {
+test('managed guard serializes cooperating ownership and preserves observed replacement run files', () => {
 	const path = join(dir, 'guard'), pid = join(dir, 'daemon.pid'), socket = join(dir, 'daemon.sock');
 	writeFileSync(pid, '123');
 	const expected = runFileIdentity(pid);

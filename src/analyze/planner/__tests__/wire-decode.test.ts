@@ -127,6 +127,15 @@ test('null params including nested ones are removed before INV-5, and the adhere
 	const w = firstAttempt(whole);
 	assert.deepEqual(w.params, { other: 'kept' }, 'a null the resolved $ref refuses is removed from a whole-params slot');
 	assert.notEqual(w.invariant, 'INV-5');
+	// Unions: a null is kept where one branch admits it, removed where every branch refuses it.
+	const unions = supplied('custom.union', { type: 'object', additionalProperties: false, properties: {
+		maybe: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+		never: { anyOf: [{ type: 'string' }, { type: 'integer' }] },
+	} });
+	const { outcome: u } = await plan([unions], wirePlan('custom.union', JSON.stringify({ maybe: null, never: null })));
+	const uu = firstAttempt(u);
+	assert.deepEqual(uu.params, { maybe: null }, 'the admitted null is kept, the refused one removed');
+	assert.notEqual(uu.invariant, 'INV-5');
 });
 
 test('invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5', async () => {

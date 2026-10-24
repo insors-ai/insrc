@@ -325,6 +325,61 @@ test('claude ignores stallMs and reviewer sessions keep the first-output watchdo
 	} finally { session.cleanup(); }
 });
 
+// --- the silence limit of a reviewer session (ISSUE-562b1bb5) ------------------
+
+test('a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError', async () => {
+	// Silent from the start: killed at stallMs, though the first-output limit is a minute.
+	const silent = fakeCli([{ sleepMs: 30_000, out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: silent.bin, codexFirstOutputMs: 60_000 });
+		const t0 = Date.now();
+		await assert.rejects(
+			p.runReviewSession('P', SCHEMA, { cwd: silent.dir, deadlineMs: 20_000, stallMs: 1_000, internalRetry: false }),
+			(e: unknown) => e instanceof CliStallError,
+		);
+		assert.ok(Date.now() - t0 < 10_000, `killed at the silence limit, not the deadline (took ${Date.now() - t0}ms)`);
+		assert.equal(silent.calls().length, 1);
+	} finally { silent.cleanup(); }
+	// Model output early, then silence: the first-output watchdog would let it run; the silence limit does not.
+	const late = fakeCli([{ pre: codexSilent('t-session-late') + reasoningStarted, drip: [{ ms: 600, text: reasoningStarted }], sleepMs: 30_000, out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: late.bin, codexFirstOutputMs: 60_000 });
+		const t0 = Date.now();
+		await assert.rejects(
+			p.runReviewSession('P', SCHEMA, { cwd: late.dir, deadlineMs: 20_000, stallMs: 1_000, internalRetry: false }),
+			(e: unknown) => e instanceof CliStallError && e.sessionId === 't-session-late',
+		);
+		const took = Date.now() - t0;
+		assert.ok(took >= 1_500, `the limit restarted at the later item event, 600 ms in (took ${took}ms)`);
+		assert.ok(took < 10_000, `killed at the silence limit, not the deadline (took ${took}ms)`);
+	} finally { late.cleanup(); }
+	// A session that keeps printing within stallMs answers.
+	const busy = fakeCli([{ pre: codexSilent('t-session-busy'), drip: [1, 2, 3, 4].map(() => ({ ms: 600, text: reasoningStarted })), out: codexOk(JSON.stringify({ ok: true })) }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: busy.bin, codexFirstOutputMs: 60_000 });
+		assert.deepEqual(await p.runReviewSession('P', SCHEMA, { cwd: busy.dir, deadlineMs: 20_000, stallMs: 1_000, internalRetry: false }), { ok: true });
+	} finally { busy.cleanup(); }
+});
+
+test('a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall', async () => {
+	const slow = fakeCli([{ pre: codexSilent('t-first') + reasoningStarted, sleepMs: 2_500, out: codexOk(JSON.stringify({ ok: true })) }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: slow.bin, codexFirstOutputMs: 1_000 });
+		assert.deepEqual(await p.runReviewSession('P', SCHEMA, { cwd: slow.dir, deadlineMs: 20_000, internalRetry: false }), { ok: true });
+		assert.equal(slow.calls().length, 1);
+	} finally { slow.cleanup(); }
+	const silent = fakeCli([{ pre: codexSilent('t-first-silent'), sleepMs: 30_000, out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: silent.bin, codexFirstOutputMs: 1_000 });
+		const t0 = Date.now();
+		await assert.rejects(
+			p.runReviewSession('P', SCHEMA, { cwd: silent.dir, deadlineMs: 20_000, internalRetry: false }),
+			(e: unknown) => e instanceof CliStallError,
+		);
+		assert.ok(Date.now() - t0 < 10_000, `no model output is still cut at the first-output limit (took ${Date.now() - t0}ms)`);
+	} finally { silent.cleanup(); }
+});
+
 test('a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is', async () => {
 	const refusal = 'Error: turn/start: turn/start failed: Input exceeds the maximum length of 1048576 characters. (code -32602), data: {"input_error_code":"input_too_large","max_chars":1048576,"actual_chars":1247701}';
 	// claude: an is_error envelope saying the prompt is too long.

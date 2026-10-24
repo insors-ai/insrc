@@ -27,7 +27,7 @@ import { applyFailure, applyOutput, createReviewJob, MAX_CALL_ATTEMPTS, MAX_GATH
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { getLogger } from '../../../shared/logger.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
-import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
+import type { AdapterStage, EvidenceNote, ExecutionMode, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
 import { asSent, atom, atomIdsIn, callIdIn, drive, NOTE_SCHEMA, RELATION_SCHEMA, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, VERDICT_SCHEMA, type ToyOpts, type ToyResult } from './toy-adapter.js';
 
 test('the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens', () => {
@@ -1298,4 +1298,30 @@ test("the pipeline driver forwards a structured call's stallMs to completeStruct
 	assert.equal(seen[0]?.stallMs, 60_000);
 	assert.equal(seen[0]?.timeoutMs, 600_000);
 	assert.equal(seen[0]?.internalRetry, false);
+});
+
+test("the pipeline driver forwards a reviewer-session call's stallMs to runReviewSession", async () => {
+	const T = 1_000_000;
+	const snap = toySnapshot([atom(1)]);
+	const run = async (execution: ExecutionMode): Promise<ReviewSessionOpts[]> => {
+		const seen: ReviewSessionOpts[] = [];
+		const provider = {
+			completeStructured: async () => { throw new Error('a session review makes no structured call'); },
+			runReviewSession: async (prompt: string, _schema: unknown, o: ReviewSessionOpts) => {
+				seen.push(o);
+				return { callId: /This request's id is "([^"]+)"/.exec(prompt)![1], answer: { seen: ['a1'] } };
+			},
+		} as unknown as LLMProvider;
+		const adapter = toyAdapter(snap, { execution });
+		await runReviewJob(createReviewJob(adapter, 'daemon', snap, LIMIT, { now: T }), adapter, provider, { now: () => T });
+		return seen;
+	};
+	const withLimit = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only', stallMs: 300_000 });
+	assert.equal(withLimit.length, 1);
+	assert.equal(withLimit[0]?.stallMs, 300_000, 'the silence limit reaches the session');
+	assert.equal(withLimit[0]?.deadlineMs, 600_000);
+	assert.equal(withLimit[0]?.internalRetry, false);
+	const without = await run({ mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' });
+	assert.equal(without.length, 1);
+	assert.ok(!('stallMs' in without[0]!), 'a session without a silence limit is sent none');
 });

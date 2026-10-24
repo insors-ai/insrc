@@ -432,15 +432,20 @@ export class CliProvider implements LLMProvider {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			try {
-				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true, ...(opts.signal !== undefined ? { signal: opts.signal } : {}) });
+				return await this.reviewSessionOnce<T>(prompt, schema, {
+					cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true,
+					...(opts.stallMs !== undefined ? { stallMs: opts.stallMs } : {}),
+					...(opts.signal !== undefined ? { signal: opts.signal } : {}),
+				});
 			} catch (err) {
 				if (isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
-				// A run that never started answering is retried once, as a fresh run,
-				// inside the time that remains (ISSUE-d4b2cd1c).
+				// A run that never started answering (or, with stallMs, went silent) is
+				// retried once, as a fresh run, inside the time that remains (ISSUE-d4b2cd1c).
 				if (err instanceof CliStallError) {
+					const what = opts.stallMs !== undefined ? 'the CLI printed nothing new within its silence limit' : 'the CLI produced no model output';
 					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
-						attempt < maxAttempts ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output; giving up');
+						`runReviewSession: ${what}; ${attempt < maxAttempts ? 'retrying once inside the remaining time' : 'giving up'}`);
 					if (attempt < maxAttempts) continue;
 					throw err;
 				}
@@ -452,7 +457,7 @@ export class CliProvider implements LLMProvider {
 		}
 	}
 
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean; signal?: AbortSignal | undefined }): Promise<T> {
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean; stallMs?: number | undefined; signal?: AbortSignal | undefined }): Promise<T> {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
@@ -640,7 +645,7 @@ interface ExecOverride {
 	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
 	readonly watchStall?: boolean | undefined;
 	/** Kill a codex run that prints nothing new for this long (CliStallError).
-	 *  Set by a structured call that passes `stallMs` (ISSUE-562b1bb5); takes
+	 *  Set by a structured call or a reviewer session that passes `stallMs` (ISSUE-562b1bb5); takes
 	 *  the place of `watchStall` when both are set. */
 	readonly stallMs?: number | undefined;
 	/** Cancels the run in flight: its process group is killed and AbortError thrown (Epic 8315a11f s1). */

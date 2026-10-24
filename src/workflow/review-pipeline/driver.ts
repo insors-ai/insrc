@@ -82,7 +82,9 @@ async function send(provider: LLMProvider, call: ReviewCall, signal: AbortSignal
 			throw new Error('This review needs a reviewer session (a claude, codex or Ollama provider); the configured review provider has none.');
 		}
 		return provider.runReviewSession<unknown>(sessionPrompt(call.messages), call.schema, {
-			cwd: exec.cwd, deadlineMs: exec.deadlineMs, internalRetry: false, ...(signal !== undefined ? { signal } : {}),
+			cwd: exec.cwd, deadlineMs: exec.deadlineMs, internalRetry: false,
+			...(exec.stallMs !== undefined ? { stallMs: exec.stallMs } : {}),
+			...(signal !== undefined ? { signal } : {}),
 		});
 	}
 	return provider.completeStructured<unknown>([...call.messages], call.schema, {

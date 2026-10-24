@@ -247,6 +247,10 @@ export interface ReviewSessionOpts {
   readonly deadlineMs: number;
   /** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
   readonly internalRetry?: boolean | undefined;
+  /** Silence limit: a codex session that prints nothing new on stdout for this
+   *  long is killed (CliStallError), in place of the first-output watchdog.
+   *  Absent: the first-output watchdog, as before (ISSUE-562b1bb5). */
+  readonly stallMs?: number | undefined;
   /** Cancels the session. */
   readonly signal?: AbortSignal | undefined;
 }

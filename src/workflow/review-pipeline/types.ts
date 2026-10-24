@@ -56,7 +56,7 @@ export interface ReviewMaterial {
 export type ExecutionMode =
 	| { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined }
 	/** `deadlineMs` is the per-session limit; the job hands each session only what remains of its deadline. */
-	| { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };
+	| { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only'; readonly stallMs?: number | undefined };
 
 /** One call an adapter asks for: today's messages and schema, and how to run it. */
 export interface ChunkPrompt {

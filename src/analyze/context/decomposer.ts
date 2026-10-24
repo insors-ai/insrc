@@ -30,6 +30,7 @@ import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
+import { EXPLORATION_PARAMS, explorationParamsSchema } from '../explore/params-schema.js';
 import { getLogger } from '../../shared/logger.js';
 import type {
 	LLMMessage,
@@ -139,7 +140,9 @@ export const DECOMPOSE_SCHEMA: StructuredSchema = {
 					id:      { type: 'string', minLength: 1 },
 					type:    { type: 'string', enum: [...EXPLORATION_TYPES] },
 					purpose: { type: 'string', minLength: 1 },
-					params:  { type: 'object', additionalProperties: true },
+					// One closed branch per type, so codex's strict grammar can express it
+					// (ISSUE-8d39ef09); which branch applies is checked after the reply.
+					params:  { anyOf: EXPLORATION_TYPES.map(explorationParamsSchema) },
 					dependsOn: {
 						type:  'array',
 						items: { type: 'string', minLength: 1 },
@@ -196,15 +199,16 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 		throw errClass;
 	}
 
+	const explorations = normalizeExplorationParams(raw.explorations);
 	// Validate id ordering + dependsOn topology (schema-level checks
 	// aren't strong enough to enforce this).
-	validatePlanTopology(raw.explorations);
+	validatePlanTopology(explorations);
 
 	log.info(
 		{
 			runId:            args.runId,
 			answerType:       raw.answerType,
-			explorationCount: raw.explorations.length,
+			explorationCount: explorations.length,
 			target:           args.intent.target,
 			scope:            args.intent.scope,
 			focus:            args.intent.focus,
@@ -214,7 +218,7 @@ export async function decompose(args: DecomposeArgs): Promise<ExplorationPlan> {
 
 	return {
 		answerType:    raw.answerType,
-		explorations:  raw.explorations,
+		explorations,
 		synthesisHint: raw.synthesisHint,
 	};
 }
@@ -272,12 +276,37 @@ export function finalizeDecompose(raw: unknown): ExplorationPlan {
 	if (!result.ok) {
 		throw new DecomposerSchemaUnrecoverable(result.errors);
 	}
-	validatePlanTopology(result.value.explorations);
+	const explorations = normalizeExplorationParams(result.value.explorations);
+	validatePlanTopology(explorations);
 	return {
 		answerType:    result.value.answerType,
-		explorations:  result.value.explorations,
+		explorations,
 		synthesisHint: result.value.synthesisHint,
 	};
+}
+
+/**
+ * The params step both plan entry points run before topology validation
+ * (ISSUE-8d39ef09): a null param means absent and is removed, and a key its
+ * exploration's type does not declare is refused, since the schema's params
+ * anyOf is not tied to the sibling type. A missing required param is left for
+ * the runner, which fails only that exploration, as before.
+ */
+function normalizeExplorationParams(explorations: readonly Exploration[]): Exploration[] {
+	return explorations.map(exp => {
+		const declared = EXPLORATION_PARAMS[exp.type];
+		const params: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(exp.params ?? {})) {
+			if (value === null) continue;
+			if (declared === undefined || !(key in declared)) {
+				throw new DecomposerSchemaUnrecoverable([
+					`exploration '${exp.id}' (${exp.type}) has param '${key}', which ${exp.type} does not take`,
+				]);
+			}
+			params[key] = value;
+		}
+		return { ...exp, params };
+	});
 }
 
 // ---------------------------------------------------------------------------

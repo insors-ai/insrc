@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e739bb63-508d-41fd-b252-ced725f33777",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.959Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Editor approval prompt",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bbeb5e010c5899f141e7ada8bf1cbded5aed0f26b01bc05e49a8552f771c7591",
+        "at": "2026-10-24T07:04:50.960Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.960Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Editor approval prompt",
+    "summary": "In vscode-plugin subscribe to approval.subscribe at attach (through the controller) and show each request as a notification with Approve and Decline actions that names the tool, repository and arguments, answering through approval.answer and removing it on a cancel frame.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "the editor subscribes at attach and shows a notification for a raised request with the tool, repository and arguments",
+      "choosing Approve or Decline sends approval.answer",
+      "a cancel frame closes the notification",
+      "the stream is reopened after the daemon restarts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

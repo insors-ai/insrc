@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-82e5c5e7-6fbb-40f2-938e-e10e357f8cd2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.952Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Resolve the approval class, the effective mode and the request",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "360500f06b4ef19e53e224314cacea7fc116bb9048564004ad67ea2d1d6916f8",
+        "at": "2026-10-24T07:04:50.952Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.953Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve the approval class, the effective mode and the request",
+    "summary": "Add the pure resolution used by the executor (src/daemon/tools/approval-policy.ts): the class from the field or the per-input function (a function that throws counts as destructive; absent means none), the rule for whether to ask (destructive always; common when the effective mode, deps.approvalMode else tools.commonApproval, is manual or edit-auto; none never), and the request builder (repository from input cwd then deps.repoPath, the exact arguments truncated for display with the length noted, the preview from buildApprovalGate with a generic preview if it throws, a 300 second expiry). No broker and no IO.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "a destructive tool asks for every approvalMode, every tools.commonApproval value, any caller and any argument",
+      "a common tool asks in manual and edit-auto and not in auto, with the call's approvalMode over the flag",
+      "a throwing class function resolves to destructive",
+      "the request names the tool, the repository and the untruncated-length of large arguments",
+      "a missing buildApprovalGate or one that throws gives a generic preview"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-policy.test.ts: class resolution gives none, common, destructive, a per-input class, and destructive for a throwing function"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a destructive tool asks under every approvalMode, every flag value, any caller and any argument"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a common tool asks in manual and edit-auto, not in auto, and the call mode wins over the flag"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-policy.test.ts: the request takes the repository from input cwd then deps.repoPath, truncates large arguments and falls back to a generic preview"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

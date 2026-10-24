@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fe6091d-9ee8-4b72-a73d-b59e5c5711ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.954Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Make executeTool ask before it runs",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ae964f3424c386bd236bd7ea05c6538715d884489a26c5a6684075f83a89788e",
+        "at": "2026-10-24T07:04:50.954Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.954Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make executeTool ask before it runs",
+    "summary": "In src/daemon/tools/executor.ts run s2's input check, then the approval step from t5: ask the broker for the request, and on a decline, timeout, no client or cancel return a failed result with failure kind denied and the denial reason, without running the tool. Remove the 'auto-approving' branch. Set caller at the two ToolDeps builders that reach executeTool (src/analyze/context/driver.ts, src/agent/providers/ollama.ts). The broker is reached through a daemon-level accessor so executeTool keeps its signature.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "a declined, timed-out, no-client or cancelled answer returns failure kind denied with that reason and execute is never called",
+      "an approved call runs and returns the tool's own result unchanged",
+      "a second destructive call after an approved one asks again with a new request id",
+      "a bad input is rejected before any prompt",
+      "the 'auto-approving' log line and branch are gone",
+      "tool ids and input schemas are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: no client and a cancelled request return denied with their reasons"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: an approved call runs and returns the tool's result unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a bad input is rejected before any prompt"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

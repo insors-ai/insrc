@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9dc76bda-5530-4145-8564-8302407c73ab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.948Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Add the tools.commonApproval setting and retire permissions.mode",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cca182c51ae0cbf11f69580bfd40119b6759a7164da39ed295d95081226eb151",
+        "at": "2026-10-24T07:04:50.948Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.948Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the tools.commonApproval setting and retire permissions.mode",
+    "summary": "Add the tools.commonApproval enum entry (manual, edit-auto, auto; default auto) to src/config/config-catalog.ts with a reader the executor uses per call (an unknown value falls back to auto with a warning). Retire permissions.mode through RETIRED_PATHS and remove its type use in src/shared/types.ts, its insrc.permissions.mode contribution in vscode-plugin/package.json and its entry in site/settings.html; remove the unread approval.defaultAction and destructive.requireDoubleConfirm from src/daemon/tools/config.ts. Update the tests and fixture that assert the old state (config-catalog-contract, config-boot-reconcile, config-reconcile-smoke, daemon-defaults-literal.json and its PROVENANCE.md).",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "a fresh config gets tools.commonApproval = auto from the boot reconcile and a written value survives a reload",
+      "an unknown value reads as auto and logs a warning",
+      "permissions.mode is stripped from an existing config on reconcile and appears nowhere in the catalog, the plugin manifest or the settings page",
+      "the tests that asserted permissions.mode now assert its absence and pass",
+      "no remaining reader of approval.defaultAction or destructive.requireDoubleConfirm"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/config/__tests__/tools-common-approval.test.ts: config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload"
+      },
+      {
+        "level": "unit",
+        "name": "src/config/__tests__/tools-common-approval.test.ts: permissions.mode is stripped from an existing config and is gone from the catalog, the plugin manifest and the settings page"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

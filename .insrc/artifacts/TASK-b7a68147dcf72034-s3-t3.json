@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b5973970-1865-4a08-b08f-96f86cbb6efb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.949Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Build the approval broker",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "526a2453a341490c18c802d7e9751dd04672875f4f6a98e96f8b603e7c8032cd",
+        "at": "2026-10-24T07:04:50.949Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.950Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the approval broker",
+    "summary": "Add the daemon-owned broker (src/daemon/approval-broker.ts): a pending table keyed by requestId with a resolver and a 300 second timer, the set of open approval streams, ask(request) resolving to an answer or an ApprovalDenial (no-client at once with no stream open, timed-out at expiry, declined, cancelled when the caller's signal aborts, which also sends the subscribers a cancel frame), answer(requestId, decision) where the first answer wins and an unknown or already answered id is refused, replay of still-pending requests to a late subscriber, and no-client for every pending request when the last stream closes. It never rejects.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "ask() with no open stream resolves no-client without waiting",
+      "an unanswered request resolves timed-out at its expiry and a late answer is ignored",
+      "two subscribers: the first answer wins and the second is told accepted false",
+      "closing the last stream resolves every pending request to no-client",
+      "an aborted caller signal resolves cancelled and removes the request",
+      "the broker holds no state across a restart and never rejects"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an answered request resolves approved and a declined one resolves declined"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: no open stream resolves no-client at once"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: with two subscribers the first answer wins and the second is refused"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: closing the last stream resolves every pending request to no-client"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an aborted caller signal resolves cancelled and sends the subscribers a cancel frame"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/__tests__/approval-broker.test.ts: a late subscriber receives the still-pending requests"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

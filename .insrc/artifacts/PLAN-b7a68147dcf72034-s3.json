@@ -1,0 +1,590 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792764450335-oq23v3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-23T14:12:05.688Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 270283,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s3",
+    "lldRunId": "wf-1792753489483-m36f90",
+    "lldEffectiveHash": "49d9b4a4eaf49a4ea089366bc177dcf5b15c8736c685b2f7d5791b69785d2a00",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "87f1e697ba6be77f10c1708376b635c8fe0da826f7a072f82b3060252f0c3918",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:49.335Z"
+      }
+    },
+    "rangeBase": "c2af536a43c4b9e7329ab6613adae9f14a0095a3"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build lays down the approval types and the setting first, then the daemon-side broker and its IPC, then the pure policy and the executor change, then the mechanical rewrite of about a hundred builtins behind a before/after snapshot, and last the client prompts and docs. The destructive-always-asks rule is proved at three levels: the pure policy, the executor with a fake broker, and a mode by tool-class matrix through the real executor and broker."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare the approval types and the new Tool and ToolDeps fields",
+        "summary": "Add ApprovalClass (none, common, destructive), CommonApprovalMode (manual, edit-auto, auto), ApprovalRequest { requestId, toolId, approvalClass, repoPath, arguments, preview, reason, expiresAt }, ApprovalAnswer, ApprovalDenial (declined, timed-out, no-client, cancelled) and ApprovalGate beside the s2 types in src/daemon/tools, plus the optional Tool.approval (a class or a per-input function) and the optional ToolDeps.caller ('agent' | 'daemon' | 'workflow') and approvalMode. requiresApproval and destructive stay for now, so nothing else changes.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "npm run build compiles with the four ToolDeps builders and every builtin unchanged",
+          "ApprovalDenial has exactly declined, timed-out, no-client and cancelled and is assignable to s2's ToolDenialReason",
+          "no existing Tool, ToolResult or ToolDeps field changes meaning, and tool ids and input schemas are unchanged"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-types.test.ts: ApprovalDenial holds exactly the four values and ToolDeps accepts caller and approvalMode"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the tools.commonApproval setting and retire permissions.mode",
+        "summary": "Add the tools.commonApproval enum entry (manual, edit-auto, auto; default auto) to src/config/config-catalog.ts with a reader the executor uses per call (an unknown value falls back to auto with a warning). Retire permissions.mode through RETIRED_PATHS and remove its type use in src/shared/types.ts, its insrc.permissions.mode contribution in vscode-plugin/package.json and its entry in site/settings.html; remove the unread approval.defaultAction and destructive.requireDoubleConfirm from src/daemon/tools/config.ts. Update the tests and fixture that assert the old state (config-catalog-contract, config-boot-reconcile, config-reconcile-smoke, daemon-defaults-literal.json and its PROVENANCE.md).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a fresh config gets tools.commonApproval = auto from the boot reconcile and a written value survives a reload",
+          "an unknown value reads as auto and logs a warning",
+          "permissions.mode is stripped from an existing config on reconcile and appears nowhere in the catalog, the plugin manifest or the settings page",
+          "the tests that asserted permissions.mode now assert its absence and pass",
+          "no remaining reader of approval.defaultAction or destructive.requireDoubleConfirm"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/config/__tests__/tools-common-approval.test.ts: config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload"
+          },
+          {
+            "level": "unit",
+            "name": "src/config/__tests__/tools-common-approval.test.ts: permissions.mode is stripped from an existing config and is gone from the catalog, the plugin manifest and the settings page"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Build the approval broker",
+        "summary": "Add the daemon-owned broker (src/daemon/approval-broker.ts): a pending table keyed by requestId with a resolver and a 300 second timer, the set of open approval streams, ask(request) resolving to an answer or an ApprovalDenial (no-client at once with no stream open, timed-out at expiry, declined, cancelled when the caller's signal aborts, which also sends the subscribers a cancel frame), answer(requestId, decision) where the first answer wins and an unknown or already answered id is refused, replay of still-pending requests to a late subscriber, and no-client for every pending request when the last stream closes. It never rejects.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "ask() with no open stream resolves no-client without waiting",
+          "an unanswered request resolves timed-out at its expiry and a late answer is ignored",
+          "two subscribers: the first answer wins and the second is told accepted false",
+          "closing the last stream resolves every pending request to no-client",
+          "an aborted caller signal resolves cancelled and removes the request",
+          "the broker holds no state across a restart and never rejects"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an answered request resolves approved and a declined one resolves declined"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: no open stream resolves no-client at once"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an unanswered request resolves timed-out at expiry and a late answer is ignored"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: with two subscribers the first answer wins and the second is refused"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: closing the last stream resolves every pending request to no-client"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: an aborted caller signal resolves cancelled and sends the subscribers a cancel frame"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-broker.test.ts: a late subscriber receives the still-pending requests"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Expose the broker over IPC",
+        "summary": "Register the approval.subscribe stream handler (pushes 'gate' frames, replays pending requests, closes with the socket) and the approval.answer RPC ({ requestId, decision } returning { accepted }) in src/daemon/index.ts against the single broker created at daemon start, and add the frame and method shapes to src/shared/types.ts. The gate.request-permission stub stays. Prove the exchange over the real unix-socket server with the real broker: a client attaches, sees the exact call and answers over its own connection.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "a client that opens approval.subscribe receives a gate frame for a pending request and its approval.answer resolves the request",
+          "a client that subscribes after the request was raised receives it",
+          "an answer for an unknown request id returns accepted false",
+          "disconnecting the only subscriber resolves pending requests to no-client",
+          "an integration test over the real unix-socket server and the real broker shows a client seeing the exact call and answering over its connection"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a subscribed client receives the gate frame for a pending request and its answer resolves it"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: an answer for an unknown request id returns accepted false"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: disconnecting the only subscriber resolves pending requests to no-client"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a cancelled request sends a cancel frame over the socket"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Resolve the approval class, the effective mode and the request",
+        "summary": "Add the pure resolution used by the executor (src/daemon/tools/approval-policy.ts): the class from the field or the per-input function (a function that throws counts as destructive; absent means none), the rule for whether to ask (destructive always; common when the effective mode, deps.approvalMode else tools.commonApproval, is manual or edit-auto; none never), and the request builder (repository from input cwd then deps.repoPath, the exact arguments truncated for display with the length noted, the preview from buildApprovalGate with a generic preview if it throws, a 300 second expiry). No broker and no IO.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a destructive tool asks for every approvalMode, every tools.commonApproval value, any caller and any argument",
+          "a common tool asks in manual and edit-auto and not in auto, with the call's approvalMode over the flag",
+          "a throwing class function resolves to destructive",
+          "the request names the tool, the repository and the untruncated-length of large arguments",
+          "a missing buildApprovalGate or one that throws gives a generic preview"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: class resolution gives none, common, destructive, a per-input class, and destructive for a throwing function"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a destructive tool asks under every approvalMode, every flag value, any caller and any argument"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: a common tool asks in manual and edit-auto, not in auto, and the call mode wins over the flag"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-policy.test.ts: the request takes the repository from input cwd then deps.repoPath, truncates large arguments and falls back to a generic preview"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Make executeTool ask before it runs",
+        "summary": "In src/daemon/tools/executor.ts run s2's input check, then the approval step from t5: ask the broker for the request, and on a decline, timeout, no client or cancel return a failed result with failure kind denied and the denial reason, without running the tool. Remove the 'auto-approving' branch. Set caller at the two ToolDeps builders that reach executeTool (src/analyze/context/driver.ts, src/agent/providers/ollama.ts). The broker is reached through a daemon-level accessor so executeTool keeps its signature.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "a declined, timed-out, no-client or cancelled answer returns failure kind denied with that reason and execute is never called",
+          "an approved call runs and returns the tool's own result unchanged",
+          "a second destructive call after an approved one asks again with a new request id",
+          "a bad input is rejected before any prompt",
+          "the 'auto-approving' log line and branch are gone",
+          "tool ids and input schemas are unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a declined call returns a denied failure with reason declined and execute is never called"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a timed-out call returns a denied failure with reason timed-out and the tool is not run"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: no client and a cancelled request return denied with their reasons"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: an approved call runs and returns the tool's result unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a second destructive call after an approved one raises its own request with a new id"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/executor-approval.test.ts: a bad input is rejected before any prompt"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Map every builtin onto the approval field",
+        "summary": "Rewrite the builtins: requiresApproval true becomes approval 'common', each of the 7 predicates becomes a per-input function returning common or none, requiresApproval false or absent becomes none (the field is dropped), and the 8 destructive: true builtins (cloud az/vm, k8s, aws s3, gcp compute, aws cloudformation, gcp run, gcp storage, aws ec2) become approval 'destructive'. Include src/docgen/tool.ts. Then remove requiresApproval and destructive from the Tool type. A script-assisted, mechanical change that keeps every tool id and input schema; a snapshot of tool id, input schema and old flag taken before the rewrite is kept as a test fixture.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "no file under src declares requiresApproval or destructive",
+          "every former requiresApproval true tool is common, every predicate tool is per-input, every former false or absent tool resolves to none (no read-only tool asks)",
+          "the 8 destructive builtins resolve to destructive",
+          "the snapshot taken before the rewrite matches the new approval field for every tool, and the list of tool ids and input schemas is identical",
+          "npm run build and the existing builtin tests pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: every former requiresApproval true builtin is common, every predicate one is per-input, and every former false or absent tool resolves to none"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the eight destructive builtins are destructive"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: no builtin still declares requiresApproval or destructive"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add an optional streaming method to IpcClient",
+        "summary": "Add an optional stream method to the IpcClient interface and its implementation in src/shared/ipc-client.ts (open a stream request, deliver frames to a callback, return a handle that closes the socket), modelled on src/mcp/daemon-stream.ts. It is optional so the IpcClient test doubles (per-role-engine, registrar, activation and controller tests) keep compiling; only subscribing modules check for it.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a client opens a stream, receives the frames the daemon pushes and closes it",
+          "closing the handle closes the socket and the server aborts the handler",
+          "the existing IpcClient test doubles compile unchanged"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/shared/__tests__/ipc-client-stream.test.ts: a client opens a stream, receives the pushed frames and closes it"
+          },
+          {
+            "level": "integration",
+            "name": "src/shared/__tests__/ipc-client-stream.test.ts: closing the handle aborts the server's stream handler"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Terminal client approval prompt",
+        "summary": "In the ink TUI (src/cli) add a service that opens approval.subscribe at attach and a view that shows each pending request inline (tool, repository, exact arguments, preview, time left) with approve and decline keys, answering through approval.answer and dropping the prompt on a cancel frame. Reconnect after a daemon restart.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the client subscribes at attach and shows the tool, repository and arguments of a raised request",
+          "approve and decline send approval.answer with the request id",
+          "a cancel frame removes the prompt",
+          "the stream is reopened after the daemon restarts"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer"
+          },
+          {
+            "level": "integration",
+            "name": "src/cli/services/__tests__/approval-subscribe.test.ts: a cancel frame removes the prompt and the stream is reopened after a restart"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Editor approval prompt",
+        "summary": "In vscode-plugin subscribe to approval.subscribe at attach (through the controller) and show each request as a notification with Approve and Decline actions that names the tool, repository and arguments, answering through approval.answer and removing it on a cancel frame.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the editor subscribes at attach and shows a notification for a raised request with the tool, repository and arguments",
+          "choosing Approve or Decline sends approval.answer",
+          "a cancel frame closes the notification",
+          "the stream is reopened after the daemon restarts"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: the editor and chat client receive a gate frame, show the exact call and send approval.answer"
+          },
+          {
+            "level": "integration",
+            "name": "vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts: a cancel frame closes the notification and the stream is reopened after a restart"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Docs, the ac6 matrix and the s7 requirement",
+        "summary": "Update docs/daemon.md with the approval exchange, the tools.commonApproval setting, the class mapping and the retirement of permissions.mode; add the mode x tool-class matrix test that pins the DEF ac6 reading across the real executor and broker; record in docs/plans/tool-registry.md what s7 must build against (the tool-call IPC carries caller and optional approvalMode, and a chat sends its session's PermissionMode as approvalMode).",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t7",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "docs/daemon.md describes the exchange, the setting and the class mapping",
+          "the matrix test asserts the ask rule for every mode against none, common and destructive tools through the real executor and broker",
+          "docs/plans/tool-registry.md states what s7 must build against"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/tools/__tests__/approval-matrix.test.ts: every mode against none, common and destructive tools asks exactly as the ac6 reading says, through the real executor and broker"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "approval broker ask(): answered, declined, timed-out, no-client, late answer, first answer wins, abort resolves cancelled",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "executor class resolution: none, common, destructive, per-input function, throwing function",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "effective-mode rule for the common class: call mode over global flag, default auto",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "config catalog entry tools.commonApproval: default auto, an unknown value falls back to auto with a warning, and a value written to config.json is read back after a reload (it survives a restart)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "request building: repoPath from input cwd then deps.repoPath, preview fallback, argument truncation",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "approval.subscribe stream and approval.answer RPC against src/daemon/server.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "late subscriber receives still-pending requests",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "all subscribers disconnecting resolves pending requests to no-client",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "caller signal abort sends a cancel frame",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "terminal client and editor/chat client: receive a gate frame, render tool, repository and arguments, answer through approval.answer",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "every builtin that had requiresApproval true maps to common, a predicate to a per-input class, and every one that had false or absent resolves to none",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the eight destructive:true builtins map to destructive",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "no builtin still declares requiresApproval or destructive",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "type test: ToolDeps accepts caller and approvalMode; the destructive path does not read them",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 executeTool, Tool.approval and Tool.buildApprovalGate (contract 2)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 ApprovalGate.ask, the broker and its IPC methods (contract 2 and data model 3.4, 3.6)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 data model changes: Tool.approval, ToolDeps, the request types and tools.commonApproval (section 3)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 error paths, edge cases and invariants (section 5)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 test strategy (section 6)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration steps (section 7)"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md#s3-lld-review-2026-10-23-six-rounds-approved-with-override"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 interaction with shared contracts and the client call sites (sections 3.6 and 4)"
+    }
+  ]
+}

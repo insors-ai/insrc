@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2e39ff02-8cc6-42f7-bac1-465be7a52557",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.951Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Expose the broker over IPC",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb4088ebd5e9fde3a40c80b6d8690c0b77066f577d8b9ac30306256f9496fc9c",
+        "at": "2026-10-24T07:04:50.951Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.951Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose the broker over IPC",
+    "summary": "Register the approval.subscribe stream handler (pushes 'gate' frames, replays pending requests, closes with the socket) and the approval.answer RPC ({ requestId, decision } returning { accepted }) in src/daemon/index.ts against the single broker created at daemon start, and add the frame and method shapes to src/shared/types.ts. The gate.request-permission stub stays. Prove the exchange over the real unix-socket server with the real broker: a client attaches, sees the exact call and answers over its own connection.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a client that opens approval.subscribe receives a gate frame for a pending request and its approval.answer resolves the request",
+      "a client that subscribes after the request was raised receives it",
+      "an answer for an unknown request id returns accepted false",
+      "disconnecting the only subscriber resolves pending requests to no-client",
+      "an integration test over the real unix-socket server and the real broker shows a client seeing the exact call and answering over its connection"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a subscribed client receives the gate frame for a pending request and its answer resolves it"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a client that subscribes after the request was raised receives it and answers with approval.answer"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: an answer for an unknown request id returns accepted false"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: disconnecting the only subscriber resolves pending requests to no-client"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/approval-ipc.test.ts: a cancelled request sends a cancel frame over the socket"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

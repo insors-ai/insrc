@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cf868997-5d2b-4cfa-9d30-78942c4a54de",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T07:04:50.958Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Terminal client approval prompt",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "af5dd0198a51e528e6f16a40d9fb31c7af3439dc661c79670ea016ef2b357a24",
+        "at": "2026-10-24T07:04:50.958Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T07:04:50.959Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Terminal client approval prompt",
+    "summary": "In the ink TUI (src/cli) add a service that opens approval.subscribe at attach and a view that shows each pending request inline (tool, repository, exact arguments, preview, time left) with approve and decline keys, answering through approval.answer and dropping the prompt on a cancel frame. Reconnect after a daemon restart.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "the client subscribes at attach and shows the tool, repository and arguments of a raised request",
+      "approve and decline send approval.answer with the request id",
+      "a cancel frame removes the prompt",
+      "the stream is reopened after the daemon restarts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/cli/services/__tests__/approval-subscribe.test.ts: the terminal client receives a gate frame, shows the tool, repository and arguments, and sends approval.answer"
+      },
+      {
+        "level": "integration",
+        "name": "src/cli/services/__tests__/approval-subscribe.test.ts: a cancel frame removes the prompt and the stream is reopened after a restart"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

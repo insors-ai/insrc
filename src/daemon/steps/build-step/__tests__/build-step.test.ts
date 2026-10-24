@@ -21,9 +21,9 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
-import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
+import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests, JUDGE_DEADLINE_MS } from '../phases/validate.js';
 import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
-import { ReviewSessionTimeoutError } from '../../../../agent/providers/cli-provider.js';
+import { ReviewSessionTimeoutError, type ReviewSessionOpts } from '../../../../agent/providers/cli-provider.js';
 import { approveArtifactByJsonPath, jsonPathForMd } from '../../../../workflow/gates.js';
 import { ARTIFACTS_DIR, buildArtifactPaths, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
@@ -270,6 +270,28 @@ test('validate: a failing judge verdict gives passed:false', async () => {
 		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
 		assert.equal(out['next'], 'done');
 		assert.equal(out['passed'], false);
+	} finally {
+		_setBuildValidateProviderForTests(undefined);
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS', async () => {
+	const repo = mkRepo();
+	try {
+		seedDef(repo);
+		seedLld(repo);
+		seedPlan(repo, true);
+		const seen: ReviewSessionOpts[] = [];
+		_setBuildValidateProviderForTests({
+			async runReviewSession<T>(_prompt: string, _schema: unknown, opts: ReviewSessionOpts) { seen.push(opts); return judgeVerdict({ taskId: 't1', passed: true }) as T; },
+		});
+		const out = outputOf(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo }));
+		assert.equal(out['next'], 'done');
+		assert.equal(seen.length, 1);
+		assert.equal(seen[0]?.stallMs, 90_000, "the build-validate row's silence limit");
+		assert.equal(seen[0]?.deadlineMs, JUDGE_DEADLINE_MS);
+		assert.equal(JUDGE_DEADLINE_MS, 300_000);
 	} finally {
 		_setBuildValidateProviderForTests(undefined);
 		rmSync(repo, { recursive: true, force: true });

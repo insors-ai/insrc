@@ -33,6 +33,7 @@ import { runReviewJob } from './driver.js';
 import { getLogger } from '../../shared/logger.js';
 import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
+import { structuredLimits } from '../review/call-limits.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
 
 const log = getLogger('review-pipeline:code-review');
@@ -152,7 +153,7 @@ function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: Re
  */
 export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
-	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
+	const execution = { mode: 'structured' as const, cwd: subject.repoPath, ...structuredLimits('code-review') };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
 	// obligations and their context. From the snapshot and the saved subject only, so it
 	// is built once and every caller reads the same material: the pipeline asks for it
@@ -231,7 +232,7 @@ export function deterministicDimensionAdapter(spec: DeterministicDimensionSpec, 
 			? [{ id: 'run', kind: 'deterministic', after: [], onCallFailure: spec.onFailure ?? 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async (_prior, snap) => spec.run(snap, grounding) }]
 			: [{
 				id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review', chunkCalls: () => [],
-				singleCalls: () => [{ messages: spec.controllerPrompt(grounding), schema: CONTROLLER_FINDINGS_SCHEMA, execution: { mode: 'structured', cwd: subject.repoPath } }],
+				singleCalls: () => [{ messages: spec.controllerPrompt(grounding), schema: CONTROLLER_FINDINGS_SCHEMA, execution: { mode: 'structured', cwd: subject.repoPath, ...structuredLimits('code-review') } }],
 			}],
 		finish: (outputs, ctx) => {
 			if (outputs['run'] !== undefined) return outputs['run'] as DimensionResult;

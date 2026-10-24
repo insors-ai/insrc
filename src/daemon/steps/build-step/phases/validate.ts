@@ -33,6 +33,7 @@ import {
 import { collectBuildChangeLog } from '../../../../workflow/runners/build/changed-files.js';
 import { mergeInProgress } from '../../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../../workflow/gates.js';
+import { REVIEW_CALL_LIMITS } from '../../../../workflow/review/call-limits.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../../workflow/storage.js';
 import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
@@ -86,7 +87,7 @@ export function _setBuildValidateTestRecordWriterForTests(writer: typeof persist
 }
 
 /** Time the judge session may take, its one retry included. */
-const JUDGE_DEADLINE_MS = 300_000;
+export const JUDGE_DEADLINE_MS = 300_000;
 
 /** What the judge returns. testsPassed / typecheckClean are NOT asked of it:
  *  the daemon supplies both from its own check results. */
@@ -449,7 +450,7 @@ async function runValidateSession(
 		log.info({ taskId: ident.taskId, storyId: ident.storyId }, 'insrc_build_step[validate]: running judge session');
 		let judged: unknown;
 		try {
-			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS });
+			judged = await provider.runReviewSession<unknown>(prompt(renderCheckEvidence(results)), JUDGE_VERDICT_SCHEMA, { cwd: repoPath, deadlineMs: JUDGE_DEADLINE_MS, stallMs: REVIEW_CALL_LIMITS['build-validate'].silenceMs });
 		} catch (e) {
 			const message = e instanceof Error ? e.message : String(e);
 			if (e instanceof ReviewSessionTimeoutError) {

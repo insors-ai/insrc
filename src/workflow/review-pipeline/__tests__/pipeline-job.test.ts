@@ -451,7 +451,7 @@ test("runStage commits a deterministic stage's output; extract claims and probe 
 	assert.deepEqual(job.snapshot.evidence, [{ for: 'p1', hits: 1 }, { for: 'p2', hits: 1 }]);
 	assert.equal(job.stage, 'verify');
 	await assert.rejects(runStage(job, premiseAdapter(job.snapshot, probe)), /model stage/);
-	// Verify: one call per claim, keyed, with the 3-minute limit, built from the snapshot alone.
+	// Verify: one call per claim, keyed, with a per-call limit, built from the snapshot alone.
 	const verifies = nextCalls(job, premiseAdapter(job.snapshot, probe));
 	assert.deepEqual(verifies.map(c => c.carries.key), ['p1', 'p2']);
 	assert.ok(verifies.every(c => c.execution.mode === 'structured' && c.execution.timeoutMs === 180_000));

@@ -8,8 +8,8 @@
  *
  * Premise review (DEF, plan, ...): extract (a model stage; failing it fails the
  * review), probe (a deterministic stage over the claims), then verify. On the
- * daemon path verify is one call per premise with the 3-minute limit and the
- * repo as cwd, and a premise whose call fails twice is recorded as not judged;
+ * daemon path verify is one call per premise with the design-verify limits and the
+ * repo as cwd, and a premise whose call is exhausted is recorded as not judged;
  * on the controller path it is today's one batched verify call. The claims and
  * the evidence enter the snapshot once, and verify reads them from there.
  *
@@ -28,7 +28,8 @@ import {
 	buildTemplateReviewPrompt, TEMPLATE_ANSWER_SCHEMA, validateTemplateAnswer, type RawTemplateAnswer, type ReviewTemplate,
 } from '../review/template.js';
 import type { Claim, Evidence, Finding } from '../review/types.js';
-import { buildBatchedVerifyPrompt, buildVerifyPrompt, normalizeFinding, VERDICTS_SCHEMA, VERIFY_CALL_TIMEOUT_MS, VERIFY_SCHEMA, type RawFinding } from '../review/verify.js';
+import { REVIEW_CALL_LIMITS, structuredLimits } from '../review/call-limits.js';
+import { buildBatchedVerifyPrompt, buildVerifyPrompt, normalizeFinding, VERDICTS_SCHEMA, VERIFY_SCHEMA, type RawFinding } from '../review/verify.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import { attemptsText } from './job.js';
 import type { AdapterStage, NotJudged, ReviewAdapter, ReviewMaterialSnapshot, StageAnswer, StageOutputs } from './types.js';
@@ -79,7 +80,7 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		// Today's extract prompt; like every structured review call, it runs in the repository (HLD).
 		singleCalls: () => {
 			const { system, user } = buildExtractPrompt(document, opts.stage);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo } }];
+			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-extract') } }];
 		},
 		chunkCalls: () => [],
 		snapshotField: 'claims',
@@ -99,13 +100,13 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 		((snap.evidence ?? []) as Evidence[]).find(e => e.claimId === claim.id) ?? { claimId: claim.id, grepResults: [], reads: [] };
 	const verifyDaemon: AdapterStage = {
 		id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'record-not-judged',
-		// One call per premise, in claim order, with the 3-minute limit; the repo as cwd is an addition.
+		// One call per premise, in claim order, with the design-verify limits; the repo as cwd is an addition.
 		singleCalls: (_prior, snap) => ((snap.claims ?? []) as Claim[]).map(claim => {
 			const { system, user } = buildVerifyPrompt(claim, evidenceFor(snap, claim));
 			return {
 				key: claim.id, schema: VERIFY_SCHEMA,
 				messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-				execution: { mode: 'structured', cwd: opts.repo, timeoutMs: VERIFY_CALL_TIMEOUT_MS },
+				execution: { mode: 'structured', cwd: opts.repo, ...structuredLimits('design-verify') },
 			};
 		}),
 		chunkCalls: () => [],
@@ -165,7 +166,7 @@ export function templateCorrection(errors: readonly string[]): string {
 /** The template review's adapter; its result is the checklist's findings. */
 export function templateAdapter(snapshot: ReviewMaterialSnapshot, opts: TemplateAdapterOpts): ReviewAdapter<readonly Finding[]> {
 	const { system, user } = buildTemplateReviewPrompt(opts.template, snapshot.documentText ?? '', opts.stage);
-	const execution = { mode: 'reviewer-session' as const, cwd: opts.repo, deadlineMs: opts.limitMs, tools: 'read-only' as const };
+	const execution = { mode: 'reviewer-session' as const, cwd: opts.repo, deadlineMs: opts.limitMs, tools: 'read-only' as const, stallMs: REVIEW_CALL_LIMITS['design-session'].silenceMs };
 	const session: AdapterStage = {
 		id: 'template', kind: 'model', after: [], onCallFailure: 'fail-review',
 		singleCalls: () => [{ messages: [{ role: 'user', content: `${system}\n\n${user}` }], schema: TEMPLATE_ANSWER_SCHEMA as unknown as StructuredSchema, execution }],

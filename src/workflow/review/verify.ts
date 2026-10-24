@@ -29,6 +29,7 @@
  */
 
 import { getLogger } from '../../shared/logger.js';
+import { REVIEW_CALL_LIMITS } from './call-limits.js';
 import type { LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type {
 	ArtifactEdit, Claim, Evidence, Finding, Fixability, ProposedFix, Severity,
@@ -207,13 +208,11 @@ export { renderEvidence };
  * Judge one claim against its gathered evidence. One structured LLM call;
  * evidence is placed at the prompt tail.
  */
-/**
- * The wall-clock cap of one premise judgement. A judgement normally returns in
- * well under a minute; a call that is still silent after this is treated as
- * stalled and retried by the review (ISSUE-d4b2cd1c), instead of holding the
- * whole review for the provider's 10-minute default.
- */
-export const VERIFY_CALL_TIMEOUT_MS = 180_000;
+/** The total cap of one premise judgement: the design-verify row of REVIEW_CALL_LIMITS. */
+export const VERIFY_CALL_TIMEOUT_MS = REVIEW_CALL_LIMITS['design-verify'].timeoutMs!;
+/** Its silence limit: a judgement that prints nothing new for this long is killed as
+ *  stalled and re-issued by the review (ISSUE-562b1bb5). The design-verify row too. */
+export const VERIFY_CALL_STALL_MS = REVIEW_CALL_LIMITS['design-verify'].silenceMs!;
 
 export async function verifyClaim(
 	claim:    Claim,
@@ -230,7 +229,7 @@ export async function verifyClaim(
 	const raw = await provider.completeStructured<RawFinding>(
 		messages,
 		VERIFY_SCHEMA,
-		{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, ...(signal !== undefined ? { signal } : {}) },
+		{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, stallMs: VERIFY_CALL_STALL_MS, ...(signal !== undefined ? { signal } : {}) },
 	);
 
 	const finding = normalizeFinding(claim, raw);

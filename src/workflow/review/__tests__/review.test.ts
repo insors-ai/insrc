@@ -31,7 +31,7 @@ import { gatherEvidence } from '../probe.js';
 import { runReview } from '../review.js';
 import { renderReviewReport } from '../report.js';
 import type { Claim } from '../types.js';
-import { VERIFY_CALL_TIMEOUT_MS } from '../verify.js';
+import { VERIFY_CALL_STALL_MS, VERIFY_CALL_TIMEOUT_MS } from '../verify.js';
 import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 // The probe uses the shared `runGrepSearch` backend (ripgrep when present,
@@ -399,14 +399,14 @@ test('a premise call that fails twice is recorded as not judged, never as a pass
 	} finally { cleanup(); }
 });
 
-test('every premise judgement carries a per-call limit well under the provider default', async () => {
+test('every premise judgement carries the design-verify cap and silence limit', async () => {
 	const { repo, cleanup } = makeRepo();
 	try {
 		const s = stallingProvider(0);
 		await runReview(ARTIFACT, { repo, stage: 'plan', provider: s.provider, ...BASE_OPTS });
 		assert.equal(s.verifyOpts.length, 3);
-		for (const o of s.verifyOpts) assert.equal(o.timeoutMs, VERIFY_CALL_TIMEOUT_MS);
-		assert.ok(VERIFY_CALL_TIMEOUT_MS <= 180_000);
+		for (const o of s.verifyOpts) assert.deepEqual([o.timeoutMs, o.stallMs], [VERIFY_CALL_TIMEOUT_MS, VERIFY_CALL_STALL_MS]);
+		assert.deepEqual([VERIFY_CALL_TIMEOUT_MS, VERIFY_CALL_STALL_MS], [600_000, 90_000]);
 	} finally { cleanup(); }
 });
 

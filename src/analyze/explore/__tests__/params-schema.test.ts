@@ -45,25 +45,33 @@ test('each branch is closed, requires no param, and admits null and a placeholde
 	}
 });
 
-/** Every `params: {...}` example in the decomposer prompt's catalog, with the type it documents. */
+/** Every `params: {...}` example in the decomposer prompt's catalog (single- or multi-line), with the type it documents. */
 function documentedExamples(): { type: string; params: unknown }[] {
 	const prompt = readFileSync(join(process.cwd(), 'src/prompts/analyze/decompose.system.md'), 'utf8');
-	const catalog = prompt.slice(prompt.indexOf('## Exploration catalog'));
+	const catalog = prompt.slice(prompt.indexOf('## Exploration catalog'), prompt.indexOf('## When to reach for'));
 	const out: { type: string; params: unknown }[] = [];
-	let current: string | undefined;
-	for (const line of catalog.split('\n')) {
-		const heading = /^- \*\*`([a-z.-]+)`\*\*/.exec(line);
-		if (heading !== null) { current = heading[1]; continue; }
-		const example = /params:\s*(\{.*\})\s*$/.exec(line);
-		if (example !== null && current !== undefined) out.push({ type: current, params: JSON.parse(example[1]!) });
-	}
+	const headings = [...catalog.matchAll(/^- \*\*`([a-z.-]+)`\*\*/gm)];
+	headings.forEach((h, i) => {
+		const section = catalog.slice(h.index, headings[i + 1]?.index ?? catalog.length);
+		for (const m of section.matchAll(/params:\s*\{/g)) {
+			// Take the object from its opening brace to the matching close, across lines.
+			const start = m.index + m[0].length - 1;
+			let depth = 0;
+			let end = start;
+			for (; end < section.length; end++) {
+				if (section[end] === '{') depth++;
+				else if (section[end] === '}' && --depth === 0) break;
+			}
+			out.push({ type: h[1]!, params: JSON.parse(section.slice(start, end + 1)) });
+		}
+	});
 	return out;
 }
 
 test("every documented params example in the decomposer prompt validates against its type's branch", () => {
 	const examples = documentedExamples();
 	const types = new Set(explorationTypes());
-	assert.ok(examples.length >= 20, `the catalog's examples were found (${examples.length})`);
+	assert.deepEqual([...new Set(examples.map(e => e.type))].sort(), [...types].sort(), 'every exploration type has a documented example, and every example names a type');
 	for (const { type, params } of examples) {
 		assert.ok(types.has(type as ExplorationType), `${type} is an exploration type`);
 		const r = validateAgainstSchema(explorationParamsSchema(type as ExplorationType), params);

@@ -474,6 +474,8 @@ Each existing tool's `approval` becomes a function of the input as listed under 
   - **ignored**: left to implementer judgment — Schema note; the invariants are explicit in the LLD _(2026-10-24T18:11:53.607Z)_
 - `q1c7e28d9` — alt2 (partial): k1, k3, k4 and k6 were not scored per alternative; none of them is touched by the choice between the three shapes.
   - **resolved**: Record as non-discriminating — k1, k3, k4, k6 are not touched by the choice between the three shapes _(2026-10-24T18:13:40.476Z)_
+- `q893aa254` — sbdry3 (partial): the Story says 'each mutating operation is a distinct tool the rules can see' while ac4 keeps the seven multi-operation ids; the LLD keeps the ids and lets a rule filter on input.op. Confirm this reading at approval.
+  - **resolved**: Keep IDs; filter by operation — Confirmed by the user on 2026-10-24: a rule for one operation filters on input.op; ac4 keeps the seven multi-operation ids _(2026-10-24T18:15:15.741Z)_
 
 ## Citations
 

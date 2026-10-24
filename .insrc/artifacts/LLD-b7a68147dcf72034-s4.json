@@ -98,6 +98,13 @@
         "choice": "Record as non-discriminating",
         "rationale": "k1, k3, k4, k6 are not touched by the choice between the three shapes",
         "resolvedAt": "2026-10-24T18:13:40.476Z"
+      },
+      "q893aa254": {
+        "question": "sbdry3 (partial): the Story says 'each mutating operation is a distinct tool the rules can see' while ac4 keeps the seven multi-operation ids; the LLD keeps the ids and lets a rule filter on input.op. Confirm this reading at approval.",
+        "status": "resolved",
+        "choice": "Keep IDs; filter by operation",
+        "rationale": "Confirmed by the user on 2026-10-24: a rule for one operation filters on input.op; ac4 keeps the seven multi-operation ids",
+        "resolvedAt": "2026-10-24T18:15:15.741Z"
       }
     }
   },

@@ -47,6 +47,8 @@ import {
 import { allocateEntityIdInTxn } from './graph/ids.js';
 import {
 	encodeEntityKey,
+	encodeEntityFileKey,
+	absoluteEntityFilePath as toAbsolutePath,
 	encodeOutEdgePrefix,
 	encodeInEdgePrefix,
 	encodeNameIndexKey,
@@ -268,6 +270,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 				const prevBuf = s.entity.get(encodeEntityKey(existingU64));
 				const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 				s.entity.put(encodeEntityKey(existingU64), encodeEntityRow(row));
+				rewireMembershipsInTxn(s, existingU64, prev, row);
 				// Reconcile name_index: drop the prior (repo, kind, name)
 				// entry if any of those identity fields changed, then
 				// rewrite the new one. Idempotent for unchanged rows.
@@ -285,6 +288,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			const u64 = allocateEntityIdInTxn(s);
 			const row = entityToRow(e, repoId, e.repo);
 			s.entity.put(encodeEntityKey(u64), encodeEntityRow(row));
+			rewireMembershipsInTxn(s, u64, null, row);
 			s.entityIdByString.put(e.id, u64);
 			s.entityStringByU64.put(encodeEntityKey(u64), e.id);
 			// dupsort put: multiple entities can share (repo, kind, name)
@@ -448,7 +452,9 @@ export async function reindexFile(
 			const newRow = entityToRow(e, repoId, repoPath);
 			if (prevBuf !== undefined) {
 				const prev = decodeEntityRow(prevBuf as Buffer);
-				if (prev.contentHash === newRow.contentHash
+				if (prev.repoId === newRow.repoId
+				 && prev.filePath === newRow.filePath
+				 && prev.contentHash === newRow.contentHash
 				 && prev.body === newRow.body
 				 && prev.startLine === newRow.startLine
 				 && prev.endLine === newRow.endLine
@@ -461,6 +467,7 @@ export async function reindexFile(
 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 			s.entity.put(encodeEntityKey(u64), encodeEntityRow(newRow));
+			rewireMembershipsInTxn(s, u64, prev, newRow);
 			rewireNameIndexInTxn(s, u64, prev, newRow);
 			if (e.embedding !== undefined && e.embedding.length > 0) {
 				lanceWrites.push({
@@ -965,6 +972,7 @@ export async function updateEmbedding(
 		isFirstEmbed = row.embeddingModel === '';
 		const next: EntityRow = { ...row, embeddingModel };
 		s.entity.put(encodeEntityKey(toBigInt(u64)), encodeEntityRow(next));
+		rewireMembershipsInTxn(s, toBigInt(u64), row, next);
 		repoId = row.repoId;
 		kind = row.kind;
 		artifact = row.artifact;
@@ -1005,6 +1013,26 @@ const lookupStringIdByU64 = (s: GraphStore, u64: bigint): string | undefined => 
 	const v = s.entityStringByU64.get(encodeEntityKey(u64));
 	return typeof v === 'string' ? v : undefined;
 };
+
+/** Reconcile exact-file and repository memberships inside the authoritative row transaction. */
+function rewireMembershipsInTxn(s: GraphStore, u64: bigint, prev: EntityRow | null, next: EntityRow | null): void {
+	const fileKey = (row: EntityRow): Buffer => {
+		const root = readRepoPath(s, row.repoId);
+		if (root === undefined) throw new UnregisteredRepoError(`entity repository id ${row.repoId}`);
+		return encodeEntityFileKey(toAbsolutePath(row.filePath, root));
+	};
+	const before = prev === null ? undefined : fileKey(prev);
+	const after = next === null ? undefined : fileKey(next);
+	const id = encodeEntityKey(u64);
+	if (prev !== null) {
+		if (after === undefined || !before!.equals(after)) s.entityByFile.remove(before!, id);
+		if (next === null || prev.repoId !== next.repoId) s.entityByRepo.remove(encodeRepoKey(prev.repoId), id);
+	}
+	if (next !== null) {
+		s.entityByFile.put(after!, id);
+		s.entityByRepo.put(encodeRepoKey(next.repoId), id);
+	}
+}
 
 /**
  * Reconcile `name_index` for an entity write:
@@ -1158,6 +1186,7 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 		const rowBuf = s.entity.get(encodeEntityKey(u64));
 		if (rowBuf !== undefined) {
 			const row = decodeEntityRow(rowBuf as Buffer);
+			rewireMembershipsInTxn(s, u64, row, null);
 			// dupsort remove(key, value): drop only this entity's u64 from
 			// the dup set, leaving other entities that share (repo, kind,
 			// name) untouched.
@@ -1250,10 +1279,6 @@ function toRepoRelative(absoluteOrRelative: string, repoRoot: string): string {
 	return rel === '' ? '.' : rel;
 }
 
-function toAbsolutePath(filePath: string, repoRoot: string): string {
-	if (filePath.startsWith('/') || repoRoot === '') return filePath;
-	return repoRoot.endsWith('/') ? `${repoRoot}${filePath}` : `${repoRoot}/${filePath}`;
-}
 
 function parseTimestamp(s: string | undefined): number {
 	if (s === undefined || s === '') return 0;

@@ -1,3 +1,4 @@
+import { assertParquetSchema } from './fixtures/assert-parquet-schema.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -48,10 +49,10 @@ async function all(source: MemoryRowSource): Promise<Record<string, unknown>[]> 
 }
 test('CM-S1-W: Avro explicit writer schemas and full normalized values match saved output with zero rows nullable fields and nested unions', async () => {
 	await fixture(async (dir) => {
-		const schema: avsc.Schema = { type: 'record', name: 'Fixture', fields: [{ name: 'count', type: 'long' }, { name: 'optional', type: ['null', 'double'] }, { name: 'label', type: 'string' }, { name: 'nested', type: { type: 'array', items: 'int' } }] };
+		const schema: avsc.Schema = { type: 'record', name: 'Fixture', fields: [{ name: 'count', type: 'long' }, { name: 'optional', type: ['null', 'double'] }, { name: 'label', type: 'string' }, { name: 'nested', type: { type: 'array', items: ['null', 'int'] } }] };
 		const type = avsc.Type.forSchema(schema);
 		for (const codec of ['null', 'deflate'])
-			for (const values of [[], [{ count: 1, optional: null, label: 'full string', nested: [1, 2, 3] }, { count: 2, optional: 1.25, label: 'tail', nested: [] }]]) {
+			for (const values of [[], [{ count: 1, optional: null, label: 'full string', nested: [1, null, 3] }, { count: 2, optional: 1.25, label: 'tail', nested: [] }]]) {
 				const sourcePath = join(dir, 'fixture.avro'), dest = join(dir, 'saved.parquet');
 				await writeFile(sourcePath, Buffer.concat([header(schema, codec), ...(values.length ? [block(Buffer.concat(values.map(v => type.toBuffer(v))), values.length, codec)] : [])]));
 				const budget = new DecoderBudget(32 * 1024 * 1024), source = await avroConverter.openMemory!(sourcePath, { memoryBudgetBytes: budget.limit, budget });
@@ -62,10 +63,11 @@ test('CM-S1-W: Avro explicit writer schemas and full normalized values match sav
 					const memory = await all(source);
 					assert.equal(memory.length, values.length);
 					if (values.length) {
-						assert.equal(memory[0]?.nested, '[1,2,3]');
+						assert.equal(memory[0]?.nested, '[1,null,3]');
 						assert.equal(memory[0]?.optional, null);
 					}
 					await avroConverter.convertFile(sourcePath, dest);
+ await assertParquetSchema(dest,columns);
 					const db = await DuckDBInstance.create(':memory:'), connection = await db.connect();
 					try {
 						const saved = (await connection.runAndReadAll('SELECT * FROM read_parquet(?)', [dest])).getRowObjectsJS().map(row => ({ ...row, count: Number(row.count) }));

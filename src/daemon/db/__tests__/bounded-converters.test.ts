@@ -1,3 +1,4 @@
+import { assertParquetSchema } from './fixtures/assert-parquet-schema.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -118,6 +119,7 @@ test('CM-S1-W: BSON saved and memory schemas preserve full dates precise large n
 			assert.match(memory[0]?.nested as string, /9007199254740993/);
 			assert.equal(memory.at(-1)?.rare, 'last record retained');
 			assert.equal((await bsonConverter.convertFile(path, dest)).rowCount, docs.length);
+ await assertParquetSchema(dest,schema.columns);
 			assert.deepEqual(await savedRows(dest, schema.columns.map(c => c.name), schema.columns.filter(c => c.physicalType === 'TIMESTAMP_MILLIS').map(c => c.name)), canonical(memory));
 		}
 		finally {
@@ -139,6 +141,7 @@ test('CM-S1-W: fixed-width saved and memory rows share explicit empty all-null s
 				assert.deepEqual(schema.columns.map(c => c.physicalType), ['INT64', 'BOOLEAN', 'UTF8']);
 				const memory = await rows(source);
 				await fixedWidthConverter.convertFile(path, dest, options);
+ await assertParquetSchema(dest,schema.columns);
 				assert.deepEqual(await savedRows(dest, schema.columns.map(c => c.name)), canonical(memory));
 			}
 			finally {
@@ -176,6 +179,7 @@ test('CM-S1-W: actual empty and all-null BSON keeps its declared fallback schema
 				const memory = await rows(source);
 				assert.equal(memory.length, bytes.length ? 1 : 0);
 				await bsonConverter.convertFile(path, dest);
+ await assertParquetSchema(dest,schema.columns);
 				assert.deepEqual(await savedRows(dest, schema.columns.map(c => c.name)), canonical(memory));
 			}
 			finally {

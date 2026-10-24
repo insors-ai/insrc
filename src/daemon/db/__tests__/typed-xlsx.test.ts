@@ -1,3 +1,4 @@
+import { assertParquetSchema } from './fixtures/assert-parquet-schema.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -70,6 +71,7 @@ test('CM-S1-W: XLSX sheet names legacy slugs dates shared strings formula normal
 			await assert.rejects(source.describe(), /Incompatible/);
 			await assert.rejects(rows(source), /Incompatible/);
 			assert.equal((await xlsxConverter.convertFile(path, dest)).rowCount, 3);
+ for(const target of await source.targets())await assertParquetSchema(join(dest,target.worksheetSlug!+'.parquet'),target.columns);
 			assert.deepEqual(await saved(join(dest, 'Sales_Q1.parquet'), ['when']), memory);
 			assert.deepEqual(await saved(join(dest, 'Other_Sheet.parquet')), await rows(source, 'Other Sheet'));
 		}
@@ -120,6 +122,7 @@ test('CM-S1-W: XLSX compatible no-target union merged headers fallback names and
 			assert.deepEqual(first, [{ a: 1, col_2: 'merged', c: '[object Object]' }, { a: 2, col_2: 'merged', c: null }]);
 			assert.deepEqual(await rows(source), [...first, { a: 3, col_2: 'tail', c: 'text' }]);
 			await xlsxConverter.convertFile(path, dest);
+ for(const target of await source.targets())await assertParquetSchema(join(dest,target.worksheetSlug!+'.parquet'),target.columns);
 			assert.deepEqual(await saved(join(dest, 'First.parquet')), first);
 		}
 		finally {

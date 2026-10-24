@@ -1,0 +1,610 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "9874475f902756f6",
+    "storyId": "S001",
+    "createdAt": "2026-10-24T14:17:55.971Z",
+    "updatedAt": "2026-10-24T15:32:05.516Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-24T12:57:08.198Z",
+    "epicSlug": "let-codex-accept-analyzer-decomposer-s"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0e258e3d1",
+        "ranAt": "2026-10-24T14:19:36.403Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "every exploration type has exactly one params branch, derived from EXPLORATION_TYPES",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+                "title": "every exploration type has exactly one params branch, derived from EXPLORATION_TYPES",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each branch is closed, requires no param, and admits null and a placeholder string for every value",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+                "title": "each branch is closed, requires no param, and admits null and a placeholder string for every value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "every documented params example in the decomposer prompt validates against its type's branch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+                "title": "every documented params example in the decomposer prompt validates against its type's branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/params-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 500,
+            "titles": [
+              {
+                "title": "every exploration type has exactly one params branch, derived from EXPLORATION_TYPES",
+                "result": "pass"
+              },
+              {
+                "title": "each branch is closed, requires no param, and admits null and a placeholder string for every value",
+                "result": "pass"
+              },
+              {
+                "title": "every documented params example in the decomposer prompt validates against its type's branch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e756417d6",
+        "ranAt": "2026-10-24T14:23:46.628Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the codex strict copy of DECOMPOSE_SCHEMA contains no object without properties and no object whose additionalProperties is not false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/decompose-params.test.ts",
+                "title": "the codex strict copy of DECOMPOSE_SCHEMA contains no object without properties and no object whose additionalProperties is not false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "decompose and finalizeDecompose remove null params, so the executor receives today's params",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/decompose-params.test.ts",
+                "title": "decompose and finalizeDecompose remove null params, so the executor receives today's params",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an exploration carrying a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose, and the one-shot driver runs the freeform.probe fallback instead of the plan",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/decompose-params.test.ts",
+                "title": "an exploration carrying a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "empty params, a placeholder string where an array is expected, and a plan omitting optional params validate against DECOMPOSE_SCHEMA",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/decompose-params.test.ts",
+                "title": "empty params, a placeholder string where an array is expected, and a plan omitting optional params validate against DECOMPOSE_SCHEMA",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/decompose-params.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 508,
+            "titles": [
+              {
+                "title": "the codex strict copy of DECOMPOSE_SCHEMA contains no object without properties and no object whose additionalProperties is not false",
+                "result": "pass"
+              },
+              {
+                "title": "decompose and finalizeDecompose remove null params, so the executor receives today's params",
+                "result": "pass"
+              },
+              {
+                "title": "an exploration carrying a key its type does not declare fails with DecomposerSchemaUnrecoverable at decompose and at finalizeDecompose",
+                "result": "pass"
+              },
+              {
+                "title": "empty params, a placeholder string where an array is expected, and a plan omitting optional params validate against DECOMPOSE_SCHEMA",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 710,
+            "titles": [
+              {
+                "title": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in",
+                "result": "pass"
+              },
+              {
+                "title": "a planning call that fails for another reason is replaced by the free-form lookup, as before",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns 'not-applicable' for classification and task modes",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path",
+                "result": "pass"
+              },
+              {
+                "title": "module scope: lookup path and cache key unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              },
+              {
+                "title": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider",
+                "result": "pass"
+              },
+              {
+                "title": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle",
+                "result": "pass"
+              },
+              {
+                "title": "settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason",
+                "result": "pass"
+              },
+              {
+                "title": "a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "18aeeef6c",
+        "ranAt": "2026-10-24T14:25:59.732Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 582,
+            "titles": [
+              {
+                "title": "the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths",
+                "result": "pass"
+              },
+              {
+                "title": "a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "7a5df2bb5",
+        "ranAt": "2026-10-24T14:31:17.318Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no inputSchema, a local reference, a union with a string, and a draft-07 tuple each yield a whole-params slot, and no built-in template falls back",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "no inputSchema, a local reference, a union with a string, and a draft-07 tuple each yield a whole-params slot, and no built-in template falls back",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "repeated and recursive wire-schema builds with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "repeated and recursive wire-schema builds with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "two catalogs sharing a template id with different inputSchemas get different wire schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "two catalogs sharing a template id with different inputSchemas get different wire schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the codex strict copy of the built-in planner wire schema for every target contains no open object",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+                "title": "the codex strict copy of the built-in planner wire schema for every target contains no open object",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/wire-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1193,
+            "titles": [
+              {
+                "title": "the 27 built-in templates yield a branch each, with exactly their 9 slot sets at the expected paths",
+                "result": "pass"
+              },
+              {
+                "title": "a slot is placed only at a position the original schema restricts to an object, and the adherence root one-of-three is left out of the branch",
+                "result": "pass"
+              },
+              {
+                "title": "no inputSchema, a local reference, a union with a string, and a draft-07 tuple each yield a whole-params slot, and no built-in template falls back",
+                "result": "pass"
+              },
+              {
+                "title": "repeated and recursive wire-schema builds with identical and different catalogs compile through validateAgainstSchema and validateCodexReply without an id collision",
+                "result": "pass"
+              },
+              {
+                "title": "two catalogs sharing a template id with different inputSchemas get different wire schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the codex strict copy of the built-in planner wire schema for every target contains no open object",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "864cacca4",
+        "ranAt": "2026-10-24T15:32:05.516Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "runPlanner sends a wire schema covering exactly its effective catalog, and a supplied scopeRef round-trips through a slot into INV-5 unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-decode.test.ts",
+                "title": "runPlanner sends a wire schema covering exactly its effective catalog, and a supplied scopeRef round-trips through a slot into INV-5 unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "supplied templates with no inputSchema, local references, a union with a string, and a draft-07 tuple round-trip as whole-params slots and pass INV-5 as today",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-decode.test.ts",
+                "title": "supplied templates with no inputSchema, local references, a union with a string, and a draft-07 tuple round-trip as whole-params slots and pass INV-5 as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-decode.test.ts",
+                "title": "nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-decode.test.ts",
+                "title": "invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/wire-decode.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1099,
+            "titles": [
+              {
+                "title": "runPlanner sends a wire schema covering exactly its effective catalog, and a supplied scopeRef round-trips through a slot into INV-5 unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "supplied templates with no inputSchema, local references, a union with a string, and a draft-07 tuple round-trip as whole-params slots and pass INV-5 as today",
+                "result": "pass"
+              },
+              {
+                "title": "nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds",
+                "result": "pass"
+              },
+              {
+                "title": "invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "e30ce2a04",
+        "ranAt": "2026-10-24T14:54:38.197Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the planner's output-shape block is the call's wire schema and the catalog lists each template's slot paths",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-messages.test.ts",
+                "title": "the output shape is the call's wire schema and the catalog lists each template's slot paths, marking whole-params slots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a correction retry echoes the rejected plan and the offending task in wire form",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-messages.test.ts",
+                "title": "a correction retry echoes the rejected plan and the offending task in wire form",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the planner system prompt names the slot exception with the aggregator example and allows null for absent optional values",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/planner/__tests__/wire-messages.test.ts",
+                "title": "the planner system prompt names the slot exception with the aggregator example and allows null for absent optional values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/planner/__tests__/wire-messages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 753,
+            "titles": [
+              {
+                "title": "the output shape is the call's wire schema and the catalog lists each template's slot paths, marking whole-params slots",
+                "result": "pass"
+              },
+              {
+                "title": "a correction retry echoes the rejected plan and the offending task in wire form",
+                "result": "pass"
+              },
+              {
+                "title": "the planner system prompt names the slot exception with the aggregator example and allows null for absent optional values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "638bc9291",
+        "ranAt": "2026-10-24T14:58:53.441Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "codex accepts the complete DECOMPOSE_SCHEMA and every built-in planner wire schema, and the replies pass the reply check",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610249874475f/S001/evidence/t7-live-codex.md (run of src/analyze/__tests__/codex-plan-schemas.live.test.ts with INSRC_LIVE_TESTS=1, plus the PLAN_TASK_SCHEMA control)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t8",
+        "commit": "864cacca4",
+        "ranAt": "2026-10-24T15:28:28.004Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a one-shot insrc_analyze on the rebuilt daemon's codex tier returns a plan",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/let-codex-accept-analyzer-decomposer-s-E202610249874475f/S001/evidence/t8-rollout-smoke.md (run mcp-1792854654039-jybhub; /tmp/.insrc/daemon.log 15:10:54-15:12:00)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

@@ -1,9 +1,9 @@
 /** Stopped-daemon maintenance only. No online adoption or writable live-inode fallback. */
 import { randomUUID } from 'node:crypto';
-import { lstat, realpath, readFile } from 'node:fs/promises';
+import { lstat, realpath, readFile, chmod } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { connectionsPath, repoIdOf } from './config.js';
-import { privateDirectory, writeProtected } from './management-files.js';
+import { privateDirectory, writeProtected, syncDirectory } from './management-files.js';
 import { ManagementOwnerLease, processObservation } from './management-owner-lease.js';
 import { ManagementStateFile } from './management-state.js';
 import type { StoppedDaemonEvidence, RollbackReference } from './management-state.js';
@@ -22,12 +22,20 @@ export interface AdoptionPorts {
 	readonly stopped: StoppedDaemonEvidence;
 }
 export async function adoptManagedRoot(root: string, ports: AdoptionPorts): Promise<void> {
+	if (process.getuid?.() === undefined || process.geteuid?.() === undefined || process.getuid() === 0 || process.getuid() !== process.geteuid())
+		throw new ManagedStoreError('unsupported-filesystem');
 	if (await realpath(root) !== root || !await ports.isRegistered(root) || ports.stopped.source !== 'safe-stop-control' || !Number.isSafeInteger(ports.stopped.pid) || ports.stopped.pid <= 0 || processObservation.alive(ports.stopped.pid) || !/^[a-f0-9]{64}$/.test(ports.stopped.processIdentity) || !Number.isFinite(Date.parse(ports.stopped.stoppedAt)))
 		throw new ManagedStoreError('recovery-required');
 	const evidence = await ports.enablement();
 	if (!evidence.ready)
 		throw new ManagedStoreError('recovery-required');
 	const path = connectionsPath(root), directory = managementStateDirectory(path);
+	const parentBefore = await lstat(dirname(path));
+	if (!parentBefore.isDirectory() || parentBefore.isSymbolicLink() || parentBefore.uid !== process.getuid?.())
+		throw new ManagedStoreError('recovery-required');
+	// Only this stopped maintenance path establishes private parent permissions.
+	await chmod(dirname(path), 0o700);
+	await syncDirectory(dirname(path));
 	await privateDirectory(dirname(path));
 	await proveWriterFence(dirname(path));
 	const before = await readRegistrySnapshot(path, true);

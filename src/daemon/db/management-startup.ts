@@ -2,6 +2,7 @@
 import { lstat, realpath } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { connectionsPath, repoIdOf } from './config.js';
+import { readProtected } from './management-files.js';
 import { ManagementOwnerLease } from './management-owner-lease.js';
 import { ManagementStateFile, anchorsMatch } from './management-state.js';
 import { ManagedRegistry, PreparationJournal, ManagedStoreError, readRegistrySnapshot, registryAnchor, managementStateDirectory } from './managed-store.js';
@@ -37,7 +38,7 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 	let store: ManagedRegistry | undefined, uninstall: (() => void) | undefined;
 	try {
 		const snapshot = await readRegistrySnapshot(path), envelope = snapshot.file._management;
-		if (!envelope)
+		if (!envelope || snapshot.mode !== 0o400)
 			throw new ManagedStoreError('recovery-required');
 		const keystore = ports.keystore ?? credentialKeystore;
 		const tickets = await SavedTicketAuthority.open({ root, registryId: envelope.registryId, adopted: true, keystore, isRegistered: ports.isRegistered });
@@ -45,6 +46,15 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 		if (initial.phase !== 'managed' || initial.releaseDigest !== evidence.digest || initial.parent.inode !== parent.ino || initial.parent.device !== parent.dev)
 			throw new ManagedStoreError('recovery-required');
 		await state.reconcile(snapshot);
+		const baseline = await readProtected(join(directory, initial.baseline.name));
+		if (baseline.digest !== initial.baseline.digest)
+			throw new ManagedStoreError('recovery-required');
+		for (const rollback of initial.rollback) {
+			const value = await keystore.getKey(rollback.copyRef);
+			if (value === null)
+				throw new ManagedStoreError('recovery-required');
+			await tickets.verifyMaintenance('rollback-value', { sourceRef: rollback.sourceRef, value }, rollback.valueMac);
+		}
 		store = await ManagedRegistry.open(path, { ownsRoot: () => lease.current(), prepared: (a, b, name) => state.prepare(a, b, name), committed: a => state.committed(a) });
 		const currentStore = store, journal = await PreparationJournal.open(path, envelope.registryId);
 		const generations = new CredentialGenerations(journal, repoIdOf(root), { keystore, current: () => currentStore.inspect() });

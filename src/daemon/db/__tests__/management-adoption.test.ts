@@ -42,6 +42,7 @@ test('stopped adoption migrates fixed credentials, preserves rollback preimage a
 	f.values.set(oldRef, 'legacy-secret-canary');
 	const original = JSON.stringify({ connections: [{ id: 'warehouse', kind: 'postgres', url: 'postgres://user:${secret:' + oldRef + '}@host/db', secretRef: oldRef }], retained: { exact: true } });
 	await writeFile(f.path, original, { mode: 0o600 });
+	await chmod(dirname(f.path), 0o755);
 	await adoptManagedRoot(f.root, f.ports);
 	const text = await readFile(f.path, 'utf8'), doc = JSON.parse(text);
 	assert(!text.includes('legacy-secret-canary'));
@@ -67,6 +68,11 @@ test('stopped adoption migrates fixed credentials, preserves rollback preimage a
 		await pool.closeAll();
 	}
 	assert.equal(JSON.parse(await readFile(f.path, 'utf8'))._management.registryId, doc._management.registryId);
+	const rollbackRef = [...f.values.keys()].find(ref => ref.startsWith('db:rollback:'))!;
+	const rollbackValue = f.values.get(rollbackRef)!;
+	f.values.delete(rollbackRef);
+	await assert.rejects(openManagedRoot(f.root, f.ports));
+	f.values.set(rollbackRef, rollbackValue);
 	await chmod(f.path, 0o600);
 	await assert.rejects(openManagedRoot(f.root, f.ports));
 }));

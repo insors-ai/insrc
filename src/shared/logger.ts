@@ -5,16 +5,10 @@ import { homedir } from 'node:os';
 import { PATHS } from './paths.js';
 
 // ---------------------------------------------------------------------------
-// Ensure log directory exists
-// ---------------------------------------------------------------------------
-
-try { mkdirSync(PATHS.logDir, { recursive: true }); } catch { /* ok */ }
-
-// ---------------------------------------------------------------------------
 // Mode detection
 // ---------------------------------------------------------------------------
 
-export type LogMode = 'daemon' | 'cli' | 'mcp';
+export type LogMode = 'daemon' | 'cli' | 'mcp' | 'probe-worker';
 
 let _mode: LogMode = 'cli';
 
@@ -151,6 +145,13 @@ function getRoot(): pino.Logger {
   if (_root) return _root;
 
   const mode = getLogMode();
+  // The worker sets this fixed, nonsecret mode before importing any drivers.
+  // Do not resolve config or create a transport/directory in this process.
+  if (mode === 'probe-worker') {
+    _root = pino({ enabled: false, level: 'silent' }, { write() {} });
+    return _root;
+  }
+  try { mkdirSync(PATHS.logDir, { recursive: true }); } catch { /* ok */ }
   const transport = mode === 'daemon'
     ? buildDaemonTransport()
     : mode === 'mcp'

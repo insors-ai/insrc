@@ -6,41 +6,25 @@
  * what's about to move between worktree and index.
  */
 
+import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { Tool, ToolApprovalGate, ToolInput, ToolResult } from '../../types.js';
-import { fail, spawnFail, withFailure } from './helpers.js';
+import { assertSafeArg, fail, failureKind, ranToExit, spawnFail, withFailure } from './helpers.js';
+import { GitStageDataSchema } from './schemas.js';
+import type { GitStageData, GitStageOp } from './schemas.js';
 
-export type GitStageOp = 'stage' | 'unstage';
-
-export interface GitStageData {
-  op: GitStageOp;
-  paths: string[];
-  /** Paths that still had changes in the index after the op (for visibility). */
-  indexAfter: string[];
-}
+export type { GitStageData, GitStageOp } from './schemas.js';
 
 export const gitStageTool: Tool = {
   id: 'git_stage',
   description: 'Stage (git add) or unstage (git restore --staged) paths.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      cwd: { type: 'string', description: 'Repository root.' },
-      op:  { type: 'string', enum: ['stage', 'unstage'], description: 'stage=`git add`, unstage=`git restore --staged`.' },
-      paths: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Paths relative to the repo root. Use ["."] to affect the whole tree.',
-        minItems: 1,
-      },
-      update: {
-        type: 'boolean',
-        description: 'Stage-only: pass `-u` so only already-tracked files are staged (skip untracked).',
-      },
-    },
-    required: ['op', 'paths'],
-    additionalProperties: false,
-  },
+  inputSchema: Type.Object({
+    cwd: Type.Optional(Type.String({ description: 'Repository root.' })),
+    op: Type.String({ enum: ['stage', 'unstage'], description: 'stage=`git add`, unstage=`git restore --staged`.' }),
+    paths: Type.Array(Type.String(), { description: 'Paths relative to the repo root. Use ["."] to affect the whole tree.', minItems: 1 }),
+    update: Type.Optional(Type.Boolean({ description: 'Stage-only: pass `-u` so only already-tracked files are staged (skip untracked).' })),
+  }, { additionalProperties: false }),
+  outputSchema: GitStageDataSchema,
   approval: 'common',
 
   buildApprovalGate(input: ToolInput): ToolApprovalGate {
@@ -78,6 +62,7 @@ export const gitStageTool: Tool = {
     if (paths.length === 0) {
       return withFailure({ output: '[git:stage] paths is empty', format: 'text', success: false, error: 'no paths' }, 'rejected');
     }
+    for (const p of paths) { assertSafeArg(p, 'path'); }
     const update = input['update'] === true;
 
     const argv = op === 'stage'
@@ -94,11 +79,16 @@ export const gitStageTool: Tool = {
     // in `git diff --cached --name-only`. Lets the caller verify the
     // staging area without running git:status separately.
     const post = await runShell(['git', 'diff', '--cached', '--name-only'], { cwd, timeoutMs: 10_000 });
-    const indexAfter = post.code === 0
+    // The mutation has happened: a read that fails keeps the placeholder and says so.
+    const postOk = ranToExit(post) && post.code === 0;
+    const indexAfter = postOk
       ? post.stdout.split('\n').map(s => s.trim()).filter(Boolean)
       : [];
 
-    const data: GitStageData = { op, paths, indexAfter };
+    const data: GitStageData = {
+      op, paths, indexAfter,
+      ...(postOk ? {} : { warnings: [`git diff --cached --name-only ${failureKind(post)}: the index listing is empty`] }),
+    };
     const verb = op === 'stage' ? 'Staged' : 'Unstaged';
     const output = [
       `${verb} ${paths.length} path${paths.length === 1 ? '' : 's'} in \`${cwd}\`.`,

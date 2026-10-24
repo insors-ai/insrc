@@ -126,3 +126,17 @@ export const GitBlameDataSchema = Type.Object({
   })),
 });
 export type GitBlameData = Static<typeof GitBlameDataSchema>;
+
+// ---- git_stage -------------------------------------------------------------
+
+export const GitStageOpSchema = Type.Union([Type.Literal('stage'), Type.Literal('unstage')]);
+export type GitStageOp = Static<typeof GitStageOpSchema>;
+
+export const GitStageDataSchema = Type.Object({
+  op: GitStageOpSchema,
+  paths: Type.Array(Type.String()),
+  /** Paths that still had changes in the index after the op (for visibility). */
+  indexAfter: Type.Array(Type.String()),
+  warnings: warnings(),
+});
+export type GitStageData = Static<typeof GitStageDataSchema>;

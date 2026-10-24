@@ -422,6 +422,26 @@ test('git_diff exclude and git_stage empty paths fail with the executor\'s messa
 		assert.equal(direct.error, 'invalid-input');
 		assert.equal(direct.failure?.kind, 'rejected');
 
+		// git_stage with no paths: the schema refuses it before git runs; called directly the tool keeps its legacy text
+		for (const paths of [[], undefined]) {
+			const r = await executeTool('git_stage', { cwd: repo, op: 'stage', ...(paths ? { paths } : {}) }, deps(repo));
+			assert.equal(r.success, false);
+			assert.equal(r.failure?.kind, 'rejected');
+			assert.match(r.failure?.message ?? '', /does not fit its input schema/);
+			assert.match(r.failure?.message ?? '', /paths/);
+		}
+		const emptyDirect = await gitStageTool.execute({ cwd: repo, op: 'stage', paths: [] }, deps(repo));
+		assert.equal(emptyDirect.output, '[git:stage] paths is empty');
+		assert.equal(emptyDirect.error, 'no paths');
+		assert.equal(emptyDirect.failure?.kind, 'rejected');
+		// a path made only of empty strings is also empty to the tool
+		assert.equal((await gitStageTool.execute({ cwd: repo, op: 'stage', paths: [''] }, deps(repo))).error, 'no paths');
+		// a real stage works through the executor and returns data that fits its schema
+		writeFileSync(join(repo, 'g.txt'), 'g\n');
+		const staged = await executeTool('git_stage', { cwd: repo, op: 'stage', paths: ['g.txt'] }, deps(repo));
+		assert.equal(staged.success, true, staged.output);
+		assert.deepEqual((staged.data as { indexAfter: string[] }).indexAfter, ['g.txt']);
+
 		// path together with paths is not expressible in the schema: the legacy failure stays, through the executor too
 		const both = await executeTool('git_diff', { cwd: repo, path: 'f.txt', paths: ['f.txt'] }, deps(repo));
 		assert.equal(both.success, false);

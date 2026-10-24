@@ -1,0 +1,866 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792867668065-n4o9m7",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-24T18:51:11.302Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 203200,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicHash": "484fcef7efaf229e",
+    "epicSlug": "manage-saved-temporary-data-connections",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1792569414548-dvzndd",
+    "hldEffectiveHash": "dc1a3f91a768c5e20e9788e76390b96ae43e65586f3afa87762c1a5834745047",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed backend scope covers S002's upstream acceptance obligations and preserves the allocation of client behavior to S005.",
+          "evidence": "DEF S002/ac1 requires merged-draft parity, no persistence, sanitized errors, duration and reachability-only reporting; ac2 requires stale-result protection, bounded execution and cleanup. The LLD designs backend support for each. HLD §6.5 explicitly assigns stale-test suppression and client presentation to S005. No new drivers or temporary-session store are proposed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "Retain the explicit S005 integration dependency when reporting end-to-end acceptance.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Legacy connection tests currently construct drivers in-process, request memory-only file execution, await close, and expose raw nonfile exception messages.",
+          "evidence": "Read the complete testConnectionRpc and materializeTransientConfig implementations. The factory executes directly in the daemon; file policy specifies 'memory-only'; finally awaits driver.close() but swallows close errors. The nonfile failure branch returns '(err as Error).message'. Success is selected immediately after factory construction. [files: src/daemon/db-rpc.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
+          "action": "Preserve the successful legacy projection while replacing these execution and failure semantics.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Lazy factory construction, logger import side effects and absent unary cancellation are real current implementation gaps.",
+          "evidence": "MysqlDriver constructs createPool without an awaited query; RedisDriver uses 'lazyConnect: true'. logger.ts executes 'mkdirSync(PATHS.logDir, { recursive: true })' at module scope. TrustedRpcContext has only identity and epoch; directDispatch's unary branch returns '() => {}'. These support the proposed explicit probes, logger bootstrap and optional signal changes. [files: src/daemon/db/drivers/mysql.ts, src/daemon/db/drivers/redis.ts, src/shared/logger.ts, src/daemon/request-context.ts, src/daemon/server.ts]",
+          "action": "Keep explicit negative probe and fresh-process bootstrap tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Shared draft materialization and owned memory-only file execution exist with the stated reusable boundaries.",
+          "evidence": "materializeDraft accepts current config/revision, credential actions and a readSecret-only port; SavedConnectionManagement.apply already uses it. MemoryFileExecution owns native/converted loading and close. createPrivateDuckDB disables spill, automatic extension installation and logging. DuckDBFileDriver.readerPath performs lazy loading, so adding an awaited test-specific operation is necessary. Repository search found no existing DraftProbe, probeReachability or prepareDraft implementation. The analyzer returned incomplete relationships, so these conclusions were checked against source bodies. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/duckdb-pool.ts, src/daemon/db/drivers/duckdb-file.ts]",
+          "action": "Reuse these boundaries and retain the explicit probe requirement.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Returning materializeDraft's effective config directly is sufficient preparation for the v2 worker factory.",
+          "evidence": "The proposed prepareDraft stops after materializeDraft, which preserves path strings without repo-relative runtime resolution. Actual activation separately calls 'resolveConfigPath(withSecrets, this.repoPath)'; that function resolves and checks file/SQLite paths and schemaSource.path. Legacy materializeTransientConfig likewise resolves file paths. DuckDBFileDriver's factory directly calls 'existsSync(config.path)', and SQLite directly opens the supplied filename. As designed, a valid relative draft can probe the daemon's working directory, fail incorrectly, or read a different file; root containment is also omitted from this v2 path. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/pool.ts, src/daemon/db-rpc.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/drivers/sqlite.ts]",
+          "action": "Specify a readonly runtime-path preparation boundary before worker construction, using the same registered-kind path rules as activation. Include it in the change inventory and test relative paths from another working directory, SQLite, outside-root paths and pinned-family records.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Unary abort can suppress directDispatch delivery without changing the surrounding request-lifetime wrappers.",
+          "evidence": "holdingForward resolves its request hold on a delivered reply; its cancel path explicitly releases only when 'request.stream'. Router.forward similarly calls ended() on replies and only calls it during cancellation for streams. Suppressing unary completion delivery inside directDispatch therefore prevents both wrappers from observing completion after disconnect, leaking the maintenance request hold and activity bookkeeping. Neither wrapper is included in the LLD's transport change sites. [files: src/daemon/server.ts, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/router.ts, src/daemon/index.ts]",
+          "action": "Separate internal handler completion from socket response delivery. Update maintenance-entry.ts and router.ts so canceled unary operations finish bookkeeping exactly once without delivering a late socket response. Add disconnect tests with maintenance locking and router activity tracking enabled.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design adequately documents the new operation, transport, child and resource ownership relationships.",
+          "evidence": "PendingProbe specifies transport-to-operation 0..1, operation-to-child 0..1, child ownership of one disposable driver, bounded reaping and capacity retention through close. Compatibility and the future readonly S003 resolver are described. The linked sequence source identifies client, supervisor and child and includes private IPC and cancellation escalation. This is adequate relationship documentation without an additional ERD. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "When regenerating the companion, make the explicit probe and successful-exit gate visible to match the detailed prose.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.4",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders correctly and visually agrees with the design.",
+          "evidence": "Inspected the generated HTML and extracted Mermaid sequence source, including its rendering initialization. Attempted to open it through computer-use browser tooling; the in-app browser was unavailable and browser inventory was empty. Actual rendering, clipping and visual consistency could not be verified. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "Render the existing companion and inspect the result before claiming visual verification; correct or regenerate any rendering defect.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "A credential-free inherited worker environment preserves existing DynamoDB authentication behavior using effective ConnectionConfig alone.",
+          "evidence": "DynamoDriver constructs DynamoDBClient with region, optional fromIni(profile), and endpoint; without an explicit profile it uses the SDK default credential chain. The installed chain calls 'fromEnv(init)()', whose implementation reads 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY' and 'AWS_SESSION_TOKEN'. The driver profile exposes no corresponding credential slots, and materializeDraft does not capture this runtime identity. Removing inherited credentials without an IPC replacement makes an existing environment-authenticated saved connection fail testing or select a different fallback identity. [files: src/daemon/db/drivers/dynamodb.ts, src/daemon/db/driver-profiles.ts, node_modules/@aws-sdk/credential-provider-node/dist-cjs/index.js, node_modules/@aws-sdk/credential-provider-env/dist-cjs/index.js]",
+          "action": "Design explicit authentication preparation for DynamoDB that preserves the activation identity while keeping secrets out of argv/environment. Specify any worker-local adapter or private IPC credential shape and test environment-only credentials, session tokens and profile selection.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The additive sc4 contract and request-local test state require no persisted connection-data rewrite and can preserve legacy successful response fields.",
+          "evidence": "Existing stored management metadata contains revisions and receipts; the proposed test records add neither. TestConnectionResult already consists of ok, kind, family, optional error and tookMs, matching the compatibility projection described. The checked release evidence currently has 'ready: false', consistent with retaining disabled foundation gates. [files: src/shared/connection-management.ts, src/daemon/db-rpc.ts, src/assets/connection-management-gates.json, src/daemon/db/management-enablement.ts]",
+          "action": "Keep tests out of persistence and preserve the legacy successful projection during supervisor adaptation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed ownership split respects the HLD's shared contracts and adjacent Story boundaries.",
+          "evidence": "HLD sc4 assigns transient testing to S002; sc8 assigns conversion and private DuckDB lifecycle to S001; sc5 assigns temporary storage to S003; sc7 assigns client state to S005. The LLD consumes existing file policy and materialization, adds an internal probe interface without changing BaseDriver/factory signatures, and defers session storage and UI implementation. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/shared/db-driver.ts, src/shared/connection-management.ts]",
+          "action": "Address the identified runtime preparation and authentication gaps through explicit additive boundaries, retaining the stated ownership split.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design states detectable, bounded handling for preparation stalls, child failures, cancellation and cleanup failure.",
+          "evidence": "The LLD starts the deadline before asynchronous preparation, forbids late spawning, retains capacity while preparation/reaping remains outstanding, validates child correlation and withholds reachable until cleanup and exit. It explicitly handles malformed IPC, crashes, hanging close and forced termination. Existing ProfileError/managementRejection and file execution errors provide concrete admission and resource-error projection boundaries. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/duckdb-pool.ts]",
+          "action": "Retain these failure rules and incorporate the request-wrapper completion correction identified under change-sites.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each upstream S002 acceptance criterion maps to a meaningful proposed test group.",
+          "evidence": "Compared DEF S002/ac1 and ac2 with the LLD mapping. CM-S2-A covers draft parity, safe results and zero writes; contract tests cover legacy/v2 routing and gates; CM-S2-B covers stale identities, deadlines, cancellation and reaping. CM-S2-D adds actual lazy-driver failures, logger bootstrap, readonly acquisition and transport lifetime. Existing owned-file-driver tests provide relevant memory-policy and cleanup regression fixtures. This verifies planned coverage, not execution or passing results. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, src/daemon/db/__tests__/owned-file-driver.test.ts, src/daemon/db/__tests__/connection-management-rpc.test.ts, src/daemon/__tests__/connection-request-context.test.ts]",
+          "action": "Add focused regression cases for repo-relative runtime paths, canceled-unary maintenance bookkeeping and DynamoDB credential-source parity to prove the corrections above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 3,
+        "med": 0,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-24T18:57:47.708Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Run each connection test in a disposable child process, using the same effective draft and credential rules as Save. The daemon enforces a ten-second deadline, cancels obsolete requests and returns only a safe reachability result after worker cleanup. This story supplies the backend contract; form layout and client stale-result handling remain S005.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a daemon-owned application service over the existing repository JSON registry and driver implementations. Separate saved commit, runtime activation and client refresh; use immutable credential generations and atomic JSON replacement rather than pretending the filesystem and keychain share a transaction. Temporary configurations remain in daemon memory under a workbench lease. All descriptions below are proposed architecture, not assertions of current implementation.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Transient draft test contract",
+          "purpose": "Test the same draft as Save with bounded lifetime and stale-result identity.",
+          "interfaceSketch": "interface DraftTestRequest { requestId: string; draftRevision: number; key: ConnectionKey; expectedRevision?: string | undefined; publicPatch: Readonly<Record<string, unknown>>; credentials: Readonly<Record<string, CredentialPatch>> } interface DraftTestResult { requestId: string; draftRevision: number; repoRoot: string; daemonEpoch: string; status: 'reachable'|'failed'|'timeout'|'canceled'; tookMs: number; safeMessage?: string | undefined } interface TestCancellation { requestId: string }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s5"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Connection management protocol and driver descriptors",
+          "purpose": "One safe wire contract and compatibility boundary for all consumers.",
+          "interfaceSketch": "type ConnectionScope = 'saved' | 'temporary'; interface ConnectionKey { repoRoot: string; scope: ConnectionScope; id: string } interface SafeConnection { key: ConnectionKey; revision: string; kind: string; family: 'rdbms'|'kv'|'file'; label?: string | undefined; publicConfig: Readonly<Record<string, unknown>>; declaredFamily?: string | undefined; registeredFamily?: string | undefined; effectiveFamily: string; compatibilityWarning?: string | undefined; credentialPresence: Readonly<Record<string, boolean>> } type CredentialPatch = { action: 'keep' } | { action: 'replace'; value: string } | { action: 'clear' }; interface DriverDescriptor { kind: string; family: 'rdbms'|'kv'|'file'; publicInputSchema: Readonly<Record<string, unknown>>; secretSlots: readonly string[] } interface ManagementCapabilities { version: 2; daemonEpoch: string; features: readonly string[]; receiptRetentionDays: 30 }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Revision-checked mutation and recovery outcomes",
+          "purpose": "Make persistence and retries truthful across registry and credential boundaries.",
+          "interfaceSketch": "interface OperationTicket { operationId: string; lookupRoot: string; scope: ConnectionScope; connectionId: string; mode: \"create\"|\"update\"|\"remove\"; issuedAt: string; expiresAt: string; signature: string } interface OperationStatusRequest { ticket: OperationTicket } interface MutationRequest { ticket: OperationTicket; operationId: string; key: ConnectionKey; mode: 'create'|'update'|'remove'; expectedRevision?: string | undefined; publicPatch?: Readonly<Record<string, unknown>> | undefined; credentials?: Readonly<Record<string, CredentialPatch>> | undefined } type ManagementErrorCode = 'invalid-input'|'duplicate-id'|'conflict'|'not-found'|'busy'|'registry-unreadable'|'secret-unavailable'|'recovery-required'|'session-expired'|'upgrade-required'|'operation-mismatch'|'reconciliation-required'; interface CommittedOutcome { operationId: string; revision: string; registration: 'persisted'|'session-added'|'removed'; activation: 'active'|'pending'|'failed'|'not-applicable'; credentialCleanup: 'complete'|'pending' } type MutationOutcome = { status: 'committed'; value: CommittedOutcome } | { status: 'rejected'; code: ManagementErrorCode; message: string }; type OperationStatus = { status:'committed'; value:CommittedOutcome } | { status:'pending'|'not-seen'|'reconciliation-required' }; interface ActivationRetry { key: ConnectionKey; committedRevision: string }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Validated connection access context and driver leases",
+          "purpose": "A foundational extension point for session isolation and busy-use correctness across dependency branches.",
+          "interfaceSketch": "interface ConnectionAccessContext { lookupRoot: string; managementRepoRoot?: string | undefined; daemonEpoch: string; sessionHandle?: string | undefined } interface ConnectionLease { key: ConnectionKey; revision: string; release(): Promise<void> } interface ConnectionResolver { list(context: ConnectionAccessContext): Promise<readonly SafeConnection[]>; lease(context: ConnectionAccessContext, id: string): Promise<ConnectionLease> } interface ManagementRequestContext { connectionIdentity: string; access: ConnectionAccessContext }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc8",
+          "name": "Memory-only file execution and conversion policy",
+          "purpose": "A shared file-driver foundation for transient tests and temporary sessions without reversing branch dependencies.",
+          "interfaceSketch": "interface FileExecutionIdentity { lookupRoot: string; ownerId: string; connectionId: string; revision: string; sourceIdentity: string; converterOptionsDigest: string } interface FileExecutionPolicy { identity: FileExecutionIdentity; persistence: 'saved-cache'|'memory-only'; memoryBudgetBytes: number; allowSpill: false } interface FileExecutionResource { close(): Promise<void> } interface FileExecutionFactory { open(policy: FileExecutionPolicy): Promise<FileExecutionResource> }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc8"
+        ],
+        "internal": "Transient process probe transport, deadline/cancellation and sanitization. Uses foundational context slots without depending on s3’s session implementation."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "depends": [],
+          "internal": "Safe saved-config read/patch, canonical repo validation, driver profiles, registry metadata/receipts and crash recovery, immutable secret generation staging, compatibility adapters and lease accounting foundation. Does not own temporary storage or rich manager layout. Preserve saved-only scope-local lookup and legacy pinned-family values; signed operation tickets make expiry/replay decidable after receipt pruning. Own the shared memory-only conversion/probe driver foundation, converter-cache policy/identity changes and private DuckDB lifecycle (sc8), completed before the S002/S003 branches."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc8"
+          ],
+          "internal": "Session open/resume/heartbeat/end, memory-only temporary overlays and receipts, trusted execution-context propagation through analyzer/tool/MCP call paths, expiry and saved/temporary collision rules. Bind the S001-owned sc8 file execution policy to session identity and expiry; S001 owns conversion, cache-policy isolation and private DuckDB lifecycle. Every native/converted kind uses that foundation rather than a branch-local converter."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "Removal coordination for both scopes, busy/revision enforcement, confirmation state, postcommit credential cleanup retry and operation-status recovery. Never invokes source data deletion."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Settings contributions and shared command routing, themed editor/forms, filters, dirty guards, stale-test suppression and truthful feedback in extension and external IDE. HLD has inspected the external pane, actions, service, mirrored types and Settings registrations; S005 implements the recorded plan and validates its mirrored contract before integration acceptance."
+        }
+      ],
+      "rolloutPhase": "B — tests and temporary scope",
+      "nonFunctional": {
+        "performance": "Draft tests have a 10-second parent-enforced deadline, with forced child reap if graceful termination fails. Workbench heartbeat is 30 seconds and expiry 90 seconds after last valid heartbeat. Mutations serialize per repo; list/filter work does not perform driver probes. LLD load tests must verify no leaked children, leases or session entries after cancellation/expiry.",
+        "security": "Daemon owns every saved/temporary config and credential decision; client labels/PIDs are not authorization. Registered-root eligibility gates management and temporary operations; saved-only analysis preserves canonical scope-local lookup without gaining mutation rights. Safe read responses return a profile allowlist and presence booleans only. Secrets, capabilities and full requests never enter logs, receipts, prompts, artifacts, telemetry or checkpoints. Temporary inputs never reach disk or keychain. A test worker receives config via private IPC and may not emit raw driver errors. Temporary file conversion, query spill and metadata/logging are part of the no-persistence boundary, including test workers.",
+        "observability": "Use getLogger with operation ID, safe code, repo ID, scope, revision and phase only; timing and counters for commit, activation, recovery, timeout, busy refusal and session expiry. No raw exceptions or endpoint/options. Operation status exposes committed truth even when response delivery or activation failed. Recovery-required and cleanup-pending are visible and actionable.",
+        "durability": "Saved JSON remains authoritative. Same-directory atomic rename/fsync commits registry, revisions and receipts together; immutable keychain generations preserve previous effective credentials until commit. Recover preparation records before enabling mutation. Issue signed 30-day operation tickets; preserve receipts through ticket expiry and pending cleanup, and distinguish expired-unreceipted from valid-not-seen after restart. Temporary state and receipts expire on explicit session end, 90-second lease loss or daemon epoch change."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DraftTestRequest",
+          "signature": "interface DraftTestRequest { requestId: string; draftRevision: number; key: ConnectionKey; expectedRevision?: string | undefined; publicPatch: Readonly<Record<string, unknown>>; credentials: Readonly<Record<string, CredentialPatch>> }",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "DraftTestRequest",
+              "purpose": "Strict db.connections.v2.test payload bound to trusted socket/epoch context.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DraftTestResult | { status: 'rejected'; code: ManagementErrorCode; message: string }",
+            "meaning": "Reachability only, never schema completeness; admission errors use existing safe management projection."
+          },
+          "errors": [
+            {
+              "type": "invalid-input",
+              "condition": "Unknown fields, malformed identity, invalid draft, duplicate pending request."
+            },
+            {
+              "type": "conflict",
+              "condition": "expectedRevision mismatches selected owned snapshot."
+            },
+            {
+              "type": "upgrade-required",
+              "condition": "Uninstalled/release-disabled foundation or temporary-edit resolver unavailable."
+            },
+            {
+              "type": "busy",
+              "condition": "One active per transport or global four-worker cap, including workers being reaped."
+            }
+          ],
+          "preconditions": [
+            "RequestId UUID, nonnegative safe integer draftRevision, strict total serialized input cap256KiB, canonical registered root matched to trusted access.",
+            "Start monotonic deadline before asynchronous root/read/credential materialization; late preparation may not spawn after terminal state.",
+            "No expectedRevision means create; existing target rejects duplicate-id. expectedRevision means edit owned saved snapshot; not-found/conflict fail before secrets/spawn.",
+            "Use materializeDraft unchanged with readonly owner-aware credential port; no signing tickets, receipts, secret writes, pool activation or cache writes.",
+            "Temporary creates with supplied fields require registered root; temporary edits require injected S003 snapshot resolver and fail upgrade-required until installed."
+          ],
+          "postconditions": [
+            "Result echoes requestId/draftRevision/canonical root/server epoch, status reachable|failed|timeout|canceled, monotonic tookMs and fixed optional safeMessage.",
+            "Save revalidates independently; test success grants no authority or guarantee.",
+            "Parent validates child message shape and nonce/request correlation, ignores unknown/late/duplicate messages. raw worker error never forwarded."
+          ]
+        },
+        {
+          "name": "TestCancellation",
+          "signature": "interface TestCancellation { requestId: string }",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "TestCancellation",
+              "purpose": "db.connections.v2.cancelTest; authenticated by same trusted transport identity and daemon epoch.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ canceled: boolean }",
+            "meaning": "True only for own pending request; false for unknown, completed or other-owner requests without disclosure."
+          },
+          "errors": [
+            {
+              "type": "invalid-input",
+              "condition": "Malformed/unknown fields."
+            }
+          ],
+          "preconditions": [
+            "No caller supplied owner/PID/epoch is trusted."
+          ],
+          "postconditions": [
+            "Cancellation and disconnect mark terminal once; no late success can replace it.",
+            "One parent operation owns zero or one child; no reusable workers. Global limit4, one outstanding per transport; keep capacity until actual child close. Drop request records/timers/listeners and plaintext references after exit.",
+            "At deadline/cancel send cancel over private IPC, allow250ms graceful cleanup then SIGKILL owned child and await close; result timeout/canceled may return at10s while capped reaper owns capacity until close. A stuck reap cannot enable unbounded retries.",
+            "Normal success withheld until child disposes driver/resource and exits. Failed/hung close leads timeout, not reachable."
+          ]
+        },
+        {
+          "name": "testConnectionRpc",
+          "signature": "testConnectionRpc(params: { readonly repoRoot?: unknown; readonly config?: unknown }, context?: TrustedRpcContext): Promise<TestConnectionResult | { error: string }>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "{repoRoot?:unknown;config?:unknown}",
+              "purpose": "Existing legacy test adapter.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "TrustedRpcContext | undefined",
+              "purpose": "Server-owned identity, epoch and unary AbortSignal; legacy callers without trusted context fail closed for supervised runtime calls.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TestConnectionResult | {error:string}",
+            "meaning": "Preserve successful legacy fields; safely map worker failures and timeout/canceled."
+          },
+          "errors": [
+            {
+              "type": "sanitized legacy error",
+              "condition": "Existing legacy admission failures or unavailable test service."
+            }
+          ],
+          "preconditions": [
+            "Retain legacy saved-only scope-local lookup and read-only materialization behavior. Route actual driver work to same bounded supervisor; no new management write authority."
+          ],
+          "postconditions": [
+            "No raw nonfile exception return; legacy calls share global capacity/deadline and cleanup semantics.",
+            "No new UI/session store/removal implementation."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DraftTestRequest / DraftTestResult / TestCancellation",
+        "change": "new",
+        "details": "Implement sc4 in shared types/wire validators. Extend method catalog by test/cancelTest and classify both main-daemon routes. Result identity is correlation, not authority; immutable snapshot is request-local memory, never persisted.",
+        "callSites": [
+          "src/shared/connection-management.ts",
+          "src/daemon/handler-runtime.ts",
+          "src/daemon/connection-management-rpc.ts"
+        ]
+      },
+      {
+        "entity": "PendingProbe",
+        "change": "new",
+        "details": "Daemon transport identity -> 0..1 pending operation; operation ->0..1 owned child, plus bounded reaping state. operation owns timer, IPC nonce, abort cleanup and ephemeral effective config. Child ->exactly1 disposable driver ->0..1 private file resource. No parent pool registration. Future S003 only supplies readonly snapshot callback. Proposed new supervisor src/daemon/db/draft-test.ts and isolated entry src/bin/insrc-connection-test.ts; private messages validate config and return fixed codes only. Fork inherits no credentials or INSRC logging configuration: minimal platform/runtime environment, ignored stdio and silent worker logger initialized before driver imports; no argv/env config, runfiles, shell, keychain/registry/graph imports or IPC daemon access. Worker uses imported factory and sc8 memory-only policy. Source/compiled entry resolution tested; startup crash and broken IPC safely fail. File factories disable persistent DuckDB install/cache/spill per sc8. Construction alone is insufficient. Await the explicit registered-kind probeReachability operation described below; never return schema completeness.",
+        "callSites": [
+          "src/daemon/db-rpc.ts",
+          "src/daemon/db/file-execution.ts",
+          "src/daemon/db/driver-profiles.ts"
+        ]
+      },
+      {
+        "entity": "Explicit awaited reachability probes (S002-internal contract)",
+        "change": "new",
+        "details": "Factory construction NEVER implies reachable. Add S002-only DraftProbe interface { probeReachability(): Promise<void>; close(): Promise<void> } in proposed src/daemon/db/draft-probe.ts. Concrete driver classes implement this extra internal method without changing shared BaseDriver, registry factory signatures or sc1/sc8. Worker uses exact registered-kind allowlist and checks method presence; absence fails unsupported, never reachable. Driver probes: postgres/cockroachdb SELECT 1 through pg; mysql/mariadb pooled SELECT 1; sqlite read-only open then SELECT 1 (missing file must not be created); mssql SELECT 1; oracle SELECT 1 FROM DUAL; clickhouse SELECT 1; redis/valkey/keydb explicitly connect lazy client then PING; mongodb admin ping; cassandra client connect then SELECT release_version FROM system.local; nats connected flush; dynamodb authenticated ListTables Limit1 without exposing names; etcd authenticated bounded range limit1; memcached version. No writes or schema enumeration. File kinds csv/tsv/json/jsonl/ndjson/parquet/arrow/feather/avro/bson/fixed-width/xlsx explicitly call private readerPath under memory-only policy and issue a bounded SELECT on the selected local target; parse/load errors fail; empty valid input can succeed; xlsx must select real sheet, not fake fallback. No completeness claim. Add methods at src/daemon/db/drivers/pg.ts, mysql.ts, sqlite.ts, mssql.ts, oracle.ts, clickhouse.ts, redis.ts, mongodb.ts, cassandra.ts, nats.ts, dynamodb.ts, etcd.ts, memcached.ts, duckdb-file.ts (each name resolved under src/daemon/db/drivers/). Add exact29-kind coverage assertion, actual unreachable/bad-auth/malformed-file negatives and lazy factory success/probe failure tests. S002 owns these test-specific operations; no sc8 converter redesign.",
+        "callSites": [
+          "src/shared/db-driver.ts",
+          "src/daemon/db-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Worker-safe shared logger bootstrap",
+        "change": "invariant-change",
+        "details": "src/shared/logger.ts must remove top-level mkdirSync and defer mkdir/config reads/transports to non-worker logger creation. Add explicit internal probe-worker mode selected via fixed nonsecret bootstrap environment before first module import; worker fork overwrites INSRC_MODE to probe-worker, filters all inherited logger/Node injection variables, and uses dynamic driver imports only after selecting mode. In probe-worker getRoot returns disabled pino with in-memory no-op destination; it must never call resolveLevel/read config, mkdir, pino transport, pino-roll or stdout/stderr sink. Guard top-level path imports for side effects. Existing daemon/cli/mcp modes preserve current lazy creation and transport behavior. Verify fresh compiled and tsx processes, isolated HOME/TMP and actual PATHS.logDir, spies on fs mkdir/read config and recursive filesystem watches plus path/password canaries on startup/init/error/close; ignoring stdio alone is not evidence.",
+        "callSites": [
+          "src/daemon/db-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Unary transport lifetime",
+        "change": "field-add",
+        "details": "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates a per-unary-request AbortController, merges signal with existing trusted identity/epoch, returns abort callback and suppresses response delivery after abort. Socket close calls registered cancel as today. Other unary handlers may ignore optional signal unchanged. src/daemon/handler-runtime.ts must pass trusted context to legacy testConnectionRpc via additive optional second parameter; v2 adapter forwards signal to supervisor. src/daemon/threads/method-class.ts classifies test/cancel/legacy db.testConnection in main daemon, never serializes signal into worker threads. Supervisor shutdown hook in src/daemon/index.ts stops admission, aborts all owned operations, sends child cancel and escalates after250ms, awaiting owned close before daemon teardown; no unrelated PIDs signaled. Real IPC disconnect tests prove child exits and no late reply; legacy and v2 share owner/capacity.",
+        "callSites": [
+          "src/daemon/handler-runtime.ts",
+          "src/daemon/connection-management-rpc.ts",
+          "src/daemon/db-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Saved owner readonly prepareDraft boundary",
+        "change": "new",
+        "details": "Add SavedConnectionManagement.prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest, 'key' | 'expectedRevision' | 'publicPatch' | 'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> in src/daemon/db/management.ts. Under existing per-root serialized gate validate context/root, enabled/registration/recovery state through current(), snapshot config and revision, infer create/update, enforce existence/expectedRevision, then call shared materializeDraft with readonly owned reference reader. Never list(), apply(), pool.reload(), mutate(), stage/activate, tickets or receipts. Owner-aware reader only accepts refs enumerated from selected snapshot after revision checks; create cannot resolve arbitrary supplied refs. Hold gate through readonly credential materialization so concurrent mutation/cleanup cannot delete Keep generation while it is read; release immediately after immutable plaintext snapshot built, not for network test. Check signal after every await and before returns; hanging preparation retains bounded supervisor slot and queued aborted gate callback must not read secrets/spawn when eventually admitted. No late spawn after deadline. No raw snapshot returned to client or child beyond effective config. Tests snapshot exact registry/keychain and spy zero pool reload/staging/writers; concurrent saved update/delete cannot race Keep acquisition. Future temporary resolver uses equivalent readonly owner contract, no S003 store implementation.",
+        "callSites": [
+          "src/daemon/db/driver-profiles.ts",
+          "src/daemon/connection-management-rpc.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reuse strict key/profile descriptors, allowlisted errors and capability handshake; add draft-test feature only behind verified S001 gates."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use owned revision snapshot and existing materializeDraft Keep/Replace/Clear; no mutations/receipts."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Trust server-minted transport identity; registered roots and readonly snapshot adapter; no S003 store or reconnect semantics."
+      },
+      {
+        "contractId": "sc8",
+        "role": "consumes",
+        "howDetails": "Use memory-only FileExecutionPolicy and owned close exactly as S001; never add converters/cache policy."
+      },
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Strict request/result/cancel types and transport-bound one-shot disposable process supervisor; deadline, sanitized errors and stale correlation available to S005."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Malformed, excessive or forged request",
+          "detection": "Strict key/type/size checks and canonical registered-root/transport gate before materialization",
+          "response": "Fixed invalid-input or upgrade-required; no worker, no secret read",
+          "userImpact": "Correct draft or upgrade",
+          "recoverable": true
+        },
+        {
+          "scenario": "Saved drift or credential unavailable",
+          "detection": "Owned snapshot revision comparison and readonly materializeDraft error code",
+          "response": "Fixed conflict/not-found/registry-unreadable/secret-unavailable; no raw exception or spawn",
+          "userImpact": "Refresh draft or replace credential",
+          "recoverable": true
+        },
+        {
+          "scenario": "Worker error/crash/malformed IPC",
+          "detection": "Spawn error, child exit, disconnect or strict message validation",
+          "response": "Fixed failed result, terminate/reap owned child; sanitize even unknown codes",
+          "userImpact": "Retry after correcting connection",
+          "recoverable": true
+        },
+        {
+          "scenario": "Deadline, cancellation or client disconnect",
+          "detection": "Parent monotonic10s timer, matching owner cancellation or transport AbortSignal",
+          "response": "Single terminal timeout/canceled; suppress late preparation/results, graceful cancel250ms then SIGKILL and reap",
+          "userImpact": "Retry after cleanup capacity available",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native conversion cannot stay memory-only",
+          "detection": "sc8 resource-limit/unsupported-temporary code",
+          "response": "Fixed actionable safeMessage without path/config",
+          "userImpact": "Use smaller input or saved connection",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Same request ID on different sockets or epoch",
+          "expected": "No cross-owner cancellation or result disclosure; parent keys identity+epoch+request."
+        },
+        {
+          "input": "Result races deadline/cancel and duplicate completion",
+          "expected": "First terminal state wins; reachable only after successful close/exit before deadline."
+        },
+        {
+          "input": "Keychain or root read hangs past deadline",
+          "expected": "Parent settles timeout; aborted operation cannot later spawn. Bound preparation capacity and keep it occupied until pending work drains."
+        },
+        {
+          "input": "Temporary create before S003 installation",
+          "expected": "Standalone fully supplied draft can probe with no session storage; Keep with no owned snapshot rejects. Temporary edit unavailable until readonly resolver installed."
+        },
+        {
+          "input": "Pinned family differs registered driver family",
+          "expected": "Use same materializeDraft preservation as Save; actual factory/file policy selected by registered kind."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Profile materialization preserves owned credentials and read-only transient operation; analyze e1/e3 and supplemental source.",
+          "source": "c1"
+        },
+        {
+          "text": "File probes use S001 memory-only execution and awaited resource cleanup; analyze e1/e3.",
+          "source": "c2"
+        },
+        {
+          "text": "Legacy successful response shapes remain compatible; testConnectionRpc anchor in analyze e1.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "CM-S2-A: exact wire validators and materialization parity with Save, Keep/Replace/Clear, revision and safe outcomes.",
+          "subjects": [
+            "Unknown-field/type/size rejection; request/result owner identities; pinned family; missing/foreign secret refusal; parent fixed messages for SQL/KV/file errors"
+          ],
+          "fixturesNeeded": [
+            "Fake readonly keystore and snapshots; no real credential access"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-A: actual disposable child probes SQL/KV/native/converted files with no draft persistence and sanitized logs.",
+          "subjects": [
+            "SQL/KV loopback fixtures; native CSV/JSON/JSONL/Parquet and BSON/Avro/fixed-width/XLSX; optional Arrow explicitly reports unsupported if absent",
+            "Snapshot registry bytes/keychain values and watch isolated HOME/TMP/cache/log directories before/after all success/error paths",
+            "Capture stdout/stderr/daemon logs with credential/path canaries; worker receives config solely by IPC; no INSTALL or persistent files"
+          ],
+          "fixturesNeeded": [
+            "Node22 compiled worker and tsx development worker; fake secrets; readonly local file fixtures; isolated environment; local SQL/KV fixtures, live suites explicitly labeled if unavailable"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-B: deterministic race/cancel/deadline and real process forced cleanup.",
+          "subjects": [
+            "10-second production deadline including hanging prepare/spawn/init/close; cancellation250ms grace then owned PID absent; retries capacity bounded",
+            "Duplicate clicks busy, per-owner isolation, global cap4 including reaping, reconnect epoch, root switch/form close simulation via cancel and late result identity; UI presentation remains S005",
+            "Child never replies, ignores cancel, sends malformed/duplicate/wrong nonce messages, exits early; same-time success/cancel deadline; transport disconnect/shutdown drain; zero child/resource/timer/listener residuals"
+          ],
+          "fixturesNeeded": [
+            "Injected monotonic clock for unit races plus real child ignoring termination for smoke; only fixture PIDs may be signaled"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Legacy and v2 actual route compatibility and capability gates.",
+          "subjects": [
+            "handler-runtime test dispatch and cancel main-daemon classification; trusted socket context; feature disabled until prerequisites verified; missing old-daemon method handshake",
+            "Legacy saved-only test returns existing successful fields and bounded sanitized failure; no regression to memory-only file behavior"
+          ],
+          "fixturesNeeded": [
+            "Real IPC transport harness; isolated registry/keystore"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-D: prove explicit probes, zero-write logger bootstrap, readonly preparation and transport lifetime.",
+          "subjects": [
+            "Factory construction NEVER implies reachable. Add S002-only DraftProbe interface { probeReachability(): Promise<void>; close(): Promise<void> } in proposed src/daemon/db/draft-probe.ts. Concrete driver classes implement this extra internal method without changing shared BaseDriver, registry factory signatures or sc1/sc8. Worker uses exact registered-kind allowlist and checks method presence; absence fails unsupported, never reachable. Driver probes: postgres/cockroachdb SELECT 1 through pg; mysql/mariadb pooled SELECT 1; sqlite read-only open then SELECT 1 (missing file must not be created); mssql SELECT 1; oracle SELECT 1 FROM DUAL; clickhouse SELECT 1; redis/valkey/keydb explicitly connect lazy client then PING; mongodb admin ping; cassandra client connect then SELECT release_version FROM system.local; nats connected flush; dynamodb authenticated ListTables Limit1 without exposing names; etcd authenticated bounded range limit1; memcached version. No writes or schema enumeration. File kinds csv/tsv/json/jsonl/ndjson/parquet/arrow/feather/avro/bson/fixed-width/xlsx explicitly call private readerPath under memory-only policy and issue a bounded SELECT on the selected local target; parse/load errors fail; empty valid input can succeed; xlsx must select real sheet, not fake fallback. No completeness claim. Add methods at src/daemon/db/drivers/pg.ts, mysql.ts, sqlite.ts, mssql.ts, oracle.ts, clickhouse.ts, redis.ts, mongodb.ts, cassandra.ts, nats.ts, dynamodb.ts, etcd.ts, memcached.ts, duckdb-file.ts (each name resolved under src/daemon/db/drivers/). Add exact29-kind coverage assertion, actual unreachable/bad-auth/malformed-file negatives and lazy factory success/probe failure tests. S002 owns these test-specific operations; no sc8 converter redesign.",
+            "src/shared/logger.ts must remove top-level mkdirSync and defer mkdir/config reads/transports to non-worker logger creation. Add explicit internal probe-worker mode selected via fixed nonsecret bootstrap environment before first module import; worker fork overwrites INSRC_MODE to probe-worker, filters all inherited logger/Node injection variables, and uses dynamic driver imports only after selecting mode. In probe-worker getRoot returns disabled pino with in-memory no-op destination; it must never call resolveLevel/read config, mkdir, pino transport, pino-roll or stdout/stderr sink. Guard top-level path imports for side effects. Existing daemon/cli/mcp modes preserve current lazy creation and transport behavior. Verify fresh compiled and tsx processes, isolated HOME/TMP and actual PATHS.logDir, spies on fs mkdir/read config and recursive filesystem watches plus path/password canaries on startup/init/error/close; ignoring stdio alone is not evidence.",
+            "Add readonly signal?: AbortSignal | undefined to server-created TrustedRpcContext in src/daemon/request-context.ts. src/daemon/server.ts directDispatch creates a per-unary-request AbortController, merges signal with existing trusted identity/epoch, returns abort callback and suppresses response delivery after abort. Socket close calls registered cancel as today. Other unary handlers may ignore optional signal unchanged. src/daemon/handler-runtime.ts must pass trusted context to legacy testConnectionRpc via additive optional second parameter; v2 adapter forwards signal to supervisor. src/daemon/threads/method-class.ts classifies test/cancel/legacy db.testConnection in main daemon, never serializes signal into worker threads. Supervisor shutdown hook in src/daemon/index.ts stops admission, aborts all owned operations, sends child cancel and escalates after250ms, awaiting owned close before daemon teardown; no unrelated PIDs signaled. Real IPC disconnect tests prove child exits and no late reply; legacy and v2 share owner/capacity.",
+            "Add SavedConnectionManagement.prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest, 'key' | 'expectedRevision' | 'publicPatch' | 'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> in src/daemon/db/management.ts. Under existing per-root serialized gate validate context/root, enabled/registration/recovery state through current(), snapshot config and revision, infer create/update, enforce existence/expectedRevision, then call shared materializeDraft with readonly owned reference reader. Never list(), apply(), pool.reload(), mutate(), stage/activate, tickets or receipts. Owner-aware reader only accepts refs enumerated from selected snapshot after revision checks; create cannot resolve arbitrary supplied refs. Hold gate through readonly credential materialization so concurrent mutation/cleanup cannot delete Keep generation while it is read; release immediately after immutable plaintext snapshot built, not for network test. Check signal after every await and before returns; hanging preparation retains bounded supervisor slot and queued aborted gate callback must not read secrets/spawn when eventually admitted. No late spawn after deadline. No raw snapshot returned to client or child beyond effective config. Tests snapshot exact registry/keychain and spy zero pool reload/staging/writers; concurrent saved update/delete cannot race Keep acquisition. Future temporary resolver uses equivalent readonly owner contract, no S003 store implementation."
+          ],
+          "fixturesNeeded": [
+            "Actual lazy driver failure fixtures; compiled fresh worker; real IPC disconnect; fake keychain and pool/writer spies"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "CM-S2-A: same merged draft as Save, fixed reachability-only result, sanitized errors/duration, zero draft registry/keychain/cache writes for SQL/KV/native/converted fixtures.",
+            "CM-S2-C: actual legacy/v2 routing, private worker IPC and release capability gating."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "CM-S2-B: stale identities and cancel races, repeated-click suppression, production10s deadline, forced reaping and bounded retry with zero retained resources."
+          ]
+        }
+      ],
+      "testFramework": "node:test with node:assert/strict, *.test.ts and Node22 via tsx; meaningful actual-child integration alongside deterministic unit clocks. Relevant tests per build task, full sweep only once all S002 tasks built; no live daemon stop/adoption."
+    },
+    "migration": {
+      "stateBefore": "Analyze e1/e3 and supplemental src/daemon/db-rpc.ts show in-process transient factory initialization with memory-only file probes and awaited close; nonfile error messages returned directly. S001 review remains pending and release gates disabled.",
+      "stateAfter": "One bounded parent supervisor owns disposable test children for both v2 and legacy actual probe execution. No connection data migration, no persistent test state; S005 consumes correlation and cancellation contract later.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add shared sc4 types and strict validators, parent supervisor and private compiled/development child entry; keep draft-test capability disabled.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Wire main-daemon v2 test/cancel routes and existing legacy adapter to the supervisor; use current profiles and read-only snapshot materialization, no S003 store.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Complete focused task tests, then full sweep and independent S002 review. Advertise draft-test only when S001 prerequisites and S002 evidence are verified; never modify S001 approval state or run maintenance during build.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "connections.managementV2",
+            "verified-S001-foundation",
+            "verified-S002-probes"
+          ]
+        }
+      ],
+      "backwardCompat": "Retain legacy method name, saved-only scope-local lookup and successful fields. Timeout/canceled/failures are fixed sanitized projections. New clients detect absent draft-test support as upgrade-required; no fallback to unbounded in-process execution. Downgrade requires no draft data rewrite; no live downgrade or restart performed by this story.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One disposable child per admitted request",
+        "approach": "Parent materializes shared effective draft; isolated one-shot IPC worker with bounded lifetime. Selected smallest complete sc4 implementation."
+      },
+      {
+        "id": "a2",
+        "name": "Reusable supervised child pool",
+        "approach": "Retain/reset idle workers across requests.",
+        "reasonRejected": "Unnecessary reset/scheduling complexity and credential retention risk; partial ac1 until reset verified."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "draft-probe-lifecycle",
+      "narrative": "Shows process ownership, credential flow over private IPC and timeout cleanup. Alternative terminal paths are explicitly labeled; no persistent connection mutation occurs.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "Calling client",
+          "description": "S005 consumer of sc4 correlation and cancellation."
+        },
+        {
+          "id": "parent",
+          "label": "Daemon supervisor",
+          "description": "Owns admission, deadline, readonly snapshot materialization and child reaping."
+        },
+        {
+          "id": "worker",
+          "label": "Disposable test child",
+          "description": "Owns one driver and its private memory-only file resource."
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "parent",
+          "label": "test(requestId, draftRevision, draft)",
+          "description": "Trusted transport identifies owner; no caller identity trusted."
+        },
+        {
+          "from": "parent",
+          "to": "parent",
+          "label": "Start deadline; validate and materialize readonly snapshot",
+          "description": "Same shared materializer as Save; no keychain/config write."
+        },
+        {
+          "from": "parent",
+          "to": "worker",
+          "label": "Fork then send effective config via private IPC",
+          "description": "No config in argv/env/logs; minimal worker environment."
+        },
+        {
+          "from": "worker",
+          "to": "worker",
+          "label": "Initialize driver; close owned resources",
+          "description": "No schema completeness claim; sc8 memory-only files."
+        },
+        {
+          "from": "worker",
+          "to": "parent",
+          "label": "Normal path: fixed result code then exit",
+          "kind": "return",
+          "description": "Parent waits for successful cleanup and close before reachable."
+        },
+        {
+          "from": "client",
+          "to": "parent",
+          "label": "Alternative: cancel or disconnect",
+          "description": "Owner cancellation races completion through single terminal state."
+        },
+        {
+          "from": "parent",
+          "to": "worker",
+          "label": "Timeout/cancel path: cancel, 250ms grace, SIGKILL if needed",
+          "description": "Parent owns actual child only; await close, retain capacity during reap."
+        },
+        {
+          "from": "parent",
+          "to": "client",
+          "label": "Correlated reachable / failed / timeout / canceled",
+          "kind": "return",
+          "description": "Fixed sanitized outcome and elapsed duration; late replies ignored."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "S002 context.assemble: e1/e3 and supplemental src/daemon/db/driver-profiles.ts materializeDraft; src/daemon/db-rpc.ts transient materialization"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "S002 context.assemble e1/e3: src/daemon/db/file-execution.ts and src/daemon/db/__tests__/owned-file-driver.test.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "S002 context.assemble e1/e3: src/daemon/db-rpc.ts testConnectionRpc; src/daemon/handler-runtime.ts legacy dispatch"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD-484fcef7efaf229e shared contracts sc1/sc2/sc3/sc4/sc8 and S002 boundary"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "User explicitly deferred S001 independent review and requested next story; relevant tests per task, full sweep after all tasks built."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/shared/logger.ts; src/daemon/request-context.ts; src/daemon/server.ts; src/daemon/db/management.ts; src/daemon/db/drivers/index.ts; src/daemon/db/drivers/redis.ts; src/daemon/db/drivers/mysql.ts",
+      "quotedText": "Review-grounded correction: lazy construction is not reachability, logger import creates directory, unary cancel is no-op, saved owner ports are private."
+    }
+  ]
+}

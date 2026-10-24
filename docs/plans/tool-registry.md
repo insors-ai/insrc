@@ -191,3 +191,9 @@ s1 t1 to t5 built and gated; code review pass (0 findings, full grounding); BUIL
 - **No cancellation bound** on the stage; a rule that never settles holds the call.
 - `registerToolHook` is not yet called anywhere in production; s7 registers the tracker-status refresh and similar rules.
 - **Sweep:** s1 introduced no failures. 18 workflow tests and the daemon `build-start` T33 test started failing at `86fb49d2b` (the `fix(workflow)` build-bound code-review commits, outside this Story); the pre-existing failures are unchanged.
+
+## s4 split (2026-10-24)
+
+After nine review rounds the s4 LLD was split on the user's decision. s4 keeps the 22 existing git tools (typed outputs, per-input approval classes, typed failures, legacy compatibility) and the new tools s7 needs (reads, `git_fetch_refs`, `git_symbolic_ref`, a byte-safe `git_cat_file`, `runShellBytes`). The long tail of git (93 of the 169 commands of git 2.53.0) is Story **s8** ("Reach the rest of git through named, typed tools"), appended through the define extend path: DEF revision 2 (approved with an override for 36 MED evidence gaps, 2026-10-24 16:02 UTC), HLD amendment AMD-b7a68147dcf72034-8 (approved). s8 depends on s2, s3 and s4 (not recordable in the extend path; this note is the record) and owns the stdin-consuming commands, the destructive classes of its modes and the full coverage table.
+
+Accepted by the user: DEF s4 ac1 ("an operation that git supports") is met by s4 and s8 together; the exclusions are commands that need a person or a GUI, mail, a server or transport role, credential helpers, and internal helpers. Still to confirm at s8: excluding commands that run an arbitrary command (for-each-repo, hook, filter-branch) as raw passthrough. Accepted behaviour changes: inputs a tool's schema forbids are now rejected (git_log limit, git_diff maxBytes and context, git_fetch depth); a failed git_show diff read is a failure.

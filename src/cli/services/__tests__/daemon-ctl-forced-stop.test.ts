@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { captureStopTarget } from '../../../shared/daemon-process-client.js';
@@ -34,6 +34,7 @@ function source(f: Fixture, mode: string): string {
  const server = net.createServer(sock => { sock.on('error', () => {}); sock.on('data', data => {
   const req = JSON.parse(String(data).split('\\n')[0]);
   if (mode === 'remove') { fs.rmSync(${JSON.stringify(f.pid)}, { force: true }); fs.rmSync(${JSON.stringify(f.sock)}, { force: true }); sock.destroy(); return; }
+  if (mode === 'reincarnate') { fs.writeFileSync(${JSON.stringify(f.pid)}, String(process.pid)); fs.writeFileSync(${JSON.stringify(join(f.home, 'process-table'))}, String(process.pid) + ' replacement-incarnation alive'); sock.destroy(); return; }
   if (mode === 'replace') { fs.writeFileSync(${JSON.stringify(f.pid)}, '123456789'); fs.rmSync(${JSON.stringify(f.sock)}); fs.writeFileSync(${JSON.stringify(f.sock)}, 'foreign'); sock.destroy(); return; }
   sock.write(JSON.stringify({ id: req.id, result: { ok: true } }) + '\\n'); if (mode === 'clean') setTimeout(stop, 20);
  }); });
@@ -45,8 +46,8 @@ async function standIn(f: Fixture, mode: string, valid = true) {
  const entry = join(folder, valid ? 'index.js' : 'server.js'); writeFileSync(entry, source(f, mode));
  const child = spawn(process.execPath, [entry], { stdio: ['ignore', 'pipe', 'inherit'] }); children.push(child); await once(child.stdout!, 'data'); return child;
 }
-function ctl(f: Fixture, command: string) {
- const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1' }, encoding: 'utf8', timeout: 15000 });
+function ctl(f: Fixture, command: string, extraEnv: Record<string, string> = {}) {
+ const r = spawnSync('bash', [script, command, '--skip-sync', '--skip-install', '--skip-build', '--branch', 'main'], { env: { ...process.env, HOME: f.home, INSRC_DAEMON_ROOT: f.root, INSRC_CTL_LOG_DIR: join(f.home, 'logs'), INSRC_CTL_STOP_WAIT_SECS: '0.1', ...extraEnv }, encoding: 'utf8', timeout: 15000 });
  return { status: r.status, output: r.stdout + r.stderr };
 }
 async function ended(child: ChildProcess) { if (child.exitCode !== null || child.signalCode !== null) return [child.exitCode, child.signalCode]; return once(child, 'exit'); }
@@ -84,4 +85,24 @@ test('Shell start and restart refuse spawn after lifecycle failures even in cond
  // Missing packaging must also fail through the actual start path.
  rmSync(join(f.root, 'out/bin')); writeFileSync(join(f.root, 'out/daemon/index.js'), `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unsafe');`);
  const missing = ctl(f, 'start'); assert.notEqual(missing.status, 0); assert.match(missing.output, /helper missing/); assert.equal(existsSync(marker), false);
+});
+
+
+test('Shell bridge with injected same-PID reincarnation refuses restart and missing identity', { timeout: 15000 }, async () => {
+ const f = fixture();
+ // A private complete distribution lets the actual shell bridge use a compiled
+ // test-only OS adapter, without altering the workspace or installed broker.
+ rmSync(join(f.root, 'out/bin')); cpSync(join(repo, 'out'), join(f.root, 'out'), { recursive: true });
+ const binary = join(f.root, 'out/bin/insrc-process-broker');
+ execFileSync(process.env['CC'] || 'cc', ['-std=c11', '-Wall', '-Wextra', '-Werror', '-I', join(repo, 'src/native/process-broker'), join(repo, 'src/native/process-broker/main.c'), join(repo, 'src/cli/services/__tests__/fixtures/reused-pid-backend.c'), '-o', binary]);
+ const child = await standIn(f, 'reincarnate');
+ const signalLog = join(f.home, 'signals');
+ const result = ctl(f, 'restart', { INSRC_REUSE_SIGNAL_LOG: signalLog });
+ assert.notEqual(result.status, 0, result.output); assert.match(result.output, /ownership conflict/);
+ assert.equal(readFileSync(signalLog, 'utf8'), `${child.pid} original-incarnation\n`);
+ assert.equal(readFileSync(join(f.home, 'process-table'), 'utf8'), `${child.pid} replacement-incarnation alive`);
+ assert.doesNotMatch(result.output, /spawning daemon/);
+ const missing = fixture(); writeFileSync(missing.pid, 'unverifiable-owner');
+ const invalid = ctl(missing, 'restart'); assert.notEqual(invalid.status, 0); assert.match(invalid.output, /invalid PID/); assert.doesNotMatch(invalid.output, /spawning daemon/);
+ assert.equal(readFileSync(missing.pid, 'utf8'), 'unverifiable-owner');
 });

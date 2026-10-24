@@ -30,6 +30,8 @@ import type {
 	DriverFamily,
 } from '../../shared/db-driver.js';
 import { familyOf, kindExists } from './registry.js';
+import { assertUnmanagedWrite, writeWithManagedProof } from './managed-store.js';
+import type { ManagedCommit } from './managed-store.js';
 
 const log = getLogger('db-config');
 
@@ -148,11 +150,17 @@ export async function loadConnections(
 export async function saveConnections(
 	repoPath: string,
 	file: ConnectionsFile,
+	commit?: ManagedCommit | undefined,
 ): Promise<string> {
 	const path = connectionsPath(repoPath);
-	await mkdir(dirname(path), { recursive: true });
 	const serialized = JSON.stringify(file, null, 2) + '\n';
-	await writeFile(path, serialized, 'utf8');
+	if (commit !== undefined) {
+		await writeWithManagedProof(path, serialized, commit);
+	} else {
+		await assertUnmanagedWrite(path, file);
+		await mkdir(dirname(path), { recursive: true });
+		await writeFile(path, serialized, 'utf8');
+	}
 	log.debug({ repoPath, path }, 'saved db-connections');
 	return path;
 }

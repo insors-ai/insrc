@@ -2282,7 +2282,7 @@
     "Actual registered kinds, rather than the stale index.ts count comment, are authoritative."
   ],
   "sourceDigests": {
-    "src/daemon/db/config.ts": "60f60abcf252e1c7afeb8540a95c12f60891e8b4d28ddeefd5dc1272435cc5e3",
+    "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
     "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
     "src/daemon/db/drivers/converters/avro.ts": "e2a8dd50f1da32b3c65752350b922f7a03cd7bc7d42972c57f9ee52d8262adea",
@@ -2312,6 +2312,11 @@
       "task": "t2",
       "source": "src/shared/db-driver.ts",
       "reason": "Type-only import and optional document _management envelope/index signature; ConnectionConfig field reads and all driver classifications unchanged."
+    },
+    {
+      "task": "t5",
+      "source": "src/daemon/db/config.ts",
+      "reason": "Adds internal managed-commit proof and pre-write unmanaged guard; no ConnectionConfig field classifications or driver reads changed."
     }
   ]
 }

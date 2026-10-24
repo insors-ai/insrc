@@ -124,7 +124,7 @@ import { reconcileConfigFile } from '../config/reconcile-io.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
-import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError } from './run-file-ownership.js';
+import { daemonRunFiles, endForRunFileConflict, RunFileOwnershipError, cleanupFailedPublication } from './run-file-ownership.js';
 import type { RunFileLease } from './run-file-ownership.js';
 
 // ---------------------------------------------------------------------------
@@ -2141,10 +2141,8 @@ main().catch(async err => {
 	log.fatal({ err }, 'fatal error');
 	if (err instanceof RunFileOwnershipError) { endForRunFileConflict(err); return; }
 	try {
-		startupServer?.disconnectClients();
-		await startupServer?.close();
-		if (startupRunFiles) daemonRunFiles.clearRunFiles();
-		startupRunFiles?.release(); startupRunFiles = undefined;
+		await cleanupFailedPublication(startupServer, startupRunFiles);
+		startupRunFiles = undefined;
 	} catch (cleanupError) { endForRunFileConflict(cleanupError); return; }
 	exitRespectingStoreHealth(1, 'a failed start');
 });

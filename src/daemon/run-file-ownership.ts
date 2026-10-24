@@ -29,8 +29,10 @@ export class DaemonRunFileOwnership {
 	private depth = 0;
 	private pidIdentity: RunFileIdentity | undefined;
 	private socketIdentity: RunFileIdentity | undefined;
+	private listenerMayUnlink = false;
 	constructor(paths: RunFilePaths) { this.paths = Object.freeze({ ...paths }); }
-	get hasSocketPublication(): boolean { return this.socketIdentity !== undefined; }
+	get hasSocketPublication(): boolean { return this.listenerMayUnlink; }
+	markListenerClosed(): void { this.listenerMayUnlink = false; }
 
 	lease(): RunFileLease {
 		try {
@@ -69,6 +71,7 @@ export class DaemonRunFileOwnership {
 			if (!lstatSync(this.paths.socketFile).isSocket()) throw new RunFileOwnershipError(`published endpoint is not a socket at ${this.paths.socketFile}`);
 			this.socketIdentity = runFileIdentity(this.paths.socketFile);
 			if (!this.socketIdentity) throw new RunFileOwnershipError('published socket disappeared');
+			this.listenerMayUnlink = true;
 		});
 	}
 	assertSocketOwned(): void { this.within(() => this.verifyFiles()); }
@@ -125,4 +128,12 @@ export function endForRunFileConflict(error: unknown, deps: { readonly logPath?:
 	try { const path = deps.logPath ?? PATHS.daemonLog; mkdirSync(dirname(path), { recursive: true }); appendFileSync(path, line); } catch { /* diagnostic unavailable */ }
 	try { process.stderr.write(line); } catch { /* stderr unavailable */ }
 	(deps.killSelf ?? (() => { process.kill(process.pid, 'SIGKILL'); }))();
+}
+
+/** Shared startup-failure cleanup, including a listener opened before readiness. */
+export async function cleanupFailedPublication(server: { disconnectClients(): void; close(): Promise<void> } | undefined, publication: RunFileLease | undefined): Promise<void> {
+ server?.disconnectClients();
+ await server?.close();
+ if (publication) daemonRunFiles.clearRunFiles();
+ publication?.release();
 }

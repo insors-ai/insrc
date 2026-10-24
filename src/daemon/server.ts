@@ -180,6 +180,7 @@ export class IpcServer {
         // Refuse before server.close: libuv may unlink the pathname implicitly.
         this.ownership.assertSocketOwned();
         await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+        this.ownership.markListenerClosed();
         this.ownership.removeSocket(); this.server = null;
       } finally { lease.release(); }
     })();

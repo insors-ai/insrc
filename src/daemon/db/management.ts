@@ -2,7 +2,7 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
 import type { ConnectionConfig } from '../../shared/db-driver.js';
-import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt } from '../../shared/connection-management.js';
+import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt, DraftTestRequest, EffectiveDraft } from '../../shared/connection-management.js';
 import { parseMutationRequest, parseOperationTicket, parseConnectionKey, ManagementInputError } from '../../shared/connection-management-wire.js';
 import { canonicalRequestJson, SavedTicketAuthority, TicketError } from './management-tickets.js';
 import { connectionsPath, loadConnections } from './config.js';
@@ -12,6 +12,7 @@ import { ManagedRegistry, ManagedStoreError } from './managed-store.js';
 import type { RegistrySnapshot } from './managed-store.js';
 import type { DriverPool } from './pool.js';
 import { ConnectionUseError } from './lease-gate.js';
+import { prepareRuntimeConfig } from './runtime-config.js';
 const roots = new Map<string, Promise<void>>();
 /** Shared by v2 and unmanaged legacy compatibility writes; never serializes different roots. */
 export async function withSavedRootGate<T>(root: string, use: () => Promise<T>): Promise<T> {
@@ -69,6 +70,7 @@ export interface SavedManagementPorts {
 	readonly generations: CredentialGenerations;
 	readonly pool: DriverPool;
 	readonly enabled: () => Promise<boolean>;
+	readonly probeMetadataReady?: (() => Promise<RegistrySnapshot>) | undefined;
 	readonly isRegistered: (root: string) => Promise<boolean>;
 	readonly activate: (id: string, revision: string) => Promise<void>;
 	readonly readSecret: (ref: string) => Promise<string | null>;
@@ -107,7 +109,11 @@ export class SavedConnectionManagement {
 		const current = await (reconcile ? this.ports.store.reconcile() : this.ports.store.inspect());
 		if (!current.file._management || JSON.stringify(loaded.file) !== JSON.stringify(current.file))
 			throw new ManagementServiceError('recovery-required');
+		return this.validateSnapshot(current);
+	}
+	private validateSnapshot(current: RegistrySnapshot): RegistrySnapshot {
 		const envelope = current.file._management;
+		if (!envelope) throw new ManagementServiceError('recovery-required');
 		const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 		if (!uuid.test(envelope.registryId) || !uuid.test(envelope.generation) || envelope.registryId !== this.ports.generations.journal.registryId || Object.values(envelope.revisions).some(revision => typeof revision !== 'string' || !uuid.test(revision)) || current.file.connections.some(c => !Object.hasOwn(envelope.revisions, c.id)))
 			throw new ManagementServiceError('registry-unreadable');
@@ -129,6 +135,31 @@ export class SavedConnectionManagement {
 	private context(context: ManagementRequestContext): void {
 		if (!context.connectionIdentity || context.access.managementRepoRoot !== this.root || context.access.lookupRoot !== this.root || !context.access.daemonEpoch)
 			throw new ManagementServiceError('invalid-input');
+	}
+	/** Readonly selected draft preparation; metadata admission must precede every keychain read. */
+	async prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest,'key'|'expectedRevision'|'publicPatch'|'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> {
+		this.context(context);
+		const key = parseConnectionKey(request.key);
+		if (key.repoRoot !== this.root || key.scope !== 'saved') throw new ManagementServiceError('invalid-input');
+		return withSavedRootGate(this.root, async () => {
+			signal?.throwIfAborted();
+			if (!this.ports.probeMetadataReady) throw new ManagementServiceError('upgrade-required');
+			const current = this.validateSnapshot(await this.ports.probeMetadataReady());
+			signal?.throwIfAborted();
+			const config = current.file.connections.find(c => c.id === key.id), revision = current.file._management!.revisions[key.id];
+			const editing = request.expectedRevision !== undefined;
+			if (editing && !config) throw new ManagementServiceError('not-found');
+			if (!editing && config) throw new ManagementServiceError('duplicate-id');
+			if (editing && revision !== request.expectedRevision) throw new ManagementServiceError('conflict');
+			await this.ports.tickets.assertAvailable();
+			signal?.throwIfAborted();
+			const refs = referencedSecrets(config);
+			if ([...refs].some(ref => !this.ports.generations.owns(ref))) throw new ManagementServiceError('recovery-required');
+			const effective = await materializeDraft({ key, mode: editing ? 'update' : 'create', ...(config && revision ? {current:{config,revision}} : {}), ...(request.expectedRevision !== undefined ? {expectedRevision:request.expectedRevision}:{}), publicPatch:request.publicPatch, credentials:request.credentials,
+				readSecret: async ref => { signal?.throwIfAborted(); if (!refs.has(ref) || !this.ports.generations.owns(ref)) throw new ManagementServiceError('secret-unavailable'); const value=await this.ports.readSecret(ref); signal?.throwIfAborted(); return value; } });
+			signal?.throwIfAborted();
+			return {...effective, config: await prepareRuntimeConfig(effective.config,this.root,signal)};
+		});
 	}
 	legacyProjection(id: string): SafeConnection | undefined {
 		const value = this.#lastCommitted.get(id) ?? this.ports.pool.safeList().find(c => c.key.id === id);

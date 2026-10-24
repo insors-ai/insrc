@@ -60,7 +60,7 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 		const generations = new CredentialGenerations(journal, repoIdOf(root), { keystore, current: () => currentStore.inspect() });
 		await generations.recover();
 		await generations.assertReady();
-		const enabled = async () => {
+		const probeMetadataReady = async () => {
 			if (!await lease.current())
 				throw new ManagedStoreError('recovery-required');
 			const current = await currentStore.inspect(), checkpoint = await state.current(), actualParent = await lstat(dirname(path));
@@ -71,6 +71,11 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 			const release = await (ports.enablement ?? connectionManagementEnablement)();
 			if (!release.ready || release.digest !== evidence.digest)
 				throw new ManagedStoreError('recovery-required');
+			if (!await ports.isRegistered(root)) throw new ManagedStoreError('recovery-required');
+			return current;
+		};
+		const enabled = async () => {
+			const current = await probeMetadataReady();
 			await tickets.assertAvailable();
 			for (const config of current.file.connections) {
 				const projected = safeConnection(config, { repoRoot: root, scope: 'saved', id: config.id }, current.file._management!.revisions[config.id]!);
@@ -84,7 +89,7 @@ export async function openManagedRoot(root: string, ports: StartupPorts): Promis
 		};
 		await enabled();
 		const pool = await (ports.pool ?? acquirePool)(root);
-		const service = await SavedConnectionManagement.create({ root, store, tickets, generations, pool, enabled, isRegistered: ports.isRegistered, readSecret: ref => keystore.getKey(ref), activate: async (id) => {
+		const service = await SavedConnectionManagement.create({ root, store, tickets, generations, pool, enabled, probeMetadataReady, isRegistered: ports.isRegistered, readSecret: ref => keystore.getKey(ref), activate: async (id) => {
 				await pool.withConnection(id, async () => {
 				});
 			} });

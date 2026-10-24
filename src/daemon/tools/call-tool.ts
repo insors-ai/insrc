@@ -14,13 +14,13 @@
 
 import type { Static, TSchema } from '@sinclair/typebox';
 import { executeTool } from './executor.js';
-import type { Tool, ToolDeps, ToolFailure, ToolInput } from './types.js';
+import type { HookFailure, Tool, ToolDeps, ToolFailure, ToolInput } from './types.js';
 
 /** A tool whose input and result shapes are both typebox schemas. */
 export type TypedTool = Tool & { readonly inputSchema: TSchema; readonly outputSchema: TSchema };
 
 export type TypedToolResult<T> =
-	| { readonly success: true;  readonly data: T; readonly output: string }
+	| { readonly success: true;  readonly data: T; readonly output: string; readonly hookFailures?: readonly HookFailure[] | undefined }
 	| { readonly success: false; readonly error: ToolFailure; readonly output: string };
 
 export async function callTool<T extends TypedTool>(

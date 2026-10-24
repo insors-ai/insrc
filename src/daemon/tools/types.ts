@@ -73,6 +73,31 @@ export interface ToolFailure {
 	denial?: ToolDenialReason | undefined;
 }
 
+/** One rule that failed after its tool succeeded (sc1). */
+export interface HookFailure {
+	readonly hookId: string;
+	/** The thrown error's message, cut to 500 characters. */
+	readonly message: string;
+}
+
+/** What a rule is given. input and result are the rule's own deep copies; there is no signal. */
+export interface ToolHookContext {
+	/** The canonical tool id, never an alias. */
+	readonly toolId: string;
+	readonly input: unknown;
+	readonly result: Readonly<ToolResult>;
+	/** deps.caller; unset when the call did not say. */
+	readonly caller: 'agent' | 'daemon' | 'workflow' | undefined;
+}
+
+/** A rule that runs after a tool succeeds, for every caller. Failure is signalled by throwing or rejecting. */
+export interface ToolHook {
+	readonly id: string;
+	/** The canonical id of the tool it follows. */
+	readonly toolId: string;
+	run(ctx: ToolHookContext): Promise<void>;
+}
+
 export interface ToolResult {
 	/** Rendered output surfaced to the caller. */
 	output: string;
@@ -90,6 +115,8 @@ export interface ToolResult {
 	data?: unknown;
 	/** Typed failure kind; present on a failed result produced by the executor or a typed tool. */
 	failure?: ToolFailure | undefined;
+	/** Set only when a rule registered for the tool failed after it succeeded; the result stays a success. */
+	hookFailures?: readonly HookFailure[] | undefined;
 }
 
 /** Providers for the two text-conversion roles, resolved by the conversion module. */

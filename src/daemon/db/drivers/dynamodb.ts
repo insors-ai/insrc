@@ -29,9 +29,9 @@ import {
 	ListTablesCommand,
 	ScanCommand,
 } from '@aws-sdk/client-dynamodb';
-import { fromIni } from '@aws-sdk/credential-providers';
-
-import { getLogger } from '../../../shared/logger.js';
+import { getLogger, getLogMode } from '../../../shared/logger.js';
+import { dynamoIdentityProvider, dynamoSnapshotIdentity } from '../dynamo-identity.js';
+import type { DynamoRuntimeAuth } from '../draft-probe.js';
 import type {
 	ConnectionConfig,
 	KvDriver,
@@ -74,10 +74,16 @@ export class DynamoDriver implements KvDriver {
 		profile: string | undefined,
 		endpoint: string | undefined,
 		private readonly config: ConnectionConfig,
+		runtimeAuth?: DynamoRuntimeAuth,
 	) {
+		if (getLogMode() === 'probe-worker' && runtimeAuth === undefined) throw new Error('Connection credentials are unavailable.');
+		const source = runtimeAuth ? async () => dynamoSnapshotIdentity(runtimeAuth) : dynamoIdentityProvider({ ...config, options: { ...config.options, ...(profile !== undefined ? {profile} : {}) } });
 		this.client = new DynamoDBClient({
 			region,
-			...(profile !== undefined ? { credentials: fromIni({ profile }) } : {}),
+			credentials: async () => {
+				const value = await source();
+				return { accessKeyId: value.accessKeyId, secretAccessKey: value.secretAccessKey, ...(value.sessionToken !== undefined ? {sessionToken:value.sessionToken}:{}), ...(value.expiration !== undefined ? {expiration:value.expiration}:{} ) };
+			},
 			...(endpoint !== undefined ? { endpoint } : {}),
 		});
 	}

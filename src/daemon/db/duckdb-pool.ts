@@ -208,3 +208,44 @@ function readMemoryBudget(): number {
 function errMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
+
+/** Isolated execution owner; never touches the saved singleton or installs extensions. */
+export interface PrivateDuckDB {
+ readonly instance: DuckDBInstance;
+ close(): void;
+}
+export async function createPrivateDuckDB(options: {
+ readonly memoryBudgetBytes: number;
+ readonly allowedPaths?: readonly string[] | undefined;
+ readonly localReaders?: readonly 'arrow'[] | undefined;
+}): Promise<PrivateDuckDB> {
+ if (!Number.isSafeInteger(options.memoryBudgetBytes) || options.memoryBudgetBytes <= 0) throw new Error('resource-limit');
+ let instance: DuckDBInstance | undefined;
+ let connection: DuckDBConnection | undefined;
+ try {
+  instance = await DuckDBInstance.create(':memory:', {
+   memory_limit: `${options.memoryBudgetBytes}B`,
+   temp_directory: '', max_temp_directory_size: '0B',
+   autoinstall_known_extensions: 'false', autoload_known_extensions: 'false',
+   threads: '1',
+  });
+  connection = await instance.connect();
+  await connection.run('PRAGMA disable_profiling');
+  await connection.run('SET enable_logging = false');
+  for (const reader of options.localReaders ?? []) {
+   if (reader !== 'arrow') throw new Error('unsupported-temporary');
+   // LOAD can use an existing local binary; autoinstall is already disabled.
+   await connection.run('LOAD arrow');
+  }
+  const literal = (path: string) => `'${path.replaceAll("'", "''")}'`;
+  await connection.run(`SET allowed_paths = [${(options.allowedPaths ?? []).map(literal).join(',')}]`);
+  await connection.run('SET enable_external_access = false');
+  connection.closeSync(); connection = undefined;
+  let closed = false;
+  const owned = instance;
+  return { instance: owned, close() { if (closed) return; closed = true; owned.closeSync(); } };
+ } catch {
+  connection?.closeSync(); instance?.closeSync();
+  throw new Error('unsupported-temporary');
+ }
+}

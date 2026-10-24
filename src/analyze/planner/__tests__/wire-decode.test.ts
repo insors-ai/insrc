@@ -99,15 +99,16 @@ test('supplied templates with no inputSchema, local references, a union with a s
 	}
 });
 
-test('null params including nested ones are removed before INV-5, and the adherence one-of-three rule still fails a task with none of the three', async () => {
+test('nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds', async () => {
 	const nested = supplied('custom.nested', { type: 'object', additionalProperties: false, properties: {
 		a: { type: 'string' },
 		keep: { enum: ['x', null] },   // admits null without a multi-type value (which would make it a whole-params slot)
 		inner: { type: 'object', additionalProperties: false, properties: { b: { type: 'integer' }, c: { type: 'string' } } },
+		rows:  { type: 'array', items: { type: 'object', additionalProperties: false, properties: { d: { type: 'string' }, e: { type: 'string' } } } },
 	} });
-	const { outcome } = await plan([nested], wirePlan('custom.nested', { a: null, keep: null, inner: { b: 1, c: null } }));
+	const { outcome } = await plan([nested], wirePlan('custom.nested', { a: null, keep: null, inner: { b: 1, c: null }, rows: [{ d: 'x', e: null }] }));
 	const got = firstAttempt(outcome);
-	assert.deepEqual(got.params, { keep: null, inner: { b: 1 } }, 'nulls the schema does not admit are gone; an admitted null is kept');
+	assert.deepEqual(got.params, { keep: null, inner: { b: 1 }, rows: [{ d: 'x' }] }, 'nulls the schema does not admit are gone, in nested objects and array items; an admitted null is kept');
 	assert.notEqual(got.invariant, 'INV-5');
 	// The built-in adherence check, every constraint source null: decoded to none of the three, INV-5 refuses it.
 	const code = getTemplatesForTarget('code');
@@ -116,45 +117,23 @@ test('null params including nested ones are removed before INV-5, and the adhere
 	const r = firstAttempt(refused);
 	assert.equal(r.invariant, 'INV-5', 'the one-of-three rule still holds');
 	for (const k of ['constraintTopic', 'constraints', 'constraintIds']) assert.equal(k in (r.params as object), false, `${k} removed, not passed on as null`);
-	// Nulls inside decoded slots: an inline constraint's optional sourceEntityId, sent null in its JSON text.
+	// A null at an optional slot position is structural: the wire made it nullable, so it is removed.
+	const scoped = supplied('custom.scoped', { type: 'object', additionalProperties: false, properties: { scopeRef: { type: 'object' }, label: { type: 'string' } } });
+	const { outcome: atSlot } = await plan([scoped], wirePlan('custom.scoped', { scopeRef: null, label: 'kept' }));
+	const at = firstAttempt(atSlot);
+	assert.deepEqual(at.params, { label: 'kept' }, 'a null where a slot would sit is removed');
+	assert.notEqual(at.invariant, 'INV-5');
+	// Inside slot JSON the model wrote the object itself: a null there reaches INV-5 untouched, as from any provider.
 	const { outcome: inSlot } = await plan(code, wirePlan('code.adherence.check', { codeSubject: 'src', constraints: [JSON.stringify({ constraint: 'no console.log', sourceEntityId: null })] }, [...(adherence.produces ?? [])]));
 	const s = firstAttempt(inSlot);
-	assert.deepEqual((s.params as { constraints: unknown }).constraints, [{ constraint: 'no console.log' }], 'a null inside a decoded slot is removed');
-	assert.notEqual(s.invariant, 'INV-5');
-	// Nulls inside a whole-params slot, at a key whose local $ref resolves to a string.
+	assert.deepEqual((s.params as { constraints: unknown }).constraints, [{ constraint: 'no console.log', sourceEntityId: null }], 'a null inside a decoded slot is kept');
+	assert.equal(s.invariant, 'INV-5', 'and INV-5 judges it');
+	// A whole-params slot is the model's own params JSON: its nulls are kept too.
 	const refd = supplied('custom.ref', { type: 'object', additionalProperties: false, properties: { customValue: { $ref: '#/definitions/Value' }, other: { type: 'string' } }, definitions: { Value: { type: 'string' } } });
 	const { outcome: whole } = await plan([refd], wirePlan('custom.ref', JSON.stringify({ customValue: null, other: 'kept' })));
 	const w = firstAttempt(whole);
-	assert.deepEqual(w.params, { other: 'kept' }, 'a null the resolved $ref refuses is removed from a whole-params slot');
-	assert.notEqual(w.invariant, 'INV-5');
-	// Unions: a null is kept where one branch admits it, removed where every branch refuses it.
-	const unions = supplied('custom.union', { type: 'object', additionalProperties: false, properties: {
-		maybe: { anyOf: [{ type: 'string' }, { type: 'null' }] },
-		never: { anyOf: [{ type: 'string' }, { type: 'integer' }] },
-	} });
-	const { outcome: u } = await plan([unions], wirePlan('custom.union', JSON.stringify({ maybe: null, never: null })));
-	const uu = firstAttempt(u);
-	assert.deepEqual(uu.params, { maybe: null }, 'the admitted null is kept, the refused one removed');
-	assert.notEqual(uu.invariant, 'INV-5');
-	// A nested object inside a union: its refused null is removed without choosing a branch.
-	const nestedUnion = supplied('custom.nested-union', { type: 'object', additionalProperties: false, properties: {
-		value: { anyOf: [{ type: 'object', additionalProperties: false, properties: { x: { type: 'string' }, y: { type: 'string' } } }, { type: 'string' }] },
-	} });
-	const { outcome: nu } = await plan([nestedUnion], wirePlan('custom.nested-union', JSON.stringify({ value: { x: null, y: 'kept' } })));
-	const nn = firstAttempt(nu);
-	assert.deepEqual(nn.params, { value: { y: 'kept' } }, 'the refused null inside the union branch is removed');
-	assert.notEqual(nn.invariant, 'INV-5');
-	// Two branches that disagree about the same key: one admits null there, so the null is kept.
-	const disagree = supplied('custom.disagree', { type: 'object', additionalProperties: false, properties: {
-		value: { anyOf: [
-			{ type: 'object', additionalProperties: false, properties: { x: { type: 'string' } } },
-			{ type: 'object', additionalProperties: false, properties: { x: { enum: ['z', null] } } },
-		] },
-	} });
-	const { outcome: dg } = await plan([disagree], wirePlan('custom.disagree', JSON.stringify({ value: { x: null } })));
-	const d = firstAttempt(dg);
-	assert.deepEqual(d.params, { value: { x: null } }, 'a null some declaring branch admits is kept');
-	assert.notEqual(d.invariant, 'INV-5');
+	assert.deepEqual(w.params, { customValue: null, other: 'kept' }, 'a null inside a whole-params slot is kept');
+	assert.equal(w.invariant, 'INV-5', 'and INV-5 judges it');
 });
 
 test('invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5', async () => {

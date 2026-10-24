@@ -222,73 +222,37 @@ export function plannerWireSchema(catalog: readonly AnalyzeTaskTemplate[]): Plan
 // Decoding a reply back to the template's own params
 // ---------------------------------------------------------------------------
 
-/** A local `#/...` reference resolved against the template's own schema; anything else as given. */
-function resolveLocal(schema: Schema | undefined, root: Schema): Schema | undefined {
-	let node = schema;
-	for (let hops = 0; hops < 16 && node !== undefined && typeof node['$ref'] === 'string'; hops++) {
-		const ref = node['$ref'] as string;
-		if (!ref.startsWith('#')) return node;
-		let at: unknown = root;
-		for (const raw of ref.slice(1).split('/').filter(Boolean)) {
-			const part = decodeURIComponent(raw).replace(/~1/g, '/').replace(/~0/g, '~');
-			at = at !== null && typeof at === 'object' ? (at as Schema)[part] : undefined;
-		}
-		node = at !== null && typeof at === 'object' ? at as Schema : undefined;
-	}
-	return node;
-}
-
-/** Whether a schema certainly refuses null. Undecidable shapes ($ref outside the schema, allOf, not, if) count as admitting it. */
-function excludesNull(schema: Schema | undefined, root: Schema): boolean {
-	const node = resolveLocal(schema, root);
-	if (node === undefined) return false;
+/** Whether a schema refuses null. An embedded branch has no union or reference (those fall back to a whole-params slot), so its type, enum or const decides. */
+function excludesNull(node: Schema): boolean {
 	const type = node['type'];
 	if (typeof type === 'string') return type !== 'null';
-	if (Array.isArray(type)) return !type.includes('null');
 	if (Array.isArray(node['enum'])) return !(node['enum'] as unknown[]).includes(null);
 	if ('const' in node) return node['const'] !== null;
-	for (const k of ['anyOf', 'oneOf']) {
-		if (Array.isArray(node[k])) return (node[k] as Schema[]).every(b => excludesNull(b, root));
-	}
 	return false;
 }
 
-/** The schemas a value at this node may be read against: the node itself (its own properties or items) and, resolved, each union branch. */
-function branchesOf(node: Schema, root: Schema): Schema[] {
-	const out: Schema[] = [node];
-	for (const k of ['anyOf', 'oneOf']) {
-		if (!Array.isArray(node[k])) continue;
-		for (const b of node[k] as Schema[]) { const r = resolveLocal(b, root); if (r !== undefined) out.push(...branchesOf(r, root)); }
-	}
-	return out;
-}
-
 /**
- * Remove nulls the template's schema certainly refuses: a null there means the
- * property is absent. Through a union no branch is chosen: a null key is removed
- * only when some branch declares it and every branch declaring it refuses null,
- * and a value is walked against the union of the declaring branches' schemas.
+ * Remove the nulls the wire form forced: the wire makes every optional
+ * property nullable, so a null where the template's schema refuses it means
+ * the property is absent. It runs before slots are decoded, while each slot
+ * (a whole-params one too) is still a string, so only structural positions are
+ * walked: what the model wrote inside slot JSON reaches INV-5 untouched, as it
+ * would from any provider.
  */
-function dropWireNulls(value: unknown, schema: Schema | undefined, root: Schema): unknown {
-	const node = resolveLocal(schema, root);
-	if (node === undefined || value === null || typeof value !== 'object') return value;
-	const branches = branchesOf(node, root);
+function dropWireNulls(value: unknown, node: Schema): unknown {
+	if (value === null || typeof value !== 'object') return value;
 	if (Array.isArray(value)) {
-		const items = branches.map(b => b['items']).filter((i): i is Schema => i !== null && typeof i === 'object' && !Array.isArray(i));
-		if (items.length === 0) return value;
-		const itemSchema: Schema = items.length === 1 ? items[0]! : { anyOf: items };
-		return value.map(v => dropWireNulls(v, itemSchema, root));
+		const items = node['items'];
+		return items !== null && typeof items === 'object' && !Array.isArray(items) ? value.map(v => dropWireNulls(v, items as Schema)) : value;
 	}
-	const declaring = (key: string): Schema[] => branches.flatMap(b => {
-		const props = b['properties'] as Record<string, Schema> | undefined;
-		return props !== undefined && key in props ? [props[key]!] : [];
-	});
+	const props = node['properties'] as Record<string, Schema> | undefined;
+	if (props === undefined) return value;
 	const out: Schema = {};
 	for (const [k, v] of Object.entries(value as Schema)) {
-		const subs = declaring(k);
-		if (subs.length === 0) { out[k] = v; continue; }
-		if (v === null && subs.every(sub => excludesNull(sub, root))) continue;
-		out[k] = dropWireNulls(v, subs.length === 1 ? subs[0] : { anyOf: subs }, root);
+		const sub = props[k];
+		if (sub === undefined) { out[k] = v; continue; }
+		if (v === null && excludesNull(sub)) continue;
+		out[k] = dropWireNulls(v, sub);
 	}
 	return out;
 }
@@ -310,10 +274,11 @@ interface TaskLike { readonly taskId?: unknown; readonly template?: unknown; rea
 
 /**
  * Turn a reply in wire form back into the templates' own params: for each task,
- * the JSON strings at its slot paths are parsed back into objects, then nulls
- * its template's schema certainly refuses are removed, inside decoded slots
- * and whole-params slots too. A slot that is not valid JSON is an error, and
- * no task is returned half-decoded.
+ * the nulls the wire form forced are removed at structural positions, then the
+ * JSON strings at its slot paths are parsed back into objects. A whole-params
+ * slot and the contents of every slot are left as the model wrote them, for
+ * INV-5 to judge. A slot that is not valid JSON is an error, and no task is
+ * returned half-decoded.
  */
 export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[] }>(
 	plan: P, wire: PlannerWireSchema, catalog: readonly AnalyzeTaskTemplate[],
@@ -323,16 +288,15 @@ export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[]
 		const template = catalog.find(t => t.id === task.template);
 		const slots = typeof task.template === 'string' ? wire.slots.get(task.template) : undefined;
 		if (template === undefined || slots === undefined) return task;   // an unknown template is INV-5's to report
-		// Parse the slots first, then remove nulls over the whole decoded params, slot contents included.
-		let params = task.params;
+		// Nulls first, while the slots are still strings; then the slots.
+		let params = template.inputSchema === undefined ? task.params : dropWireNulls(task.params, template.inputSchema as Schema);
 		try {
 			for (const path of slots) params = decodeSlot(params, path, 'params');
 		} catch (err) {
 			errors.push(`task '${String(task.taskId)}' (${template.id}): ${(err as Error).message}`);
 			return task;
 		}
-		const root = template.inputSchema as Schema | undefined;
-		return { ...task, params: root === undefined ? params : dropWireNulls(params, root, root) };
+		return { ...task, params };
 	});
 	return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: { ...plan, tasks } };
 }

@@ -104,7 +104,7 @@ test('CM-S1-S: Avro declared block and inflated expansion bounds reject before o
 		source = await avroConverter.openMemory!(path, { memoryBudgetBytes: budget.limit, budget });
 		try {
 			await assert.rejects(all(source), /resource-limit/);
-			assert.ok(budget.snapshot().peak < 9 * 1024 * 1024, 'never retains an over-limit expanded block');
+			assert.ok(budget.snapshot().peak < 17 * 1024 * 1024, 'admits bounded native chunks and concatenation before inflation');
 		}
 		finally {
 			await source.close();

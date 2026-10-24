@@ -2355,7 +2355,7 @@
     "src/daemon/db/config.ts": "1b68b76e903244ff634a2e3d220314ae15ea8d094c0dfccdddc9dc63c168e559",
     "src/daemon/db/drivers/cassandra.ts": "e14d61ab2c840feee640f40515c7c59425704a1b8219b344bb6fb3437032e135",
     "src/daemon/db/drivers/clickhouse.ts": "df15cfd9df7a0b3a2cbc14bb73c21b354ac532f49181f045e2a66be9be142d2a",
-    "src/daemon/db/drivers/converters/avro.ts": "96b0a11c366f19c27df75df4f9f3a98f311dd44558351df5912e89b14e2e8ce0",
+    "src/daemon/db/drivers/converters/avro.ts": "258bc855222f8a938b4688d5edf4f09ca1e765a9173d0580c148ca914930911e",
     "src/daemon/db/drivers/converters/bson.ts": "cc1b45ef8e61a7e61fa1bc1c0218774ce7a2ed4b9e6ff26ab679bfe59482a496",
     "src/daemon/db/drivers/converters/fixed-width.ts": "053beb2ff80dd7f3c28f66e7a4a00dfc8bee18ee4189877e0eaf3ab70a2c9d74",
     "src/daemon/db/drivers/converters/xlsx.ts": "1e003eff74382f9c61abe26668664e90dc8f70ae5a020c3f8cb2bc626309eef2",
@@ -2535,6 +2535,11 @@
       "task": "t15",
       "source": "src/daemon/db/drivers/converters/avro.ts",
       "reason": "Bounds schema field/union/fixed/reference graphs before avsc materialization, in addition to existing record framing and decoded-value checks. Driver credential/public field classifications unchanged."
+    },
+    {
+      "task": "t15",
+      "source": "src/daemon/db/drivers/converters/avro.ts",
+      "reason": "Uses shared bounded inflater that pre-admits native output chunks, cap overshoot, concatenation and workspace, then retains the actual Buffer backing size; field and credential classifications unchanged."
     }
   ]
 }

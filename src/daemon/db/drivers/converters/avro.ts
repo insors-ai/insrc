@@ -1,10 +1,9 @@
 import { validateAvroSchemaDefinition } from './avro-schema.js';
 /** Explicit container framing + bounded inflater + schema-first Avro rows. */
 import avsc from 'avsc';
-import { inflateRawSync } from 'node:zlib';
+import { boundedInflateRaw } from './bounded-inflate.js';
 import { BoundedInput, sourceStamp } from './bounded-input.js';
 import type { SourceStamp } from './bounded-input.js';
-import type { DecoderReservation } from './decoder-budget.js';
 import { DecoderBudget } from './decoder-budget.js';
 import { AvroCursor, avroStructure, validateAvroRecord, validateAvroSchema } from './avro-binary.js';
 import { convertedColumn, normalizeScalar } from './normalization.js';
@@ -190,22 +189,12 @@ async function* records(path: string, stamp: SourceStamp, h: Header, budget: Dec
 			if (count <= 0 || count > 1024 * 1024 || size < 0 || size > MAX_BLOCK)
 				throw new Error('resource-limit');
 			const compressed = await input.read(size, MAX_BLOCK);
-			let releaseExpansion: DecoderReservation | undefined;
+			let releaseExpansion: (()=>void) | undefined;
 			try {
 				let data = compressed.bytes;
 				if (h.codec === 'deflate') {
-					// Native output admission is fixed before inflation; no unbounded collector.
-					const allowance = Math.min(MAX_BLOCK, budget.limit - budget.snapshot().retained);
-					if (allowance <= 0)
-						throw new Error('resource-limit');
-					releaseExpansion = budget.reserve(allowance);
-					try {
-						data = inflateRawSync(compressed.bytes, { maxOutputLength: allowance });
-						releaseExpansion.shrinkTo(data.length);
-					}
-					catch {
-						throw new Error('resource-limit');
-					}
+					const expanded=boundedInflateRaw(compressed.bytes,budget,MAX_BLOCK);
+					data=expanded.bytes;releaseExpansion=expanded.release;
 				}
 				const cursor = new AvroCursor(data);
 				for (let row = 0; row < count; row++) {

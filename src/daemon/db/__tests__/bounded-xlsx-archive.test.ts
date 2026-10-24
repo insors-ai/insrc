@@ -81,7 +81,7 @@ test('CM-S1-S: XLSX ZIP entry count declared totals ZIP64 and forged expansion r
 		const budget = new DecoderBudget(128 * 1024 * 1024), zip = await BoundedZip.open(path, budget);
 		try {
 			await assert.rejects(zip.read('sheet.xml'), /resource-limit/);
-			assert.ok(budget.snapshot().peak < 128 * 1024);
+			assert.ok(budget.snapshot().peak < 512 * 1024, 'accounts for bounded native chunks and workspace even for forged tiny declarations');
 		}
 		finally {
 			await zip.close();

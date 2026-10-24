@@ -1,4 +1,4 @@
-import { inflateRawSync } from 'node:zlib';
+import { boundedInflateRaw } from './bounded-inflate.js';
 import { BoundedInput, sourceStamp } from './bounded-input.js';
 import type { SourceStamp } from './bounded-input.js';
 import { DecoderBudget } from './decoder-budget.js';
@@ -171,13 +171,8 @@ export class BoundedZip {
 			payload = await input.read(entry.compressed, MAX_ENTRY);
 			let data = payload.bytes;
 			if (entry.method === 8) {
-				releaseExpanded = this.budget.reserve(entry.expanded);
-				try {
-					data = inflateRawSync(data, { maxOutputLength: Math.max(1, entry.expanded) });
-				}
-				catch {
-					throw new Error('resource-limit');
-				}
+				const expanded=boundedInflateRaw(data,this.budget,Math.max(1,entry.expanded));
+				data=expanded.bytes;releaseExpanded=expanded.release;
 			}
 			if (data.length !== entry.expanded || crc32(data) !== entry.crc)
 				throw new Error('Invalid ZIP expanded entry');

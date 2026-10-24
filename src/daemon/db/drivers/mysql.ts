@@ -97,6 +97,10 @@ export class MysqlDriver implements RdbmsDriver {
 		});
 	}
 
+	async probeReachability(): Promise<void> {
+		await this.pool.query('SELECT 1');
+	}
+
 	async describe(target: string): Promise<SchemaDescription> {
 		const cached = this.schemaCache.get(target);
 		if (cached !== undefined) { return cached; }

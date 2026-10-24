@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s1",
     "createdAt": "2026-10-24T08:23:58.478Z",
-    "updatedAt": "2026-10-24T08:30:48.653Z",
+    "updatedAt": "2026-10-24T11:49:32.000Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -65,6 +65,1537 @@
               },
               {
                 "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "755c254da",
+        "ranAt": "2026-10-24T08:57:06.202Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-J: legacy success shapes versus v2 structured errors; malformed requests, unknown ticket fields, wrong root/target and no stored-secret return.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2735,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c31108f46",
+        "ranAt": "2026-10-24T09:14:43.578Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-C: Keep/Replace/Clear, pinned-family preservation, request HMAC/signature/expiry and exact response sanitization.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: signed tickets and keyed full-request fingerprints retain credential intent without config effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: malformed, tampered and wrong-target tickets reject with sanitized errors",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: expiry remains authenticated for reconciliation and cannot authorize new replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: missing, changed or malformed adopted keys never rotate; initialization joins once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: canonical JSON hashes complete JSON values without lossy or ambiguous coercion",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6136,
+            "titles": [
+              {
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 356,
+            "titles": [
+              {
+                "title": "CM-S1-C: signed tickets and keyed full-request fingerprints retain credential intent without config effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: malformed, tampered and wrong-target tickets reject with sanitized errors",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: expiry remains authenticated for reconciliation and cannot authorize new replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: missing, changed or malformed adopted keys never rotate; initialization joins once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: canonical JSON hashes complete JSON values without lossy or ambiguous coercion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/connection-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2403,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "de41aee2a",
+        "ranAt": "2026-10-24T10:22:20.952Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-A: per-driver profile matrix covers every listRegisteredKinds entry and preserves unexposed supported config.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-C: Keep/Replace/Clear, pinned-family preservation, request HMAC/signature/expiry and exact response sanitization.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: signed tickets and keyed full-request fingerprints retain credential intent without config effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: malformed, tampered and wrong-target tickets reject with sanitized errors",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: expiry remains authenticated for reconciliation and cannot authorize new replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: missing, changed or malformed adopted keys never rotate; initialization joins once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+                "title": "CM-S1-C: canonical JSON hashes complete JSON values without lossy or ambiguous coercion",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-management.test.ts",
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-P: create/edit materialization and safe read followed by cancel/abandon before mutate leave registry bytes, revision/receipt map and every keychain value unchanged; no writer or keychain-write call. This tests the foundation boundary, not S005 UI.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+                "title": "CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-K: run existing own-directory data runtime cases and pinned-family config tests without redirecting roots or normalizing records.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/config.test.ts",
+                "title": "honors user-pinned family but warns on mismatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 720,
+            "titles": [
+              {
+                "title": "a data task with a connection scope works on that connection only",
+                "result": "pass"
+              },
+              {
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "title": "the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: present non-empty -> returns; missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: empty string -> throws (empty != non-empty)",
+                "result": "pass"
+              },
+              {
+                "title": "optionalStringParam: present -> value; missing -> undefined; empty -> throws",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all 4 data runtimes",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.connections: lists the registered sqlite connection (no secret leak)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: lists rdbms tables for the sqlite connection",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: kind filter narrows the result",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: unknown connectionId -> throws (no such connection)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: missing connectionId param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes the users table -- columns + types + nullability",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes orders table -- FK to users surfaces",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: missing table param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: nonexistent table -> driver error propagates",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 420,
+            "titles": [
+              {
+                "title": "produces a 32-hex deterministic id",
+                "result": "pass"
+              },
+              {
+                "title": "differs per path",
+                "result": "pass"
+              },
+              {
+                "title": "repoIdOf",
+                "result": "pass"
+              },
+              {
+                "title": "returns empty list when the file is missing",
+                "result": "pass"
+              },
+              {
+                "title": "loads + infers family from the registered driver",
+                "result": "pass"
+              },
+              {
+                "title": "honors user-pinned family but warns on mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "rejects duplicate ids",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown driver kinds",
+                "result": "pass"
+              },
+              {
+                "title": "rejects connections with neither url nor path",
+                "result": "pass"
+              },
+              {
+                "title": "rejects invalid family strings",
+                "result": "pass"
+              },
+              {
+                "title": "rejects invalid JSON with a typed message",
+                "result": "pass"
+              },
+              {
+                "title": "rejects missing connections array",
+                "result": "pass"
+              },
+              {
+                "title": "loadConnections",
+                "result": "pass"
+              },
+              {
+                "title": "writes + round-trips a config file",
+                "result": "pass"
+              },
+              {
+                "title": "saveConnections",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/driver-profiles.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1362,
+            "titles": [
+              {
+                "title": "CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/management-tickets.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 295,
+            "titles": [
+              {
+                "title": "CM-S1-C: signed tickets and keyed full-request fingerprints retain credential intent without config effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: malformed, tampered and wrong-target tickets reject with sanitized errors",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: expiry remains authenticated for reconciliation and cannot authorize new replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: missing, changed or malformed adopted keys never rotate; initialization joins once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: canonical JSON hashes complete JSON values without lossy or ambiguous coercion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/connection-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2238,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 wire rejects malformed and mismatched tickets without returning draft values",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy document remains readable and v2 declarations preserve safe outcome boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: protocol declarations compile in strict NodeNext including negative secret-field assignments",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: real legacy save replies retain their shape and v2 errors never return stored credentials",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "26f01a2da",
+        "ranAt": "2026-10-24T10:25:53.632Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-E: crash/failure injection before/after preparation sync, keychain stage, temp sync/chmod, rename, parent sync and obsolete-ref cleanup; restart/reconcile to exact committed truth.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-F: POSIX same-UID old writeFile recipe attempts overwrite AFTER the new digest check and read-only commit; expect EACCES and preserved management envelope. Also old pre-opened-fd writes only detached inode. Failed proof/privileged process/unsupported filesystem must disable adoption.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-F: privileged or failed permission proof disables adoption without changing the registry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-O: start on a managed read-only registry and refuse unsafe downgrade/direct legacy write; older clients can use safe adapter projections through new service.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/managed-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1828,
+            "titles": [
+              {
+                "title": "CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-F: privileged or failed permission proof disables adoption without changing the registry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "ca1e842d0",
+        "ranAt": "2026-10-24T10:43:56.294Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-E: crash/failure injection before/after preparation sync, keychain stage, temp sync/chmod, rename, parent sync and obsolete-ref cleanup; restart/reconcile to exact committed truth.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: real process crashes at preparation stage write rename sync and cleanup boundaries recover exact committed truth",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: Keep retains the live generation and Clear removes it only after canonical commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: missing live keys and unresolved journals block writes; foreign and referenced keys cannot be cleaned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: encoded immutable userinfo references resolve with credential escaping and no legacy regression",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: partial keychain failure preserves old effective credentials and recovery removes only owned staging",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: committed cleanup failure stays pending and retry preserves exact registry revision receipt and live generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: first-use recovery directory parent sync precedes staging and completion sync failures retain a blocking retry record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12356,
+            "titles": [
+              {
+                "title": "CM-S1-E: real process crashes at preparation stage write rename sync and cleanup boundaries recover exact committed truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: Keep retains the live generation and Clear removes it only after canonical commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: missing live keys and unresolved journals block writes; foreign and referenced keys cannot be cleaned",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: encoded immutable userinfo references resolve with credential escaping and no legacy regression",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: partial keychain failure preserves old effective credentials and recovery removes only owned staging",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: committed cleanup failure stays pending and retry preserves exact registry revision receipt and live generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: first-use recovery directory parent sync precedes staging and completion sync failures retain a blocking retry record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/managed-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1387,
+            "titles": [
+              {
+                "title": "CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-F: privileged or failed permission proof disables adoption without changing the registry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-F: an ineffective physical overwrite fence refuses adoption with exact registry bytes unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "6c22caf74",
+        "ranAt": "2026-10-24T11:29:53.251Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-B: create/update identity/revision/duplicate/busy validation occurs before secret or writer ports.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-K: run existing own-directory data runtime cases and pinned-family config tests without redirecting roots or normalizing records.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/config.test.ts",
+                "title": "honors user-pinned family but warns on mismatch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-M: full-use lease spans asynchronous iteration and nested calls; update barrier rejects busy; release-on-error and cancellation; no idle close while leased. Session overlay stub is injectable but no S003 store implemented.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/runtimes/data/__tests__/data-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 789,
+            "titles": [
+              {
+                "title": "a data task with a connection scope works on that connection only",
+                "result": "pass"
+              },
+              {
+                "title": "a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)",
+                "result": "pass"
+              },
+              {
+                "title": "the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: present non-empty -> returns; missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "requireStringParam: empty string -> throws (empty != non-empty)",
+                "result": "pass"
+              },
+              {
+                "title": "optionalStringParam: present -> value; missing -> undefined; empty -> throws",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all 4 data runtimes",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.connections: lists the registered sqlite connection (no secret leak)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: lists rdbms tables for the sqlite connection",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: kind filter narrows the result",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: unknown connectionId -> throws (no such connection)",
+                "result": "skipped"
+              },
+              {
+                "title": "discovery.objects: missing connectionId param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes the users table -- columns + types + nullability",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: describes orders table -- FK to users surfaces",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: missing table param -> INV-5 message",
+                "result": "skipped"
+              },
+              {
+                "title": "schema.table: nonexistent table -> driver error propagates",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 409,
+            "titles": [
+              {
+                "title": "produces a 32-hex deterministic id",
+                "result": "pass"
+              },
+              {
+                "title": "differs per path",
+                "result": "pass"
+              },
+              {
+                "title": "repoIdOf",
+                "result": "pass"
+              },
+              {
+                "title": "returns empty list when the file is missing",
+                "result": "pass"
+              },
+              {
+                "title": "loads + infers family from the registered driver",
+                "result": "pass"
+              },
+              {
+                "title": "honors user-pinned family but warns on mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "rejects duplicate ids",
+                "result": "pass"
+              },
+              {
+                "title": "rejects unknown driver kinds",
+                "result": "pass"
+              },
+              {
+                "title": "rejects connections with neither url nor path",
+                "result": "pass"
+              },
+              {
+                "title": "rejects invalid family strings",
+                "result": "pass"
+              },
+              {
+                "title": "rejects invalid JSON with a typed message",
+                "result": "pass"
+              },
+              {
+                "title": "rejects missing connections array",
+                "result": "pass"
+              },
+              {
+                "title": "loadConnections",
+                "result": "pass"
+              },
+              {
+                "title": "writes + round-trips a config file",
+                "result": "pass"
+              },
+              {
+                "title": "saveConnections",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1614,
+            "titles": [
+              {
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1363,
+            "titles": [
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b82d9190d",
+        "ranAt": "2026-10-24T11:42:08.399Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-B: create/update identity/revision/duplicate/busy validation occurs before secret or writer ports.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-D: same-repo concurrent mutations/replays, separate-root independence and deleted-ID revision reuse refusal.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-U: through BOTH legacy saveConnectionRpc and v2 mutation dispatch, attempt a save against (1) malformed JSON, (2) invalid registry shape, (3) injected non-ENOENT EACCES/EPERM/EIO read failures. Snapshot exact registry bytes and all fake keychain values first; assert byte/value equality after rejection, zero secret-staging calls, zero writer/rename calls and a non-empty sanitized registry-unreadable error rather than []/success. Include a replacement-password draft to prove extraction cannot occur before the failed read. ENOENT is a separate valid-unmanaged-empty control, never conflated with these failures.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2077,
+            "titles": [
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2066,
+            "titles": [
+              {
+                "title": "CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: uncertain initial and final receipt rename results reconcile in place without staging another generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-Q: activation-only retry preserves exact registry revision receipt and credential generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-R: a failed safe-list refresh retries only list without another ticket mutation stage or registry write",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "b53943496",
+        "ranAt": "2026-10-24T11:49:32.000Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S1-D: same-repo concurrent mutations/replays, separate-root independence and deleted-ID revision reuse refusal.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-E: crash/failure injection before/after preparation sync, keychain stage, temp sync/chmod, rename, parent sync and obsolete-ref cleanup; restart/reconcile to exact committed truth.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-E: uncertain initial and final receipt rename results reconcile in place without staging another generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: real process crashes at preparation stage write rename sync and cleanup boundaries recover exact committed truth",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: Keep retains the live generation and Clear removes it only after canonical commit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: missing live keys and unresolved journals block writes; foreign and referenced keys cannot be cleaned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: encoded immutable userinfo references resolve with credential escaping and no legacy regression",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: partial keychain failure preserves old effective credentials and recovery removes only owned staging",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: committed cleanup failure stays pending and retry preserves exact registry revision receipt and live generation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+                "title": "CM-S1-E: first-use recovery directory parent sync precedes staging and completion sync failures retain a blocking retry record",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/managed-store.test.ts",
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-Q: successful commit with failed activation then activation-only retry preserves exact config bytes, revision, receipt and credential generation; writer/keychain-stage call count remains zero during retry.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-Q: activation-only retry preserves exact registry revision receipt and credential generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S1-R: successful commit followed by injected safe-list/refresh failure retries only list; assert no mutation request, new ticket, writer call, credential stage, revision bump or receipt duplication.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+                "title": "CM-S1-R: a failed safe-list refresh retries only list without another ticket mutation stage or registry write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/credential-generations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19372,
+            "titles": [
+              {
+                "title": "CM-S1-E: real process crashes at preparation stage write rename sync and cleanup boundaries recover exact committed truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: Keep retains the live generation and Clear removes it only after canonical commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: missing live keys and unresolved journals block writes; foreign and referenced keys cannot be cleaned",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: encoded immutable userinfo references resolve with credential escaping and no legacy regression",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: partial keychain failure preserves old effective credentials and recovery removes only owned staging",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: committed cleanup failure stays pending and retry preserves exact registry revision receipt and live generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: first-use recovery directory parent sync precedes staging and completion sync failures retain a blocking retry record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/managed-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1527,
+            "titles": [
+              {
+                "title": "CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-F: privileged or failed permission proof disables adoption without changing the registry",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-F: an ineffective physical overwrite fence refuses adoption with exact registry bytes unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1433,
+            "titles": [
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-replay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2145,
+            "titles": [
+              {
+                "title": "CM-S1-D: simultaneous identical replay joins one mutation and restart replays the exact durable outcome without effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: expired signed tickets reconcile missing or pruned receipts and can never authorize a new replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-E: uncertain initial and final receipt rename results reconcile in place without staging another generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-Q: activation-only retry preserves exact registry revision receipt and credential generation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-R: a failed safe-list refresh retries only list without another ticket mutation stage or registry write",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: a full service process exits after commit without a response and the restarted owner reconciles one receipt",
                 "result": "pass"
               }
             ],

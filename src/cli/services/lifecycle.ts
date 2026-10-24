@@ -64,7 +64,9 @@ export async function captureDaemon(): Promise<CapturedDaemon> {
   matches(PATHS.pidFile, pidFile); matches(PATHS.sockFile, socketFile);
   return { target, pidFile, socketFile };
  } catch (error) { await target?.handle.close(); throw error; }
- finally { guard.release(); }
+ finally {
+  try { guard.release(); } catch (error) { await target?.handle.close(); throw error; }
+ }
 }
 /** Only after positive kernel-handle exit; no orphan guard is reclaimed. */
 export function cleanupStoppedDaemon(captured: CapturedDaemon): void {

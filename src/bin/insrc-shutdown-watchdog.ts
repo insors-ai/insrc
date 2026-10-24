@@ -22,7 +22,7 @@ function finish(code = 0): void {
  const timer = setTimeout(() => { broker.kill('SIGKILL'); process.exit(code); }, 100);
  broker.once('exit', () => { clearTimeout(timer); process.exit(code); });
 }
-function fail(reason: string): void { diagnostic(reason); if (process.connected) process.send?.({ type: 'failed', reason }); finish(1); }
+function fail(reason: string): void { if (finished) return; diagnostic(reason); if (process.connected) process.send?.({ type: 'failed', reason }); finish(1); }
 function request(operation: 'STATE' | 'TERM'): Promise<string> {
  if (pending) return Promise.reject(new Error('overlapping broker request'));
  return new Promise((resolve, reject) => {
@@ -53,6 +53,8 @@ broker.stdout.on('data', (chunk: string) => {
  let end: number; while (!finished && (end = buffer.indexOf('\n')) >= 0) { const value = buffer.slice(0, end); buffer = buffer.slice(end + 1); line(value); }
 });
 broker.on('error', error => fail('broker spawn failed: ' + error.message));
+broker.stdin.on('error', error => fail('broker input failed: ' + error.message));
+broker.stdout.on('error', error => fail('broker output failed: ' + error.message));
 broker.on('exit', () => { if (!finished) fail('broker exited unexpectedly'); });
 process.on('disconnect', () => finish());
 process.on('message', (message: unknown) => {

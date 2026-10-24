@@ -1,0 +1,95 @@
+{
+  "recordedAt": "2026-10-24T19:27:16.172Z",
+  "platform": "linux",
+  "node": "v24.21.0",
+  "historicalCause": "October 13 native cause remains deferred and unproven",
+  "installedDaemonSmoke": "not performed",
+  "cases": [
+    {
+      "mode": "blocked",
+      "startedAt": "2026-10-24T19:27:14.776Z",
+      "original": {
+        "pid": 2497822,
+        "startedAt": "linux:26ef4fcf-dc58-4c66-ad16-d622dced0af5:4484879",
+        "commandLine": "/home/subho/.nvm/versions/node/v24.21.0/bin/node /tmp/insrc-shutdown-evidence-OuIc2G/case-fYGyUU/daemon/index.js"
+      },
+      "configuredDeadlineMs": 600,
+      "elapsedMs": 852,
+      "termination": {
+        "exitCode": null,
+        "signal": "SIGKILL"
+      },
+      "restart": {
+        "ok": true,
+        "steps": [
+          "stop",
+          "start"
+        ]
+      },
+      "startCount": 1,
+      "guardRemains": false,
+      "watchdogPid": 2498057,
+      "log": "{\"time\":\"2026-10-24T19:27:14.844Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"watchdog arm\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:14.872Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"stop background work\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:14.872Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"queue drain\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:14.872Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"close stores and request server\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:15.454Z\",\"module\":\"shutdown-watchdog\",\"pid\":2497822,\"deadline\":1792870035444,\"stage\":\"close stores and request server\",\"reason\":\"shutdown deadline exceeded; terminating retained parent capability\"}\n"
+    },
+    {
+      "mode": "healthy",
+      "startedAt": "2026-10-24T19:27:15.699Z",
+      "original": {
+        "pid": 2498227,
+        "startedAt": "linux:26ef4fcf-dc58-4c66-ad16-d622dced0af5:4484971",
+        "commandLine": "/home/subho/.nvm/versions/node/v24.21.0/bin/node /tmp/insrc-shutdown-evidence-OuIc2G/case-q3pDFQ/daemon/index.js"
+      },
+      "configuredDeadlineMs": 600,
+      "elapsedMs": 238,
+      "termination": {
+        "exitCode": 0,
+        "signal": null
+      },
+      "restart": {
+        "ok": true,
+        "steps": [
+          "stop",
+          "start"
+        ]
+      },
+      "startCount": 1,
+      "guardRemains": false,
+      "watchdogPid": 2498255,
+      "log": "{\"time\":\"2026-10-24T19:27:15.766Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"watchdog arm\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:15.792Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"stop background work\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:15.793Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"queue drain\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:15.793Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"close stores and request server\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:15.793Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"exit hooks\",\"health\":{\"state\":\"ok\"}}\n"
+    },
+    {
+      "mode": "guard-death",
+      "startedAt": "2026-10-24T19:27:16.001Z",
+      "original": {
+        "pid": 2498276,
+        "startedAt": "linux:26ef4fcf-dc58-4c66-ad16-d622dced0af5:4485002",
+        "commandLine": "/home/subho/.nvm/versions/node/v24.21.0/bin/node /tmp/insrc-shutdown-evidence-OuIc2G/case-lWirFG/daemon/index.js"
+      },
+      "configuredDeadlineMs": 5000,
+      "elapsedMs": 171,
+      "termination": {
+        "exitCode": null,
+        "signal": "SIGKILL"
+      },
+      "restart": {
+        "ok": false,
+        "steps": [
+          "stop"
+        ],
+        "error": "run-file ownership conflict at /tmp/insrc-shutdown-evidence-OuIc2G/case-lWirFG/.insrc/daemon.run-files.guard: owner pid=2498276, start=linux:26ef4fcf-dc58-4c66-ad16-d622dced0af5:4485002, nonce=0e38a348-d0fb-4392-987e-e18e87e0d30a, state=gone. Restart is withheld. An operator must verify the original owner has ended and quarantine this exact guard before retrying; it was not reclaimed automatically."
+      },
+      "startCount": 0,
+      "guardRemains": true,
+      "guardOwner": {
+        "owner": {
+          "pid": 2498276,
+          "startedAt": "linux:26ef4fcf-dc58-4c66-ad16-d622dced0af5:4485002",
+          "commandLine": "/home/subho/.nvm/versions/node/v24.21.0/bin/node /tmp/insrc-shutdown-evidence-OuIc2G/case-lWirFG/daemon/index.js"
+        },
+        "nonce": "0e38a348-d0fb-4392-987e-e18e87e0d30a"
+      },
+      "watchdogPid": 2498303,
+      "log": "{\"time\":\"2026-10-24T19:27:16.058Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"watchdog arm\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:16.085Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"stop background work\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:16.085Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"queue drain\",\"health\":{\"state\":\"ok\"}}\n{\"time\":\"2026-10-24T19:27:16.085Z\",\"module\":\"shutdown-stage\",\"signal\":\"RPC\",\"stage\":\"close stores and request server\",\"health\":{\"state\":\"ok\"}}\n"
+    }
+  ]
+}

@@ -96,6 +96,12 @@
         "choice": "Accept the known limit",
         "rationale": "No timeout; the LLD states the hook stage has no cancellation bound",
         "resolvedAt": "2026-10-24T14:17:10.924Z"
+      },
+      "q4e665925": {
+        "question": "ep3 (partial): invariantsToPreserve rest on the s1 bundle for executor.ts and types.ts; the source field holds a citation id as the schema requires.",
+        "status": "ignored",
+        "rationale": "Schema note; the invariants are explicit in the LLD",
+        "resolvedAt": "2026-10-24T14:18:06.766Z"
       }
     }
   },

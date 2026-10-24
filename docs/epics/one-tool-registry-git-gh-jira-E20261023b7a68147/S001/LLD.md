@@ -316,6 +316,8 @@ The success variant gains hookFailures?: readonly HookFailure[] | undefined; cal
   - **resolved**: Internal helper with test export — sc1 refinement recorded in docs/plans/tool-registry.md _(2026-10-24T14:16:10.663Z)_
 - `q8e8b12c1` — ep2 (partial): a rule that never settles is not detected by the hook stage; the LLD records it as a known limit and adds no timeout.
   - **resolved**: Accept the known limit — No timeout; the LLD states the hook stage has no cancellation bound _(2026-10-24T14:17:10.924Z)_
+- `q4e665925` — ep3 (partial): invariantsToPreserve rest on the s1 bundle for executor.ts and types.ts; the source field holds a citation id as the schema requires.
+  - **ignored**: left to implementer judgment — Schema note; the invariants are explicit in the LLD _(2026-10-24T14:18:06.766Z)_
 
 ## Citations
 

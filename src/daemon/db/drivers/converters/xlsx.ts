@@ -1,188 +1,117 @@
-/**
- * xlsx → Parquet converter (Phase 2.5 of
- * plans/data-driver-duckdb-files.md). Per-sheet output: one source
- * `.xlsx` produces one Parquet file per worksheet, written under a
- * directory whose name is the sluggified workbook basename. The
- * caller queries by sheet name.
- *
- * `exceljs` is already a daemon dep (used by the existing xlsx
- * driver). We use the streaming reader so multi-sheet workbooks
- * don't load every sheet at once.
- *
- * Type fidelity (parquetjs-lite limits): scalar types only. Numbers
- * become DOUBLE, dates become TIMESTAMP_MILLIS, booleans become
- * BOOLEAN, strings + everything else become UTF8. No nested support.
- * Header row is the first row of each sheet; type inference samples
- * up to 50 data rows.
- */
-
-import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+/** Bounded worksheet readers and one normalization path for both output modes. */
 import { mkdir } from 'node:fs/promises';
-
-import ExcelJS from 'exceljs';
-
-const _require = createRequire(import.meta.url);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const parquet: any = _require('parquetjs-lite');
-
-import { getLogger } from '../../../../shared/logger.js';
+import { join } from 'node:path';
+import { DecoderBudget } from './decoder-budget.js';
+import { BoundedWorkbook } from './xlsx-reader.js';
+import { XlsxInference, coerceXlsxValue, slugifySheetName } from './xlsx-values.js';
+import { convertedColumn } from './normalization.js';
+import { createTypedRowSource, emptyColumn, assertCompatibleTargets } from './typed-row-source.js';
+import type { TypedTargetReader } from './typed-row-source.js';
+import { writeTypedParquet } from './typed-parquet.js';
 import { runDirectoryConvert } from './shared.js';
-import type {
-	ConvertDirectoryOpts,
-	ConvertDirectoryResult,
-	ConvertResult,
-	FileConverter,
-} from './types.js';
-
-const log = getLogger('converter-xlsx');
-
-const TYPE_INFER_ROWS = 50;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function inferType(values: readonly unknown[]): string {
-	let sawNumber = false;
-	let sawInt = true;
-	let sawBool = false;
-	let sawDate = false;
-	let sawString = false;
-	for (const v of values) {
-		if (v === null || v === undefined) continue;
-		if (typeof v === 'number') {
-			sawNumber = true;
-			if (!Number.isInteger(v)) sawInt = false;
-			continue;
-		}
-		if (typeof v === 'boolean') { sawBool = true; continue; }
-		if (v instanceof Date) { sawDate = true; continue; }
-		if (typeof v === 'string') { sawString = true; continue; }
-		sawString = true;
-	}
-	if (sawString) return 'UTF8';
-	if (sawDate && !sawNumber && !sawBool) return 'TIMESTAMP_MILLIS';
-	if (sawNumber && !sawBool) return sawInt ? 'INT64' : 'DOUBLE';
-	if (sawBool && !sawNumber) return 'BOOLEAN';
-	return 'UTF8';
-}
-
-function coerceFor(v: unknown, type: string): unknown {
-	if (v === null || v === undefined) return null;
-	switch (type) {
-		case 'INT64': {
-			if (typeof v === 'number' && Number.isInteger(v)) return v;
-			if (typeof v === 'number') return Math.round(v);
-			return null;
-		}
-		case 'DOUBLE': {
-			if (typeof v === 'number') return v;
-			return null;
-		}
-		case 'BOOLEAN': return Boolean(v);
-		case 'TIMESTAMP_MILLIS': {
-			if (v instanceof Date) return v.getTime();
-			return null;
-		}
-		case 'UTF8':
-		default: {
-			if (v instanceof Date) return v.toISOString();
-			return String(v);
-		}
-	}
-}
-
-function slugify(name: string): string {
-	return name.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'sheet';
-}
-
+import type { FileConverter, MemoryRowSource, MemorySourceOptions, ConvertResult, ConvertDirectoryOpts, ConvertDirectoryResult } from './types.js';
 class XlsxConverter implements FileConverter {
 	readonly kind = 'xlsx' as const;
-
-	async convertFile(
-		source: string,
-		dest: string,
-		_options?: Readonly<Record<string, unknown>>,
-	): Promise<ConvertResult> {
-		// `dest` here is the per-sheet directory root: dest = .../<basename>.xlsx.parquet
-		// We treat that as a *directory* and write one Parquet per sheet inside.
-		// The cache layer's source-mtime/size check still catches re-conversion.
-		await mkdir(dirname(dest), { recursive: true });
-		await mkdir(dest, { recursive: true });
-		const t0 = Date.now();
-		const workbook = new ExcelJS.Workbook();
-		await workbook.xlsx.readFile(source);
-		let totalRows = 0;
-		for (const sheet of workbook.worksheets) {
-			const sheetDest = join(dest, `${slugify(sheet.name)}.parquet`);
-			const rowCount = await convertSheet(sheet, sheetDest);
-			totalRows += rowCount;
+	async openMemory(source: string, controls: MemorySourceOptions): Promise<MemoryRowSource> {
+		const budget = controls.budget ?? new DecoderBudget(controls.memoryBudgetBytes);
+		let workbook: BoundedWorkbook | undefined;
+		const schemaReleases: (() => void)[] = [];
+		try {
+			controls.signal?.throwIfAborted();
+			workbook = await BoundedWorkbook.open(source, budget);
+			const owned = workbook, readers: TypedTargetReader[] = [];
+			for (const sheet of workbook.sheets) {
+				let names: string[] = [];
+				let inferred: XlsxInference[] = [];
+				for await (const row of workbook.rows(sheet, controls.signal)) {
+					if (row.index === 1) {
+						const last = Math.max(0, ...row.values.keys());
+						for (let column = 1; column <= last; column++) {
+							const name = String(row.values.get(column) ?? `col_${column}`);
+							schemaReleases.push(budget.reserve(name.length * 2 + 256));
+							names.push(name);
+							inferred.push(new XlsxInference());
+						}
+						if (new Set(names).size !== names.length)
+							throw new Error('Unsupported duplicate worksheet headers');
+					}
+					if (row.index >= 2 && row.index <= 51)
+						for (let column = 0; column < names.length; column++)
+							inferred[column]!.observe(row.values.get(column + 1));
+				}
+				const columns = names.length ? names.map((name, i) => convertedColumn(name, inferred[i]!.physicalType(), true, 'xlsx-scalar')) : [emptyColumn()];
+				const targetId = slugifySheetName(sheet.name);
+				readers.push({
+					target: { targetId, sourceIdentity: workbook.zip.stamp.identity, worksheetName: sheet.name, worksheetSlug: targetId, columns },
+					async *rows(signal) {
+						const combined = controls.signal ? AbortSignal.any([controls.signal, ...(signal ? [signal] : [])]) : signal;
+						if (!names.length)
+							return;
+						for await (const row of owned.rows(sheet, combined)) {
+							if (row.index < 2)
+								continue;
+							const out: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+							let allNull = true;
+							for (let index = 0; index < columns.length; index++) {
+								const column = columns[index]!, value = coerceXlsxValue(row.values.get(index + 1), column.physicalType);
+								out[column.name] = value;
+								if (value !== null)
+									allNull = false;
+							}
+							if (!allNull)
+								yield out;
+						}
+					}, normalize: row => row,
+				});
+			}
+			if (new Set(readers.map(r => r.target.targetId)).size !== readers.length)
+				throw new Error('Unsupported ambiguous worksheet slugs');
+			const close = async () => {
+				for (const release of schemaReleases.splice(0))
+					release();
+				await owned.close();
+			};
+			const base = createTypedRowSource(readers, { memoryBudgetBytes: controls.memoryBudgetBytes, close });
+			return {
+				targets: () => base.targets(),
+				async describe(target) {
+					if (!target)
+						assertCompatibleTargets(await base.targets());
+					return base.describe(target || undefined);
+				},
+				async *batches(target, signal) {
+					if (!target)
+						assertCompatibleTargets(await base.targets());
+					yield* base.batches(target || undefined, signal);
+				},
+				close: () => base.close(),
+			};
 		}
-		log.debug({ source, dest, rowCount: totalRows, durationMs: Date.now() - t0 }, 'xlsx converted');
-		return { destPath: dest, rowCount: totalRows, durationMs: Date.now() - t0 };
+		catch (error) {
+			for (const release of schemaReleases)
+				release();
+			await workbook?.close();
+			if (error instanceof Error && ['resource-limit', 'unsupported-temporary', 'Source changed during conversion'].includes(error.message))
+				throw error;
+			throw new Error('Invalid or unsupported XLSX source');
+		}
 	}
-
-	async convertDirectory(
-		sourceDir: string,
-		destDir: string,
-		opts: ConvertDirectoryOpts,
-		options?: Readonly<Record<string, unknown>>,
-	): Promise<ConvertDirectoryResult> {
-		return runDirectoryConvert(sourceDir, destDir, opts, this.kind, async (s, d) => {
-			return this.convertFile(s, d, options);
-		});
+	async convertFile(source: string, dest: string, _options?: Readonly<Record<string, unknown>>): Promise<ConvertResult> {
+		const start = Date.now(), rows = await this.openMemory(source, { memoryBudgetBytes: 256 * 1024 * 1024 });
+		try {
+			await mkdir(dest, { recursive: true });
+			let rowCount = 0;
+			for (const target of await rows.targets())
+				rowCount += await writeTypedParquet(rows, target.targetId, join(dest, `${target.worksheetSlug}.parquet`));
+			return { destPath: dest, rowCount, durationMs: Date.now() - start };
+		}
+		finally {
+			await rows.close();
+		}
+	}
+	async convertDirectory(source: string, dest: string, opts: ConvertDirectoryOpts, options?: Readonly<Record<string, unknown>>): Promise<ConvertDirectoryResult> {
+		const result = await runDirectoryConvert(source, dest, { ...opts, pattern: opts.pattern ?? '*.xlsx' }, this.kind, (s, d) => this.convertFile(s, d, options));
+		return { ...result, parquetGlob: join(dest, '**', '*.parquet') };
 	}
 }
-
-async function convertSheet(sheet: ExcelJS.Worksheet, dest: string): Promise<number> {
-	// Header row is the first row; data rows start at row 2.
-	const headerRow = sheet.getRow(1);
-	const headerCells = headerRow.values as unknown[];
-	// exceljs uses 1-indexed cell arrays; element 0 is undefined.
-	const columns: string[] = [];
-	for (let i = 1; i < headerCells.length; i++) {
-		columns.push(String(headerCells[i] ?? `col_${i}`));
-	}
-	if (columns.length === 0) {
-		// Empty sheet -- write an empty Parquet with one stub column so
-		// DuckDB can still read_parquet without erroring.
-		const emptySchema = new parquet.ParquetSchema({ _empty: { type: 'UTF8', optional: true } });
-		const emptyWriter = await parquet.ParquetWriter.openFile(emptySchema, dest);
-		await emptyWriter.close();
-		return 0;
-	}
-
-	// First pass: sample up to TYPE_INFER_ROWS data rows to infer types.
-	const samplesByCol: unknown[][] = columns.map(() => []);
-	const lastRowSample = Math.min(sheet.rowCount, 1 + TYPE_INFER_ROWS);
-	for (let r = 2; r <= lastRowSample; r++) {
-		const row = sheet.getRow(r).values as unknown[];
-		for (let c = 0; c < columns.length; c++) {
-			samplesByCol[c]!.push(row[c + 1]);
-		}
-	}
-	const types = columns.map((_, i) => inferType(samplesByCol[i]!));
-
-	const fields: Record<string, { type: string; optional: boolean }> = {};
-	for (let i = 0; i < columns.length; i++) {
-		fields[columns[i]!] = { type: types[i]!, optional: true };
-	}
-	const schema = new parquet.ParquetSchema(fields);
-	const writer = await parquet.ParquetWriter.openFile(schema, dest);
-	let rowCount = 0;
-	for (let r = 2; r <= sheet.rowCount; r++) {
-		const rowVals = sheet.getRow(r).values as unknown[];
-		const out: Record<string, unknown> = {};
-		let allNull = true;
-		for (let c = 0; c < columns.length; c++) {
-			const v = coerceFor(rowVals[c + 1], types[c]!);
-			out[columns[c]!] = v;
-			if (v !== null) allNull = false;
-		}
-		if (allNull) continue;  // skip empty trailing rows
-		await writer.appendRow(out);
-		rowCount++;
-	}
-	await writer.close();
-	return rowCount;
-}
-
 export const xlsxConverter: FileConverter = new XlsxConverter();

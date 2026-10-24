@@ -52,7 +52,7 @@ function admitXmlUnits(bytes: Buffer): void {
 	}
 }
 /** No DTDs/custom entities; bounded tokens are admitted before entering the parser. */
-export function parseBoundedXml(bytes: Buffer, budget: DecoderBudget, handlers: XmlHandlers): void {
+export function* parseBoundedXmlChunks(bytes: Buffer, budget: DecoderBudget, handlers: XmlHandlers): Generator<void> {
 	admitXmlUnits(bytes);
 	const release = budget.reserve(bytes.length * 4 + 256 * 1024);
 	try {
@@ -103,12 +103,19 @@ export function parseBoundedXml(bytes: Buffer, budget: DecoderBudget, handlers: 
 			depth--;
 		});
 		const decoder = new TextDecoder('utf-8', { fatal: true });
-		for (let offset = 0; offset < bytes.length; offset += 64 * 1024)
+		for (let offset = 0; offset < bytes.length; offset += 64 * 1024) {
 			parser.write(decoder.decode(bytes.subarray(offset, offset + 64 * 1024), { stream: true }));
+			yield;
+		}
 		parser.write(decoder.decode());
 		parser.close();
+		yield;
 	}
 	finally {
 		release();
 	}
+}
+export function parseBoundedXml(bytes: Buffer, budget: DecoderBudget, handlers: XmlHandlers): void {
+	for (const step of parseBoundedXmlChunks(bytes, budget, handlers))
+		void step;
 }

@@ -1402,6 +1402,16 @@ The call is **denied, and the tool does not run**, when you decline, when nobody
 
 In the terminal client the question appears above the panes and takes the keys until answered (`y` approve, `n` decline). In the editor it is a warning toast with Approve and Decline; VS Code cannot dismiss a toast programmatically, so after a cancel the old toast stays on screen but a click on it sends nothing. The toast also has **Show details**, which opens the full call as JSON and then asks again.
 
+## Rules that follow a tool
+
+A rule that must follow an operation, such as refreshing tracker status after a push, is registered once against the tool and runs after every successful call of it, whoever made the call (an agent, the daemon or a workflow). Callers cannot attach rules; they are registered in code at daemon start-up with `registerToolHook({ id, toolId, run })` from `src/daemon/tools/hooks.ts`.
+
+- **When it runs.** `executeTool` runs the rules at its two success exits: after the tool succeeded and, where the tool declares an output schema, after the result fit it. A failed, denied, rejected or schema-mismatch call runs no rule. Rules run one at a time, in registration order.
+- **The report.** A rule signals failure by throwing or rejecting. The call stays a success; its result gains `hookFailures` (`[{ hookId, message }]`, the message cut to 500 characters) and one `[hook failed] <hookId>: <message>` line per failure at the end of `output`, so a caller that reads only the text is told too. `callTool` carries `hookFailures` onto its typed success result. With no rule registered, or none failing, the result is the very object the tool returned.
+- **Canonical ids.** A rule is registered under the tool's canonical id. A call through an alias runs the same rules, once. `registerToolHook` throws at start-up on a duplicate `toolId` and rule id, an empty id, or an alias of an already registered tool.
+- **A copy per rule.** Each rule is given its own `structuredClone` of the input and the result, so nothing it does to them, nested data included, reaches the caller or the next rule. A result that cannot be copied is reported as that rule's failure, and the rest still run. The rule's context is `{ toolId, input, result, caller }`; `caller` is the call's `deps.caller` and can be unset.
+- **No cancellation bound.** The stage awaits each rule. A rule that never settles holds the call until it does; neither `executeTool` nor `callTool` races the call against cancellation. Rules are repository code, so a hanging rule is a defect in that rule.
+
 ## CLI reference
 
 All CLI subcommands live under `~/.insrc/daemon/src/insrc/`.

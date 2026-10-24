@@ -290,3 +290,33 @@ test('tool-hooks.test.ts: callTool omits hookFailures when nothing failed', asyn
 	assert.equal('hookFailures' in passing, false, 'a rule ran and passed');
 	assert.equal(passing.output, 'text');
 });
+
+// ── through the executor: failure text and nested mutation ────────────────
+
+test('tool-hooks.test.ts: a rule that throws a null-prototype object or a value with a throwing toString is reported with a fixed text', async () => {
+	registerTool(fakeTool('demo', ok(GOOD_DATA)));
+	registerToolHook(hook('nullproto', 'demo', async () => { throw Object.create(null); }));
+	registerToolHook(hook('badstring', 'demo', async () => { throw { toString() { throw new Error('no'); } }; }));
+	registerToolHook(hook('after', 'demo'));
+	const r = await executeTool('demo', GOOD_IN, deps());
+	assert.equal(r.success, true, 'the call is still a success');
+	assert.deepEqual(r.hookFailures, [
+		{ hookId: 'nullproto', message: 'the rule failed with a value that could not be described' },
+		{ hookId: 'badstring', message: 'the rule failed with a value that could not be described' },
+	]);
+	assert.match(r.output, /\[hook failed\] nullproto: the rule failed with a value that could not be described/);
+});
+
+test('tool-hooks.test.ts: a rule that mutates nested result data leaves the caller\'s result untouched', async () => {
+	const data = { id: 'x', total: 1 };
+	const returned: ToolResult = { output: 'ok', format: 'text', success: true, data };
+	registerTool(fakeTool('demo', returned));
+	registerToolHook(hook('mutates', 'demo', async ctx => { (ctx.result.data as { total: number }).total = 9; (ctx.input as { count: number }).count = 99; }));
+	registerToolHook(hook('mutates-then-throws', 'demo', async ctx => { (ctx.result.data as { id: string }).id = 'changed'; throw new Error('late'); }));
+	const input = { name: 'n', count: 1 };
+	const r = await executeTool('demo', input, deps());
+	assert.deepEqual(r.data, { id: 'x', total: 1 });
+	assert.equal(r.data, data, 'the caller receives the tool\'s own data object');
+	assert.deepEqual(input, { name: 'n', count: 1 });
+	assert.deepEqual(r.hookFailures, [{ hookId: 'mutates-then-throws', message: 'late' }]);
+});

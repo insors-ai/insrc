@@ -1,5 +1,5 @@
 import { createConnection, type Socket } from 'node:net';
-import type { IpcRequest, IpcResponse, DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from './types.js';
+import type { IpcRequest, IpcResponse, IpcStreamMessage, DaemonStatus, DaemonUpdateResult, DaemonUpdateOutcome } from './types.js';
 import { PATHS } from './paths.js';
 
 // The single thin socket-client boundary shared by the CLI/TUI and the VS Code
@@ -135,6 +135,58 @@ export interface IpcClient {
   update(): Promise<DaemonUpdateResult>;
   /** The last persisted daemon self-update outcome, or null when none exists. */
   updateOutcome(): Promise<DaemonUpdateOutcome | null>;
+  /**
+   * Open a stream method on the daemon and deliver every frame it pushes to `onFrame`.
+   * Optional: a client that cannot stream (a test double) omits it, and only the modules
+   * that subscribe (the approval prompts) check for it. `onClose` runs once when the stream
+   * ends, with the error if it ended abnormally (the daemon went away).
+   */
+  stream?(method: string, params: unknown, onFrame: (frame: IpcStreamMessage) => void, onClose?: (err?: Error) => void): IpcStreamHandle;
+}
+
+/** An open stream. close() destroys the socket; the daemon's server then aborts the stream handler. */
+export interface IpcStreamHandle { close(): void }
+
+/**
+ * Open a daemon stream: one request with `stream: true`, then newline-delimited frames until the
+ * socket closes. Unlike `rpc` it does not end after the first line. Modelled on
+ * src/mcp/daemon-stream.ts; `connect` is the same injectable seam.
+ */
+export function openStream(
+  method:  string,
+  params:  unknown,
+  onFrame: (frame: IpcStreamMessage) => void,
+  onClose?: (err?: Error) => void,
+  connect: () => Socket = () => createConnection(PATHS.sockFile),
+): IpcStreamHandle {
+  const socket = connect();
+  let buffer = '';
+  let closed = false;
+  const finish = (err?: Error): void => {
+    if (closed) return;
+    closed = true;
+    socket.destroy();
+    onClose?.(err);
+  };
+
+  socket.on('connect', () => {
+    const req: IpcRequest = { id: _nextId++, method, params, stream: true, client: { label: 'cli', pid: process.pid } };
+    socket.write(JSON.stringify(req) + '\n');
+  });
+  socket.on('data', (chunk: Buffer) => {
+    buffer += chunk.toString();
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try { onFrame(JSON.parse(line) as IpcStreamMessage); } catch { /* a frame that is not JSON is dropped */ }
+    }
+  });
+  socket.on('error', (err: NodeJS.ErrnoException) => {
+    finish(err.code === 'ENOENT' || err.code === 'ECONNREFUSED' ? new Error('daemon is not running — start it with: insrc daemon start') : err);
+  });
+  socket.on('close', () => finish(closed ? undefined : new Error('daemon closed the stream')));
+  return { close: () => { if (closed) return; closed = true; socket.destroy(); onClose?.(); } };
 }
 
 /**
@@ -160,5 +212,6 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
     },
     update: () => call<DaemonUpdateResult>('daemon.update'),
     updateOutcome: () => call<DaemonUpdateOutcome | null>('daemon.updateOutcome'),
+    stream: (method, params, onFrame, onClose) => openStream(method, params, onFrame, onClose, connect),
   };
 }

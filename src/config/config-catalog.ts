@@ -84,7 +84,7 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	// models.analyze.* / models.providers.local nesting is MIGRATED to models.*
 	// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
 	// shaperModel/summariser* keys) is stripped via RETIRED_PATHS on boot/update.
-	{ path: 'permissions.mode',      type: 'enum',    default: 'validate',      desc: "tool permission mode: 'validate' | 'auto-accept'", enumValues: ['validate', 'auto-accept'], group: 'Workflow & review' },
+	{ path: 'tools.commonApproval', type: 'enum',    default: 'auto',          desc: "whether a tool call that needs approval asks first: 'manual' and 'edit-auto' ask, 'auto' does not; a chat session's edits mode overrides it per call, and a destructive tool always asks", enumValues: ['manual', 'edit-auto', 'auto'], group: 'Workflow & review' },
 	{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
 	{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
 	{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },
@@ -160,6 +160,9 @@ export const RETIRED_PATHS: readonly RetiredPath[] = [
 	// migrated (they resolve from the tiers) and so are stripped here.
 	{ path: 'models.analyze',   prefix: true },
 	{ path: 'models.providers', prefix: true },
+	// permissions.mode ('validate' | 'auto-accept') was read by nothing; tools.commonApproval is the one
+	// tool-approval setting. Declared as a prefix so the emptied `permissions` object goes with it.
+	{ path: 'permissions', prefix: true },
 ];
 
 /**

@@ -86,7 +86,9 @@ test('first boot against an empty home → surviving former-literal keys written
 		const literal = readFixture('daemon-defaults-literal.json');
 		// surviving daemon-wide keys unchanged from the former literal
 		assert.equal(written['logLevel'], literal['logLevel']);
-		assert.deepEqual(written['permissions'], literal['permissions']);
+		// permissions.mode is retired: the former literal still carries it, the first boot no longer writes it
+		assert.equal(written['permissions'], undefined);
+		assert.deepEqual((written['tools'] as Record<string, unknown>)['commonApproval'], 'auto');
 		assert.deepEqual(written['routing'], literal['routing']);
 		// retired / old-nesting model keys are NOT written at first boot
 		const wm = written['models'] as Record<string, unknown>;

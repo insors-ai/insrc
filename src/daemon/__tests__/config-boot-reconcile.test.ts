@@ -63,7 +63,7 @@ const defaultsLiteral = (): Record<string, unknown> =>
 
 // The former L180-192 literal keys that were RETIRED in this story — first boot
 // must NO LONGER write them (they are absent, not defaulted).
-const RETIRED_PREFIXES = ['models.embedding', 'models.embeddingDim', 'models.context', 'models.agents', 'models.analyze', 'models.providers'];
+const RETIRED_PREFIXES = ['models.embedding', 'models.embeddingDim', 'models.context', 'models.agents', 'models.analyze', 'models.providers', 'permissions'];
 const isRetired = (dp: string): boolean => RETIRED_PREFIXES.some(p => dp === p || dp.startsWith(`${p}.`));
 
 test('first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent', () => {
@@ -81,7 +81,9 @@ test('first-boot equivalence: surviving former-literal keys match catalog defaul
 	assert.deepEqual(divergences, [], `former-literal key divergences:\n${divergences.join('\n')}`);
 	// the surviving daemon-wide keys are still catalog defaults
 	assert.equal(getPath(firstBoot, 'logLevel'), 'info');
-	assert.equal(getPath(firstBoot, 'permissions.mode'), 'validate');
+	// permissions.mode is retired (it was read by nothing); tools.commonApproval is the one approval setting
+	assert.equal(getPath(firstBoot, 'permissions'), undefined);
+	assert.equal(getPath(firstBoot, 'tools.commonApproval'), 'auto');
 });
 
 test('first boot with no config present → writes surviving former keys + canonical catalog defaults; no retired keys, one write', () => {

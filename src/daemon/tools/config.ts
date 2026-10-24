@@ -26,11 +26,6 @@ const log = getLogger('tools-config');
 // ---------------------------------------------------------------------------
 
 export interface ToolSettings {
-  approval: {
-    defaultAction: 'approve' | 'skip';
-    maxEditRounds: number;
-    showStructuredDiff: boolean;
-  };
   loop: {
     maxIterations: number;
     maxNudges: number;
@@ -45,9 +40,6 @@ export interface ToolSettings {
   };
   web: {
     braveApiKeySource: 'env' | 'keychain';
-  };
-  destructive: {
-    requireDoubleConfirm: boolean;
   };
   /**
    * Keychain account names (strings). The actual secret (webhook
@@ -71,12 +63,10 @@ export interface ToolSettings {
 
 function defaults(): ToolSettings {
   return {
-    approval:    { defaultAction: 'skip', maxEditRounds: 5, showStructuredDiff: true },
     loop:        { maxIterations: 25, maxNudges: 3 },
     output:      { inlineMaxChars: 12_000, retainSpills: false },
     shell:       { defaultTimeoutMs: 120_000, detachedMaxRuntimeMs: 30 * 60_000 },
     web:         { braveApiKeySource: 'env' },
-    destructive: { requireDoubleConfirm: false },
     notify: {
       slack:   { defaultWebhookRef: '' },
       teams:   { defaultWebhookRef: '' },
@@ -105,11 +95,6 @@ export function getToolSettings(): ToolSettings {
  */
 export function updateToolSettings(incoming: Record<string, unknown>): ToolSettings {
   const next: ToolSettings = {
-    approval: {
-      defaultAction:     parseEnum(incoming['approval.defaultAction'],     ['approve', 'skip'], current.approval.defaultAction),
-      maxEditRounds:     parseNumber(incoming['approval.maxEditRounds'],   current.approval.maxEditRounds, 1, 20),
-      showStructuredDiff: parseBool(incoming['approval.showStructuredDiff'], current.approval.showStructuredDiff),
-    },
     loop: {
       maxIterations: parseNumber(incoming['loop.maxIterations'], current.loop.maxIterations, 1, 200),
       maxNudges:     parseNumber(incoming['loop.maxNudges'],     current.loop.maxNudges, 0, 10),
@@ -125,9 +110,6 @@ export function updateToolSettings(incoming: Record<string, unknown>): ToolSetti
     web: {
       braveApiKeySource: parseEnum(incoming['web.braveApiKeySource'], ['env', 'keychain'], current.web.braveApiKeySource),
     },
-    destructive: {
-      requireDoubleConfirm: parseBool(incoming['destructive.requireDoubleConfirm'], current.destructive.requireDoubleConfirm),
-    },
     notify: {
       slack:   { defaultWebhookRef: parseString(incoming['notify.slack.defaultWebhookRef'],   current.notify.slack.defaultWebhookRef) },
       teams:   { defaultWebhookRef: parseString(incoming['notify.teams.defaultWebhookRef'],   current.notify.teams.defaultWebhookRef) },
@@ -142,10 +124,7 @@ export function updateToolSettings(incoming: Record<string, unknown>): ToolSetti
     },
   };
   current = next;
-  log.info({
-    maxIterations: next.loop.maxIterations,
-    defaultApproval: next.approval.defaultAction,
-  }, 'tool settings updated');
+  log.info({ maxIterations: next.loop.maxIterations }, 'tool settings updated');
   return next;
 }
 

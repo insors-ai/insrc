@@ -13,7 +13,7 @@ distinguish a captured document from a hand-authored guess.
 **2026-07-26**. The captured base is verbatim: `logLevel`, `ollama.host`, all
 of `models.local` / `models.embedding` / `models.embeddingDim` /
 `models.tiers.*` / `models.context.*`, `models.analyze.shaperProvider`,
-`permissions.mode`, and `routing.mode` are exactly as they were on disk. This
+`permissions.mode` (since retired: the reconcile strips it), and `routing.mode` are exactly as they were on disk. This
 is the classic regression shape — it predates the per-role tiering schema, so
 it carries `models.analyze.shaperProvider` but **none** of the newer catalog
 keys (`models.analyze.tiers.*`, `models.analyze.coreFloor`,

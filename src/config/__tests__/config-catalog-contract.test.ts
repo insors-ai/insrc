@@ -103,7 +103,7 @@ test('the real CONFIG_CATALOG has 40 rows (flat models.* surface; shaper*/summar
 	}
 });
 
-test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint from every CONFIG_CATALOG path', () => {
+test('RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path', () => {
 	assert.deepEqual(
 		RETIRED_PATHS.map(r => ({ path: r.path, prefix: r.prefix ?? false })),
 		[
@@ -113,6 +113,7 @@ test('RETIRED_PATHS covers exactly the 6 declared legacy entries and is disjoint
 			{ path: 'models.agents', prefix: true },
 			{ path: 'models.analyze', prefix: true },
 			{ path: 'models.providers', prefix: true },
+			{ path: 'permissions', prefix: true },
 		],
 	);
 	// disjoint: no live catalog path equals or sits under any retired path

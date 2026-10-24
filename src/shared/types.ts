@@ -488,9 +488,6 @@ export interface AgentConfig {
     mistral?: string | undefined;
     brave?: string | undefined;
   };
-  permissions: {
-    mode: 'validate' | 'auto-accept';
-  };
   classifier?: {
     /**
      * When true, every turn prompts the user to confirm / override the

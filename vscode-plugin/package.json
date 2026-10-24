@@ -198,14 +198,15 @@
       {
         "title": "Workflow & review",
         "properties": {
-          "insrc.permissions.mode": {
+          "insrc.tools.commonApproval": {
             "type": "string",
-            "default": "validate",
-            "markdownDescription": "tool permission mode: 'validate' | 'auto-accept'",
+            "default": "auto",
+            "markdownDescription": "whether a tool call that needs approval asks first: 'manual' and 'edit-auto' ask, 'auto' does not; a chat session's edits mode overrides it per call, and a destructive tool always asks",
             "scope": "machine",
             "enum": [
-              "validate",
-              "auto-accept"
+              "manual",
+              "edit-auto",
+              "auto"
             ]
           },
           "insrc.routing.mode": {

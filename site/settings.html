@@ -55,7 +55,7 @@
     <thead><tr><th>Group</th><th>Controls</th><th>Example keys</th></tr></thead>
     <tbody>
       <tr><td><strong>General</strong></td><td>Daemon-wide basics.</td><td><code>logLevel</code>, <code>ollama.host</code></td></tr>
-      <tr><td><strong>Workflow &amp; review</strong></td><td>How features are routed, gated and reviewed.</td><td><code>permissions.mode</code>, <code>routing.mode</code>, <code>classifier.confirmIntent</code>, <code>codeReview.enforce</code>, <code>codeReview.freshnessTimeoutMs</code></td></tr>
+      <tr><td><strong>Workflow &amp; review</strong></td><td>How features are routed, gated and reviewed.</td><td><code>tools.commonApproval</code>, <code>routing.mode</code>, <code>classifier.confirmIntent</code>, <code>codeReview.enforce</code>, <code>codeReview.freshnessTimeoutMs</code></td></tr>
       <tr><td><strong>Analysis &amp; memory</strong></td><td>Analyzer routing and implicit memory capture.</td><td><code>analyzer.useLocal</code>, <code>memory.implicitCapture.enabled</code></td></tr>
       <tr><td><strong>Models — tiers</strong></td><td>The per-tier backend + model, and the accuracy floor.</td><td><code>models.tiers.{core,mid,cheap}.{runner,model}</code>, <code>models.coreFloor</code></td></tr>
       <tr><td><strong>Models — shaper</strong></td><td>The local shaper's loop + output limits.</td><td><code>models.shaper.maxToolTurns</code>, <code>…structuredOutputRetries</code>, <code>…ollamaNumCtx</code>, <code>…ollamaNumPredict</code></td></tr>

@@ -29,7 +29,7 @@ Building this fix touches three layers. The CLI provider gets an opt-in silence 
 | 7 | **`t7`** Real attempt count in the template-review failure message | S | `t4` | unit: a template review that stalls twice and then gets an invalid answer fails with a message naming three attempts, and two invalid answers report two attempts | [[c5]] |
 | 8 | **`t8`** Heartbeat frames from workflow.review | S | — | integration: workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame, and its stage frames are unchanged | [[c8]] |
 | 9 | **`t9`** insrc_review_step relays progress and waits with an idle limit | M | `t8` | integration: insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'; integration: a healthy design review longer than 15 minutes completes while heartbeats flow, and a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit | [[c6]] |
-| 10 | **`t10`** Live check, full sweep and daemon rollout | M | `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7`, `t8`, `t9` | live: codex accepts the strict copy of the bounded VERIFY_SCHEMA and a real verify call returns a finding that passes the reply check; smoke: a real DEF review on the rebuilt daemon relays progress to the controller and retries any stall within its call type's silence limit | [[c12]] [[c13]] |
+| 10 | **`t10`** Live check, full sweep and daemon rollout | M | `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7`, `t8`, `t9` | live: codex accepts the strict copy of the bounded VERIFY_SCHEMA and a real verify call returns a finding that passes the reply check; smoke: a real DEF review on the rebuilt daemon completes without a stall and relays progress to the controller | [[c12]] [[c13]] |
 
 ### 1.1 E20261024697b9f8f:S001:T001 — Silence watchdog for opted-in structured codex calls
 
@@ -118,12 +118,12 @@ ReviewStepDeps gains progress; the step host wires insrc_review_step with its pr
 
 ### 1.10 E20261024697b9f8f:S001:T010 — Live check, full sweep and daemon rollout
 
-Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that progress reaches the controller and a stall is retried within its call type's silence limit (about 90 s for a verify call).
+Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that it completes without a stall and progress reaches the controller; the retry of a stall within its call type's silence limit (about 90 s for a verify call) is covered by the t5/t6 unit tests, since a real stall cannot be forced against live codex (user decision A, 2026-10-24).
 
 **Acceptance checks:**
 - Live: codex accepts the bounded VERIFY_SCHEMA strict copy and a verified finding passes the reply check
 - Full sweep passes (pre-existing failures named)
-- A real DEF review relays progress and any stall is retried within its silence limit
+- A real DEF review completes without a stall and relays progress to the controller; the retry within each call type's silence limit is covered by unit tests
 
 ## 2. Test-strategy coverage
 

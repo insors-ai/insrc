@@ -25,7 +25,6 @@
     "lldRunId": "wf-1792763798946-g7op3j",
     "lldEffectiveHash": "697b9f8ff46b9deb7c9f49de3715d7269704a2669d032ecdbaf1514d8ab17aff",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-24T11:46:58.044Z",
     "rangeBase": "b53943496e14ac18ef919298e60308455b4f48ea"
   },
   "body": {
@@ -321,7 +320,7 @@
       {
         "id": "t10",
         "title": "Live check, full sweep and daemon rollout",
-        "summary": "Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that progress reaches the controller and a stall is retried within its call type's silence limit (about 90 s for a verify call).",
+        "summary": "Run the live codex check of the bounded VERIFY_SCHEMA, run the full test sweep once, rebuild and restart the installed daemon, and confirm on a real DEF review that it completes without a stall and progress reaches the controller; the retry of a stall within its call type's silence limit (about 90 s for a verify call) is covered by the t5/t6 unit tests, since a real stall cannot be forced against live codex (user decision A, 2026-10-24).",
         "size": "M",
         "order": 10,
         "dependsOn": [
@@ -338,7 +337,7 @@
         "acceptanceChecks": [
           "Live: codex accepts the bounded VERIFY_SCHEMA strict copy and a verified finding passes the reply check",
           "Full sweep passes (pre-existing failures named)",
-          "A real DEF review relays progress and any stall is retried within its silence limit"
+          "A real DEF review completes without a stall and relays progress to the controller; the retry within each call type's silence limit is covered by unit tests"
         ],
         "derivedFrom": [
           "c12",
@@ -351,7 +350,7 @@
           },
           {
             "level": "smoke",
-            "name": "a real DEF review on the rebuilt daemon relays progress to the controller and retries any stall within its call type's silence limit"
+            "name": "a real DEF review on the rebuilt daemon completes without a stall and relays progress to the controller"
           }
         ]
       }

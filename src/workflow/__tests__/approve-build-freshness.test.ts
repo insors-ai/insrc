@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { reviewBuildGap, reviewedBuildFingerprint } from '../code-review/build-freshness.js';
 import { enforceCodeReviewGate } from '../code-review/gate.js';
 import { createCompletionEvidence } from '../artifact-core/completion-evidence.js';
-import { approveJson } from './helpers/approve.js';
+import { approveJson, approveTarget } from './helpers/approve.js';
 
 const H = '3bc755af91d494a8';
 const BEFORE = '2026-10-01T00:00:00.000Z';
@@ -109,5 +109,21 @@ test('completion refuses a malformed review even when an empty BUILD has no file
    writeFileSync(join(dir, `CR-${H}-s1.json`), JSON.stringify(malformed));
    await assert.rejects(approveJson(path), /code review structure cannot be verified/);
   }
+ } finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+
+test('a stale BUILD review does not prevent approval of a new PLAN', async () => {
+ const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-freshness-'));
+ try {
+  const dir = join(repo, '.insrc/artifacts'); mkdirSync(dir, { recursive: true });
+  const b = build(); b.meta.updatedAt = AFTER;
+  writeFileSync(join(dir, `BUILD-${H}-s1.json`), JSON.stringify(b));
+  writeFileSync(join(dir, `CR-${H}-s1.json`), JSON.stringify(review()));
+  const path = join(dir, `PLAN-${H}-s1.json`);
+  writeFileSync(path, JSON.stringify({ meta: { ...b.meta, workflow: 'plan' }, body: { tasks: [] } }));
+  const result = await approveTarget({ repoPath: repo, artifactPath: path }, { enforce: false });
+  assert.equal(result.skipped.length, 0);
+  assert.equal(result.approved.length, 1);
  } finally { rmSync(repo, { recursive: true, force: true }); }
 });

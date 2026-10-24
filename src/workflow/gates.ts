@@ -976,6 +976,7 @@ export async function approveWorkflowTarget(
 		const meta = readArtifactMeta(jsonPath);
 		if (meta !== undefined && meta.epicHash !== undefined && meta.storyId !== undefined) {
 			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
+				checkBuildFreshness: reviewRequiredFor(jsonPath) === 'code',
 				...(req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : {}),
 				...(opts?.enforce !== undefined ? { enforce: opts.enforce } : {}),
 			});

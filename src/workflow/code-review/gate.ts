@@ -53,6 +53,8 @@ export type CodeReviewGateResult =
 	| { readonly status: 'overridden'; readonly verdict: 'block'; readonly counts: GateCounts; readonly overrideReason: string; readonly at: string };
 
 export interface CodeReviewGateOpts {
+	/** Only BUILD completion requires freshness; other artifact approvals retain verdict-only checks. */
+	readonly checkBuildFreshness?: boolean | undefined;
 	/** An explicit reason that bypasses a `block` verdict (records the override). */
 	readonly overrideReview?: string | undefined;
 	/** Overrides the `codeReview.enforce` config flag (defaults to the config
@@ -99,7 +101,7 @@ export function enforceCodeReviewGate(
 	}
 
 	const buildPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId));
-	if (existsSync(buildPath)) {
+	if (opts?.checkBuildFreshness !== false && existsSync(buildPath)) {
 		let gap: string | undefined;
 		try { gap = reviewBuildGap(JSON.parse(readFileSync(buildPath, 'utf8')), review, repoPath); }
 		catch { gap = 'the current BUILD cannot be read'; }

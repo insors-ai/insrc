@@ -55,28 +55,29 @@ export const VERIFY_SCHEMA: StructuredSchema = {
 	required: ['severity', 'evidence', 'action', 'fixability'],
 	properties: {
 		severity:   { type: 'string', enum: SEVERITIES as unknown as string[] },
-		evidence:   { type: 'string', minLength: 1 },
-		action:     { type: 'string', minLength: 1 },
+		evidence:   { type: 'string', minLength: 1, maxLength: 4000 },
+		action:     { type: 'string', minLength: 1, maxLength: 2000 },
 		fixability: { type: 'string', enum: FIXABILITIES as unknown as string[] },
 		proposedFix: {
 			type: 'object',
 			additionalProperties: false,
 			required: ['rationale'],
 			properties: {
-				rationale: { type: 'string' },
+				rationale: { type: 'string', maxLength: 2000 },
 				artifactEdits: {
 					type: 'array',
+					maxItems: 10,
 					items: {
 						type: 'object',
 						additionalProperties: false,
 						required: ['find', 'replace'],
 						properties: {
-							find:    { type: 'string', minLength: 1 },
-							replace: { type: 'string' },
+							find:    { type: 'string', minLength: 1, maxLength: 4000 },
+							replace: { type: 'string', maxLength: 4000 },
 						},
 					},
 				},
-				options: { type: 'array', items: { type: 'string' } },
+				options: { type: 'array', maxItems: 4, items: { type: 'string', maxLength: 500 } },
 			},
 		},
 	},
@@ -140,9 +141,12 @@ const SYSTEM = [
 	'               alternatives). Provide `proposedFix.options` (2–4 choices) and, only if',
 	'               safe, candidate `artifactEdits`.',
 	'  - manual   : needs a design decision (re-scope, change the type model, resolve a',
-	'               semantic gap) with NO safe auto-edit. Provide `proposedFix.options` only;',
-	'               do NOT emit `artifactEdits`.',
-	'A LOW/verified finding is `manual` with no edits and no options unless a cleanup is genuinely useful.',
+	'               semantic gap) with NO safe auto-edit. Provide `proposedFix.options`;',
+	'               leave `artifactEdits` an empty array.',
+	'Always emit `proposedFix` with all three fields. When a field has nothing to say, give',
+	'it empty: `rationale` an empty string (or one line), `artifactEdits` and `options` empty',
+	'arrays. A LOW/verified finding is `manual` with an empty rationale and empty arrays',
+	'unless a cleanup is genuinely useful.',
 ].join('\n');
 
 function renderEvidence(claim: Claim, evidence: Evidence): string {

@@ -1,6 +1,6 @@
 /** S002-only operations and private IPC. No public driver or factory contract changes. */
 import type { ConnectionConfig } from '../../shared/db-driver.js';
-import { assertDraftTestJson, assertDraftTestUuid, ManagementInputError } from '../../shared/connection-management-wire.js';
+import { assertDraftTestJson, assertDraftTestUuid, assertNoRuntimeAuth, ManagementInputError } from '../../shared/connection-management-wire.js';
 
 export interface DraftProbe { probeReachability(): Promise<void>; close(): Promise<void> }
 export interface DynamoRuntimeAuth {
@@ -45,6 +45,7 @@ export function parseProbeWorkerStart(value: unknown): ProbeWorkerStart {
 	if (o['type'] !== 'start') throw new ManagementInputError();
 	identity(o); text(o['lookupRoot']);
 	const c = record(o['config'], ['id','kind'], ['family','label','url','path','schemaSource','namespace','pii','options','recursive','partitioning']);
+	assertNoRuntimeAuth(c);
 	text(c['id']); text(c['kind']);
 	for (const name of ['label','url','path']) if (Object.hasOwn(c,name)) text(c[name]);
 	if (c['family'] !== undefined && !['rdbms','kv','file'].includes(c['family'] as string)) throw new ManagementInputError();

@@ -65,9 +65,16 @@ export function parseDraftTestRequest(value: unknown): DraftTestRequest {
  assertDraftTestUuid(o['requestId']); parseConnectionKey(o['key']);
  if (!Number.isSafeInteger(o['draftRevision']) || (o['draftRevision'] as number) < 0) throw new ManagementInputError();
  if (Object.hasOwn(o,'expectedRevision')) assertDraftTestUuid(o['expectedRevision']);
- object(o['publicPatch']);
+ object(o['publicPatch']); assertNoRuntimeAuth(o['publicPatch']);
  for (const patch of Object.values(object(o['credentials']))) parseCredentialPatch(patch);
  return value as DraftTestRequest;
+}
+/** Runtime credentials have one private IPC slot, never a public/config field. Call after JSON validation. */
+export function assertNoRuntimeAuth(value: unknown): void {
+ if (value && typeof value === 'object') {
+  if (Object.hasOwn(value,'runtimeAuth')) throw new ManagementInputError();
+  for (const child of Object.values(value)) assertNoRuntimeAuth(child);
+ }
 }
 export function parseTestCancellation(value: unknown): TestCancellation {
  assertDraftTestJson(value); const o=object(value); keys(o,['requestId']); assertDraftTestUuid(o['requestId']); return value as TestCancellation;

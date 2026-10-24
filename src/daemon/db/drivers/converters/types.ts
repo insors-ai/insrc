@@ -15,6 +15,7 @@
  */
 
 import type { MemoryRowSource } from '../../../../shared/connection-management.js';
+import type { DecoderBudget } from './decoder-budget.js';
 export type { ConvertedColumn, ConvertedTarget, ConvertedBatch, MemoryRowSource } from '../../../../shared/connection-management.js';
 
 export interface ConvertResult {
@@ -83,4 +84,5 @@ export interface FileConverter {
 export interface MemorySourceOptions {
  readonly memoryBudgetBytes: number;
  readonly signal?: AbortSignal | undefined;
+ readonly budget?: DecoderBudget | undefined;
 }

@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1792763798946-g7op3j`
 **HLD effective hash:** `697b9f8ff46b...`
 
-This fix makes daemon design reviews finish in reasonable time. A review call whose codex run prints nothing new for a minute is killed and re-issued, up to three attempts, instead of waiting three minutes per stall; active calls may run to ten minutes and healthy calls are untouched. The daemon sends a heartbeat during a review and insrc_review_step passes every progress frame on, so a long review is no longer aborted at 30 minutes. The review answer gains length bounds, the verify prompt now asks for exactly the fields codex's strict grammar requires, and a reply that fails the caller's schema is retried with its reasons. The codex-wide change to how optional fields reach codex is left to a separate follow-up.
+This fix makes daemon reviews and build validation stop losing minutes to silent codex runs. Each review call type gets its own silence limit, taken from one table and set from the measured silence of healthy calls of that type: a DEF verify call is killed after 90 s with nothing new on stdout, a code-review call or an HLD/LLD reviewer session after 300 s, a build-validation session after 90 s, while an extract call (healthy silence up to about 5 minutes) gets none. A stalled call is re-issued up to three times. The daemon sends a heartbeat during a review and insrc_review_step passes every progress frame on, so a long review is no longer aborted at 30 minutes. The review answer gains length bounds, the verify prompt asks for exactly the fields codex's strict grammar requires, and a reply that fails the caller's schema is retried with its reasons. The codex-wide change to how optional fields reach codex is left to a separate follow-up.
 
 ## Contents
 
@@ -54,31 +54,54 @@ completeStructured<T>(messages: readonly LLMMessage[], schema: StructuredSchema,
 - With stallMs absent every existing caller behaves exactly as before
 - A stalled run is killed within stallMs plus the process-group kill time
 - A run that prints an early item event and then goes silent is killed stallMs after its last output, not at timeoutMs
-- Reviewer sessions keep the first-output watchdog unchanged
+- Reviewer sessions keep the first-output watchdog unless they are given their own stallMs (see CliProvider.runReviewSession)
 
-### 2.2 `VERIFY_CALL_TIMEOUT_MS`
+### 2.2 `REVIEW_CALL_LIMITS`
 
 ```typescript
-export const VERIFY_CALL_TIMEOUT_MS: number /* 600_000 */; export const VERIFY_CALL_STALL_MS: number /* 60_000 */
+type ReviewCallKind = 'design-verify' | 'design-extract' | 'design-session' | 'code-review' | 'build-validate';
+export const REVIEW_CALL_LIMITS: Readonly<Record<ReviewCallKind, { readonly silenceMs?: number | undefined; readonly timeoutMs?: number | undefined }>>  // src/workflow/review/call-limits.ts (new)
 ```
 
-**Returns:** `number` — VERIFY_CALL_TIMEOUT_MS becomes the overall cap of one premise judgement (600 s); the new VERIFY_CALL_STALL_MS (60 s) is its first-output limit. verifyClaim and the design-review verify stage pass both.
+**Returns:** `Readonly<Record<ReviewCallKind, { silenceMs?, timeoutMs? }>>` — The one place the silence limit and total cap of every daemon review and build-validation call type are set. Values: design-verify { silenceMs 90_000, timeoutMs 600_000 }; design-extract { timeoutMs 600_000 } with no silence limit; design-session (HLD/LLD reviewer session) { silenceMs 300_000 } beside its existing deadline; code-review (every code-review chunk, gather, judge and controller call) { silenceMs 300_000, timeoutMs 600_000 }; build-validate (validation verdict session) { silenceMs 90_000 } inside its existing 300 s JUDGE_DEADLINE_MS, so a stall is caught with time left for runReviewSession's one retry. Each silence limit sits above the longest stdout silence of a healthy call of its type in the 2026-10-16..24 survey, measured on the events codex prints on stdout (tool calls, tool outputs, messages; codex prints no reasoning items): verify 62 s -> 90 s, HLD/LLD session 172 s -> 300 s, code review 185 s (gather) and 66 s (judges) -> 300 s, build validation 29 s -> 90 s; extract (up to 343 s of silence, median call 130 s) gets none, because a limit above its silence would sit near its useful run time.
 
 **Postconditions:**
-- A silent verify call costs at most ~60 s; an active one may run to 600 s
+- Every review and build-validation call site reads its limits from REVIEW_CALL_LIMITS; no call site writes its own number
+- VERIFY_CALL_TIMEOUT_MS (600_000) and VERIFY_CALL_STALL_MS (90_000) remain exported, defined from the design-verify row, so existing imports keep working
+- Changing a limit is a one-line edit with its evidence in the table's comment
+- Every silence limit is below the total limit of the call it applies to (process-group.ts arms the watchdog only when stall.ms < timeoutMs): verify 90 s < 600 s, code review 300 s < 600 s, HLD/LLD session 300 s < its 12-30 min deadline, build validation 90 s < 300 s
+- verifyClaim, and so the calibration harness that calls it (src/workflow/review/calibration.ts), uses the design-verify row too: its total cap goes from 180 s to 600 s and it gains the 90 s silence limit
 
-### 2.3 `ExecutionMode`
+### 2.3 `CliProvider.runReviewSession`
 
 ```typescript
-type ExecutionMode = { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined } | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' }
+runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>  // ReviewSessionOpts gains: readonly stallMs?: number | undefined
 ```
 
-**Returns:** `ExecutionMode` — The structured mode carries an optional stallMs that the driver's send() forwards to completeStructured.
+**Parameters:**
+- `opts.stallMs: number | undefined` _(optional)_ — When set, the codex session is watched by the silence watchdog with this limit (no new stdout for stallMs -> killed -> CliStallError) instead of the first-output watchdog at codexFirstOutputMs. A reviewer session prints an event for each tool call and item, so a silence limit catches a session that hangs after it has started. Absent: today's first-output watchdog, unchanged.
+
+**Returns:** `Promise<T>` — Unchanged: the checked answer.
+
+**Errors:**
+- `CliStallError` when no new stdout for stallMs (silence mode) or no model output within codexFirstOutputMs (default mode)
+
+**Postconditions:**
+- Without stallMs the session's stall behaviour is exactly today's
+- The session's existing deadline, internal retry and size-refusal handling are unchanged
+
+### 2.4 `ExecutionMode`
+
+```typescript
+type ExecutionMode = { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined; readonly stallMs?: number | undefined } | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only'; readonly stallMs?: number | undefined }
+```
+
+**Returns:** `ExecutionMode` — Both modes carry an optional stallMs (the silence limit) that the driver's send() forwards: to completeStructured for a structured call, to runReviewSession for a reviewer session.
 
 **Postconditions:**
 - Adapters that set no stallMs are unchanged
 
-### 2.4 `MAX_CALL_ATTEMPTS`
+### 2.5 `MAX_CALL_ATTEMPTS`
 
 ```typescript
 export const MAX_CALL_ATTEMPTS = 2; export const MAX_STALL_ATTEMPTS = 3
@@ -88,9 +111,9 @@ export const MAX_CALL_ATTEMPTS = 2; export const MAX_STALL_ATTEMPTS = 3
 
 **Postconditions:**
 - Invalid answers and size refusals are not retried more than today
-- Every message that reports an exhausted call states its real attempt count, carried as NotJudged.attempts into notJudgedFinding (src/workflow/review-pipeline/design-review.ts:41) and into ReviewCallFailedError (src/workflow/review-pipeline/job.ts:51), and in the applyFailure log (job.ts:306)
+- Every message that reports an exhausted call states its real attempt count, carried as NotJudged.attempts into notJudgedFinding (src/workflow/review-pipeline/design-review.ts:41) and into ReviewCallFailedError (src/workflow/review-pipeline/job.ts:51), and in the applyFailure log (job.ts:306); runTemplateReview's own wrapper message for an exhausted invalid answer ('failed checklist … twice', src/workflow/review/template-review.ts) also states err.attempts and says how many attempts were invalid answers
 
-### 2.5 `handleReviewStep`
+### 2.6 `handleReviewStep`
 
 ```typescript
 handleReviewStep(input: unknown, deps?: ReviewStepDeps): Promise<ReviewStepMcpEnvelope>  // ReviewStepDeps gains: readonly progress?: ((data: unknown) => void) | undefined
@@ -108,7 +131,7 @@ handleReviewStep(input: unknown, deps?: ReviewStepDeps): Promise<ReviewStepMcpEn
 - The step host wires insrc_review_step with its progress callback (src/daemon/steps/host.ts:71), so every daemon progress frame reaches the MCP client before 'done'
 - reviewByDaemon waits with its existing ceiling (DESIGN_REVIEW_WAIT_MS / PIPELINE_REVIEW_WAIT_MS) plus an idle limit (DESIGN_REVIEW_IDLE_MS = 5 min). The daemon heartbeat (every 60 s) keeps a healthy review, including a 30-minute reviewer session, inside the idle limit; only a daemon that stops sending frames is cut.
 
-### 2.6 `ModelResponseShapeError`
+### 2.7 `ModelResponseShapeError`
 
 ```typescript
 class ModelResponseShapeError extends Error { constructor(message: string, reasons?: readonly string[]); readonly reasons: readonly string[] }
@@ -123,7 +146,7 @@ class ModelResponseShapeError extends Error { constructor(message: string, reaso
 - The review pipeline driver's classify() returns the error's reasons with cause 'invalid-answer', and the failure path passes them to applyFailure as more.reasons (src/workflow/review-pipeline/job.ts:291-296)
 - Under the existing omission policy, the re-issue carries the correction note when the corrected prompt fits job.plan.limitChars; when it does not fit, the call is re-issued without it and the omission is logged with the reasons (unchanged behaviour)
 
-### 2.7 `workflowReviewStart`
+### 2.8 `workflowReviewStart`
 
 ```typescript
 workflowReviewStart(...): Promise<void>  // unchanged signature; adds export const WORKFLOW_REVIEW_HEARTBEAT_MS = 60_000
@@ -136,7 +159,7 @@ workflowReviewStart(...): Promise<void>  // unchanged signature; adds export con
 - No heartbeat is sent after 'done' or 'error'
 - Checked consumers of workflow.review progress: the step host relay (src/daemon/steps/host.ts) and the MCP progress forwarder (src/mcp/progress-forward.ts), which renders a non-stage frame generically. The VS Code plugin uses workflow.reviewDecision, not workflow.review progress, and the JetBrains plugin does not consume it.
 
-### 2.8 `buildVerifyPrompt`
+### 2.9 `buildVerifyPrompt`
 
 ```typescript
 buildVerifyPrompt(claim: Claim, evidence: Evidence): { system: string; user: string }  // signature unchanged; the shared SYSTEM rules (src/workflow/review/verify.ts:100) change
@@ -148,7 +171,7 @@ buildVerifyPrompt(claim: Claim, evidence: Evidence): { system: string; user: str
 - normalizeFix (src/workflow/review/verify.ts:257) is unchanged: a no-fix answer with an empty rationale and empty arrays becomes a finding without proposedFix; one with a one-line rationale and empty arrays keeps a rationale-only proposedFix, exactly as today
 - VERIFY_SCHEMA keeps proposedFix, artifactEdits and options optional for every provider
 
-### 2.9 `NotJudged`
+### 2.10 `NotJudged`
 
 ```typescript
 interface NotJudged { readonly stage: string; readonly key: string; readonly cause: string; readonly detail?: string | undefined; readonly policy: 'record-not-judged' | 'record-observation'; readonly attempts?: number | undefined }
@@ -209,6 +232,27 @@ Optional attempts: the number of times the call was issued.
 - `src/workflow/review-pipeline/job.ts:290`
 - `src/workflow/review-pipeline/design-review.ts:138`
 
+### 3.6 `ReviewSessionOpts` — field-add
+
+Optional stallMs: the session's silence limit; absent keeps the first-output watchdog.
+
+**Call sites:**
+- `src/agent/providers/cli-provider.ts:432`
+- `src/daemon/steps/build-step/phases/validate.ts:452`
+- `src/workflow/review-pipeline/driver.ts:77`
+
+### 3.7 `Review call executions` — field-modify
+
+The design-review extract, verify and reviewer-session executions, the code-review execution and the build-validation session take their silence limit and cap from REVIEW_CALL_LIMITS.
+
+**Call sites:**
+- `src/workflow/review-pipeline/design-review.ts:82`
+- `src/workflow/review-pipeline/design-review.ts:108`
+- `src/workflow/review-pipeline/design-review.ts:168`
+- `src/workflow/review-pipeline/code-review.ts:155`
+- `src/workflow/review-pipeline/code-review.ts:234`
+- `src/daemon/steps/build-step/phases/validate.ts:452`
+
 ## 4. Error paths
 
 **Error cases**
@@ -216,15 +260,15 @@ Optional attempts: the number of times the call was issued.
 - **A codex verify run stays silent after turn.started (the observed stall)** (recoverable)
   - Detection: The silence watchdog armed by stallMs sees no new codex stdout output for VERIFY_CALL_STALL_MS (from the spawn or from the last output) and kills the process group; runCodex throws CliStallError; the pipeline driver classifies it as cause 'stall'.
   - Response: job.ts re-issues the call under a new callId while its attempt count is below MAX_STALL_ATTEMPTS (3); after the third stall the verify stage's record-not-judged policy records the claim as not judged.
-  - User impact: A stall costs about 60 s instead of 180 s; a claim is left unjudged only after three consecutive stalls.
+  - User impact: A verify stall costs about 90 s instead of 180 s; a claim is left unjudged only after three consecutive stalls.
 - **A codex verify run is producing output but exceeds the overall cap** (recoverable)
   - Detection: runSubprocess's total timer (VERIFY_CALL_TIMEOUT_MS, 600 s) fires; the run exits -9 with no stalled flag; the driver classifies it as 'transient'.
   - Response: Re-issued once (MAX_CALL_ATTEMPTS), as today; then recorded as not judged.
   - User impact: Only a pathological answer is cut; healthy calls (p95 39 s) are far below the cap.
 - **The extract call (which fails the whole review on failure) stalls** (recoverable)
-  - Detection: Same watchdog, if the extract stage passes stallMs; CliStallError -> 'stall'.
-  - Response: Re-issued up to MAX_STALL_ATTEMPTS times before the extract stage's fail-review policy fails the review with ReviewCallFailedError.
-  - User impact: A transient stall no longer fails the whole review after a single re-issue.
+  - Detection: Extract has no silence limit (healthy extract calls are silent for up to about 5 minutes); a stalled extract is ended by its 600 s cap, which the driver classifies as 'transient'.
+  - Response: Re-issued once, as today, before the extract stage's fail-review policy fails the review.
+  - User impact: Unchanged from today for a stalled extract; none of the 19 surveyed extract calls stalled.
 - **A verify answer exceeds a new length bound (e.g. evidence over 4000 characters)** (recoverable)
   - Detection: For codex the strict copy carries maxLength/maxItems, so the grammar bounds it; if a reply still exceeds a bound, codexReply's existing check fails and it now throws ModelResponseShapeError with the formatted reasons; for claude the existing structured-output validation fails.
   - Response: Classified 'invalid-answer' with reasons and re-issued once with the correction note.
@@ -244,11 +288,15 @@ Optional attempts: the number of times the call was issued.
 - **A codex run prints an item event early and then goes silent** (recoverable)
   - Detection: The silence watchdog resets on that output and fires stallMs after it, since no further output arrives.
   - Response: CliStallError -> 'stall' -> re-issued up to MAX_STALL_ATTEMPTS.
-  - User impact: A late hang costs about 60 s after the last output instead of the 600 s cap.
+  - User impact: A late hang costs its silence limit (90 s for a verify call) after the last output instead of the 600 s cap.
 - **A codex reply does not satisfy the caller's schema** (recoverable)
   - Detection: codexReply's existing validateCodexReply check fails; it throws ModelResponseShapeError carrying ValidationResult.errors as reasons.
   - Response: The driver classifies it as 'invalid-answer' and passes the reasons to applyFailure; the re-issue carries the correction note when it fits the call limit, otherwise it is re-issued without it and the omission is logged (existing policy).
   - User impact: The retry is told what was wrong instead of repeating the same mistake.
+- **A reviewer session (HLD/LLD review, code-review gather or build validation) hangs after it has started** (recoverable)
+  - Detection: With its stallMs from REVIEW_CALL_LIMITS, the session's silence watchdog sees no new stdout for its limit (300 s for HLD/LLD sessions and code-review calls, 90 s for build validation) and kills it; CliStallError.
+  - Response: Inside the review pipeline the call is re-issued up to MAX_STALL_ATTEMPTS; the build-validation session uses runReviewSession's own single retry inside its deadline.
+  - User impact: A hung session costs its silence limit instead of running to its deadline.
 
 **Edge cases**
 
@@ -260,6 +308,9 @@ Optional attempts: the number of times the call was issued.
 | A healthy reviewer session lasting 17 minutes | About 17 heartbeat frames arrive; the review completes within DESIGN_REVIEW_WAIT_MS. |
 | A claim whose three attempts all stall | Recorded as not judged with a message naming three attempts, not two. |
 | A LOW verified finding answered with proposedFix {rationale:'', artifactEdits:[], options:[]} | Valid for codex and claude; normalizeFix turns it into a finding with no proposedFix (with a non-empty rationale it keeps a rationale-only proposedFix, as today). |
+| A healthy code-review gather call that is silent for 159 s between tool calls (the longest observed) | Below the 300 s code-review silence limit; not killed. |
+| A healthy extract call that takes 403 s | No silence limit applies; it completes under its 600 s cap. |
+| Two stalls and then an invalid answer in an HLD/LLD template review | The review fails with a message naming three attempts, not 'twice'. |
 
 **Invariants to preserve**
 
@@ -268,6 +319,7 @@ Optional attempts: the number of times the call was issued.
 - The pipeline sends each call with internalRetry:false and owns every retry; non-stall failure causes keep exactly one re-issue (MAX_CALL_ATTEMPTS = 2) and the stage failure policies (record-not-judged for verify, fail-review for extract) are unchanged. [[c3]]
 - A review that cannot complete stamps nothing and never falls back to a controller review; reviewByDaemon still returns next:'error' with a retryable flag. [[c4]]
 - The daemon already emits a progress frame per pipeline call (runReview's onCall emits 'extract' or 'verify:<claim>', src/workflow/review/review.ts:104) and per phase; this Story relays them and does not change their shape. [[c8]]
+- Workflow calls outside reviews and build validation (open design question, brainstorm drafter, analyzer) are not given silence limits by this Story; the survey found no stalls in them. [[c18]]
 
 ## 5. Test strategy
 
@@ -292,12 +344,15 @@ Optional attempts: the number of times the call was issued.
 - **unit** — Typed validation failure: a codex reply that fails the caller's schema throws ModelResponseShapeError with the formatted reasons; the pipeline classifies it as invalid-answer and the re-issued prompt carries the correction note when it fits.
   - Subjects: `codexReply`, `driver classify`, `applyFailure`
   - Fixtures: `fake codex returning an answer that breaks the caller's schema (e.g. an over-long evidence string)`
+- **unit** — Call limits: REVIEW_CALL_LIMITS holds the values above; the design-review extract, verify and session executions, the code-review execution and the build-validation session pass their row's silence limit and cap; a reviewer session given stallMs is killed after that silence (also after an early item event) while one without stallMs keeps the first-output watchdog.
+  - Subjects: `REVIEW_CALL_LIMITS`, `CliProvider.runReviewSession`, `design-review executions`, `code-review execution`, `build-validation session`
+  - Fixtures: `fake codex printing an item event then going silent, run as a reviewer session`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `a structured codex call with stallMs kills a run that prints no output, and a run that prints an early item event then goes silent, stallMs after its last output, and throws CliStallError; without stallMs no watchdog is armed; reviewer sessions keep the first-output watchdog`, `a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once`, `the design-review verify stage sends VERIFY_CALL_STALL_MS (60 s) and VERIFY_CALL_TIMEOUT_MS (600 s) with every verify call`, `a claim whose three attempts stall (or two stalls then a transient failure) is recorded as not judged with a message naming three attempts` |
+| `ac1` | `a structured codex call with stallMs kills a run that prints no output, and a run that prints an early item event then goes silent, stallMs after its last output, and throws CliStallError; without stallMs no watchdog is armed; reviewer sessions keep the first-output watchdog`, `a review pipeline call that stalls is re-issued up to three times, while an invalid answer is re-issued only once`, `a claim whose three attempts stall (or two stalls then a transient failure) is recorded as not judged with a message naming three attempts`, `every review and build-validation call site passes the silence limit and cap of its REVIEW_CALL_LIMITS row (verify 90 s / 600 s, extract none / 600 s, HLD/LLD sessions and code review 300 s, build validation 90 s)`, `a reviewer session given stallMs is killed after that silence, also after an early item event, and one without stallMs keeps the first-output watchdog` |
 | `ac2` | `workflow.review sends a heartbeat frame every 60 s while a review runs and none after the terminal frame`, `insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'`, `a healthy design review whose reviewer session runs longer than 15 minutes completes with heartbeats, while a daemon that sends no frame for 5 minutes fails with an idle timeout naming the idle limit` |
 | `ac3` | `the verify SYSTEM rules ask for an always-present proposedFix with an empty rationale and empty arrays when there is no fix, and no longer tell the model to omit fields`, `a no-fix answer with empty proposedFix fields validates for codex and claude and normalises to a finding without proposedFix; with a one-line rationale it keeps a rationale-only proposedFix`, `a codex reply that breaks the caller's schema throws ModelResponseShapeError with reasons, and the review re-issue carries them as a correction note when it fits` |
 | `ac4` | `VERIFY_SCHEMA bounds evidence, action, rationale, edits and options, and an answer over a bound fails the reply check`, `live: codex accepts the strict copy of the bounded VERIFY_SCHEMA and a verified finding passes the reply check` |
@@ -305,31 +360,28 @@ Optional attempts: the number of times the call was issued.
 
 ## 6. Migration
 
-**State before:** Design-review verify calls run through CliProvider.completeStructured with only a 180 s total limit (VERIFY_CALL_TIMEOUT_MS, src/workflow/review/verify.ts:212) and no stall watchdog (watchStall only for reviewer sessions, src/agent/providers/cli-provider.ts:432); a failed call is re-issued once (MAX_CALL_ATTEMPTS = 2, src/workflow/review-pipeline/job.ts:46). The codex strict copy forces every property required and non-null (src/agent/providers/structured-output.ts:283-310). insrc_review_step relays no progress (src/daemon/steps/host.ts:71) and reviewByDaemon waits on a total timeout only (src/daemon/steps/review-step/phases/start.ts:147-156).
+**State before:** Built so far on main (Tasks t1-t4, commits 31fc8410, c46a4e8b, a3cb5640, dcd6b674): the structured codex silence watchdog (stallMs, process-group silence mode), ModelResponseShapeError with reasons through the pipeline, the bounded VERIFY_SCHEMA with the aligned prompt, and MAX_STALL_ATTEMPTS with attempt counts in NotJudged, notJudgedFinding and ReviewCallFailedError. Not yet built: the REVIEW_CALL_LIMITS table and its use at every review and build-validation call site, stallMs on reviewer sessions, the runTemplateReview message, the heartbeat and the insrc_review_step relay. Before this Story, verify calls had only a 180 s cap (src/workflow/review/verify.ts:212), sessions only a first-output watchdog (src/agent/providers/cli-provider.ts:432), and insrc_review_step relayed no progress (src/daemon/steps/host.ts:71).
 
-**State after:** Verify (and extract) calls pass a 60 s silence limit and a 600 s cap; a stalled call is re-issued up to twice and exhausted calls report their real attempt count. The verify prompt asks for the fields codex's grammar forces; the verify answer has length bounds; a reply that fails the caller's schema is rejected with reasons that reach the re-issue. workflow.review sends a heartbeat every 60 s, and insrc_review_step relays every frame and waits with a ceiling plus a 5-minute idle limit. The codex strict copy is unchanged.
+**State after:** Every review and build-validation call takes its silence limit and cap from one table (verify 90 s / 600 s; extract no silence limit / 600 s; HLD/LLD sessions and code-review calls 300 s silence, build validation 90 s silence inside its 300 s deadline); a stalled call is re-issued up to twice and exhausted calls report their real attempt count. The verify prompt asks for the fields codex's grammar forces; the verify answer has length bounds; a reply that fails the caller's schema is rejected with reasons that reach the re-issue. workflow.review sends a heartbeat every 60 s, and insrc_review_step relays every frame and waits with a ceiling plus a 5-minute idle limit. The codex strict copy is unchanged.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Add the optional stallMs to the structured completion options and the structured ExecutionMode; have the codex branch of completeStructured arm the existing watchdog when it is set. No caller sets it yet, so behaviour is unchanged. — ↩ rollbackable
-2. Align the verify SYSTEM rules with the forced proposedFix fields (empty rationale and arrays when there is no fix), and have codexReply throw ModelResponseShapeError with the existing formatted reasons. — ↩ rollbackable
-3. Add length bounds to VERIFY_SCHEMA (they flow into VERDICTS_SCHEMA). — ↩ rollbackable
-4. Introduce MAX_STALL_ATTEMPTS and apply it to 'stall' failures in the pipeline's re-issue decision. — ↩ rollbackable
-5. Carry the attempt count in NotJudged and report it in notJudgedFinding, ReviewCallFailedError and the applyFailure log. — ↩ rollbackable
-6. Set VERIFY_CALL_TIMEOUT_MS to 600 s, add VERIFY_CALL_STALL_MS (60 s), and pass both from verifyClaim and the design-review verify and extract stages; update the tests that pin the old 180 s value. — ↩ rollbackable
-7. Add the workflow.review heartbeat frame (every 60 s while a review runs). — ↩ rollbackable
-8. Wire insrc_review_step with the step host's progress callback; reviewByDaemon passes onFrame and an idle limit and relays frames. — ↩ rollbackable
-9. Rebuild and restart the installed daemon so the new review behaviour is live; confirm with a DEF review that progress frames reach the controller and stalls are retried within about a minute. — ↩ rollbackable
+1. Already built (t1-t4): structured stallMs and the silence mode, typed rejection with reasons, the bounded verify answer and aligned prompt, the stall retry budget and attempt counts. — ↩ rollbackable
+2. Add REVIEW_CALL_LIMITS (src/workflow/review/call-limits.ts) and read every review and build-validation call's silence limit and cap from it: design-review extract, verify and reviewer session, code-review calls, build validation. Define VERIFY_CALL_TIMEOUT_MS and VERIFY_CALL_STALL_MS from its design-verify row; give ReviewSessionOpts and the reviewer-session ExecutionMode a stallMs; update the tests that pin the old 180 s value. — ↩ rollbackable
+3. Make runTemplateReview's exhausted-invalid-answer message state the real attempt count. — ↩ rollbackable
+4. Add the workflow.review heartbeat frame (every 60 s while a review runs). — ↩ rollbackable
+5. Wire insrc_review_step with the step host's progress callback; reviewByDaemon passes onFrame and an idle limit and relays frames. — ↩ rollbackable
+6. Rebuild and restart the installed daemon so the new review behaviour is live; confirm with a DEF review that progress frames reach the controller and a stall is retried within its call type's silence limit (about 90 s for a verify call). — ↩ rollbackable
 
-**Backward compat:** No public API or IPC payload changes: stallMs, deps.progress and NotJudged.attempts are optional additions; workflow.review stage frames keep their shape, and the new heartbeat frame is accepted by the checked consumers (the step host relay and src/mcp/progress-forward.ts); no IDE plugin in this repo reads workflow.review progress. Existing completeStructured callers that do not set stallMs are unaffected. The codex strict copy is unchanged, so other codex callers see no difference. ModelResponseShapeError gains an optional reasons argument, so existing throw sites are unchanged. The longer per-call cap (600 s) applies only to calls that are producing output.
+**Backward compat:** No public API or IPC payload changes: stallMs, deps.progress and NotJudged.attempts are optional additions; workflow.review stage frames keep their shape, and the new heartbeat frame is accepted by the checked consumers (the step host relay and src/mcp/progress-forward.ts); no IDE plugin in this repo reads workflow.review progress. Existing completeStructured callers that do not set stallMs are unaffected. The codex strict copy is unchanged, so other codex callers see no difference. ModelResponseShapeError gains an optional reasons argument, so existing throw sites are unchanged. The longer per-call cap (600 s) applies only to calls that are producing output. Reviewer sessions change only when given a stallMs: the HLD/LLD review session and code-review calls move from today's first-output watchdog (or none) to a 300 s silence limit, and build validation to a 90 s silence limit inside its 300 s deadline, each set above the longest healthy stdout silence observed for its type.
 
 ## 7. Alternatives considered
 
 ### 7.1 a1: Arm the existing codex stall watchdog for review calls, relay the progress that already exists — **CHOSEN**
 
-Reuse the existing codex stall watchdog (as a silence limit) for structured review calls via an optional per-call stall limit, give stalls their own retry budget, add a daemon heartbeat and relay progress through insrc_review_step, bound the verify answer and align the verify prompt with the fields codex's grammar forces. Scope narrowed on 2026-10-24 (user decision): the codex strict copy is left unchanged; its optional-field handling is a follow-up.
+Reuse the existing codex stall watchdog (as a silence limit) for structured review calls via an optional per-call stall limit, give stalls their own retry budget, add a daemon heartbeat and relay progress through insrc_review_step, bound the verify answer and align the verify prompt with the fields codex's grammar forces. Scope narrowed on 2026-10-24 (user decision): the codex strict copy is left unchanged; its optional-field handling is a follow-up. Extended on 2026-10-24 (user decision, option A of the timeout review): limits are set per call type from one table covering every review and build-validation call, from a survey of all daemon codex calls.
 
 
 
@@ -368,32 +420,10 @@ Lower VERIFY_CALL_TIMEOUT_MS to ~60 s and raise the pipeline's attempts, plus th
 - **[[c15]]** `code` `src/workflow/review-pipeline/job.ts:51` — "super(`review stage ${stage}: the call failed twice (${cause})"
 - **[[c16]]** `code` `src/workflow/review/verify.ts:100` — "const SYSTEM = ["
 - **[[c17]]** `stakeholder` `user 2026-10-24` — "go with option A"
+- **[[c18]]** `doc` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023697b9f8f/S001/evidence/call-type-survey.md` — "Stalls (no-finish) concentrate in DEF verify calls: 38 of 792 (4.8%). Code-review gather 2 of 701, build validation 1 of 176, and none in 129 HLD/LLD sessions, 101 code-review judges, 19 extract calls"
+- **[[c19]]** `stakeholder` `user 2026-10-24` — "we need to take a more holistic view on the review timeouts, just because we noticed it in the DEF review doesn't mean the same pattern doesn't exist elsewhere"
 
 ## 9. Open questions
 
 - Follow-up (out of scope by decision, 2026-10-24): codexStrictSchema forces every optional property of every codex schema to be present and non-null. Making that null-tolerant needs a correct reply-normalisation design across unions, $ref and patternProperties; to be filed as its own issue.
-
-## Resolved questions
-
-- `qfbddcfb9` — Follow-up (out of scope by decision, 2026-10-24): codexStrictSchema forces every optional property of every codex schema to be present and non-null. Making that null-tolerant needs a correct reply-normalisation design across unions, $ref and patternProperties; to be filed as its own issue.
-  - **resolved**: Retain the strict contract — User decision 2026-10-24 (option A): S001 leaves codexStrictSchema unchanged; the normalisation design is filed as ISSUE-7d346e0dcbafc70e. _(2026-10-24T07:15:20.200Z)_
-
-## Citations
-
-- **[[c1]]** `analyze-bundle` `s1 how-does-it-work (insrc_analyze_step): Callers of codexStrictSchema / processSchemaForOpenAIStrict, uses of VERIFY_CALL_TIMEOUT_MS, progress relay in review-step vs code-review-step`
-- **[[c2]]** `analyze-bundle` `s1 code-read: existing codex stall watchdog: How the CLI provider detects a silent codex run`
-- **[[c3]]** `analyze-bundle` `s1 code-read: review pipeline retry and failure classes: How a failed review call is re-issued and recorded`
-- **[[c4]]** `analyze-bundle` `s1 code-read: design-review progress path: Where design-review progress is produced and where it is lost`
-- **[[c5]]** `analyze-bundle` `s1 code-read: verify schema, strict copy and reply check: What the review expects, what codex receives, and how the reply is checked`
-- **[[c6]]** `prior-artifact` `ISSUE-562b1bb52f476d81`
-- **[[c7]]** `doc` `docs/standalone/stop-codex-review-calls-stalling-keep-E20261023562b1bb5/evidence/stall-replays.md`
-- **[[c8]]** `code` `src/workflow/review/review.ts:104` — "onCall: c => emit(c.stage === 'extract' ? 'extract' : `verify:${c.carries.key ?? ''}`),"
-- **[[c9]]** `code` `src/shared/types.ts:287` — "export interface StructuredCompletionOpts {"
-- **[[c10]]** `code` `src/workflow/review/template.ts:62` — "export const HARD_REVIEW_DEADLINE_MS = 30 * 60_000;"
-- **[[c11]]** `code` `src/agent/providers/model-call-error.ts:30` — "export class ModelResponseShapeError extends Error {"
-- **[[c12]]** `code` `src/workflow/review-pipeline/job.ts:291` — "if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {"
-- **[[c13]]** `code` `src/shared/process-group.ts:108` — "? setTimeout(() => { if (!stall.started(stdout)) { stalled = true; kill(); } }, stall.ms)"
-- **[[c14]]** `code` `src/mcp/progress-forward.ts:51` — "const message = ev.kind === 'stage'"
-- **[[c15]]** `code` `src/workflow/review-pipeline/job.ts:51` — "super(`review stage ${stage}: the call failed twice (${cause})"
-- **[[c16]]** `code` `src/workflow/review/verify.ts:100` — "const SYSTEM = ["
-- **[[c17]]** `stakeholder` `user 2026-10-24` — "go with option A"
+- Separate defect found by the survey: the analyzer's exploration decomposer fails on every codex run because its params object schema has no properties (codex strict mode refuses it); to be filed as its own bugfix.

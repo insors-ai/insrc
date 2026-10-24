@@ -116,6 +116,17 @@ test('null params including nested ones are removed before INV-5, and the adhere
 	const r = firstAttempt(refused);
 	assert.equal(r.invariant, 'INV-5', 'the one-of-three rule still holds');
 	for (const k of ['constraintTopic', 'constraints', 'constraintIds']) assert.equal(k in (r.params as object), false, `${k} removed, not passed on as null`);
+	// Nulls inside decoded slots: an inline constraint's optional sourceEntityId, sent null in its JSON text.
+	const { outcome: inSlot } = await plan(code, wirePlan('code.adherence.check', { codeSubject: 'src', constraints: [JSON.stringify({ constraint: 'no console.log', sourceEntityId: null })] }, [...(adherence.produces ?? [])]));
+	const s = firstAttempt(inSlot);
+	assert.deepEqual((s.params as { constraints: unknown }).constraints, [{ constraint: 'no console.log' }], 'a null inside a decoded slot is removed');
+	assert.notEqual(s.invariant, 'INV-5');
+	// Nulls inside a whole-params slot, at a key whose local $ref resolves to a string.
+	const refd = supplied('custom.ref', { type: 'object', additionalProperties: false, properties: { customValue: { $ref: '#/definitions/Value' }, other: { type: 'string' } }, definitions: { Value: { type: 'string' } } });
+	const { outcome: whole } = await plan([refd], wirePlan('custom.ref', JSON.stringify({ customValue: null, other: 'kept' })));
+	const w = firstAttempt(whole);
+	assert.deepEqual(w.params, { other: 'kept' }, 'a null the resolved $ref refuses is removed from a whole-params slot');
+	assert.notEqual(w.invariant, 'INV-5');
 });
 
 test('invalid JSON in a slot is reported through the planner failure path and nothing partial reaches INV-5', async () => {

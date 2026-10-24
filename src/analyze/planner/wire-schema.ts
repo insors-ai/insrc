@@ -222,29 +222,51 @@ export function plannerWireSchema(catalog: readonly AnalyzeTaskTemplate[]): Plan
 // Decoding a reply back to the template's own params
 // ---------------------------------------------------------------------------
 
-/** Whether a schema admits null. */
-function admitsNull(schema: Schema | undefined): boolean {
-	if (schema === undefined) return true;
-	const type = schema['type'];
-	if (type === 'null' || (Array.isArray(type) && type.includes('null'))) return true;
-	if (Array.isArray(schema['enum']) && (schema['enum'] as unknown[]).includes(null)) return true;
-	for (const k of ['anyOf', 'oneOf']) if (Array.isArray(schema[k]) && (schema[k] as Schema[]).some(admitsNull)) return true;
+/** A local `#/...` reference resolved against the template's own schema; anything else as given. */
+function resolveLocal(schema: Schema | undefined, root: Schema): Schema | undefined {
+	let node = schema;
+	for (let hops = 0; hops < 16 && node !== undefined && typeof node['$ref'] === 'string'; hops++) {
+		const ref = node['$ref'] as string;
+		if (!ref.startsWith('#')) return node;
+		let at: unknown = root;
+		for (const raw of ref.slice(1).split('/').filter(Boolean)) {
+			const part = decodeURIComponent(raw).replace(/~1/g, '/').replace(/~0/g, '~');
+			at = at !== null && typeof at === 'object' ? (at as Schema)[part] : undefined;
+		}
+		node = at !== null && typeof at === 'object' ? at as Schema : undefined;
+	}
+	return node;
+}
+
+/** Whether a schema certainly refuses null. Undecidable shapes ($ref outside the schema, allOf, not, if) count as admitting it. */
+function excludesNull(schema: Schema | undefined, root: Schema): boolean {
+	const node = resolveLocal(schema, root);
+	if (node === undefined) return false;
+	const type = node['type'];
+	if (typeof type === 'string') return type !== 'null';
+	if (Array.isArray(type)) return !type.includes('null');
+	if (Array.isArray(node['enum'])) return !(node['enum'] as unknown[]).includes(null);
+	if ('const' in node) return node['const'] !== null;
+	for (const k of ['anyOf', 'oneOf']) {
+		if (Array.isArray(node[k])) return (node[k] as Schema[]).every(b => excludesNull(b, root));
+	}
 	return false;
 }
 
-/** Remove nulls the original schema does not admit: a wire null means the property is absent. */
-function dropWireNulls(value: unknown, schema: Schema | undefined): unknown {
-	if (schema === undefined || value === null || typeof value !== 'object') return value;
+/** Remove nulls the template's schema certainly refuses: a null there means the property is absent. */
+function dropWireNulls(value: unknown, schema: Schema | undefined, root: Schema): unknown {
+	const node = resolveLocal(schema, root);
+	if (node === undefined || value === null || typeof value !== 'object') return value;
 	if (Array.isArray(value)) {
-		const items = schema['items'];
-		return items !== null && typeof items === 'object' && !Array.isArray(items) ? value.map(v => dropWireNulls(v, items as Schema)) : value;
+		const items = node['items'];
+		return items !== null && typeof items === 'object' && !Array.isArray(items) ? value.map(v => dropWireNulls(v, items as Schema, root)) : value;
 	}
-	const props = schema['properties'] as Record<string, Schema> | undefined;
+	const props = node['properties'] as Record<string, Schema> | undefined;
 	if (props === undefined) return value;
 	const out: Schema = {};
 	for (const [k, v] of Object.entries(value as Schema)) {
-		if (v === null && k in props && !admitsNull(props[k])) continue;
-		out[k] = dropWireNulls(v, props[k]);
+		if (v === null && k in props && excludesNull(props[k], root)) continue;
+		out[k] = dropWireNulls(v, props[k], root);
 	}
 	return out;
 }
@@ -266,9 +288,10 @@ interface TaskLike { readonly taskId?: unknown; readonly template?: unknown; rea
 
 /**
  * Turn a reply in wire form back into the templates' own params: for each task,
- * nulls its template's schema does not admit are removed, then the JSON strings
- * at its slot paths are parsed back into objects. A slot that is not valid JSON
- * is an error, and no task is returned half-decoded.
+ * the JSON strings at its slot paths are parsed back into objects, then nulls
+ * its template's schema certainly refuses are removed, inside decoded slots
+ * and whole-params slots too. A slot that is not valid JSON is an error, and
+ * no task is returned half-decoded.
  */
 export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[] }>(
 	plan: P, wire: PlannerWireSchema, catalog: readonly AnalyzeTaskTemplate[],
@@ -278,15 +301,16 @@ export function decodePlanParams<P extends { readonly tasks: readonly TaskLike[]
 		const template = catalog.find(t => t.id === task.template);
 		const slots = typeof task.template === 'string' ? wire.slots.get(task.template) : undefined;
 		if (template === undefined || slots === undefined) return task;   // an unknown template is INV-5's to report
-		const whole = slots.length === 1 && slots[0]!.length === 0;
-		let params = whole ? task.params : dropWireNulls(task.params, template.inputSchema as Schema | undefined);
+		// Parse the slots first, then remove nulls over the whole decoded params, slot contents included.
+		let params = task.params;
 		try {
 			for (const path of slots) params = decodeSlot(params, path, 'params');
 		} catch (err) {
 			errors.push(`task '${String(task.taskId)}' (${template.id}): ${(err as Error).message}`);
 			return task;
 		}
-		return { ...task, params };
+		const root = template.inputSchema as Schema | undefined;
+		return { ...task, params: root === undefined ? params : dropWireNulls(params, root, root) };
 	});
 	return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: { ...plan, tasks } };
 }

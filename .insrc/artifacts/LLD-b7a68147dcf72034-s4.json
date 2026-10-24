@@ -1,0 +1,1088 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792854081539-oscyis",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-24T15:05:19.104Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 237285,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1792748380403-lgvbgd",
+    "hldEffectiveHash": "8118b9bf1de52a19df7e782bca3743f7f2bdb7b05c42c9053a72ad87adfad33f",
+    "hldAmendmentsApplied": [
+      "AMD-b7a68147dcf72034-3",
+      "AMD-b7a68147dcf72034-4",
+      "AMD-b7a68147dcf72034-5",
+      "AMD-b7a68147dcf72034-6",
+      "AMD-b7a68147dcf72034-7"
+    ],
+    "authoredBy": "controller",
+    "revision": 12,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 12,
+        "contentHash": "4f82340867dde8739d7b76ed810a4df5b0cce32da86794c79f83a3b007e30f93",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 11,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 3,
+          "low": 8
+        },
+        "at": "2026-10-24T17:41:05.810Z",
+        "report": {
+          "entityId": "LLD-b7a68147dcf72034-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-02badec71f987783033c0af0daee642f"
+        }
+      },
+      "approval": {
+        "revision": 12,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-24T18:01:49.360Z",
+        "override": {
+          "reason": "Twelve daemon review rounds over four cycles (s4 LLD revisions 1 to 11). The Story was split on the user's decision: the long tail of git moved to Story s8 (DEF revision 2 and AMD-b7a68147dcf72034-8 approved). The last round (revision 11) had 0 HIGH and 3 MED, narrow code-inventory findings; they were fixed in revision 12 (noMerged on git_for_each_ref; the amend, reset and merge helper reads with expected non-zero outcomes kept apart from process failures; independent stdout and stderr limits on runShellBytes) and not re-reviewed. The build's audit test (every runShell and helper result must pass through a failure kind, a warning or a listed placeholder) and the per-subcommand coverage test are the backstop for any inventory item still missing. The user accepted the ac1 exclusions, rejection of schema-forbidden legacy inputs, and a failing git_show diff as a real failure. Approved by the user."
+        }
+      }
+    },
+    "questionResolutions": {
+      "q69911691": {
+        "question": "ep3 (partial): invariantsToPreserve rest on the s1 bundle; the source field holds a citation id as the schema requires.",
+        "status": "ignored",
+        "rationale": "Schema note; the invariants are explicit in the LLD",
+        "resolvedAt": "2026-10-24T18:11:53.607Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The 22 git tools that exist keep their ids, inputs and meanings and gain a checked result shape, a typed failure and an approval class that depends on the call, so a hard reset, a force or deleting push, a branch or tag delete and the other work-destroying operations always ask. A small set of new read tools gives the repository code that spawns git today (the team workflow, the build ranges, the daemon self-update) typed tools to move onto in s7. The rest of git's commands are Story s8's; this Story's coverage table lists them as assigned there.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Alternative a1: the executor in src/daemon/tools/executor.ts becomes the one pipeline for all external operations, and git, gh and Jira (acli) are registry tool families with an optional declared output schema and an approval class (none, common or destructive). Workflow and daemon code call tools through a typed helper that takes the tool definition; about 32 production files that spawn git or gh, or call a wrapper that does, move onto it in one change.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "Tool output schema and typed call",
+          "purpose": "Lets a tool declare its result shape, has the executor check it when declared, and gives callers a result typed from the tool definition they pass.",
+          "interfaceSketch": "interface OutputSchemaField<O> { outputSchema?: JsonSchema; readonly outputType?: O }\ntype ToolOutput<T> = T extends OutputSchemaField<infer O> ? O : unknown\ninterface TypedToolResult<O> { success: boolean; data?: O; error?: ToolFailure }\ncallTool<T extends OutputSchemaField<any> & { id: string }>(tool: T, input: ToolInput<T>, deps: ToolDeps): Promise<TypedToolResult<ToolOutput<T>>>\n  // + outputSchema is a typebox TSchema; TypedTool; callTool signature: outputSchema?: TSchema (typebox); TypedTool = Tool & { inputSchema: TSchema; outputSchema: TSchema }; callTool<T extends TypedTool>(tool: T, input: Static<T['inputSchema']>, deps: ToolDeps): Promise<TypedToolResult<Static<T['outputSchema']>>>;  // Refines the sc2 sketch as approved in the s2 LLD (requirement R2): typebox instead of JsonSchema plus a phantom type, and a typed input. (amend:AMD-b7a68147dcf72034-6)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c2",
+            "c3"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "Text conversion with cross-check",
+          "purpose": "Turns text-only CLI output into the declared shape using the cheap model, cross-checks the key values against the raw text, and escalates once to a higher-tier model; conversions run serially.",
+          "interfaceSketch": "interface ConversionRequest<O> { toolId: string; rawText: string; schema: JsonSchema; keyValues: (value: O) => string[] }\ninterface ConversionResult<O> { ok: boolean; value?: O; tier: 'cheap' | 'escalated'; failure?: ConversionFailure }\ninterface ConversionFailure { kind: 'shape-mismatch' | 'value-not-in-text' | 'retries-exhausted'; detail: string }\nconvertText<O>(req: ConversionRequest<O>): Promise<ConversionResult<O>>\n  // + convertText takes ToolDeps; keyValues required: convertText<S extends TSchema>(req: ConversionRequest<S>, deps: ToolDeps): Promise<ConversionResult<Static<S>>>; ConversionRequest.keyValues is required;  // Refines the sc3 sketch as approved in the s2 LLD (requirement R2): deps supplies repoPath, signal and the optional conversion setting. (amend:AMD-b7a68147dcf72034-7)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "Approval class and approval exchange",
+          "purpose": "Defines the one field that gives a tool or call its approval class, the global setting that governs the common class, the request the executor sends to the attached client, the answer, the timeout and the denial reasons, so that every client implements the same exchange.",
+          "interfaceSketch": "type ApprovalClass = 'none' | 'common' | 'destructive'\ninterface ApprovalField<I> { approval?: ApprovalClass | ((input: I) => ApprovalClass) }\ntype CommonApprovalMode = 'auto' | 'ask'\ninterface ApprovalRequest { requestId: string; toolId: string; approvalClass: 'common' | 'destructive'; inputSummary: string; reason: string; expiresAt: string }\ninterface ApprovalAnswer { requestId: string; decision: 'approve' | 'decline' }\ntype ApprovalDenial = 'declined' | 'timed-out' | 'no-client'\ninterface ApprovalGate { ask(req: ApprovalRequest): Promise<ApprovalAnswer | ApprovalDenial> }\n// IPC methods: approval.request (daemon to client), approval.answer (client to daemon)\n  // + ApprovalRequest repoPath, arguments, preview; CommonApprovalMode; approval.subscribe: ApprovalRequest gains repoPath: string, arguments: Record<string, unknown> and preview?: { title: string; content: string }; CommonApprovalMode = 'manual' | 'edit-auto' | 'auto'; ApprovalDenial gains 'cancelled'; IPC method approval.request (daemon to client) is realised as approval.subscribe (a client-opened stream carrying 'gate' frames) plus approval.answer;  // The request must name the repository and the exact arguments (DEF S003 FR001), the chat has three modes, and the daemon can push only over a stream the client opened. Additive refinements of a contract only s3 owns. (amend:AMD-b7a68147dcf72034-4)",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "CLI failure kinds",
+          "purpose": "One set of failure kinds returned by every git, gh and acli tool so callers tell a missing CLI, a missing sign-in, a time-out and a rejection apart.",
+          "interfaceSketch": "type ToolFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'timed-out' | 'rejected' | 'conversion-failed' | 'schema-mismatch' | 'denied'\ninterface ToolFailure { kind: ToolFailureKind; message: string; denial?: ApprovalDenial }\n  // + ToolResult.failure, ToolFailure.original and ToolDenialReason?: ToolResult.failure?: ToolFailure; ToolFailure.original?: string (the tool's raw output, truncated, kept for diagnosis); type ToolDenialReason = 'declined' | 'timed-out' | 'no-client', which ToolFailure.denial uses in place of the ApprovalDenial type from sc4;  // The Story's second functional requirement says a conversion that fails the check is reported as the tool's failure with the original output available for diagnosis, and the executor has to carry a typed failure on the ToolResult that agents and code both receive. sc5's sketch types denial with ApprovalDenial, owned by s3 (sc4), but s2 has no dependency on s3 in the Epic graph and so cannot compile against it; declaring the three-value union in sc5 removes the dependency, and s3 reuses it. All three additions are optional or additive; a caller that ignores them sees today's success, output and error fields. (amend:AMD-b7a68147dcf72034-3)\n  // + ToolDenialReason 'cancelled': type ToolDenialReason = 'declined' | 'timed-out' | 'no-client' | 'cancelled' (an approval aborted by the caller's signal);  // An aborted approval needs a reason distinct from a decline or a timeout; s2 owns the type and s3 raises the value. (amend:AMD-b7a68147dcf72034-5)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The list of git operation families, their input and output schemas, which git operations are in the destructive class (for example force push, hard reset, clean, deleting a branch or tag), and the parsing of git porcelain output. Operations that need approval but cannot destroy work stay in the common class. Existing git ids keep their meaning."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The hook stage inside executeTool: the registry of hooks keyed by tool id, registration order, the rule that a hook runs only after a successful, checked call, and the way a hook failure is carried on the result. It places its stage at step 5 of the pipeline order in the architecture shape and does not own the schema check or the approval step."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "depends": [],
+          "internal": "The optional output-schema field and the check at step 4 of the pipeline, the typed call helper that takes a tool definition, the serial conversion queue, the key-value cross-check and the one-time escalation, and the shared failure kinds. It includes the choice of schema language and the way an input-to-tool mismatch is reported. It does not declare or read the approval class."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The approval step at step 2 of the pipeline: the single approval field on a tool definition, the global approval setting for the common class and its default, the IPC request and answer methods, the timeout value, the daemon-side holder of the pending requests, the terminal-client, editor and chat implementations of the answer, and removal of the 'auto-approving' fallback in executor.ts. It maps every existing requiresApproval flag, in every family, to the common class, and lists the tools that change. It does not choose which individual git, gh or Jira operations are destructive; each family Story marks its own."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The list of gh operation families, their schemas (read from gh --json where it exists, converted from text otherwise, for example gh pr diff and gh run view --log), which of the 27 gh operations that need approval are in the destructive class, and the 120 second time limit and its message. Existing gh ids keep their meaning."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The Jira tool families over acli (work item view, search, create, edit, transition, assign, comment, link, project list and view), their schemas, the --yes flag on every mutating command, the bounded forms of search and project list that acli requires, the 'acli jira auth status' sign-in check, and which operations are in the destructive class. An operation acli does not offer is left out and named as unsupported."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The repository check that fails on a direct git, gh or acli spawn outside src/daemon/tools, built first; the inventory it produces (about 32 production files known today, with the indexer, the design corpus reader, the analyze ignore filter, the understanding identity lookup and the daemon self-update included and no allowlist); the rewrite of every listed site and of the tests that import the old wrappers onto the typed helper; and the removal of runGit, commitAndPushArtifacts and the github.ts wrappers. It keeps the artifacts, commits and tracker records the same as before."
+        }
+      ],
+      "rolloutPhase": "Phase B — tool families",
+      "nonFunctional": {
+        "performance": "gh commands time out after 120 seconds (decided with the user; the daemon is expected to become multi-threaded so a slow gh will not block it). The approval wait has its own timeout, set in s3's LLD. Conversion is serial, so a text-only tool that needs the cheap model costs one model call per attempt plus at most one escalated call; structured-output tools make no model call.",
+        "security": "No argument, setting, environment variable or caller identity can skip the approval for a destructive call; with no client attached the call is denied. Common calls follow one global setting. Approval requests travel only over the daemon's Unix socket. No credentials are read or stored: gh, git and acli use the user's own CLI sessions. A tool that declares an output schema and returns a result that does not match it fails and its result is not passed on. Today the executor runs every tool flagged requiresApproval as approved (11 git tools, 5 more by predicate, 27 gh operations and other families), so nothing asks; this Epic makes destructive calls ask every time and puts the rest under the global setting.",
+        "observability": "The executor logs each stage per call with the tool id, the caller, the approval class and decision and its reason, the schema check result, and each hook outcome. Hook failures, denials and conversion escalations are returned to the caller as part of the result, not only logged.",
+        "durability": "Pending approval requests are held in memory by the daemon and are lost on restart; a request left open at restart is treated as denied. Hooks are registered in code at start-up, not stored. The global approval setting is stored in the daemon's config. The cutover leaves artifacts, commits and tracker records unchanged."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "registerGitTools",
+          "signature": "registerGitTools(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Registers every git tool, the 22 existing and the new ones, with the tool registry."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called once from daemon start-up, as today"
+          ],
+          "postconditions": [
+            "Every tool id in this Story's coverage table is registered and every registered git tool id is in the table or in s8's list once s8 lands",
+            "Existing ids git_status, git_log, git_diff, git_show, git_blame, git_branch, git_stage, git_commit, git_amend, git_push, git_pull, git_fetch, git_checkout, git_merge, git_rebase, git_stash, git_reset, git_revert, git:cherry-pick, git_tag, git_remote and git_worktree are registered under the same ids",
+            "Each git tool is registered wrapped so that any unsuccessful result without a failure gets one (kind 'rejected', message from its error text); a failure the tool set itself is left as it is",
+            "assertSafeArg(value, position) is the one argument check: a value that goes before the option terminator (a ref, revision, remote or branch name) is rejected when it starts with '-' or holds a NUL; a path that goes after '--' may start with '-' and is rejected only for a NUL; every tool builds argv with the terminator in the position git defines"
+          ]
+        },
+        {
+          "name": "spawnFail",
+          "signature": "spawnFail(label: string, err: string): ToolResult",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "purpose": "The output prefix label the tool prints today.",
+              "optional": false
+            },
+            {
+              "name": "err",
+              "type": "string",
+              "purpose": "The spawn error text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ToolResult",
+            "meaning": "A failed result carrying failure kind 'missing-tool', alongside the existing output and error text."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "output, format and error keep their current text and values, so a caller that ignores failure sees what it saw before",
+            "branch.ts's local copies of spawnFail and fail are removed and it uses the shared helpers; status.ts and merge.ts build their failures through the same helpers, merge.ts keeping its conflict data and its 'merge conflict' error text",
+            "status.ts, diff.ts, stage.ts, blame.ts, show.ts, log.ts, merge.ts, rebase.ts, revert.ts, cherry-pick.ts and branch.ts keep their legacy labels; a compatibility test pins the exact output and error text of every spawn and non-zero failure path"
+          ]
+        },
+        {
+          "name": "fail",
+          "signature": "fail(label: string, r: ShellResult, opts?: { network?: boolean; mutating?: boolean }): ToolResult",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "purpose": "The output prefix label the tool prints today (for example 'git:status', 'git_push').",
+              "optional": false
+            },
+            {
+              "name": "r",
+              "type": "ShellResult",
+              "purpose": "The runShell result of the command that failed; it carries stderr, stdout, code, signal, spawnError, timedOut and stdoutTruncated, so classification never depends on the caller remembering a flag.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ network?: boolean; mutating?: boolean }",
+              "purpose": "network is true for push, pull, fetch, clone and ls-remote (a sign-in or network message is recognised); mutating is true when the call is not a read (approval(input) !== 'none') and adds the unknown-outcome sentence to a timed-out failure.message only.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ToolResult",
+            "meaning": "A failed result whose failure kind is 'timed-out' when the command timed out, 'missing-signin' when git's message shows an authentication refusal, 'unreachable' when it shows a network failure, and 'rejected' otherwise; output, format, success and error are as they are today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "fail builds the default shape '[label] failed: <message>' (output, format, success, error exactly as today) and calls failureKind(r, { network }) and withFailure; the four-argument form (id, stderr, stdout, code) is removed and every caller passes the ShellResult",
+            "Tools whose legacy failure text differs from the default (git_diff numstat and invalid-input, git_merge conflict, git_status, git_stage) build their own result and call failureKind and withFailure",
+            "The unknown-outcome warning for a timed-out mutation is added to failure.message only; output and error keep exactly the text they have today",
+            "Every runShell call site in the git tools passes the ShellResult to failureKind, including conflict-detection paths, so a time-out is never reported as a plain rejection"
+          ]
+        },
+        {
+          "name": "failureKind",
+          "signature": "failureKind(r: ShellResult, opts?: { network?: boolean }): ToolFailureKind",
+          "parameters": [
+            {
+              "name": "r",
+              "type": "ShellResult",
+              "purpose": "The result of runShell for the command that failed.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ network?: boolean }",
+              "purpose": "True for push, pull, fetch, clone and ls-remote, where git's message may show a sign-in or network failure.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ToolFailureKind",
+            "meaning": "'missing-tool' when the command could not be spawned, 'timed-out' when it was killed by the time limit, 'missing-signin' or 'unreachable' when the message shows it (network calls only), and 'rejected' otherwise."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Pure: it reads the ShellResult only and builds no result, so a tool that must keep a legacy output and error text calls it and builds its own result"
+          ]
+        },
+        {
+          "name": "withFailure",
+          "signature": "withFailure(result: ToolResult, kind: ToolFailureKind, original?: string, message?: string): ToolResult",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "ToolResult",
+              "purpose": "The legacy failed result the tool built, with its own output, format, error and data.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "ToolFailureKind",
+              "purpose": "The kind from failureKind.",
+              "optional": false
+            },
+            {
+              "name": "original",
+              "type": "string",
+              "purpose": "git's own output, kept as failure.original.",
+              "optional": true
+            },
+            {
+              "name": "message",
+              "type": "string",
+              "purpose": "failure.message when it should differ from result.error (the unknown-outcome sentence of a timed-out mutation).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ToolResult",
+            "meaning": "The same result with failure set; output, format, success, error and data are untouched."
+          },
+          "errors": [],
+          "preconditions": [
+            "result.success is false"
+          ],
+          "postconditions": [
+            "git_diff's numstat failure, git_merge's conflict result (error 'merge conflict' with its conflict data) and every other legacy shape keep their exact text and data and gain only the failure"
+          ]
+        },
+        {
+          "name": "approval",
+          "signature": "approval(input: ToolInput): ApprovalClass",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "ToolInput",
+              "purpose": "The call's input; the class depends on its operation and flags.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ApprovalClass",
+            "meaning": "'destructive' when the call can destroy work that git cannot restore from history or the reflog, 'common' for other mutations, 'none' for reads."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "git_reset: mode hard is destructive; soft and mixed are common",
+            "git_push: destructive when force, forceRaw or forceToMain is set, when `ref` starts with '+' (a forced refspec), or when `ref` has an empty source before ':' such as ':dev' (it deletes the remote ref); a plain push of a branch or tag name or of 'src:dst' is common",
+            "git_branch: op delete is destructive whether or not force is set; create and switch are common; list is none",
+            "git_tag: op delete is destructive; create is common; list is none",
+            "git_stash: op drop and clear are destructive; push, pop and apply are common; list and show are none",
+            "git_worktree: op remove with force is destructive, remove without force is common; add, move and prune are common; list is none",
+            "git_checkout: mode path is destructive, and mode ref with discard true is destructive; mode ref otherwise is common",
+            "git_remote: mutations are common (remove deletes only remote-tracking refs and config); list is none",
+            "git_fetch is none today (it has no approval property and updates remote-tracking refs only) and stays none",
+            "git_amend, git_rebase, git_revert, git:cherry-pick, git_merge, git_pull, git_commit and git_stage mutations stay common exactly as they are after s3; git_status, git_log, git_diff, git_show and git_blame stay none",
+            "The new read tools of this Story are none",
+            "A function that throws is treated as destructive by the executor (s3), so a malformed input asks",
+            "git_fetch_refs: none when every refspec destination is under refs/remotes/, destructive when a forced refspec would overwrite any other ref; git_symbolic_ref: get none, set common, delete destructive; git_cat_file and the other new reads are none"
+          ]
+        },
+        {
+          "name": "runShellBytes",
+          "signature": "runShellBytes(argv: readonly string[], options?: ShellOptions & { stdin?: Uint8Array | string; isolate?: boolean; stdoutLimit?: number; stderrLimit?: number }): Promise<ShellBytesResult>",
+          "parameters": [
+            {
+              "name": "argv",
+              "type": "readonly string[]",
+              "purpose": "The command and its arguments; no shell is involved.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "ShellOptions & { stdin?: Uint8Array | string; isolate?: boolean; stdoutLimit?: number; stderrLimit?: number }",
+              "purpose": "The existing runShell options plus input for the command's standard input and an isolate switch. With isolate the command runs in a fresh environment built from PATH (and SystemRoot where set) only, never the daemon's environment, with LC_ALL=C, LANG=C, GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=/dev/null, GIT_NO_REPLACE_OBJECTS=1, GIT_NO_LAZY_FETCH=1, GIT_TERMINAL_PROMPT=0 and GIT_OPTIONAL_LOCKS=0, which is the environment git-reader.ts builds today (gitEnvironment).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<ShellBytesResult>",
+            "meaning": "The same fields as ShellResult except stdout is a Uint8Array with no text decoding, plus stderrOverflow: boolean; spawnError, timedOut and stdoutTruncated keep their meaning."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Never throws: a spawn error, a time-out and a cancelled signal are reported in the result",
+            "A write error on stdin (the process exits before reading) is reported as a failed result, not thrown",
+            "runShell keeps its signature and behaviour and is unchanged; Story s8 reuses the stdin option for its input-consuming commands",
+            "The isolated environment and the read arguments --no-replace-objects --literal-pathspecs -c protocol.allow=never -c core.fsmonitor=false -c core.hooksPath=/dev/null -c core.attributesFile=/dev/null (git-reader.ts's GIT_READ_ARGS) are defined once in a shared module that git_cat_file and, after s7, the corpus reader use, so there is one copy",
+            "stdoutLimit and stderrLimit are independent byte budgets (maxBytes stays the shared default for runShell): when stderr passes its limit the process is killed and the result carries stderrOverflow true with the captured prefix, which the tool reports as a rejected failure 'git diagnostics exceed byte limit'; when stdout passes its limit stdoutTruncated is true and the tool reports a cut read, as git-reader.ts does with its separate limits (READER_LIMITS stdoutBytes and stderrBytes 65536); a cancelled signal kills the process"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Git output schemas",
+        "change": "new",
+        "details": "src/daemon/tools/builtins/git/schemas.ts holds one typebox schema per tool result of the 22 existing tools and the new read tools, built from the existing Git*Data interfaces, each tool's outputSchema, and the type exported as Static<typeof Schema> under the existing interface name, so imports keep compiling. The inputSchema of each of the 22 tools is rewritten as a typebox Type.Object with the same JSON output, so callTool(tool, input, deps) is typed and the snapshot of ids and input schemas still matches; the schemas are not tightened. Because the executor checks a tool's input against its inputSchema once the tool declares an outputSchema, inputs that execute normalises today and that the schema forbids are rejected from now on, as the user chose. Audit of the 22 tools against their schemas: git_log `limit` (schema 1 to 500, clamped in code) and git_diff `maxBytes` (schema 1024 to the tool maximum, clamped in code) and git_diff `context` (schema 0 to 50, passed through by code, so 51 reaches git today) are the inputs whose schemas declare bounds that the code does not enforce; git_show `maxBytes` is clamped in code but its schema declares no bounds, so it keeps clamping and is not rejected; `mainline`, `startLine` and `endLine` already fail in git itself when below 1, but git_fetch `depth` does not: fetch.ts floors it and adds --depth only when the result is non-zero, so depth 0 or 0.5 runs an ordinary fetch today. The schema says minimum 1, so depth below 1 and any value that floors to 0 is rejected from now on, like the others. A call with git_log limit 0 or 501, git_diff maxBytes 100 git_diff context 51 or git_fetch depth 0 returns a rejected failure naming the field; a test pins each rejection, and the callers in the repository are checked for out-of-range values before the build. git_show, git_branch, git_rebase, git_commit, git_amend, git_reset, git_merge, git_push, git_stage, git_revert, git_checkout and git_cherry-pick gain the optional `warnings` described under the failure inventory; no other existing data shape changes. Malformed inputs that the schema already forbade are also rejected earlier from now on: git_diff's `exclude` and `paths` values that the schema forbids (invalid-input results labelled git:diff) and git_stage's empty `paths` are reached by the executor's input check before execute runs, so those failures now read 'input for tool git_diff does not fit its input schema: ...' with failure kind rejected, not the legacy text. This is part of the accepted rejection of schema-forbidden inputs; the combination of `path` with `paths` is valid for the schema and still reaches execute, so its legacy '[git:diff] invalid-input' result is kept; the checks inside execute stay for callers that run a tool directly, and a test pins each text.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/status.ts",
+          "src/daemon/tools/builtins/git/branch.ts",
+          "src/daemon/tools/builtins/git/push.ts",
+          "src/daemon/tools/builtins/git/reset.ts",
+          "src/daemon/tools/types.ts"
+        ]
+      },
+      {
+        "entity": "Git porcelain parsers",
+        "change": "new",
+        "details": "src/daemon/tools/builtins/git/parsers.ts holds the deterministic parsers for the structured output the existing and the new read tools produce: status v2 -z (moved out of status.ts), for-each-ref with a fixed --format, ls-tree -z, ls-files -z, rev-list, log with a fixed --format and a record separator, and show-ref. Each parser works on a complete stdout and fails (a rejected failure with the raw text in original) when the output does not parse or when ShellResult.stdoutTruncated is true, so a cut read is never turned into a partial list. No parser calls a model.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/status.ts",
+          "src/daemon/tools/shell-helper.ts"
+        ]
+      },
+      {
+        "entity": "New git tools",
+        "change": "new",
+        "details": "Twelve new tools (read tools are approval none; the exceptions are named), each one file in src/daemon/tools/builtins/git with a typebox input and output schema, the same spawn, timeout and failure path as the existing tools, no free-form argument list, and these shapes. Together they replace the git reads the repository's own code runs today, so s7 can move them. git_rev_parse {cwd, rev?, abbrevRef?, short?, verify?, gitDir?, showToplevel?, isInsideWorkTree?, isShallow?} -> {values: string[]}; git_rev_list {cwd, rev, count?, maxParents?, firstParent?, limit?} -> {commits: string[]} | {count: number}; git_ls_files {cwd, paths?, cached?, others?, ignored?} -> {files: string[]} (-z); git_ls_tree {cwd, rev, paths?, nameOnly?, recursive?} -> {entries: {mode,type,sha,path}[]} (-z); git_cat_file {cwd, rev | revs[] (batch, run with `cat-file --batch` and the revs on stdin), path?, exists?, type?, size?, encoding? ('utf8' | 'base64', default 'utf8'; base64 is lossless for binary), maxBytes? (per object), stdoutLimit? and stderrLimit? (independent budgets for the whole call; the s7 adapter passes the reader's READER_LIMITS values), isolated? (default true: runShellBytes with isolate and git-reader.ts's read arguments, so replacement refs, inherited GIT_CONFIG_* and object-store overrides, hooks, fsmonitor, attributes files and lazy network fetching cannot change or widen what is read)} -> {exists: boolean} | {type, size} | {objects: {rev, sha, type, size, content (utf8) | contentBase64}[]}; a rev git reports as missing yields an entry with exists false, an object over maxBytes or a cut read is a rejected failure, and cancellation through deps.signal kills the process; the tool verifies each object's framing (size equals the bytes read) and returns the bytes untouched so the caller can recompute the hash as git-reader.ts does today; git_for_each_ref {cwd, pattern?, fields (a fixed set), sort?, count?, contains?, merged?, noMerged?, pointsAt?} -> {refs: object[]} (`contains` replaces branch -r --contains); git_symbolic_ref {cwd, ref, op get|set|delete, target?, quiet?} -> {target: string | null} (get none; set common, which policy-refresh.ts uses to point refs/remotes/<remote>/HEAD at a tracking branch; delete destructive); git_show_ref {cwd, ref?, verify?, exists?} -> {refs: {sha,name}[]}; git_merge_base {cwd, a, b, isAncestor?, all?} -> {bases: string[]} | {isAncestor: boolean}: with all true `bases` lists every common ancestor (git merge-base --all), otherwise it holds the one best ancestor; no common ancestor is exit 1 and returns a success with bases [] ; with isAncestor true exit 0 is {isAncestor: true} and exit 1 is {isAncestor: false}; any other exit is a rejected failure; git_hash_object {cwd, path} -> {sha} (read only, no -w); git_fetch_refs {cwd, remote, refspecs[] (explicit src:dst pairs), noTags?, noWriteFetchHead?, noRecurseSubmodules?, noPrune?, refmap? (an empty string allowed), depth?} -> {updated: {ref, old, new}[]}, the typed form of the fetches policy-refresh.ts ('--no-tags --no-write-fetch-head --no-recurse-submodules --no-prune --refmap=' with an explicit destination refspec) and maintenance.ts (an explicit '+refs/heads/<branch>:refs/remotes/origin/<branch>') run today; its class is none when every refspec destination is under refs/remotes/ and destructive when a forced ('+') refspec would overwrite any other ref, and it fails with missing-signin or unreachable as git_fetch does; git_path_history {cwd, path?, rev? (default HEAD; a tracking ref such as origin/main is allowed), diffFilter? (A|D|M|R), firstParent?, reverse?, limit?, pickaxe? (-S text), raw?} -> {commits: {sha, committerTime (ISO 8601, %cI), subject?}[]}, the typed form of the history queries range-base.ts (HEAD, introducing commit: --diff-filter=A --format=%H -1 -- <path>) and anchor-finder.ts (an explicit trackingRef, --first-parent --diff-filter=A --reverse, '%H<TAB>%cI') run today, and of git whatchanged and log -S; it is on the s7 handoff list with tests for a tracking branch different from HEAD and for the preserved firstCommitTime, while git_log keeps its schema. Two reads the code runs need no new tool: git_remote list already returns fetchUrl and pushUrl (remote get-url), and git_diff with staged true returns an empty file list for 'diff --cached --quiet'. The tools of s8 are not part of this Story. The s7 handoff list for this family is: git_cat_file (src/design/corpus/sources/git-reader.ts and its tests src/design/corpus/sources/__tests__/git-reader.test.ts, which must keep passing unchanged for binary bytes, replacement-ref immunity and isolation), git_fetch_refs and git_symbolic_ref set (src/workflow/team/policy-refresh.ts, src/cli/services/maintenance.ts), git_path_history (src/workflow/runners/build/range-base.ts, src/workflow/team/anchor-finder.ts), and the other reads for the remaining sites in the call-site list.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/index.ts",
+          "src/workflow/team/git.ts",
+          "src/workflow/team/handoff.ts",
+          "src/workflow/team/policy-reader.ts",
+          "src/workflow/team/anchor-finder.ts",
+          "src/workflow/team/signoff.ts",
+          "src/cli/services/maintenance.ts",
+          "src/daemon/installed-commit.ts",
+          "src/workflow/runners/build/range-base.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/team/policy-refresh.ts",
+          "src/design/corpus/sources/git-reader.ts",
+          "src/design/corpus/sources/__tests__/git-reader.test.ts",
+          "src/daemon/tools/shell-helper.ts"
+        ]
+      },
+      {
+        "entity": "Git coverage table",
+        "change": "new",
+        "details": "src/daemon/tools/builtins/git/coverage.ts exports GIT_COVERAGE, built from git 2.53.0's own command list (`git --list-cmds=main`, 169 commands). Each row is { command, owner, toolIds?: string[], cases?: Case[] } so a command that several tools serve keeps one owner (commit is served by git_commit and git_amend, each with its own case) where owner is 'covered' (this Story, with its tool ids and a concrete case for each that runs through executeTool in a temporary repository and checks the result and effect), 'assigned' (Story s8, with no tool yet) or 'excluded' (with a reason). This Story covers: git:cherry-pick: cherry-pick; git_blame: annotate, blame; git_branch: branch, switch; git_cat_file: cat-file, unpack-file; git_checkout: checkout; git_commit: commit; git_diff: diff; git_fetch: fetch; git_for_each_ref: for-each-ref, refs (list only); git_hash_object: hash-object; git_log: log; git_ls_files: ls-files; git_ls_tree: ls-tree; git_merge: merge; git_merge_base: merge-base; git_path_history: whatchanged, pickaxe; git_pull: pull; git_push: push; git_rebase: rebase; git_remote: remote; git_reset: reset; git_rev_list: rev-list; git_rev_parse: rev-parse; git_revert: revert; git_show: show; git_show_ref: show-ref, refs (exists); git_stage: add, stage; git_stash: stash; git_status: status; git_symbolic_ref: symbolic-ref; git_tag: tag; git_worktree: worktree. Assigned to s8: am, apply, archive, backfill, bisect, bugreport, bundle, check-attr, check-ignore, check-mailmap, check-ref-format, checkout-index, cherry, clean, clone, column, commit-graph, commit-tree, config, count-objects, describe, diagnose, diff-files, diff-index, diff-pairs, diff-tree, fast-export, fast-import, fmt-merge-msg, format-patch, fsck, fsck-objects, gc, get-tar-commit-id, grep, index-pack, init, init-db, interpret-trailers, last-modified, ls-remote, mailinfo, mailsplit, maintenance, merge-file, merge-octopus, merge-ours, merge-recursive, merge-recursive-ours, merge-recursive-theirs, merge-resolve, merge-subtree, merge-tree, mktag, mktree, multi-pack-index, mv, name-rev, notes, pack-objects, pack-redundant, pack-refs, patch-id, prune, prune-packed, quiltimport, range-diff, read-tree, reflog, repack, replace, replay, repo, request-pull, rerere, restore, rm, shortlog, show-branch, show-index, sparse-checkout, stripspace, submodule, subtree, unpack-objects, update-index, update-ref, var, verify-commit, verify-pack, verify-tag, version, write-tree. Excluded commands are the ones the user accepted for DEF ac1 (needing a person at a terminal or a GUI, mail, a server or transport role, credential helpers) plus internal helpers; the full list is owned by s8, and the table here carries it so the whole inventory is accounted for. DEF ac1 ('an operation that git supports') is met by s4 and s8 together; s4 alone does not claim it. The test: (1) every command of the recorded list is in exactly one owner; (2) every tool id in a 'covered' row is registered with a runnable case, and every registered git tool appears in some covered row's toolIds, git_amend and git_fetch_refs included; (3) every covered row's case runs through executeTool and its assertion holds; (4) an 'assigned' row for a command in s8 is not counted as covered; (5) a command only the installed git lists is logged, not failed. Coverage is tracked by operation for any command that has subcommands or modes: the table has one row per subcommand, each row owned by s4 (covered), s8 (assigned) or excluded. For `refs` the operations are list and exists (s4: git_for_each_ref, git_show_ref with `exists`) and verify, migrate and optimize (assigned to s8). For the commands whose existing tools s4 keeps, the operations the existing schema does not offer are assigned to s8 by name: git stash (branch, create, store, export, import; `save` is the deprecated spelling of push), git worktree (lock, unlock, repair), git remote (show, prune, update, set-head, set-branches, set-url --add and --delete), git branch (rename, copy, set-upstream-to, unset-upstream, edit-description; the --merged, --no-merged, --points-at and --format reads are served by git_for_each_ref with `merged`, `noMerged` (git for-each-ref --no-merged) and `pointsAt`), git tag (verify, and signing with -s or -u), and git reflog (all of it, with expire, delete and write, in s8). The recorded subcommand lists are taken from `git <command> -h` of git 2.53.0 when coverage.ts is written and are reviewed with it; a test fails when a subcommand row is missing for a command the table lists as multi-operation, and a 'covered' row for a command never hides an assigned operation.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/index.ts"
+        ]
+      },
+      {
+        "entity": "ToolResult.failure from git tools",
+        "change": "invariant-change",
+        "details": "A failed git result now carries failure.kind. Before, only error and output were set. The kind is 'missing-tool' for a spawn error, 'timed-out' for a killed command, 'missing-signin' or 'unreachable' for push, pull, fetch, clone and ls-remote when git's message shows it, and 'rejected' for every other non-zero exit. Inventory of failure sites (counted with grep for `success: false` plus the helpers): blame.ts 3, branch.ts 2 (local spawnFail and fail), rebase.ts 1, cherry-pick.ts 1, diff.ts 5 (including its invalid-input results labelled git:diff), log.ts 2, merge.ts 1 (the conflict result), revert.ts 1, show.ts 3 (a local spawnFail, a non-zero result and the metadata-parse failure), status.ts 2 (labelled git:status), stage.ts 3, and helpers.ts 2; the other tools fail through the helpers. Each is changed to classify with failureKind(ShellResult) and attach the kind with withFailure, or to build the default result through fail, and to keep the label and text it prints today (git:status, git:diff, git:stage). Reads fall in two groups, decided by the user. (1) The read that is the tool's answer: git_show's diff (show.ts runs diffArgv and statArgv and today checks only the stat code) becomes a real failure when it fails, times out, cannot spawn or is cut, with failure kind missing-tool, timed-out or rejected; git_diff, git_blame and git_log main reads are checked in the same way and any that ignores a failure is fixed the same way. (2) Lookups made after a mutation has already succeeded, or additional detail: git_show's numstat, git_branch's previous-branch lookup, git_rebase's commit count and head, git_commit's sha and short sha and its numstat, git_push's short sha (revParse after the push, which helpers.ts turns into '' on failure), git_amend's sha and message, git_commit's third read (collectCommitData's `git show --numstat --format= HEAD`, whose stat.stdout is parsed today without checking code, spawnError, timedOut or stdoutTruncated), git_reset's previous short sha and the short sha it reads after the reset (afterShort) and git_merge's incoming rev keep today's placeholder values (an empty list, '', '?') and return success, because failing would misreport a mutation that happened; each adds an optional `warnings: string[]` to its data naming the command and the kind (timed-out or rejected). A failed numstat read of git_show therefore returns the diff with no file list and a warning. The registration wrapper is the net for any path still missed: it adds kind 'rejected' to an unsuccessful result that has none. The invariant it must not break: output, format, success and error are exactly what they were for each existing failure, data on a conflict result is kept, and callers that read them are unaffected. For the commit statistics: a failed, timed-out or cut numstat read after a successful commit returns success with the file counts empty (as an unparsable read gives today) and a data.warnings entry; the parser is applied only to complete stdout. Complete inventory of secondary lookups (each keeps its placeholder, returns success and adds data.warnings): git_show numstat; git_branch previous branch; git_rebase commit count and head; git_commit sha, short sha and numstat; git_amend sha and message; git_reset previous and after short sha; git_merge incoming rev; git_push short sha; git_stage's index-after read (`git diff --cached --name-only`, indexAfter [] on failure); every use of currentBranch after a successful mutation (git_revert's okResult, git_merge after a successful abort, git_rebase, git_checkout's previous branch, git_cherry-pick). The types that gain the optional `warnings: string[]` are GitShowData, GitBranchData, GitRebaseData, GitCommitData, GitAmendData, GitResetData, GitMergeData, GitPushData, GitStageData, GitRevertData, GitCheckoutData and GitCherryPickData. This list is the known set; the audit test enumerates every runShell and helper result in the git tools, so a lookup missing from the list fails the build and is added with its placeholder and warning. A test greps each tool for a runShell result whose code is not checked, so a lookup added later without a warning fails the build. Helper-mediated reads (helpers.ts): currentBranch (symbolic-ref), stagedCount (diff --cached --name-only) and stagedSummary (diff --cached --numstat) are used before a mutation by git_commit, git_push (in execute and in the approval preview), git_rebase, git_checkout and git_cherry-pick. They are not post-mutation lookups, so they follow a separate rule. A precondition read whose outcome decides the call (the current branch, the staged count) now returns {value, failure}: a spawn error, a time-out, a cut read or a non-zero exit other than git's documented 'not a symbolic ref' for a detached HEAD fails the call before anything is changed, with the kind failureKind gives; a detached HEAD is still reported as '(detached)' as today. A read that only feeds a preview (stagedSummary, the branch shown in an approval request) keeps today's placeholder and names the problem in the preview text. The audit covers helper calls as well as direct runShell calls and looks at the process flags (spawnError, timedOut, stdoutTruncated), not only the exit code: a test fails when any runShell or helper result is used without passing through failureKind, a warning, or a listed placeholder. Further helper reads, with their expected non-zero outcomes kept apart from process failures: git_amend's wasPushed (three reads: HEAD, @{upstream}, merge-base --is-ancestor): a missing upstream or an unresolved @{upstream} (git's documented exit 128 'no upstream configured') and 'not an ancestor' (exit 1) are the answer false, as today; a spawn error, a time-out or a cut read is not an answer and the call fails before anything is changed, because amending a pushed commit is the risk the read guards; git_reset's willNeedForcePush: exit 0 is true, exit 1 is false, and any other exit or a process failure fails the call before the reset when the mode is hard or the new HEAD is behind the upstream is unknown (it is a precondition), and warns in the preview otherwise; git_merge's listConflicts after a conflicted merge: a failed enumeration returns the conflict result with an empty list as today and data.warnings naming the read, because the merge has already happened. Targeted tests cover each of these helpers with a missing upstream, a non-ancestor, a time-out and a cut read.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/helpers.ts",
+          "src/daemon/tools/failure-mapping.ts",
+          "src/daemon/tools/builtins/git/log.ts",
+          "src/daemon/tools/builtins/git/show.ts",
+          "src/daemon/tools/builtins/git/merge.ts",
+          "src/daemon/tools/builtins/git/branch.ts",
+          "src/daemon/tools/builtins/git/status.ts",
+          "src/daemon/tools/builtins/git/diff.ts",
+          "src/daemon/tools/builtins/git/stage.ts",
+          "src/daemon/tools/builtins/git/blame.ts",
+          "src/daemon/tools/builtins/git/commit.ts",
+          "src/daemon/tools/builtins/git/amend.ts",
+          "src/daemon/tools/builtins/git/rebase.ts",
+          "src/daemon/tools/builtins/git/reset.ts",
+          "src/daemon/tools/builtins/git/helpers.ts",
+          "src/daemon/tools/builtins/git/checkout.ts",
+          "src/daemon/tools/builtins/git/cherry-pick.ts",
+          "src/daemon/tools/builtins/git/amend.ts",
+          "src/daemon/tools/builtins/git/reset.ts",
+          "src/daemon/tools/builtins/git/merge.ts"
+        ]
+      },
+      {
+        "entity": "Approval classes of the existing git tools",
+        "change": "invariant-change",
+        "details": "Each existing tool's `approval` becomes a function of the input as listed under approval. The invariant it must not break: a read operation stays none and every mutation that is not named destructive stays at least common, so no call that asks today stops asking. git_fetch stays none and git_status, git_log, git_diff, git_show and git_blame stay none. The mapping test src/daemon/tools/__tests__/approval-class-mapping.test.ts and the snapshot src/daemon/tools/__tests__/fixtures/approval-snapshot.json are updated for the new tools and the new classes; the existing 228 ids and their input schemas are unchanged.",
+        "callSites": [
+          "src/daemon/tools/builtins/git/reset.ts",
+          "src/daemon/tools/builtins/git/push.ts",
+          "src/daemon/tools/builtins/git/branch.ts",
+          "src/daemon/tools/builtins/git/tag.ts",
+          "src/daemon/tools/builtins/git/stash.ts",
+          "src/daemon/tools/builtins/git/worktree.ts",
+          "src/daemon/tools/builtins/git/checkout.ts",
+          "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Every git tool, old and new, declares a typebox inputSchema and outputSchema, so the executor checks the result (a result that does not fit is a schema-mismatch failure) and callTool types the call. Nothing in sc2 is changed."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Not called. Git output is machine-parseable (porcelain and fixed --format output), so the git family parses it deterministically and never converts text with a model."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Sets Tool.approval as a function of the input to return 'destructive' for the operations listed under approval. The destructive choice for git is s4's; the field, the exchange and the setting are s3's."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "spawnFail and fail return the sc5 failure kinds: missing-tool, timed-out, missing-signin, unreachable and rejected. The mapping of git's messages to missing-signin and unreachable is git-specific and lives in helpers.ts."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "git is not installed or cannot be spawned",
+          "detection": "runShell returns spawnError true for the git argv",
+          "response": "spawnFail returns a failed result with failure kind 'missing-tool' and the existing output and error text; no parser runs",
+          "userImpact": "The caller learns the CLI is missing, distinct from a git rejection",
+          "recoverable": true
+        },
+        {
+          "scenario": "A git command exceeds its time limit",
+          "detection": "runShell returns timedOut true",
+          "response": "fail returns a failed result with failure kind 'timed-out'; for a mutating call (the tool passes mutating from its approval function) failure.message ends with a sentence saying the outcome is unknown and to check status before retrying; output and error are unchanged",
+          "userImpact": "The caller does not retry a push or a commit blindly",
+          "recoverable": true
+        },
+        {
+          "scenario": "A network or authentication refusal on push, pull, fetch, clone or ls-remote",
+          "detection": "A non-zero exit whose stderr matches git's known text: 'Authentication failed', 'could not read Username', 'Permission denied (publickey)' map to missing-signin; 'Could not resolve host', 'unable to access', 'Connection timed out', 'Connection refused' map to unreachable",
+          "response": "fail returns that kind; any other non-zero exit is 'rejected' with git's message",
+          "userImpact": "A caller can tell 'sign in' from 'offline' from 'git said no'",
+          "recoverable": true
+        },
+        {
+          "scenario": "A structured read is cut by the output limit",
+          "detection": "ShellResult.stdoutTruncated is true when a parser is about to run",
+          "response": "The tool returns a rejected failure saying the output was cut, with the cut text in failure.original; it never returns a partial list as a success",
+          "userImpact": "A large ls-files or log never silently loses entries",
+          "recoverable": true
+        },
+        {
+          "scenario": "A parser cannot parse git's output (an unexpected record, a version difference)",
+          "detection": "The parser throws on a record that does not match the expected fields; the tool catches it",
+          "response": "A rejected failure with the parser's message and the raw output in failure.original; the executor's schema check is a second line of defence",
+          "userImpact": "A format surprise is a clear failure, not a wrong value",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tool's data does not fit its declared outputSchema",
+          "detection": "The executor's output check (s2) fails the data",
+          "response": "The call is a schema-mismatch failure and the data is not passed on",
+          "userImpact": "A drift between a parser and its schema is found by the first call and by the tests",
+          "recoverable": false
+        },
+        {
+          "scenario": "A ref, revision or remote name starts with a dash, or any argument holds a NUL",
+          "detection": "assertSafeArg(value, position) in each tool: before the option terminator a value starting with '-' or holding a NUL is rejected; after '--' a path starting with '-' is accepted and a NUL is rejected. The input schemas are not tightened",
+          "response": "The tool returns a rejected failure naming the argument and spawns nothing; a path such as -draft.txt after '--' keeps working as today",
+          "userImpact": "A crafted ref cannot become a git option such as --upload-pack, and a valid dash-prefixed filename is not refused",
+          "recoverable": true
+        },
+        {
+          "scenario": "An approval function throws on a malformed input",
+          "detection": "resolveApprovalClass (s3) catches the throw",
+          "response": "The call is treated as destructive and asks",
+          "userImpact": "A malformed call fails safe",
+          "recoverable": true
+        },
+        {
+          "scenario": "A git tool builds a failed result without the shared helpers (an inline failure or a conflict result)",
+          "detection": "The registration wrapper sees success false and no failure on the result the tool returned",
+          "response": "It adds failure kind 'rejected' with the tool's error text as message and original output as failure.original; data, output, format and error are untouched",
+          "userImpact": "Every failed git result carries a kind, including paths the helpers do not cover",
+          "recoverable": true
+        },
+        {
+          "scenario": "A push refspec expresses a delete or a force without a flag (':dev', '+main')",
+          "detection": "approval(input) parses `ref`: a leading '+', or an empty source before ':', is destructive; the push tool refuses a delete refspec to a protected ref unless forceToMain is true",
+          "response": "The call asks in every mode before it runs",
+          "userImpact": "A remote branch cannot be deleted or force-overwritten through the registry without the user's yes",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process behind runShellBytes exits before reading its stdin, or the batch is cancelled",
+          "detection": "A write error on the stdin stream, or deps.signal aborting, observed in runShellBytes",
+          "response": "The result reports spawnError false, a non-zero code or signal and, for a cancellation, timedOut false with the process killed; the tool returns a failure of kind rejected (or timed-out when the time limit fired) and no partial object list",
+          "userImpact": "A broken pipe never turns into a partial list of objects",
+          "recoverable": true
+        },
+        {
+          "scenario": "A precondition read (current branch, staged count) fails, times out or is cut before a mutation",
+          "detection": "The helper's {value, failure} result: failureKind classifies the ShellResult's spawnError, timedOut, stdoutTruncated and exit code, with git's 'not a symbolic ref' exit for a detached HEAD excluded",
+          "response": "The call fails before anything is changed, with kind missing-tool, timed-out or rejected; a detached HEAD is not a failure",
+          "userImpact": "A commit, push, rebase or checkout never starts from an unknown branch or staged state",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "git_branch op delete without force on a merged branch",
+          "expected": "Destructive: it asks, then runs git branch -d"
+        },
+        {
+          "input": "git_branch op list",
+          "expected": "Class none; the result is the branch list under GitBranchData"
+        },
+        {
+          "input": "git_push with no force flags",
+          "expected": "Class common"
+        },
+        {
+          "input": "git_push with forceToMain true and no force flag",
+          "expected": "Class destructive, because forceToMain is a force intent; the tool still refuses a force to a protected ref without it"
+        },
+        {
+          "input": "git_checkout mode ref, discard false",
+          "expected": "Class common; mode path or discard true is destructive"
+        },
+        {
+          "input": "git_stash op pop with a conflict",
+          "expected": "Common; git keeps the stash, the result reports the conflict as a rejected failure with the conflicting paths in original"
+        },
+        {
+          "input": "A repository path that is not a git repository",
+          "expected": "A rejected failure with git's 'not a git repository' text"
+        },
+        {
+          "input": "A repository with a detached HEAD or an unborn branch",
+          "expected": "git_status and git_rev_parse report it in their data (branch '(detached)' or the unborn name) and succeed"
+        },
+        {
+          "input": "A path with spaces, unicode or a newline in git_ls_files",
+          "expected": "Parsed from -z output, returned exactly"
+        },
+        {
+          "input": "A listed operation in the coverage table that is not registered, or a registered git tool that is not in the table",
+          "expected": "The coverage test fails and names the id"
+        },
+        {
+          "input": "An existing caller passing the old inputs to git_branch, git_reset, git_push or git:cherry-pick",
+          "expected": "Accepted exactly as before; the typebox input schema is JSON-identical to the old one"
+        },
+        {
+          "input": "git_merge ends in a conflict",
+          "expected": "The result keeps success false, error 'merge conflict' and its data; failure.kind is 'rejected' and failure.original holds git's output"
+        },
+        {
+          "input": "A command in git's own list that the coverage table does not know (a newer git)",
+          "expected": "The coverage test logs it and passes; the next update of the table adds it"
+        },
+        {
+          "input": "git_push with ref ':dev' and no force flag",
+          "expected": "Class destructive; it asks in every mode"
+        },
+        {
+          "input": "git_push with ref '+main:main'",
+          "expected": "Class destructive"
+        },
+        {
+          "input": "git_push with ref 'feature' or 'feature:feature'",
+          "expected": "Class common"
+        },
+        {
+          "input": "git_checkout mode path with a path '-draft.txt'",
+          "expected": "Accepted exactly as today: the path goes after '--'"
+        },
+        {
+          "input": "git_fetch with remote '--upload-pack=x'",
+          "expected": "A rejected failure from assertSafeArg; git is not spawned"
+        },
+        {
+          "input": "git_status fails to spawn",
+          "expected": "output reads '[git:status] cannot spawn git -- ...' exactly as today, with failure kind missing-tool"
+        },
+        {
+          "input": "git_show whose main diff read fails, times out or is cut",
+          "expected": "A failed result with kind rejected, timed-out or missing-tool; no empty diff is returned as a success"
+        },
+        {
+          "input": "git_show whose numstat read fails",
+          "expected": "Success with the diff, an empty file list and data.warnings naming the numstat command and its kind"
+        },
+        {
+          "input": "git_commit whose rev-parse lookup of the new sha fails after the commit succeeded",
+          "expected": "Success with sha '' as today and data.warnings naming the lookup; the commit is not reported as failed"
+        },
+        {
+          "input": "git_log with limit 0 or 501, or git_diff with maxBytes 100",
+          "expected": "A rejected failure from the executor's input check naming the field; before, execute clamped the value. This is the accepted behaviour change"
+        },
+        {
+          "input": "git_show with maxBytes 100",
+          "expected": "Unchanged: its schema declares no bounds, so the value is accepted and execute clamps it to 1024 as today"
+        },
+        {
+          "input": "git_path_history with rev origin/main and diffFilter A, firstParent and reverse",
+          "expected": "The commits in the order anchor-finder.ts reads today, each with sha and committerTime"
+        },
+        {
+          "input": "git_diff with context 51",
+          "expected": "A rejected failure from the executor's input check naming context; before, the value reached git"
+        },
+        {
+          "input": "git_fetch with depth 0 or 0.5",
+          "expected": "A rejected failure from the executor's input check naming depth; before, an ordinary full fetch ran"
+        },
+        {
+          "input": "git_merge_base for two unrelated histories",
+          "expected": "Success with bases [] (git exits 1); with isAncestor true the result is {isAncestor: false}"
+        },
+        {
+          "input": "git_merge_base with all true on a criss-cross history",
+          "expected": "Every common ancestor, in git's order, in bases"
+        },
+        {
+          "input": "git_commit whose numstat read fails after the commit succeeded",
+          "expected": "Success with the same data as before and data.warnings naming the numstat read; the commit is not reported as failed"
+        },
+        {
+          "input": "git_diff with `exclude` that is not an array of non-empty strings",
+          "expected": "Through executeTool: a rejected failure whose text is the executor's input check message, before execute runs; the legacy '[git:diff] invalid-input' text is kept only when execute is called directly"
+        },
+        {
+          "input": "git_push whose short-sha lookup fails after the push succeeded",
+          "expected": "Success with shortSha '' as today and data.warnings naming the lookup"
+        },
+        {
+          "input": "git_diff with both path and paths",
+          "expected": "Passes the executor's input check and reaches execute, which returns the legacy '[git:diff] invalid-input' result with failure kind rejected"
+        },
+        {
+          "input": "git_cat_file for a binary blob containing bytes that are not valid UTF-8, with encoding base64",
+          "expected": "The bytes come back unchanged in contentBase64 and their size matches the object's size; a utf8 request for the same blob is not silently lossy: it is a rejected failure naming the encoding"
+        },
+        {
+          "input": "git_cat_file in a repository with a replacement ref for the object, isolated true",
+          "expected": "The original object is read; replacement refs are ignored"
+        },
+        {
+          "input": "git_fetch_refs with the refspec '+refs/heads/main:refs/heads/main'",
+          "expected": "Class destructive: the forced destination is a local branch, not under refs/remotes/"
+        },
+        {
+          "input": "git_symbolic_ref set refs/remotes/origin/HEAD to refs/remotes/origin/main",
+          "expected": "Common; the result target is refs/remotes/origin/main"
+        },
+        {
+          "input": "git stash branch, git worktree lock, git remote set-head, git branch --move or git tag -v",
+          "expected": "Not offered by the existing tool's schema; the coverage table lists each as an operation assigned to s8, and the test counts none of them as covered"
+        },
+        {
+          "input": "git_stage whose index-after read fails after the files were staged",
+          "expected": "Success with indexAfter [] as today and data.warnings naming the read"
+        },
+        {
+          "input": "git_amend on a branch with no upstream configured",
+          "expected": "wasPushed is false (git's documented exit), the amend proceeds as today, and no failure is raised"
+        },
+        {
+          "input": "git_amend whose upstream read times out",
+          "expected": "The call fails before amending, with failure kind timed-out; no commit is changed"
+        },
+        {
+          "input": "git_merge conflict whose conflict-list read fails",
+          "expected": "The conflict result as today with an empty list, success false, error 'merge conflict', and data.warnings naming the read"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every existing git tool id, input shape and meaning is unchanged, including git_pull, git_push, git_reset and git:cherry-pick; the snapshot of ids and input schemas still matches for the existing 228 tools",
+          "source": "c3"
+        },
+        {
+          "text": "A failed git result keeps its output, format, success and error text; failure.kind is added beside them",
+          "source": "c3"
+        },
+        {
+          "text": "Every call that asks for approval today still asks; a destructive class only adds asking, and a read stays none",
+          "source": "c4"
+        },
+        {
+          "text": "A git result that does not fit its declared schema, or whose output was cut, is a failure and is never passed on as a success",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run with tsx (npx tsx --test), test files named *.test.ts under src/daemon/tools/builtins/git/__tests__ next to the tools, as diff.test.ts and git-diff-paths.test.ts are; integration tests run the real git binary against a temporary repository",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The parsers, the failure helper and the approval functions without spawning git",
+          "subjects": [
+            "each parser in parsers.ts turns fixed sample output into the expected records, handles -z paths with spaces, unicode and newlines, and rejects a record it does not understand",
+            "a parser refuses output that ShellResult.stdoutTruncated marks as cut instead of returning a partial list",
+            "spawnFail returns kind missing-tool, and fail returns timed-out, missing-signin, unreachable or rejected from the process outcome and git's message while keeping output, format, success and error unchanged",
+            "the approval function of each tool returns the class listed in the contract for every operation and flag, and a function given a malformed input throws or returns a class the executor treats as destructive",
+            "the GIT_COVERAGE table lists every command of the recorded git 2.53.0 list under exactly one owner (covered here, assigned to s8, or excluded with a reason), a covered row has a case and is registered, an assigned row is never counted as covered, every registered git tool is in the table, and a command only the installed git knows is logged, not failed",
+            "assertSafeArg rejects a value that starts with a dash or holds a NUL, and each tool places refs and paths after the option terminator",
+            "the registration wrapper adds failure kind rejected to an unsuccessful result that has none and leaves a failure the tool set untouched",
+            "the push classifier returns destructive for force flags, a leading '+', an empty-source refspec such as ':dev' and a delete, and common for a plain branch, tag or 'src:dst'",
+            "the output and error text of every spawn and non-zero failure path of the 22 existing tools, including the legacy git:status, git:diff and git:stage labels, matches a table recorded before the change",
+            "failureKind returns missing-tool, timed-out, missing-signin, unreachable or rejected from a ShellResult, and withFailure leaves output, format, success, error and data untouched on git_diff's numstat failure and git_merge's conflict result",
+            "runShellBytes returns stdout bytes unchanged, delivers stdin, applies the isolate environment, reports a stdin write error and a cancellation, and leaves runShell's behaviour unchanged",
+            "the coverage table has one row per subcommand for every multi-operation command (refs, stash, worktree, remote, branch, tag, reflog), each owned by s4, s8 or excluded, and a command marked covered never hides an assigned operation",
+            "runShellBytes kills the process and sets stderrOverflow when stderr passes a lowered stderrLimit independent of stdoutLimit, and git_cat_file reports 'git diagnostics exceed byte limit'"
+          ],
+          "fixturesNeeded": [
+            "sample porcelain outputs checked in beside the test"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Each tool against a real temporary git repository, through executeTool",
+          "subjects": [
+            "every new read tool returns data that fits its outputSchema for a repository with commits, a detached HEAD and an unborn branch",
+            "git_reset hard, git_push with force, git_branch delete, git_tag delete, git_stash drop and clear, git_worktree remove with force and git_checkout of a path ask for approval through the executor and are not run when declined, and a plain push, a soft reset and a branch create ask only under the common setting",
+            "an existing tool called with its old input (git_branch list, git_reset mixed, git_push, git:cherry-pick start) returns the same output, format and error as before and now also a data payload that fits its schema",
+            "a git tool called in a directory that is not a repository, with git missing from PATH, and past its time limit returns a failure of the right kind",
+            "git_merge with a conflict keeps its data and its 'merge conflict' error and carries failure kind rejected",
+            "a timed-out mutating call carries kind timed-out and the unknown-outcome sentence in failure.message while output and error match today's text",
+            "git_push ':dev' and '+main' ask through the executor in auto mode and are not run when declined",
+            "git_show with a failing numstat still succeeds, returns the same files-less data as before and adds data.warnings",
+            "every covered row of GIT_COVERAGE runs its case through executeTool in a temporary repository and the result and the repository change match the row's assertion",
+            "git_show with a failing diff read fails with the right kind, and with a failing numstat read succeeds with data.warnings",
+            "git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected with a failure naming the field, and git_show maxBytes 100 is accepted and clamped as today",
+            "git_path_history returns the introducing commit that range-base.ts's query returns for HEAD, and for a tracking branch that differs from HEAD the first-parent reversed list with sha and committerTime that anchor-finder.ts reads",
+            "git_for_each_ref contains replaces branch -r --contains, git_remote list returns the urls remote get-url returns, and git_diff staged true answers 'diff --cached --quiet'",
+            "git_merge_base returns every common ancestor with all true, an empty list for unrelated histories, and isAncestor true and false",
+            "git_commit with a failing numstat read still succeeds and adds data.warnings, and git_fetch depth 0 is rejected",
+            "git_reset and git_push with a failing short-sha lookup after a successful mutation still succeed and add data.warnings, and every runShell result in the git tools has its code checked or is listed in the secondary-lookup inventory",
+            "git_diff with a malformed exclude fails with the executor's message through executeTool and with the legacy text when execute is called directly",
+            "git_cat_file returns a binary blob unchanged in base64, batches several revs through stdin, ignores a replacement ref when isolated, rejects an object over maxBytes and stops on cancellation; the design corpus reader's own tests pass unchanged against it",
+            "git_fetch_refs applies the policy-refresh and maintenance fetches (no tags, no FETCH_HEAD, explicit refspec, empty refmap) and is destructive for a forced refspec that targets a local branch",
+            "git_symbolic_ref sets, reads and deletes refs/remotes/origin/HEAD with the classes none, common and destructive",
+            "git_amend runs its own case in the coverage table; git_diff with path and paths keeps its legacy failure",
+            "git_commit, git_push, git_rebase and git_checkout fail before changing anything when the current-branch or staged-count read cannot run or times out, and report a detached HEAD as before; git_cat_file in isolated mode ignores inherited GIT_CONFIG_*, alternate object stores and replacement refs and never fetches lazily",
+            "git_amend with no upstream, a non-ancestor and a timed-out upstream read; git_reset hard with an unknown force-push state; git_merge with a failing conflict enumeration; and git_for_each_ref noMerged"
+          ],
+          "fixturesNeeded": [
+            "a helper that creates a temporary repository with a bare remote",
+            "the approval gate seam _setApprovalGateForTests from s3"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The existing tool surface is unchanged",
+          "subjects": [
+            "the 228-tool snapshot of ids and input schemas in src/daemon/tools/__tests__/fixtures/approval-snapshot.json still matches for every tool that existed before, and lists the new git tools",
+            "the approval-class mapping test passes with the new classes and the new tools",
+            "every typebox input schema of the 22 existing tools serialises to the same JSON as the schema it replaced"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: every command of the recorded list has exactly one owner and every covered row's case runs through its tool and matches its assertion",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: every new read tool returns data that fits its outputSchema",
+            "src/daemon/tools/builtins/git/__tests__/git-path-history.test.ts: git_path_history answers the introducing-commit and first-parent queries the callers run today",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: git_cat_file, git_fetch_refs and git_symbolic_ref serve the design corpus reader, policy refresh and self-update operations",
+            "src/daemon/tools/__tests__/shell-helper-bytes.test.ts: runShellBytes returns bytes, delivers stdin and applies isolation",
+            "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+            "src/daemon/tools/__tests__/shell-helper-bytes.test.ts: independently lowered stdout and stderr limits behave as the corpus reader's limits do"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: every git tool's result fits its declared outputSchema",
+            "src/daemon/tools/builtins/git/__tests__/git-parsers.test.ts: a parser refuses cut output and unknown records",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: failure kinds follow the process outcome and git's message",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: every failed git result carries a failure kind, including a merge conflict",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a failing git_show diff read is a failure and a failing numstat read is a warning",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: git_merge_base answers all, unrelated and isAncestor cases with data that fits its schema",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a failing git_commit numstat read after a successful commit is a success with a warning",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: every secondary lookup in the git tools is in the inventory and warns on failure",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: a failing precondition read fails the call before any change, and no runShell or helper result is used outside failureKind, a warning or a listed placeholder",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_amend wasPushed, git_reset willNeedForcePush and git_merge listConflicts keep their expected non-zero answers and fail or warn on process failures"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: each work-destroying operation is destructive and each read is none",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: destructive git calls ask through the executor and are not run when declined",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: git_push ':dev' asks in auto mode and is not run when declined",
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/daemon/tools/__tests__/approval-class-mapping.test.ts: the tool ids and input schemas match the snapshot taken before the rewrite",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: an existing tool called with its old input returns what it returned before",
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: every typebox input schema serialises to the same JSON as the schema it replaced",
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: input schemas are unchanged and unsafe arguments are rejected at run time",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: the legacy output and error text of every existing failure path is unchanged",
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected",
+            "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged",
+            "src/daemon/tools/builtins/git/__tests__/git-tools-integration.test.ts: git_fetch depth 0 and 0.5 are rejected and git_fetch depth 1 runs as before",
+            "src/daemon/tools/builtins/git/__tests__/git-failures.test.ts: git_diff exclude and git_stage empty paths fail with the executor's message through executeTool and with the legacy text directly"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "src/daemon/tools/builtins/git/index.ts registers 22 git tools, each with a plain JSON-schema inputSchema, no outputSchema, and `approval` of 'common' or a predicate that returns 'common' for anything but a read; none is destructive, so git_reset hard, a force git_push, branch and tag delete, stash drop and clear, and checkout of a path all ask only under the common setting. Failures from helpers.ts spawnFail and fail set only output and error. Production code runs rev-parse, rev-list, cat-file, ls-tree, ls-files, for-each-ref, symbolic-ref, show-ref, merge-base and hash-object outside the registry because no tool covers them. Only diff.test.ts and git-diff-paths.test.ts test the git tools.",
+      "stateAfter": "The 22 existing tools keep their ids and inputs, now written as typebox schemas that serialise to the same JSON, and declare an outputSchema, a typed failure and a per-input approval function with the destructive operations marked. Eleven new read tools replace the git reads the repository's own code runs, parsers in one module turn structured git output into checked records, a coverage table accounts for all 169 git commands as covered here, assigned to s8 or excluded, and each tool is tested against a real temporary repository.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add schemas.ts with the typebox result schemas built from the existing Git*Data interfaces, and re-export each interface as the Static type of its schema under the same name",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add failureKind and withFailure to helpers.ts and change spawnFail and fail to use them (timeout warning in failure.message only); remove branch.ts's local copies; route status.ts, diff.ts, stage.ts, merge.ts, show.ts, log.ts and the other failure sites through the helpers or through withFailure while keeping their legacy text and data; switch every runShell call site to pass the ShellResult; add the registration wrapper as the net",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add parsers.ts, moving the status v2 -z parser out of status.ts, and add the stdoutTruncated check every structured read uses",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "For each of the 22 existing tools: rewrite inputSchema as typebox with identical JSON (no tightening), declare outputSchema, add assertSafeArg and option-terminator placement for refs and paths, set `approval` as a function of the input with the destructive operations from the contract, and handle the ignored secondary reads (git_show's diff fails, its numstat warns); one commit per group of related tools",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add runShellBytes to shell-helper.ts with its test, then the twelve new tools (the eleven reads including git_cat_file with batch and base64, git_symbolic_ref get|set|delete, and git_fetch_refs) with schemas and tests, including git_path_history",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Register all tools in index.ts, add coverage.ts and its test, update the 228-tool snapshot and the approval-class mapping test for the new tools and classes, and add the coverage table to docs/daemon.md",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Run the full test sweep once; s7 later moves the production call sites onto these tools in its own change, and s8 adds the remaining git tools",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Every existing git tool id keeps its input, meaning and output text; the typebox input schemas serialise to the same JSON and a test pins that. The only changes a current caller can see are additive: a failed result gains failure.kind, a successful result's data is now checked against its schema, and a few calls that asked under the common setting only (git_reset hard, a force git_push, branch and tag delete, stash drop and clear, worktree remove with force, checkout of a path) now ask in every mode, including auto. An agent that calls those with no client attached is now denied, which is the intended change of the Epic. New tool ids are additive. Two further visible changes are accepted: calls with limit 0 or 501 (git_log) or git_diff maxBytes below the minimum or context above 50, or git_fetch depth below 1 are now rejected instead of clamped, and a git_show whose diff read fails now fails instead of returning an empty diff. Malformed inputs that the schema already forbade (git_diff exclude and paths, git_stage empty paths) now fail with the executor's input message instead of the tool's legacy text when called through executeTool. A git call whose precondition read (current branch, staged count) times out or cannot spawn now fails before changing anything, with the right kind; before, it carried on with a placeholder.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Keep the 22 tools, type them, classify per operation, and add the missing families as new tools",
+        "summary": "Each existing tool gets a typebox outputSchema matching its current data and a per-input approval function; new named tools fill the families git lacks, delivered by this Story (the reads s7 needs) and by Story s8 (the rest); one coverage list maps commands to tool ids.",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Split every mutating operation into its own tool and keep the old ids as dispatchers",
+        "summary": "git_branch_delete, git_branch_create, git_tag_delete and the like become distinct tools with a fixed approval class; the old multi-operation ids stay and forward to them.",
+        "costEstimate": "L",
+        "reasonRejected": "Meets the criteria only with a dispatcher that duplicates approval and checks, which the Epic's single pipeline exists to avoid."
+      },
+      {
+        "id": "a3",
+        "name": "Type and classify the 22 tools, add only the read tools s7 needs, and name the rest of git as not covered",
+        "summary": "Schemas and destructive classes for the existing tools, plus nine read tools for the production call sites; every other git operation is listed as not covered.",
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac1 and leaves ac3 and k5 partial."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "ep3 (partial): invariantsToPreserve rest on the s1 bundle; the source field holds a citation id as the schema requires.",
+      "alt2 (partial): k1, k3, k4 and k6 were not scored per alternative; none of them is touched by the choice between the three shapes.",
+      "sbdry3 (partial): the Story says 'each mutating operation is a distinct tool the rules can see' while ac4 keeps the seven multi-operation ids; the LLD keeps the ids and lets a rule filter on input.op. Confirm this reading at approval.",
+      "This LLD was narrowed on the user's decision on 2026-10-24 after six review rounds in two cycles: the long tail of git (about 55 commands, their family tools, stdin delivery and the destructive classes of their modes) moved to the new Story s8, appended to the Epic with HLD amendment AMD-b7a68147dcf72034-8. DEF s4 ac1 is met by s4 and s8 together. The user accepted the ac1 exclusions (a person or GUI, mail, server or transport role, credential helpers); out-of-range legacy inputs are rejected; a failed git_show diff is a real failure.",
+      "Review cycle 2, round 3 (2 HIGH, 2 MED) was addressed without a further review: git_merge_base returns bases, the commit numstat read is an inventoried secondary read, git_fetch depth below 1 is in the compatibility audit, and the coverage test uses three owners. A further review needs the user's go-ahead.",
+      "Review cycle 3, round 1 (0 HIGH, 2 MED) revised this LLD: git_reset and git_push lookups joined the secondary-read inventory with a grep test, and the executor-level rejection of schema-forbidden git_diff and git_stage inputs is a documented compatibility change.",
+      "Review cycle 3, round 2 (3 HIGH, 1 MED) was addressed without a further review; the user then chose one more cycle of up to three rounds. Added: runShellBytes with stdin and isolation, a batch binary-safe git_cat_file, git_fetch_refs, git_symbolic_ref set and delete, coverage rows with several tool ids, and the git_diff path-plus-paths exception.",
+      "Authority for the split: Story s8 and HLD amendment AMD-b7a68147dcf72034-8 (storyBoundary.addStory) were approved by the user on 2026-10-24 (16:02:39 UTC) together with DEF revision 2; the s8 extension record S008/EXT.md still reads 'pending approval' and the rendered HLD.md has not been regenerated, but the effective HLD is the base HLD plus amendments AMD-3 to AMD-8, all approved, as the artifact records show. The record is in docs/plans/tool-registry.md.",
+      "Review cycle 4, round 1 (1 HIGH, 2 MED, 1 unverified) revised this LLD: the isolated environment is the corpus reader's own, fail takes the ShellResult, precondition reads fail the call before any change, and the authority for s8 is cited.",
+      "Review cycle 4, round 2 (1 HIGH, 1 MED) revised this LLD: coverage is tracked per operation for multi-operation commands, with the operations the existing tools lack assigned to s8 by name, and the secondary-lookup list gained git_stage, git_revert, git_checkout and git_cherry-pick, with the audit test as the authority for completeness.",
+      "Review cycle 4, round 3 (0 HIGH, 3 MED) was addressed without a further review; the user approved the LLD with an override on that basis. Fixed: noMerged on git_for_each_ref, the amend, reset and merge helper reads with their expected non-zero outcomes kept apart from process failures, and independent stdout and stderr limits on runShellBytes."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/index.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/git/helpers.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/plans/tool-registry.md"
+    }
+  ]
+}

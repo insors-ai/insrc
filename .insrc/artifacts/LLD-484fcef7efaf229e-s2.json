@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "warn",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers S002's upstream reachability, draft parity, sanitization, deadline and cancellation requirements while leaving client presentation to S005.",
-          "evidence": "HLD §5.4 defines correlation fields and reachability-only outcomes; its S002 acceptance mapping requires identical Test/Save materialization, no draft writes, a ten-second deadline and forced cleanup. LLD §§2–3 and §7 address these obligations. HLD §6.2 assigns S002 transient probe transport rather than session storage or manager UI. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md]",
-          "action": "Retain this scope; resolve the preparation-ordering and maintenance-lifetime findings below.",
+          "premise": "The design covers S002's draft parity, no-persistence, truthful reachability, duration, timeout and cancellation obligations while leaving client presentation to S005.",
+          "evidence": "DEF S002/ac1 requires the same merged configuration as Save, sanitized errors, duration and no schema-completeness claim; ac2 requires stale-result suppression, bounded tests and released resources. HLD assigns transient process probes to S002 and stale-test presentation to S005. The proposed materialization, correlation, supervisor and cleanup contracts cover that backend allocation. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md]",
+          "action": "None required.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,9 +48,21 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Current connection tests run factories in-process without proving reachability, expose nonfile exception messages, and encounter logger import side effects.",
-          "evidence": "testConnectionRpc awaits factory(transient, ...) and immediately returns 'ok: true'; its finally block awaits close, swallowing close errors. Nonfile failures return '(err as Error).message'. Redis construction uses 'lazyConnect: true'; MysqlDriver only constructs createPool. logger.ts executes 'mkdirSync(PATHS.logDir, { recursive: true })' at module scope, and paths.ts fixes that directory under /tmp. [files: src/daemon/db-rpc.ts, src/daemon/db/drivers/redis.ts, src/daemon/db/drivers/mysql.ts, src/shared/logger.ts, src/shared/paths.ts]",
-          "action": "Preserve the proposed explicit awaited probes and worker logger bootstrap requirements.",
+          "premise": "Legacy tests currently construct transient drivers in-process, await close, and expose raw nonfile exception messages.",
+          "evidence": "testConnectionRpc awaits materializeTransientConfig and factory(), then returns 'ok: true' without an explicit reachability operation. Its finally block awaits driver.close() but suppresses close errors. Its catch sanitizes registered file-family failures while returning '(err as Error).message' for nonfile drivers. handler-runtime calls this function directly. [files: src/daemon/db-rpc.ts, src/daemon/handler-runtime.ts]",
+          "action": "None required; the proposed explicit probes and supervised execution address real current behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Driver construction can be lazy, and importing the existing shared logger can create persistent logging artifacts.",
+          "evidence": "MysqlDriver's constructor calls createPool without issuing a query. RedisDriver creates ioredis with 'lazyConnect: true'. logger.ts executes 'mkdirSync(PATHS.logDir, { recursive: true })' at module scope; getLogger immediately obtains the root, whose creation reads config and builds transports. PATHS.logDir is '/tmp/.insrc', independent of isolated HOME/TMP. [files: src/daemon/db/drivers/mysql.ts, src/daemon/db/drivers/redis.ts, src/shared/logger.ts, src/shared/paths.ts]",
+          "action": "None required; retain the explicit-probe and fresh-process logger checks.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -59,12 +71,12 @@
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Calling current() before checking existence and expectedRevision permits not-found/conflict rejection before reading secrets.",
-          "evidence": "LLD §3.6 orders current() before snapshot existence/revision checks, while §2.1 promises 'not-found/conflict fail before secrets/spawn'. SavedConnectionManagement.current() first executes 'await this.ports.enabled()'. The production enabled callback in management-startup.ts calls tickets.assertAvailable() and loops over every saved connection's references, executing 'await keystore.getKey(ref)'. Consequently stale or missing targets can read credentials, including unrelated connections' credentials, before the proposed revision rejection. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/management.ts, src/daemon/db/management-startup.ts]",
-          "action": "Define a metadata-only admission path that checks the selected snapshot's existence/revision before credential-bearing readiness checks. Then perform the required owner-scoped credential validation under the root gate. Add coverage using the production readiness callback rather than only an always-true fixture.",
+          "severity": "LOW",
+          "premise": "The existing materializeDraft is an appropriate shared, read-only boundary for Save/Test configuration and credential parity.",
+          "evidence": "DraftMaterialization exposes only readSecret for credential access. materializeDraft checks create/update existence, revision and immutable kind, merges public fields, and implements Keep/Replace/Clear. SavedConnectionManagement.apply already invokes this function before generation staging; legacy transient preparation also invokes it. Persistence occurs outside the materializer. [files: src/daemon/db/driver-profiles.ts, src/daemon/db/management.ts, src/daemon/db-rpc.ts]",
+          "action": "None required.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "new-versus-reuse.2",
@@ -72,9 +84,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 already supplies the memory-only file execution foundation that S002 proposes to reuse.",
-          "evidence": "fileExecutionPolicy exposes persistence, ownership identity, memory budget and allowSpill:false. DuckDB file factories accept DriverFactoryContext, select MemoryFileExecution for memory-only policy, and readerPath lazily loads native or converted sources. close awaits execution.close(). Existing owned-file-driver tests exercise owned-resource disposal and bypass of persistent BSON/XLSX conversion. [files: src/daemon/db/file-policy.ts, src/daemon/db/file-execution.ts, src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/__tests__/owned-file-driver.test.ts]",
-          "action": "Implement the probe through these existing paths without adding a separate converter or cache policy.",
+          "premise": "S001 already supplies the reusable memory-only file execution and owned cleanup foundation required by the worker.",
+          "evidence": "DuckDB file factories accept DriverFactoryContext.fileExecutionPolicy and select MemoryFileExecution for memory-only operation. readerPath lazily loads native or converted sources into that execution owner. createPrivateDuckDB disables autoinstall, spill storage and logging; MemoryFileExecution.close interrupts active connections, drains pending work and closes owned resources. Construction alone does not load or validate file contents. [files: src/daemon/db/drivers/duckdb-file.ts, src/daemon/db/file-execution.ts, src/daemon/db/duckdb-pool.ts, src/daemon/db/file-policy.ts]",
+          "action": "Reuse this foundation and add the proposed awaited probe; do not duplicate converter lifecycle logic.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,9 +96,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The identified transport and adapter sites are the actual boundaries required to propagate unary cancellation.",
-          "evidence": "TrustedRpcContext currently contains only connectionIdentity and daemonEpoch. directDispatch passes that context to unary handlers and returns a no-op cancellation callback. handler-runtime's db.testConnection adapter currently omits context. The v2 method catalog and method-class table currently omit test/cancelTest. Router routes non-worker classes locally through holdingForward. [files: src/daemon/request-context.ts, src/daemon/server.ts, src/daemon/handler-runtime.ts, src/daemon/connection-management-rpc.ts, src/daemon/threads/method-class.ts, src/daemon/threads/router.ts]",
-          "action": "Apply the additive context, adapter and method-inventory changes described in §3.5.",
+          "premise": "The final local/wire separation and completion protocol identify the production transport sites that must change together.",
+          "evidence": "TrustedRpcContext currently contains only identity/epoch. RequestEnvelope embeds that type, Router.send posts the complete request, and worker-requests passes received envelopes through holdingForward/directDispatch. Unary directDispatch cancellation currently returns a no-op; maintenance holds and router activity end on replies. The design explicitly covers these defining sites, handler context forwarding, non-admitted completion and cloneable projection. [files: src/daemon/request-context.ts, src/daemon/server.ts, src/daemon/threads/channel.ts, src/daemon/threads/router.ts, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/worker-requests.ts, src/daemon/handler-runtime.ts]",
+          "action": "Treat §3.11 as authoritative during implementation; remove superseded reply-only and suppression wording from earlier test descriptions to reduce implementation ambiguity.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -95,12 +107,24 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Returning a timeout reply while preparation/reaping continues preserves maintenance exclusion until the actual operation finishes.",
-          "evidence": "LLD §2.2 permits timeout/canceled results at ten seconds while a reaper retains capacity; §6 likewise settles timeout while preparation remains pending. But §3.5 releases the unary maintenance hold on the internal reply. Existing holdingForward explicitly resolves its hold when 'envelope.kind === reply', and Router also ends request activity on that reply. Keeping a supervisor capacity slot does not retain either hold or activity. The design specifies no separate lifetime mechanism for work continuing after the response. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/router.ts, src/shared/locks/maintenance-lock.ts, src/daemon/server.ts]",
-          "action": "Specify separate response and drain lifetimes, with maintenance ownership retained through outstanding preparation and relevant cleanup after the terminal client reply. Add a real-lock test that attempts maintenance after timeout while preparation is deliberately still pending.",
+          "severity": "LOW",
+          "premise": "The design adequately documents the changed ownership relationships without requiring a separate ERD.",
+          "evidence": "The design states transport→0..1 operation, operation→0..1 child, child→one disposable driver, optional private file resource, and operation ownership of timers/config/reaping. It also defines response versus drain ownership and local versus wire compatibility. The companion source describes client→supervisor→child flow and parent retention of capacity during reap. These are transient ownership relationships, with no new persistent entity model. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "Optionally update the companion's 'Initialize driver' step to name the explicit awaited probe and show response versus drain completion.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The linked sequence companion renders correctly and remains visually consistent with the design.",
+          "evidence": "Inspected the generated HTML, embedded Mermaid sequence, participant/message descriptions and bundled renderer source. Attempted to open the local companion in the browser tool; it reported 'Browser is not available: iab', and browser inventory returned an empty list. Rendered arrows, labels, clipping and layout could not be inspected. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
+          "action": "Render the existing companion in an available browser and verify it; request author regeneration if rendering or consistency fails.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "data-compatibility.1",
@@ -108,21 +132,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed draft snapshot and runtime-path preparation can remain transient while preserving saved records and legacy success projections.",
-          "evidence": "EffectiveDraft already contains config and credentialActions. materializeDraft merges a copied current config and preserves its family. Pool resolveConfigPath returns copied configs with absolute path/schemaSource values rather than persisting them. SQLite pathOf gives config.path precedence over URL. Legacy TestConnectionResult contains ok, kind, family, optional error and tookMs, matching the fields the adapter promises to preserve. [files: src/shared/connection-management.ts, src/daemon/db/driver-profiles.ts, src/daemon/db/pool.ts, src/daemon/db/drivers/sqlite.ts, src/daemon/db-rpc.ts]",
-          "action": "Keep the planned byte-equality, pinned-family and activation/probe path-parity regression tests.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The DynamoDB identity snapshot accounts for the existing explicit-profile versus default-chain authentication distinction.",
-          "evidence": "DynamoDriver currently supplies 'credentials: fromIni({ profile })' when a profile is specified and otherwise leaves credentials to DynamoDBClient's default resolution. The installed credential-providers package exports fromNodeProviderChain. Resolving the corresponding identity in the parent and supplying it privately avoids relying on the stripped worker environment. [files: src/daemon/db/drivers/dynamodb.ts, node_modules/@aws-sdk/credential-providers/dist-types/index.d.ts, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md]",
-          "action": "Retain the activation/probe signing-boundary comparisons and rejection of missing worker runtimeAuth.",
+          "premise": "The runtime-path extraction and pinned-family preservation are grounded in existing activation and stored-config behavior.",
+          "evidence": "pool.ts selects path policy with familyOf(config.kind), resolves file/SQLite paths and schemaSource.path against the pool root, and checks lexical containment/readability. sqlite.ts gives config.path precedence over config.url but currently returns an undecoded file URL pathname. loadConnections preserves pinned family with a warning; materializeDraft clones existing config and prevents family changes through public patches. The design explicitly applies its SQLite correction to activation and probes without rewriting saved bytes. [files: src/daemon/db/pool.ts, src/daemon/db/drivers/sqlite.ts, src/daemon/db/config.ts, src/daemon/db/driver-profiles.ts]",
+          "action": "None required; retain URL, different-cwd, pinned-family and saved-byte regression fixtures.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,23 +144,11 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed ownership relationships are sufficiently documented without a separate ERD, and session/UI/conversion responsibilities remain with their HLD owners.",
-          "evidence": "HLD assigns sc4 to S002, sc5 to S003, sc7 to S005 and sc8 to S001. LLD §3.2 documents transport→0..1 pending operation, operation→0..1 child, child→1 disposable driver and driver→0..1 private resource, including ownership and cleanup. It uses an injected temporary snapshot resolver and existing file execution policy rather than implementing the adjacent stores or converters. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
-          "action": "Retain the ownership prose. When updating the sequence companion, explicitly show awaited reachability and the DynamoDB private-auth exception to make the critical flow clearer.",
+          "premise": "The proposal consumes S001 foundations and leaves temporary storage, removal and manager implementation with their assigned stories.",
+          "evidence": "HLD assigns sc4 to S002, sc1/sc2/sc3/sc8 to S001, session overlays to S003, removal to S004 and manager UI to S005. The proposal adds readonly preparation and test-specific operations, preserves mutation readiness, and uses existing file execution rather than redesigning converters. Temporary edits depend on an injected resolver and fail closed until installed. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, src/daemon/db/management.ts, src/daemon/db/management-startup.ts, src/shared/ipc-client.ts, src/daemon/server.ts]",
+          "action": "Carry the same-socket cancellation requirement into S005: the existing shared rpc helper creates a new connection per call, so it cannot issue an owner-matching cancelTest through separate ordinary rpc calls.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "boundaries.2",
-          "ref": "boundaries",
-          "item": "boundaries",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The linked sequence companion renders correctly and visually matches the design.",
-          "evidence": "Read the generated HTML and extracted its Mermaid source: it contains client, supervisor and child participants, deadline/materialization, private IPC, exit and cancellation messages. Browser rendering was attempted, but the in-app browser was unavailable and the browser inventory was empty. SVG generation, clipping and visual consistency could not be checked. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/sequence-diagram.html]",
-          "action": "Have the author render and inspect the existing companion, correcting or regenerating it if needed.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
         },
         {
           "claimId": "error-paths.1",
@@ -156,9 +156,33 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design states detection and safe responses for admission errors, worker faults, malformed IPC, cancellation and unsupported memory-only execution.",
-          "evidence": "LLD §§2 and 6 specify strict parsing, owned revision checks, nonce/message validation, spawn/exit/disconnect detection, first-terminal-wins handling and fixed public messages. Existing managementRejection already projects recognized management errors through fixed ManagementServiceError messages. File execution already uses resource-limit/unsupported-temporary failures. The lifetime and credential-ordering exceptions are reported separately above. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/management.ts, src/daemon/db/file-execution.ts, src/daemon/db/drivers/duckdb-file.ts]",
-          "action": "Preserve fixed projections across legacy and v2 routes; include unknown worker codes and close failures in the planned negative tests.",
+          "premise": "Metadata-only admission is necessary and can reuse authenticated metadata without reading unrelated credentials.",
+          "evidence": "SavedConnectionManagement.current first calls enabled(). The production enabled closure calls tickets.assertAvailable and loops over every connection reference with keystore.getKey. Conversely, ManagementStateFile.current checks protected-file digest/inode/device against cached authenticated state without keychain access. The proposed split preserves these metadata fences and delays signing/selected credential reads until existence/revision admission. [files: src/daemon/db/management.ts, src/daemon/db/management-startup.ts, src/daemon/db/management-state.ts, src/daemon/db/management-tickets.ts]",
+          "action": "None required; test the actual openManagedRoot closure, as specified, rather than an always-true readiness fixture.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The final response/drain protocol addresses timeout, disconnect and refusal without falsely releasing live operation ownership.",
+          "evidence": "Current holdingForward releases unary holds on reply, and Router activity similarly ends on reply; socket disconnect drops external delivery while unary work continues. A timeout response would therefore release protection too early unless cleanup has a separate lifetime. The final design registers drain before awaiting, distinguishes completed from drained, completes non-admitted paths explicitly, retains preparation/reaper capacity, and names shutdown integration before store teardown. [files: src/daemon/server.ts, src/daemon/threads/maintenance-entry.ts, src/daemon/threads/router.ts, src/shared/locks/maintenance-lock.ts, src/daemon/index.ts, src/daemon/shutdown.ts]",
+          "action": "None required; preserve the specified real-lock tests with router activity enabled.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.3",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The DynamoDB identity snapshot addresses the authentication failure caused by stripping worker credential environment.",
+          "evidence": "DynamoDriver explicitly supplies fromIni({ profile }) when options.profile exists; otherwise DynamoDBClient uses its default credential chain. The installed credential-providers package exports fromNodeProviderChain. Parent resolution, shared provider selection and explicit static worker credentials preserve those selection paths while preventing worker fallback. The design states rejection, expiration and late-resolution handling and keeps runtimeAuth outside public/config persistence. [files: src/daemon/db/drivers/dynamodb.ts, node_modules/@aws-sdk/credential-providers/dist-types/index.d.ts, src/daemon/db/driver-profiles.ts]",
+          "action": "None required; retain signing-boundary comparisons and missing-runtimeAuth failure tests.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -168,21 +192,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both upstream S002 acceptance criteria map to concrete planned tests.",
-          "evidence": "HLD S002/ac1 maps to draft parity, reachability, sanitization, duration and zero writes; LLD maps these to CM-S2-A and route/capability contract tests. HLD S002/ac2 maps to stale replies, repeated clicks, deadlines and forced cleanup; LLD CM-S2-B covers these with deterministic races and actual children. Existing owned-file and management-RPC suites provide relevant fixtures and compatibility baselines. This verifies planned coverage, not implementation or passing results. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/HLD.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/__tests__/owned-file-driver.test.ts, src/daemon/db/__tests__/connection-management-rpc.test.ts]",
-          "action": "Add the production-readiness ordering and post-timeout maintenance-exclusion regressions required by the findings above. Remove the superseded cancellation wording from CM-S2-D to keep test instructions unambiguous.",
+          "premise": "Both S002 acceptance criteria map to concrete tests, including the proposed lifecycle and security corrections.",
+          "evidence": "CM-S2-A and the routing contract group cover ac1 draft parity, safe output, duration and unchanged persistence. CM-S2-B covers ac2 identities, timeout, cancellation and bounded cleanup. D–G add explicit lazy-driver negatives, actual-child/logger checks, production readiness instrumentation, runtime paths, AWS signing, cloneability and real-lock completion races. Existing owned-file-driver, request-context and maintenance-lock tests provide relevant production seams. This verifies the test design, not execution of unimplemented S002 tests. [files: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/DEF.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/LLD.md, src/daemon/db/__tests__/owned-file-driver.test.ts, src/daemon/__tests__/connection-request-context.test.ts, src/daemon/threads/__tests__/maintenance-lock.test.ts]",
+          "action": "Give the contract test group the explicit CM-S2-C identifier used by the acceptance table, and retain S005 end-to-end stale-UI tests as a separate integration obligation.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 2,
+        "high": 0,
         "med": 0,
-        "low": 10,
+        "low": 14,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-24T19:11:36.354Z",
+      "reviewedAt": "2026-10-24T19:24:46.155Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
     }
@@ -545,13 +569,26 @@
       {
         "entity": "Separate unary response and operation-drain lifetimes",
         "change": "new",
-        "details": "Introduce internal RequestLifetime in src/daemon/request-context.ts, created server-side in src/daemon/server.ts BEFORE forwarding unary request. API registerDrain(work:Promise<void>):void, seal():void, drained:Promise<void>; registerDrain accepts only before seal, uses all-settled work completion, never settles drained until sealed AND every registered work item settled. Expose only registerDrain on TrustedRpcContext, lifetime owned by internal RequestEnvelope; none is deserialized from client params or serialized to worker-thread wire. draft-test supervisor synchronously registers its whole operation-drain promise before first await; drain encompasses root-gate queue, pending root/keychain/AWS preparation, asynchronous spawn, child close/reap, and all cleanup/listener/timer releases, including work continuing after timeout result. Terminal response promise settles at deadline independently. directDispatch seals request lifetime in its unary handler finally and still delivers exactly one INTERNAL reply after result settles; IpcServer drops only external canceled socket delivery. holdingForward in src/daemon/threads/maintenance-entry.ts resolves its held callback only when (reply delivered internally OR pre-admission canceled) AND request.lifetime.drained settles; keep hold through timed-out hanging preparation and through reaping. No early release on cancel or reply for work registered in lifetime. Router in src/daemon/threads/router.ts similarly calls once-only ended() after internal unary reply AND drained; no late socket write. For unrelated unary handlers with zero registered work drained resolves immediately at seal, preserving previous behavior. All relevant test methods remain main-daemon classified; on remote unary routes lacking a local lifetime use existing reply completion, do not serialize promises/functions. Ensure wrappers propagate the SAME lifetime object, including holdingForward's queued entry; if cancellation before forward admission, seal empty lifetime and release once. If synchronous handler throws, seal and internal reply; if supervisor preparation never settles, terminal client timeout still returned but slot/maintenance hold/activity remain truthfully held until drain; never fabricate cleanup. This intentionally prevents compaction/restart from racing unresolved store access and caps leaks to four admitted operations. Shutdown cancels operations, reaps children and waits registered drains; a still-unresolved noncancelable preparation is reported pending rather than releasing live resource ownership. Real-lock integration test: install production server/router/holdingForward with maintenance lock enabled, hold fake credential preparation deferred, reach real or injected deadline and receive timeout, attempt exclusive maintenance and assert denied while pending; repeat after socket disconnect and while child ignores cancel; settle preparation/reap then assert exclusive maintenance admitted and activity/holds/listeners zero exactly once. Register-before-await, rejection, queued-cancel, reply/cancel race and ignored AbortSignal coverage mandatory.",
+        "details": "Introduce internal RequestLifetime in src/daemon/request-context.ts, created server-side in src/daemon/server.ts BEFORE forwarding unary request. API registerDrain(work:Promise<void>):void, seal():void, drained:Promise<void>; registerDrain accepts only before seal, uses all-settled work completion, never settles drained until sealed AND every registered work item settled. Expose only registerDrain on TrustedRpcContext, lifetime owned by internal RequestEnvelope; none is deserialized from client params or serialized to worker-thread wire. draft-test supervisor synchronously registers its whole operation-drain promise before first await; drain encompasses root-gate queue, pending root/keychain/AWS preparation, asynchronous spawn, child close/reap, and all cleanup/listener/timer releases, including work continuing after timeout result. Terminal response promise settles at deadline independently. directDispatch seals request lifetime in its unary handler finally and still delivers exactly one INTERNAL reply after result settles; IpcServer drops only external canceled socket delivery. holdingForward in src/daemon/threads/maintenance-entry.ts resolves its held callback only when (reply delivered internally OR pre-admission canceled) AND request.lifetime.drained settles; keep hold through timed-out hanging preparation and through reaping. No early release on cancel or reply for work registered in lifetime. Router in src/daemon/threads/router.ts similarly calls once-only ended() after internal unary reply AND drained; no late socket write. For unrelated unary handlers with zero registered work drained resolves immediately at seal, preserving previous behavior. All relevant test methods remain main-daemon classified; on remote unary routes lacking a local lifetime use existing reply completion, do not serialize promises/functions. Ensure wrappers propagate the SAME lifetime object, including holdingForward's queued entry; if cancellation before forward admission, seal empty lifetime and release once. If synchronous handler throws, seal and internal reply; if supervisor preparation never settles, terminal client timeout still returned but slot/maintenance hold/activity remain truthfully held until drain; never fabricate cleanup. This intentionally prevents compaction/restart from racing unresolved store access and caps leaks to four admitted operations. Shutdown cancels operations, reaps children and waits registered drains; a still-unresolved noncancelable preparation is reported pending rather than releasing live resource ownership. Real-lock integration test: install production server/router/holdingForward with maintenance lock enabled, hold fake credential preparation deferred, reach real or injected deadline and receive timeout, attempt exclusive maintenance and assert denied while pending; repeat after socket disconnect and while child ignores cancel; settle preparation/reap then assert exclusive maintenance admitted and activity/holds/listeners zero exactly once. Register-before-await, rejection, queued-cancel, reply/cancel race and ignored AbortSignal coverage mandatory. FINAL protocol clarification: RequestLifetime includes complete()/completed; all wrappers await completed AND drained rather than requiring an internal reply, so non-admitted requests need no fabricated response. See cloneable channel projection and non-admitted completion below for every terminal path.",
         "callSites": [
           "src/daemon/request-context.ts",
           "src/daemon/server.ts",
           "src/daemon/threads/maintenance-entry.ts",
           "src/daemon/threads/router.ts",
           "src/shared/locks/maintenance-lock.ts"
+        ]
+      },
+      {
+        "entity": "Cloneable channel projection and non-admitted completion",
+        "change": "new",
+        "details": "Explicit defining change site src/daemon/threads/channel.ts: retain RequestEnvelope as the cloneable WIRE interface. Its trustedContext must be narrowed to a wire-only {connectionIdentity:string;daemonEpoch:string} type, not full TrustedRpcContext after optional signal/registerDrain are added. Add separate main-thread LocalRequestEnvelope type with same request data and trusted local context plus RequestLifetime; ForwardRequest/server/router/maintenance wrappers use this local type. Router.send creates an explicit field-by-field WireRequestEnvelope projection containing kind/requestId/method/params/stream/session/underHold and identity/epoch ONLY; never spreads local request or posts lifetime/AbortSignal/functions/promises. src/daemon/threads/worker-requests.ts receives and validates wire projection and uses existing worker-side request completion. No S002 test runs on worker thread; no test deadline/cancel callbacks cross channel. Remote unary requests retain existing semantics: socket cancel does not abort worker execution, reply/error/worker-unavailable remains completion trigger, with parent local lifetime completed/sealed at that terminal trigger. Include structuredClone/postMessage regression test with local lifetime present and ignored optional local context fields; verify no DataCloneError and no identity loss. This supersedes earlier use of RequestEnvelope as both local and wire container.\nExtend RequestLifetime with once-only complete():void and completed:Promise<void> in addition to registerDrain/seal/drained. complete() seals registration and resolves completed exactly once; drained still awaits every registered promise. WRAPPER BOOKKEEPING waits completed AND drained, NOT internal reply AND drained. directDispatch invokes complete() in unary handler finally (also unknown method and synchronous throw), delivers internal reply once, and external socket filtering remains IpcServer. holdingForward calls complete() for every path that NEVER invokes forward: maintenance refusal, lock acquisition failure, cancellation while waiting for admission and cancel before admission; these paths have no registered work, so drained resolves. Maintenance refusal may deliver sanitized busy reply only if socket still open; pre-admission cancellation MUST NOT fabricate a socket reply or invoke handler. Router registers one completion observer before dispatch; onRequest ended runs once after completed AND drained even when no internal reply exists. For non-admitted paths complete and seal the shared SAME local lifetime before release; no callback references stranded. Error delivery and complete must execute even if external deliver throws; use once-only finally semantics, no duplicate handler execution. holdingForward's hold promise releases only after completed AND drained when admitted; if not admitted there is no acquired work hold to retain. RequestLifetime creation occurs before Router onRequest, so observers never miss synchronous refusal/cancel. Remote replies/errors and queued-local reroutes set complete once on original local lifetime; worker crash/unavailable/predispatch queue rejection also complete/seal empty lifetime; streams retain existing cancellation/hold semantics unchanged. Add production real-lock tests with onRequest enabled for (1) maintenance already exclusive -> busy refusal, (2) cancellation before admission, (3) lock acquisition rejects/throws, (4) synchronous unknown handler, (5) worker unavailable/queued cancellation. Each must prove handler/spawn/secret calls zero, no reply to closed socket, local completed/drained settle, activity and hold counts return to baseline once, and next request/maintenance succeeds. Preserve earlier timeout test where admitted deferred preparation DOES retain hold until drain. These rules replace all earlier reply-only completion statements for local lifetimes.",
+        "callSites": [
+          "src/daemon/threads/channel.ts",
+          "src/daemon/threads/router.ts",
+          "src/daemon/threads/worker-requests.ts",
+          "src/daemon/threads/maintenance-entry.ts",
+          "src/daemon/server.ts",
+          "src/daemon/request-context.ts"
         ]
       }
     ],
@@ -738,6 +775,16 @@
           ],
           "fixturesNeeded": [
             "openManagedRoot production readiness closure with instrumented fake keystore; real lock manager and server/router; deferred preparation, clock and owned stubborn child"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "CM-S2-G: cloneable local/wire separation and all non-admitted completion paths.",
+          "subjects": [
+            "Explicit defining change site src/daemon/threads/channel.ts: retain RequestEnvelope as the cloneable WIRE interface. Its trustedContext must be narrowed to a wire-only {connectionIdentity:string;daemonEpoch:string} type, not full TrustedRpcContext after optional signal/registerDrain are added. Add separate main-thread LocalRequestEnvelope type with same request data and trusted local context plus RequestLifetime; ForwardRequest/server/router/maintenance wrappers use this local type. Router.send creates an explicit field-by-field WireRequestEnvelope projection containing kind/requestId/method/params/stream/session/underHold and identity/epoch ONLY; never spreads local request or posts lifetime/AbortSignal/functions/promises. src/daemon/threads/worker-requests.ts receives and validates wire projection and uses existing worker-side request completion. No S002 test runs on worker thread; no test deadline/cancel callbacks cross channel. Remote unary requests retain existing semantics: socket cancel does not abort worker execution, reply/error/worker-unavailable remains completion trigger, with parent local lifetime completed/sealed at that terminal trigger. Include structuredClone/postMessage regression test with local lifetime present and ignored optional local context fields; verify no DataCloneError and no identity loss. This supersedes earlier use of RequestEnvelope as both local and wire container.\nExtend RequestLifetime with once-only complete():void and completed:Promise<void> in addition to registerDrain/seal/drained. complete() seals registration and resolves completed exactly once; drained still awaits every registered promise. WRAPPER BOOKKEEPING waits completed AND drained, NOT internal reply AND drained. directDispatch invokes complete() in unary handler finally (also unknown method and synchronous throw), delivers internal reply once, and external socket filtering remains IpcServer. holdingForward calls complete() for every path that NEVER invokes forward: maintenance refusal, lock acquisition failure, cancellation while waiting for admission and cancel before admission; these paths have no registered work, so drained resolves. Maintenance refusal may deliver sanitized busy reply only if socket still open; pre-admission cancellation MUST NOT fabricate a socket reply or invoke handler. Router registers one completion observer before dispatch; onRequest ended runs once after completed AND drained even when no internal reply exists. For non-admitted paths complete and seal the shared SAME local lifetime before release; no callback references stranded. Error delivery and complete must execute even if external deliver throws; use once-only finally semantics, no duplicate handler execution. holdingForward's hold promise releases only after completed AND drained when admitted; if not admitted there is no acquired work hold to retain. RequestLifetime creation occurs before Router onRequest, so observers never miss synchronous refusal/cancel. Remote replies/errors and queued-local reroutes set complete once on original local lifetime; worker crash/unavailable/predispatch queue rejection also complete/seal empty lifetime; streams retain existing cancellation/hold semantics unchanged. Add production real-lock tests with onRequest enabled for (1) maintenance already exclusive -> busy refusal, (2) cancellation before admission, (3) lock acquisition rejects/throws, (4) synchronous unknown handler, (5) worker unavailable/queued cancellation. Each must prove handler/spawn/secret calls zero, no reply to closed socket, local completed/drained settle, activity and hold counts return to baseline once, and next request/maintenance succeeds. Preserve earlier timeout test where admitted deferred preparation DOES retain hold until drain. These rules replace all earlier reply-only completion statements for local lifetimes."
+          ],
+          "fixturesNeeded": [
+            "Production router and maintenance lock enabled; structured-clone MessagePort pair; canceled and refused admissions with activity spy"
           ]
         }
       ],

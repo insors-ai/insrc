@@ -21,7 +21,7 @@ import { readCommonApprovalMode } from '../../shared/common-approval.js';
 import { getApprovalGate } from '../approval.js';
 import { buildApprovalRequest, resolveApprovalClass, shouldAsk } from './approval-policy.js';
 import { getTool } from './registry.js';
-import type { ApprovalDenial, ApprovalGate, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
+import type { ApprovalDenial, ApprovalGate, CommonApprovalMode, ToolDeps, ToolFailureKind, ToolInput, ToolResult } from './types.js';
 
 const log = getLogger('tools-executor');
 
@@ -52,6 +52,10 @@ const DENIAL_TEXT: Record<ApprovalDenial, (id: string) => string> = {
 /** Test seam: the gate the executor asks. Production uses the daemon's broker. */
 let gate: () => ApprovalGate = getApprovalGate;
 export function _setApprovalGateForTests(g: (() => ApprovalGate) | undefined): void { gate = g ?? getApprovalGate; }
+
+/** Test seam: the tools.commonApproval setting. Production reads ~/.insrc/config.json on each call. */
+let commonSetting: () => CommonApprovalMode = readCommonApprovalMode;
+export function _setCommonApprovalForTests(f: (() => CommonApprovalMode) | undefined): void { commonSetting = f ?? readCommonApprovalMode; }
 
 /** ajv reports a schema it cannot compile as an error list that starts with this text. */
 const isCompileError = (errors: readonly string[]): boolean => errors[0]?.startsWith('ajv.compile failed') === true;
@@ -94,7 +98,7 @@ export async function executeTool(
 	// Approval. Nothing but the class, the call's mode and the setting decides whether to ask; a
 	// destructive call asks whatever the caller, the mode, the setting or the arguments say.
 	const cls = resolveApprovalClass(tool, input);
-	if (cls !== 'none' && shouldAsk(cls, deps, cls === 'common' ? readCommonApprovalMode() : 'auto')) {
+	if (cls !== 'none' && shouldAsk(cls, deps, cls === 'common' ? commonSetting() : 'auto')) {
 		const request = await buildApprovalRequest({ tool, cls, input, deps });
 		log.info({ id: tool.id, approvalClass: cls, requestId: request.requestId, caller: deps.caller }, 'asking for approval');
 		let outcome: Awaited<ReturnType<ApprovalGate['ask']>>;

@@ -17,7 +17,14 @@ async function fixture() {
  const key:ConnectionKey={repoRoot:root,id:'fixture',scope:'saved'};
  return {root,vault,options,authority,key,writes:()=>writes,setNow:(n:number)=>{now=n;},close:()=>rm(temp,{recursive:true,force:true})};
 }
-function code(expected:string) {return (error:unknown)=>error instanceof TicketError && error.code===expected && !error.message.includes('canary');}
+function code(expected:string) {return (error:unknown)=>{
+ if (!(error instanceof TicketError)) return false;
+ const messages:Record<string,string>={'invalid-input':'Invalid operation ticket.','operation-mismatch':'Invalid operation ticket.','reconciliation-required':'The operation requires reconciliation.','recovery-required':'Connection management requires recovery.','secret-unavailable':'Connection credentials are unavailable.'};
+ assert.equal(error.code,expected);
+ assert.equal(error.message,messages[expected]);
+ assert.deepEqual(Object.keys(error).sort(),['code','name']);
+ return true;
+};}
 
 test('CM-S1-C: signed tickets and keyed full-request fingerprints retain credential intent without config effects', async () => {
  const f=await fixture();
@@ -27,6 +34,7 @@ test('CM-S1-C: signed tickets and keyed full-request fingerprints retain credent
   f.vault.set('legacy','stored-canary-password'); const keysBefore=[...f.vault];
   const ticket=await f.authority.issue(f.key,'update');
   assert.equal(Date.parse(ticket.expiresAt)-Date.parse(ticket.issuedAt),TICKET_LIFETIME_MS);
+  assert.deepEqual(Object.keys(ticket).sort(),['connectionId','expiresAt','issuedAt','lookupRoot','mode','operationId','scope','signature']);
   const base:MutationRequest={ticket,operationId:ticket.operationId,key:f.key,mode:'update',expectedRevision:'r1'};
   const hashes:string[]=[];
   for (const patch of [{action:'keep'},{action:'clear'},{action:'replace',value:'replacement-canary'}] satisfies CredentialPatch[]) {

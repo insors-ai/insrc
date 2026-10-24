@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792855796394-l8tfvw",
+    "runId": "cr-1792856007308-0jucbn",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-24T15:29:56.394Z",
+    "createdAt": "2026-10-24T15:33:27.308Z",
     "model": "codex:gpt-6.1-sol",
-    "elapsedMs": 91494,
+    "elapsedMs": 52808,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9874475f902756f6",
@@ -62,27 +62,16 @@
       },
       {
         "dimension": "coverage",
-        "findings": [
-          {
-            "dimension": "coverage",
-            "severity": "HIGH",
-            "location": "src/analyze/planner/wire-schema.ts:1",
-            "message": "Missing promised coverage for preserving nulls inside slot contents and whole-params. The related test is present and passing, but covers nested null removal and the adherence rule; no listed test establishes the promised preservation cases.",
-            "expectationRef": "nulls the wire form forced are removed at structural positions only: slot contents and whole-params reach INV-5 as written, and the adherence one-of-three rule still holds",
-            "confidence": "breach",
-            "findingKind": "promised-test",
-            "symbolId": ""
-          }
-        ]
+        "findings": []
       },
       {
         "dimension": "quality",
         "findings": []
       }
     ],
-    "verdict": "block",
+    "verdict": "pass",
     "counts": {
-      "high": 1,
+      "high": 0,
       "med": 0,
       "low": 0
     }
